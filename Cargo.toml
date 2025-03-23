@@ -1,0 +1,45 @@
+[package]
+name = "cursed"
+version = "0.1.0"
+edition = "2021"
+authors = ["Geoffrey Huntley"]
+description = "CURSED Programming Language - Gen Z slang meets Go-like grammar"
+repository = "https://github.com/ghuntley/cursed"
+license = "MIT"
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thiserror = "1.0"  # For ergonomic error handling
+clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing
+rustyline = "12.0"  # For REPL functionality
+log = "0.4"  # Logging facade
+env_logger = "0.10"  # Logging implementation
+dirs = "5.0"  # For finding home directory
+num-traits = "0.2"  # For numerical traits
+
+[dev-dependencies]
+criterion = "0.5"  # For benchmarking
+pretty_assertions = "1.4"  # For nicer test output
+proptest = "1.3"  # For property-based testing
+
+[workspace]
+members = [
+    ".",
+]
+
+[[bin]]
+name = "cursed"
+path = "src/main.rs"
+
+[profile.release]
+lto = true  # Enable Link Time Optimization for smaller binaries
+codegen-units = 1  # Optimize for size and performance
+opt-level = 3  # Maximum optimization
+panic = "abort"  # Remove panic unwinding code in release builds
+strip = true  # Strip symbols from the binary
+
+[profile.dev]
+opt-level = 0  # No optimization for faster compilation
+debug = true  # Full debug info
