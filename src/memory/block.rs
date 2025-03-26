@@ -16,7 +16,7 @@ use std::slice;
 use std::mem;
 use std::collections::HashSet;
 use std::error::Error as StdError;
-use crate::memory::allocator::{AllocatorBase, AllocatorExt};
+use crate::memory::allocator::AllocatorBase;
 use super::tagged::{Tag, TaggedPtr, TAG_MASK, TAG_SHIFT, PTR_MASK, NonNullExt, TaggedPtrExt, TaggedPtrConstructor};
 use std::marker::PhantomData;
 use std::cell::RefCell;
@@ -38,6 +38,21 @@ pub struct BlockAllocatorStats {
     pub free_slots: usize,
     /// Total size of memory managed
     pub total_size: usize,
+    /// Current used memory
+    pub used: usize,
+}
+
+impl Default for BlockAllocatorStats {
+    fn default() -> Self {
+        Self {
+            total_allocated: 0,
+            total_freed: 0,
+            blocks_allocated: 0,
+            free_slots: 0,
+            total_size: 0,
+            used: 0,
+        }
+    }
 }
 
 /// A block of memory
@@ -306,6 +321,18 @@ const SLOT_SIZES: [usize; 4] = [
     1024,   // For objects <= 1024 bytes
 ];
 
+/// A companion object for BlockAllocator to provide static methods
+pub struct BlockAllocatorCompanion;
+
+impl BlockAllocatorCompanion {
+    /// Create a new block allocator with the specified heap size
+    pub fn new(heap_size: usize) -> Result<BlockAllocator, Box<dyn Error>> {
+        let mut block_allocator = BlockAllocator::default();
+        block_allocator.init(heap_size)?;
+        Ok(block_allocator)
+    }
+}
+
 /// A block allocator for efficient memory management
 #[derive(Debug)]
 pub struct BlockAllocator {
@@ -326,7 +353,7 @@ pub struct BlockAllocator {
     /// Available slot sizes
     slot_sizes: Vec<usize>,
     /// Statistics for block allocator
-    stats: BlockAllocatorStats,
+    pub stats: BlockAllocatorStats,
     /// Maximum size of the allocator
     max_size: usize,
     /// The start of the allocated memory
@@ -336,18 +363,26 @@ pub struct BlockAllocator {
 }
 
 impl BlockAllocator {
-    /// Create a new block allocator
-    pub fn new(heap_size: usize) -> Result<Self, Error> {
+    /// Create a new block allocator with the given heap size
+    ///
+    /// # Arguments
+    ///
+    /// * `heap_size` - The size of the heap in bytes
+    ///
+    /// # Returns
+    ///
+    /// A new block allocator
+    pub fn new(heap_size: usize) -> Result<BlockAllocator, Error> {
         // Validate heap size
         if heap_size == 0 {
             return Err(Error::Memory("Heap size cannot be zero".to_string()));
         }
 
         // Define slot sizes (powers of 2)
-        let slot_sizes = vec![8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096];
+        let slot_sizes = std::vec![8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096];
         
         // Allocate memory for the heap
-        let layout = Layout::from_size_align(heap_size, DEFAULT_ALIGNMENT)
+        let layout = Layout::from_size_align(heap_size, 8)
             .map_err(|e| Error::Memory(format!("Invalid layout for heap: {}", e)))?;
             
         let start = unsafe {
@@ -355,7 +390,7 @@ impl BlockAllocator {
                 .ok_or_else(|| Error::Memory("Failed to allocate memory for heap".to_string()))?
         };
         
-        Ok(Self {
+        Ok(BlockAllocator {
             blocks: Vec::new(),
             block_size: DEFAULT_BLOCK_SIZE,
             ptr_map: HashMap::new(),
@@ -373,12 +408,13 @@ impl BlockAllocator {
 
     /// Get the current memory usage
     pub fn current(&self) -> usize {
-        self.stats.used
+        // Calculate the memory in use (similar to how memory_usage works)
+        self.total_allocated - self.total_freed
     }
 
     /// Get the block allocator statistics
-    pub fn stats(&self) -> &BlockStats {
-        &self.stats
+    pub fn stats(&self) -> BlockAllocatorStats {
+        self.stats.clone()
     }
 
     /// Find a block with a free slot of the specified size
@@ -433,15 +469,6 @@ impl BlockAllocator {
         }
         
         power
-    }
-
-    /// Get statistics about allocations
-    ///
-    /// # Returns
-    ///
-    /// The current allocation statistics
-    pub fn stats(&self) -> BlockAllocatorStats {
-        self.stats.clone()
     }
 
     /// Get the memory capacity in bytes
@@ -516,6 +543,7 @@ impl BlockAllocator {
         None
     }
 
+    /// Get the capacity of this allocator
     pub fn capacity(&self) -> usize {
         self.total_size
     }
@@ -527,10 +555,10 @@ impl AllocatorBase for BlockAllocator {
         let align = layout.align();
         
         // Determine the slot size needed
-        let slot_size = self.get_slot_size_for(size);
+        let slot_size = BlockAllocatorExt::get_slot_size_for(self, size);
         
         // Find a block with a free slot
-        if let Some(block_index) = self.find_block_with_free_slot(slot_size) {
+        if let Some(block_index) = BlockAllocatorExt::find_block_with_free_slot(self, slot_size) {
             let mut blocks = self.blocks.clone();
             let block = &mut blocks[block_index];
             
@@ -620,15 +648,6 @@ impl Clone for BlockAllocator {
             start: self.start,
             num_blocks: self.num_blocks,
         }
-    }
-}
-
-// The method wrapping_offset is implemented for raw pointers
-//
-// This change fixes the error for raw_ptr.wrapping_offset in find_free_slot()
-unsafe impl<T> RawPtrExt<T> for *mut T {
-    fn wrapping_offset(self, offset: isize) -> *mut T {
-        unsafe { self.wrapping_offset(offset) }
     }
 }
 
@@ -814,6 +833,15 @@ pub trait BlockAllocatorExt {
     
     /// Calculate the number of free slots in all blocks
     fn count_free_slots(&self) -> usize;
+    
+    /// Find a block with a free slot of the specified size
+    fn find_block_with_free_slot(&self, slot_size: usize) -> Option<usize>;
+    
+    /// Get the appropriate slot size for the requested size
+    fn get_slot_size_for(&self, size: usize) -> usize;
+    
+    /// Get the capacity of this allocator
+    fn capacity(&self) -> usize;
 }
 
 impl BlockAllocatorExt for BlockAllocator {
@@ -845,75 +873,81 @@ impl BlockAllocatorExt for BlockAllocator {
     fn count_free_slots(&self) -> usize {
         self.blocks.iter().map(|block| block.free_slots).sum()
     }
-}
-
-// Implementation of TaggedPtrConstructor for BlockAllocator
-impl TaggedPtrConstructor for BlockAllocator {
-    type T = BlockAllocator;
     
-    fn new(ptr: Option<NonNull<Self::T>>, _tag: Tag) -> TaggedPtr<Self::T> {
-        TaggedPtr {
-            ptr,
-            tag: 0,
-            _phantom: PhantomData,
-        }
-    }
-}
-
-// Implement MemoryBlockExt trait methods
-impl MemoryBlockExt for BlockAllocator {
-    fn get_slot_size(&self) -> usize {
-        // Default implementation returns the first slot size
-        self.slot_sizes.first().copied().unwrap_or(MIN_ALIGNMENT)
-    }
-    
-    fn is_allocated(&self, slot: usize) -> bool {
-        // This implementation is a placeholder since BlockAllocator doesn't directly implement this
-        false
-    }
-    
-    fn find_free_slot(&self) -> Option<usize> {
-        // Look for any block with a free slot
+    fn find_block_with_free_slot(&self, slot_size: usize) -> Option<usize> {
+        // Look for a block with the right slot size and at least one free slot
         for (index, block) in self.blocks.iter().enumerate() {
-            if block.free_slots > 0 {
+            if block.slot_size == slot_size && block.free_slots > 0 {
                 return Some(index);
             }
         }
+        
+        // If no existing blocks with free slots, check our free blocks list
+        for &block_idx in &self.free_blocks {
+            if block_idx < self.blocks.len() {
+                let block = &self.blocks[block_idx];
+                if block.slot_size == slot_size {
+                    return Some(block_idx);
+                }
+            }
+        }
+        
         None
     }
     
-    fn is_slot_free(&self, slot: usize) -> bool {
-        // This implementation is a placeholder since BlockAllocator doesn't directly implement this
-        false
+    fn get_slot_size_for(&self, size: usize) -> usize {
+        // Ensure we have at least the minimum alignment
+        let aligned_size = if size < MIN_ALIGNMENT {
+            MIN_ALIGNMENT
+        } else {
+            // Round up to the nearest alignment boundary
+            align_up(size, MIN_ALIGNMENT)
+        };
+        
+        // Find the smallest slot size that can accommodate the aligned size
+        for &slot_size in &self.slot_sizes {
+            if slot_size >= aligned_size {
+                return slot_size;
+            }
+        }
+        
+        // If no slot size fits, round up to the next power of 2
+        let mut power = MIN_ALIGNMENT;
+        while power < aligned_size {
+            power *= 2;
+        }
+        
+        power
     }
     
-    fn contains_ptr(&self, ptr: *mut u8) -> bool {
-        // Check if the pointer is within the total allocated memory range
-        let ptr_addr = ptr as usize;
-        let start_addr = self.start.as_ptr() as usize;
-        let end_addr = start_addr + self.total_size;
-        
-        ptr_addr >= start_addr && ptr_addr < end_addr
-    }
-    
-    fn get_slot_index(&self, ptr: NonNull<u8>) -> Option<usize> {
-        // Convert to usize for easier comparison
-        let ptr_addr = ptr.as_ptr() as usize;
-        
-        // Check if we have this pointer in our map
-        self.ptr_map.get(&ptr_addr).map(|(_, slot_idx)| *slot_idx)
-    }
-    
-    fn is_pointer_allocated(&self, ptr: *mut u8) -> bool {
-        // Convert to usize for easier comparison
-        let ptr_addr = ptr as usize;
-        
-        // Check if we have this pointer in our map
-        self.ptr_map.contains_key(&ptr_addr)
+    fn capacity(&self) -> usize {
+        self.total_size
     }
 }
 
+/// A memory block in a linked list of blocks
+#[derive(Debug)]
+pub struct Block {
+    /// Size of this block in bytes
+    pub size: usize,
+    /// Whether this block is free (true) or allocated (false)
+    pub is_free: bool,
+    /// Pointer to the next block
+    pub next: Option<Box<Block>>,
+    /// Pointer to the previous block (weak reference to avoid cycles)
+    pub prev: Option<*mut Block>,
+}
+
 impl Block {
+    /// Creates a new memory block
+    /// 
+    /// # Arguments
+    /// 
+    /// * `size` - The size of the block in bytes
+    /// 
+    /// # Returns
+    /// 
+    /// A new Block with the specified size, marked as free
     pub fn new(size: usize) -> Self {
         Self {
             size,
@@ -922,8 +956,120 @@ impl Block {
             prev: None,
         }
     }
+    
+    /// Splits this block into two blocks
+    /// 
+    /// # Arguments
+    /// 
+    /// * `size` - The size of the first block after the split
+    /// 
+    /// # Returns
+    /// 
+    /// The newly created block if the split was successful, None otherwise
+    pub fn split(&mut self, size: usize) -> Option<Box<Block>> {
+        // Ensure we can split the block
+        if size >= self.size || size == 0 {
+            return None;
+        }
+        
+        // Create the new block with the remaining size
+        let mut new_block = Box::new(Block {
+            size: self.size - size,
+            is_free: true,
+            next: None,
+            prev: None,
+        });
+        
+        // Update this block's size
+        self.size = size;
+        
+        // Link the new block to this block's next
+        new_block.next = self.next.take();
+        
+        // Get a raw pointer to new_block to avoid a second mutable borrow
+        let new_block_ptr = &mut *new_block as *mut Block;
+        new_block.prev = Some(self as *mut Block);
+        
+        // If there was a next block, update its prev pointer
+        if let Some(ref mut next_block) = new_block.next {
+            next_block.prev = Some(new_block_ptr);
+        }
+        
+        // Update this block's next to point to the new block
+        self.next = Some(new_block);
+        
+        // Return just the option itself instead of trying to clone
+        self.next.as_ref().map(|b| Box::new(Block {
+            size: b.size,
+            is_free: b.is_free,
+            next: None, // Don't clone the entire chain
+            prev: None, // Don't clone the entire chain
+        }))
+    }
+    
+    /// Get the next block
+    pub fn next(&self) -> Option<&Box<Block>> {
+        self.next.as_ref()
+    }
+    
+    /// Attempts to merge this block with the next block if they're both free
+    /// 
+    /// # Returns
+    /// 
+    /// true if the merge was successful, false otherwise
+    pub fn merge_with_next(&mut self) -> bool {
+        // Can only merge if this block is free
+        if !self.is_free {
+            return false;
+        }
+        
+        // Check if there's a next block and it's free
+        if let Some(mut next_block) = self.next.take() {
+            if next_block.is_free {
+                // Merge by increasing this block's size
+                self.size += next_block.size;
+                
+                // Update this block's next pointer to skip the next block
+                self.next = next_block.next.take();
+                
+                // Create a pointer to self before borrowing next
+                let self_ptr = self as *mut Block;
+                
+                // If there's now a next block, update its prev pointer
+                if let Some(ref mut new_next) = self.next {
+                    // Use the raw pointer to avoid a second mutable borrow of self
+                    new_next.prev = Some(self_ptr);
+                }
+                
+                return true;
+            } else {
+                // Put the next block back since we can't merge
+                self.next = Some(next_block);
+            }
+        }
+        
+        false
+    }
+
+    /// Get the capacity of this block
+    pub fn capacity(&self) -> usize {
+        self.size
+    }
 }
 
+// Add impl Clone for Block
+impl Clone for Block {
+    fn clone(&self) -> Self {
+        Self {
+            size: self.size,
+            is_free: self.is_free,
+            next: None, // Don't clone the next block to avoid infinite recursion
+            prev: None, // Don't clone the prev reference
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct BlockStats {
     pub total_size: usize,
     pub used_size: usize,

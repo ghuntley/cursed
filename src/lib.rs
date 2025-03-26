@@ -75,7 +75,7 @@ pub use memory::Allocated;
 
 // Memory internals with full implementations
 pub use memory::tagged::{TaggedPtr, Tag, NonNullExt};
-pub use memory::gc::{Traceable, Visitor, Trace, GarbageCollector, Gc};
+pub use memory::gc::{Traceable, Visitor, GarbageCollector, Gc};
 
 /// Main entry point for the REPL
 pub fn run_repl() -> Result<(), Error> {

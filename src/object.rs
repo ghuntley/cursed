@@ -18,12 +18,15 @@ use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::ptr::NonNull;
 use crate::prelude::{VecExt, RawPtrExt, VecStrJoinExt, StrCharsExt};
-use crate::memory::gc::{Traceable, Visitor, Trace};
-use crate::memory::tagged::Tag;
+use crate::memory::Trace;
+use crate::memory::Traceable;
+use crate::memory::Visitor;
+use crate::memory::tagged::{TaggedDynPtr};
 use crate::compiler::CompiledFunction;
 use crate::vm::ErrorLocation;
 use crate::error::Error;
 use std::str;
+use std::cell::RefCell;
 
 /// Object represents a runtime value
 #[derive(Debug, Clone, PartialEq)]
@@ -59,35 +62,29 @@ pub enum Object {
 impl Trace for Object {
     fn trace(&self, visitor: &mut dyn Visitor) {
         match self {
-            Object::Array(arr) => {
-                for obj in arr {
-                    gc::Trace::trace(obj, visitor);
+            Object::Array(objs) => {
+                for obj in objs.iter() {
+                    Trace::trace(obj, visitor);
                 }
             },
-            Object::HashTable(hash) => {
-                for (_, value) in hash {
-                    gc::Trace::trace(value, visitor);
+            Object::HashTable(pairs) => {
+                for (_, value) in pairs.iter() {
+                    Trace::trace(value, visitor);
                 }
-            },
-            Object::CompiledFunction(function) => {
-                visitor.visit_ptr(Rc::as_ptr(function) as usize, Tag::Function);
             },
             Object::Closure { function, free_vars } => {
-                visitor.visit_ptr(Rc::as_ptr(function) as usize, Tag::Function);
+                visitor.visit_ptr(Rc::as_ptr(function) as usize, crate::memory::tagged::Tag::Function);
                 for var in free_vars {
-                    gc::Trace::trace(var, visitor);
+                    Trace::trace(var, visitor);
                 }
-            },
-            Object::Struct { name: _, fields } => {
-                // No pointers to trace in struct definition
             },
             Object::Instance { struct_type, fields } => {
-                gc::Trace::trace(struct_type.as_ref(), visitor);
-                for (_, value) in fields {
-                    gc::Trace::trace(value, visitor);
+                Trace::trace(struct_type.as_ref(), visitor);
+                for (_, value) in fields.iter() {
+                    Trace::trace(value, visitor);
                 }
             },
-            _ => {} // Other types don't have references to trace
+            _ => {}
         }
     }
 }
@@ -108,7 +105,7 @@ impl Traceable for Object {
                     key_size
             },
             Object::CompiledFunction(_) => std::mem::size_of::<Rc<CompiledFunction>>() + std::mem::size_of::<CompiledFunction>(),
-            Object::Closure { function: _, free_vars } => {
+            Object::Closure { function, free_vars } => {
                 std::mem::size_of::<Rc<CompiledFunction>>() + 
                 std::mem::size_of::<Vec<Object>>() + 
                 (free_vars.capacity() * std::mem::size_of::<Object>())
@@ -135,36 +132,7 @@ impl Traceable for Object {
     }
 
     fn trace(&self, visitor: &mut dyn Visitor) {
-        match self {
-            Object::Array(arr) => {
-                for obj in arr {
-                    visitor.visit(obj);
-                }
-            },
-            Object::HashTable(map) => {
-                for (_, value) in map {
-                    visitor.visit(value);
-                }
-            },
-            Object::CompiledFunction(f) => {
-                visitor.visit(f.as_ref());
-            },
-            Object::Closure { function, free_vars } => {
-                visitor.visit(function.as_ref());
-                for obj in free_vars {
-                    visitor.visit(obj);
-                }
-            },
-            Object::Instance { struct_type, fields } => {
-                visitor.visit(struct_type.as_ref());
-                for (_, value) in fields {
-                    visitor.visit(value);
-                }
-            },
-            _ => {
-                // Other types don't contain pointers to other objects
-            }
-        }
+        Trace::trace(self, visitor);
     }
 }
 
@@ -524,6 +492,46 @@ impl Object {
                 Some(chars)
             }
             _ => None,
+        }
+    }
+
+    /// Trace object references for the garbage collector
+    pub fn trace_object_references(&self, visitor: &mut dyn Visitor) {
+        match self {
+            Object::Array(elements) => {
+                for obj in elements {
+                    let ptr = obj as *const Object as usize;
+                    visitor.visit_ptr(ptr, crate::memory::tagged::Tag::Object);
+                }
+            },
+            Object::HashTable(map) => {
+                for (key, value) in map {
+                    let key_ptr = key as *const String as usize;
+                    visitor.visit_ptr(key_ptr, crate::memory::tagged::Tag::String);
+                    
+                    let value_ptr = value as *const Object as usize;
+                    visitor.visit_ptr(value_ptr, crate::memory::tagged::Tag::Object);
+                }
+            },
+            Object::Closure { function, free_vars } => {
+                let func_ptr = Rc::as_ptr(function) as usize;
+                visitor.visit_ptr(func_ptr, crate::memory::tagged::Tag::Function);
+                
+                for var in free_vars {
+                    let var_ptr = var as *const Object as usize;
+                    visitor.visit_ptr(var_ptr, crate::memory::tagged::Tag::Object);
+                }
+            },
+            Object::Instance { struct_type, fields } => {
+                let type_ptr = Rc::as_ptr(struct_type) as usize;
+                visitor.visit_ptr(type_ptr, crate::memory::tagged::Tag::Object);
+                
+                for (_, value) in fields {
+                    let value_ptr = value as *const Object as usize;
+                    visitor.visit_ptr(value_ptr, crate::memory::tagged::Tag::Object);
+                }
+            },
+            _ => {}
         }
     }
 }

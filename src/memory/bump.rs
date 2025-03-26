@@ -4,7 +4,7 @@
 // It doesn't support individual deallocations, but can reset all memory at once.
 
 use std::vec::Vec;
-use std::alloc::{self, Layout};
+use std::alloc::{self, Layout, GlobalAlloc, System};
 use std::ptr::{self, NonNull};
 use std::borrow::BorrowMut;
 use std::iter::Iterator;
@@ -20,11 +20,13 @@ use crate::prelude::ptr_is_null;
 use crate::prelude::ptr_wrapping_offset;
 use std::fmt::{self, Debug, Formatter};
 use crate::memory::allocator::AllocatorBase;
-use crate::page_size;
 use std::marker::PhantomData;
 use super::tagged::{Tag, TaggedPtr, TaggedPtrConstructor};
 use std::cell::Cell;
 use std::rc::Rc;
+use std::cell::RefMut;
+use std::num::NonZeroUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Statistics for bump allocator
 #[derive(Debug, Clone, Default)]
@@ -64,22 +66,33 @@ pub struct BumpAllocator {
     /// The total number of deallocations
     total_freed: usize,
     /// The current allocation statistics
-    stats: BumpAllocatorStats,
+    pub stats: BumpAllocatorStats,
 }
 
-impl BumpAllocator {
-    /// Create a new bump allocator
-    pub fn new(heap_size: usize) -> Result<Self, Error> {
+/// A companion object for static methods
+pub struct BumpAllocatorCompanion;
+
+impl BumpAllocatorCompanion {
+    /// Create a new bump allocator with the given heap size
+    ///
+    /// # Arguments
+    ///
+    /// * `heap_size` - The size of the heap in bytes
+    ///
+    /// # Returns
+    ///
+    /// A new bump allocator
+    pub fn new(heap_size: usize) -> Result<BumpAllocator, Error> {
         // Ensure heap size is a power of 2
-        if !heap_size.is_power_of_two() {
-            return Err(Error::InvalidHeapSize(heap_size));
+        if heap_size == 0 || (heap_size & (heap_size - 1)) != 0 {
+            return Err(Error::Memory(format!("Heap size {} is not a power of 2", heap_size)));
         }
 
         let layout = Layout::from_size_align(heap_size, 8).unwrap();
-        let ptr = unsafe { alloc(layout) };
+        let ptr = unsafe { std::alloc::alloc(layout) };
         let ptr = NonNull::new(ptr).unwrap();
         
-        Ok(Self {
+        Ok(BumpAllocator {
             memory: Some(ptr),
             size: heap_size,
             offset_cell: RefCell::new(0),
@@ -97,8 +110,19 @@ impl BumpAllocator {
             },
         })
     }
+}
 
+impl BumpAllocator {
     /// Align the offset to the requested alignment
+    ///
+    /// # Arguments
+    ///
+    /// * `offset` - The offset to align
+    /// * `align` - The alignment to use
+    ///
+    /// # Returns
+    ///
+    /// The aligned offset
     pub fn align_offset(&self, offset: usize, align: usize) -> usize {
         align_up(offset, align)
     }
@@ -147,27 +171,40 @@ impl BumpAllocator {
             let layout = Layout::from_size_align(self.size, MIN_ALIGNMENT)
                 .map_err(|_| Error::Memory("Invalid memory layout".to_string()))?;
             
-            let ptr = unsafe {
-                let ptr = alloc::alloc(layout);
-                if ptr.is_null() {
-                    return Err(Error::Memory("Failed to allocate memory for bump allocator".to_string()));
-                }
-                NonNull::new_unchecked(ptr)
-            };
+            let ptr = unsafe { std::alloc::alloc(layout) };
+            if ptr.is_null() {
+                return Err(Error::Memory("Failed to allocate memory for bump allocator".to_string()));
+            }
             
-            self.memory = Some(ptr);
+            self.memory = Some(unsafe { NonNull::new_unchecked(ptr) });
         }
         
         Ok(())
     }
 
-    /// Get the current memory usage in bytes
+    /// Get the current memory usage of the allocator
+    pub fn memory_usage(&self) -> usize {
+        // Current memory usage is the current offset
+        let current_offset = *self.offset_cell.borrow();
+        if current_offset >= self.size {
+            self.size
+        } else {
+            current_offset
+        }
+    }
+
+    /// Get the remaining free memory in bytes
     ///
     /// # Returns
     ///
-    /// The current memory usage in bytes
-    pub fn memory_usage(&self) -> usize {
-        self.current
+    /// The remaining free memory in bytes
+    pub fn remaining_memory(&self) -> usize {
+        let current_offset = *self.offset_cell.borrow();
+        if current_offset >= self.size {
+            0
+        } else {
+            self.size - current_offset
+        }
     }
 
     /// Get the peak memory usage in bytes
@@ -244,19 +281,8 @@ impl BumpAllocator {
 
     /// Check if there's enough space for an allocation
     pub fn has_space(&self, size: usize, align: usize) -> bool {
-        let aligned_offset = self.align_offset(*self.offset_cell.borrow(), align);
+        let aligned_offset = align_up(*self.offset_cell.borrow(), align);
         aligned_offset + size <= self.size
-    }
-
-    /// Get the remaining memory
-    pub fn remaining_memory(&self) -> usize {
-        self.size - *self.offset_cell.borrow()
-    }
-
-    /// Get the current memory usage of the allocator
-    pub fn memory_usage(&self) -> usize {
-        // Current memory usage is the difference between the heap size and remaining space
-        self.size - self.remaining
     }
 }
 
@@ -274,7 +300,7 @@ impl AllocatorBase for BumpAllocator {
         
         // Calculate the aligned position
         let mut offset = self.offset_cell.borrow_mut();
-        let aligned_offset = self.align_offset(*offset, align);
+        let aligned_offset = align_up(*offset, align);
         
         // Check if we have enough space
         if aligned_offset + size <= self.size {
@@ -341,7 +367,11 @@ impl fmt::Display for BumpAllocator {
 
 impl Default for BumpAllocator {
     fn default() -> Self {
-        Self::new(DEFAULT_BUMP_SIZE)
+        // Call the regular constructor with the default bump size
+        match BumpAllocatorCompanion::new(DEFAULT_BUMP_SIZE) {
+            Ok(allocator) => allocator,
+            Err(_) => panic!("Failed to create default bump allocator"),
+        }
     }
 }
 
@@ -376,34 +406,24 @@ fn allocate(size: usize) -> Result<NonNull<u8>, Error> {
     let layout = Layout::from_size_align(size, MIN_ALIGNMENT)
         .map_err(|e| Error::from(format!("Invalid layout: {}", e)))?;
         
-    let ptr = unsafe {
-        let ptr = alloc::alloc(layout);
-        if ptr.is_null() {
-            return Err(Error::from(format!("Failed to allocate {} bytes", size)));
-        }
-        NonNull::new_unchecked(ptr)
-    };
-    
-    Ok(ptr)
-}
-
-// Implementation of TaggedPtrConstructor for BumpAllocator
-impl TaggedPtrConstructor for BumpAllocator {
-    type T = BumpAllocator;
-    
-    fn new(ptr: Option<NonNull<Self::T>>, _tag: Tag) -> TaggedPtr<Self::T> {
-        TaggedPtr {
-            ptr,
-            tag: 0,
-            _phantom: PhantomData,
-        }
+    let ptr = unsafe { std::alloc::alloc(layout) };
+    if ptr.is_null() {
+        return Err(Error::from(format!("Failed to allocate {} bytes", size)));
     }
+    
+    Ok(unsafe { NonNull::new_unchecked(ptr) })
 }
 
+/// Statistics for bump allocator
+#[derive(Debug, Clone)]
 pub struct BumpStats {
+    /// Total size of the heap
     pub total_size: usize,
+    /// Currently used size
     pub used_size: usize,
+    /// Number of allocations
     pub allocations: usize,
+    /// Number of deallocations
     pub deallocations: usize,
 }
 
@@ -427,4 +447,14 @@ impl Clone for BumpStats {
             deallocations: self.deallocations,
         }
     }
+}
+
+/// Create a pointer to a given address
+pub fn ptr_to(address: usize) -> Result<NonNull<u8>, Error> {
+    let ptr = address as *mut u8;
+    if ptr.is_null() {
+        return Err(Error::from("Null pointer created".to_string()));
+    }
+    
+    unsafe { Ok(NonNull::new_unchecked(ptr)) }
 } 

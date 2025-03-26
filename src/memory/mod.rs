@@ -21,6 +21,12 @@ use std::ops::Deref;
 use std::iter::Iterator;
 use std::collections::HashMap;
 use std::ops::RangeBounds;
+use crate::memory::bump::BumpAllocator;
+use crate::memory::gc::GarbageCollector;
+use crate::memory::block::BlockAllocator;
+use crate::memory::block::BlockStats;
+use crate::memory::bump::BumpStats;
+use crate::memory::gc::GcStats;
 
 /// Get the system's memory page size
 #[inline]
@@ -41,7 +47,7 @@ mod error;
 mod tests;
 
 // Re-export the public API
-pub use allocator::Allocator;
+// pub use allocator::Allocator;
 
 // Re-export tagged pointer functionality
 pub use tagged::TaggedPtr;
@@ -50,16 +56,16 @@ pub use tagged::NonNullExt;
 pub use tagged::{TaggedPtrExt, TaggedPtrExtMut, TaggedPtrConstructor};
 
 // Re-export block allocator functionality
-pub use block::BlockAllocator;
+// pub use block::BlockAllocator;
 pub use block::MemoryBlock;
 pub use block::{BlockAllocatorExt, MemoryBlockExt, MemoryBlockExtMut};
 
 // Re-export garbage collector functionality 
-pub use gc::GarbageCollector;
+// pub use gc::GarbageCollector;
 pub use gc::GarbageCollectorExt;
 
 // Re-export bump allocator functionality
-pub use bump::BumpAllocator;
+// pub use bump::BumpAllocator;
 
 /// Minimum alignment for all allocations
 pub const MIN_ALIGNMENT: usize = 8;
@@ -74,7 +80,7 @@ pub use error::MemoryError;
 pub use block::BlockAllocatorStats;
 pub use bump::BumpAllocatorStats;
 pub use tagged::{TAG_BITS, TAG_MASK, TAG_SHIFT, PTR_MASK};
-pub use gc::{Traceable, Visitor, Gc};
+pub use gc::{Traceable, Visitor, Gc, Trace};
 
 /// Align a value up to the next multiple of `align`
 pub fn align_up(value: usize, align: usize) -> usize {
@@ -86,18 +92,22 @@ pub fn align_up(value: usize, align: usize) -> usize {
 }
 
 /// Create a new garbage collector
-pub fn create_gc(heap_size: usize) -> Result<gc::GarbageCollector, error::MemoryError> {
-    gc::GarbageCollector::with_heap_size(heap_size).map_err(|e| error::MemoryError::AllocationFailed(format!("Failed to create garbage collector: {:?}", e)))
+pub fn create_garbage_collector(heap_size: usize) -> Result<gc::GarbageCollector, error::MemoryError> {
+    // Create a garbage collector with the specified heap size
+    use crate::error;
+    use crate::memory::gc;
+    
+    gc::GarbageCollectorCompanion::with_heap_size(heap_size).map_err(|e| error::MemoryError::AllocationFailed(format!("Failed to create garbage collector: {:?}", e)))
 }
 
 /// Create a new block allocator
 pub fn create_block_allocator(heap_size: usize) -> Result<block::BlockAllocator, error::MemoryError> {
-    block::BlockAllocator::new(heap_size).map_err(|e| error::MemoryError::AllocationFailed(format!("Failed to create block allocator: {:?}", e)))
+    block::BlockAllocatorCompanion::new(heap_size).map_err(|e| error::MemoryError::AllocationFailed(format!("Failed to create block allocator: {:?}", e)))
 }
 
 /// Create a new bump allocator
 pub fn create_bump_allocator(heap_size: usize) -> Result<bump::BumpAllocator, error::MemoryError> {
-    bump::BumpAllocator::new(heap_size).map_err(|e| error::MemoryError::AllocationFailed(format!("Failed to create bump allocator: {:?}", e)))
+    bump::BumpAllocatorCompanion::new(heap_size).map_err(|e| error::MemoryError::AllocationFailed(format!("Failed to create bump allocator: {:?}", e)))
 }
 
 /// A wrapper around allocated memory that tracks its allocator
@@ -162,7 +172,7 @@ impl MemoryManager {
     /// Create a new memory manager with the specified total size
     pub fn new(heap_size: usize) -> Result<Self, error::MemoryError> {
         Ok(Self {
-            gc: RefCell::new(create_gc(heap_size)?),
+            gc: RefCell::new(create_garbage_collector(heap_size)?),
             block_allocator: RefCell::new(create_block_allocator(heap_size)?),
             bump_allocator: RefCell::new(create_bump_allocator(heap_size)?),
             total_size: heap_size,
@@ -173,25 +183,33 @@ impl MemoryManager {
     
     /// Get the stats for this memory manager
     pub fn stats(&self) -> MemoryStats {
-        let gc = self.gc.borrow();
+        // Calculate total in use directly to avoid the get_total_in_use method
+        let bump_usage = self.bump_allocator.borrow().memory_usage();
+        let block_usage = crate::memory::block::BlockAllocatorExt::memory_usage(&*self.block_allocator.borrow());
+        let gc_usage = crate::memory::gc::GarbageCollectorExt::memory_usage(&*self.gc.borrow());
+        let total_in_use = bump_usage + block_usage + gc_usage;
         
         MemoryStats {
-            bump_stats: self.bump_allocator.borrow().stats(),
-            block_stats: self.block_allocator.borrow().stats(),
-            gc_stats: gc.stats().clone(),
-            total_managed: self.get_total_managed(),
-            total_in_use: self.get_total_in_use(),
+            bump_stats: self.bump_allocator.borrow().stats.clone(),
+            block_stats: self.block_allocator.borrow().stats.clone(),
+            gc_stats: self.gc.borrow().stats(),
+            total_managed: self.total_size,
+            total_in_use,
         }
     }
     
-    /// Get the total memory in use
+    /// Get the total amount of memory in use
     pub fn get_total_in_use(&self) -> usize {
-        self.gc.borrow().get_total_in_use()
+        // Sum up memory in use from all allocators
+        self.bump_allocator.borrow().memory_usage() + 
+        crate::memory::block::BlockAllocatorExt::memory_usage(&*self.block_allocator.borrow()) + 
+        // Explicitly specify which memory_usage to use
+        crate::memory::gc::GarbageCollectorExt::memory_usage(&*self.gc.borrow())
     }
     
-    /// Get the total managed memory
+    /// Get the total amount of memory managed
     pub fn get_total_managed(&self) -> usize {
-        self.gc.borrow().get_total_managed()
+        self.total_size
     }
     
     /// Allocate a block of memory
@@ -304,14 +322,18 @@ impl MemoryManager {
     
     /// Get memory statistics
     pub fn memory_stats(&self) -> MemoryStats {
-        let gc = self.gc.borrow();
+        // Calculate total in use directly to avoid the get_total_in_use method
+        let bump_usage = self.bump_allocator.borrow().memory_usage();
+        let block_usage = crate::memory::block::BlockAllocatorExt::memory_usage(&*self.block_allocator.borrow());
+        let gc_usage = crate::memory::gc::GarbageCollectorExt::memory_usage(&*self.gc.borrow());
+        let total_in_use = bump_usage + block_usage + gc_usage;
         
         MemoryStats {
-            bump_stats: self.bump_allocator.borrow().stats(),
-            block_stats: self.block_allocator.borrow().stats(),
-            gc_stats: gc.stats().clone(),
-            total_managed: self.get_total_managed(),
-            total_in_use: self.get_total_in_use(),
+            bump_stats: self.bump_allocator.borrow().stats.clone(),
+            block_stats: self.block_allocator.borrow().stats.clone(),
+            gc_stats: self.gc.borrow().stats(),
+            total_managed: self.total_size,
+            total_in_use,
         }
     }
 }
@@ -328,9 +350,9 @@ pub struct MemoryStats {
     /// Total memory currently in use (in bytes)
     pub total_in_use: usize,
     /// Memory usage by the bump allocator (in bytes)
-    pub bump_stats: BumpStats,
+    pub bump_stats: BumpAllocatorStats,
     /// Memory usage by the block allocator (in bytes)
-    pub block_stats: BlockStats,
+    pub block_stats: BlockAllocatorStats,
     /// Memory usage by the garbage collector (in bytes)
     pub gc_stats: GcStats,
 }
@@ -341,16 +363,16 @@ impl fmt::Display for MemoryStats {
         writeln!(f, "  Total in use: {} bytes", self.total_in_use)?;
         writeln!(f, "  Total managed: {} bytes", self.total_managed)?;
         writeln!(f, "  Bump allocator stats:")?;
-        writeln!(f, "    Used: {} bytes", self.bump_stats.usage)?;
-        writeln!(f, "    Total: {} bytes", self.bump_stats.capacity)?;
+        writeln!(f, "    Used: {} bytes", self.bump_stats.bytes_in_use)?;
+        writeln!(f, "    Total: {} bytes", self.bump_stats.total_size)?;
         writeln!(f, "  Block allocator stats:")?;
-        writeln!(f, "    Used: {} bytes", self.block_stats.usage)?;
-        writeln!(f, "    Total: {} bytes", self.block_stats.capacity)?;
+        writeln!(f, "    Used: {} bytes", self.block_stats.total_allocated - self.block_stats.total_freed)?;
+        writeln!(f, "    Total: {} bytes", self.block_stats.total_size)?;
         writeln!(f, "  GC stats:")?;
         writeln!(f, "    Collections: {}", self.gc_stats.collections)?;
-        writeln!(f, "    Total allocated: {} bytes", self.gc_stats.usage)?;
-        writeln!(f, "    Current heap size: {} bytes", self.gc_stats.capacity)?;
-        write!(f, "    Max heap size: {} bytes", self.gc_stats.capacity)
+        writeln!(f, "    Total allocated: {} bytes", self.gc_stats.total_allocated)?;
+        writeln!(f, "    Current heap size: {} bytes", self.gc_stats.current_heap_size)?;
+        write!(f, "    Max heap size: {} bytes", self.gc_stats.max_heap_size)
     }
 }
 
@@ -371,35 +393,5 @@ pub fn next_multiple_of(value: usize, align: usize) -> usize {
     } else {
         // Calculate next aligned value: (value + align - 1) & !(align - 1)
         (value + align - 1) & !(align - 1)
-    }
-}
-
-/// Align up to the next multiple of `align`
-#[inline]
-pub fn align_up(addr: usize, align: usize) -> usize {
-    debug_assert!(is_power_of_two(align), "Alignment must be a power of 2");
-    (addr + align - 1) & !(align - 1)
-}
-
-// No need for a VecExt trait here, removed in favor of the one in prelude
-// trait VecExt<T> { ... } 
-
-pub struct MemoryStats {
-    pub total_in_use: usize,
-    pub total_managed: usize,
-    pub bump_stats: BumpStats,
-    pub block_stats: BlockStats,
-    pub gc_stats: GcStats,
-}
-
-impl Clone for MemoryStats {
-    fn clone(&self) -> Self {
-        Self {
-            total_in_use: self.total_in_use,
-            total_managed: self.total_managed,
-            bump_stats: self.bump_stats.clone(),
-            block_stats: self.block_stats.clone(),
-            gc_stats: self.gc_stats.clone(),
-        }
     }
 } 

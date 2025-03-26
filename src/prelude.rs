@@ -13,7 +13,7 @@ use std::borrow::Cow;
 use num_traits::{Saturating, WrappingAdd, WrappingMul, WrappingSub, WrappingNeg};
 use std::alloc;
 use std::ptr::NonNull;
-use crate::object::Object;
+// use crate::object::Hashable; // This doesn't exist, so remove it
 // For len() and other slice methods
 use std::ops::Deref;
 use std::str::{self, FromStr};
@@ -21,10 +21,10 @@ use std::collections::HashMap;
 use std::fmt;
 use std::cell::{RefCell, Ref, RefMut};
 use crate::compiler::symbol_table::{SymbolTable, Symbol};
-use crate::memory::tagged::{TaggedPtr, Tag, TypedPtr};
-use std::cell::RefCell;
+use crate::memory::tagged::{TaggedPtr, Tag, TypedPtr, TaggedDynPtr, TaggedDynPtrExt};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::rc::Rc;
+use std::cell::Cell;
 
 /// Extension trait for Vec to make methods accessible across crate
 pub trait VecExt<T> {
@@ -179,257 +179,87 @@ impl<T: Clone> CloneableVecExt<T> for Vec<T> {
     }
 }
 
-/// Extension trait for String to make methods accessible across crate
+/// Extension trait for String and &str
 pub trait StringExt {
-    /// Convert a String to a string slice
-    fn as_str(&self) -> &str;
+    /// Split the string on whitespace
+    fn split_on_whitespace(&self) -> Vec<String>;
     
-    /// Trim whitespace from the start and end of a string
-    fn trim(&self) -> &str;
+    /// Join the string with new lines
+    fn join_with_newlines(&self, strings: &[String]) -> String;
     
-    /// Trim whitespace from the start of a string
-    fn trim_start(&self) -> &str;
+    /// Convert to a string
+    fn to_string_ext(&self) -> String;
     
-    /// Trim whitespace from the end of a string
-    fn trim_end(&self) -> &str;
+    /// Get the character at the given index
+    fn char_at(&self, index: usize) -> Option<char>;
     
-    /// Create a new string by repeating the original
-    fn repeat(&self, n: usize) -> String;
-    
-    /// Convert a string to lowercase
-    fn to_lowercase(&self) -> String;
-    
-    /// Check if a string contains a substring
-    fn contains(&self, pat: &str) -> bool;
-    
-    /// Split a string by a pattern
-    fn split(&self, pat: &str) -> Vec<String>;
-    
-    /// Split a string by whitespace
-    fn split_whitespace(&self) -> std::str::SplitWhitespace;
-    
-    /// Get a substring
-    fn substring(&self, start: usize, end: usize) -> &str;
-    
-    /// Get the length of the string
-    fn len(&self) -> usize;
-    
-    /// Check if the string is empty
-    fn is_empty(&self) -> bool;
-    
-    /// Get a byte at the given index
-    fn get_byte(&self, index: usize) -> Option<u8>;
-    
-    /// Get a character at the given index
-    fn get_char(&self, index: usize) -> Option<char>;
-    
-    /// Split the string by a delimiter
-    fn split_by(&self, delimiter: &str) -> Vec<&str>;
-    
-    /// Join strings with a delimiter
-    fn join(&self, delimiter: &str) -> String;
-    
-    /// Replace all occurrences of a substring
-    fn replace_all(&self, from: &str, to: &str) -> String;
-    
-    /// Check if the string starts with a prefix
-    fn starts_with(&self, prefix: &str) -> bool;
-    
-    /// Check if the string ends with a suffix
-    fn ends_with(&self, suffix: &str) -> bool;
-    
-    /// Convert the string to uppercase
-    fn to_uppercase(&self) -> String;
+    /// Get the characters as a vector
+    fn chars_vec(&self) -> Vec<char>;
     
     /// Convert to cursed object
-    fn to_cursed_object(&self) -> TaggedPtr<dyn Traceable>;
+    fn to_cursed_object(&self) -> TaggedDynPtr;
+    
+    /// Get the characters from the string
+    fn chars(&self) -> std::str::Chars<'_>;
 }
 
 impl StringExt for String {
-    fn as_str(&self) -> &str {
-        std::string::String::as_str(self)
+    fn split_on_whitespace(&self) -> Vec<String> {
+        self.split_whitespace().map(|s| s.to_string()).collect()
     }
     
-    fn trim(&self) -> &str {
-        std::string::String::as_str(self).trim()
+    fn join_with_newlines(&self, strings: &[String]) -> String {
+        strings.join("\n")
     }
     
-    fn trim_start(&self) -> &str {
-        std::string::String::as_str(self).trim_start()
+    fn to_string_ext(&self) -> String {
+        self.clone()
     }
     
-    fn trim_end(&self) -> &str {
-        std::string::String::as_str(self).trim_end()
+    fn char_at(&self, index: usize) -> Option<char> {
+        self.chars().nth(index)
     }
     
-    fn repeat(&self, n: usize) -> String {
-        std::string::String::as_str(self).repeat(n)
+    fn chars_vec(&self) -> Vec<char> {
+        self.chars().collect()
     }
     
-    fn to_lowercase(&self) -> String {
-        std::string::String::as_str(self).to_lowercase()
+    fn to_cursed_object(&self) -> TaggedDynPtr {
+        TaggedDynPtr::new(self.as_ptr() as *mut dyn Traceable, Tag::String)
     }
     
-    fn contains(&self, pat: &str) -> bool {
-        std::string::String::as_str(self).contains(pat)
-    }
-    
-    fn split(&self, pat: &str) -> Vec<String> {
-        std::string::String::as_str(self)
-            .split(pat)
-            .map(|s| s.to_string())
-            .collect()
-    }
-    
-    fn split_whitespace(&self) -> std::str::SplitWhitespace {
-        self.as_str().split_whitespace()
-    }
-    
-    fn substring(&self, start: usize, end: usize) -> &str {
-        let s = std::string::String::as_str(self);
-        if start >= s.len() || end > s.len() || start > end {
-            ""
-        } else {
-            &s[start..end]
-        }
-    }
-    
-    fn len(&self) -> usize {
-        std::string::String::len(self)
-    }
-    
-    fn is_empty(&self) -> bool {
-        std::string::String::is_empty(self)
-    }
-    
-    fn get_byte(&self, index: usize) -> Option<u8> {
-        std::string::String::as_bytes(self).get(index).copied()
-    }
-    
-    fn get_char(&self, index: usize) -> Option<char> {
-        std::string::String::as_str(self).chars().nth(index)
-    }
-    
-    fn split_by(&self, delimiter: &str) -> Vec<&str> {
-        std::string::String::as_str(self).split(delimiter).collect()
-    }
-    
-    fn join(&self, delimiter: &str) -> String {
-        if self.is_empty() {
-            self.clone()
-        } else {
-            delimiter.to_string() + self
-        }
-    }
-    
-    fn replace_all(&self, from: &str, to: &str) -> String {
-        std::string::String::as_str(self).replace(from, to)
-    }
-    
-    fn starts_with(&self, prefix: &str) -> bool {
-        std::string::String::as_str(self).starts_with(prefix)
-    }
-    
-    fn ends_with(&self, suffix: &str) -> bool {
-        std::string::String::as_str(self).ends_with(suffix)
-    }
-    
-    fn to_uppercase(&self) -> String {
-        std::string::String::as_str(self).to_uppercase()
-    }
-    
-    fn to_cursed_object(&self) -> TaggedPtr<dyn Traceable> {
-        TaggedPtr::new(self.as_ptr() as *mut dyn Traceable, Tag::String)
+    fn chars(&self) -> std::str::Chars<'_> {
+        self.chars()
     }
 }
 
 impl StringExt for str {
-    fn as_str(&self) -> &str {
-        self
+    fn split_on_whitespace(&self) -> Vec<String> {
+        self.split_whitespace().map(|s| s.to_string()).collect()
     }
     
-    fn trim(&self) -> &str {
-        <str>::trim(self)
+    fn join_with_newlines(&self, strings: &[String]) -> String {
+        strings.join("\n")
     }
     
-    fn trim_start(&self) -> &str {
-        <str>::trim_start(self)
+    fn to_string_ext(&self) -> String {
+        self.to_string()
     }
     
-    fn trim_end(&self) -> &str {
-        <str>::trim_end(self)
+    fn char_at(&self, index: usize) -> Option<char> {
+        self.chars().nth(index)
     }
     
-    fn repeat(&self, n: usize) -> String {
-        <str>::repeat(self, n)
+    fn chars_vec(&self) -> Vec<char> {
+        self.chars().collect()
     }
     
-    fn to_lowercase(&self) -> String {
-        <str>::to_lowercase(self)
+    fn to_cursed_object(&self) -> TaggedDynPtr {
+        TaggedDynPtr::new(self.as_ptr() as *mut dyn Traceable, Tag::String)
     }
     
-    fn contains(&self, pat: &str) -> bool {
-        <str>::contains(self, pat)
-    }
-    
-    fn split(&self, pat: &str) -> Vec<String> {
-        <str>::split(self, pat).map(String::from).collect()
-    }
-    
-    fn split_whitespace(&self) -> std::str::SplitWhitespace {
-        <str>::split_whitespace(self)
-    }
-    
-    fn substring(&self, start: usize, end: usize) -> &str {
-        &self[start..end]
-    }
-    
-    fn len(&self) -> usize {
-        <str>::len(self)
-    }
-    
-    fn is_empty(&self) -> bool {
-        <str>::is_empty(self)
-    }
-    
-    fn get_byte(&self, index: usize) -> Option<u8> {
-        self.as_bytes().get(index).copied()
-    }
-    
-    fn get_char(&self, index: usize) -> Option<char> {
-        <str>::chars(self).nth(index)
-    }
-    
-    fn split_by(&self, delimiter: &str) -> Vec<&str> {
-        <str>::split(self, delimiter).collect()
-    }
-    
-    fn join(&self, delimiter: &str) -> String {
-        <str>::chars(self).map(|c| c.to_string()).collect::<Vec<_>>().join(delimiter)
-    }
-    
-    fn replace_all(&self, from: &str, to: &str) -> String {
-        <str>::replace(self, from, to)
-    }
-    
-    fn starts_with(&self, prefix: &str) -> bool {
-        <str>::starts_with(self, prefix)
-    }
-    
-    fn ends_with(&self, suffix: &str) -> bool {
-        <str>::ends_with(self, suffix)
-    }
-    
-    fn to_uppercase(&self) -> String {
-        <str>::to_uppercase(self)
-    }
-    
-    fn to_cursed_object(&self) -> TaggedPtr<dyn Traceable> {
-        TaggedPtr::new(self.as_ptr() as *mut dyn Traceable, Tag::String)
-    }
-
     fn chars(&self) -> std::str::Chars<'_> {
-        <str>::chars(self)
+        self.chars()
     }
 }
 
@@ -462,11 +292,16 @@ pub use crate::ast::{
 
 // Compiler
 pub use crate::compiler::{
-    Compiler, Bytecode, Instructions, 
-    CompiledFunction, Opcode, SymbolTable
+    Compiler, 
+    Bytecode, 
+    CompiledFunction, 
+    Opcode, 
+    symbol_table::SymbolScope,
+    bytecode::Instructions
 };
+
 // Object is already imported at the top of the file
-// pub use crate::object::Object;
+pub use crate::object::Object;
 
 // VM
 pub use crate::vm::{VM, Frame};
@@ -484,7 +319,7 @@ pub unsafe fn ptr_is_null<T>(ptr: *mut T) -> bool {
 }
 
 /// Extension trait for raw pointers to provide some common methods
-pub trait RawPtrExt<T> {
+pub trait RawPtrExt<T: ?Sized> {
     /// Checks if the pointer is null
     fn is_null(self) -> bool;
     
@@ -504,46 +339,46 @@ pub trait RawPtrExt<T> {
     fn as_mut(&mut self) -> Option<&mut T>;
     
     /// Gets the raw pointer value as a slice
-    fn as_slice(&self, len: usize) -> Option<&[T]>;
+    fn as_slice(&self, len: usize) -> Option<&[T]> where T: Sized;
     
     /// Gets the raw pointer value as a mutable slice
-    fn as_mut_slice(&mut self, len: usize) -> Option<&mut [T]>;
+    fn as_mut_slice(&mut self, len: usize) -> Option<&mut [T]> where T: Sized;
     
     /// Gets the raw pointer value as a string slice
-    fn as_str(&self) -> Option<&str>;
+    fn as_str(&self) -> Option<&str> where T: Sized;
     
     /// Gets the raw pointer value as a mutable string slice
-    fn as_mut_str(&mut self) -> Option<&mut str>;
+    fn as_mut_str(&mut self) -> Option<&mut str> where T: Sized;
     
     /// Calculates a pointer offset with wrapping behavior
-    unsafe fn wrapping_offset(self, offset: isize) -> *mut T;
+    unsafe fn wrapping_offset(self, offset: isize) -> *mut T where T: Sized;
     
     /// Adds to a pointer, with wrapping behavior
-    unsafe fn add(self, count: usize) -> *mut T;
+    unsafe fn add(self, count: usize) -> *mut T where T: Sized;
 }
 
 /// Implementation of RawPtrExt for mutable raw pointers
 impl<T: ?Sized> RawPtrExt<T> for *mut T {
     /// Checks if the pointer is null
-    fn is_null(&self) -> bool {
-        (*self).is_null()
+    fn is_null(self) -> bool {
+        self.is_null()
     }
 
     /// Gets the raw pointer value as a reference
-    unsafe fn as_ref<'a>(&self) -> Option<&'a T> {
+    fn as_ref(&self) -> Option<&T> {
         if self.is_null() {
             None
         } else {
-            Some(&**self)
+            unsafe { Some(&**self) }
         }
     }
 
     /// Gets the raw pointer value as a mutable reference
-    unsafe fn as_mut<'a>(&mut self) -> Option<&'a mut T> {
+    fn as_mut(&mut self) -> Option<&mut T> {
         if self.is_null() {
             None
         } else {
-            Some(&mut **self)
+            unsafe { Some(&mut **self) }
         }
     }
 
@@ -560,19 +395,19 @@ impl<T: ?Sized> RawPtrExt<T> for *mut T {
         NonNull::new(self)
     }
     
-    fn as_slice(&self, len: usize) -> Option<&[T]> {
+    fn as_slice(&self, len: usize) -> Option<&[T]> where T: Sized {
         if self.is_null() {
             None
         } else {
-            unsafe { Some(std::slice::from_raw_parts(self, len)) }
+            unsafe { Some(std::slice::from_raw_parts(*self, len)) }
         }
     }
     
-    fn as_mut_slice(&mut self, len: usize) -> Option<&mut [T]> {
+    fn as_mut_slice(&mut self, len: usize) -> Option<&mut [T]> where T: Sized {
         if self.is_null() {
             None
         } else {
-            unsafe { Some(std::slice::from_raw_parts_mut(self, len)) }
+            unsafe { Some(std::slice::from_raw_parts_mut(*self, len)) }
         }
     }
     
@@ -606,8 +441,8 @@ impl<T: ?Sized> RawPtrExt<T> for *mut T {
 /// Implementation of RawPtrExt for const raw pointers
 impl<T: ?Sized> RawPtrExt<T> for *const T {
     /// Checks if the pointer is null
-    fn is_null(&self) -> bool {
-        (*self).is_null()
+    fn is_null(self) -> bool {
+        self.is_null()
     }
     
     /// Gets the raw pointer value
@@ -626,7 +461,7 @@ impl<T: ?Sized> RawPtrExt<T> for *const T {
     }
     
     /// Gets the raw pointer value as a reference
-    fn as_ref<'a>(&self) -> Option<&'a T> {
+    fn as_ref(&self) -> Option<&T> {
         if self.is_null() {
             None
         } else {
@@ -644,7 +479,7 @@ impl<T: ?Sized> RawPtrExt<T> for *const T {
     }
     
     /// Gets the raw pointer value as a slice
-    fn as_slice(&self, len: usize) -> Option<&[T]> {
+    fn as_slice(&self, len: usize) -> Option<&[T]> where T: Sized {
         if self.is_null() {
             None
         } else {
@@ -653,7 +488,7 @@ impl<T: ?Sized> RawPtrExt<T> for *const T {
     }
     
     /// Gets the raw pointer value as a mutable slice
-    fn as_mut_slice(&mut self, len: usize) -> Option<&mut [T]> {
+    fn as_mut_slice(&mut self, len: usize) -> Option<&mut [T]> where T: Sized {
         if self.is_null() {
             None
         } else {
@@ -821,67 +656,134 @@ impl VecStrJoinExt for Vec<&str> {
 }
 
 pub trait TaggedPtrExt<T: ?Sized> {
+    /// Get the tag value
     fn tag(&self) -> Tag;
+    
+    /// Check if the pointer is null
     fn is_null(&self) -> bool;
+    
+    /// Get the raw pointer value
     fn as_ptr(&self) -> *mut T;
+    
+    /// Get a reference to the value pointed to by this tagged pointer
     fn as_ref(&self) -> Option<&T>;
+    
+    /// Get a mutable reference to the value pointed to by this tagged pointer
     fn as_mut(&mut self) -> Option<&mut T>;
+    
+    /// Set the tag of this tagged pointer
     fn set_tag(&mut self, tag: Tag);
+    
+    /// Create a new tagged pointer with a different tag
     fn with_tag(&self, tag: Tag) -> TaggedPtr<T>;
+    
+    /// Get the size of the pointed-to value
     fn size(&self) -> usize;
+    
+    /// Convert to a non-null pointer if possible
     fn as_non_null(&self) -> Option<NonNull<T>>;
+    
+    /// Convert to a raw pointer
     fn as_raw_ptr(&self) -> *mut T;
+    
+    /// Convert to usize
     fn as_usize(&self) -> usize;
+    
+    /// Check if this is an immediate value
+    fn is_immediate(&self) -> bool;
 }
 
-impl<T: ?Sized> TaggedPtrExt<T> for TaggedPtr<T> {
-    fn tag(&self) -> Tag {
-        self.tag
-    }
+// The implementation of TaggedPtrExt for TaggedPtr<T> is in src/memory/tagged.rs
 
-    fn is_null(&self) -> bool {
-        self.ptr.is_null()
-    }
-
-    fn as_ptr(&self) -> *mut T {
-        self.ptr.as_ptr()
-    }
-
-    fn as_ref(&self) -> Option<&T> {
-        unsafe { self.ptr.as_ref() }
-    }
-
-    fn as_mut(&mut self) -> Option<&mut T> {
-        unsafe { self.ptr.as_mut() }
-    }
-
-    fn set_tag(&mut self, tag: Tag) {
-        self.tag = tag;
-    }
-
-    fn with_tag(&self, tag: Tag) -> TaggedPtr<T> {
-        TaggedPtr { ptr: self.ptr, tag }
-    }
-
-    fn size(&self) -> usize {
-        std::mem::size_of::<T>()
-    }
-
-    fn as_non_null(&self) -> Option<NonNull<T>> {
-        NonNull::new(self.ptr.as_ptr())
-    }
-
-    fn as_raw_ptr(&self) -> *mut T {
-        self.ptr.as_ptr()
-    }
-
-    fn as_usize(&self) -> usize {
-        self.ptr.as_ptr() as usize
-    }
+/// Extension trait for str
+pub trait StrExt {
+    /// Check if the string is empty
+    fn is_empty(&self) -> bool;
+    
+    /// Get the length of the string
+    fn len(&self) -> usize;
+    
+    /// Trim whitespace from the start and end of the string
+    fn trim(&self) -> &str;
+    
+    /// Trim whitespace from the start of the string
+    fn trim_start(&self) -> &str;
+    
+    /// Trim whitespace from the end of the string
+    fn trim_end(&self) -> &str;
+    
+    /// Repeat the string n times
+    fn repeat(&self, n: usize) -> String;
+    
+    /// Convert the string to lowercase
+    fn to_lowercase(&self) -> String;
+    
+    /// Check if the string contains a pattern
+    fn contains(&self, pat: &str) -> bool;
+    
+    /// Split the string into an iterator of substrings
+    fn split_whitespace(&self) -> std::str::SplitWhitespace;
+    
+    /// Split the string at the first occurrence of the pattern
+    fn split_once(&self, pat: &str) -> Option<(&str, &str)>;
+    
+    /// Convert the first character to uppercase, leave the rest unchanged
+    fn to_capitalized(&self) -> String;
+    
+    /// Get characters from the string
+    fn chars(&self) -> std::str::Chars<'_>;
 }
 
-impl<T: Clone> Clone for Box<T> {
-    fn clone(&self) -> Self {
-        Box::new((**self).clone())
+impl StrExt for str {
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+    
+    fn len(&self) -> usize {
+        self.len()
+    }
+    
+    fn trim(&self) -> &str {
+        self.trim()
+    }
+    
+    fn trim_start(&self) -> &str {
+        self.trim_start()
+    }
+    
+    fn trim_end(&self) -> &str {
+        self.trim_end()
+    }
+    
+    fn repeat(&self, n: usize) -> String {
+        self.repeat(n)
+    }
+    
+    fn to_lowercase(&self) -> String {
+        self.to_lowercase()
+    }
+    
+    fn contains(&self, pat: &str) -> bool {
+        self.contains(pat)
+    }
+    
+    fn split_whitespace(&self) -> std::str::SplitWhitespace {
+        self.split_whitespace()
+    }
+    
+    fn split_once(&self, pat: &str) -> Option<(&str, &str)> {
+        self.split_once(pat)
+    }
+    
+    fn to_capitalized(&self) -> String {
+        let mut chars = self.chars();
+        match chars.next() {
+            None => String::new(),
+            Some(first) => first.to_uppercase().chain(chars).collect(),
+        }
+    }
+    
+    fn chars(&self) -> std::str::Chars<'_> {
+        self.chars()
     }
 }

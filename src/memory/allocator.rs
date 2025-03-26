@@ -60,8 +60,8 @@ pub trait Allocator: AllocatorBase {
     
     /// Deallocate memory for a slice of a specific type
     unsafe fn deallocate_slice<T>(&self, ptr: NonNull<[T]>) {
-        let ptr = ptr.as_ptr() as *mut T;
-        let len = std::slice::from_raw_parts(ptr, 0).len();
+        let len = ptr.len();
+        let ptr = ptr.cast::<T>().as_ptr();
         let layout = Layout::array::<T>(len).unwrap();
         
         self.deallocate(NonNull::new_unchecked(ptr as *mut u8), layout);

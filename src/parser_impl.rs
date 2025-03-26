@@ -4,6 +4,7 @@ use crate::ast::{
 };
 use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::lexer::{Lexer, Token};
+use crate::ast;
 use std::mem;
 use std::collections::HashMap;
 

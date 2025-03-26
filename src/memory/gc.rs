@@ -1,7 +1,12 @@
+// GC for CURSED VM
+//
+// This module contains the garbage collector for the CURSED VM. It tracks
+// objects allocated by the VM and reclaims memory when it's no longer needed.
+
 use std::alloc::Layout;
 use std::cell::RefCell;
 use std::marker::PhantomData;
-use std::ptr::NonNull;
+use std::ptr::{self, null_mut, NonNull};
 use std::rc::Rc;
 use std::any::{TypeId};
 use std::mem;
@@ -9,54 +14,51 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::iter::Iterator;
 use std::slice::Iter;
-use std::collections::HashSet;
-use crate::prelude::{VecExt, RawPtrExt, TaggedPtrExt};
+use std::collections::{HashMap, HashSet};
+use crate::prelude::VecExt;
 use std::convert::TryFrom;
-use std::collections::HashMap;
 use crate::error::Error;
 use crate::memory::allocator::AllocatorBase;
-use crate::memory::tagged::TaggedPtrExtMut;
+use crate::memory::tagged::{Tag, TaggedPtr, TAG_MASK, TAG_SHIFT, PTR_MASK, NonNullExt, TaggedPtrConstructor, TaggedDynPtr, TaggedPtrExt};
 use num_traits::Saturating;
+use crate::memory::tagged::TaggedPtrExtMut;
 
 use super::allocator::Allocator;
 use super::block::{BlockAllocator, BlockAllocatorExt};
-use super::tagged::{Tag, TaggedPtr, TAG_MASK, TAG_SHIFT, PTR_MASK, NonNullExt, TaggedPtrConstructor};
 use super::MemoryError;
 use super::{align_up, MIN_ALIGNMENT, DEFAULT_BLOCK_SIZE};
-use crate::memory::trace::{Traceable, Visitor};
-use crate::memory::stats::GcStats;
 
-/// A trait for objects that can be garbage collected
+/// Type alias for a function that traces an object's references
+pub type TraceFunc = fn(*mut dyn Traceable, &mut dyn Visitor);
+
+/// Type alias for a function that calculates an object's size
+pub type SizeFunc = fn(*mut dyn Traceable) -> usize;
+
+/// Trait for objects that can be traced by the garbage collector.
 pub trait Traceable {
-    /// Visit all pointers that this object refers to
+    /// Trace object references.
     fn trace(&self, visitor: &mut dyn Visitor);
     
-    /// Get the size of this object in bytes
+    /// Get the size of this object.
     fn size(&self) -> usize;
 }
 
-/// A visitor used during the tracing phase of garbage collection
-pub trait Visitor {
-    /// Visit a pointer to a traceable object
-    fn visit(&mut self, obj: &dyn std::any::Any);
-    
-    /// Visit a raw pointer
-    fn visit_ptr(&mut self, ptr: usize, tag: Tag);
-}
-
-/// A trait for objects that can be traced during garbage collection
+/// Trait for objects that can be traced by the garbage collector.
 pub trait Trace {
-    /// Trace all pointers that this object refers to
+    /// Trace object references.
     fn trace(&self, visitor: &mut dyn Visitor);
 }
 
-/// Function type for tracing object references
-pub type TraceFunc = fn(*const u8, &mut dyn Visitor);
+/// Visitor for tracing object references.
+pub trait Visitor {
+    /// Visit an object
+    fn visit(&mut self, obj: &dyn std::any::Any);
+    
+    /// Visit a pointer to another object.
+    fn visit_ptr(&mut self, ptr: usize, tag: Tag);
+}
 
-/// Function type for calculating object size
-pub type SizeFunc = fn(*const u8) -> usize;
-
-/// Statistics about the garbage collector
+/// Garbage collector statistics.
 #[derive(Default, Debug, Clone)]
 pub struct GcStats {
     /// Number of garbage collection cycles
@@ -117,6 +119,30 @@ impl<'a> Visitor for ObjectCollector<'a> {
     }
 }
 
+/// A structure to collect object indices for garbage collection
+#[derive(Debug)]
+pub struct ObjectIndexCollector {
+    /// Set of visited object indices
+    pub visited: HashSet<usize>,
+    /// Reference to the garbage collector
+    pub gc: *mut GarbageCollector,
+}
+
+impl Visitor for ObjectIndexCollector {
+    fn visit(&mut self, _obj: &dyn std::any::Any) {
+        // Default implementation that does nothing
+    }
+    
+    fn visit_ptr(&mut self, ptr: usize, _tag: Tag) {
+        if let Some(idx) = unsafe { (*self.gc).allocated_objects.get(&ptr) } {
+            // Mark the object at this index
+            unsafe {
+                (*self.gc).mark_object(*idx);
+            }
+        }
+    }
+}
+
 /// An object managed by the garbage collector
 #[derive(Debug, Clone)]
 pub struct GcObject {
@@ -143,7 +169,7 @@ pub struct GcObject {
 #[derive(Debug)]
 pub struct GarbageCollector {
     /// Objects managed by the garbage collector
-    pub objects: Vec<TaggedPtr<dyn Traceable>>,
+    pub objects: Vec<TaggedDynPtr>,
     /// The block allocator used for memory allocation
     pub block_allocator: BlockAllocator,
     /// Set of root object indices
@@ -156,59 +182,12 @@ pub struct GarbageCollector {
     pub allocation_threshold: usize,
     /// Collection counter
     pub collect_counter: usize,
-    /// Map of allocated objects by address
-    pub allocated_objects: HashMap<usize, TaggedPtr<dyn Traceable>>,
+    /// Map of allocated objects address to their index in objects array
+    pub allocated_objects: HashMap<usize, usize>,
     /// Current heap usage
     pub heap_used: usize,
     /// Trace functions for different tags
     pub trace_fns: HashMap<Tag, fn(*mut dyn Traceable, &mut ObjectIndexCollector)>,
-}
-
-/// Garbage collector statistics
-#[derive(Debug, Clone)]
-pub struct GcStats {
-    /// Number of garbage collection cycles
-    pub collections: usize,
-    /// Number of live objects
-    pub live_objects: usize,
-    /// Number of objects freed
-    pub freed_objects: usize,
-    /// Total memory allocated
-    pub total_allocated: usize,
-    /// Total memory freed
-    pub total_freed: usize,
-    /// Current heap size
-    pub current_heap_size: usize,
-    /// Maximum heap size
-    pub max_heap_size: usize,
-}
-
-impl Default for GcStats {
-    fn default() -> Self {
-        Self {
-            collections: 0,
-            total_allocated: 0,
-            total_freed: 0,
-            current_heap_size: 0,
-            max_heap_size: 0,
-            live_objects: 0,
-            freed_objects: 0,
-        }
-    }
-}
-
-impl Clone for GcStats {
-    fn clone(&self) -> Self {
-        Self {
-            collections: self.collections,
-            total_allocated: self.total_allocated,
-            total_freed: self.total_freed,
-            current_heap_size: self.current_heap_size,
-            max_heap_size: self.max_heap_size,
-            live_objects: self.live_objects,
-            freed_objects: self.freed_objects,
-        }
-    }
 }
 
 // Default collection threshold: collect after 1000 allocations
@@ -221,16 +200,28 @@ const MAX_MEMORY_PRESSURE: f64 = 0.85;
 // Define the page size constant for memory alignment
 const PAGE_SIZE: usize = 4096;
 
-/// Extension trait for GarbageCollector references
+/// Trait for GarbageCollector extensions
 pub trait GarbageCollectorExt {
+    /// Return GC stats
+    fn stats(&self) -> GcStats;
+    
+    /// Mark an object
+    fn mark_object(&mut self, obj_index: usize);
+    
+    /// Mark object references recursively
+    fn mark_object_references(&mut self, obj_index: usize, obj: TaggedDynPtr);
+    
+    /// Get object size
+    fn get_object_size(&self, ptr: TaggedDynPtr) -> usize;
+    
+    /// Deallocate object
+    fn deallocate_object(&mut self, ptr: TaggedDynPtr);
+    
     /// Run a garbage collection cycle
     fn run_collection(&mut self);
     
     /// Mark all objects reachable from roots
     fn mark(&mut self);
-    
-    /// Mark a specific object
-    fn mark_object(&mut self, obj_index: usize);
     
     /// Mark all objects traced from roots
     fn mark_traced_objects(&mut self);
@@ -247,14 +238,14 @@ pub trait GarbageCollectorExt {
     /// Get the memory pressure (ratio of used to capacity)
     fn memory_pressure(&self) -> f64;
     
-    /// Get memory usage statistics
-    fn stats(&self) -> &GcStats;
-    
     /// Get memory capacity
     fn memory_capacity(&self) -> usize;
     
     /// Get memory usage
     fn memory_usage(&self) -> usize;
+    
+    /// Get the trace function for a given object
+    fn get_trace_fn(&mut self, obj: TaggedDynPtr) -> Option<fn(*mut dyn Traceable, &mut ObjectIndexCollector)>;
 }
 
 impl GarbageCollectorExt for GarbageCollector {
@@ -299,48 +290,9 @@ impl GarbageCollectorExt for GarbageCollector {
         
         // If the object has references to other objects, visit them
         if obj_index < self.objects.len() {
-            let mut pending = Vec::new();
-            pending.push(obj_index);
-            
-            struct ObjectIndexCollector<'a> {
-                gc: &'a GarbageCollector,
-                indices: &'a mut Vec<usize>,
-            }
-            
-            impl<'a> Visitor for ObjectIndexCollector<'a> {
-                fn visit(&mut self, _obj: &dyn std::any::Any) {
-                    // Not used in this context
-                }
-                
-                fn visit_ptr(&mut self, ptr: usize, _tag: Tag) {
-                    // If this pointer is in our allocation map, add it to pending
-                    if let Some(&obj_index) = self.gc.allocated_objects.get(&ptr) {
-                        if !self.gc.marked.contains(&obj_index) {
-                            self.indices.push(obj_index);
-                        }
-                    }
-                }
-            }
-            
-            // Process the pending queue
-            while let Some(idx) = pending.pop() {
-                // Skip if already processed or out of bounds
-                if idx >= self.objects.len() {
-                    continue;
-                }
-                
-                // Mark the current object
-                self.marked.insert(idx);
-                
-                // Collect objects referenced by this object
-                let mut collector = ObjectIndexCollector {
-                    gc: self,
-                    indices: &mut pending,
-                };
-                
-                // TODO: Call trace on the object to visit its references
-                // This depends on how objects are implemented in your system
-            }
+            let obj = self.objects[obj_index];
+            // Mark object references
+            self.mark_object_references(obj_index, obj);
         }
     }
 
@@ -353,26 +305,28 @@ impl GarbageCollectorExt for GarbageCollector {
         let mut freed_objects = 0;
         let mut freed_memory = 0;
         
-        // Clone the allocated_objects to avoid borrowing issues
+        // Clone the allocated objects to avoid borrowing issues during iteration
         let allocated_objects = self.allocated_objects.clone();
         
-        // Collect objects that aren't marked
         for (addr, obj_index) in allocated_objects {
             // If the object is not marked, free it
-            if !self.marked.contains(&obj_index) {
+            if !self.marked.contains(&addr) {  // Changed from obj_index to addr
                 // Remove from the allocation table
                 self.allocated_objects.remove(&addr);
                 
-                if let Some(obj) = self.objects.get(obj_index) {
+                // Find the object by address
+                let obj = self.objects.iter().find(|obj| obj.as_usize() == addr).copied();
+                
+                if let Some(obj) = obj {
                     // Calculate the memory freed
-                    let obj_size = self.get_object_size(*obj);
+                    let obj_size = self.get_object_size(obj);
                     freed_memory += obj_size;
                     
                     // Decrement heap used
                     self.heap_used = self.heap_used.saturating_sub(obj_size);
                     
                     // Deallocate the memory if it's a complex object
-                    self.deallocate_object(*obj);
+                    self.deallocate_object(obj);
                 }
                 
                 freed_objects += 1;
@@ -412,18 +366,16 @@ impl GarbageCollectorExt for GarbageCollector {
     }
 
     fn memory_pressure(&self) -> f64 {
-        let used = AllocatorBase::memory_usage(&self.block_allocator);
-        let capacity = AllocatorBase::memory_capacity(&self.block_allocator);
-        
+        let capacity = GarbageCollectorExt::memory_capacity(self);
         if capacity == 0 {
-            return 0.0;
+            return 1.0;
         }
         
-        used as f64 / capacity as f64
+        GarbageCollectorExt::memory_usage(self) as f64 / capacity as f64
     }
 
-    fn stats(&self) -> &GcStats {
-        &self.stats
+    fn stats(&self) -> GcStats {
+        self.stats.clone()
     }
 
     fn memory_capacity(&self) -> usize {
@@ -431,16 +383,16 @@ impl GarbageCollectorExt for GarbageCollector {
     }
 
     fn memory_usage(&self) -> usize {
-        BlockAllocatorExt::memory_usage(&self.block_allocator)
+        self.heap_used
     }
 
     /// Get the size of an object
-    fn get_object_size(&self, ptr: TaggedPtr<dyn Traceable>) -> usize {
-        ptr.size_of()
+    fn get_object_size(&self, ptr: TaggedDynPtr) -> usize {
+        ptr.size()
     }
     
     /// Deallocate an object
-    fn deallocate_object(&mut self, ptr: TaggedPtr<dyn Traceable>) {
+    fn deallocate_object(&mut self, ptr: TaggedDynPtr) {
         // Skip deallocating immediate values
         if ptr.is_immediate() {
             return;
@@ -456,23 +408,23 @@ impl GarbageCollectorExt for GarbageCollector {
                         
                         // Deallocate the memory
                         let layout = Layout::new::<String>();
-                        std::alloc::dealloc(raw_ptr.as_ptr(), layout);
+                        std::alloc::dealloc(raw_ptr.as_ptr() as *mut u8, layout);
                     },
                     Tag::Array => {
                         // Drop the array
-                        std::ptr::drop_in_place(raw_ptr.as_ptr() as *mut Vec<TaggedPtr<dyn Traceable>>);
+                        std::ptr::drop_in_place(raw_ptr.as_ptr() as *mut Vec<TaggedDynPtr>);
                         
                         // Deallocate the memory
-                        let layout = Layout::new::<Vec<TaggedPtr<dyn Traceable>>>();
-                        std::alloc::dealloc(raw_ptr.as_ptr(), layout);
+                        let layout = Layout::new::<Vec<TaggedDynPtr>>();
+                        std::alloc::dealloc(raw_ptr.as_ptr() as *mut u8, layout);
                     },
                     Tag::HashMap => {
                         // Drop the hashmap
-                        std::ptr::drop_in_place(raw_ptr.as_ptr() as *mut std::collections::HashMap<TaggedPtr<dyn Traceable>, TaggedPtr<dyn Traceable>>);
+                        std::ptr::drop_in_place(raw_ptr.as_ptr() as *mut std::collections::HashMap<TaggedDynPtr, TaggedDynPtr>);
                         
                         // Deallocate the memory
-                        let layout = Layout::new::<std::collections::HashMap<TaggedPtr<dyn Traceable>, TaggedPtr<dyn Traceable>>>();
-                        std::alloc::dealloc(raw_ptr.as_ptr(), layout);
+                        let layout = Layout::new::<std::collections::HashMap<TaggedDynPtr, TaggedDynPtr>>();
+                        std::alloc::dealloc(raw_ptr.as_ptr() as *mut u8, layout);
                     },
                     Tag::Function => {
                         // Drop the function
@@ -480,7 +432,7 @@ impl GarbageCollectorExt for GarbageCollector {
                         
                         // Deallocate the memory
                         let layout = Layout::new::<Function>();
-                        std::alloc::dealloc(raw_ptr.as_ptr(), layout);
+                        std::alloc::dealloc(raw_ptr.as_ptr() as *mut u8, layout);
                     },
                     _ => {
                         // For unknown types, try to use drop_in_place if we know the size
@@ -488,90 +440,58 @@ impl GarbageCollectorExt for GarbageCollector {
                         if size > 0 {
                             let layout = Layout::from_size_align(size, std::mem::align_of::<usize>())
                                 .unwrap_or(Layout::new::<usize>());
-                            std::alloc::dealloc(raw_ptr.as_ptr(), layout);
+                            std::alloc::dealloc(raw_ptr.as_ptr() as *mut u8, layout);
                         }
                     }
                 }
             }
         }
     }
+
+    fn mark_object_references(&mut self, obj_index: usize, obj: TaggedDynPtr) {
+        // Create a collector to gather referenced objects
+        let mut collector = ObjectIndexCollector {
+            gc: self as *mut _,
+            visited: HashSet::new(),
+        };
+        
+        // Call the trace function if available
+        if let Some(trace_fn) = self.get_trace_fn(obj) {
+            // Safety: We've verified the object exists and has a trace function
+            unsafe {
+                if !obj.is_null() {
+                    trace_fn(obj.as_raw_ptr() as *mut dyn Traceable, &mut collector);
+                }
+            }
+        }
+    }
+
+    fn get_trace_fn(&mut self, obj: TaggedDynPtr) -> Option<fn(*mut dyn Traceable, &mut ObjectIndexCollector)> {
+        self.trace_fns.get(&obj.tag()).copied()
+    }
 }
 
-impl GarbageCollector {
-    /// Create a new garbage collector
-    pub fn new() -> Result<Self, Error> {
-        Self::with_heap_size(1024 * 1024) // Default to 1MB heap
-    }
-    
-    /// Create a new garbage collector with a specific heap size
-    pub fn with_heap_size(heap_size: usize) -> Result<Self, Error> {
-        Ok(Self {
+/// A companion object for GarbageCollector to provide static methods
+pub struct GarbageCollectorCompanion;
+
+impl GarbageCollectorCompanion {
+    /// Create a new garbage collector with the specified heap size
+    pub fn with_heap_size(heap_size: usize) -> Result<GarbageCollector, Box<dyn Error>> {
+        let block_allocator = BlockAllocatorCompanion::new(heap_size)?;
+        Ok(GarbageCollector {
             objects: Vec::new(),
-            block_allocator: BlockAllocator::new(heap_size).map_err(|e| Error::Memory(format!("Failed to create block allocator: {:?}", e)))?,
+            block_allocator,
             roots: HashSet::new(),
             marked: HashSet::new(),
             stats: GcStats::default(),
-            allocation_threshold: heap_size / 2,
-            collect_counter: 0,
-            allocated_objects: HashMap::new(),
-            heap_used: 0,
             trace_fns: HashMap::new(),
+            size_fns: HashMap::new(),
         })
     }
-
-    /// Get the size of an object
-    pub fn get_object_size(&self, ptr: TaggedPtr<dyn Traceable>) -> usize {
-        ptr.size()
-    }
-
-    /// Get the trace function for a tag
-    pub fn get_trace_fn(&self, obj: TaggedPtr<dyn Traceable>) -> Option<fn(*mut dyn Traceable, &mut dyn Visitor)> {
-        obj.as_ref().map(|obj| obj.trace as fn(*mut dyn Traceable, &mut dyn Visitor))
-    }
-
-    /// Mark object references
-    pub fn mark_object_references(&mut self, obj_index: usize, obj: TaggedPtr<dyn Traceable>) {
-        if let Some(trace_fn) = self.get_trace_fn(obj) {
-            let mut collector = ObjectIndexCollector {
-                gc: self,
-                current_index: obj_index,
-            };
-            trace_fn(obj.as_raw_ptr(), &mut collector);
-        }
-    }
-
-    /// Get total memory in use
-    pub fn get_total_in_use(&self) -> usize {
-        self.heap_used
-    }
-
-    /// Get total memory managed
-    pub fn get_total_managed(&self) -> usize {
-        self.block_allocator.capacity()
-    }
-
-    /// Get garbage collector statistics
-    pub fn stats(&self) -> &GcStats {
-        &self.stats
-    }
-
-    pub fn deallocate(&mut self, ptr: TaggedPtr<dyn Traceable>) {
-        if let Some(raw_ptr) = ptr.as_non_null() {
-            let size = ptr.size();
-            unsafe {
-                self.block_allocator.deallocate(raw_ptr, Layout::from_size_align(size, 8).unwrap());
-            }
-            self.heap_used = self.heap_used.saturating_sub(size);
-        }
-    }
-
-    pub fn mark(&mut self, obj: TaggedPtr<dyn Traceable>) {
-        if let Some(trace_fn) = self.get_trace_fn(obj) {
-            let mut collector = ObjectIndexCollector {
-                marked: HashSet::new(),
-            };
-            trace_fn(obj.as_raw_ptr(), &mut collector);
-        }
+    
+    /// Create a new garbage collector with default heap size
+    pub fn new() -> Result<GarbageCollector, Error> {
+        Self::with_heap_size(1024 * 1024) // Default to 1MB heap
     }
 }
 
@@ -654,18 +574,19 @@ impl Allocator for GarbageCollector {}
 
 impl<T: 'static + Traceable> Trace for Gc<T> {
     fn trace(&self, visitor: &mut dyn Visitor) {
-        if let Some(ptr) = self.ptr.as_ref() {
+        if let Some(ptr) = if self.ptr.is_null() { None } else { unsafe { Some(&*self.ptr.as_ptr()) } } {
             visitor.visit_ptr(ptr as *const T as usize, self.tag);
         }
     }
 }
 
-impl<T: 'static> Gc<T> {
+impl<T: Traceable + 'static> Gc<T> {
     /// Create a new Gc-managed object
     pub fn new(value: T, collector: Rc<RefCell<GarbageCollector>>, tag: Tag) -> Self {
+        let raw_ptr = Box::into_raw(Box::new(value));
         Self {
             collector,
-            ptr: TaggedPtr::new(Some(NonNull::new(Box::into_raw(Box::new(value)) as *mut T).unwrap()), tag),
+            ptr: TaggedPtr::new(raw_ptr, tag),
             tag,
             _phantom: PhantomData,
         }
@@ -673,12 +594,20 @@ impl<T: 'static> Gc<T> {
     
     /// Get a reference to the underlying value
     pub fn get(&self) -> Option<&T> {
-        self.ptr.as_ref()
+        if self.ptr.is_null() {
+            None
+        } else {
+            unsafe { Some(&*self.ptr.as_ptr()) }
+        }
     }
     
     /// Get a mutable reference to the underlying value
     pub fn get_mut(&mut self) -> Option<&mut T> {
-        self.ptr.as_mut()
+        if self.ptr.is_null() {
+            None
+        } else {
+            unsafe { Some(&mut *self.ptr.as_ptr()) }
+        }
     }
     
     /// Get a reference to the underlying value
@@ -702,7 +631,7 @@ impl<T: 'static> Gc<T> {
     }
     
     /// Get the raw pointer for this object
-    pub fn ptr(&self) -> Option<TaggedPtr> {
+    pub fn ptr(&self) -> Option<TaggedPtr<T>> {
         let ptr = self.ptr;
         if ptr.is_null() {
             None
@@ -726,13 +655,21 @@ impl<T: 'static> Deref for Gc<T> {
     type Target = T;
     
     fn deref(&self) -> &Self::Target {
-        self.ptr.as_ref().unwrap()
+        if self.ptr.is_null() {
+            panic!("Attempted to dereference null Gc pointer")
+        } else {
+            unsafe { &*self.ptr.as_ptr() }
+        }
     }
 }
 
 impl<T: 'static> DerefMut for Gc<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.ptr.as_mut().unwrap()
+        if self.ptr.is_null() {
+            panic!("Attempted to mutably dereference null Gc pointer")
+        } else {
+            unsafe { &mut *self.ptr.as_ptr() }
+        }
     }
 }
 
@@ -747,12 +684,12 @@ impl<T: 'static> Clone for Gc<T> {
     }
 }
 
-// Helper trait to adapt the new visitor to TaggedPtr
+// Helper trait to adapt the new visitor to TaggedDynPtr
 trait VisitAdapter {
     fn visit_tagged(&self, visitor: &mut dyn Visitor);
 }
 
-impl<T: Traceable> VisitAdapter for TaggedPtr<T> {
+impl VisitAdapter for TaggedDynPtr {
     fn visit_tagged(&self, visitor: &mut dyn Visitor) {
         if !self.is_null() {
             visitor.visit_ptr(self.as_usize(), self.tag());
@@ -852,19 +789,6 @@ mod tests {
     }
 }
 
-// Implementation of TaggedPtrConstructor for GarbageCollector
-impl TaggedPtrConstructor for GarbageCollector {
-    type T = GarbageCollector;
-    
-    fn new(ptr: Option<NonNull<Self::T>>, _tag: Tag) -> TaggedPtr<Self::T> {
-        TaggedPtr {
-            ptr,
-            tag: Tag::Null,
-            _phantom: PhantomData,
-        }
-    }
-}
-
 // Define the Function type for GC to properly handle function objects
 /// A function in the CURSED language
 #[derive(Debug, Clone)]
@@ -878,7 +802,7 @@ pub struct Function {
     /// The locals used in the function
     pub locals: usize,
     /// The environment for closures (captured variables)
-    pub env: Option<HashMap<String, TaggedPtr<dyn Traceable>>>,
+    pub env: Option<HashMap<String, TaggedDynPtr>>,
 }
 
 impl Function {
@@ -904,7 +828,7 @@ impl Function {
         instructions: Vec<u8>,
         parameters: usize,
         locals: usize,
-        env: HashMap<String, TaggedPtr<dyn Traceable>>,
+        env: HashMap<String, TaggedDynPtr>,
     ) -> Self {
         Self {
             name,
@@ -936,7 +860,7 @@ impl Function {
     }
     
     /// Get the environment, if any
-    pub fn env(&self) -> Option<&HashMap<String, TaggedPtr<dyn Traceable>>> {
+    pub fn env(&self) -> Option<&HashMap<String, TaggedDynPtr>> {
         self.env.as_ref()
     }
 }
@@ -944,6 +868,9 @@ impl Function {
 /// Implement Traceable for Function
 impl Traceable for Function {
     fn trace(&self, visitor: &mut dyn Visitor) {
+        // Import TaggedPtrExt from prelude for this impl block
+        use crate::prelude::TaggedPtrExt;
+        
         // Trace any captured variables in the environment
         if let Some(env) = &self.env {
             for (_, value) in env {
@@ -966,16 +893,75 @@ impl Traceable for Function {
         
         // Add size of environment if present
         if let Some(ref env) = self.env {
-            size += env.len() * (std::mem::size_of::<String>() + std::mem::size_of::<TaggedPtr<dyn Traceable>>());
+            size += env.len() * (std::mem::size_of::<String>() + std::mem::size_of::<TaggedDynPtr>());
         }
         
         size
     }
 }
 
-// Fix TaggedPtr extension methods
-impl<T: Traceable> TaggedPtrExt for TaggedPtr<T> {
-    fn as_usize(&self) -> usize {
-        self.as_ptr() as usize
+impl GarbageCollector {
+    /// Get the size of an object
+    pub fn get_object_size(&self, ptr: TaggedDynPtr) -> usize {
+        ptr.size()
+    }
+
+    /// Get the trace function for the given object
+    pub fn get_trace_fn(&mut self, obj: TaggedDynPtr) -> Option<fn(*mut dyn Traceable, &mut ObjectIndexCollector)> {
+        self.trace_fns.get(&obj.tag()).copied()
+    }
+
+    /// Mark object references recursively
+    pub fn mark_object_references(&mut self, obj_index: usize, obj: TaggedDynPtr) {
+        // Create a collector to gather referenced objects
+        let mut collector = ObjectIndexCollector {
+            gc: self as *mut _,
+            visited: HashSet::new(),
+        };
+        
+        // Call the trace function if available
+        if let Some(trace_fn) = self.get_trace_fn(obj) {
+            // Safety: We've verified the object exists and has a trace function
+            unsafe {
+                if !obj.is_null() {
+                    trace_fn(obj.as_raw_ptr() as *mut dyn Traceable, &mut collector);
+                }
+            }
+        }
+    }
+
+    /// Get total memory in use
+    pub fn get_total_in_use(&self) -> usize {
+        self.heap_used
+    }
+
+    /// Get total memory managed
+    pub fn get_total_managed(&self) -> usize {
+        BlockAllocatorExt::capacity(&self.block_allocator)
+    }
+
+    /// Get garbage collector statistics
+    pub fn stats(&self) -> &GcStats {
+        &self.stats
+    }
+
+    pub fn deallocate(&mut self, ptr: TaggedDynPtr) {
+        if let Some(raw_ptr) = ptr.as_non_null() {
+            let size = self.get_object_size(ptr);
+            unsafe {
+                let u8_ptr = NonNull::new(raw_ptr.as_ptr() as *mut u8).unwrap();
+                self.block_allocator.deallocate(u8_ptr, Layout::from_size_align(size, 8).unwrap());
+            }
+        }
+    }
+
+    pub fn mark(&mut self, obj: TaggedDynPtr) {
+        if let Some(trace_fn) = self.get_trace_fn(obj) {
+            let mut collector = ObjectIndexCollector {
+                visited: HashSet::new(),
+                gc: self,
+            };
+            trace_fn(obj.as_raw_ptr(), &mut collector);
+        }
     }
 } 
