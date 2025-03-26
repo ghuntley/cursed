@@ -1,30 +1,43 @@
 use std::collections::HashMap;
+use std::fmt;
 
-/// Symbol types
-#[derive(Debug, Clone, PartialEq)]
-pub enum SymbolScope {
-    Global,
-    Local,
-    Builtin,
-    Free,
-    Function,
-}
-
-/// Symbol representation
+/// Symbol definition for variables
 #[derive(Debug, Clone, PartialEq)]
 pub struct Symbol {
+    /// Name of the symbol
     pub name: String,
+    /// Scope of the symbol (global/local)
     pub scope: SymbolScope,
+    /// Index for the symbol
     pub index: usize,
 }
 
-/// SymbolTable tracks symbols and their scope
+/// Scope types for symbols
+#[derive(Debug, Clone, PartialEq)]
+pub enum SymbolScope {
+    /// Global scope
+    Global,
+    /// Local scope
+    Local,
+    /// Free variable (for closures)
+    Free,
+    /// Built-in function
+    Builtin,
+    /// Function scope
+    Function,
+}
+
+/// Symbol table for tracking variables in the compiler
 #[derive(Debug, Clone)]
 pub struct SymbolTable {
-    store: HashMap<String, Symbol>,
-    outer: Option<Box<SymbolTable>>,
-    num_definitions: usize,
-    free_symbols: Vec<Symbol>,
+    /// Outer scope (parent symbol table)
+    pub outer: Option<Box<SymbolTable>>,
+    /// Symbols in this scope
+    pub store: HashMap<String, Symbol>,
+    /// Number of definitions in this scope
+    pub num_definitions: usize,
+    /// Free symbols (for closures)
+    pub free_symbols: Vec<Symbol>,
 }
 
 impl SymbolTable {

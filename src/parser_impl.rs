@@ -1,10 +1,11 @@
 use crate::ast::{
     BooleanLiteral, Expression, FloatLiteral, Identifier, ImportStatement, IntegerLiteral,
-    Node, PackageStatement, Program, Statement, StringLiteral, ExpressionStatement
+    Node, PackageStatement, Program, Statement, StringLiteral, ExpressionStatement, FieldStatement, SquadStatement
 };
 use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::lexer::{Lexer, Token};
 use std::mem;
+use std::collections::HashMap;
 
 /// Precedence levels for parsing expressions
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
@@ -22,26 +23,70 @@ enum Precedence {
 /// Parser for the CURSED language
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
-    current_token: Option<Token>,
-    peek_token: Option<Token>,
+    current_token: Token,
+    peek_token: Token,
     errors: Vec<Error>,
+    current_token_location: SourceLocation,
+    peek_token_location: SourceLocation,
+    prefix_parsers: HashMap<Token, fn(&mut Parser<'a>) -> Result<Box<dyn Expression>, Error>>,
+    infix_parsers: HashMap<Token, fn(&mut Parser<'a>) -> Result<Box<dyn Expression>, Error>>,
 }
 
 impl<'a> Parser<'a> {
     /// Create a new parser
     pub fn new(lexer: Lexer<'a>) -> Self {
-        let mut p = Parser {
+        let mut parser = Self {
             lexer,
+            current_token: Token::EOF,
+            peek_token: Token::EOF,
             errors: Vec::new(),
-            current_token: None,
-            peek_token: None,
+            current_token_location: SourceLocation::new(0, 0),
+            peek_token_location: SourceLocation::new(0, 0),
+            prefix_parsers: HashMap::new(),
+            infix_parsers: HashMap::new(),
         };
         
-        // Read the first two tokens to initialize current_token and peek_token
-        p.next_token();
-        p.next_token();
+        // Read two tokens to initialize current_token and peek_token
+        parser.next_token();
+        parser.next_token();
         
-        p
+        // Register prefix parsers
+        parser.register_prefix(Token::IDENT, parse_identifier);
+        parser.register_prefix(Token::INT, parse_integer_literal);
+        parser.register_prefix(Token::BANG, parse_prefix_expression);
+        parser.register_prefix(Token::MINUS, parse_prefix_expression);
+        parser.register_prefix(Token::TRUE, parse_boolean);
+        parser.register_prefix(Token::FALSE, parse_boolean);
+        parser.register_prefix(Token::LPAREN, parse_grouped_expression);
+        parser.register_prefix(Token::IF, parse_if_expression);
+        parser.register_prefix(Token::FUNCTION, parse_function_literal);
+        parser.register_prefix(Token::STRING, parse_string_literal);
+        parser.register_prefix(Token::LBRACKET, parse_array_literal);
+        parser.register_prefix(Token::LBRACE, parse_hash_literal);
+        
+        // Register infix parsers
+        parser.register_infix(Token::PLUS, parse_infix_expression);
+        parser.register_infix(Token::MINUS, parse_infix_expression);
+        parser.register_infix(Token::SLASH, parse_infix_expression);
+        parser.register_infix(Token::ASTERISK, parse_infix_expression);
+        parser.register_infix(Token::EQ, parse_infix_expression);
+        parser.register_infix(Token::NOT_EQ, parse_infix_expression);
+        parser.register_infix(Token::LT, parse_infix_expression);
+        parser.register_infix(Token::GT, parse_infix_expression);
+        parser.register_infix(Token::LPAREN, parse_call_expression);
+        parser.register_infix(Token::LBRACKET, parse_index_expression);
+        
+        parser
+    }
+    
+    /// Register a prefix parser for a token type
+    pub fn register_prefix(&mut self, token_type: Token, func: fn(&mut Parser<'a>) -> Result<Box<dyn Expression>, Error>) {
+        self.prefix_parsers.insert(token_type, func);
+    }
+    
+    /// Register an infix parser for a token type
+    pub fn register_infix(&mut self, token_type: Token, func: fn(&mut Parser<'a>) -> Result<Box<dyn Expression>, Error>) {
+        self.infix_parsers.insert(token_type, func);
     }
     
     /// Get the errors that occurred during parsing
@@ -52,11 +97,17 @@ impl<'a> Parser<'a> {
     /// Advance to the next token
     fn next_token(&mut self) {
         self.current_token = self.peek_token.take();
+        self.current_token_location = self.peek_token_location.clone();
+        
         match self.lexer.next_token() {
-            Ok(token) => self.peek_token = Some(token),
+            Ok(token) => {
+                self.peek_token = Some(token.clone());
+                self.peek_token_location = token.location.clone();
+            },
             Err(err) => {
-                self.errors.push(err);
+                self.errors.push(err.to_string());
                 self.peek_token = Some(Token::Illegal("error".to_string()));
+                self.peek_token_location = SourceLocation::new(0, 0);
             }
         }
     }
@@ -85,34 +136,28 @@ impl<'a> Parser<'a> {
             self.next_token();
             Ok(())
         } else {
-            let location = SourceLocation::new(0, 0); // TODO: get actual location
+            let location = self.peek_token_location.clone(); 
             let message = format!(
                 "Expected next token to be {:?}, got {:?} instead",
                 token_type, self.peek_token
             );
-            Err(ErrorReporter::parser_error(location, &message))
+            Err(Error::Parser {
+                location,
+                message,
+            })
         }
     }
     
-    /// Parse a CURSED program
+    /// Parse the entire program
     pub fn parse_program(&mut self) -> Result<Program, Error> {
-        let mut program = Program::default();
+        let mut program = Program::new();
         
         while !self.current_token_is(&Token::Eof) {
             match self.parse_statement() {
                 Ok(stmt) => program.statements.push(stmt),
-                Err(err) => {
-                    self.errors.push(err);
-                    self.next_token(); // Skip the problematic token and continue
-                }
+                Err(e) => self.errors.push(e.to_string()),
             }
-            
             self.next_token();
-        }
-        
-        if !self.errors.is_empty() {
-            // Return the first error for now
-            return Err(self.errors[0].clone());
         }
         
         Ok(program)
@@ -123,10 +168,14 @@ impl<'a> Parser<'a> {
         match &self.current_token {
             Some(Token::Vibe) => self.parse_package_statement(),
             Some(Token::Yeet) => self.parse_import_statement(),
+            Some(Token::BeLike) => self.parse_squad_statement(),
             Some(_) => self.parse_expression_statement(),
             None => {
-                let location = SourceLocation::new(0, 0); // TODO: get actual location
-                Err(ErrorReporter::parser_error(location, "Unexpected end of input"))
+                let location = self.current_token_location.clone();
+                Err(Error::Parser {
+                    location,
+                    message: "Unexpected end of input".to_string(),
+                })
             }
         }
     }
@@ -144,11 +193,11 @@ impl<'a> Parser<'a> {
                 value: ident.clone(),
             },
             _ => {
-                let location = SourceLocation::new(0, 0); // TODO: get actual location
-                return Err(ErrorReporter::parser_error(
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
                     location,
-                    "Expected identifier after 'vibe'",
-                ));
+                    message: "Expected identifier after 'vibe'".to_string(),
+                });
             }
         };
         
@@ -183,11 +232,11 @@ impl<'a> Parser<'a> {
                 value: s.clone(),
             },
             _ => {
-                let location = SourceLocation::new(0, 0); // TODO: get actual location
-                return Err(ErrorReporter::parser_error(
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
                     location,
-                    "Expected string literal for import path",
-                ));
+                    message: "Expected string literal for import path".to_string(),
+                });
             }
         };
         
@@ -198,6 +247,100 @@ impl<'a> Parser<'a> {
             token: token_literal,
             path,
             alias,
+        }))
+    }
+    
+    /// Parse a squad statement (be_like)
+    fn parse_squad_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        let token_literal = "be_like".to_string();
+        
+        // Expect a struct name after 'be_like'
+        self.next_token();
+        
+        // Get the struct name
+        let name = match &self.current_token {
+            Some(Token::Identifier(ident)) => Identifier {
+                token: "identifier".to_string(),
+                value: ident.clone(),
+            },
+            _ => {
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
+                    location,
+                    message: "Expected identifier after 'be_like'".to_string(),
+                });
+            }
+        };
+        
+        // Expect an opening brace
+        self.expect_peek(Token::LBrace)?;
+        
+        let mut fields = Vec::new();
+        
+        // Parse fields
+        self.next_token();
+        while !self.current_token_is(&Token::RBrace) && !self.current_token_is(&Token::Eof) {
+            // Parse field name
+            let field_name = match &self.current_token {
+                Some(Token::Identifier(ident)) => Identifier {
+                    token: "identifier".to_string(),
+                    value: ident.clone(),
+                },
+                _ => {
+                    let location = self.current_token_location.clone();
+                    return Err(Error::Parser {
+                        location,
+                        message: "Expected field name in struct definition".to_string(),
+                    });
+                }
+            };
+            
+            // Expect a colon after field name
+            self.expect_peek(Token::Colon)?;
+            
+            // Parse field type
+            self.next_token();
+            let field_type = match &self.current_token {
+                Some(Token::Identifier(ident)) => Identifier {
+                    token: "identifier".to_string(),
+                    value: ident.clone(),
+                },
+                _ => {
+                    let location = self.current_token_location.clone();
+                    return Err(Error::Parser {
+                        location,
+                        message: "Expected field type in struct definition".to_string(),
+                    });
+                }
+            };
+            
+            // Add the field to the list
+            fields.push(Box::new(FieldStatement {
+                token: "field".to_string(),
+                name: field_name,
+                field_type,
+            }));
+            
+            // Expect a comma or closing brace
+            self.next_token();
+            if self.current_token_is(&Token::Comma) {
+                self.next_token();
+            }
+        }
+        
+        // Ensure we have a closing brace
+        if !self.current_token_is(&Token::RBrace) {
+            let location = self.current_token_location.clone();
+            return Err(Error::Parser {
+                location,
+                message: "Expected closing brace in struct definition".to_string(),
+            });
+        }
+        
+        Ok(Box::new(SquadStatement {
+            token: token_literal,
+            name,
+            fields,
         }))
     }
     
@@ -273,10 +416,16 @@ impl<'a> Parser<'a> {
             Some(Token::LParen) => {
                 self.parse_grouped_expression()?
             },
+            Some(Token::BeLike) => {
+                self.parse_be_like_expression()?
+            },
             _ => {
-                let location = SourceLocation::new(0, 0); // TODO: get actual location
+                let location = self.current_token_location.clone();
                 let message = format!("No prefix parse function for token: {:?}", self.current_token);
-                return Err(ErrorReporter::parser_error(location, &message));
+                return Err(Error::Parser {
+                    location,
+                    message,
+                });
             }
         };
         
@@ -304,56 +453,34 @@ impl<'a> Parser<'a> {
         Ok(left_expr)
     }
     
-    /// Parse a prefix expression (e.g., !x, -5)
+    /// Parse a prefix expression
     fn parse_prefix_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
-        // Store the operator token
+        let token_literal = match &self.current_token {
+            Some(token) => token.to_string(),
+            None => "".to_string(),
+        };
+        
         let operator = match &self.current_token {
             Some(Token::Bang) => "!".to_string(),
             Some(Token::Minus) => "-".to_string(),
             _ => {
-                let location = SourceLocation::new(0, 0); // TODO: get actual location
-                return Err(ErrorReporter::parser_error(
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
                     location,
-                    "Expected prefix operator (! or -)",
-                ));
+                    message: "Expected prefix operator (! or -)".to_string(),
+                });
             }
         };
         
-        // Move to the expression
+        // Advance to the operand
         self.next_token();
         
-        // Parse the right expression with prefix precedence
+        // Parse the operand with prefix precedence
         let right = self.parse_expression(Precedence::Prefix)?;
         
-        // Create a struct to represent the prefix expression
-        struct PrefixExpression {
-            token: String,
-            operator: String,
-            right: Box<dyn Expression>,
-        }
-        
-        // Implement necessary traits for PrefixExpression
-        impl Node for PrefixExpression {
-            fn token_literal(&self) -> String {
-                self.token.clone()
-            }
-            
-            fn string(&self) -> String {
-                format!("({}{})", self.operator, self.right.string())
-            }
-        }
-        
-        impl Expression for PrefixExpression {
-            fn expression_node(&self) {}
-            
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
-            }
-        }
-        
-        // Return the prefix expression
-        Ok(Box::new(PrefixExpression {
-            token: operator.clone(),
+        // Create the prefix expression
+        Ok(Box::new(ast::PrefixExpression {
+            token: token_literal,
             operator,
             right,
         }))
@@ -385,11 +512,11 @@ impl<'a> Parser<'a> {
             Some(Token::LtEq) => "<=".to_string(),
             Some(Token::GtEq) => ">=".to_string(),
             _ => {
-                let location = SourceLocation::new(0, 0); // TODO: get actual location
-                return Err(ErrorReporter::parser_error(
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
                     location,
-                    "Expected infix operator (+, -, *, /, ==, !=, <, >, <=, >=)",
-                ));
+                    message: "Expected infix operator (+, -, *, /, ==, !=, <, >, <=, >=)".to_string(),
+                });
             }
         };
         
@@ -552,6 +679,143 @@ impl<'a> Parser<'a> {
         }))
     }
     
+    /// Parse a 'be_like' expression for creating an instance of a struct
+    fn parse_be_like_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        // Create a struct to represent the be_like expression (struct instantiation)
+        struct BeLikeExpression {
+            token: String,
+            struct_name: Identifier,
+            fields: Vec<(String, Box<dyn Expression>)>,
+        }
+        
+        // Implement necessary traits for BeLikeExpression
+        impl Node for BeLikeExpression {
+            fn token_literal(&self) -> String {
+                self.token.clone()
+            }
+            
+            fn string(&self) -> String {
+                let mut out = format!("be_like {}", self.struct_name.string());
+                
+                if !self.fields.is_empty() {
+                    out.push_str(" with {");
+                    let fields_str: Vec<String> = self.fields.iter()
+                        .map(|(name, expr)| format!("{}: {}", name, expr.string()))
+                        .collect();
+                    out.push_str(&fields_str.join(", "));
+                    out.push_str("}");
+                }
+                
+                out
+            }
+        }
+        
+        impl Expression for BeLikeExpression {
+            fn expression_node(&self) {}
+            
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+        }
+        
+        // Skip 'be_like' token
+        self.next_token();
+        
+        // Parse the struct name
+        let struct_name = match &self.current_token {
+            Some(Token::Identifier(ident)) => Identifier {
+                token: "identifier".to_string(),
+                value: ident.clone(),
+            },
+            _ => {
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
+                    location,
+                    message: "Expected struct name after 'be_like'".to_string(),
+                });
+            }
+        };
+        
+        // Check for 'with' keyword for field initialization
+        let mut fields = Vec::new();
+        self.next_token();
+        
+        if self.current_token_is(&Token::With) {
+            self.next_token(); // Skip 'with'
+            
+            // Expect opening brace
+            if !self.current_token_is(&Token::LBrace) {
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
+                    location,
+                    message: "'{' expected after 'with' in struct instantiation".to_string(),
+                });
+            }
+            
+            self.next_token(); // Skip '{'
+            
+            // Parse field initializations
+            while !self.current_token_is(&Token::RBrace) && !self.current_token_is(&Token::Eof) {
+                // Parse field name
+                let field_name = match &self.current_token {
+                    Some(Token::Identifier(ident)) => ident.clone(),
+                    _ => {
+                        let location = self.current_token_location.clone();
+                        return Err(Error::Parser {
+                            location,
+                            message: "Expected field name in struct instantiation".to_string(),
+                        });
+                    }
+                };
+                
+                // Expect colon
+                self.next_token();
+                if !self.current_token_is(&Token::Colon) {
+                    let location = self.current_token_location.clone();
+                    return Err(Error::Parser {
+                        location,
+                        message: "':' expected after field name in struct instantiation".to_string(),
+                    });
+                }
+                
+                // Parse value expression
+                self.next_token();
+                let value = self.parse_expression(Precedence::Lowest)?;
+                
+                // Add field to the list
+                fields.push((field_name, value));
+                
+                // Check for comma
+                if self.peek_token_is(&Token::Comma) {
+                    self.next_token(); // Skip comma
+                    self.next_token(); // Move to next field name
+                } else {
+                    break;
+                }
+            }
+            
+            // Expect closing brace
+            if !self.current_token_is(&Token::RBrace) && !self.peek_token_is(&Token::RBrace) {
+                let location = self.current_token_location.clone();
+                return Err(Error::Parser {
+                    location,
+                    message: "'}' expected at end of struct instantiation".to_string(),
+                });
+            }
+            
+            if self.peek_token_is(&Token::RBrace) {
+                self.next_token(); // Skip to closing brace
+            }
+        }
+        
+        // Return the BeLikeExpression
+        Ok(Box::new(BeLikeExpression {
+            token: "be_like".to_string(),
+            struct_name,
+            fields,
+        }))
+    }
+    
     /// Get the precedence of the peek token
     fn peek_precedence(&self) -> Precedence {
         match &self.peek_token {
@@ -577,4 +841,82 @@ impl<'a> Parser<'a> {
             _ => Precedence::Lowest,
         }
     }
+}
+
+/// Parse an identifier expression
+fn parse_identifier(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_identifier not implemented")
+}
+
+/// Parse an integer literal expression
+fn parse_integer_literal(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_integer_literal not implemented")
+}
+
+/// Parse a prefix expression
+fn parse_prefix_expression(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_prefix_expression not implemented")
+}
+
+/// Parse a boolean expression
+fn parse_boolean(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_boolean not implemented")
+}
+
+/// Parse a grouped expression
+fn parse_grouped_expression(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_grouped_expression not implemented")
+}
+
+/// Parse an if expression
+fn parse_if_expression(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_if_expression not implemented")
+}
+
+/// Parse a function literal expression
+fn parse_function_literal(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_function_literal not implemented")
+}
+
+/// Parse a string literal expression
+fn parse_string_literal(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_string_literal not implemented")
+}
+
+/// Parse an array literal expression
+fn parse_array_literal(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_array_literal not implemented")
+}
+
+/// Parse a hash literal expression
+fn parse_hash_literal(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_hash_literal not implemented")
+}
+
+/// Parse an infix expression
+fn parse_infix_expression(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_infix_expression not implemented")
+}
+
+/// Parse a call expression
+fn parse_call_expression(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_call_expression not implemented")
+}
+
+/// Parse an index expression
+fn parse_index_expression(parser: &mut Parser<'_>) -> Result<Box<dyn Expression>, Error> {
+    // Placeholder - implement according to your language spec
+    unimplemented!("parse_index_expression not implemented")
 } 

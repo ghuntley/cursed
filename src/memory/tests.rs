@@ -1,5 +1,6 @@
 use crate::memory::{MemoryManager, Traceable, Visitor, TaggedPtr, Tag, MemoryError};
-use crate::compiler::{Object, Bytecode, Instructions, Opcode, Compiler};
+use crate::object::Object;
+use crate::compiler::{Bytecode, Instructions, Opcode, Compiler};
 use crate::parser::{Parser};
 use crate::lexer::Lexer;
 use crate::vm::VM;
@@ -13,6 +14,7 @@ use crate::memory::gc::{GarbageCollector, Gc};
 use crate::memory::tagged::TaggedPtr as TP;
 use crate::memory::Allocated;
 use crate::memory::allocator::Allocator;
+use super::tagged::{TaggedPtr as TP, Tag, TypedPtr};
 
 fn parse_compile(input: &str) -> Result<Bytecode, crate::error::Error> {
     let lexer = Lexer::new(input);
@@ -185,7 +187,7 @@ fn test_basic_gc_integration() {
         }
     }
     
-    let gc = GarbageCollector::new(1024 * 1024);
+    let gc = GarbageCollector::with_heap_size(1024 * 1024);
     
     // Allocate some objects
     let obj1 = gc.allocate(TestObject { value: 42 }, Tag::Integer).unwrap();
@@ -298,4 +300,53 @@ fn test_vm_with_memory_management() {
     
     // Some memory should have been allocated
     assert!(bump_stats.total_allocated > 0 || block_stats.total_allocated > 0);
+}
+
+#[test]
+fn test_typed_ptr() {
+    // Create a test structure
+    struct TestStruct { value: i32 }
+    
+    // Create an instance of the test structure
+    let test_struct = TestStruct { value: 42 };
+    
+    // Create a tagged pointer to the test structure with Integer tag
+    let ptr_raw = &test_struct as *const TestStruct as *mut TestStruct;
+    let ptr = TP::from_raw(ptr_raw, Tag::Integer);
+    
+    // Test has_tag
+    assert!(ptr.has_tag(Tag::Integer));
+    assert!(!ptr.has_tag(Tag::String));
+    
+    // Test as_type with correct tag
+    let ts_ref = ptr.as_type::<TestStruct>(Tag::Integer);
+    assert!(ts_ref.is_some());
+    assert_eq!(ts_ref.unwrap().value, 42);
+    
+    // Test as_type with wrong tag
+    let wrong_ref = ptr.as_type::<TestStruct>(Tag::String);
+    assert!(wrong_ref.is_none());
+    
+    // Test cast
+    let cast_ptr = ptr.cast::<TestStruct>(Tag::Integer);
+    assert!(cast_ptr.is_some());
+    assert_eq!(cast_ptr.unwrap().as_ref().unwrap().value, 42);
+    
+    // Test cast with wrong tag
+    let wrong_cast = ptr.cast::<TestStruct>(Tag::String);
+    assert!(wrong_cast.is_none());
+    
+    // Test unwrap_as
+    let unwrapped = ptr.unwrap_as::<TestStruct>(Tag::Integer);
+    assert!(unwrapped.is_ok());
+    assert_eq!(unwrapped.unwrap().value, 42);
+    
+    // Test unwrap_as with wrong tag
+    let wrong_unwrap = ptr.unwrap_as::<TestStruct>(Tag::String);
+    assert!(wrong_unwrap.is_err());
+    
+    // Create a null pointer and test type checking
+    let null_ptr = TP::<TestStruct>::null(Tag::Null);
+    assert!(null_ptr.as_type::<TestStruct>(Tag::Null).is_none()); // None because it's null
+    assert!(null_ptr.as_type::<TestStruct>(Tag::Integer).is_none()); // None because tag doesn't match
 } 

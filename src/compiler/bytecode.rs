@@ -1,4 +1,4 @@
-use crate::compiler::Object;
+use crate::object::Object;
 use std::fmt;
 
 /// Bytecode representation
@@ -12,71 +12,115 @@ pub struct Bytecode {
 pub type Instructions = Vec<u8>;
 
 /// Bytecode operation codes
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Opcode {
-    Constant,   // 0x00: Load constant
-    Add,        // 0x01: Add
-    Sub,        // 0x02: Subtract
-    Mul,        // 0x03: Multiply
-    Div,        // 0x04: Divide
-    True,       // 0x05: Push true
-    False,      // 0x06: Push false
-    Equal,      // 0x07: Equal
-    NotEqual,   // 0x08: Not equal
-    GreaterThan,// 0x09: Greater than
-    Minus,      // 0x0A: Negate
-    Bang,       // 0x0B: Logical NOT
-    JumpNotTruthy,// 0x0C: Jump if not truthy
-    Jump,       // 0x0D: Jump
-    Null,       // 0x0E: Push null
-    SetGlobal,  // 0x0F: Set global
-    GetGlobal,  // 0x10: Get global
-    Array,      // 0x11: Create array
-    Hash,       // 0x12: Create hash
-    Index,      // 0x13: Index operation
-    Call,       // 0x14: Call function
-    ReturnValue,// 0x15: Return with value
-    Return,     // 0x16: Return without value
-    SetLocal,   // 0x17: Set local
-    GetLocal,   // 0x18: Get local
-    GetBuiltin, // 0x19: Get builtin
-    Closure,    // 0x1A: Create closure
-    GetFree,    // 0x1B: Get free variable
-    Pop,        // 0x1C: Pop from stack
+    Invalid = 0x00,
+    Constant,   // 0x01: Load constant
+    Add,        // 0x02: Add
+    Sub,        // 0x03: Subtract
+    Mul,        // 0x04: Multiply
+    Div,        // 0x05: Divide
+    True,       // 0x06: Push true
+    False,      // 0x07: Push false
+    Equal,      // 0x08: Equal
+    NotEqual,   // 0x09: Not equal
+    GreaterThan,// 0x0A: Greater than
+    Minus,      // 0x0B: Negate
+    Bang,       // 0x0C: Logical NOT
+    JumpNotTruthy,// 0x0D: Jump if not truthy
+    Jump,       // 0x0E: Jump
+    Null,       // 0x0F: Push null
+    SetGlobal,  // 0x10: Set global
+    GetGlobal,  // 0x11: Get global
+    Array,      // 0x12: Create array
+    Hash,       // 0x13: Create hash
+    Index,      // 0x14: Index operation
+    Call,       // 0x15: Call function
+    ReturnValue,// 0x16: Return with value
+    Return,     // 0x17: Return without value
+    SetLocal,   // 0x18: Set local
+    GetLocal,   // 0x19: Get local
+    GetBuiltin, // 0x1A: Get builtin
+    Closure,    // 0x1B: Create closure
+    GetFree,    // 0x1C: Get free variable
+    Pop,        // 0x1D: Pop from stack
+    ForLoop,    // 0x1E: For loop
+    Switch,     // 0x1F: Switch statement
+    Case,       // 0x20: Case statement
+    VariadicCall, // 0x21: Variadic function call
+    Try,        // 0x22: Try block
+    Catch,      // 0x23: Catch block
+    CurrentClosure, // 0x24: Get current closure
+    GetField,   // 0x25: Get field
+    SetField,   // 0x26: Set field
+    Method,     // 0x27: Method definition
+    Class,      // 0x28: Class definition
+    Instance,   // 0x29: Create instance
+    InvokeMethod, // 0x2A: Invoke method
+    InvokeSuper,  // 0x2B: Invoke super method
+    Inherit,    // 0x2C: Inherit from superclass
+    DefineMethod, // 0x2D: Define method
+    LessThan,    // 0x2E: Less than
+    GreaterThanEqual, // 0x2F: Greater than or equal
+    LessThanEqual,    // 0x30: Less than or equal
+    Modulo,           // 0x31: Modulo
+    Dup,              // 0x32: Duplicate top stack value
 }
 
 impl From<u8> for Opcode {
     fn from(byte: u8) -> Self {
         match byte {
-            0x00 => Opcode::Constant,
-            0x01 => Opcode::Add,
-            0x02 => Opcode::Sub,
-            0x03 => Opcode::Mul,
-            0x04 => Opcode::Div,
-            0x05 => Opcode::True,
-            0x06 => Opcode::False,
-            0x07 => Opcode::Equal,
-            0x08 => Opcode::NotEqual,
-            0x09 => Opcode::GreaterThan,
-            0x0A => Opcode::Minus,
-            0x0B => Opcode::Bang,
-            0x0C => Opcode::JumpNotTruthy,
-            0x0D => Opcode::Jump,
-            0x0E => Opcode::Null,
-            0x0F => Opcode::SetGlobal,
-            0x10 => Opcode::GetGlobal,
-            0x11 => Opcode::Array,
-            0x12 => Opcode::Hash,
-            0x13 => Opcode::Index,
-            0x14 => Opcode::Call,
-            0x15 => Opcode::ReturnValue,
-            0x16 => Opcode::Return,
-            0x17 => Opcode::SetLocal,
-            0x18 => Opcode::GetLocal,
-            0x19 => Opcode::GetBuiltin,
-            0x1A => Opcode::Closure,
-            0x1B => Opcode::GetFree,
-            0x1C => Opcode::Pop,
+            0x00 => Opcode::Invalid,
+            0x01 => Opcode::Constant,
+            0x02 => Opcode::Add,
+            0x03 => Opcode::Sub,
+            0x04 => Opcode::Mul,
+            0x05 => Opcode::Div,
+            0x06 => Opcode::True,
+            0x07 => Opcode::False,
+            0x08 => Opcode::Equal,
+            0x09 => Opcode::NotEqual,
+            0x0A => Opcode::GreaterThan,
+            0x0B => Opcode::Minus,
+            0x0C => Opcode::Bang,
+            0x0D => Opcode::JumpNotTruthy,
+            0x0E => Opcode::Jump,
+            0x0F => Opcode::Null,
+            0x10 => Opcode::SetGlobal,
+            0x11 => Opcode::GetGlobal,
+            0x12 => Opcode::Array,
+            0x13 => Opcode::Hash,
+            0x14 => Opcode::Index,
+            0x15 => Opcode::Call,
+            0x16 => Opcode::ReturnValue,
+            0x17 => Opcode::Return,
+            0x18 => Opcode::SetLocal,
+            0x19 => Opcode::GetLocal,
+            0x1A => Opcode::GetBuiltin,
+            0x1B => Opcode::Closure,
+            0x1C => Opcode::GetFree,
+            0x1D => Opcode::Pop,
+            0x1E => Opcode::ForLoop,
+            0x1F => Opcode::Switch,
+            0x20 => Opcode::Case,
+            0x21 => Opcode::VariadicCall,
+            0x22 => Opcode::Try,
+            0x23 => Opcode::Catch,
+            0x24 => Opcode::CurrentClosure,
+            0x25 => Opcode::GetField,
+            0x26 => Opcode::SetField,
+            0x27 => Opcode::Method,
+            0x28 => Opcode::Class,
+            0x29 => Opcode::Instance,
+            0x2A => Opcode::InvokeMethod,
+            0x2B => Opcode::InvokeSuper,
+            0x2C => Opcode::Inherit,
+            0x2D => Opcode::DefineMethod,
+            0x2E => Opcode::LessThan,
+            0x2F => Opcode::GreaterThanEqual,
+            0x30 => Opcode::LessThanEqual,
+            0x31 => Opcode::Modulo,
+            0x32 => Opcode::Dup,
             _ => panic!("Unknown opcode: {}", byte),
         }
     }
@@ -85,35 +129,57 @@ impl From<u8> for Opcode {
 impl From<Opcode> for u8 {
     fn from(op: Opcode) -> Self {
         match op {
-            Opcode::Constant => 0x00,
-            Opcode::Add => 0x01,
-            Opcode::Sub => 0x02,
-            Opcode::Mul => 0x03,
-            Opcode::Div => 0x04,
-            Opcode::True => 0x05,
-            Opcode::False => 0x06,
-            Opcode::Equal => 0x07,
-            Opcode::NotEqual => 0x08,
-            Opcode::GreaterThan => 0x09,
-            Opcode::Minus => 0x0A,
-            Opcode::Bang => 0x0B,
-            Opcode::JumpNotTruthy => 0x0C,
-            Opcode::Jump => 0x0D,
-            Opcode::Null => 0x0E,
-            Opcode::SetGlobal => 0x0F,
-            Opcode::GetGlobal => 0x10,
-            Opcode::Array => 0x11,
-            Opcode::Hash => 0x12,
-            Opcode::Index => 0x13,
-            Opcode::Call => 0x14,
-            Opcode::ReturnValue => 0x15,
-            Opcode::Return => 0x16,
-            Opcode::SetLocal => 0x17,
-            Opcode::GetLocal => 0x18,
-            Opcode::GetBuiltin => 0x19,
-            Opcode::Closure => 0x1A,
-            Opcode::GetFree => 0x1B,
-            Opcode::Pop => 0x1C,
+            Opcode::Invalid => 0x00,
+            Opcode::Constant => 0x01,
+            Opcode::Add => 0x02,
+            Opcode::Sub => 0x03,
+            Opcode::Mul => 0x04,
+            Opcode::Div => 0x05,
+            Opcode::True => 0x06,
+            Opcode::False => 0x07,
+            Opcode::Equal => 0x08,
+            Opcode::NotEqual => 0x09,
+            Opcode::GreaterThan => 0x0A,
+            Opcode::Minus => 0x0B,
+            Opcode::Bang => 0x0C,
+            Opcode::JumpNotTruthy => 0x0D,
+            Opcode::Jump => 0x0E,
+            Opcode::Null => 0x0F,
+            Opcode::SetGlobal => 0x10,
+            Opcode::GetGlobal => 0x11,
+            Opcode::Array => 0x12,
+            Opcode::Hash => 0x13,
+            Opcode::Index => 0x14,
+            Opcode::Call => 0x15,
+            Opcode::ReturnValue => 0x16,
+            Opcode::Return => 0x17,
+            Opcode::SetLocal => 0x18,
+            Opcode::GetLocal => 0x19,
+            Opcode::GetBuiltin => 0x1A,
+            Opcode::Closure => 0x1B,
+            Opcode::GetFree => 0x1C,
+            Opcode::Pop => 0x1D,
+            Opcode::ForLoop => 0x1E,
+            Opcode::Switch => 0x1F,
+            Opcode::Case => 0x20,
+            Opcode::VariadicCall => 0x21,
+            Opcode::Try => 0x22,
+            Opcode::Catch => 0x23,
+            Opcode::CurrentClosure => 0x24,
+            Opcode::GetField => 0x25,
+            Opcode::SetField => 0x26,
+            Opcode::Method => 0x27,
+            Opcode::Class => 0x28,
+            Opcode::Instance => 0x29,
+            Opcode::InvokeMethod => 0x2A,
+            Opcode::InvokeSuper => 0x2B,
+            Opcode::Inherit => 0x2C,
+            Opcode::DefineMethod => 0x2D,
+            Opcode::LessThan => 0x2E,
+            Opcode::GreaterThanEqual => 0x2F,
+            Opcode::LessThanEqual => 0x30,
+            Opcode::Modulo => 0x31,
+            Opcode::Dup => 0x32,
         }
     }
 }
@@ -242,6 +308,90 @@ pub fn lookup(op: Opcode) -> Definition {
         },
         Opcode::Pop => Definition {
             name: "Pop",
+            operand_widths: vec![],
+        },
+        Opcode::ForLoop => Definition {
+            name: "ForLoop",
+            operand_widths: vec![2], // 2-byte loop start address
+        },
+        Opcode::Switch => Definition {
+            name: "Switch",
+            operand_widths: vec![2], // 2-byte switch value
+        },
+        Opcode::Case => Definition {
+            name: "Case",
+            operand_widths: vec![2], // 2-byte case value
+        },
+        Opcode::VariadicCall => Definition {
+            name: "VariadicCall",
+            operand_widths: vec![1], // 1-byte arg count
+        },
+        Opcode::Try => Definition {
+            name: "Try",
+            operand_widths: vec![],
+        },
+        Opcode::Catch => Definition {
+            name: "Catch",
+            operand_widths: vec![2], // 2-byte catch block address
+        },
+        Opcode::CurrentClosure => Definition {
+            name: "CurrentClosure",
+            operand_widths: vec![],
+        },
+        Opcode::GetField => Definition {
+            name: "GetField",
+            operand_widths: vec![2], // 2-byte field index
+        },
+        Opcode::SetField => Definition {
+            name: "SetField",
+            operand_widths: vec![2], // 2-byte field index
+        },
+        Opcode::Method => Definition {
+            name: "Method",
+            operand_widths: vec![2], // 2-byte method index
+        },
+        Opcode::Class => Definition {
+            name: "Class",
+            operand_widths: vec![2], // 2-byte class index
+        },
+        Opcode::Instance => Definition {
+            name: "Instance",
+            operand_widths: vec![2], // 2-byte instance index
+        },
+        Opcode::InvokeMethod => Definition {
+            name: "InvokeMethod",
+            operand_widths: vec![2], // 2-byte method index
+        },
+        Opcode::InvokeSuper => Definition {
+            name: "InvokeSuper",
+            operand_widths: vec![2], // 2-byte superclass index
+        },
+        Opcode::Inherit => Definition {
+            name: "Inherit",
+            operand_widths: vec![2], // 2-byte superclass index
+        },
+        Opcode::DefineMethod => Definition {
+            name: "DefineMethod",
+            operand_widths: vec![2], // 2-byte method index
+        },
+        Opcode::LessThan => Definition {
+            name: "LessThan",
+            operand_widths: vec![],
+        },
+        Opcode::GreaterThanEqual => Definition {
+            name: "GreaterThanEqual",
+            operand_widths: vec![],
+        },
+        Opcode::LessThanEqual => Definition {
+            name: "LessThanEqual",
+            operand_widths: vec![],
+        },
+        Opcode::Modulo => Definition {
+            name: "Modulo",
+            operand_widths: vec![],
+        },
+        Opcode::Dup => Definition {
+            name: "Dup",
             operand_widths: vec![],
         },
     }

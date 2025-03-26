@@ -1,7 +1,7 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: *.rs
+alwaysApply: false
 ---
 # Cursor AI Rules for CURSED Language Development
 

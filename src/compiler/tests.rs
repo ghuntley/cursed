@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Object;
+    use crate::object::Object;
     use crate::compiler::{Bytecode, Compiler, Instructions};
     use crate::compiler::bytecode::{Opcode, lookup};
     use crate::ast::*;
@@ -323,7 +323,7 @@ mod tests {
     
     #[test]
     fn test_scopes() {
-        let mut compiler = Compiler::new();
+        let mut compiler = Compiler::new().expect("Failed to create compiler");
         compiler.emit(Opcode::Mul, vec![]);
         compiler.emit(Opcode::Sub, vec![]);
         
@@ -356,103 +356,103 @@ mod tests {
         ) {
             // Integer expressions
             let input = format!("{}", i);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Integer arithmetic
             let input = format!("{} + {}", i, i + 1);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = format!("{} - {}", i, i - 1);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = format!("{} * {}", i, i);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = if i != 0 { format!("{} / {}", i*i, i) } else { format!("1 / 1") };
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Float expressions
             let input = format!("{}", f);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // String expressions
             let input = format!("\"{}\"", s);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // String concatenation
             let input = format!("\"{}\" + \"{}\"", s, s);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Boolean expressions
             let input = "true";
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.to_string());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = "false";
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.to_string());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Boolean operations
             let input = "!true";
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.to_string());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = "!false";
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.to_string());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Comparison expressions
             let input = format!("{} > {}", i, i - 1);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = format!("{} < {}", i, i + 1);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = format!("{} == {}", i, i);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             let input = format!("{} != {}", i, i + 1);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Combined expressions
             let input = format!("-{} + {} * ({} / {})", 
                             i, i + 1, i + 2, if i != 0 { i } else { 1 });
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
             
             // Complex expressions
             let input = format!("(({} > {}) == ({} < {})) != !true", 
                             i, i - 1, i, i + 1);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             let program = parse(input.clone());
             prop_assert!(compiler.compile(&program).is_ok());
         }
@@ -462,7 +462,7 @@ mod tests {
             // Test addition
             let input = format!("{} + {}", a, b);
             let program = parse(input);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             compiler.compile(&program).unwrap();
             let bytecode = compiler.bytecode();
             
@@ -482,7 +482,7 @@ mod tests {
             // Test string literal
             let input = format!("\"{}\"", s);
             let program = parse(input);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             compiler.compile(&program).unwrap();
             let bytecode = compiler.bytecode();
             
@@ -503,7 +503,7 @@ mod tests {
             // Test boolean literal
             let input = format!("{}", b);
             let program = parse(input);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             compiler.compile(&program).unwrap();
             let bytecode = compiler.bytecode();
             
@@ -523,7 +523,7 @@ mod tests {
             // Test nested expressions with precedence
             let input = format!("{} + {} * {}", a, b, a);
             let program = parse(input);
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             compiler.compile(&program).unwrap();
             let bytecode = compiler.bytecode();
             
@@ -626,7 +626,7 @@ mod tests {
                 Just((expr, program)).boxed()
             }).prop_map(|(expr, program)| {
                 // Now compile the expression and check that it works
-                let mut compiler = Compiler::new();
+                let mut compiler = Compiler::new().expect("Failed to create compiler");
                 let result = compiler.compile(&program);
                 prop_assert!(result.is_ok(), "Failed to compile expression: {}", expr);
                 
@@ -653,7 +653,7 @@ mod tests {
                 (0..10i64, 0..10i64).prop_map(|(a, b)| format!("let x = {} + {};", a, b))
             ].prop_map(|input| {
                 let program = parse(input.clone());
-                let mut compiler = Compiler::new();
+                let mut compiler = Compiler::new().expect("Failed to create compiler");
                 let result = compiler.compile(&program);
                 prop_assert!(result.is_ok(), "Failed to compile let statement: {}", input);
                 true
@@ -690,7 +690,7 @@ mod tests {
             
             if_stmt.prop_map(|input| {
                 let program = parse(input.clone());
-                let mut compiler = Compiler::new();
+                let mut compiler = Compiler::new().expect("Failed to create compiler");
                 let result = compiler.compile(&program);
                 prop_assert!(result.is_ok(), "Failed to compile if statement: {}", input);
                 
@@ -723,7 +723,7 @@ mod tests {
                 Just("return;".to_string())
             ].prop_map(|input| {
                 let program = parse(input.clone());
-                let mut compiler = Compiler::new();
+                let mut compiler = Compiler::new().expect("Failed to create compiler");
                 let result = compiler.compile(&program);
                 prop_assert!(result.is_ok(), "Failed to compile return statement: {}", input);
                 
@@ -747,7 +747,7 @@ mod tests {
         for test in tests {
             let program = parse(test.input);
             
-            let mut compiler = Compiler::new();
+            let mut compiler = Compiler::new().expect("Failed to create compiler");
             match compiler.compile(&program) {
                 Ok(_) => {
                     // Check bytecode matches expected

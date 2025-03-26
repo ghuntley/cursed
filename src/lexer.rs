@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorReporter, SourceLocation};
+use crate::prelude::StrExt;
 
 /// Token type for the CURSED language
 #[derive(Debug, PartialEq, Clone)]
@@ -83,53 +84,66 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    /// Create a new lexer with the given input
+    /// Create a new lexer for the provided input
     pub fn new(input: &'a str) -> Self {
-        let mut lexer = Self {
+        let mut lexer = Lexer {
             input,
             position: 0,
             read_position: 0,
             ch: None,
             line: 1,
-            column: 0,
+            column: 1,
         };
-        lexer.read_char(); // Read the first character
+        
+        // Initialize by reading the first character
+        lexer.read_char();
+        
         lexer
     }
     
-    /// Read the next character
-    fn read_char(&mut self) {
+    /// Read the next character from the input
+    pub fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
             self.ch = None;
         } else {
             let chars: Vec<char> = self.input.chars().collect();
-            self.ch = Some(chars[self.read_position]);
-            
-            // Track line and column numbers
-            if self.ch == Some('\n') {
-                self.line += 1;
-                self.column = 0;
-            } else {
-                self.column += 1;
-            }
+            self.ch = chars.get(self.read_position).copied();
         }
-        
         self.position = self.read_position;
         self.read_position += 1;
+        
+        // Update line and column for error reporting
+        if let Some('\n') = self.ch {
+            self.line += 1;
+            self.column = 1;
+        } else {
+            self.column += 1;
+        }
     }
     
     /// Peek at the next character without advancing
-    fn peek_char(&self) -> Option<char> {
+    pub fn peek_char(&self) -> Option<char> {
         if self.read_position >= self.input.len() {
             None
         } else {
             let chars: Vec<char> = self.input.chars().collect();
-            Some(chars[self.read_position])
+            chars.get(self.read_position).copied()
+        }
+    }
+    
+    /// Skip whitespace characters
+    pub fn skip_whitespace(&mut self) {
+        while let Some(ch) = self.ch {
+            if ch.is_whitespace() {
+                self.read_char();
+            } else {
+                break;
+            }
         }
     }
     
     /// Get the current source location
-    fn current_location(&self) -> SourceLocation {
+    pub fn location(&self) -> SourceLocation {
         SourceLocation::new(self.line, self.column)
     }
     
@@ -194,7 +208,7 @@ impl<'a> Lexer<'a> {
             },
             None => Token::Eof,
             _ => {
-                let location = self.current_location();
+                let location = self.location();
                 let message = format!("Unexpected character: {:?}", self.ch);
                 return Err(ErrorReporter::lexer_error(location, &message));
             }
@@ -202,17 +216,6 @@ impl<'a> Lexer<'a> {
         
         self.read_char();
         Ok(token)
-    }
-    
-    /// Skip whitespace characters
-    fn skip_whitespace(&mut self) {
-        while let Some(c) = self.ch {
-            if c.is_whitespace() {
-                self.read_char();
-            } else {
-                break;
-            }
-        }
     }
     
     /// Read an identifier
@@ -251,7 +254,7 @@ impl<'a> Lexer<'a> {
             match number_str.parse::<f64>() {
                 Ok(value) => Ok(Token::Float(value)),
                 Err(_) => {
-                    let location = self.current_location();
+                    let location = self.location();
                     Err(ErrorReporter::lexer_error(location, &format!("Could not parse float: {}", number_str)))
                 }
             }
@@ -259,7 +262,7 @@ impl<'a> Lexer<'a> {
             match number_str.parse::<i64>() {
                 Ok(value) => Ok(Token::Int(value)),
                 Err(_) => {
-                    let location = self.current_location();
+                    let location = self.location();
                     Err(ErrorReporter::lexer_error(location, &format!("Could not parse integer: {}", number_str)))
                 }
             }
@@ -276,7 +279,7 @@ impl<'a> Lexer<'a> {
         }
         
         if self.ch != Some('"') {
-            let location = self.current_location();
+            let location = self.location();
             return Err(ErrorReporter::lexer_error(location, "Unterminated string literal"));
         }
         
@@ -362,7 +365,7 @@ impl<'a> Lexer<'a> {
     
     /// Check if a character is a digit
     fn is_digit(ch: char) -> bool {
-        ch.is_digit(10)
+        ch >= '0' && ch <= '9'
     }
 }
 

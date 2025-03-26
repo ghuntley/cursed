@@ -1,4 +1,4 @@
-use crate::compiler::Object;
+use crate::object::Object;
 use crate::memory::{Traceable, Visitor, tagged::Tag};
 use std::collections::HashMap;
 use std::rc::Rc;

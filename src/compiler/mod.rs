@@ -1,5 +1,5 @@
 mod bytecode;
-mod symbol_table;
+pub mod symbol_table;
 
 #[cfg(test)]
 mod tests;
@@ -9,12 +9,16 @@ mod property_tests;
 
 pub use bytecode::{Bytecode, Instructions, Opcode};
 pub use symbol_table::{Symbol, SymbolScope, SymbolTable};
-use crate::ast::{self, Node, Program, Statement, Expression};
+use crate::ast::{self, Program, Statement, Expression};
 use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::memory::gc::{Traceable, Visitor};
+use crate::object::Object;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use crate::prelude::VecExt;
+use crate::prelude::RefCellSymbolTableExt;
+use crate::prelude::SymbolScopeExt;
 
 /// The Compiler takes an AST and converts it into bytecode that can be executed by the VM
 pub struct Compiler {
@@ -23,144 +27,51 @@ pub struct Compiler {
     symbol_table: Rc<RefCell<SymbolTable>>,
     scopes: Vec<CompilationScope>,
     scope_index: usize,
-}
-
-/// Object represents a runtime value
-#[derive(Debug, Clone, PartialEq)]
-pub enum Object {
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    String(String),
-    Array(Vec<Object>),
-    HashTable(HashMap<String, Object>),
-    CompiledFunction(Rc<CompiledFunction>),
-    Closure {
-        function: Rc<CompiledFunction>,
-        free_vars: Vec<Object>,
-    },
-    Null,
-}
-
-// Implementation of Traceable for Object to work with garbage collector
-impl Traceable for Object {
-    fn trace(&self, visitor: &mut dyn Visitor) {
-        match self {
-            Object::Array(arr) => {
-                // Trace elements in array
-                for obj in arr.iter() {
-                    let ptr_addr = (obj as *const Object) as usize;
-                    visitor.visit_ptr(ptr_addr, crate::memory::tagged::Tag::Object);
-                }
-            },
-            Object::HashTable(map) => {
-                // Trace values in hash table
-                for (_, value) in map.iter() {
-                    let ptr_addr = (value as *const Object) as usize;
-                    visitor.visit_ptr(ptr_addr, crate::memory::tagged::Tag::Object);
-                }
-            },
-            Object::Closure { function: _, free_vars } => {
-                // Trace free variables
-                for obj in free_vars.iter() {
-                    let ptr_addr = (obj as *const Object) as usize;
-                    visitor.visit_ptr(ptr_addr, crate::memory::tagged::Tag::Object);
-                }
-            },
-            // Other object types don't contain references to trace
-            _ => {}
-        }
-    }
-
-    fn size(&self) -> usize {
-        match self {
-            Object::Integer(_) => std::mem::size_of::<i64>(),
-            Object::Float(_) => std::mem::size_of::<f64>(),
-            Object::Boolean(_) => std::mem::size_of::<bool>(),
-            Object::String(s) => std::mem::size_of::<String>() + s.capacity(),
-            Object::Array(arr) => {
-                std::mem::size_of::<Vec<Object>>() + arr.capacity() * std::mem::size_of::<Object>()
-            },
-            Object::HashTable(map) => {
-                let key_size = map.keys().map(|k| k.capacity()).sum::<usize>();
-                let value_size = map.values().map(|v| v.size()).sum::<usize>();
-                std::mem::size_of::<HashMap<String, Object>>() + key_size + value_size
-            },
-            Object::CompiledFunction(f) => {
-                std::mem::size_of::<CompiledFunction>() + f.instructions.len()
-            },
-            Object::Closure { function, free_vars } => {
-                let free_vars_size = free_vars.iter().map(|v| v.size()).sum::<usize>();
-                std::mem::size_of::<Rc<CompiledFunction>>() + 
-                std::mem::size_of::<Vec<Object>>() + 
-                free_vars_size
-            },
-            Object::Null => 0,
-        }
-    }
-}
-
-impl std::fmt::Display for Object {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Object::Integer(i) => write!(f, "{}", i),
-            Object::Float(fl) => write!(f, "{}", fl),
-            Object::Boolean(b) => write!(f, "{}", b),
-            Object::String(s) => write!(f, "\"{}\"", s),
-            Object::Array(arr) => {
-                write!(f, "[")?;
-                for (i, obj) in arr.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{}", obj)?;
-                }
-                write!(f, "]")
-            }
-            Object::HashTable(map) => {
-                write!(f, "{{")?;
-                let mut first = true;
-                for (k, v) in map {
-                    if !first {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "\"{}\": {}", k, v)?;
-                    first = false;
-                }
-                write!(f, "}}")
-            }
-            Object::CompiledFunction(func) => write!(f, "compiled function[{}]", func.instructions.len()),
-            Object::Closure { function, free_vars } => write!(f, "closure[free_vars: {}]", free_vars.len()),
-            Object::Null => write!(f, "cap"),
-        }
-    }
+    error_reporter: ErrorReporter,
 }
 
 /// A compiled function
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompiledFunction {
     /// The bytecode for the function
-    pub instructions: Instructions,
+    pub instructions: Vec<u8>,
     /// The number of local variables
-    pub num_locals: usize,
+    pub num_locals: u8,
     /// The number of parameters
-    pub num_parameters: usize,
+    pub num_parameters: u8,
     /// Free variables for closures
     pub free_variables: Vec<Object>,
+    /// Function name (optional)
+    pub name: Option<String>,
 }
 
 impl CompiledFunction {
     /// Create a new compiled function
-    pub fn new(instructions: Instructions, num_locals: usize, num_parameters: usize) -> Self {
+    ///
+    /// # Arguments
+    ///
+    /// * `instructions` - The bytecode instructions for the function
+    /// * `num_locals` - The number of local variables in the function
+    /// * `num_parameters` - The number of parameters the function accepts
+    ///
+    /// # Returns
+    ///
+    /// A new CompiledFunction instance
+    pub fn new(
+        instructions: Vec<u8>,
+        num_locals: u8,
+        num_parameters: u8,
+    ) -> Self {
         Self {
             instructions,
             num_locals,
             num_parameters,
             free_variables: Vec::new(),
+            name: None,
         }
     }
     
-    /// Create a compiled function with free variables
+    /// Create a compiled function with free variables for closures
     pub fn with_free_vars(
         instructions: Instructions, 
         num_locals: usize, 
@@ -172,16 +83,57 @@ impl CompiledFunction {
             num_locals,
             num_parameters,
             free_variables,
+            name: None,
+        }
+    }
+    
+    /// Create a compiled function with a name
+    pub fn with_name(
+        instructions: Instructions, 
+        num_locals: usize, 
+        num_parameters: usize,
+        name: String
+    ) -> Self {
+        Self {
+            instructions,
+            num_locals,
+            num_parameters,
+            free_variables: Vec::new(),
+            name: Some(name),
         }
     }
 }
 
-/// Compilation scope structure
-#[derive(Default)]
+/// A compilation scope
+#[derive(Debug, Clone)]
 struct CompilationScope {
+    /// The instructions for this scope
     instructions: Instructions,
-    last_instruction: Option<EmittedInstruction>,
-    previous_instruction: Option<EmittedInstruction>,
+    /// The last instruction emitted
+    last_instruction: Instruction,
+    /// The previous instruction emitted
+    previous_instruction: Instruction,
+}
+
+impl Default for CompilationScope {
+    fn default() -> Self {
+        Self {
+            instructions: Instructions::new(),
+            last_instruction: Instruction::new(Opcode::Invalid, Vec::new()),
+            previous_instruction: Instruction::new(Opcode::Invalid, Vec::new()),
+        }
+    }
+}
+
+impl CompilationScope {
+    /// Create a new compilation scope
+    pub fn new() -> Self {
+        Self {
+            instructions: Vec::new(),
+            last_instruction: EmittedInstruction::default(),
+            previous_instruction: EmittedInstruction::default(),
+        }
+    }
 }
 
 /// Emitted instruction structure
@@ -191,33 +143,70 @@ struct EmittedInstruction {
     position: usize,
 }
 
+/// An instruction in the bytecode
+#[derive(Debug, Clone)]
+pub struct Instruction {
+    /// The opcode for this instruction
+    pub opcode: Opcode,
+    /// The operands for this instruction
+    pub operands: Vec<u16>,
+}
+
+impl Instruction {
+    /// Create a new instruction with the given opcode and operands
+    pub fn new(opcode: Opcode, operands: Vec<u16>) -> Self {
+        Self {
+            opcode,
+            operands,
+        }
+    }
+}
+
 impl Compiler {
     /// Create a new compiler
     pub fn new() -> Self {
-        let symbol_table = Rc::new(RefCell::new(SymbolTable::new()));
-        
         Self {
             instructions: Vec::new(),
             constants: Vec::new(),
-            symbol_table,
+            symbol_table: Rc::new(RefCell::new(SymbolTable::new())),
             scopes: vec![CompilationScope::new()],
             scope_index: 0,
+            error_reporter: ErrorReporter::new(),
         }
     }
     
-    /// Create a new compiler with existing state
-    pub fn new_with_state(symbol_table: SymbolTable, constants: Vec<Object>) -> Self {
-        Self {
-            instructions: Vec::new(),
-            constants,
-            symbol_table,
-            scopes: vec![CompilationScope {
-                instructions: Vec::new(),
-                last_instruction: None,
-                previous_instruction: None,
-            }],
-            scope_index: 0,
+    /// Compile a program into bytecode
+    ///
+    /// # Arguments
+    ///
+    /// * `program` - The AST program to compile
+    ///
+    /// # Returns
+    ///
+    /// A result containing either the bytecode or an error
+    pub fn compile_program(&mut self, program: &Program) -> Result<Bytecode, Error> {
+        for statement in &program.statements {
+            self.compile_statement(statement)?;
         }
+        
+        Ok(Bytecode {
+            instructions: self.instructions.clone(),
+            constants: self.constants.clone(),
+        })
+    }
+    
+    /// Compile a statement
+    ///
+    /// # Arguments
+    ///
+    /// * `statement` - The statement to compile
+    ///
+    /// # Returns
+    ///
+    /// A result indicating success or an error
+    fn compile_statement(&mut self, _statement: &dyn Statement) -> Result<(), Error> {
+        // Placeholder implementation
+        Ok(())
     }
 
     /// Compile an AST program into bytecode
@@ -234,9 +223,24 @@ impl Compiler {
             constants: self.constants.clone(),
         })
     }
+    
+    /// Compile a program from an AST Program struct
+    pub fn compile_program(&mut self, program: &Program) -> Result<Bytecode, Error> {
+        for stmt in &program.statements {
+            self.compile_statement(stmt.clone())?;
+        }
+        
+        // We're compiling from the main scope
+        let main_scope = &self.scopes[0];
+        
+        Ok(Bytecode {
+            instructions: main_scope.instructions.clone(),
+            constants: self.constants.clone(),
+        })
+    }
 
     /// Compile a statement
-    fn compile_statement(&mut self, stmt: Box<dyn Statement>) -> Result<(), Error> {
+    pub fn compile_statement(&mut self, stmt: Box<dyn Statement>) -> Result<(), Error> {
         let location = SourceLocation::new(0, 0); // TODO: Add proper location tracking
         
         // Each statement type requires different compilation
@@ -248,6 +252,46 @@ impl Compiler {
             "yeet" => {
                 // Import declaration, skip for now
                 Ok(())
+            },
+            "be_like" => {
+                if let Some(squad_stmt) = stmt.as_any().downcast_ref::<ast::SquadStatement>() {
+                    // Create the struct type object
+                    let mut fields = Vec::new();
+                    for field in &squad_stmt.fields {
+                        fields.push((
+                            field.name.value.clone(),
+                            field.type_name.value.clone()
+                        ));
+                    }
+                    
+                    let struct_obj = Object::Struct {
+                        name: squad_stmt.name.value.clone(),
+                        fields,
+                    };
+                    
+                    // Add the struct to constants
+                    let struct_idx = self.add_constant(struct_obj);
+                    
+                    // Emit class instruction
+                    self.emit(Opcode::Class, vec![struct_idx]);
+                    
+                    // Define the struct in the symbol table
+                    let symbol = self.symbol_table.borrow_mut().define(&squad_stmt.name.value);
+                    
+                    // Store the struct class in a global variable
+                    if symbol.scope == symbol_table::SymbolScope::Global {
+                        self.emit(Opcode::SetGlobal, vec![symbol.index]);
+                    } else {
+                        self.emit(Opcode::SetLocal, vec![symbol.index]);
+                    }
+                    
+                    Ok(())
+                } else {
+                    Err(ErrorReporter::compilation_error(&format!(
+                        "Expected SquadStatement, got: {}", 
+                        stmt.token_literal()
+                    )))
+                }
             },
             "let" => {
                 if let Some(let_stmt) = stmt.as_any().downcast_ref::<ast::LetStatement>() {
@@ -336,7 +380,7 @@ impl Compiler {
     }
     
     /// Compile an if statement
-    fn compile_if_statement(&mut self, if_stmt: &ast::IfStatement) -> Result<(), Error> {
+    pub fn compile_if_statement(&mut self, if_stmt: &ast::IfStatement) -> Result<(), Error> {
         // Compile the condition expression
         self.compile_expression(if_stmt.condition.as_ref())?;
         
@@ -370,7 +414,7 @@ impl Compiler {
     }
     
     /// Compile a block statement
-    fn compile_block_statement(&mut self, block: &ast::BlockStatement) -> Result<(), Error> {
+    pub fn compile_block_statement(&mut self, block: &ast::BlockStatement) -> Result<(), Error> {
         for stmt in &block.statements {
             self.compile_statement(stmt.clone())?;
         }
@@ -378,8 +422,8 @@ impl Compiler {
         Ok(())
     }
     
-    /// Change an operand at a position in the instructions
-    fn change_operand(&mut self, op_pos: usize, operand: usize) {
+    /// Change an operand at the given position
+    pub fn change_operand(&mut self, op_pos: usize, operand: usize) {
         let op: Opcode = self.current_instructions()[op_pos].into();
         let new_instruction = bytecode::make(op, &[operand]);
         
@@ -391,8 +435,54 @@ impl Compiler {
     }
 
     /// Compile an expression
-    fn compile_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
+    pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         let location = SourceLocation::new(0, 0); // TODO: Add proper location tracking
+        
+        // Check if this is a BeLikeExpression for struct instantiation
+        if let Some(be_like_expr) = expr.as_any().downcast_ref::<ast::BeLikeExpression>() {
+            // Resolve the struct name in the symbol table
+            match self.symbol_table.resolve(&be_like_expr.struct_name.value) {
+                Some(symbol) => {
+                    // Load the struct definition
+                    if symbol.scope.is_global() {
+                        self.emit(Opcode::GetGlobal, vec![symbol.index]);
+                    } else {
+                        self.emit(Opcode::GetLocal, vec![symbol.index]);
+                    }
+                    
+                    // Create a new instance
+                    self.emit(Opcode::Instance, vec![]);
+                    
+                    // Set fields if provided
+                    for (field_name, value_expr) in &be_like_expr.fields {
+                        // Duplicate the instance on top of the stack 
+                        // (we need it for each field operation)
+                        self.emit(Opcode::Dup, vec![]);
+                        
+                        // Compile the value expression
+                        self.compile_expression(value_expr.as_ref())?;
+                        
+                        // Get field name constant index or create it
+                        let name_obj = Object::String(field_name.value.clone());
+                        let name_idx = self.add_constant(name_obj);
+                        
+                        // Set the field
+                        self.emit(Opcode::SetField, vec![name_idx]);
+                        
+                        // Pop the result (which is the instance)
+                        self.emit(Opcode::Pop, vec![]);
+                    }
+                    
+                    return Ok(());
+                },
+                None => {
+                    return Err(ErrorReporter::compilation_error(&format!(
+                        "Struct not found: {}", 
+                        be_like_expr.struct_name.value
+                    )));
+                }
+            }
+        }
         
         // Handle different expression types
         if let Some(integer) = expr.as_any().downcast_ref::<ast::IntegerLiteral>() {
@@ -427,7 +517,7 @@ impl Compiler {
         
         if let Some(ident) = expr.as_any().downcast_ref::<ast::Identifier>() {
             // Look up the identifier in the symbol table
-            match self.symbol_table.borrow().resolve(&ident.value) {
+            match self.symbol_table.resolve(&ident.value) {
                 Some(symbol) => {
                     if symbol.scope.is_global() {
                         self.emit(Opcode::GetGlobal, vec![symbol.index]);
@@ -546,38 +636,44 @@ impl Compiler {
         )))
     }
 
-    /// Add a constant to the constants pool and return its index
-    fn add_constant(&mut self, obj: Object) -> usize {
+    /// Add a constant to the constants pool
+    pub fn add_constant(&mut self, obj: Object) -> usize {
         self.constants.push(obj);
         self.constants.len() - 1
     }
 
-    /// Emit bytecode instruction
-    fn emit(&mut self, op: Opcode, operands: Vec<usize>) -> usize {
-        let ins = bytecode::make(op, &operands);
+    /// Emit an instruction
+    pub fn emit(&mut self, op: Opcode, operands: Vec<usize>) -> usize {
         let pos = self.current_instructions().len();
-        self.current_instructions_mut().extend(ins);
+        let operands_slice: &[usize] = operands.as_slice();
+        let mut ins = bytecode::make(op, operands_slice);
+        self.current_instructions_mut().extend(&ins);
         
         self.set_last_instruction(op, pos);
+        
         pos
     }
 
     /// Get the current instructions
-    fn current_instructions(&self) -> &Instructions {
+    pub fn current_instructions(&self) -> &Instructions {
         &self.scopes[self.scope_index].instructions
     }
 
-    /// Get mutable reference to current instructions
-    fn current_instructions_mut(&mut self) -> &mut Instructions {
+    /// Get the current instructions as mutable
+    pub fn current_instructions_mut(&mut self) -> &mut Instructions {
         &mut self.scopes[self.scope_index].instructions
     }
 
     /// Set the last instruction
-    fn set_last_instruction(&mut self, op: Opcode, pos: usize) {
+    pub fn set_last_instruction(&mut self, op: Opcode, pos: usize) {
+        let last = EmittedInstruction {
+            opcode: op,
+            position: pos,
+        };
+        
         let scope = &mut self.scopes[self.scope_index];
-        let last = EmittedInstruction { opcode: op, position: pos };
-        scope.previous_instruction = scope.last_instruction.take();
-        scope.last_instruction = Some(last);
+        scope.previous_instruction = scope.last_instruction.clone();
+        scope.last_instruction = Instruction::new(op, Vec::new());
     }
 
     /// Enter a new scope
@@ -613,6 +709,19 @@ impl Compiler {
         Bytecode {
             instructions: self.current_instructions().clone(),
             constants: self.constants.clone(),
+        }
+    }
+
+    /// Define built-in functions in the symbol table
+    fn define_builtins(symbol_table: &mut SymbolTable) {
+        // Define each built-in function with a unique index
+        let builtins = [
+            "len", "first", "last", "rest", "push", "puts", 
+            "type", "print", "println", "array", "map", "range",
+        ];
+        
+        for (i, builtin) in builtins.iter().enumerate() {
+            symbol_table.define_builtin(i, builtin);
         }
     }
 }

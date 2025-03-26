@@ -549,4 +549,98 @@ impl Statement for IfStatement {
     fn as_any(&self) -> &dyn Any {
         self
     }
+}
+
+/// SquadStatement represents a struct definition
+pub struct SquadStatement {
+    pub token: String, // Token::Squad
+    pub name: Identifier,
+    pub fields: Vec<FieldStatement>,
+}
+
+impl Node for SquadStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&format!("be_like {} squad {{\n", self.name.string()));
+        
+        for field in &self.fields {
+            out.push_str(&format!("    {}\n", field.string()));
+        }
+        
+        out.push_str("}\n");
+        out
+    }
+}
+
+impl Statement for SquadStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// FieldStatement represents a field definition in a struct
+pub struct FieldStatement {
+    pub token: String, // Usually the identifier token
+    pub name: Identifier,
+    pub type_name: Identifier,
+}
+
+impl Node for FieldStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{} {}", self.name.string(), self.type_name.string())
+    }
+}
+
+impl Statement for FieldStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// BeLikeExpression represents a struct instantiation expression
+pub struct BeLikeExpression {
+    pub token: String,
+    pub struct_name: Identifier,
+    pub fields: Vec<(String, Box<dyn Expression>)>,
+}
+
+impl Node for BeLikeExpression {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+    
+    fn string(&self) -> String {
+        let mut out = format!("be_like {}", self.struct_name.string());
+        
+        if !self.fields.is_empty() {
+            out.push_str(" with {");
+            let fields_str: Vec<String> = self.fields.iter()
+                .map(|(name, expr)| format!("{}: {}", name, expr.string()))
+                .collect();
+            out.push_str(&fields_str.join(", "));
+            out.push_str("}");
+        }
+        
+        out
+    }
+}
+
+impl Expression for BeLikeExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 } 

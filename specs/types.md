@@ -18,6 +18,7 @@ CURSED has several built-in basic types:
 |               | `byte`       | Alias for uint8, represents a byte of data |
 |               | `rune`       | Alias for int32, represents a Unicode code point |
 | String        | `tea`        | A sequence of bytes representing Unicode text |
+| Character     | `sip`        | Single Unicode character (rune) |
 | Complex       | `extra`      | Complex number with two floating-point components |
 
 ## Composite Types
@@ -69,6 +70,7 @@ Each type has a zero value that variables of that type are initialized to when n
 | lit  | `sus` (false) |
 | numeric types | `0` |
 | tea  | `""` (empty string) |
+| sip  | `\0` (null character) |
 | pointers | `cap` (nil) |
 | slices | `cap` (nil) |
 | maps | `cap` (nil) |
@@ -84,6 +86,7 @@ CURSED supports type inference in variable declarations with the `:=` operator:
 x := 10        fr fr x is a normie (int32)
 y := "hello"   fr fr y is a tea (string)
 z := based     fr fr z is a lit (bool)
+c := 'a'       fr fr c is a sip (char)
 ```
 
 ## Type Assertions and Type Switches
@@ -98,6 +101,8 @@ vibe_check v.(be_like) {  fr fr Type switch
         fr fr v is an int
     mood tea:
         fr fr v is a string
+    mood sip:
+        fr fr v is a char
     basic:
         fr fr Other types
 }
@@ -122,4 +127,20 @@ slay pop[T](s @Stack[T]) T {
     s.size--
     yolo s.items[s.size]
 }
+```
+
+## Character Type Operations
+
+The character type `sip` supports various operations:
+
+```
+sus c sip = 'a'
+sus is_upper lit = c.is_uppercase()
+sus is_lower lit = c.is_lowercase()
+sus is_digit lit = c.is_digit()
+sus is_alpha lit = c.is_alpha()
+sus is_alnum lit = c.is_alnum()
+sus as_upper sip = c.to_uppercase()
+sus as_lower sip = c.to_lowercase()
+sus as_int normie = normie(c)    fr fr Convert char to integer
 ``` 
