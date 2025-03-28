@@ -652,6 +652,71 @@ impl Statement for ForStatement {
     }
 }
 
+/// SwitchStatement represents a switch statement (vibe_check in CURSED)
+pub struct SwitchStatement {
+    pub token: String, // Token::VibeCheck
+    pub value: Box<dyn Expression>,
+    pub cases: Vec<CaseStatement>,
+    pub default: Option<BlockStatement>,
+}
+
+impl Node for SwitchStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let mut out = format!("vibe_check {} {{\n", self.value.string());
+        
+        for case in &self.cases {
+            out.push_str(&format!("    {}\n", case.string()));
+        }
+        
+        if let Some(default) = &self.default {
+            out.push_str(&format!("    basic: {}\n", default.string()));
+        }
+        
+        out.push_str("}");
+        out
+    }
+}
+
+impl Statement for SwitchStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// CaseStatement represents a case clause in a switch statement
+pub struct CaseStatement {
+    pub token: String, // Token::Mood
+    pub expressions: Vec<Box<dyn Expression>>,
+    pub body: BlockStatement,
+}
+
+impl Node for CaseStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let exprs: Vec<String> = self.expressions.iter()
+            .map(|expr| expr.string())
+            .collect();
+        format!("mood {}: {}", exprs.join(", "), self.body.string())
+    }
+}
+
+impl Statement for CaseStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 /// SquadStatement represents a struct definition
 pub struct SquadStatement {
     pub token: String, // Token::Squad

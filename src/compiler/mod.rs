@@ -279,6 +279,9 @@ impl Compiler {
         } else if let Some(for_stmt) = stmt.as_any().downcast_ref::<ast::ForStatement>() {
             // Compile for statements
             self.compile_for_statement(for_stmt)
+        } else if let Some(switch_stmt) = stmt.as_any().downcast_ref::<ast::SwitchStatement>() {
+            // Compile switch statements
+            self.compile_switch_statement(switch_stmt)
         } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
             // Compile block statements
             self.compile_block_statement(block_stmt)
@@ -351,6 +354,80 @@ impl Compiler {
         if let Some(jump_pos) = jump_not_truthy_pos {
             let after_loop_pos = self.current_instructions().len();
             self.change_operand(jump_pos, after_loop_pos);
+        }
+        
+        Ok(())
+    }
+
+    /// Compile a switch statement (vibe_check in CURSED)
+    pub fn compile_switch_statement(&mut self, switch_stmt: &ast::SwitchStatement) -> Result<(), Error> {
+        // Compile the expression that we're switching on
+        self.compile_expression(&*switch_stmt.value)?;
+        
+        // We'll store the positions of all jump instructions so we can update them later
+        let mut jump_positions = Vec::new();
+        
+        // Popping the matched value at the end of the switch statement
+        let mut pop_needed = true;
+        
+        // Compile each case
+        for case in &switch_stmt.cases {
+            // For each case value, we need to duplicate the switch value and compare it with the case value
+            for expr in &case.expressions {
+                // Duplicate the value we're switching on
+                self.emit(Opcode::Dup, vec![]);
+                
+                // Compile the case expression
+                self.compile_expression(&**expr)?;
+                
+                // Compare for equality
+                self.emit(Opcode::Equal, vec![]);
+                
+                // Jump to the case if equal
+                // We need to use a placeholder and update it later
+                self.emit(Opcode::JumpNotTruthy, vec![9999]);
+                
+                // Update the last instruction with the position right after this block
+                let case_is_equal_pos = self.current_instructions().len();
+                
+                // If the case matches, execute the body
+                self.compile_block_statement(&case.body)?;
+                
+                // After executing the case, jump to the end of the switch
+                let jump_end_pos = self.emit(Opcode::Jump, vec![9999]);
+                jump_positions.push(jump_end_pos);
+                
+                // Update the JumpNotTruthy to jump to the next case comparison
+                let next_case_pos = self.current_instructions().len();
+                self.change_operand(case_is_equal_pos - 3, next_case_pos);
+            }
+        }
+        
+        // Compile the default case if it exists
+        if let Some(default) = &switch_stmt.default {
+            // Pop the switch value since we'll enter the default case
+            self.emit(Opcode::Pop, vec![]);
+            pop_needed = false;
+            
+            // Compile the default case body
+            self.compile_block_statement(default)?;
+        } else {
+            // If no case matched and no default case exists, pop the switch value
+            self.emit(Opcode::Pop, vec![]);
+            pop_needed = false;
+        }
+        
+        // End of switch statement
+        let end_pos = self.current_instructions().len();
+        
+        // Update all the jump instructions to point to the end of the switch
+        for pos in jump_positions {
+            self.change_operand(pos, end_pos);
+        }
+        
+        // If we haven't popped the switched value yet, do it now
+        if pop_needed {
+            self.emit(Opcode::Pop, vec![]);
         }
         
         Ok(())

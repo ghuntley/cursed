@@ -330,4 +330,66 @@ mod tests {
         let result = compiler.compile(&program);
         assert!(result.is_ok(), "Compilation of infinite for loop failed: {:?}", result.err());
     }
+    
+    #[test]
+    fn test_compile_switch_statement() {
+        // Test basic switch statement
+        let input = r#"
+            sus day = "Monday";
+            vibe_check day {
+                mood "Monday", "Tuesday":
+                    x = 1;
+                mood "Friday":
+                    x = 2;
+                basic:
+                    x = 0;
+            }
+        "#;
+        
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of basic switch statement failed: {:?}", result.err());
+        
+        // Test switch statement without default case
+        let input = r#"
+            vibe_check day {
+                mood "Monday":
+                    x = 1;
+                mood "Friday":
+                    x = 2;
+            }
+        "#;
+        
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of switch without default failed: {:?}", result.err());
+        
+        // Test switch statement with a complex expression
+        let input = r#"
+            vibe_check x + 10 {
+                mood 20:
+                    y = "twenty";
+                mood 30:
+                    y = "thirty";
+                basic:
+                    y = "other";
+            }
+        "#;
+        
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of switch with complex expression failed: {:?}", result.err());
+    }
 } 
