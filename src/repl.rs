@@ -1,6 +1,6 @@
 use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::lexer::Lexer;
-use crate::parser_impl::Parser;
+use crate::parser::Parser;
 use crate::compiler::Compiler;
 use crate::compiler::Bytecode;
 use crate::vm::VM;

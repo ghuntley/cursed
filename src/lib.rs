@@ -11,7 +11,6 @@ pub mod code;
 pub mod error;
 pub mod lexer;
 pub mod parser;
-pub mod parser_impl;
 pub mod symbol;
 pub mod vm;
 pub mod prelude;
@@ -211,7 +210,7 @@ pub use vm::Closure;
 pub use vm::constants::*;
 
 // Re-export parsers
-pub use parser_impl::Parser;
+pub use parser::Parser;
 
 // Re-export compiler
 pub use compiler::Compiler;
