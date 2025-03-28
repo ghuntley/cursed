@@ -276,6 +276,9 @@ impl Compiler {
         } else if let Some(while_stmt) = stmt.as_any().downcast_ref::<ast::WhileStatement>() {
             // Compile while statements
             self.compile_while_statement(while_stmt)
+        } else if let Some(for_stmt) = stmt.as_any().downcast_ref::<ast::ForStatement>() {
+            // Compile for statements
+            self.compile_for_statement(for_stmt)
         } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
             // Compile block statements
             self.compile_block_statement(block_stmt)
@@ -309,6 +312,46 @@ impl Compiler {
         // Update the JumpNotTruthy instruction with the correct exit point
         let after_loop_pos = self.current_instructions().len();
         self.change_operand(jump_not_truthy_pos, after_loop_pos);
+        
+        Ok(())
+    }
+
+    /// Compile a for statement (bestie in CURSED)
+    pub fn compile_for_statement(&mut self, for_stmt: &ast::ForStatement) -> Result<(), Error> {
+        // If we have an initialization statement, compile it first
+        if let Some(init) = &for_stmt.init {
+            self.compile_statement(&**init)?;
+        }
+        
+        // Record the position of the start of the loop (where condition check begins)
+        let loop_start_pos = self.current_instructions().len();
+        
+        // If we have a condition expression, compile it and set up conditional jump
+        let jump_not_truthy_pos = if let Some(condition) = &for_stmt.condition {
+            self.compile_expression(&**condition)?;
+            // Emit jump-if-not-truthy to exit loop if condition is false
+            Some(self.emit(Opcode::JumpNotTruthy, vec![9999]))
+        } else {
+            // No condition means infinite loop, so no conditional jump needed
+            None
+        };
+        
+        // Compile the loop body
+        self.compile_block_statement(&for_stmt.body)?;
+        
+        // If we have a post statement, compile it
+        if let Some(post) = &for_stmt.post {
+            self.compile_statement(&**post)?;
+        }
+        
+        // Jump back to the start of the loop to check the condition again
+        self.emit(Opcode::Jump, vec![loop_start_pos]);
+        
+        // If we have a jump_not_truthy instruction, update it with the correct exit point
+        if let Some(jump_pos) = jump_not_truthy_pos {
+            let after_loop_pos = self.current_instructions().len();
+            self.change_operand(jump_pos, after_loop_pos);
+        }
         
         Ok(())
     }

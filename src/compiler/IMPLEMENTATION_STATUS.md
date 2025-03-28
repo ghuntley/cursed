@@ -50,8 +50,8 @@ The CURSED language compiler is partially implemented. The core architecture is 
    - Improve error handling
 
 4. **Additional Statements & Expressions**:
-   - While loops (`periodt`)
-   - For loops (`bestie`)
+   - While loops (`periodt`) ✅
+   - For loops (`bestie`) ✅
    - Switch statements (`vibe_check`)
    - Package declarations (`vibe`)
    - Import statements (`yeet`)

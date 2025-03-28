@@ -601,6 +601,57 @@ impl Statement for WhileStatement {
     }
 }
 
+/// ForStatement represents a for loop (bestie in CURSED)
+/// A for loop can have three different forms:
+/// 1. C-style: bestie init; condition; post { body }
+/// 2. Condition-only: bestie condition { body }
+/// 3. Infinite loop: bestie { body }
+pub struct ForStatement {
+    pub token: String, // Token::Bestie
+    pub init: Option<Box<dyn Statement>>,
+    pub condition: Option<Box<dyn Expression>>,
+    pub post: Option<Box<dyn Statement>>,
+    pub body: BlockStatement,
+}
+
+impl Node for ForStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let mut out = String::new();
+        out.push_str("bestie ");
+        
+        if let Some(init) = &self.init {
+            out.push_str(&init.string());
+            out.push_str("; ");
+        }
+        
+        if let Some(cond) = &self.condition {
+            out.push_str(&cond.string());
+        }
+        
+        if let Some(post) = &self.post {
+            out.push_str("; ");
+            out.push_str(&post.string());
+        }
+        
+        out.push_str(" ");
+        out.push_str(&self.body.string());
+        
+        out
+    }
+}
+
+impl Statement for ForStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 /// SquadStatement represents a struct definition
 pub struct SquadStatement {
     pub token: String, // Token::Squad
