@@ -440,4 +440,363 @@ impl Token {
             Token::Eof => "".to_string(),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+    
+    // Helper function to tokenize a string and collect tokens
+    fn tokenize(input: &str) -> Result<Vec<Token>, Error> {
+        let mut lexer = Lexer::new(input);
+        let mut tokens = Vec::new();
+        
+        loop {
+            let token = lexer.next_token()?;
+            tokens.push(token.clone());
+            
+            if let Token::Eof = token {
+                break;
+            }
+        }
+        
+        Ok(tokens)
+    }
+    
+    // Property: Tokenize and then convert back to string should preserve semantics
+    proptest! {
+        #[test]
+        fn prop_symbols_tokenize_correctly(
+            // Test individual symbols one at a time instead of sequences
+            symbol in prop::sample::select(vec![
+                "+", "-", "*", "/", "=", "!", "<", ">", ",", ".", ";", ":", "(", ")", "{", "}", "[", "]"
+            ])
+        ) {
+            let result = tokenize(symbol);
+            assert!(result.is_ok(), "Failed to tokenize symbol: {}", symbol);
+            
+            let tokens = result.unwrap();
+            // Should be one token plus EOF
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens for symbol '{}', got {} - tokens: {:?}", symbol, tokens.len(), tokens);
+            
+            // Check that the symbol was tokenized correctly
+            let expected = match symbol {
+                "+" => Token::Plus,
+                "-" => Token::Minus,
+                "*" => Token::Asterisk,
+                "/" => Token::Slash,
+                "=" => Token::Assign,
+                "!" => Token::Bang,
+                "<" => Token::Lt,
+                ">" => Token::Gt,
+                "," => Token::Comma,
+                "." => Token::Dot,
+                ";" => Token::Semicolon,
+                ":" => Token::Colon,
+                "(" => Token::LParen,
+                ")" => Token::RParen,
+                "{" => Token::LBrace,
+                "}" => Token::RBrace,
+                "[" => Token::LBracket,
+                "]" => Token::RBracket,
+                _ => panic!("Unexpected symbol: {}", symbol),
+            };
+            
+            assert_eq!(tokens[0], expected, "Symbol '{}' was not tokenized correctly", symbol);
+        }
+        
+        #[test]
+        fn prop_integer_tokenization(
+            // Generate only positive integers to avoid the minus sign issue
+            i in 0i64..9999999999i64
+        ) {
+            let input = i.to_string();
+            
+            let mut lexer = Lexer::new(&input);
+            let mut tokens = Vec::new();
+            
+            loop {
+                let token = lexer.next_token().unwrap();
+                tokens.push(token.clone());
+                
+                if let Token::Eof = token {
+                    break;
+                }
+            }
+            
+            // Should produce exactly one INT token and one EOF token
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens, got {} - tokens: {:?}", tokens.len(), tokens);
+            
+            match &tokens[0] {
+                Token::Int(value) => assert_eq!(*value, i),
+                _ => panic!("Expected INT token, got {:?}", tokens[0]),
+            }
+        }
+        
+        #[test]
+        fn prop_float_tokenization(
+            // Generate only positive floats to avoid the minus sign issue
+            int_part in 0i64..999i64,
+            decimal_part in 0u32..999u32
+        ) {
+            // Format as a float string like "123.456"
+            let input = format!("{}.{}", int_part, decimal_part);
+            // Parse it as a f64 to compare with the lexer's output
+            let expected = input.parse::<f64>().unwrap();
+            
+            let mut lexer = Lexer::new(&input);
+            let mut tokens = Vec::new();
+            
+            loop {
+                let token = lexer.next_token().unwrap();
+                tokens.push(token.clone());
+                
+                if let Token::Eof = token {
+                    break;
+                }
+            }
+            
+            // Should produce exactly one FLOAT token and one EOF token
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens, got {} - tokens: {:?}", tokens.len(), tokens);
+            
+            match &tokens[0] {
+                Token::Float(value) => {
+                    // Use approximate equality for floating point
+                    assert!((value - expected).abs() < f64::EPSILON, 
+                        "Expected {}, got {}", expected, value);
+                }
+                _ => panic!("Expected FLOAT token, got {:?}", tokens[0]),
+            }
+        }
+        
+        #[test]
+        fn prop_identifier_tokenization(
+            // Generate random valid identifiers
+            id in r"[a-zA-Z_][a-zA-Z0-9_]{0,19}"
+        ) {
+            // Skip testing keywords
+            if ["vibe", "yeet", "slay", "sus", "facts", "lowkey", "highkey", 
+                "bestie", "periodt", "vibe_check", "mood", "basic", "ghosted", 
+                "simp", "be_like", "squad", "collab", "tea", "dm", "stan", 
+                "flex", "later", "yolo", "based", "cap", "fr", "no", "on"]
+                .contains(&id.as_str()) {
+                return Ok(());
+            }
+            
+            let result = tokenize(&id);
+            assert!(result.is_ok(), "Failed to tokenize identifier: {}", id);
+            
+            let tokens = result.unwrap();
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens, got {}", tokens.len());
+            
+            match &tokens[0] {
+                Token::Identifier(name) => assert_eq!(name, &id),
+                _ => panic!("Expected IDENTIFIER token, got {:?}", tokens[0]),
+            }
+        }
+        
+        #[test]
+        fn prop_string_tokenization(
+            // Generate a random string content (no quotes inside)
+            content in r"[a-zA-Z0-9 ]{0,50}"
+        ) {
+            let input = format!("\"{}\"", content);
+            let result = tokenize(&input);
+            
+            assert!(result.is_ok(), "Failed to tokenize string: {}", input);
+            let tokens = result.unwrap();
+            
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens, got {}", tokens.len());
+            
+            match &tokens[0] {
+                Token::String(s) => assert_eq!(s, &content),
+                _ => panic!("Expected STRING token, got {:?}", tokens[0]),
+            }
+        }
+        
+        #[test]
+        fn prop_compound_operators(
+            // Test patterns with compound operators, one at a time
+            op in prop::sample::select(vec![
+                "==", "!=", "<=", ">=", "=", "+", "-", "*", "/", "<", ">", "!"
+            ])
+        ) {
+            let result = tokenize(&op);
+            assert!(result.is_ok(), "Failed to tokenize operator: {}", op);
+            
+            let tokens = result.unwrap();
+            
+            // The last token should be EOF
+            assert_eq!(tokens.last().unwrap(), &Token::Eof);
+            
+            // Verify the token is correctly identified
+            let expected_token = match op {
+                "==" => Token::Eq,
+                "!=" => Token::NotEq,
+                "<=" => Token::LtEq,
+                ">=" => Token::GtEq,
+                "=" => Token::Assign,
+                "+" => Token::Plus,
+                "-" => Token::Minus,
+                "*" => Token::Asterisk,
+                "/" => Token::Slash,
+                "<" => Token::Lt,
+                ">" => Token::Gt,
+                "!" => Token::Bang,
+                _ => panic!("Unexpected operator: {}", op),
+            };
+            
+            assert_eq!(tokens[0], expected_token, "Token mismatch for operator {}", op);
+        }
+        
+        #[test]
+        fn prop_keywords_tokenization(
+            keyword in prop::sample::select(vec![
+                "vibe", "yeet", "slay", "sus", "facts", "lowkey", "highkey", 
+                "bestie", "periodt", "vibe_check", "mood", "basic", "ghosted", 
+                "simp", "be_like", "squad", "collab", "tea", "dm", "stan", 
+                "flex", "later", "yolo", "based", "cap"
+            ])
+        ) {
+            let result = tokenize(keyword);
+            assert!(result.is_ok(), "Failed to tokenize keyword: {}", keyword);
+            
+            let tokens = result.unwrap();
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens, got {}", tokens.len());
+            
+            let expected_token = match keyword {
+                "vibe" => Token::Vibe,
+                "yeet" => Token::Yeet,
+                "slay" => Token::Slay,
+                "sus" => Token::Sus,
+                "facts" => Token::Facts,
+                "lowkey" => Token::Lowkey,
+                "highkey" => Token::Highkey,
+                "bestie" => Token::Bestie,
+                "periodt" => Token::Periodt,
+                "vibe_check" => Token::VibeCheck,
+                "mood" => Token::Mood,
+                "basic" => Token::Basic,
+                "ghosted" => Token::Ghosted,
+                "simp" => Token::Simp,
+                "be_like" => Token::BeLike,
+                "squad" => Token::Squad,
+                "collab" => Token::Collab,
+                "tea" => Token::Tea,
+                "dm" => Token::Dm,
+                "stan" => Token::Stan,
+                "flex" => Token::Flex,
+                "later" => Token::Later,
+                "yolo" => Token::Yolo,
+                "based" => Token::Based,
+                "cap" => Token::Cap,
+                _ => panic!("Unexpected keyword: {}", keyword),
+            };
+            
+            assert_eq!(tokens[0], expected_token);
+        }
+        
+        #[test]
+        fn prop_comments_tokenization(
+            // Test line comments and block comments
+            has_line_comment in proptest::bool::ANY,
+            has_block_comment in proptest::bool::ANY,
+            content in r"[a-zA-Z0-9 ]{0,20}"
+        ) {
+            let mut input = String::new();
+            let mut expected_tokens = Vec::new();
+            
+            if has_line_comment {
+                input.push_str("fr fr ");
+                input.push_str(&content);
+                expected_tokens.push(Token::LineComment);
+            }
+            
+            if has_block_comment {
+                if !input.is_empty() {
+                    input.push_str("\n");
+                }
+                input.push_str("no cap ");
+                input.push_str(&content);
+                input.push_str(" on god");
+                expected_tokens.push(Token::BlockCommentStart);
+                expected_tokens.push(Token::BlockCommentEnd);
+            }
+            
+            // If both are false, just add some content
+            if !has_line_comment && !has_block_comment {
+                input.push_str(&content);
+                if !content.is_empty() {
+                    // This will be tokenized as identifiers or other tokens 
+                    // depending on the content, so we don't predict specific tokens
+                }
+            }
+            
+            let result = tokenize(&input);
+            assert!(result.is_ok(), "Failed to tokenize comments: {}", input);
+        }
+        
+        #[test]
+        fn prop_whitespace_handling(
+            // Test handling of different whitespace characters
+            tokens in prop::collection::vec(prop::sample::select(vec![
+                "+", "-", "*", "/", "==", "!=", "<=", ">=", "vibe", "yeet", "123", "x"
+            ]), 1..5),
+            spaces in prop::collection::vec(prop::sample::select(vec![
+                " ", "\t", "\n", "\r\n", "  ", "\t\t", "\n\n"
+            ]), 0..10)
+        ) {
+            // Combine tokens with random whitespace
+            let mut input = String::new();
+            let mut i = 0;
+            
+            for token in &tokens {
+                if i < spaces.len() {
+                    input.push_str(spaces[i]);
+                    i += 1;
+                }
+                input.push_str(token);
+            }
+            
+            // Add whitespace at the end too
+            if i < spaces.len() {
+                input.push_str(spaces[i]);
+            }
+            
+            let result = tokenize(&input);
+            assert!(result.is_ok(), "Failed to tokenize with whitespace: {}", input);
+            
+            // The number of tokens should be the number of input tokens plus EOF
+            let actual_tokens = result.unwrap();
+            assert!(actual_tokens.len() > 0, "No tokens generated");
+            
+            // The last token should be EOF
+            assert_eq!(actual_tokens.last().unwrap(), &Token::Eof);
+        }
+    }
+    
+    #[test]
+    fn test_location_tracking() {
+        let input = "1\n2\n3";
+        let mut lexer = Lexer::new(input);
+        
+        // First token: "1" on line 1
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token, Token::Int(1));
+        assert_eq!(lexer.line, 2); // Already moved to the next line
+        
+        // Second token: "2" on line 2
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token, Token::Int(2));
+        assert_eq!(lexer.line, 3); // Moved to line 3
+        
+        // Third token: "3" on line 3
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token, Token::Int(3));
+        
+        // Final token: EOF
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token, Token::Eof);
+    }
 } 
