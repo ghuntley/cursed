@@ -282,6 +282,9 @@ impl Compiler {
         } else if let Some(switch_stmt) = stmt.as_any().downcast_ref::<ast::SwitchStatement>() {
             // Compile switch statements
             self.compile_switch_statement(switch_stmt)
+        } else if let Some(package_stmt) = stmt.as_any().downcast_ref::<ast::PackageStatement>() {
+            // Compile package declarations
+            self.compile_package_statement(package_stmt)
         } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
             // Compile block statements
             self.compile_block_statement(block_stmt)
@@ -429,6 +432,28 @@ impl Compiler {
         if pop_needed {
             self.emit(Opcode::Pop, vec![]);
         }
+        
+        Ok(())
+    }
+
+    /// Compile a package statement (vibe in CURSED)
+    pub fn compile_package_statement(&mut self, package_stmt: &ast::PackageStatement) -> Result<(), Error> {
+        // Store the package name in a symbol table or metadata
+        // For now, we'll just define it as a global variable with value set to its name
+        // In a more complete implementation, this would be used for module/namespace resolution
+        
+        // Create a string object with the package name
+        let package_name = Object::String(package_stmt.name.value.clone());
+        
+        // Add the package name as a constant
+        let constant_index = self.add_constant(package_name);
+        
+        // Emit instructions to load the package name
+        self.emit(Opcode::Constant, vec![constant_index]);
+        
+        // Define a special global variable for the package
+        let symbol = self.symbol_table.borrow_mut().define("__package__");
+        self.emit(Opcode::SetGlobal, vec![symbol.index]);
         
         Ok(())
     }

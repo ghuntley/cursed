@@ -392,4 +392,37 @@ mod tests {
         let result = compiler.compile(&program);
         assert!(result.is_ok(), "Compilation of switch with complex expression failed: {:?}", result.err());
     }
+    
+    #[test]
+    fn test_compile_package_statement() {
+        // Test basic package declaration
+        let input = "vibe main;";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of package declaration failed: {:?}", result.err());
+        
+        // Verify the bytecode contains the package name as a constant
+        let bytecode = result.unwrap();
+        assert!(bytecode.constants.len() > 0, "No constants generated");
+        
+        // The first constant should be the package name "main"
+        match &bytecode.constants[0] {
+            Object::String(name) => assert_eq!(name, "main"),
+            _ => panic!("Expected package name to be a string constant")
+        }
+        
+        // Test package with a more complex name
+        let input = "vibe com.example.project;";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of namespaced package failed: {:?}", result.err());
+    }
 } 

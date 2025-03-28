@@ -86,8 +86,37 @@ impl<'a> Parser<'a> {
     
     /// Parse a package statement
     pub fn parse_package_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("Package statement parsing not implemented yet"))
+        // Store the 'vibe' token
+        let token = self.current_token.token_literal();
+        
+        // Next token should be the package name (identifier)
+        if !self.expect_peek(&Token::Identifier("".to_string())) {
+            return Err(Error::from_str(
+                &format!("Expected identifier after 'vibe', got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Get the package name
+        let name = match &self.current_token {
+            Token::Identifier(val) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: val.clone(),
+            },
+            _ => unreachable!(), // We already checked it's an identifier
+        };
+        
+        // Expect a semicolon
+        if !self.expect_peek(&Token::Semicolon) {
+            return Err(Error::from_str(
+                &format!("Expected ';' after package name, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Create and return the package statement
+        Ok(Box::new(ast::PackageStatement {
+            token,
+            name,
+        }))
     }
     
     /// Parse an import statement
