@@ -285,6 +285,9 @@ impl Compiler {
         } else if let Some(package_stmt) = stmt.as_any().downcast_ref::<ast::PackageStatement>() {
             // Compile package declarations
             self.compile_package_statement(package_stmt)
+        } else if let Some(import_stmt) = stmt.as_any().downcast_ref::<ast::ImportStatement>() {
+            // Compile import statements
+            self.compile_import_statement(import_stmt)
         } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
             // Compile block statements
             self.compile_block_statement(block_stmt)
@@ -458,6 +461,56 @@ impl Compiler {
         Ok(())
     }
 
+    /// Compile an import statement (yeet in CURSED)
+    pub fn compile_import_statement(&mut self, import_stmt: &ast::ImportStatement) -> Result<(), Error> {
+        // Create a string object with the import path
+        let import_path = Object::String(import_stmt.path.value.clone());
+        
+        // Add the import path as a constant
+        let path_index = self.add_constant(import_path);
+        
+        // Emit instructions to load the import path
+        self.emit(Opcode::Constant, vec![path_index]);
+        
+        // Determine the import name (either the alias or the last part of the path)
+        let import_name = if let Some(alias) = &import_stmt.alias {
+            alias.value.clone()
+        } else {
+            // Extract the module name from the path (last component)
+            let path = &import_stmt.path.value;
+            match path.rfind('/') {
+                Some(pos) => path[pos + 1..].to_string(),
+                None => path.clone(),
+            }
+        };
+        
+        // Store the import in a special global array of imports
+        // First we need to define or get the __imports__ array
+        let imports_symbol = self.symbol_table.borrow_mut().define("__imports__");
+        
+        // We'll emit instructions to create a tuple of (path, name) and add it to imports
+        // In a real implementation, this would trigger loading the module
+        
+        // Create a string object with the import name
+        let import_name_obj = Object::String(import_name.clone());
+        let name_index = self.add_constant(import_name_obj);
+        
+        // Emit instructions to load the import name
+        self.emit(Opcode::Constant, vec![name_index]);
+        
+        // Define a global variable for the imported module
+        let module_symbol = self.symbol_table.borrow_mut().define(&import_name);
+        self.emit(Opcode::SetGlobal, vec![module_symbol.index]);
+        
+        // Pop the import name from the stack (we just used it to set the global)
+        self.emit(Opcode::Pop, vec![]);
+        
+        // Pop the import path from the stack (we're done with it)
+        self.emit(Opcode::Pop, vec![]);
+        
+        Ok(())
+    }
+    
     /// Compile an if statement
     pub fn compile_if_statement(&mut self, if_stmt: &ast::IfStatement) -> Result<(), Error> {
         // Compile the condition expression
@@ -491,7 +544,7 @@ impl Compiler {
         
         Ok(())
     }
-    
+
     /// Compile a block statement
     pub fn compile_block_statement(&mut self, block: &ast::BlockStatement) -> Result<(), Error> {
         for stmt in &block.statements {

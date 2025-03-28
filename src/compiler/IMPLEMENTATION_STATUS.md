@@ -54,7 +54,7 @@ The CURSED language compiler is partially implemented. The core architecture is 
    - For loops (`bestie`) ✅
    - Switch statements (`vibe_check`) ✅
    - Package declarations (`vibe`) ✅
-   - Import statements (`yeet`)
+   - Import statements (`yeet`) ✅
    - Type declarations (`be_like`)
 
 5. **Closures & Scope Handling**:

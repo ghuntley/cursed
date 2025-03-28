@@ -425,4 +425,69 @@ mod tests {
         let result = compiler.compile(&program);
         assert!(result.is_ok(), "Compilation of namespaced package failed: {:?}", result.err());
     }
+    
+    #[test]
+    fn test_compile_import_statement() {
+        // Test basic import statement
+        let input = "yeet \"fmt\";";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of basic import statement failed: {:?}", result.err());
+        
+        // Verify the bytecode contains the import path as a constant
+        let bytecode = result.unwrap();
+        assert!(bytecode.constants.len() >= 2, "Not enough constants generated");
+        
+        // The constants should include the import path "fmt" and name "fmt"
+        let mut found_path = false;
+        let mut found_name = false;
+        
+        for constant in &bytecode.constants {
+            if let Object::String(value) = constant {
+                if value == "fmt" {
+                    if !found_path {
+                        found_path = true;
+                    } else {
+                        found_name = true;
+                    }
+                }
+            }
+        }
+        
+        assert!(found_path, "Import path 'fmt' not found in constants");
+        assert!(found_name, "Import name 'fmt' not found in constants");
+        
+        // Test import with alias
+        let input = "yeet math \"math/advanced\";";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of import with alias failed: {:?}", result.err());
+        
+        // Verify the bytecode contains both the import path and the alias
+        let bytecode = result.unwrap();
+        
+        let mut found_path = false;
+        let mut found_name = false;
+        
+        for constant in &bytecode.constants {
+            if let Object::String(value) = constant {
+                if value == "math/advanced" {
+                    found_path = true;
+                } else if value == "math" {
+                    found_name = true;
+                }
+            }
+        }
+        
+        assert!(found_path, "Import path 'math/advanced' not found in constants");
+        assert!(found_name, "Import alias 'math' not found in constants");
+    }
 } 

@@ -121,8 +121,51 @@ impl<'a> Parser<'a> {
     
     /// Parse an import statement
     pub fn parse_import_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("Import statement parsing not implemented yet"))
+        // Store the 'yeet' token
+        let token = self.current_token.token_literal();
+        
+        // Handle optional alias first
+        let mut alias = None;
+        
+        // Next token could be an identifier (alias) or a string (path)
+        self.next_token()?;
+        
+        // Check if we have an alias
+        if let Token::Identifier(name) = &self.current_token {
+            alias = Some(ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: name.clone(),
+            });
+            
+            // Move to the next token, which should be the path
+            self.next_token()?;
+        }
+        
+        // Next token must be a string literal (path)
+        if let Token::String(path_value) = &self.current_token {
+            let path = ast::StringLiteral {
+                token: self.current_token.token_literal(),
+                value: path_value.clone(),
+            };
+            
+            // Expect a semicolon
+            if !self.expect_peek(&Token::Semicolon) {
+                return Err(Error::from_str(
+                    &format!("Expected ';' after import path, got {:?}", self.peek_token)
+                ));
+            }
+            
+            // Create and return the import statement
+            Ok(Box::new(ast::ImportStatement {
+                token,
+                path,
+                alias,
+            }))
+        } else {
+            Err(Error::from_str(
+                &format!("Expected string literal for import path, got {:?}", self.current_token)
+            ))
+        }
     }
     
     /// Parse a let statement
