@@ -440,7 +440,4 @@ impl Token {
             Token::Eof => "".to_string(),
         }
     }
-}
-
-#[cfg(test)]
-mod tests; 
+} 

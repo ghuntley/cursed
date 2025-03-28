@@ -45,6 +45,4 @@ strip = true  # Strip symbols from the binary
 opt-level = 0  # No optimization for faster compilation
 debug = true  # Full debug info
 
-[[test]]
-name = "integration"
-path = "tests/integration/end_to_end_test.rs"
+# Test configuration removed

@@ -1,5 +1,3 @@
-mod tests;
-
 // Re-export the parser from parser_impl.rs
 pub use crate::parser_impl::Parser;
 

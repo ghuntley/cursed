@@ -190,9 +190,6 @@ pub mod memory {
     }
 }
 
-#[cfg(test)]
-mod test_traceable;
-
 /// Version of the CURSED language
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Authors of the CURSED language

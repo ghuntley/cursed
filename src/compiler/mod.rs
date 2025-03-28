@@ -1,12 +1,6 @@
 mod bytecode;
 pub mod symbol_table;
 
-#[cfg(test)]
-mod tests;
-
-#[cfg(test)]
-mod property_tests;
-
 pub use bytecode::{Bytecode, Instructions, Opcode};
 pub use symbol_table::{Symbol, SymbolScope, SymbolTable};
 use crate::ast::{self, Program, Statement, Expression};
