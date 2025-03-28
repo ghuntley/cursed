@@ -14,7 +14,7 @@ pub mod parser;
 pub mod symbol;
 pub mod vm;
 pub mod prelude;
-pub mod prelude_ext;
+// pub mod prelude_ext;  // Merged into prelude.rs
 // pub mod memory;  // Using stub version for now
 pub mod evaluator;
 pub mod object;
