@@ -200,8 +200,106 @@ impl<'a> Parser<'a> {
     
     /// Parse a type statement
     pub fn parse_type_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("Type statement parsing not implemented yet"))
+        // Store the 'be_like' token
+        let token = self.current_token.token_literal();
+        
+        // Next token should be the struct name (identifier)
+        if !self.expect_peek(&Token::Identifier("".to_string())) {
+            return Err(Error::from_str(
+                &format!("Expected identifier after 'be_like', got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Get the struct name
+        let name = match &self.current_token {
+            Token::Identifier(val) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: val.clone(),
+            },
+            _ => unreachable!(), // We already checked it's an identifier
+        };
+        
+        // Next token should be 'squad' for struct definitions
+        if !self.expect_peek(&Token::Squad) {
+            return Err(Error::from_str(
+                &format!("Expected 'squad' after struct name, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Next token should be opening brace '{'
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(
+                &format!("Expected '{{' after 'squad', got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse the struct fields
+        let mut fields = Vec::new();
+        
+        // Move past the '{'
+        self.next_token()?;
+        
+        // Parse fields until closing brace or EOF
+        while self.current_token != Token::RBrace && self.current_token != Token::Eof {
+            // Parse field name
+            if let Token::Identifier(field_name) = &self.current_token {
+                let field_token = self.current_token.token_literal();
+                let field_id = ast::Identifier {
+                    token: field_token.clone(),
+                    value: field_name.clone(),
+                };
+                
+                // Next token should be the field type
+                self.next_token()?;
+                
+                if let Token::Identifier(type_name) = &self.current_token {
+                    let type_token = self.current_token.token_literal();
+                    let type_id = ast::Identifier {
+                        token: type_token,
+                        value: type_name.clone(),
+                    };
+                    
+                    // Create field statement
+                    let field = ast::FieldStatement {
+                        token: field_token,
+                        name: field_id,
+                        type_name: type_id,
+                    };
+                    
+                    fields.push(field);
+                    
+                    // Field may be followed by semicolon or newline
+                    if self.peek_token == Token::Semicolon {
+                        self.next_token()?;
+                    }
+                    
+                    // Move to the next field
+                    self.next_token()?;
+                } else {
+                    return Err(Error::from_str(
+                        &format!("Expected field type, got {:?}", self.current_token)
+                    ));
+                }
+            } else {
+                return Err(Error::from_str(
+                    &format!("Expected field name, got {:?}", self.current_token)
+                ));
+            }
+        }
+        
+        // Ensure we have a closing brace
+        if self.current_token != Token::RBrace {
+            return Err(Error::from_str(
+                "Expected '}' to close type declaration"
+            ));
+        }
+        
+        // Create and return the squad statement
+        Ok(Box::new(ast::SquadStatement {
+            token,
+            name,
+            fields,
+        }))
     }
     
     /// Parse an expression statement

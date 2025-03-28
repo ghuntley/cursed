@@ -288,6 +288,9 @@ impl Compiler {
         } else if let Some(import_stmt) = stmt.as_any().downcast_ref::<ast::ImportStatement>() {
             // Compile import statements
             self.compile_import_statement(import_stmt)
+        } else if let Some(squad_stmt) = stmt.as_any().downcast_ref::<ast::SquadStatement>() {
+            // Compile type (squad) declarations
+            self.compile_squad_statement(squad_stmt)
         } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
             // Compile block statements
             self.compile_block_statement(block_stmt)
@@ -984,6 +987,48 @@ impl Compiler {
         // Update the last instruction
         let current_scope = &mut self.scopes[self.scope_index];
         current_scope.last_instruction.opcode = Opcode::ReturnValue;
+    }
+
+    /// Compile a type declaration statement (be_like...squad in CURSED)
+    pub fn compile_squad_statement(&mut self, squad_stmt: &ast::SquadStatement) -> Result<(), Error> {
+        // Store the struct name as a constant
+        let struct_name = Object::String(squad_stmt.name.value.clone());
+        let name_index = self.add_constant(struct_name);
+        
+        // Create a map of field names to their types
+        let mut field_map = Vec::new();
+        
+        for field in &squad_stmt.fields {
+            let field_name = Object::String(field.name.value.clone());
+            let field_type = Object::String(field.type_name.value.clone());
+            
+            let name_idx = self.add_constant(field_name);
+            let type_idx = self.add_constant(field_type);
+            
+            field_map.push((name_idx, type_idx));
+        }
+        
+        // Store the number of fields
+        let num_fields = field_map.len();
+        
+        // Emit instruction to load the struct name
+        self.emit(Opcode::Constant, vec![name_index]);
+        
+        // Emit instruction to define a struct type
+        self.emit(Opcode::DefineType, vec![num_fields]);
+        
+        // Emit instructions for each field
+        for (name_idx, type_idx) in field_map {
+            self.emit(Opcode::Constant, vec![name_idx]);
+            self.emit(Opcode::Constant, vec![type_idx]);
+            self.emit(Opcode::DefineField, vec![]);
+        }
+        
+        // Define the type in the symbol table
+        let symbol = self.symbol_table.borrow_mut().define(&squad_stmt.name.value);
+        self.emit(Opcode::SetGlobal, vec![symbol.index]);
+        
+        Ok(())
     }
 }
 

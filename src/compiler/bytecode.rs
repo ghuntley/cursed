@@ -65,6 +65,8 @@ pub enum Opcode {
     LessThanEqual,    // 0x30: Less than or equal
     Modulo,           // 0x31: Modulo
     Dup,              // 0x32: Duplicate top stack value
+    DefineType,       // 0x33: Define a type/struct
+    DefineField,      // 0x34: Define a field in a type/struct
 }
 
 impl From<u8> for Opcode {
@@ -121,6 +123,8 @@ impl From<u8> for Opcode {
             0x30 => Opcode::LessThanEqual,
             0x31 => Opcode::Modulo,
             0x32 => Opcode::Dup,
+            0x33 => Opcode::DefineType,
+            0x34 => Opcode::DefineField,
             _ => panic!("Unknown opcode: {}", byte),
         }
     }
@@ -180,6 +184,8 @@ impl From<Opcode> for u8 {
             Opcode::LessThanEqual => 0x30,
             Opcode::Modulo => 0x31,
             Opcode::Dup => 0x32,
+            Opcode::DefineType => 0x33,
+            Opcode::DefineField => 0x34,
         }
     }
 }
@@ -394,6 +400,14 @@ pub fn lookup(op: Opcode) -> Definition {
             name: "Dup",
             operand_widths: vec![],
         },
+        Opcode::DefineType => Definition {
+            name: "DefineType",
+            operand_widths: vec![2], // 2-byte field count
+        },
+        Opcode::DefineField => Definition {
+            name: "DefineField",
+            operand_widths: vec![],
+        },
     }
 }
 
@@ -489,9 +503,9 @@ mod tests {
 
     // Strategy to generate valid opcodes
     fn opcode_strategy() -> impl Strategy<Value = Opcode> {
-        (0..=0x32u8).prop_map(|b| {
+        (0..=0x34u8).prop_map(|b| {
             // Safety: We ensure we don't go beyond the known opcodes
-            if b <= 0x32 {
+            if b <= 0x34 {
                 Opcode::from(b)
             } else {
                 Opcode::Invalid

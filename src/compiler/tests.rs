@@ -490,4 +490,55 @@ mod tests {
         assert!(found_path, "Import path 'math/advanced' not found in constants");
         assert!(found_name, "Import alias 'math' not found in constants");
     }
+    
+    #[test]
+    fn test_compile_type_declaration() {
+        // Test basic type declaration
+        let input = "be_like Person squad { name tea age normie height meal }";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of type declaration failed: {:?}", result.err());
+        
+        // Verify the bytecode contains the type name and field information
+        let bytecode = result.unwrap();
+        
+        // Check that we have constants for type name and field names/types
+        assert!(bytecode.constants.len() >= 7, "Not enough constants generated");
+        
+        // The first constant should be the type name "Person"
+        match &bytecode.constants[0] {
+            Object::String(name) => assert_eq!(name, "Person", "Expected type name 'Person'"),
+            _ => panic!("Expected type name to be a string constant")
+        }
+        
+        // Check that we have field names and types in the constants
+        let expected_fields = vec![
+            "name", "tea", "age", "normie", "height", "meal"
+        ];
+        
+        let mut found_fields = 0;
+        for constant in &bytecode.constants {
+            if let Object::String(value) = constant {
+                if expected_fields.contains(&value.as_str()) {
+                    found_fields += 1;
+                }
+            }
+        }
+        
+        assert_eq!(found_fields, 6, "Not all expected fields found in constants");
+        
+        // Test type declaration with semicolons
+        let input = "be_like Point squad { x meal; y meal; }";
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program().unwrap();
+        
+        let mut compiler = Compiler::new();
+        let result = compiler.compile(&program);
+        assert!(result.is_ok(), "Compilation of type declaration with semicolons failed: {:?}", result.err());
+    }
 } 
