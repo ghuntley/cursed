@@ -799,4 +799,31 @@ mod tests {
         let token = lexer.next_token().unwrap();
         assert_eq!(token, Token::Eof);
     }
+    
+    #[test]
+    fn test_periodt_statement_tokenization() {
+        let input = "periodt x < 10 { x = x + 1; }";
+        let result = tokenize(input);
+        
+        assert!(result.is_ok(), "Failed to tokenize periodt statement");
+        let tokens = result.unwrap();
+        
+        // Expected tokens for "periodt x < 10 { x = x + 1; }"
+        assert_eq!(tokens.len(), 13, "Expected 13 tokens, got {}", tokens.len());
+        
+        // Check each token in sequence
+        assert_eq!(tokens[0], Token::Periodt);  // periodt
+        assert!(matches!(tokens[1], Token::Identifier(ref s) if s == "x"));  // x
+        assert_eq!(tokens[2], Token::Lt);  // <
+        assert_eq!(tokens[3], Token::Int(10));  // 10
+        assert_eq!(tokens[4], Token::LBrace);  // {
+        assert!(matches!(tokens[5], Token::Identifier(ref s) if s == "x"));  // x
+        assert_eq!(tokens[6], Token::Assign);  // =
+        assert!(matches!(tokens[7], Token::Identifier(ref s) if s == "x"));  // x
+        assert_eq!(tokens[8], Token::Plus);  // +
+        assert_eq!(tokens[9], Token::Int(1));  // 1
+        assert_eq!(tokens[10], Token::Semicolon);  // ;
+        assert_eq!(tokens[11], Token::RBrace);  // }
+        assert_eq!(tokens[12], Token::Eof);  // EOF
+    }
 } 

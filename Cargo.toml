@@ -27,7 +27,7 @@ proptest = "1.3"  # For property-based testing
 
 [workspace]
 members = [
-    ".",
+    "."
 ]
 
 [[bin]]

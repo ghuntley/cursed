@@ -1,171 +1,342 @@
-mod bytecode;
-pub mod symbol_table;
-#[cfg(test)]
-mod tests;
+// CURSED Compiler Implementation
+// This file contains the enhanced compiler implementation as specified in the CURSED language specs.
+// It is kept separate from the main codebase until all dependencies are ready for integration.
 
-pub use bytecode::{Bytecode, Instructions, Opcode};
-pub use symbol_table::{Symbol, SymbolScope, SymbolTable};
 use crate::ast::{self, Program, Statement, Expression};
 use crate::error::{Error, ErrorReporter, SourceLocation};
-use crate::memory::gc::{Traceable, Visitor};
 use crate::object::Object;
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
-use crate::prelude::VecExt;
-use crate::prelude::RefCellSymbolTableExt;
-use crate::prelude::SymbolScopeExt;
 
-/// The Compiler takes an AST and converts it into bytecode that can be executed by the VM
-pub struct Compiler {
-    instructions: Instructions,
-    constants: Vec<Object>,
-    symbol_table: Rc<RefCell<SymbolTable>>,
-    scopes: Vec<CompilationScope>,
-    scope_index: usize,
-    error_reporter: ErrorReporter,
+// Re-export from symbol table
+pub use crate::symbol::{Symbol, SymbolScope, SymbolTable};
+
+/// Bytecode instruction type
+pub type Instructions = Vec<u8>;
+
+/// Bytecode operation codes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Opcode {
+    Invalid = 0x00,
+    Constant = 0x01,   // Load constant
+    Add = 0x02,        // Add
+    Sub = 0x03,        // Subtract
+    Mul = 0x04,        // Multiply
+    Div = 0x05,        // Divide
+    True = 0x06,       // Push true
+    False = 0x07,      // Push false
+    Equal = 0x08,      // Equal
+    NotEqual = 0x09,   // Not equal
+    GreaterThan = 0x0A,// Greater than
+    Minus = 0x0B,      // Negate
+    Bang = 0x0C,       // Logical NOT
+    JumpNotTruthy = 0x0D,// Jump if not truthy
+    Jump = 0x0E,       // Jump
+    Null = 0x0F,       // Push null
+    SetGlobal = 0x10,  // Set global
+    GetGlobal = 0x11,  // Get global
+    Array = 0x12,      // Create array
+    Hash = 0x13,       // Create hash
+    Index = 0x14,      // Index operation
+    Call = 0x15,       // Call function
+    ReturnValue = 0x16,// Return with value
+    Return = 0x17,     // Return without value
+    SetLocal = 0x18,   // Set local
+    GetLocal = 0x19,   // Get local
+    GetBuiltin = 0x1A, // Get builtin
+    Closure = 0x1B,    // Create closure
+    GetFree = 0x1C,    // Get free variable
+    Pop = 0x1D,        // Pop from stack
+    CurrentClosure = 0x1E, // Get current closure
+    GreaterThanEqual = 0x1F, // Greater than or equal
+    LessThan = 0x20,    // Less than
+    LessThanEqual = 0x21,    // Less than or equal
+    Modulo = 0x22,           // Modulo
+    Dup = 0x23,              // Duplicate top stack value
+}
+
+impl From<u8> for Opcode {
+    fn from(byte: u8) -> Self {
+        match byte {
+            0x00 => Opcode::Invalid,
+            0x01 => Opcode::Constant,
+            0x02 => Opcode::Add,
+            0x03 => Opcode::Sub,
+            0x04 => Opcode::Mul,
+            0x05 => Opcode::Div,
+            0x06 => Opcode::True,
+            0x07 => Opcode::False,
+            0x08 => Opcode::Equal,
+            0x09 => Opcode::NotEqual,
+            0x0A => Opcode::GreaterThan,
+            0x0B => Opcode::Minus,
+            0x0C => Opcode::Bang,
+            0x0D => Opcode::JumpNotTruthy,
+            0x0E => Opcode::Jump,
+            0x0F => Opcode::Null,
+            0x10 => Opcode::SetGlobal,
+            0x11 => Opcode::GetGlobal,
+            0x12 => Opcode::Array,
+            0x13 => Opcode::Hash,
+            0x14 => Opcode::Index,
+            0x15 => Opcode::Call,
+            0x16 => Opcode::ReturnValue,
+            0x17 => Opcode::Return,
+            0x18 => Opcode::SetLocal,
+            0x19 => Opcode::GetLocal,
+            0x1A => Opcode::GetBuiltin,
+            0x1B => Opcode::Closure,
+            0x1C => Opcode::GetFree,
+            0x1D => Opcode::Pop,
+            0x1E => Opcode::CurrentClosure,
+            0x1F => Opcode::GreaterThanEqual,
+            0x20 => Opcode::LessThan,
+            0x21 => Opcode::LessThanEqual,
+            0x22 => Opcode::Modulo,
+            0x23 => Opcode::Dup,
+            _ => Opcode::Invalid,
+        }
+    }
+}
+
+/// Bytecode definition
+#[derive(Debug, Clone)]
+pub struct Definition {
+    pub name: &'static str,
+    pub operand_widths: Vec<usize>,
+}
+
+/// Get the definition for an opcode
+pub fn lookup(op: Opcode) -> Definition {
+    match op {
+        Opcode::Constant => Definition {
+            name: "Constant",
+            operand_widths: vec![2], // 2-byte operand
+        },
+        Opcode::Add => Definition {
+            name: "Add",
+            operand_widths: vec![],
+        },
+        Opcode::Sub => Definition {
+            name: "Sub",
+            operand_widths: vec![],
+        },
+        Opcode::Mul => Definition {
+            name: "Mul",
+            operand_widths: vec![],
+        },
+        Opcode::Div => Definition {
+            name: "Div",
+            operand_widths: vec![],
+        },
+        Opcode::True => Definition {
+            name: "True",
+            operand_widths: vec![],
+        },
+        Opcode::False => Definition {
+            name: "False",
+            operand_widths: vec![],
+        },
+        Opcode::Equal => Definition {
+            name: "Equal",
+            operand_widths: vec![],
+        },
+        Opcode::NotEqual => Definition {
+            name: "NotEqual",
+            operand_widths: vec![],
+        },
+        Opcode::GreaterThan => Definition {
+            name: "GreaterThan",
+            operand_widths: vec![],
+        },
+        Opcode::LessThan => Definition {
+            name: "LessThan",
+            operand_widths: vec![],
+        },
+        Opcode::GreaterThanEqual => Definition {
+            name: "GreaterThanEqual",
+            operand_widths: vec![],
+        },
+        Opcode::LessThanEqual => Definition {
+            name: "LessThanEqual",
+            operand_widths: vec![],
+        },
+        Opcode::Minus => Definition {
+            name: "Minus",
+            operand_widths: vec![],
+        },
+        Opcode::Bang => Definition {
+            name: "Bang",
+            operand_widths: vec![],
+        },
+        Opcode::JumpNotTruthy => Definition {
+            name: "JumpNotTruthy",
+            operand_widths: vec![2],
+        },
+        Opcode::Jump => Definition {
+            name: "Jump",
+            operand_widths: vec![2],
+        },
+        Opcode::Null => Definition {
+            name: "Null",
+            operand_widths: vec![],
+        },
+        Opcode::SetGlobal => Definition {
+            name: "SetGlobal",
+            operand_widths: vec![2],
+        },
+        Opcode::GetGlobal => Definition {
+            name: "GetGlobal",
+            operand_widths: vec![2],
+        },
+        Opcode::SetLocal => Definition {
+            name: "SetLocal",
+            operand_widths: vec![1],
+        },
+        Opcode::GetLocal => Definition {
+            name: "GetLocal",
+            operand_widths: vec![1],
+        },
+        Opcode::GetBuiltin => Definition {
+            name: "GetBuiltin",
+            operand_widths: vec![1],
+        },
+        Opcode::GetFree => Definition {
+            name: "GetFree",
+            operand_widths: vec![1],
+        },
+        Opcode::CurrentClosure => Definition {
+            name: "CurrentClosure",
+            operand_widths: vec![],
+        },
+        Opcode::Array => Definition {
+            name: "Array",
+            operand_widths: vec![2],
+        },
+        Opcode::Hash => Definition {
+            name: "Hash",
+            operand_widths: vec![2],
+        },
+        Opcode::Index => Definition {
+            name: "Index",
+            operand_widths: vec![],
+        },
+        Opcode::Call => Definition {
+            name: "Call",
+            operand_widths: vec![1],
+        },
+        Opcode::ReturnValue => Definition {
+            name: "ReturnValue",
+            operand_widths: vec![],
+        },
+        Opcode::Return => Definition {
+            name: "Return",
+            operand_widths: vec![],
+        },
+        Opcode::Closure => Definition {
+            name: "Closure",
+            operand_widths: vec![2, 1], // constant index, free var count
+        },
+        Opcode::Pop => Definition {
+            name: "Pop",
+            operand_widths: vec![],
+        },
+        Opcode::Modulo => Definition {
+            name: "Modulo",
+            operand_widths: vec![],
+        },
+        Opcode::Dup => Definition {
+            name: "Dup",
+            operand_widths: vec![],
+        },
+        _ => Definition {
+            name: "Invalid",
+            operand_widths: vec![],
+        },
+    }
+}
+
+/// Make bytecode from opcode and operands
+pub fn make(op: Opcode, operands: &[usize]) -> Instructions {
+    let def = lookup(op);
+    let instruction_len = 1 + def.operand_widths.iter().sum::<usize>();
+    let mut instruction = Vec::with_capacity(instruction_len);
+    
+    instruction.push(op as u8);
+    
+    for (i, width) in def.operand_widths.iter().enumerate() {
+        match width {
+            2 => {
+                // The operand is 2 bytes (16 bits), so we need to get the big-endian representation
+                let operand = operands[i];
+                if operand > u16::MAX as usize {
+                    panic!("Operand {} too large: {}", i, operand);
+                }
+                let bytes = (operand as u16).to_be_bytes();
+                instruction.extend_from_slice(&bytes);
+            },
+            1 => {
+                // The operand is 1 byte (8 bits)
+                let operand = operands[i];
+                if operand > u8::MAX as usize {
+                    panic!("Operand {} too large: {}", i, operand);
+                }
+                instruction.push(operand as u8);
+            },
+            _ => panic!("Unsupported operand width: {}", width),
+        }
+    }
+    
+    instruction
+}
+
+/// Read operands from bytecode
+pub fn read_operand(def: &Definition, instructions: &[u8], pos: usize) -> (Vec<usize>, usize) {
+    let mut operands = Vec::with_capacity(def.operand_widths.len());
+    let mut offset = pos + 1;
+    
+    for width in &def.operand_widths {
+        match width {
+            2 => {
+                let operand = (instructions[offset] as usize) << 8 | (instructions[offset + 1] as usize);
+                operands.push(operand);
+                offset += 2;
+            },
+            1 => {
+                let operand = instructions[offset] as usize;
+                operands.push(operand);
+                offset += 1;
+            },
+            _ => panic!("Unsupported operand width: {}", width),
+        }
+    }
+    
+    (operands, offset)
+}
+
+/// Bytecode is the output of the compiler
+#[derive(Debug, Clone)]
+pub struct Bytecode {
+    pub instructions: Instructions,
+    pub constants: Vec<Object>,
 }
 
 /// A compiled function
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompiledFunction {
-    /// The bytecode for the function
     pub instructions: Vec<u8>,
-    /// The number of local variables
-    pub num_locals: u8,
-    /// The number of parameters
-    pub num_parameters: u8,
-    /// Free variables for closures
+    pub num_locals: usize,
+    pub num_parameters: usize,
     pub free_variables: Vec<Object>,
-    /// Function name (optional)
     pub name: Option<String>,
 }
 
-impl CompiledFunction {
-    /// Create a new compiled function
-    ///
-    /// # Arguments
-    ///
-    /// * `instructions` - The bytecode instructions for the function
-    /// * `num_locals` - The number of local variables in the function
-    /// * `num_parameters` - The number of parameters the function accepts
-    ///
-    /// # Returns
-    ///
-    /// A new CompiledFunction instance
-    pub fn new(
-        instructions: Vec<u8>,
-        num_locals: u8,
-        num_parameters: u8,
-    ) -> Self {
-        Self {
-            instructions,
-            num_locals,
-            num_parameters,
-            free_variables: Vec::new(),
-            name: None,
-        }
-    }
-    
-    /// Create a compiled function with free variables for closures
-    pub fn with_free_vars(
-        instructions: Instructions, 
-        num_locals: usize, 
-        num_parameters: usize,
-        free_variables: Vec<Object>
-    ) -> Self {
-        Self {
-            instructions,
-            num_locals,
-            num_parameters,
-            free_variables,
-            name: None,
-        }
-    }
-    
-    /// Create a compiled function with a name
-    pub fn with_name(
-        instructions: Instructions, 
-        num_locals: usize, 
-        num_parameters: usize,
-        name: String
-    ) -> Self {
-        Self {
-            instructions,
-            num_locals,
-            num_parameters,
-            free_variables: Vec::new(),
-            name: Some(name),
-        }
-    }
-}
-
-/// A compilation scope
+/// An emitted instruction with opcode and position
 #[derive(Debug, Clone)]
-pub struct CompilationScope {
-    /// The instructions for this scope
-    pub instructions: Instructions,
-    /// The last instruction emitted
-    pub last_instruction: Instruction,
-    /// The previous instruction emitted
-    pub previous_instruction: Instruction,
-}
-
-impl Default for CompilationScope {
-    fn default() -> Self {
-        Self {
-            instructions: Instructions::new(),
-            last_instruction: Instruction::new(Opcode::Invalid, Vec::new()),
-            previous_instruction: Instruction::new(Opcode::Invalid, Vec::new()),
-        }
-    }
-}
-
-impl CompilationScope {
-    /// Create a new compilation scope
-    pub fn new() -> Self {
-        Self {
-            instructions: Vec::new(),
-            last_instruction: EmittedInstruction::default(),
-            previous_instruction: EmittedInstruction::default(),
-        }
-    }
-}
-
-/// Emitted instruction structure
-#[derive(Clone, Debug)]
 struct EmittedInstruction {
     opcode: Opcode,
     position: usize,
-}
-
-/// An instruction in the bytecode
-#[derive(Debug, Clone)]
-pub struct Instruction {
-    /// The opcode for this instruction
-    pub opcode: Opcode,
-    /// The operands for this instruction
-    pub operands: Vec<u16>,
-}
-
-impl Instruction {
-    /// Create a new instruction with the given opcode and operands
-    pub fn new(opcode: Opcode, operands: Vec<u16>) -> Self {
-        Self {
-            opcode,
-            operands,
-        }
-    }
-}
-
-impl EmittedInstruction {
-    /// Create a new emitted instruction
-    pub fn new(opcode: Opcode, position: usize) -> Self {
-        Self {
-            opcode,
-            position,
-        }
-    }
 }
 
 impl Default for EmittedInstruction {
@@ -177,28 +348,67 @@ impl Default for EmittedInstruction {
     }
 }
 
+/// An instruction in the bytecode
+#[derive(Debug, Clone)]
+pub struct Instruction {
+    pub opcode: Opcode,
+    pub operands: Vec<u16>,
+}
+
+impl Instruction {
+    pub fn new(opcode: Opcode, operands: Vec<u16>) -> Self {
+        Self { opcode, operands }
+    }
+}
+
+/// A compilation scope
+#[derive(Debug, Clone)]
+pub struct CompilationScope {
+    pub instructions: Instructions,
+    pub last_instruction: Instruction,
+    pub previous_instruction: Instruction,
+}
+
+impl Default for CompilationScope {
+    fn default() -> Self {
+        Self {
+            instructions: Vec::new(),
+            last_instruction: Instruction::new(Opcode::Invalid, Vec::new()),
+            previous_instruction: Instruction::new(Opcode::Invalid, Vec::new()),
+        }
+    }
+}
+
+/// The CURSED compiler
+pub struct Compiler {
+    constants: Vec<Object>,
+    symbol_table: Rc<RefCell<SymbolTable>>,
+    scopes: Vec<CompilationScope>,
+    scope_index: usize,
+}
+
 impl Compiler {
     /// Create a new compiler
     pub fn new() -> Self {
+        let symbol_table = Rc::new(RefCell::new(SymbolTable::new()));
+        
         Self {
-            instructions: Vec::new(),
             constants: Vec::new(),
-            symbol_table: Rc::new(RefCell::new(SymbolTable::new())),
-            scopes: vec![CompilationScope::new()],
+            symbol_table,
+            scopes: vec![CompilationScope::default()],
             scope_index: 0,
-            error_reporter: ErrorReporter::new(),
         }
     }
     
+    /// Create a compiler with a symbol table
+    pub fn with_state(symbol_table: SymbolTable, constants: Vec<Object>) -> Self {
+        let mut compiler = Self::new();
+        compiler.symbol_table = Rc::new(RefCell::new(symbol_table));
+        compiler.constants = constants;
+        compiler
+    }
+    
     /// Compile a program into bytecode
-    ///
-    /// # Arguments
-    ///
-    /// * `program` - The AST program to compile
-    ///
-    /// # Returns
-    ///
-    /// A result containing either the bytecode or an error
     pub fn compile(&mut self, program: &Program) -> Result<Bytecode, Error> {
         // Define built-in functions in the symbol table
         Self::define_builtins(&mut self.symbol_table.borrow_mut());
@@ -211,15 +421,21 @@ impl Compiler {
         Ok(self.bytecode())
     }
     
+    /// Initialize the compiler with built-in functions
+    fn define_builtins(symbol_table: &mut SymbolTable) {
+        // Define built-in functions in the symbol table
+        let builtins = vec![
+            "len", "first", "last", "rest", "push", "puts", "print",
+            "type", "input", "read_file", "write_file", "append_file",
+            "delete_file", "exists", "is_dir", "list_dir", "make_dir",
+        ];
+        
+        for (i, name) in builtins.iter().enumerate() {
+            symbol_table.define_builtin(i, name);
+        }
+    }
+    
     /// Compile a statement
-    ///
-    /// # Arguments
-    ///
-    /// * `statement` - The statement to compile
-    ///
-    /// # Returns
-    ///
-    /// A result indicating success or an error
     pub fn compile_statement(&mut self, stmt: &dyn Statement) -> Result<(), Error> {
         if let Some(expr_stmt) = stmt.as_any().downcast_ref::<ast::ExpressionStatement>() {
             // Compile expression statements
@@ -273,9 +489,6 @@ impl Compiler {
         } else if let Some(if_stmt) = stmt.as_any().downcast_ref::<ast::IfStatement>() {
             // Compile if statements
             self.compile_if_statement(if_stmt)
-        } else if let Some(while_stmt) = stmt.as_any().downcast_ref::<ast::WhileStatement>() {
-            // Compile while statements
-            self.compile_while_statement(while_stmt)
         } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
             // Compile block statements
             self.compile_block_statement(block_stmt)
@@ -286,31 +499,6 @@ impl Compiler {
                 None,
             ))
         }
-    }
-
-    /// Compile a while statement (periodt in CURSED)
-    pub fn compile_while_statement(&mut self, while_stmt: &ast::WhileStatement) -> Result<(), Error> {
-        // Record the position of the start of the loop
-        let loop_start_pos = self.current_instructions().len();
-        
-        // Compile the condition expression
-        self.compile_expression(&*while_stmt.condition)?;
-        
-        // Emit a jump-if-not-truthy instruction to exit the loop
-        // We don't know the jump offset yet, so use a placeholder
-        let jump_not_truthy_pos = self.emit(Opcode::JumpNotTruthy, vec![9999]);
-        
-        // Compile the loop body
-        self.compile_block_statement(&while_stmt.body)?;
-        
-        // Jump back to the start of the loop to check the condition again
-        self.emit(Opcode::Jump, vec![loop_start_pos]);
-        
-        // Update the JumpNotTruthy instruction with the correct exit point
-        let after_loop_pos = self.current_instructions().len();
-        self.change_operand(jump_not_truthy_pos, after_loop_pos);
-        
-        Ok(())
     }
 
     /// Compile an if statement
@@ -355,18 +543,6 @@ impl Compiler {
         Ok(())
     }
     
-    /// Change an operand at the given position
-    pub fn change_operand(&mut self, op_pos: usize, operand: usize) {
-        let op: Opcode = self.current_instructions()[op_pos].into();
-        let new_instruction = bytecode::make(op, &[operand]);
-        
-        // Replace the instruction at op_pos with the new one
-        let instructions = self.current_instructions_mut();
-        for (i, byte) in new_instruction.iter().enumerate() {
-            instructions[op_pos + i] = *byte;
-        }
-    }
-
     /// Compile an expression
     pub fn compile_expression(&mut self, expr: &dyn Expression) -> Result<(), Error> {
         // Use dynamic dispatch to handle each expression type
@@ -425,38 +601,6 @@ impl Compiler {
                     self.emit(Opcode::CurrentClosure, vec![]);
                 }
             }
-            Ok(())
-        } else if let Some(assignment_expr) = expr.as_any().downcast_ref::<ast::AssignmentExpression>() {
-            // Compile assignment expressions
-            
-            // Compile the right side expression first
-            self.compile_expression(&*assignment_expr.value)?;
-            
-            // Get the symbol for the variable being assigned
-            let symbol = match self.symbol_table.borrow_mut().resolve(&assignment_expr.name.value) {
-                Some(symbol) => symbol,
-                None => {
-                    // If symbol doesn't exist, define it in the current scope
-                    self.symbol_table.borrow_mut().define(&assignment_expr.name.value)
-                }
-            };
-            
-            // Emit the appropriate opcode based on scope
-            match symbol.scope {
-                SymbolScope::Global => {
-                    self.emit(Opcode::SetGlobal, vec![symbol.index]);
-                }
-                SymbolScope::Local => {
-                    self.emit(Opcode::SetLocal, vec![symbol.index]);
-                }
-                _ => {
-                    return Err(Error::from_str(
-                        &format!("Cannot assign to {:?}", symbol.scope),
-                        None,
-                    ));
-                }
-            }
-            
             Ok(())
         } else if let Some(prefix_expr) = expr.as_any().downcast_ref::<ast::PrefixExpression>() {
             // Compile prefix expressions (like "!x" or "-y")
@@ -581,115 +725,8 @@ impl Compiler {
             ))
         }
     }
-
-    /// Add a constant to the constants pool
-    pub fn add_constant(&mut self, obj: Object) -> usize {
-        self.constants.push(obj);
-        self.constants.len() - 1
-    }
-
-    /// Emit an instruction
-    pub fn emit(&mut self, op: Opcode, operands: Vec<usize>) -> usize {
-        let pos = self.current_instructions().len();
-        let operands_slice: &[usize] = operands.as_slice();
-        let mut ins = bytecode::make(op, operands_slice);
-        self.current_instructions_mut().extend(&ins);
-        
-        self.set_last_instruction(op, pos);
-        
-        pos
-    }
-
-    /// Get the current instructions
-    pub fn current_instructions(&self) -> &Instructions {
-        &self.scopes[self.scope_index].instructions
-    }
-
-    /// Get the current instructions as mutable
-    pub fn current_instructions_mut(&mut self) -> &mut Instructions {
-        &mut self.scopes[self.scope_index].instructions
-    }
-
-    /// Set the last instruction
-    pub fn set_last_instruction(&mut self, op: Opcode, pos: usize) {
-        // Create emitted instruction
-        let emitted = EmittedInstruction {
-            opcode: op,
-            position: pos,
-        };
-        
-        // Get the operands from the bytecode
-        let mut operands = Vec::new();
-        if let Some(def) = get_definition(op) {
-            // Extract operands based on the definition
-            let (extracted, _) = bytecode::read_operand(&def, self.current_instructions(), pos);
-            operands = extracted.into_iter().map(|o| o as u16).collect();
-        }
-        
-        // Update the scope's instructions
-        let scope = &mut self.scopes[self.scope_index];
-        scope.previous_instruction = scope.last_instruction.clone();
-        scope.last_instruction = Instruction {
-            opcode: op,
-            operands,
-        };
-    }
-
-    /// Get the definition for an opcode
-    fn get_definition(op: Opcode) -> Option<bytecode::Definition> {
-        Some(bytecode::lookup(op))
-    }
-
-    /// Enter a new scope
-    fn enter_scope(&mut self) {
-        let scope = CompilationScope::default();
-        self.scopes.push(scope);
-        self.scope_index += 1;
-        
-        // Create a new symbol table with the current one as its outer scope
-        let outer = std::mem::replace(&mut self.symbol_table, Rc::new(RefCell::new(SymbolTable::new())));
-        self.symbol_table = Rc::new(RefCell::new(SymbolTable::new_enclosed(outer.borrow().clone())));
-    }
     
-    /// Leave the current scope and return to the outer scope
-    fn leave_scope(&mut self) -> Instructions {
-        let instructions = self.current_instructions().clone();
-        
-        // Remove the current scope
-        self.scopes.pop();
-        self.scope_index -= 1;
-        
-        // Restore the outer symbol table
-        if let Some(outer) = self.symbol_table.borrow_mut().take_outer() {
-            self.symbol_table = Rc::new(RefCell::new(outer.clone()));
-        }
-        
-        instructions
-    }
-    
-    /// Provide a ByteCode object from the current compiler state
-    pub fn bytecode(&self) -> Bytecode {
-        Bytecode {
-            instructions: self.current_instructions().clone(),
-            constants: self.constants.clone(),
-        }
-    }
-
-    /// Initialize the compiler with built-in functions
-    fn define_builtins(symbol_table: &mut SymbolTable) {
-        // Define built-in functions in the symbol table
-        let builtins = vec![
-            "len", "first", "last", "rest", "push", "puts", "print",
-            "type", "input", "read_file", "write_file", "append_file",
-            "delete_file", "exists", "is_dir", "list_dir", "make_dir",
-        ];
-        
-        for (i, name) in builtins.iter().enumerate() {
-            symbol_table.define_builtin(i, name);
-        }
-    }
-
-    /// Compile a function literal to bytecode
+    /// Compile a function literal
     pub fn compile_function_literal(&mut self, func: &ast::FunctionLiteral) -> Result<(), Error> {
         // Enter a new scope for the function body
         self.enter_scope();
@@ -715,21 +752,21 @@ impl Compiler {
         
         // Get the local binding count and free variables
         let num_locals = self.symbol_table.borrow().num_definitions;
-        let free_symbols = self.symbol_table.borrow().free_symbols().to_vec();
+        let free_symbols = self.symbol_table.borrow().free_symbols.clone();
         let num_params = func.parameters.len();
         
         // Capture the compiled instructions and leave the function's scope
         let instructions = self.leave_scope();
         
         // Create a compiled function object
-        let compiled_func = Object::CompiledFunction {
+        let function_obj = Object::CompiledFunction {
             instructions,
             num_locals,
             num_parameters: num_params,
         };
         
         // Add the function to constants
-        let fn_index = self.add_constant(compiled_func);
+        let fn_index = self.add_constant(function_obj);
         
         // If we have free variables (for closures), handle them
         if !free_symbols.is_empty() {
@@ -763,7 +800,93 @@ impl Compiler {
         
         Ok(())
     }
-
+    
+    /// Add a constant to the constants pool
+    pub fn add_constant(&mut self, obj: Object) -> usize {
+        self.constants.push(obj);
+        self.constants.len() - 1
+    }
+    
+    /// Emit an instruction
+    pub fn emit(&mut self, op: Opcode, operands: Vec<usize>) -> usize {
+        let pos = self.current_instructions().len();
+        let operands_slice: &[usize] = operands.as_slice();
+        let mut ins = make(op, operands_slice);
+        self.current_instructions_mut().extend(&ins);
+        
+        // Update the last instruction info
+        self.set_last_instruction(op, pos);
+        
+        pos
+    }
+    
+    /// Set the last instruction
+    pub fn set_last_instruction(&mut self, op: Opcode, pos: usize) {
+        // Create emitted instruction
+        let emitted = EmittedInstruction {
+            opcode: op,
+            position: pos,
+        };
+        
+        // Get the operands from the bytecode
+        let mut operands = Vec::new();
+        if let Ok(def) = read_definition(op) {
+            // Extract operands based on the definition
+            let (extracted, _) = read_operand(&def, self.current_instructions(), pos);
+            operands = extracted.into_iter().map(|o| o as u16).collect();
+        }
+        
+        // Update the scope's instructions
+        let scope = &mut self.scopes[self.scope_index];
+        scope.previous_instruction = scope.last_instruction.clone();
+        scope.last_instruction = Instruction {
+            opcode: op,
+            operands,
+        };
+    }
+    
+    /// Read definition for an opcode
+    fn read_definition(op: Opcode) -> Result<Definition, String> {
+        Ok(lookup(op))
+    }
+    
+    /// Get the current instructions
+    pub fn current_instructions(&self) -> &Instructions {
+        &self.scopes[self.scope_index].instructions
+    }
+    
+    /// Get a mutable reference to the current instructions
+    pub fn current_instructions_mut(&mut self) -> &mut Instructions {
+        &mut self.scopes[self.scope_index].instructions
+    }
+    
+    /// Enter a new scope
+    fn enter_scope(&mut self) {
+        let scope = CompilationScope::default();
+        self.scopes.push(scope);
+        self.scope_index += 1;
+        
+        // Create a new symbol table with the current one as its outer scope
+        let outer = Rc::clone(&self.symbol_table);
+        self.symbol_table = Rc::new(RefCell::new(SymbolTable::with_outer(outer.borrow().clone())));
+    }
+    
+    /// Leave the current scope and return to the outer scope
+    fn leave_scope(&mut self) -> Instructions {
+        let instructions = self.current_instructions().clone();
+        
+        // Remove the current scope
+        self.scopes.pop();
+        self.scope_index -= 1;
+        
+        // Restore the outer symbol table
+        if let Some(outer) = self.symbol_table.borrow_mut().outer.clone() {
+            self.symbol_table = Rc::new(RefCell::new(*outer));
+        }
+        
+        instructions
+    }
+    
     /// Check if the last instruction is of the given opcode
     fn last_instruction_is(&self, op: Opcode) -> bool {
         let current_scope = &self.scopes[self.scope_index];
@@ -772,37 +895,47 @@ impl Compiler {
         }
         current_scope.last_instruction.opcode == op
     }
-
+    
     /// Replace the last Pop instruction with a ReturnValue
     fn replace_last_pop_with_return(&mut self) {
         let last_pos = {
             let current_scope = &self.scopes[self.scope_index];
-            current_scope.last_instruction.position
+            let position = match current_scope.last_instruction.opcode {
+                Opcode::Pop => current_scope.last_instruction.operands.first().map_or(0, |&op| op as usize),
+                _ => 0,
+            };
+            position
         };
         
         // Replace the opcode at last_pos with ReturnValue
-        self.current_instructions_mut()[last_pos] = Opcode::ReturnValue as u8;
+        if last_pos < self.current_instructions().len() {
+            self.current_instructions_mut()[last_pos] = Opcode::ReturnValue as u8;
+        }
         
         // Update the last instruction
         let current_scope = &mut self.scopes[self.scope_index];
         current_scope.last_instruction.opcode = Opcode::ReturnValue;
     }
-}
-
-// Compiler module for the CURSED language
-// 
-// This module contains the implementation of the compiler that transforms the AST
-// into bytecode that can be executed by the VM.
-//
-// The compiler implements the following features:
-// - Compilation of literal expressions (integers, floats, strings, booleans)
-// - Compilation of prefix expressions (negation, boolean not)
-// - Compilation of infix expressions (arithmetic, comparison)
-// - Compilation of call expressions (function calls)
-// - Compilation of index expressions (array/hash indexing)
-//
-// TODO: Remaining to implement:
-// - Compilation of statements (let, return, if, block)
-// - Support for let bindings and scoping
-// - Support for function declarations and closures
-// - Error reporting improvements 
+    
+    /// Change an operand at the given position
+    pub fn change_operand(&mut self, op_pos: usize, operand: usize) {
+        let op: Opcode = self.current_instructions()[op_pos].into();
+        let new_instruction = make(op, &[operand]);
+        
+        // Replace the instruction at op_pos with the new one
+        let instructions = self.current_instructions_mut();
+        for (i, byte) in new_instruction.iter().enumerate() {
+            if op_pos + i < instructions.len() {
+                instructions[op_pos + i] = *byte;
+            }
+        }
+    }
+    
+    /// Get the bytecode from the current compiler state
+    pub fn bytecode(&self) -> Bytecode {
+        Bytecode {
+            instructions: self.current_instructions().clone(),
+            constants: self.constants.clone(),
+        }
+    }
+} 

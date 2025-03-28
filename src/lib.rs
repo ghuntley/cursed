@@ -27,8 +27,10 @@ pub mod compiler {
         pub use crate::symbol::{Symbol, SymbolScope, SymbolTable};
     }
     
+    // Re-export from bytecode module
     pub type Instructions = Vec<u8>;
     
+    /// Bytecode operation codes
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum Opcode {
         Invalid = 0,
@@ -56,10 +58,20 @@ pub mod compiler {
             }
         }
         
-
-        pub fn compile_program(&mut self, _program: &crate::ast::Program) -> Result<Bytecode, crate::error::Error> {
+        // Compile a program
+        pub fn compile_program(&mut self, program: &crate::ast::Program) -> Result<Bytecode, crate::error::Error> {
+            for stmt in &program.statements {
+                self.compile_statement(&**stmt)?;
+            }
             Ok(self.bytecode())
         }
+        
+        // Compile a statement
+        fn compile_statement(&mut self, stmt: &dyn crate::ast::Statement) -> Result<(), crate::error::Error> {
+            // Stub implementation
+            Ok(())
+        }
+        
         pub fn bytecode(&self) -> Bytecode {
             Bytecode {
                 instructions: self.instructions.clone(),
@@ -237,4 +249,5 @@ pub use memory::gc::{Traceable, Visitor, GarbageCollector, Gc};
 pub fn run_repl() -> Result<(), Error> {
     repl::start_repl()
 }
+
 

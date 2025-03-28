@@ -1,0 +1,1 @@
+use cursed::lexer::Lexer; use cursed::lexer::Token; fn main() { let input = "periodt x < 10 { x = x + 1; }"; let mut lexer = Lexer::new(input); loop { match lexer.next_token() { Ok(token) => { println!("{:?}", token); if token == Token::Eof { break; } }, Err(e) => { println!("Error: {:?}", e); break; } } } }

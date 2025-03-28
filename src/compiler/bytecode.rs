@@ -480,4 +480,141 @@ impl Instructions {
     pub fn new() -> Self {
         Vec::new()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    // Strategy to generate valid opcodes
+    fn opcode_strategy() -> impl Strategy<Value = Opcode> {
+        (0..=0x32u8).prop_map(|b| {
+            // Safety: We ensure we don't go beyond the known opcodes
+            if b <= 0x32 {
+                Opcode::from(b)
+            } else {
+                Opcode::Invalid
+            }
+        })
+    }
+
+    // Strategy to generate valid bytecode instructions
+    fn instruction_strategy() -> impl Strategy<Value = (Opcode, Vec<usize>)> {
+        opcode_strategy().prop_flat_map(|op| {
+            let def = lookup(op);
+            let operand_strat = match def.operand_widths.len() {
+                0 => proptest::collection::vec(0usize, 0..0).boxed(),
+                1 => {
+                    if def.operand_widths[0] == 1 {
+                        proptest::collection::vec(0..=255usize, 1).boxed()
+                    } else {
+                        proptest::collection::vec(0..=65535usize, 1).boxed()
+                    }
+                }
+                2 => {
+                    let first = if def.operand_widths[0] == 1 {
+                        0..=255usize
+                    } else {
+                        0..=65535usize
+                    };
+                    let second = if def.operand_widths[1] == 1 {
+                        0..=255usize
+                    } else {
+                        0..=65535usize
+                    };
+                    (first, second).prop_map(|(a, b)| vec![a, b]).boxed()
+                }
+                _ => proptest::collection::vec(0usize, 0..0).boxed(),
+            };
+            operand_strat.prop_map(move |operands| (op, operands))
+        })
+    }
+
+    proptest! {
+        // Test that instruction encoding and decoding are inverses
+        #[test]
+        fn test_make_and_read_operands_are_inverse(
+            (op, operands) in instruction_strategy()
+        ) {
+            let instruction = make(op, &operands);
+            let def = lookup(op);
+            
+            // Skip if the definition doesn't match our generated operands
+            if def.operand_widths.len() == operands.len() {
+                let (decoded_operands, _) = read_operand(&def, &instruction, 0);
+                prop_assert_eq!(operands, decoded_operands);
+            }
+        }
+
+        // Test that opcode conversion is bijective
+        #[test]
+        fn test_opcode_conversion_bijective(op in opcode_strategy()) {
+            let byte: u8 = op.into();
+            let converted_back = Opcode::from(byte);
+            prop_assert_eq!(op, converted_back);
+        }
+
+        // Test that all instructions have valid definitions
+        #[test]
+        fn test_all_opcodes_have_valid_definitions(op in opcode_strategy()) {
+            let def = lookup(op);
+            prop_assert!(!def.name.is_empty(), "Opcode {:?} has no name", op);
+            
+            // Definitions should have consistent operand widths
+            for width in &def.operand_widths {
+                prop_assert!(*width == 1 || *width == 2, 
+                    "Opcode {:?} has invalid operand width {}", op, width);
+            }
+        }
+        
+        // Test that instruction lengths are correct
+        #[test]
+        fn test_instruction_length_is_correct(op in opcode_strategy(), operand in 0usize..65535usize) {
+            let def = lookup(op);
+            
+            // Skip if the opcode doesn't take operands
+            if !def.operand_widths.is_empty() {
+                let instruction = make(op, &[operand]);
+                let expected_len = 1 + def.operand_widths.iter().sum::<usize>();
+                
+                prop_assert_eq!(expected_len, instruction.len());
+            }
+        }
+        
+        // Test that multiple operands are encoded/decoded correctly
+        #[test]
+        fn test_multi_operand_encoding_decoding(operand1 in 0usize..65535usize, operand2 in 0usize..255usize) {
+            // We'll test with opcodes that can take multiple operands (like Closure)
+            let op = Opcode::Closure; // This opcode has 2 operands
+            let def = lookup(op);
+            
+            if def.operand_widths.len() == 2 {
+                let instruction = make(op, &[operand1, operand2]);
+                let (operands, _) = read_operand(&def, &instruction, 0);
+                
+                prop_assert_eq!(operand1, operands[0]);
+                prop_assert_eq!(operand2, operands[1]);
+            }
+        }
+    }
+    
+    #[test]
+    fn test_make_simple() {
+        let instructions = make(Opcode::Constant, &[1]);
+        assert_eq!(vec![Opcode::Constant as u8, 0, 1], instructions);
+        
+        let instructions = make(Opcode::Add, &[]);
+        assert_eq!(vec![Opcode::Add as u8], instructions);
+    }
+    
+    #[test]
+    fn test_read_operand() {
+        let instructions = vec![Opcode::Constant as u8, 0, 1];
+        let def = lookup(Opcode::Constant);
+        let (operands, bytes_read) = read_operand(&def, &instructions, 0);
+        
+        assert_eq!(vec![1], operands);
+        assert_eq!(2, bytes_read);
+    }
 } 
