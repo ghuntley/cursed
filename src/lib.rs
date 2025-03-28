@@ -88,6 +88,25 @@ pub mod compiler {
         pub num_parameters: u8,
         pub name: Option<String>,
     }
+    
+    // Include tests here
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::ast::{Expression, ExpressionStatement, IntegerLiteral, Program, Statement};
+        use crate::lexer::Lexer;
+        use crate::object::Object;
+        use crate::parser::Parser;
+        
+        #[test]
+        fn test_basic_compiler() {
+            // Simple test for the stub compiler
+            let program = Program { statements: vec![] };
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok());
+        }
+    }
 }
 
 pub mod memory {
