@@ -106,13 +106,13 @@ impl CompiledFunction {
 
 /// A compilation scope
 #[derive(Debug, Clone)]
-struct CompilationScope {
+pub struct CompilationScope {
     /// The instructions for this scope
-    instructions: Instructions,
+    pub instructions: Instructions,
     /// The last instruction emitted
-    last_instruction: Instruction,
+    pub last_instruction: Instruction,
     /// The previous instruction emitted
-    previous_instruction: Instruction,
+    pub previous_instruction: Instruction,
 }
 
 impl Default for CompilationScope {
@@ -162,6 +162,25 @@ impl Instruction {
     }
 }
 
+impl EmittedInstruction {
+    /// Create a new emitted instruction
+    pub fn new(opcode: Opcode, position: usize) -> Self {
+        Self {
+            opcode,
+            position,
+        }
+    }
+}
+
+impl Default for EmittedInstruction {
+    fn default() -> Self {
+        Self {
+            opcode: Opcode::Invalid,
+            position: 0,
+        }
+    }
+}
+
 impl Compiler {
     /// Create a new compiler
     pub fn new() -> Self {
@@ -190,7 +209,7 @@ impl Compiler {
         }
         
         Ok(Bytecode {
-            instructions: self.instructions.clone(),
+            instructions: self.current_instructions().clone(),
             constants: self.constants.clone(),
         })
     }
@@ -204,8 +223,8 @@ impl Compiler {
     /// # Returns
     ///
     /// A result indicating success or an error
-    fn compile_statement(&mut self, _statement: &dyn Statement) -> Result<(), Error> {
-        // Placeholder implementation
+    fn compile_statement(&mut self, statement: &dyn Statement) -> Result<(), Error> {
+        // Stub implementation
         Ok(())
     }
 

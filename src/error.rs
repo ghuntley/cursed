@@ -38,6 +38,16 @@ impl SourceLocation {
     pub fn file(&self) -> Option<&str> {
         self.file.as_deref()
     }
+
+    /// Create a default source location (0, 0)
+    pub fn default() -> Self {
+        Self {
+            line: 0,
+            column: 0,
+            file: None,
+            source_line: String::new(),
+        }
+    }
 }
 
 impl fmt::Display for SourceLocation {
@@ -379,6 +389,11 @@ impl Error {
             Error::Syntax { location, .. } => Some(location.clone()),
             _ => None,
         }
+    }
+
+    /// Create a 'not implemented' error
+    pub fn NotImplemented<T: Into<String>>(message: T, location: SourceLocation) -> Self {
+        Error::Unknown(format!("Not implemented: {}", message.into()))
     }
 }
 

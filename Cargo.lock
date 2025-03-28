@@ -277,6 +277,7 @@ dependencies = [
  "criterion",
  "dirs",
  "env_logger",
+ "libc",
  "log",
  "num-traits",
  "pretty_assertions",

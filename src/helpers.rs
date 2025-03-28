@@ -1,0 +1,62 @@
+// Utility functions for CURSED language
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
+use crate::object::Object;
+
+/// Check if a value is truthy
+pub fn is_truthy(obj: &Object) -> bool {
+    match obj {
+        Object::Boolean(b) => *b,
+        Object::Null => false,
+        Object::Integer(i) => *i != 0,
+        _ => true,
+    }
+}
+
+/// Check if two objects are equal
+pub fn objects_equal(left: &Object, right: &Object) -> bool {
+    match (left, right) {
+        (Object::Integer(l), Object::Integer(r)) => l == r,
+        (Object::Float(l), Object::Float(r)) => l == r,
+        (Object::Boolean(l), Object::Boolean(r)) => l == r,
+        (Object::String(l), Object::String(r)) => l == r,
+        _ => std::ptr::eq(left, right),
+    }
+}
+
+/// Create a cached string
+pub fn new_string(value: &str) -> Rc<Object> {
+    thread_local! {
+        static STRING_CACHE: RefCell<HashMap<String, Rc<Object>>> = RefCell::new(HashMap::new());
+    }
+    
+    STRING_CACHE.with(|cache| {
+        let mut cache = cache.borrow_mut();
+        if let Some(cached) = cache.get(value) {
+            cached.clone()
+        } else {
+            let s = Rc::new(Object::String(value.to_string()));
+            cache.insert(value.to_string(), s.clone());
+            s
+        }
+    })
+}
+
+/// Format an object for display
+pub fn format_object(obj: &Object) -> String {
+    match obj {
+        Object::Integer(i) => i.to_string(),
+        Object::Float(f) => f.to_string(),
+        Object::Boolean(b) => b.to_string(),
+        Object::String(s) => s.clone(),
+        Object::Null => "null".to_string(),
+        Object::Array(arr) => {
+            let elements: Vec<String> = arr.iter()
+                .map(|obj| format_object(obj))
+                .collect();
+            format!("[{}]", elements.join(", "))
+        }
+        _ => format!("{:?}", obj),
+    }
+} 

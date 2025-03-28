@@ -17,8 +17,9 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::ptr::NonNull;
-use crate::prelude::{VecExt, RawPtrExt, VecStrJoinExt, StrCharsExt};
-use crate::memory::Trace;
+use crate::prelude::{VecExt, StrExt};
+use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};
+use crate::memory::gc::Trace;
 use crate::memory::Traceable;
 use crate::memory::Visitor;
 use crate::memory::tagged::{TaggedDynPtr};
@@ -27,6 +28,8 @@ use crate::vm::ErrorLocation;
 use crate::error::Error;
 use std::str;
 use std::cell::RefCell;
+use num_traits::{FromPrimitive, ToPrimitive};
+use std::cell::{Ref, RefMut};
 
 /// Object represents a runtime value
 #[derive(Debug, Clone, PartialEq)]
@@ -60,36 +63,37 @@ pub enum Object {
 }
 
 impl Trace for Object {
+}
+
+impl Traceable for Object {
     fn trace(&self, visitor: &mut dyn Visitor) {
         match self {
-            Object::Array(objs) => {
-                for obj in objs.iter() {
-                    Trace::trace(obj, visitor);
+            Object::Array(arr) => {
+                for obj in arr {
+                    visitor.visit(obj);
                 }
             },
-            Object::HashTable(pairs) => {
-                for (_, value) in pairs.iter() {
-                    Trace::trace(value, visitor);
+            Object::HashTable(map) => {
+                for obj in map.values() {
+                    visitor.visit(obj);
                 }
             },
             Object::Closure { function, free_vars } => {
                 visitor.visit_ptr(Rc::as_ptr(function) as usize, crate::memory::tagged::Tag::Function);
                 for var in free_vars {
-                    Trace::trace(var, visitor);
+                    visitor.visit(var);
                 }
             },
             Object::Instance { struct_type, fields } => {
-                Trace::trace(struct_type.as_ref(), visitor);
+                visitor.visit(struct_type.as_ref());
                 for (_, value) in fields.iter() {
-                    Trace::trace(value, visitor);
+                    visitor.visit(value);
                 }
             },
             _ => {}
         }
     }
-}
-
-impl Traceable for Object {
+    
     fn size(&self) -> usize {
         match self {
             Object::Integer(_) => std::mem::size_of::<i64>(),
@@ -105,7 +109,7 @@ impl Traceable for Object {
                     key_size
             },
             Object::CompiledFunction(_) => std::mem::size_of::<Rc<CompiledFunction>>() + std::mem::size_of::<CompiledFunction>(),
-            Object::Closure { function, free_vars } => {
+            Object::Closure { function: _, free_vars } => {
                 std::mem::size_of::<Rc<CompiledFunction>>() + 
                 std::mem::size_of::<Vec<Object>>() + 
                 (free_vars.capacity() * std::mem::size_of::<Object>())
@@ -115,7 +119,7 @@ impl Traceable for Object {
                 std::mem::size_of::<Vec<(String, String)>>() + 
                 fields.iter().map(|(n, t)| n.capacity() + t.capacity() + std::mem::size_of::<(String, String)>()).sum::<usize>()
             },
-            Object::Instance { struct_type, fields } => {
+            Object::Instance { struct_type: _, fields } => {
                 std::mem::size_of::<Rc<Object>>() +
                 std::mem::size_of::<HashMap<String, Object>>() +
                 fields.keys().map(|k| k.capacity()).sum::<usize>() +
@@ -129,10 +133,6 @@ impl Traceable for Object {
             },
             Object::Null => 0,
         }
-    }
-
-    fn trace(&self, visitor: &mut dyn Visitor) {
-        Trace::trace(self, visitor);
     }
 }
 
@@ -630,5 +630,29 @@ impl From<(Rc<CompiledFunction>, Vec<Object>)> for Object {
 impl From<char> for Object {
     fn from(val: char) -> Self {
         Object::Char(val)
+    }
+}
+
+// Extension method for accessing Object as traceable
+pub trait ObjectTraceableExt {
+    fn as_traceable(&self) -> Option<NonNull<dyn Traceable>>;
+}
+
+impl ObjectTraceableExt for Object {
+    fn as_traceable(&self) -> Option<NonNull<dyn Traceable>> {
+        match self {
+            Object::Array(_) | 
+            Object::HashTable(_) |
+            Object::CompiledFunction(_) |
+            Object::Closure { .. } |
+            Object::Instance { .. } => {
+                // Using a safer approach for casting to trait object
+                let reference: &dyn Traceable = self;
+                let ptr = reference as *const dyn Traceable as *mut dyn Traceable;
+                // A reference is never null, so we can safely create a NonNull
+                unsafe { Some(NonNull::new_unchecked(ptr)) }
+            },
+            _ => None
+        }
     }
 } 

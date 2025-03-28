@@ -367,6 +367,79 @@ impl<'a> Lexer<'a> {
     fn is_digit(ch: char) -> bool {
         ch >= '0' && ch <= '9'
     }
+    
+    /// Check if the current character is a digit
+    pub fn is_current_digit(&self) -> bool {
+        match self.ch {
+            Some(ch) => Self::is_digit(ch),
+            None => false,
+        }
+    }
+}
+
+impl Token {
+    /// Get the literal value of the token as a string
+    pub fn token_literal(&self) -> String {
+        match self {
+            Token::Identifier(s) => s.clone(),
+            Token::String(s) => s.clone(),
+            Token::Int(i) => i.to_string(),
+            Token::Float(f) => f.to_string(),
+            Token::Illegal(s) => s.clone(),
+            // Default literals for non-literal tokens
+            Token::Assign => "=".to_string(),
+            Token::Plus => "+".to_string(),
+            Token::Minus => "-".to_string(),
+            Token::Bang => "!".to_string(),
+            Token::Asterisk => "*".to_string(),
+            Token::Slash => "/".to_string(),
+            Token::Lt => "<".to_string(),
+            Token::Gt => ">".to_string(),
+            Token::Eq => "==".to_string(),
+            Token::NotEq => "!=".to_string(),
+            Token::LtEq => "<=".to_string(),
+            Token::GtEq => ">=".to_string(),
+            Token::Comma => ",".to_string(),
+            Token::Semicolon => ";".to_string(),
+            Token::Colon => ":".to_string(),
+            Token::LParen => "(".to_string(),
+            Token::RParen => ")".to_string(),
+            Token::LBrace => "{".to_string(),
+            Token::RBrace => "}".to_string(),
+            Token::LBracket => "[".to_string(),
+            Token::RBracket => "]".to_string(),
+            Token::Dot => ".".to_string(),
+            Token::Vibe => "vibe".to_string(),
+            Token::Yeet => "yeet".to_string(),
+            Token::Slay => "slay".to_string(),
+            Token::Sus => "sus".to_string(),
+            Token::Facts => "facts".to_string(),
+            Token::Lowkey => "lowkey".to_string(),
+            Token::Highkey => "highkey".to_string(),
+            Token::Bestie => "bestie".to_string(),
+            Token::Periodt => "periodt".to_string(),
+            Token::VibeCheck => "vibe_check".to_string(),
+            Token::Mood => "mood".to_string(),
+            Token::Basic => "basic".to_string(),
+            Token::Ghosted => "ghosted".to_string(),
+            Token::Simp => "simp".to_string(),
+            Token::BeLike => "be_like".to_string(),
+            Token::Squad => "squad".to_string(),
+            Token::Collab => "collab".to_string(),
+            Token::Tea => "tea".to_string(),
+            Token::Dm => "dm".to_string(),
+            Token::Stan => "stan".to_string(),
+            Token::Flex => "flex".to_string(),
+            Token::Later => "later".to_string(),
+            Token::Yolo => "yolo".to_string(),
+            Token::Based => "based".to_string(),
+            Token::Cap => "cap".to_string(),
+            Token::LineComment => "fr fr".to_string(),
+            Token::BlockCommentStart => "no cap".to_string(),
+            Token::BlockCommentEnd => "on god".to_string(),
+            Token::Eof => "".to_string(),
+        }
+    }
 }
 
 #[cfg(test)]

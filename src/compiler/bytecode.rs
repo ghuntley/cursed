@@ -1,11 +1,11 @@
 use crate::object::Object;
 use std::fmt;
 
-/// Bytecode representation
-#[derive(Clone, Debug, PartialEq)]
+/// Bytecode structure containing compiled code
+#[derive(Debug, Clone)]
 pub struct Bytecode {
     pub instructions: Instructions,
-    pub constants: Vec<Object>,
+    pub constants: Vec<crate::object::Object>,
 }
 
 /// Bytecode Instructions

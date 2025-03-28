@@ -1,6 +1,4 @@
-Study requirements at specs/
-Study implementation at src/
-Implement what is not implemented in src/ and keep IMPLEMENTATION_STATUS.md up-to-date.
-IMPORTANT run build and tests after each change.
-
+run "cargo build" and "cargo test" to ensure the code is working.
+think about the code in the context of the requirements ("specs/") and implementation ("src/").
+make one change that resolves the most compilation errors
 

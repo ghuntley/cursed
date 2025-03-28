@@ -18,6 +18,7 @@ log = "0.4"  # Logging facade
 env_logger = "0.10"  # Logging implementation
 dirs = "5.0"  # For finding home directory
 num-traits = "0.2"  # For numerical traits
+libc = "0.2"  # For C functions like strlen
 
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking
