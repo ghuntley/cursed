@@ -379,8 +379,130 @@ impl<'a> Parser<'a> {
     
     /// Parse a for statement
     pub fn parse_for_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("For statement parsing not implemented yet"))
+        let token = self.current_token.token_literal(); // 'bestie' token
+        
+        // Initialize optional parts
+        let mut init: Option<Box<dyn Statement>> = None;
+        let mut condition: Option<Box<dyn Expression>> = None;
+        let mut post: Option<Box<dyn Statement>> = None;
+
+        // Look ahead to determine the form of the for loop
+        // The structure depends on whether the next token after 'bestie' is '{' or something else
+        self.next_token()?; // Consume 'bestie'
+
+        // Case 1: Infinite loop - bestie { body }
+        if self.current_token == Token::LBrace {
+            let body = self.parse_block_statement()?;
+            return Ok(Box::new(ast::ForStatement {
+                token,
+                init: None,
+                condition: None,
+                post: None,
+                body,
+            }));
+        }
+
+        // Case 2 or 3: Condition-only or C-style
+        // We need to check for semicolons to distinguish
+        
+        // Try parsing the first part (could be init statement or condition expression)
+        // We can't immediately tell if it's an init statement or condition expression
+        // Let's try parsing as an expression first. If the next token is a semicolon, it might be C-style.
+        let first_part_is_expression = !matches!(self.current_token, Token::Sus | Token::Facts);
+        
+        if first_part_is_expression {
+            // Could be condition (e.g., bestie i < 10 {...}) or start of C-style (e.g., bestie i = 0; ...)
+            condition = Some(self.parse_expression(Precedence::Lowest)?);
+            
+            // If the next token is '{', it's a condition-only loop
+            if self.current_token == Token::LBrace {
+                 let body = self.parse_block_statement()?;
+                 return Ok(Box::new(ast::ForStatement {
+                     token,
+                     init: None,
+                     condition,
+                     post: None,
+                     body,
+                 }));
+            }
+            
+            // If the next token is ';', it must be C-style, and what we parsed was the condition
+            if self.current_token == Token::Semicolon {
+                 self.next_token()?; // Consume ';'
+                 
+                 // Parse post statement (optional)
+                 if self.current_token != Token::LBrace {
+                     post = Some(self.parse_expression_statement()?);
+                 } 
+                 
+                 // Expect closing brace for body
+                 if self.current_token != Token::LBrace {
+                     return Err(Error::from_str(
+                         &format!("Expected '{{' to start for loop body, got {:?}", self.current_token)
+                     ));
+                 }
+                 
+                 let body = self.parse_block_statement()?;
+                 return Ok(Box::new(ast::ForStatement {
+                     token,
+                     init: None, // Condition was parsed first, no init here
+                     condition,
+                     post,
+                     body,
+                 }));
+            } else {
+                 // Syntax error if it's not '{' or ';' after the condition
+                 return Err(Error::from_str(
+                     &format!("Expected '{{' or ';' after for loop condition, got {:?}", self.current_token)
+                 ));
+            }
+        } else {
+            // First part must be an init statement (sus or facts)
+            init = Some(self.parse_statement()?);
+            
+            // Expect semicolon after init
+            if self.current_token != Token::Semicolon {
+                 return Err(Error::from_str(
+                     &format!("Expected ';' after for loop initializer, got {:?}", self.current_token)
+                 ));
+            }
+            self.next_token()?; // Consume ';'
+            
+            // Parse condition (optional)
+            if self.current_token != Token::Semicolon {
+                 condition = Some(self.parse_expression(Precedence::Lowest)?);
+            }
+            
+            // Expect semicolon after condition
+            if self.current_token != Token::Semicolon {
+                 return Err(Error::from_str(
+                     &format!("Expected ';' after for loop condition, got {:?}", self.current_token)
+                 ));
+            }
+            self.next_token()?; // Consume ';'
+            
+            // Parse post statement (optional)
+            if self.current_token != Token::LBrace {
+                 // Treat post as an expression statement for simplicity
+                 post = Some(self.parse_expression_statement()?);
+            }
+            
+            // Expect opening brace for body
+            if self.current_token != Token::LBrace {
+                 return Err(Error::from_str(
+                     &format!("Expected '{{' to start for loop body, got {:?}", self.current_token)
+                 ));
+            }
+            let body = self.parse_block_statement()?;
+
+            return Ok(Box::new(ast::ForStatement {
+                token,
+                init,
+                condition,
+                post,
+                body,
+            }));
+        }
     }
     
     /// Parse a switch statement

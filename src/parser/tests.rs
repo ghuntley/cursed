@@ -103,7 +103,7 @@ fn test_parse_sus_statements() -> Result<(), Error> {
     let inputs = vec![
         ("sus x = 5;", "x", ExpectedLiteral::Integer(5)),
         ("sus y = based;", "y", ExpectedLiteral::Boolean(true)),
-        ("sus foobar = cap;", "foobar", ExpectedLiteral::Boolean(false)), // Assuming 'cap' parses to false
+        ("sus foobar = cap;", "foobar", ExpectedLiteral::Boolean(false)),
         ("sus message = \"hello\";", "message", ExpectedLiteral::String("hello".to_string())),
     ];
 
@@ -284,6 +284,53 @@ fn test_parse_if_statements() -> Result<(), Error> {
         assert!(if_stmt.alternative.is_none(), "Alternative block in program 3 should be None");
     } else {
         panic!("Program 3 is not an IfStatement");
+    }
+
+    Ok(())
+}
+
+#[test]
+fn test_parse_for_statements() -> Result<(), Error> {
+    // Test case 1: C-style for loop
+    let input1 = "bestie sus i = 0; i < 10; i = i + 1 { yolo i; }";
+    let program1 = test_parser_with_input(input1)?;
+    assert_eq!(program1.statements.len(), 1, "Program 1 (C-style) failed: incorrect statement count");
+    if let Some(for_stmt) = program1.statements[0].as_any().downcast_ref::<ast::ForStatement>() {
+        assert_eq!(for_stmt.token_literal(), "bestie");
+        assert!(for_stmt.init.is_some(), "Program 1 init should exist");
+        assert!(for_stmt.condition.is_some(), "Program 1 condition should exist");
+        assert!(for_stmt.post.is_some(), "Program 1 post should exist");
+        assert_eq!(for_stmt.body.statements.len(), 1, "Program 1 body should have 1 statement");
+    } else {
+        panic!("Program 1 is not a ForStatement");
+    }
+
+    // Test case 2: Condition-only for loop
+    let input2 = "bestie i < 10 { yolo i; }";
+    let program2 = test_parser_with_input(input2)?;
+    assert_eq!(program2.statements.len(), 1, "Program 2 (Condition-only) failed: incorrect statement count");
+    if let Some(for_stmt) = program2.statements[0].as_any().downcast_ref::<ast::ForStatement>() {
+        assert_eq!(for_stmt.token_literal(), "bestie");
+        assert!(for_stmt.init.is_none(), "Program 2 init should be None");
+        assert!(for_stmt.condition.is_some(), "Program 2 condition should exist");
+        assert!(for_stmt.post.is_none(), "Program 2 post should be None");
+        assert_eq!(for_stmt.body.statements.len(), 1, "Program 2 body should have 1 statement");
+    } else {
+        panic!("Program 2 is not a ForStatement");
+    }
+
+    // Test case 3: Infinite for loop
+    let input3 = "bestie { yolo 1; }";
+    let program3 = test_parser_with_input(input3)?;
+    assert_eq!(program3.statements.len(), 1, "Program 3 (Infinite) failed: incorrect statement count");
+    if let Some(for_stmt) = program3.statements[0].as_any().downcast_ref::<ast::ForStatement>() {
+        assert_eq!(for_stmt.token_literal(), "bestie");
+        assert!(for_stmt.init.is_none(), "Program 3 init should be None");
+        assert!(for_stmt.condition.is_none(), "Program 3 condition should be None");
+        assert!(for_stmt.post.is_none(), "Program 3 post should be None");
+        assert_eq!(for_stmt.body.statements.len(), 1, "Program 3 body should have 1 statement");
+    } else {
+        panic!("Program 3 is not a ForStatement");
     }
 
     Ok(())
