@@ -22,7 +22,7 @@ The CURSED programming language is in early development with some core component
 
 ## Testing Status
 
-The implementation currently has **33 tests passing**, covering the Lexer, Symbol Table, AST, Parser, and VM components. Property-based testing is implemented using the `proptest` crate for some components, while others use standard unit tests:
+The implementation currently has **44 tests passing**, covering the Lexer, Symbol Table, AST, Parser, and VM components. Property-based testing is implemented using the `proptest` crate for some components, while others use standard unit tests:
 
 | Component | Property Tests | Unit Tests | Testing Status |
 |-----------|---------------|------------|----------------|
@@ -47,6 +47,9 @@ The implementation currently has **33 tests passing**, covering the Lexer, Symbo
   - [x] Hash table operations
   - [x] Closures and free variables
   - [x] Builtin functions
+  - [x] Type declarations
+  - [x] Interface declarations
+  - [x] Method declarations
 - [ ] Memory management/GC (partial)
 - [ ] Evaluator implementation (partial)
 
@@ -93,8 +96,9 @@ These tasks implement the essential features needed for a minimal but useful sub
   - [ ] Control flow statements (`lowkey`, `highkey`, `bestie`, `periodt`)
   - [ ] Import statements (`yeet`)
   - [ ] Package declarations (`vibe`)
-  - [ ] Type declarations (`be_like`)
-  - [ ] Function declarations (`slay`)
+  - [x] Type declarations (`squad`)
+  - [x] Interface declarations (`collab`)
+  - [x] Method declarations (`slay`)
 
 #### Compiler
 - [ ] Complete bytecode instruction set

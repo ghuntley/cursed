@@ -40,6 +40,8 @@ pub struct CompiledFunction {
     pub free_variables: Vec<Object>,
     /// Function name (optional)
     pub name: Option<String>,
+    /// Whether this function accepts variadic arguments
+    pub is_variadic: bool,
 }
 
 impl CompiledFunction {
@@ -65,6 +67,7 @@ impl CompiledFunction {
             num_parameters,
             free_variables: Vec::new(),
             name: None,
+            is_variadic: false,
         }
     }
     
@@ -81,6 +84,7 @@ impl CompiledFunction {
             num_parameters,
             free_variables,
             name: None,
+            is_variadic: false,
         }
     }
     
@@ -97,6 +101,24 @@ impl CompiledFunction {
             num_parameters,
             free_variables: Vec::new(),
             name: Some(name),
+            is_variadic: false,
+        }
+    }
+    
+    /// Create a variadic function
+    pub fn variadic(
+        instructions: Instructions,
+        num_locals: u8,
+        num_parameters: u8,
+        name: Option<String>,
+    ) -> Self {
+        Self {
+            instructions,
+            num_locals,
+            num_parameters,
+            free_variables: Vec::new(),
+            name,
+            is_variadic: true,
         }
     }
 }
@@ -928,6 +950,8 @@ impl Compiler {
             instructions,
             num_locals,
             num_parameters: num_params,
+            name: None,
+            is_variadic: false,
         };
         
         // Add the function to constants

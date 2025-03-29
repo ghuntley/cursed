@@ -80,6 +80,38 @@ impl<'a> Parser<'a> {
             Token::Bestie => self.parse_for_statement(),
             Token::VibeCheck => self.parse_switch_statement(),
             Token::BeLike => self.parse_type_statement(),
+            Token::Slay => {
+                // Check if this is a method declaration (look ahead for colon)
+                // First save the current position
+                let current_token = self.current_token.clone();
+                let peek_token = self.peek_token.clone();
+                
+                // Look ahead to see if this is a method declaration
+                let is_method_declaration = {
+                    // Move past 'slay'
+                    if !self.expect_peek_identifier() {
+                        return self.parse_expression_statement();
+                    }
+                    
+                    // Move past type name
+                    self.next_token()?;
+                    
+                    // Check if next token is colon
+                    let is_method = self.current_token == Token::Colon;
+                    
+                    // Restore the tokens
+                    self.current_token = current_token;
+                    self.peek_token = peek_token;
+                    
+                    is_method
+                };
+                
+                if is_method_declaration {
+                    self.parse_method_declaration()
+                } else {
+                    self.parse_expression_statement()
+                }
+            },
             _ => self.parse_expression_statement(),
         }
     }
@@ -878,6 +910,110 @@ impl<'a> Parser<'a> {
             // Add other token types that should be valid as type names
             _ => None,
         }
+    }
+    
+    /// Parse a method declaration
+    pub fn parse_method_declaration(&mut self) -> Result<Box<dyn Statement>, Error> {
+        let token = self.current_token.token_literal();
+        
+        // Next token should be the type name (the receiver)
+        if !self.expect_peek_identifier() {
+            return Err(Error::from_str(
+                &format!("Expected identifier after 'slay', got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse the receiver type
+        let receiver_type = match &self.current_token {
+            Token::Identifier(type_name) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: type_name.clone(),
+            },
+            _ => {
+                return Err(Error::from_str(
+                    &format!("Expected identifier for receiver type, got {:?}", self.current_token)
+                ));
+            }
+        };
+        
+        // Next token should be colon
+        if !self.expect_peek(&Token::Colon) {
+            return Err(Error::from_str(
+                &format!("Expected ':' after receiver type, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Next token should be the method name
+        if !self.expect_peek_identifier() {
+            return Err(Error::from_str(
+                &format!("Expected method name after ':', got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse the method name
+        let method_name = match &self.current_token {
+            Token::Identifier(name) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: name.clone(),
+            },
+            _ => {
+                return Err(Error::from_str(
+                    &format!("Expected identifier for method name, got {:?}", self.current_token)
+                ));
+            }
+        };
+        
+        // Next token should be opening parenthesis
+        if !self.expect_peek(&Token::LParen) {
+            return Err(Error::from_str(
+                &format!("Expected '(' after method name, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse parameters
+        let parameters = self.parse_parameters()?;
+        
+        // Optional return type
+        let mut return_type = None;
+        
+        // Check if there's a return type
+        if let Token::Identifier(_) = &self.current_token {
+            // It's a return type
+            if let Token::Identifier(type_name) = &self.current_token {
+                return_type = Some(ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: type_name.clone(),
+                });
+            } else if let Some(token_value) = self.token_to_type_name() {
+                return_type = Some(ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: token_value,
+                });
+            }
+            
+            // Move to the next token
+            self.next_token()?;
+        }
+        
+        // Next token should be opening brace for the body
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(
+                &format!("Expected '{{' to start method body, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse method body
+        let body = self.parse_block_statement()?;
+        
+        // Create and return method declaration
+        Ok(Box::new(ast::MethodDeclaration {
+            token,
+            receiver_type,
+            name: method_name,
+            parameters,
+            return_type,
+            body,
+        }))
     }
 }
 

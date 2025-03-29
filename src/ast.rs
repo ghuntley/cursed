@@ -908,6 +908,91 @@ impl Statement for ParameterStatement {
     }
 }
 
+/// MethodDeclaration represents a method declaration for a struct/type
+pub struct MethodDeclaration {
+    pub token: String, // Usually the method name token
+    pub receiver_type: Identifier, // The type that this method belongs to
+    pub name: Identifier, // The method name
+    pub parameters: Vec<ParameterStatement>, // The method parameters
+    pub return_type: Option<Identifier>, // Optional return type
+    pub body: BlockStatement, // The method body
+}
+
+impl Node for MethodDeclaration {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let params: Vec<String> = self.parameters.iter()
+            .map(|p| p.string())
+            .collect();
+        
+        let return_type_str = match &self.return_type {
+            Some(rt) => format!(" {}", rt.string()),
+            None => String::new(),
+        };
+        
+        format!("slay {}:{}({}){}{{ {} }}",
+            self.receiver_type.string(),
+            self.name.string(),
+            params.join(", "),
+            return_type_str,
+            self.body.string()
+        )
+    }
+}
+
+impl Statement for MethodDeclaration {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// FunctionLiteral represents a function literal expression
+pub struct FunctionLiteral {
+    pub token: Token,
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub is_variadic: bool,
+}
+
+impl Node for FunctionLiteral {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        let params: Vec<String> = self.parameters.iter()
+            .map(|p| p.string())
+            .collect();
+        
+        let param_str = if self.is_variadic && !self.parameters.is_empty() {
+            let mut s = params[..params.len()-1].join(", ");
+            if !s.is_empty() {
+                s.push_str(", ");
+            }
+            s.push_str("...");
+            s.push_str(&self.parameters.last().unwrap().string());
+            s
+        } else {
+            params.join(", ")
+        };
+        
+        format!("{}({}) {}", self.token_literal(), param_str, self.body.string())
+    }
+}
+
+impl Expression for FunctionLiteral {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,5 +1,7 @@
 #![recursion_limit = "512"]
 
+use std::rc::Rc;
+
 /// The CURSED programming language implementation
 /// 
 /// This crate provides the main API for the CURSED language,
@@ -23,6 +25,8 @@ pub mod helpers;
 
 // Basic stub implementations for compiler and memory
 pub mod compiler {
+    use std::rc::Rc;
+    
     pub mod symbol_table {
         pub use crate::symbol::{Symbol, SymbolScope, SymbolTable};
     }
@@ -73,6 +77,8 @@ pub mod compiler {
         DefineField = 37,
         DefineInterface = 38,
         DefineMethod = 39,
+        Method = 40,
+        VariadicCall = 41,
     }
     
     // Basic bytecode structure
@@ -86,6 +92,7 @@ pub mod compiler {
     pub struct Compiler {
         instructions: Instructions,
         constants: Vec<crate::object::Object>,
+        symbol_table: crate::compiler::symbol_table::SymbolTable,
     }
     
     impl Compiler {
@@ -93,6 +100,7 @@ pub mod compiler {
             Self {
                 instructions: Vec::new(),
                 constants: Vec::new(),
+                symbol_table: crate::compiler::symbol_table::SymbolTable::new(),
             }
         }
         
@@ -111,20 +119,28 @@ pub mod compiler {
         
         // Compile a statement
         fn compile_statement(&mut self, stmt: &dyn crate::ast::Statement) -> Result<(), crate::error::Error> {
-            // For type declarations
-            if let Some(squad_stmt) = stmt.as_any().downcast_ref::<crate::ast::SquadStatement>() {
-                return self.compile_type_declaration(squad_stmt);
+            // Try to downcast to specific statement types
+            if let Some(expr_stmt) = stmt.as_any().downcast_ref::<crate::ast::ExpressionStatement>() {
+                // Compile the expression
+                if let Some(expr) = &expr_stmt.expression {
+                    self.compile_expression(&**expr)?;
+                }
+                // Pop the result off the stack (since expressions are evaluated for side effects only)
+                self.emit(Opcode::Pop, &[]);
+            } else if let Some(squad_stmt) = stmt.as_any().downcast_ref::<crate::ast::SquadStatement>() {
+                // Compile a struct declaration
+                self.compile_type_declaration(squad_stmt)?;
+            } else if let Some(collab_stmt) = stmt.as_any().downcast_ref::<crate::ast::CollabStatement>() {
+                // Compile an interface declaration
+                self.compile_interface_declaration(collab_stmt)?;
+            } else if let Some(method_decl) = stmt.as_any().downcast_ref::<crate::ast::MethodDeclaration>() {
+                // Compile a method declaration
+                self.compile_method_declaration(method_decl)?;
+            } else {
+                // If we can't handle this statement type, error
+                return Err(crate::error::Error::from_str("Unknown statement type"));
             }
             
-            // For interface declarations
-            if let Some(collab_stmt) = stmt.as_any().downcast_ref::<crate::ast::CollabStatement>() {
-                return self.compile_interface_declaration(collab_stmt);
-            }
-            
-            // Handle other statement types
-            
-            // Add a Pop instruction to clean up the stack
-            self.emit(Opcode::Pop, &[]);
             Ok(())
         }
         
@@ -228,6 +244,109 @@ pub mod compiler {
             Ok(())
         }
         
+        // Compile a method declaration
+        fn compile_method_declaration(&mut self, method_decl: &crate::ast::MethodDeclaration) -> Result<(), crate::error::Error> {
+            // Create a new compiler for the function body
+            let mut function_compiler = Compiler::new();
+
+            // Define the parameters in the symbol table
+            for param in &method_decl.parameters {
+                function_compiler.symbol_table.define(&param.name.value);
+            }
+
+            // Compile the function body
+            for stmt in &method_decl.body.statements {
+                function_compiler.compile_statement(&**stmt)?;
+            }
+
+            // Make sure we have a return value
+            // If the last instruction isn't a return, add one
+            let last_instruction = function_compiler.instructions.last().unwrap_or(&0);
+            let last_opcode = match *last_instruction {
+                x if x == Opcode::ReturnValue as u8 => Opcode::ReturnValue,
+                x if x == Opcode::Return as u8 => Opcode::Return,
+                _ => Opcode::Invalid,
+            };
+            
+            if last_opcode != Opcode::ReturnValue && last_opcode != Opcode::Return {
+                // Add an implicit return
+                function_compiler.emit(Opcode::Return, &[]);
+            }
+
+            // Get the number of locals from the symbol table
+            let num_locals = function_compiler.symbol_table.get_definition_count() as u8;
+            let num_parameters = method_decl.parameters.len() as u8;
+            
+            // Create a compiled function
+            let compiled_function = crate::compiler::CompiledFunction {
+                instructions: function_compiler.instructions,
+                num_locals,
+                num_parameters,
+                free_variables: Vec::new(),
+                name: Some(method_decl.name.value.clone()),
+                is_variadic: false,
+            };
+
+            // Add the receiver type, method name, and function to constants
+            let receiver_type_idx = self.add_constant(crate::object::Object::String(method_decl.receiver_type.value.clone()));
+            let method_name_idx = self.add_constant(crate::object::Object::String(method_decl.name.value.clone()));
+            let function_idx = self.add_constant(crate::object::Object::CompiledFunction {
+                instructions: compiled_function.instructions.clone(),
+                num_locals: compiled_function.num_locals as usize,
+                num_parameters: compiled_function.num_parameters as usize,
+                free_variables: compiled_function.free_variables.clone(),
+                name: compiled_function.name.clone(),
+                is_variadic: compiled_function.is_variadic,
+            });
+            
+            // Define the method in the symbol table
+            let method_name = format!("{}:{}", method_decl.receiver_type.value, method_decl.name.value);
+            self.symbol_table.define(&method_name);
+            
+            // Push the receiver type, method name, and function onto the stack
+            self.emit(Opcode::Constant, &[receiver_type_idx]); // Receiver type
+            self.emit(Opcode::Constant, &[method_name_idx]);   // Method name
+            self.emit(Opcode::Constant, &[function_idx]);      // Compiled function
+            
+            // Push parameter count onto stack
+            let param_count_idx = self.add_constant(crate::object::Object::Integer(method_decl.parameters.len() as i64));
+            self.emit(Opcode::Constant, &[param_count_idx]);
+            
+            // For each parameter, push their name and type
+            for param in &method_decl.parameters {
+                let param_name_idx = self.add_constant(crate::object::Object::String(param.name.value.clone()));
+                let param_type_idx = self.add_constant(crate::object::Object::String(param.type_name.value.clone()));
+                
+                self.emit(Opcode::Constant, &[param_name_idx]); // Parameter name
+                self.emit(Opcode::Constant, &[param_type_idx]); // Parameter type
+            }
+            
+            // Push return type (or null for void)
+            if let Some(return_type) = &method_decl.return_type {
+                let return_type_idx = self.add_constant(crate::object::Object::String(return_type.value.clone()));
+                self.emit(Opcode::Constant, &[return_type_idx]);
+            } else {
+                let null_idx = self.add_constant(crate::object::Object::Null);
+                self.emit(Opcode::Constant, &[null_idx]);
+            }
+            
+            // Emit Method opcode
+            self.emit(Opcode::Method, &[]);
+            
+            Ok(())
+        }
+        
+        // Add a new method for compiling expressions
+        fn compile_expression(&mut self, expr: &dyn crate::ast::Expression) -> Result<(), crate::error::Error> {
+            // This is a placeholder implementation
+            // We'll need to actually implement expression compilation for each type
+            // For now, just push a constant null
+            let const_idx = self.add_constant(crate::object::Object::Null);
+            self.emit(Opcode::Constant, &[const_idx]);
+            
+            Ok(())
+        }
+        
         // Helper to add a constant and get its index
         fn add_constant(&mut self, obj: crate::object::Object) -> usize {
             self.constants.push(obj);
@@ -284,7 +403,9 @@ pub mod compiler {
         pub instructions: Vec<u8>,
         pub num_locals: u8,
         pub num_parameters: u8,
+        pub free_variables: Vec<crate::object::Object>,
         pub name: Option<String>,
+        pub is_variadic: bool,
     }
     
     // Include tests here

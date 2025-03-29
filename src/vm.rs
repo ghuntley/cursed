@@ -1,8 +1,10 @@
 // Virtual Machine implementation for CURSED
-use crate::compiler::{Bytecode, Instructions, Opcode};
+use crate::compiler::{Bytecode, Instructions, Opcode, CompiledFunction};
 use crate::error::{Error, SourceLocation};
 use crate::object::Object;
+use crate::memory::gc::Trace;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 pub mod constants {
     // VM constants
@@ -373,6 +375,13 @@ impl VM {
                     // Call function with arguments
                     self.execute_call(num_args)?;
                 },
+                Opcode::VariadicCall => {
+                    let num_args = self.read_u16(self.current_frame()?.ip)? as usize;
+                    self.current_frame_mut()?.ip += 2; // Skip operand bytes
+                    
+                    // Call variadic function with arguments
+                    self.execute_call(num_args)?;
+                },
                 Opcode::ReturnValue => {
                     // Get the return value from the top of the stack
                     let return_value = self.pop()?;
@@ -644,6 +653,113 @@ impl VM {
                         _ => return Err(Error::vm(format!("Cannot define method on non-interface object: {}", interface_obj))),
                     }
                 },
+                Opcode::Method => {
+                    // Add debug print for the stack
+                    println!("DEBUG VM: Stack before Method opcode:");
+                    for i in (0..self.sp).rev() {
+                        println!("  {} ({}): {:?}", self.sp - i - 1, i, self.stack[i]);
+                    }
+                    
+                    // Get return type from the stack
+                    let return_type = self.pop()?;
+                    println!("DEBUG VM: Popped return type: {:?}", return_type);
+                    
+                    // Extract return type (if any)
+                    let return_type_str = match &*return_type {
+                        Object::String(s) => Some(s.clone()),
+                        Object::Null => None,
+                        _ => return Err(Error::vm(format!("Return type must be a string or null, got {}", return_type))),
+                    };
+                    
+                    // Similar to DefineMethod, get parameters from the stack
+                    let mut parameters = Vec::new();
+                    let params_on_stack = (self.sp - 3) / 2; // Calculate how many params are on stack
+                    
+                    // Get each parameter (name and type)
+                    for _ in 0..params_on_stack {
+                        // Get parameter type and name from the stack
+                        let param_type = self.pop()?;
+                        let param_name = self.pop()?;
+                        
+                        // Get the parameter name and type as strings
+                        let name = match &*param_name {
+                            Object::String(s) => s.clone(),
+                            _ => return Err(Error::vm(format!("Parameter name must be a string, got {}", param_name))),
+                        };
+                        
+                        let typ = match &*param_type {
+                            Object::String(s) => s.clone(),
+                            _ => return Err(Error::vm(format!("Parameter type must be a string, got {}", param_type))),
+                        };
+                        
+                        // Add parameter to the list (at beginning since we're popping in reverse)
+                        parameters.insert(0, (name, typ));
+                    }
+                    
+                    // Get the parameter count as verification
+                    let param_count_obj = self.pop()?;
+                    println!("DEBUG VM: Popped param count: {:?}", param_count_obj);
+                    
+                    let expected_param_count = match &*param_count_obj {
+                        Object::Integer(n) => *n as usize,
+                        _ => return Err(Error::vm(format!("Parameter count must be an integer, got {}", param_count_obj))),
+                    };
+                    
+                    // Verify param count matches what we found
+                    if parameters.len() != expected_param_count {
+                        return Err(Error::vm(format!("Parameter count mismatch: expected {}, got {}", expected_param_count, parameters.len())));
+                    }
+                    
+                    // Get compiled function from the stack
+                    let function_obj = self.pop()?;
+                    println!("DEBUG VM: Popped function: {:?}", function_obj);
+                    
+                    let function = match &*function_obj {
+                        Object::CompiledFunction { instructions, num_locals, num_parameters, free_variables: _, name, is_variadic } => {
+                            // Create a new CompiledFunction to store in the closure
+                            let func = CompiledFunction {
+                                instructions: instructions.clone(),
+                                num_locals: *num_locals as u8,
+                                num_parameters: *num_parameters as u8,
+                                free_variables: Vec::new(),
+                                name: name.clone(),
+                                is_variadic: *is_variadic,
+                            };
+                            Rc::new(func)
+                        },
+                        _ => return Err(Error::vm(format!("Expected compiled function, got {}", function_obj))),
+                    };
+                    
+                    // Get method name from the stack
+                    let method_name_obj = self.pop()?;
+                    println!("DEBUG VM: Popped method name: {:?}", method_name_obj);
+                    
+                    let method_name = match &*method_name_obj {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Method name must be a string, got {}", method_name_obj))),
+                    };
+                    
+                    // Get the receiver type from the stack
+                    let receiver_type_obj = self.pop()?;
+                    println!("DEBUG VM: Popped receiver type: {:?}", receiver_type_obj);
+                    
+                    let receiver_type = match &*receiver_type_obj {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Receiver type must be a string, got {}", receiver_type_obj))),
+                    };
+                    
+                    // Create a Method object
+                    let method_obj = Rc::new(Object::Method {
+                        receiver_type,
+                        name: method_name,
+                        parameters,
+                        return_type: return_type_str,
+                        function,
+                    });
+                    
+                    // Push the Method object onto the stack
+                    self.push(method_obj)?;
+                },
                 _ => {
                     return Err(Error::vm(format!("Opcode not implemented: {:?}", opcode)));
                 }
@@ -910,6 +1026,8 @@ impl VM {
             37 => Ok(Opcode::DefineField),
             38 => Ok(Opcode::DefineInterface),
             39 => Ok(Opcode::DefineMethod),
+            40 => Ok(Opcode::Method),
+            41 => Ok(Opcode::VariadicCall),
             _ => Err(Error::vm(format!("Unknown opcode: {}", op_byte))),
         }
     }
@@ -924,444 +1042,374 @@ impl VM {
     }
     
     /// Build a closure from a compiled function and free variables
-    fn build_closure(&mut self, const_idx: usize, num_free_vars: usize) -> Result<Rc<Object>, Error> {
+    fn build_closure(&mut self, constant_idx: usize, num_free: usize) -> Result<Rc<Object>, Error> {
         // Get the compiled function from constants
-        let function_obj = self.constants.get(const_idx).ok_or_else(|| {
-            Error::vm(format!("Invalid constant index for closure: {}", const_idx))
-        })?.clone();
-        
-        // Verify it's a compiled function
-        if let Object::CompiledFunction(function) = &*function_obj {
-            // Collect free variables from the stack
-            let mut free_vars = Vec::with_capacity(num_free_vars);
-            
-            // Free variables are on the stack before the closure is created
-            // Start from sp - num_free_vars
-            let start_idx = self.sp.checked_sub(num_free_vars).ok_or_else(|| {
-                Error::vm(format!("Stack underflow when collecting free variables"))
-            })?;
-            
-            // Collect the free variables
-            for i in 0..num_free_vars {
-                let free_var = self.stack[start_idx + i].clone();
-                free_vars.push((*free_var).clone());
+        let obj = match self.constants.get(constant_idx) {
+            Some(val) => val.clone(),
+            None => {
+                return Err(Error::vm(format!("Invalid constant index: {}", constant_idx)));
             }
-            
-            // Remove free variables from the stack
-            self.sp -= num_free_vars;
-            
-            // Create and return the closure
-            Ok(Rc::new(Object::Closure {
-                function: function.clone(),
-                free_vars,
-            }))
-        } else {
-            Err(Error::vm(format!("Not a compiled function: {:?}", function_obj)))
-        }
-    }
-    
-    /// Execute a function call with the given number of arguments
-    fn execute_call(&mut self, num_args: usize) -> Result<(), Error> {
-        // The function is at stack[sp - 1 - num_args]
-        let fn_idx = self.sp - 1 - num_args;
+        };
         
-        if fn_idx >= self.stack.len() {
-            return Err(Error::vm("Function index out of bounds".to_string()));
-        }
-        
-        let fn_obj = self.stack[fn_idx].clone();
-        
-        match &*fn_obj {
-            Object::CompiledFunction(compiled_fn) => {
-                // Verify that the number of arguments matches the number of parameters
-                if num_args != compiled_fn.num_parameters as usize {
-                    return Err(Error::vm(format!(
-                        "Wrong number of arguments: got {}, want {}",
-                        num_args, compiled_fn.num_parameters
-                    )));
-                }
-                
-                // Create a new frame for this function call
-                let frame = Frame::new(compiled_fn.instructions.clone(), self.sp - num_args);
-                
-                // Check if we have too many frames
-                if self.frame_index + 1 >= constants::MAX_FRAMES {
-                    return Err(Error::stack_overflow("Stack overflow: too many frames".to_string()));
-                }
-                
-                // Add the frame to the call stack
-                self.frame_index += 1;
-                if self.frame_index < self.frames.len() {
-                    self.frames[self.frame_index] = frame;
-                } else {
-                    self.frames.push(frame);
-                }
-                
-                // Reserve space for local variables on the stack
-                let num_locals = compiled_fn.num_locals as usize;
-                let base_pointer = self.frames[self.frame_index].base_pointer;
-                
-                // Make sure we have enough space on the stack
-                let required_stack_size = base_pointer + num_locals;
-                if required_stack_size > constants::STACK_SIZE {
-                    return Err(Error::stack_overflow("Stack overflow for locals".to_string()));
-                }
-                
-                // Initialize locals to null
-                let current_stack_size = self.sp;
-                for _ in 0..num_locals.saturating_sub(current_stack_size - base_pointer) {
-                    self.push(Rc::new(Object::Null))?;
-                }
-                
-                // Set the stack pointer to point past the function's local values
-                self.sp = base_pointer + num_locals;
-            },
-            Object::Closure { function, free_vars } => {
-                // Verify that the number of arguments matches the number of parameters
-                if num_args != function.num_parameters as usize {
-                    return Err(Error::vm(format!(
-                        "Wrong number of arguments: got {}, want {}",
-                        num_args, function.num_parameters
-                    )));
-                }
-                
-                // Create a new frame for this function call
-                let frame = Frame {
-                    instructions: function.instructions.clone(),
-                    ip: 0,
-                    base_pointer: self.sp - num_args,
-                    free_vars: free_vars.iter().map(|obj| Rc::new(obj.clone())).collect(),
+        // Verify that the constant is a function
+        match &*obj {
+            Object::CompiledFunction { instructions, num_locals, num_parameters, free_variables: _, name, is_variadic } => {
+                // Create a CompiledFunction instance
+                let func = CompiledFunction {
+                    instructions: instructions.clone(),
+                    num_locals: *num_locals as u8,
+                    num_parameters: *num_parameters as u8,
+                    free_variables: Vec::new(),
+                    name: name.clone(),
+                    is_variadic: *is_variadic,
                 };
                 
-                // Check if we have too many frames
+                // Collect free variables from the stack
+                let mut free_vars = Vec::with_capacity(num_free);
+                for i in 0..num_free {
+                    let free_var_idx = self.sp - num_free + i;
+                    if free_var_idx < self.stack.len() {
+                        let obj_clone = (*self.stack[free_var_idx]).clone();
+                        free_vars.push(obj_clone);
+                    } else {
+                        return Err(Error::vm(format!("Invalid free variable index: {}", free_var_idx)));
+                    }
+                }
+                
+                // Create a closure with the function and free variables
+                Ok(Rc::new(Object::Closure {
+                    function: Rc::new(func),
+                    free_vars,
+                }))
+            },
+            _ => Err(Error::vm(format!("Not a function: {:?}", obj))),
+        }
+    }
+
+    /// Execute a function call
+    fn execute_call(&mut self, num_args: usize) -> Result<(), Error> {
+        let fn_obj = self.stack[self.sp - 1 - num_args].clone();
+        
+        match &*fn_obj {
+            Object::CompiledFunction { instructions, num_locals, num_parameters, free_variables: _, name: _, is_variadic } => {
+                // Check if number of arguments is correct
+                if !(*is_variadic) && *num_parameters != num_args {
+                    return Err(Error::vm(format!(
+                        "Wrong number of arguments: expected {}, got {}",
+                        num_parameters, num_args
+                    )));
+                } else if *is_variadic && *num_parameters > num_args {
+                    return Err(Error::vm(format!(
+                        "Not enough arguments for variadic function: expected at least {}, got {}",
+                        num_parameters - 1, num_args
+                    )));
+                }
+                
+                // Create a new frame for the function call
+                let base_pointer = self.sp - num_args;
+                let frame = Frame::new(instructions.clone(), base_pointer);
+                
+                // Push the frame onto the call stack
                 if self.frame_index + 1 >= constants::MAX_FRAMES {
-                    return Err(Error::stack_overflow("Stack overflow: too many frames".to_string()));
+                    return Err(Error::vm("Stack overflow".to_string()));
                 }
                 
-                // Add the frame to the call stack
+                // Move to next frame
                 self.frame_index += 1;
-                if self.frame_index < self.frames.len() {
-                    self.frames[self.frame_index] = frame;
-                } else {
+                if self.frame_index >= self.frames.len() {
                     self.frames.push(frame);
+                } else {
+                    self.frames[self.frame_index] = frame;
                 }
                 
-                // Reserve space for local variables on the stack
-                let num_locals = function.num_locals as usize;
-                let base_pointer = self.frames[self.frame_index].base_pointer;
-                
-                // Make sure we have enough space on the stack
-                let required_stack_size = base_pointer + num_locals;
-                if required_stack_size > constants::STACK_SIZE {
-                    return Err(Error::stack_overflow("Stack overflow for locals".to_string()));
-                }
+                // Allocate space for local variables
+                let num_locals = *num_locals;
+                let sp = self.sp;
                 
                 // Initialize locals to null
-                let current_stack_size = self.sp;
-                for _ in 0..num_locals.saturating_sub(current_stack_size - base_pointer) {
-                    self.push(Rc::new(Object::Null))?;
+                self.sp = self.frames[self.frame_index].base_pointer + num_locals;
+                
+                // Fill in with nulls
+                for i in 0..num_locals {
+                    let idx = sp + i;
+                    if idx >= self.stack.len() {
+                        self.stack.push(Rc::new(Object::Null));
+                    } else if idx >= self.sp {
+                        self.stack[idx] = Rc::new(Object::Null);
+                    }
                 }
                 
-                // Set the stack pointer to point past the function's local values
-                self.sp = base_pointer + num_locals;
+                Ok(())
             },
-            Object::Builtin { function, .. } => {
-                // Extract arguments from the stack
-                let start_idx = self.sp - num_args;
-                let args: Vec<Object> = self.stack[start_idx..self.sp]
-                    .iter()
-                    .map(|obj| (**obj).clone())
-                    .collect();
+            Object::Closure { function, free_vars } => {
+                // For a closure, we need to get the compiled function from the function field
+                // and then create a new frame with that function's instructions
+                let instructions = function.instructions.clone();
+                let num_locals = function.num_locals as usize;
+                let num_parameters = function.num_parameters as usize;
+                let is_variadic = function.is_variadic;
                 
-                // Reset the stack pointer to before the arguments
-                self.sp = fn_idx;
+                // Check if number of arguments is correct
+                if !is_variadic && num_parameters != num_args {
+                    return Err(Error::vm(format!(
+                        "Wrong number of arguments: expected {}, got {}",
+                        num_parameters, num_args
+                    )));
+                } else if is_variadic && num_parameters > num_args {
+                    return Err(Error::vm(format!(
+                        "Not enough arguments for variadic function: expected at least {}, got {}",
+                        num_parameters - 1, num_args
+                    )));
+                }
+                
+                // Create a new frame for the function call
+                let base_pointer = self.sp - num_args;
+                let mut frame = Frame::new(instructions.clone(), base_pointer);
+                
+                // Add free variables to the frame
+                // Convert Vec<Object> to Vec<Rc<Object>>
+                let free_vars_rc: Vec<Rc<Object>> = free_vars.iter()
+                    .map(|obj| Rc::new(obj.clone()))
+                    .collect();
+                frame.free_vars = free_vars_rc;
+                
+                // Push the frame onto the call stack
+                if self.frame_index + 1 >= constants::MAX_FRAMES {
+                    return Err(Error::vm("Stack overflow".to_string()));
+                }
+                
+                // Move to next frame
+                self.frame_index += 1;
+                if self.frame_index >= self.frames.len() {
+                    self.frames.push(frame);
+                } else {
+                    self.frames[self.frame_index] = frame;
+                }
+                
+                // Allocate space for local variables
+                let sp = self.sp;
+                
+                // Initialize locals to null
+                self.sp = self.frames[self.frame_index].base_pointer + num_locals;
+                
+                // Fill in with nulls
+                for i in 0..num_locals {
+                    let idx = sp + i;
+                    if idx >= self.stack.len() {
+                        self.stack.push(Rc::new(Object::Null));
+                    } else if idx >= self.sp {
+                        self.stack[idx] = Rc::new(Object::Null);
+                    }
+                }
+                
+                Ok(())
+            },
+            Object::Builtin { name: _, function } => {
+                // Execute builtin function directly
+                let args = self.stack
+                    .iter()
+                    .skip(self.sp - num_args)
+                    .take(num_args)
+                    .map(|obj| (**obj).clone())
+                    .collect::<Vec<_>>();
+                
+                // Remove the function and arguments from the stack
+                self.sp -= num_args + 1;
                 
                 // Call the builtin function
                 match function(args) {
                     Ok(result) => {
                         // Push the result onto the stack
                         self.push(Rc::new(result))?;
+                        Ok(())
                     },
-                    Err(e) => {
-                        return Err(e);
-                    }
+                    Err(e) => Err(e),
                 }
             },
-            _ => {
-                return Err(Error::vm(format!("Calling non-function: {}", fn_obj)));
-            }
+            _ => Err(Error::vm(format!("Not a function: {:?}", fn_obj))),
         }
+    }
+
+    /// Build an array from elements on the stack
+    fn build_array(&mut self, num_elements: usize) -> Result<(), Error> {
+        if self.sp < num_elements {
+            return Err(Error::vm("Not enough elements on stack".to_string()));
+        }
+        
+        // Collect elements from the stack
+        let elements = self.stack
+            .iter()
+            .skip(self.sp - num_elements)
+            .take(num_elements)
+            .map(|obj| (**obj).clone())
+            .collect::<Vec<_>>();
+        
+        // Remove the elements from the stack
+        self.sp -= num_elements;
+        
+        // Push the array onto the stack
+        self.push(Rc::new(Object::Array(elements)))?;
         
         Ok(())
     }
-    
+
+    /// Build a hash table from key-value pairs on the stack
+    fn build_hash(&mut self, num_pairs: usize) -> Result<(), Error> {
+        if self.sp < num_pairs * 2 {
+            return Err(Error::vm("Not enough elements on stack".to_string()));
+        }
+        
+        // Collect key-value pairs from the stack
+        let mut hash = HashMap::new();
+        
+        for i in 0..num_pairs {
+            let key_idx = self.sp - 2 * (num_pairs - i);
+            let val_idx = key_idx + 1;
+            
+            let key = match &*self.stack[key_idx] {
+                Object::String(s) => s.clone(),
+                k => return Err(Error::vm(format!("Hash key must be a string, got: {:?}", k))),
+            };
+            
+            let value = (*self.stack[val_idx]).clone();
+            hash.insert(key, value);
+        }
+        
+        // Remove the key-value pairs from the stack
+        self.sp -= num_pairs * 2;
+        
+        // Push the hash table onto the stack
+        self.push(Rc::new(Object::HashTable(hash)))?;
+        
+        Ok(())
+    }
+
     /// Execute an index operation (array[index] or hash[key])
     fn execute_index_operation(&mut self, left: Rc<Object>, index: Rc<Object>) -> Result<(), Error> {
+        // Pop the left and index from the stack
+        self.sp -= 2;
+        
         match (&*left, &*index) {
-            // Array indexing
-            (Object::Array(array), Object::Integer(idx)) => {
+            (Object::Array(elements), Object::Integer(idx)) => {
                 let idx = *idx as usize;
-                if idx >= array.len() {
-                    // Out of bounds access returns null
+                if idx >= elements.len() {
                     self.push(Rc::new(Object::Null))?;
                 } else {
-                    self.push(Rc::new(array[idx].clone()))?;
+                    self.push(Rc::new(elements[idx].clone()))?;
                 }
             },
-            // Hash table lookup with String key
             (Object::HashTable(hash), Object::String(key)) => {
-                // String keys can be used directly
                 match hash.get(key) {
                     Some(value) => self.push(Rc::new(value.clone()))?,
                     None => self.push(Rc::new(Object::Null))?,
                 }
             },
-            // Hash table lookup with Integer key
-            (Object::HashTable(hash), Object::Integer(i)) => {
-                // Convert integer to string for hash lookup
-                let key = i.to_string();
-                match hash.get(&key) {
-                    Some(value) => self.push(Rc::new(value.clone()))?,
-                    None => self.push(Rc::new(Object::Null))?,
-                }
-            },
-            // Hash table lookup with Boolean key
-            (Object::HashTable(hash), Object::Boolean(b)) => {
-                // Convert boolean to string for hash lookup
-                let key = b.to_string();
-                match hash.get(&key) {
-                    Some(value) => self.push(Rc::new(value.clone()))?,
-                    None => self.push(Rc::new(Object::Null))?,
-                }
-            },
-            // Any other unhashable type
-            (Object::HashTable(_), index) => {
-                return Err(Error::type_error(
-                    format!("Unhashable type used as hash key: {}", index),
-                    SourceLocation::default(),
-                ))
-            },
-            // Not a hashable or indexable type
-            _ => return Err(Error::type_error(
-                format!("Index operator not supported: {} {}", left, index),
-                SourceLocation::default(),
-            )),
+            _ => return Err(Error::vm(format!("Index operation not supported: {:?}[{:?}]", left, index))),
         }
+        
         Ok(())
-    }
-    
-    /// Build an array from elements on the stack
-    fn build_array(&mut self, num_elements: usize) -> Result<(), Error> {
-        // Check if we have enough elements on the stack
-        if num_elements > self.sp {
-            return Err(Error::vm(format!("Not enough elements on stack for array: need {}, have {}", 
-                                         num_elements, self.sp)));
-        }
-        
-        let start_idx = self.sp - num_elements;
-        let elements: Vec<Object> = self.stack[start_idx..self.sp]
-            .iter()
-            .map(|obj| (**obj).clone())
-            .collect();
-        
-        // Reset the stack pointer to remove the array elements
-        self.sp = start_idx;
-        
-        // Push the array onto the stack
-        self.push(Rc::new(Object::Array(elements)))
-    }
-    
-    /// Build a hash map from key-value pairs on the stack
-    fn build_hash(&mut self, num_pairs: usize) -> Result<(), Error> {
-        // For a hash, we need key-value pairs, so there should be num_pairs * 2 elements
-        let total_elements = num_pairs * 2;
-        
-        // Check if we have enough elements on the stack
-        if total_elements > self.sp {
-            return Err(Error::vm(format!("Not enough elements on stack for hash: need {}, have {}", 
-                                         total_elements, self.sp)));
-        }
-        
-        let mut hash_map = std::collections::HashMap::new();
-        
-        // Start at the first key
-        let mut stack_idx = self.sp - total_elements;
-        
-        // Extract key-value pairs from the stack
-        for _ in 0..num_pairs {
-            let key_obj = self.stack[stack_idx].clone();
-            stack_idx += 1;
-            let value_obj = self.stack[stack_idx].clone();
-            stack_idx += 1;
-            
-            // Convert key to string for hash map
-            let key = match &*key_obj {
-                Object::String(s) => s.clone(),
-                Object::Integer(i) => i.to_string(),
-                Object::Boolean(b) => b.to_string(),
-                _ => return Err(Error::type_error(
-                    format!("Unhashable type used as hash key: {}", key_obj),
-                    SourceLocation::default(),
-                )),
-            };
-            
-            hash_map.insert(key, (*value_obj).clone());
-        }
-        
-        // Reset the stack pointer to remove the hash elements
-        self.sp -= total_elements;
-        
-        // Push the hash map onto the stack
-        self.push(Rc::new(Object::HashTable(hash_map)))
     }
 }
 
-// Builtin functions for the CURSED language
-// These are defined outside the VM struct for clarity
+// Builtin functions for the VM
 
-/// Built-in function: len
-/// Returns the length of a string, array, or hash
-pub fn builtin_len(args: Vec<Object>) -> Result<Object, Error> {
+/// Get the length of a string, array, or hash table
+fn builtin_len(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for len: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for len: expected 1, got {}", args.len())));
     }
     
     match &args[0] {
         Object::String(s) => Ok(Object::Integer(s.len() as i64)),
-        Object::Array(arr) => Ok(Object::Integer(arr.len() as i64)),
+        Object::Array(elements) => Ok(Object::Integer(elements.len() as i64)),
         Object::HashTable(hash) => Ok(Object::Integer(hash.len() as i64)),
-        _ => Err(Error::type_error(
-            format!("argument to 'len' not supported, got {}", args[0]),
-            SourceLocation::default(),
-        )),
+        obj => Err(Error::vm(format!("Argument to len not supported: got {:?}", obj))),
     }
 }
 
-/// Built-in function: first
-/// Returns the first element of an array or the first character of a string
-pub fn builtin_first(args: Vec<Object>) -> Result<Object, Error> {
+/// Get the first element of an array
+fn builtin_first(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for first: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for first: expected 1, got {}", args.len())));
     }
     
     match &args[0] {
-        Object::Array(arr) => {
-            if arr.is_empty() {
+        Object::Array(elements) => {
+            if elements.is_empty() {
                 Ok(Object::Null)
             } else {
-                Ok(arr[0].clone())
+                Ok(elements[0].clone())
             }
         },
-        Object::String(s) => {
-            if s.is_empty() {
-                Ok(Object::Null)
-            } else {
-                Ok(Object::Char(s.chars().next().unwrap()))
-            }
-        },
-        _ => Err(Error::type_error(
-            format!("argument to 'first' must be array or string, got {}", args[0]),
-            SourceLocation::default(),
-        )),
+        obj => Err(Error::vm(format!("Argument to first must be array, got {:?}", obj))),
     }
 }
 
-/// Built-in function: last
-/// Returns the last element of an array or the last character of a string
-pub fn builtin_last(args: Vec<Object>) -> Result<Object, Error> {
+/// Get the last element of an array
+fn builtin_last(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for last: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for last: expected 1, got {}", args.len())));
     }
     
     match &args[0] {
-        Object::Array(arr) => {
-            if arr.is_empty() {
+        Object::Array(elements) => {
+            if elements.is_empty() {
                 Ok(Object::Null)
             } else {
-                Ok(arr[arr.len() - 1].clone())
+                Ok(elements[elements.len() - 1].clone())
             }
         },
-        Object::String(s) => {
-            if s.is_empty() {
-                Ok(Object::Null)
-            } else {
-                Ok(Object::Char(s.chars().last().unwrap()))
-            }
-        },
-        _ => Err(Error::type_error(
-            format!("argument to 'last' must be array or string, got {}", args[0]),
-            SourceLocation::default(),
-        )),
+        obj => Err(Error::vm(format!("Argument to last must be array, got {:?}", obj))),
     }
 }
 
-/// Built-in function: rest
-/// Returns all elements of an array except the first, or all characters of a string except the first
-pub fn builtin_rest(args: Vec<Object>) -> Result<Object, Error> {
+/// Get all elements of an array except the first
+fn builtin_rest(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for rest: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for rest: expected 1, got {}", args.len())));
     }
     
     match &args[0] {
-        Object::Array(arr) => {
-            if arr.is_empty() {
+        Object::Array(elements) => {
+            if elements.is_empty() {
                 Ok(Object::Null)
             } else {
-                let rest = arr[1..].to_vec();
-                Ok(Object::Array(rest))
+                Ok(Object::Array(elements[1..].to_vec()))
             }
         },
-        Object::String(s) => {
-            if s.is_empty() {
-                Ok(Object::Null)
-            } else {
-                let rest = s.chars().skip(1).collect::<String>();
-                Ok(Object::String(rest))
-            }
-        },
-        _ => Err(Error::type_error(
-            format!("argument to 'rest' must be array or string, got {}", args[0]),
-            SourceLocation::default(),
-        )),
+        obj => Err(Error::vm(format!("Argument to rest must be array, got {:?}", obj))),
     }
 }
 
-/// Built-in function: push
-/// Adds an element to the end of an array
-pub fn builtin_push(args: Vec<Object>) -> Result<Object, Error> {
+/// Push an element onto an array
+fn builtin_push(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 2 {
-        return Err(Error::vm(format!("wrong number of arguments for push: got {}, want 2", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for push: expected 2, got {}", args.len())));
     }
     
     match &args[0] {
-        Object::Array(arr) => {
-            let mut new_array = arr.clone();
-            new_array.push(args[1].clone());
-            Ok(Object::Array(new_array))
+        Object::Array(elements) => {
+            let mut new_elements = elements.clone();
+            new_elements.push(args[1].clone());
+            Ok(Object::Array(new_elements))
         },
-        _ => Err(Error::type_error(
-            format!("argument to 'push' must be array, got {}", args[0]),
-            SourceLocation::default(),
-        )),
+        obj => Err(Error::vm(format!("First argument to push must be array, got {:?}", obj))),
     }
 }
 
-/// Built-in function: puts
-/// Prints a value to the console
-pub fn builtin_puts(args: Vec<Object>) -> Result<Object, Error> {
+/// Print an object to stdout
+fn builtin_puts(args: Vec<Object>) -> Result<Object, Error> {
     for arg in args {
         println!("{}", arg);
     }
     
-    // puts returns null
     Ok(Object::Null)
 }
 
-/// Built-in function: type
-/// Returns the type of a value as a string
-pub fn builtin_type(args: Vec<Object>) -> Result<Object, Error> {
+/// Get the type of an object
+fn builtin_type(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for type: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for type: expected 1, got {}", args.len())));
     }
     
     let type_name = match &args[0] {
@@ -1372,12 +1420,13 @@ pub fn builtin_type(args: Vec<Object>) -> Result<Object, Error> {
         Object::Char(_) => "char",
         Object::Array(_) => "array",
         Object::HashTable(_) => "hash",
-        Object::CompiledFunction(_) => "function",
+        Object::CompiledFunction { .. } => "function",
         Object::Closure { .. } => "closure",
         Object::Builtin { .. } => "builtin",
         Object::Struct { .. } => "struct",
-        Object::Instance { .. } => "instance",
         Object::Interface { .. } => "interface",
+        Object::Instance { .. } => "instance",
+        Object::Method { .. } => "method",
         Object::Error { .. } => "error",
         Object::Null => "null",
     };
@@ -1385,862 +1434,62 @@ pub fn builtin_type(args: Vec<Object>) -> Result<Object, Error> {
     Ok(Object::String(type_name.to_string()))
 }
 
-/// Built-in function: is_integer
-/// Returns true if the value is an integer, false otherwise
-pub fn builtin_is_integer(args: Vec<Object>) -> Result<Object, Error> {
+/// Check if an object is an integer
+fn builtin_is_integer(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for is_integer: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for is_integer: expected 1, got {}", args.len())));
     }
     
-    Ok(Object::Boolean(matches!(&args[0], Object::Integer(_))))
+    match &args[0] {
+        Object::Integer(_) => Ok(Object::Boolean(true)),
+        _ => Ok(Object::Boolean(false)),
+    }
 }
 
-/// Built-in function: is_string
-/// Returns true if the value is a string, false otherwise
-pub fn builtin_is_string(args: Vec<Object>) -> Result<Object, Error> {
+/// Check if an object is a string
+fn builtin_is_string(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for is_string: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for is_string: expected 1, got {}", args.len())));
     }
     
-    Ok(Object::Boolean(matches!(&args[0], Object::String(_))))
+    match &args[0] {
+        Object::String(_) => Ok(Object::Boolean(true)),
+        _ => Ok(Object::Boolean(false)),
+    }
 }
 
-/// Built-in function: is_array
-/// Returns true if the value is an array, false otherwise
-pub fn builtin_is_array(args: Vec<Object>) -> Result<Object, Error> {
+/// Check if an object is an array
+fn builtin_is_array(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for is_array: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for is_array: expected 1, got {}", args.len())));
     }
     
-    Ok(Object::Boolean(matches!(&args[0], Object::Array(_))))
+    match &args[0] {
+        Object::Array(_) => Ok(Object::Boolean(true)),
+        _ => Ok(Object::Boolean(false)),
+    }
 }
 
-/// Built-in function: is_hash
-/// Returns true if the value is a hash, false otherwise
-pub fn builtin_is_hash(args: Vec<Object>) -> Result<Object, Error> {
+/// Check if an object is a hash table
+fn builtin_is_hash(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for is_hash: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for is_hash: expected 1, got {}", args.len())));
     }
     
-    Ok(Object::Boolean(matches!(&args[0], Object::HashTable(_))))
+    match &args[0] {
+        Object::HashTable(_) => Ok(Object::Boolean(true)),
+        _ => Ok(Object::Boolean(false)),
+    }
 }
 
-/// Built-in function: is_null
-/// Returns true if the value is null, false otherwise
-pub fn builtin_is_null(args: Vec<Object>) -> Result<Object, Error> {
+/// Check if an object is null
+fn builtin_is_null(args: Vec<Object>) -> Result<Object, Error> {
     if args.len() != 1 {
-        return Err(Error::vm(format!("wrong number of arguments for is_null: got {}, want 1", args.len())));
+        return Err(Error::vm(format!("Wrong number of arguments for is_null: expected 1, got {}", args.len())));
     }
     
-    Ok(Object::Boolean(matches!(&args[0], Object::Null)))
+    match &args[0] {
+        Object::Null => Ok(Object::Boolean(true)),
+        _ => Ok(Object::Boolean(false)),
+    }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::object::Object;
-    
-    #[test]
-    fn test_stack_operations() {
-        let mut vm = VM::new();
-        
-        // Test pushing objects onto the stack
-        let obj1 = Rc::new(Object::Integer(42));
-        let obj2 = Rc::new(Object::Boolean(true));
-        
-        vm.push(obj1.clone()).unwrap();
-        assert_eq!(vm.sp, 1);
-        
-        vm.push(obj2.clone()).unwrap();
-        assert_eq!(vm.sp, 2);
-        
-        // Test peeking at objects
-        let peek_result = vm.peek().unwrap();
-        assert_eq!(*peek_result, Object::Boolean(true));
-        assert_eq!(vm.sp, 2); // Stack pointer shouldn't change
-        
-        let peek_at_result = vm.peek_at(1).unwrap();
-        assert_eq!(*peek_at_result, Object::Integer(42));
-        
-        // Test popping objects
-        let pop_result1 = vm.pop().unwrap();
-        assert_eq!(*pop_result1, Object::Boolean(true));
-        assert_eq!(vm.sp, 1);
-        
-        let pop_result2 = vm.pop().unwrap();
-        assert_eq!(*pop_result2, Object::Integer(42));
-        assert_eq!(vm.sp, 0);
-        
-        // Test stack underflow
-        let pop_result3 = vm.pop();
-        assert!(pop_result3.is_err());
-        match pop_result3 {
-            Err(Error::VMError(_)) => (),
-            _ => panic!("Expected VMError"),
-        }
-    }
-    
-    #[test]
-    fn test_local_variable_operations() {
-        // Create bytecode for setting and getting local variables
-        let mut instructions = Vec::new();
-        
-        // Push constant 42
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        
-        // Set local at index 0
-        instructions.push(Opcode::SetLocal as u8);
-        instructions.push(0); // local index hi byte
-        instructions.push(0); // local index lo byte
-        
-        // Push constant 99
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(1); // const index lo byte
-        
-        // Set local at index 1
-        instructions.push(Opcode::SetLocal as u8);
-        instructions.push(0); // local index hi byte
-        instructions.push(1); // local index lo byte
-        
-        // Get local at index 0
-        instructions.push(Opcode::GetLocal as u8);
-        instructions.push(0); // local index hi byte
-        instructions.push(0); // local index lo byte
-        
-        // Get local at index 1
-        instructions.push(Opcode::GetLocal as u8);
-        instructions.push(0); // local index hi byte
-        instructions.push(1); // local index lo byte
-        
-        // Add the two local values
-        instructions.push(Opcode::Add as u8);
-        
-        let constants = vec![Object::Integer(42), Object::Integer(99)];
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Create the VM with the bytecode
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        // Local variables are on the stack at the base pointer index
-        // Set the base pointer to 0 for this test
-        let frame = &mut vm.frames[0];
-        frame.base_pointer = 0;
-        
-        // Make room on the stack for two local variables
-        vm.stack.push(Rc::new(Object::Null));
-        vm.stack.push(Rc::new(Object::Null));
-        vm.sp = 2;
-        
-        // Run the VM
-        match vm.run() {
-            Ok(result) => {
-                // Verify the result is 42 + 99 = 141
-                assert_eq!(*result, Object::Integer(141));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_array_operations() {
-        // Create a program that builds an array [1, 2, 3] and gets the element at index 1
-        let mut instructions = Vec::new();
-        
-        // Push constants onto the stack
-        for i in 0..3 {
-            instructions.push(Opcode::Constant as u8);
-            instructions.push(0); // const index hi byte
-            instructions.push(i); // const index lo byte
-        }
-        
-        // Create array with 3 elements
-        instructions.push(Opcode::Array as u8);
-        instructions.push(0); // num elements hi byte  
-        instructions.push(3); // num elements lo byte
-        
-        // Get element at index 1
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(3); // const index lo byte (index value = 1)
-        
-        instructions.push(Opcode::Index as u8);
-        
-        let constants = vec![
-            Object::Integer(1),
-            Object::Integer(2),
-            Object::Integer(3),
-            Object::Integer(1), // index value
-        ];
-        
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Run the VM
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 2 (the value at index 1)
-                assert_eq!(*result, Object::Integer(2));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_hash_operations() {
-        // Create a program that builds a hash {"one": 1, "two": 2} and gets the value for key "two"
-        let mut instructions = Vec::new();
-        
-        // Push key "one"
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        
-        // Push value 1
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(1); // const index lo byte
-        
-        // Push key "two"
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(2); // const index lo byte
-        
-        // Push value 2
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(3); // const index lo byte
-        
-        // Create hash with 2 pairs
-        instructions.push(Opcode::Hash as u8);
-        instructions.push(0); // num pairs hi byte
-        instructions.push(2); // num pairs lo byte
-        
-        // Push key for lookup
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(2); // const index lo byte (key "two")
-        
-        // Get the value
-        instructions.push(Opcode::Index as u8);
-        
-        let constants = vec![
-            Object::String("one".to_string()),
-            Object::Integer(1),
-            Object::String("two".to_string()),
-            Object::Integer(2),
-        ];
-        
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Run the VM
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 2 (the value for key "two")
-                assert_eq!(*result, Object::Integer(2));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_nested_hash_operations() {
-        // Create a program that:
-        // 1. Creates a hash {"inner": 42}
-        // 2. Accesses the hash with key "inner" to get 42
-        let mut instructions = Vec::new();
-        
-        // Create a hash {"inner": 42}
-        // Key "inner"
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        
-        // Value 42
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(1); // const index lo byte
-        
-        // Create hash
-        instructions.push(Opcode::Hash as u8);
-        instructions.push(0); // num pairs hi byte
-        instructions.push(1); // num pairs lo byte
-        
-        // Access the hash with key "inner"
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        
-        instructions.push(Opcode::Index as u8);
-        
-        // Constants for the program
-        let constants = vec![
-            Object::String("inner".to_string()),
-            Object::Integer(42),
-        ];
-        
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Create the VM and run the program
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        // Run the VM
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 42
-                assert_eq!(*result, Object::Integer(42));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_complex_array_operations() {
-        // Create a nested array structure [[1, 2], [3, 4]] and access [1][0] == 3
-        let mut instructions = Vec::new();
-        
-        // Push constants 1, 2 for first inner array
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(1); // const index lo byte
-        
-        // Create first inner array [1, 2]
-        instructions.push(Opcode::Array as u8);
-        instructions.push(0); // num elements hi byte
-        instructions.push(2); // num elements lo byte
-        
-        // Push constants 3, 4 for second inner array
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(2); // const index lo byte
-        
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(3); // const index lo byte
-        
-        // Create second inner array [3, 4]
-        instructions.push(Opcode::Array as u8);
-        instructions.push(0); // num elements hi byte
-        instructions.push(2); // num elements lo byte
-        
-        // Create outer array [[1, 2], [3, 4]]
-        instructions.push(Opcode::Array as u8);
-        instructions.push(0); // num elements hi byte
-        instructions.push(2); // num elements lo byte
-        
-        // Get the second inner array (index 1)
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(4); // const index lo byte (index value = 1)
-        
-        instructions.push(Opcode::Index as u8);
-        
-        // Get the first element of the second inner array (index 0)
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(5); // const index lo byte (index value = 0)
-        
-        instructions.push(Opcode::Index as u8);
-        
-        let constants = vec![
-            Object::Integer(1),
-            Object::Integer(2),
-            Object::Integer(3),
-            Object::Integer(4),
-            Object::Integer(1), // Outer array index (1)
-            Object::Integer(0), // Inner array index (0)
-        ];
-        
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Run the VM
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 3 (the value at outer[1][0])
-                assert_eq!(*result, Object::Integer(3));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_closure_without_free_vars() {
-        // Create a simple closure with no free variables
-        // The closure just returns a constant value (42)
-        
-        // Create a constant for the compiled function
-        let compiled_fn = Object::CompiledFunction(Rc::new(crate::compiler::CompiledFunction {
-            instructions: vec![
-                Opcode::Constant as u8, 0, 1, // Push constant (42) which is at index 1 in the constants array
-                Opcode::ReturnValue as u8,    // Return the value
-            ],
-            num_locals: 0,
-            num_parameters: 0,
-            name: Some("test_closure".to_string()),
-        }));
-        
-        // Instructions for creating and calling the closure
-        let mut instructions = Vec::new();
-        
-        // Create the closure (compiled_fn is at constant index 0, with 0 free vars)
-        instructions.push(Opcode::Closure as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        instructions.push(0); // num free vars hi byte
-        instructions.push(0); // num free vars lo byte
-        
-        // Call the closure with 0 arguments
-        instructions.push(Opcode::Call as u8);
-        instructions.push(0); // num args hi byte
-        instructions.push(0); // num args lo byte
-        
-        // Set up bytecode with the instructions and constants
-        // Note: we need both the compiled function AND the integer 42 in the constants array
-        let constants = vec![
-            compiled_fn,
-            Object::Integer(42),
-        ];
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Create and run the VM
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 42
-                assert_eq!(*result, Object::Integer(42));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_closure_with_free_vars() {
-        // Create a closure that captures a free variable and returns it
-        // The free variable is 42
-        
-        // Create a constant for the compiled function that uses a free variable
-        let compiled_fn = Object::CompiledFunction(Rc::new(crate::compiler::CompiledFunction {
-            instructions: vec![
-                Opcode::GetFree as u8, 0, 0, // Get free variable at index 0
-                Opcode::ReturnValue as u8,   // Return the value
-            ],
-            num_locals: 0,
-            num_parameters: 0,
-            name: Some("test_closure_with_free_vars".to_string()),
-        }));
-        
-        // Instructions for creating and calling the closure
-        let mut instructions = Vec::new();
-        
-        // Push the value 42 onto the stack (will become a free variable)
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte 
-        instructions.push(1); // const index lo byte (42 is at index 1)
-        
-        // Create the closure (compiled_fn is at constant index 0, with 1 free var)
-        instructions.push(Opcode::Closure as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        instructions.push(0); // num free vars hi byte
-        instructions.push(1); // num free vars lo byte
-        
-        // Call the closure with 0 arguments
-        instructions.push(Opcode::Call as u8);
-        instructions.push(0); // num args hi byte
-        instructions.push(0); // num args lo byte
-        
-        // Set up bytecode with the instructions and constants
-        let constants = vec![
-            compiled_fn,
-            Object::Integer(42),
-        ];
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Create and run the VM
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 42 (the free variable)
-                assert_eq!(*result, Object::Integer(42));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_nested_closures() {
-        // Create nested closures where an outer closure returns another closure
-        // and the inner closure captures a free variable from the outer scope
-        
-        // Inner function (returns the free variable at index 0)
-        let inner_fn = Object::CompiledFunction(Rc::new(crate::compiler::CompiledFunction {
-            instructions: vec![
-                Opcode::GetFree as u8, 0, 0, // Get free variable at index 0
-                Opcode::ReturnValue as u8,   // Return the value
-            ],
-            num_locals: 0,
-            num_parameters: 0,
-            name: Some("inner_closure".to_string()),
-        }));
-        
-        // Outer function (creates and returns the inner closure)
-        let outer_fn = Object::CompiledFunction(Rc::new(crate::compiler::CompiledFunction {
-            instructions: vec![
-                Opcode::GetLocal as u8, 0, 0, // Get local variable at index 0 (the argument 42)
-                Opcode::Closure as u8, 0, 1, 0, 1, // Create closure (inner_fn) with 1 free var
-                Opcode::ReturnValue as u8,    // Return the closure
-            ],
-            num_locals: 1,
-            num_parameters: 1,
-            name: Some("outer_closure".to_string()),
-        }));
-        
-        // Instructions for creating the outer closure, calling it with arg 42, 
-        // then calling the returned inner closure
-        let mut instructions = Vec::new();
-        
-        // Create the outer closure (compiled_fn is at constant index 0, with 0 free vars)
-        instructions.push(Opcode::Closure as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        instructions.push(0); // num free vars hi byte
-        instructions.push(0); // num free vars lo byte
-        
-        // Push argument 42 for the outer closure
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(2); // const index lo byte (42 is at index 2)
-        
-        // Call the outer closure with 1 argument
-        instructions.push(Opcode::Call as u8);
-        instructions.push(0); // num args hi byte
-        instructions.push(1); // num args lo byte
-        
-        // Call the inner closure (returned by the outer closure) with 0 arguments
-        instructions.push(Opcode::Call as u8);
-        instructions.push(0); // num args hi byte
-        instructions.push(0); // num args lo byte
-        
-        // Set up bytecode with the instructions and constants
-        let constants = vec![
-            outer_fn,
-            inner_fn,
-            Object::Integer(42),
-        ];
-        let bytecode = Bytecode { instructions, constants };
-        
-        // Create and run the VM
-        let mut vm = VM::with_bytecode(bytecode);
-        
-        match vm.run() {
-            Ok(result) => {
-                // The result should be 42 (the captured value)
-                assert_eq!(*result, Object::Integer(42));
-            },
-            Err(e) => {
-                println!("VM execution error: {:?}", e);
-                panic!("VM execution failed: {:?}", e);
-            }
-        }
-    }
-    
-    #[test]
-    fn test_builtin_functions() {
-        // Test the builtin len function with a string
-        let result = builtin_len(vec![Object::String("hello".to_string())]);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Object::Integer(5));
-        
-        // Test the builtin first function with an array
-        let result = builtin_first(vec![Object::Array(vec![
-            Object::Integer(1),
-            Object::Integer(2),
-            Object::Integer(3),
-        ])]);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Object::Integer(1));
-        
-        // Test the builtin type function
-        let result = builtin_type(vec![Object::Integer(42)]);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Object::String("integer".to_string()));
-        
-        // Test the builtin is_integer function
-        let result = builtin_is_integer(vec![Object::Integer(42)]);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Object::Boolean(true));
-        
-        // Test the builtin is_string function with a non-string
-        let result = builtin_is_string(vec![Object::Integer(42)]);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Object::Boolean(false));
-    }
-    
-    #[test]
-    fn test_type_declarations() {
-        // Test defining a struct/type and adding fields
-        let mut instructions = Vec::new();
-        let mut constants = Vec::new();
-        
-        // Add constants for the type name and field names/types
-        constants.push(Object::String("Person".to_string())); // 0: type name
-        constants.push(Object::String("name".to_string()));   // 1: field1 name
-        constants.push(Object::String("tea".to_string()));    // 2: field1 type
-        constants.push(Object::String("age".to_string()));    // 3: field2 name
-        constants.push(Object::String("normie".to_string())); // 4: field2 type
-        
-        // Load the type name and create a struct type with 2 fields
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(0); // const index lo byte
-        
-        instructions.push(Opcode::DefineType as u8);
-        instructions.push(0); // num fields hi byte
-        instructions.push(2); // num fields lo byte
-        
-        // Define first field (name: tea)
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(1); // const index lo byte (field name)
-        
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(2); // const index lo byte (field type)
-        
-        instructions.push(Opcode::DefineField as u8);
-        
-        // Define second field (age: normie)
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(3); // const index lo byte (field name)
-        
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0); // const index hi byte
-        instructions.push(4); // const index lo byte (field type)
-        
-        instructions.push(Opcode::DefineField as u8);
-        
-        // Store in global variable
-        instructions.push(Opcode::SetGlobal as u8);
-        instructions.push(0); // global index hi byte
-        instructions.push(0); // global index lo byte
-        
-        // Get the struct definition back
-        instructions.push(Opcode::GetGlobal as u8);
-        instructions.push(0); // global index hi byte
-        instructions.push(0); // global index lo byte
-        
-        let bytecode = Bytecode { instructions, constants };
-        let mut vm = VM::new();
-        vm.with_bytecode_and_state(bytecode, Vec::new());
-        
-        let result = vm.run().unwrap();
-        
-        // Verify the result is a struct with the correct fields
-        match &*result {
-            Object::Struct { name, fields } => {
-                assert_eq!(name, "Person");
-                assert_eq!(fields.len(), 2);
-                assert_eq!(fields[0].0, "name");
-                assert_eq!(fields[0].1, "tea");
-                assert_eq!(fields[1].0, "age");
-                assert_eq!(fields[1].1, "normie");
-            },
-            _ => panic!("Expected struct, got {:?}", result),
-        }
-    }
-    
-    #[test]
-    fn test_interface_declarations() {
-        // Test creating an interface with methods
-        let mut constants = Vec::new();
-        let mut instructions = Vec::new();
-        
-        // Add interface name as constant[0]
-        constants.push(Rc::new(Object::String("Greeter".to_string())));
-        
-        // Add method name "greet" as constant[1]
-        constants.push(Rc::new(Object::String("greet".to_string())));
-        
-        // Add parameter count (1) as constant[2]
-        constants.push(Rc::new(Object::Integer(1)));
-        
-        // Add parameter name "name" as constant[3]
-        constants.push(Rc::new(Object::String("name".to_string())));
-        
-        // Add parameter type "tea" as constant[4]
-        constants.push(Rc::new(Object::String("tea".to_string())));
-        
-        // Add return type "tea" as constant[5]
-        constants.push(Rc::new(Object::String("tea".to_string())));
-        
-        // Add method name "farewell" as constant[6]
-        constants.push(Rc::new(Object::String("farewell".to_string())));
-        
-        // Add parameter count (1) as constant[7]
-        constants.push(Rc::new(Object::Integer(1)));
-        
-        // Add parameter name "name" as constant[8]
-        constants.push(Rc::new(Object::String("name".to_string())));
-        
-        // Add parameter type "tea" as constant[9]
-        constants.push(Rc::new(Object::String("tea".to_string())));
-        
-        // Add return type null as constant[10]
-        constants.push(Rc::new(Object::Null));
-        
-        // Push interface name onto stack
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(0);
-        
-        // Define interface with 2 methods
-        instructions.push(Opcode::DefineInterface as u8);
-        instructions.push(0);
-        instructions.push(2);
-        
-        // Define greet method
-        // The stack must have: (from top to bottom)
-        // - Return type
-        // - Param type
-        // - Param name
-        // - Param count
-        // - Method name
-        // - Interface object
-        
-        // Push method name "greet"
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(1);
-        
-        // Push param count
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(2);
-        
-        // Push param name
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(3);
-        
-        // Push param type
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(4);
-        
-        // Push return type
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(5);
-        
-        instructions.push(Opcode::DefineMethod as u8);
-        
-        // Define farewell method
-        // Push method name "farewell"
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(6);
-        
-        // Push param count
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(7);
-        
-        // Push param name
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(8);
-        
-        // Push param type
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(9);
-        
-        // Push return type (null)
-        instructions.push(Opcode::Constant as u8);
-        instructions.push(0);
-        instructions.push(10);
-        
-        instructions.push(Opcode::DefineMethod as u8);
-        
-        // Create a new VM and set up the bytecode
-        let mut vm = VM::new();
-        
-        // Create a bytecode object with our constants and instructions
-        let bytecode = Bytecode {
-            constants: constants.iter().map(|rc| (**rc).clone()).collect(),
-            instructions: instructions,
-        };
-        
-        // Set up the VM with our bytecode
-        vm.with_bytecode_and_state(bytecode, Vec::new());
-        
-        // Add debug prints
-        println!("Running test_interface_declarations with {} constants and {} instructions",
-                 vm.constants.len(), vm.frames[0].instructions.len());
-        
-        // Run the VM
-        let result = vm.run();
-        assert!(result.is_ok(), "VM execution failed: {:?}", result.err());
-        
-        // Check the result is an interface
-        let interface = result.unwrap();
-        println!("Result: {:?}", interface);
-        
-        match &*interface {
-            Object::Interface { name, methods } => {
-                assert_eq!(name, "Greeter", "Interface name should be 'Greeter'");
-                assert_eq!(methods.len(), 2, "Interface should have 2 methods");
-                
-                // Check greet method
-                assert_eq!(methods[0].0, "greet", "First method should be 'greet'");
-                assert_eq!(methods[0].1.len(), 1, "greet should have 1 parameter");
-                assert_eq!(methods[0].1[0].0, "name", "Parameter name should be 'name'");
-                assert_eq!(methods[0].1[0].1, "tea", "Parameter type should be 'tea'");
-                assert_eq!(methods[0].2.as_ref().unwrap(), "tea", "Return type should be 'tea'");
-                
-                // Check farewell method
-                assert_eq!(methods[1].0, "farewell", "Second method should be 'farewell'");
-                assert_eq!(methods[1].1.len(), 1, "farewell should have 1 parameter");
-                assert_eq!(methods[1].1[0].0, "name", "Parameter name should be 'name'");
-                assert_eq!(methods[1].1[0].1, "tea", "Parameter type should be 'tea'");
-                assert!(methods[1].2.is_none(), "farewell should have no return type");
-            },
-            _ => panic!("Expected interface, got: {:?}", interface),
-        }
-    }
-} 

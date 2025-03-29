@@ -330,6 +330,7 @@ pub struct CompiledFunction {
     pub num_parameters: usize,
     pub free_variables: Vec<Object>,
     pub name: Option<String>,
+    pub is_variadic: bool,
 }
 
 /// An emitted instruction with opcode and position
@@ -763,6 +764,8 @@ impl Compiler {
             instructions,
             num_locals,
             num_parameters: num_params,
+            name: None,
+            is_variadic: false,
         };
         
         // Add the function to constants

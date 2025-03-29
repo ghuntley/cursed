@@ -37,7 +37,14 @@ pub enum Object {
     Char(char),
     Array(Vec<Object>),
     HashTable(HashMap<String, Object>),
-    CompiledFunction(Rc<CompiledFunction>),
+    CompiledFunction {
+        instructions: Vec<u8>,
+        num_locals: usize,
+        num_parameters: usize,
+        free_variables: Vec<Object>,
+        name: Option<String>,
+        is_variadic: bool,
+    },
     Closure {
         function: Rc<CompiledFunction>,
         free_vars: Vec<Object>,
@@ -57,6 +64,13 @@ pub enum Object {
     Interface {
         name: String,
         methods: Vec<(String, Vec<(String, String)>, Option<String>)>, // (method_name, parameters [(name, type)], return_type)
+    },
+    Method {
+        receiver_type: String, // The type this method belongs to
+        name: String, // Method name
+        parameters: Vec<(String, String)>, // Parameters (name, type)
+        return_type: Option<String>, // Optional return type
+        function: Rc<CompiledFunction>, // The compiled method body
     },
     Error {
         message: String,
@@ -96,7 +110,7 @@ impl Traceable for Object {
                     value.trace(visitor);
                 }
             },
-            Object::CompiledFunction(_) => {
+            Object::CompiledFunction { .. } => {
                 // CompiledFunction doesn't implement Traceable
             },
             Object::Closure { function: _, free_vars } => {
@@ -125,6 +139,9 @@ impl Traceable for Object {
             Object::Error { stack_trace: _, .. } => {
                 // ErrorLocation doesn't implement Traceable
             },
+            Object::Method { .. } => {
+                // Method doesn't contain references to trace
+            },
         }
     }
     
@@ -149,8 +166,8 @@ impl Traceable for Object {
                 }
                 size
             },
-            Object::CompiledFunction(function) => {
-                std::mem::size_of::<Rc<CompiledFunction>>() + function.instructions.len()
+            Object::CompiledFunction { instructions, .. } => {
+                std::mem::size_of::<Object>() + instructions.len()
             },
             Object::Closure { function, free_vars } => {
                 let mut size = std::mem::size_of::<Rc<CompiledFunction>>() + function.instructions.len();
@@ -197,6 +214,17 @@ impl Traceable for Object {
                 size += std::mem::size_of::<Vec<ErrorLocation>>() + stack_trace.len() * std::mem::size_of::<ErrorLocation>();
                 size
             },
+            Object::Method { receiver_type, name, parameters, return_type, function } => {
+                let mut size = std::mem::size_of::<String>() + receiver_type.len() + name.len();
+                for (param_name, param_type) in parameters {
+                    size += param_name.len() + param_type.len();
+                }
+                if let Some(ret_type) = return_type {
+                    size += ret_type.len();
+                }
+                size += std::mem::size_of::<Rc<CompiledFunction>>();
+                size
+            },
             Object::Null => std::mem::size_of::<()>(),
         }
     }
@@ -230,8 +258,12 @@ impl fmt::Display for Object {
                 }
                 write!(f, "}}")
             },
-            Object::CompiledFunction(func) => {
-                write!(f, "function[{}]", func.name.as_ref().unwrap_or(&"anon".to_string()))
+            Object::CompiledFunction { name, .. } => {
+                if let Some(name) = name {
+                    write!(f, "[Function: {}]", name)
+                } else {
+                    write!(f, "[Function]")
+                }
             },
             Object::Closure { function, free_vars } => {
                 write!(f, "closure[{}]", function.name.as_ref().unwrap_or(&"anon".to_string()))
@@ -256,6 +288,20 @@ impl fmt::Display for Object {
                 }
             },
             Object::Null => write!(f, "null"),
+            Object::Method { receiver_type, name, parameters, return_type, .. } => {
+                let params_str = parameters
+                    .iter()
+                    .map(|(param_name, param_type)| format!("{}: {}", param_name, param_type))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                
+                let return_str = match return_type {
+                    Some(ret) => format!(": {}", ret),
+                    None => String::new(),
+                };
+                
+                write!(f, "method {}:{}({}){}{{ ... }}", receiver_type, name, params_str, return_str)
+            },
         }
     }
 }
@@ -273,6 +319,11 @@ impl Object {
             Object::Integer(_) => true,
             Object::String(_) => true,
             Object::Boolean(_) => true,
+            Object::Char(_) => true,
+            Object::CompiledFunction { .. } => {
+                // Functions aren't hashable
+                false
+            },
             _ => false,
         }
     }
@@ -281,7 +332,7 @@ impl Object {
         match self {
             Object::Array(_) | 
             Object::HashTable(_) |
-            Object::CompiledFunction(_) |
+            Object::CompiledFunction { .. } |
             Object::Closure { .. } |
             Object::Instance { .. } => {
                 // Using a safer approach for casting to trait object
@@ -308,11 +359,12 @@ impl Object {
             Object::String(_) => "string",
             Object::Array(_) => "array",
             Object::HashTable(_) => "hash",
-            Object::CompiledFunction(_) => "function",
+            Object::CompiledFunction { .. } => "function",
             Object::Closure { .. } => "closure",
             Object::Builtin { .. } => "builtin",
             Object::Struct { .. } => "struct",
             Object::Interface { .. } => "interface",
+            Object::Method { .. } => "method",
             Object::Instance { .. } => "instance",
             Object::Error { .. } => "error",
             Object::Null => "null",
@@ -329,11 +381,12 @@ impl Object {
             (Object::Char(_), "char") => true,
             (Object::Array(_), "array") => true,
             (Object::HashTable(_), "hash") => true,
-            (Object::CompiledFunction(_), "function") => true,
+            (Object::CompiledFunction { .. }, "function") => true,
             (Object::Closure { .. }, "closure") => true,
             (Object::Builtin { .. }, "builtin") => true,
             (Object::Struct { .. }, "struct") => true,
             (Object::Interface { .. }, "interface") => true,
+            (Object::Method { .. }, "method") => true,
             (Object::Instance { .. }, "instance") => true,
             (Object::Error { .. }, "error") => true,
             (Object::Null, "null") => true,
@@ -400,11 +453,12 @@ impl Object {
             Object::Char(_) => true,
             Object::Array(a) => !a.is_empty(),
             Object::HashTable(h) => !h.is_empty(),
-            Object::CompiledFunction(_) => true,
+            Object::CompiledFunction { .. } => true,
             Object::Closure { .. } => true,
             Object::Builtin { .. } => true,
             Object::Struct { .. } => true,
             Object::Interface { .. } => true,
+            Object::Method { .. } => true,
             Object::Instance { .. } => true,
             Object::Error { .. } => false,
             Object::Null => false,
@@ -426,11 +480,11 @@ impl Object {
                 let entries: Vec<String> = map.iter().map(|(k, v)| format!("{}: {}", k, v.to_string())).collect();
                 format!("{{{}}}", entries.join(", "))
             },
-            Object::CompiledFunction(f) => {
-                if let Some(ref name) = f.name {
-                    format!("function[{}]", name)
+            Object::CompiledFunction { name, .. } => {
+                if let Some(name) = name {
+                    format!("[Function: {}]", name)
                 } else {
-                    "function[anonymous]".to_string()
+                    "[Function]".to_string()
                 }
             },
             Object::Closure { function, .. } => {
@@ -453,13 +507,27 @@ impl Object {
                 }
             },
             Object::Error { message, error_type, .. } => {
-                if let Some(ref err_type) = error_type {
+                if let Some(err_type) = error_type {
                     format!("{}Error: {}", err_type, message)
                 } else {
                     format!("Error: {}", message)
                 }
             },
             Object::Null => "null".to_string(),
+            Object::Method { receiver_type, name, parameters, return_type, .. } => {
+                let params_str = parameters
+                    .iter()
+                    .map(|(param_name, param_type)| format!("{}: {}", param_name, param_type))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                
+                let return_str = match return_type {
+                    Some(ret) => format!(": {}", ret),
+                    None => String::new(),
+                };
+                
+                format!("method {}:{}({}){}{{ ... }}", receiver_type, name, params_str, return_str)
+            },
         }
     }
 
@@ -558,7 +626,17 @@ impl Object {
 
     pub fn to_function(&self) -> Option<Rc<CompiledFunction>> {
         match self {
-            Object::CompiledFunction(function) => Some(function.clone()),
+            Object::CompiledFunction { instructions, num_locals, num_parameters, free_variables, name, is_variadic } => {
+                let func = crate::compiler::CompiledFunction {
+                    instructions: instructions.clone(),
+                    num_locals: *num_locals as u8,
+                    num_parameters: *num_parameters as u8,
+                    free_variables: free_variables.clone(),
+                    name: name.clone(),
+                    is_variadic: *is_variadic,
+                };
+                Some(Rc::new(func))
+            },
             _ => None,
         }
     }
@@ -614,6 +692,10 @@ impl Object {
             Object::Interface { .. } => {
                 // Interface objects don't contain references that need tracing
             },
+            Object::Method { function, .. } => {
+                let func_ptr = Rc::as_ptr(function) as usize;
+                visitor.visit_ptr(func_ptr, crate::memory::tagged::Tag::Function);
+            },
             _ => {}
         }
     }
@@ -628,11 +710,12 @@ impl Object {
             Object::Char(_) => type_name == "char",
             Object::Array(_) => type_name == "array",
             Object::HashTable(_) => type_name == "hash",
-            Object::CompiledFunction(_) => type_name == "function",
+            Object::CompiledFunction { .. } => type_name == "function",
             Object::Closure { .. } => type_name == "closure",
             Object::Builtin { .. } => type_name == "builtin",
             Object::Struct { .. } => type_name == "struct",
             Object::Interface { .. } => type_name == "interface",
+            Object::Method { .. } => type_name == "method",
             Object::Instance { .. } => type_name == "instance",
             Object::Error { .. } => type_name == "error",
             Object::Null => type_name == "null",
@@ -662,8 +745,12 @@ impl Object {
                 }
                 format!("{{{}}}", entries.join(", "))
             },
-            Object::CompiledFunction(func) => {
-                format!("CompiledFunction[{:p}]", Rc::as_ptr(&func))
+            Object::CompiledFunction { name, .. } => {
+                if let Some(name) = name {
+                    format!("[Function: {}]", name)
+                } else {
+                    "[Function]".to_string()
+                }
             },
             Object::Closure { function, free_vars } => {
                 let free_vars_str = free_vars
@@ -703,6 +790,20 @@ impl Object {
                     .collect::<Vec<String>>()
                     .join(", ");
                 format!("interface {}{{ {} }}", name, methods_str)
+            },
+            Object::Method { receiver_type, name, parameters, return_type, function } => {
+                let params_str = parameters
+                    .iter()
+                    .map(|(param_name, param_type)| format!("{}: {}", param_name, param_type))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                
+                let return_str = match return_type {
+                    Some(ret) => format!(": {}", ret),
+                    None => String::new(),
+                };
+                
+                format!("method {}:{}({}){}{{ ... }}", receiver_type, name, params_str, return_str)
             },
             Object::Instance { struct_type, fields } => {
                 let type_name = match &**struct_type {
@@ -780,7 +881,14 @@ impl From<HashMap<String, Object>> for Object {
 
 impl From<Rc<CompiledFunction>> for Object {
     fn from(val: Rc<CompiledFunction>) -> Self {
-        Object::CompiledFunction(val)
+        Object::CompiledFunction {
+            instructions: val.instructions.clone(),
+            num_locals: val.num_locals as usize,
+            num_parameters: val.num_parameters as usize,
+            free_variables: Vec::new(),
+            name: val.name.clone(),
+            is_variadic: val.is_variadic,
+        }
     }
 }
 
@@ -837,7 +945,7 @@ impl ObjectTraceableExt for Object {
         match self {
             Object::Array(_) | 
             Object::HashTable(_) |
-            Object::CompiledFunction(_) |
+            Object::CompiledFunction { .. } |
             Object::Closure { .. } |
             Object::Instance { .. } => {
                 // Using a safer approach for casting to trait object

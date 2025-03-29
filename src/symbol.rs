@@ -64,6 +64,11 @@ impl SymbolTable {
             self.outer.as_ref().and_then(|outer| outer.resolve(name))
         })
     }
+    
+    /// Get the number of definitions in this symbol table
+    pub fn get_definition_count(&self) -> usize {
+        self.num_definitions
+    }
 }
 
 impl Clone for Symbol {
