@@ -1,4 +1,4 @@
-use crate::error::{Error, SourceLocation};
+use crate::error::Error;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::compiler::Compiler;
@@ -48,7 +48,10 @@ pub fn start_repl() -> Result<(), Error> {
                     continue;
                 }
                 
-                rl.add_history_entry(line.as_str());
+                // Add the line to history if it's not empty
+                if !line.trim().is_empty() {
+                    let _ = rl.add_history_entry(line.as_str());
+                }
                 
                 // Handle special commands
                 match line.trim() {
@@ -129,31 +132,6 @@ fn print_help() {
     println!("  sus x = 5;");
     println!("  sus y = 10;");
     println!("  x + y;");
-}
-
-/// Print an error message
-fn print_error(error: &Error) {
-    eprintln!("Error: {}", error);
-    
-    if let Some(location) = error.location() {
-        print_error_location(&location);
-    }
-}
-
-/// Print error location details
-fn print_error_location(location: &SourceLocation) {
-    eprintln!("  at line {}, column {}", location.line, location.column);
-    
-    if !location.source_line.is_empty() {
-        eprintln!("     {}", location.source_line);
-        
-        // Highlight the error position with a caret
-        let tokens: Vec<&str> = location.source_line.split_whitespace().collect();
-        if !tokens.is_empty() {
-            // Create spacing and point to the error with ^
-            eprintln!("     {}^", repeat_str(" ", location.column - 1));
-        }
-    }
 }
 
 /// Repeat a string n times

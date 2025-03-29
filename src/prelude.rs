@@ -8,7 +8,6 @@ use std::vec::Vec;
 use std::str::{self, Chars};
 use std::cell::{RefCell, Ref, RefMut};
 use crate::compiler::symbol_table::{SymbolScope, SymbolTable};
-use std::borrow::Borrow;
 use std::string::ToString;
 
 // Export the Vec extension trait

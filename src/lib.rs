@@ -1,6 +1,5 @@
 #![recursion_limit = "512"]
 
-use std::rc::Rc;
 
 /// The CURSED programming language implementation
 /// 
@@ -25,7 +24,7 @@ pub mod helpers;
 
 // Basic stub implementations for compiler and memory
 pub mod compiler {
-    use std::rc::Rc;
+    
     
     pub mod symbol_table {
         pub use crate::symbol::{Symbol, SymbolScope, SymbolTable};
@@ -337,7 +336,7 @@ pub mod compiler {
         }
         
         // Add a new method for compiling expressions
-        fn compile_expression(&mut self, expr: &dyn crate::ast::Expression) -> Result<(), crate::error::Error> {
+        fn compile_expression(&mut self, _expr: &dyn crate::ast::Expression) -> Result<(), crate::error::Error> {
             // This is a placeholder implementation
             // We'll need to actually implement expression compilation for each type
             // For now, just push a constant null
@@ -412,7 +411,7 @@ pub mod compiler {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use crate::ast::{Expression, ExpressionStatement, IntegerLiteral, Program, Statement};
+        use crate::ast::{Program};
         use crate::lexer::Lexer;
         use crate::object::Object;
         use crate::parser::Parser;
@@ -692,6 +691,10 @@ pub mod compiler {
 }
 
 pub mod memory {
+    
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
     pub mod gc {
         use std::collections::HashSet;
         
@@ -712,26 +715,26 @@ pub mod memory {
         
         // Simple GC
         pub struct GarbageCollector {
-            marked: HashSet<usize>,
+            _marked: HashSet<usize>,
         }
         
         impl GarbageCollector {
             pub fn new() -> Self {
                 Self {
-                    marked: HashSet::new(),
+                    _marked: HashSet::new(),
                 }
             }
         }
         
         // GC reference
         pub struct Gc<T: Traceable + 'static> {
-            inner: T,
+            _inner: T,
         }
         
         impl<T: Traceable + 'static> Gc<T> {
             pub fn new(value: T) -> Self {
                 Self {
-                    inner: value,
+                    _inner: value,
                 }
             }
         }
@@ -787,12 +790,27 @@ pub mod memory {
     pub use gc::{Traceable, Visitor, GarbageCollector, Gc};
     pub use tagged::{TaggedPtr, Tag, NonNullExt};
     
-    // Minimal memory manager
-    pub struct MemoryManager {}
+    // Stub implementation of a heap for memory management
+    #[derive(Debug)]
+    struct Heap {
+        // TODO: Implement actual memory allocation and tracking
+        // For now, just a placeholder to satisfy the compiler
+        _marked: bool, // Flag for marking objects during GC (unused for now)
+    }
+
+    // Stub implementation of a memory manager
+    #[derive(Debug)]
+    pub struct MemoryManager {
+        // TODO: Implement actual memory management logic
+        // For now, holds a reference to the heap stub
+        _inner: Rc<RefCell<Heap>>, // The underlying heap (unused for now)
+    }
     
     impl MemoryManager {
         pub fn new() -> Self {
-            Self {}
+            Self {
+                _inner: Rc::new(RefCell::new(Heap { _marked: false })),
+            }
         }
     }
     

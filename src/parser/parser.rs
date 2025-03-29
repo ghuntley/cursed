@@ -382,9 +382,9 @@ impl<'a> Parser<'a> {
         let token = self.current_token.token_literal(); // 'bestie' token
         
         // Initialize optional parts
-        let mut init: Option<Box<dyn Statement>> = None;
-        let mut condition: Option<Box<dyn Expression>> = None;
-        let mut post: Option<Box<dyn Statement>> = None;
+        let mut _init: Option<Box<dyn Statement>> = None;
+        let mut _condition: Option<Box<dyn Expression>> = None;
+        let mut _post: Option<Box<dyn Statement>> = None;
 
         // Look ahead to determine the form of the for loop
         // The structure depends on whether the next token after 'bestie' is '{' or something else
@@ -411,7 +411,7 @@ impl<'a> Parser<'a> {
 
         if first_part_is_init_stmt {
             // C-style loop with init statement
-            init = Some(self.parse_statement()?);
+            _init = Some(self.parse_statement()?);
 
             // Expect semicolon after init
             if !self.expect_peek(&Token::Semicolon) {
@@ -423,10 +423,10 @@ impl<'a> Parser<'a> {
             // Parse condition (optional)
             if self.peek_token != Token::Semicolon {
                 self.next_token()?;
-                condition = Some(self.parse_expression(Precedence::Lowest)?);
+                _condition = Some(self.parse_expression(Precedence::Lowest)?);
             } else {
                 // If it's a semicolon, there's no condition
-                condition = None;
+                _condition = None;
             }
             
             // Expect semicolon after condition
@@ -441,10 +441,10 @@ impl<'a> Parser<'a> {
                 self.next_token()?;
                 // Treat post as an expression statement for simplicity
                 // Need to ensure parse_statement can handle expressions correctly here
-                post = Some(self.parse_expression_statement()?);
+                _post = Some(self.parse_expression_statement()?);
             } else {
                 // If next is LBrace, there's no post statement
-                post = None;
+                _post = None;
             }
             
             // Expect opening brace for body
@@ -457,16 +457,16 @@ impl<'a> Parser<'a> {
 
             return Ok(Box::new(ast::ForStatement {
                 token,
-                init,
-                condition,
-                post,
+                init: _init,
+                condition: _condition,
+                post: _post,
                 body,
             }));
 
         } else {
             // Either Condition-only or C-style loop without init
             // The first part MUST be the condition
-            condition = Some(self.parse_expression(Precedence::Lowest)?);
+            _condition = Some(self.parse_expression(Precedence::Lowest)?);
             
             if self.current_token == Token::LBrace {
                 // Condition-only loop: bestie condition { body }
@@ -474,7 +474,7 @@ impl<'a> Parser<'a> {
                  return Ok(Box::new(ast::ForStatement {
                      token,
                      init: None, // No init in this form
-                     condition,
+                     condition: _condition,
                      post: None, // No post in this form
                      body,
                  }));
@@ -484,14 +484,14 @@ impl<'a> Parser<'a> {
                  // Let's restart the parsing for this specific sub-case for clarity.
                  
                  // Reset condition, we will parse it again after the first semicolon.
-                 condition = None;
+                 _condition = None;
                  
                  // We already consumed the first semicolon implicitly by checking self.current_token
                  
                  // Parse condition (optional) - after the first semicolon
                  if self.peek_token != Token::Semicolon {
                     self.next_token()?;
-                    condition = Some(self.parse_expression(Precedence::Lowest)?);
+                    _condition = Some(self.parse_expression(Precedence::Lowest)?);
                  }
                  
                  // Expect semicolon after condition
@@ -504,9 +504,9 @@ impl<'a> Parser<'a> {
                  // Parse post statement (optional)
                  if self.peek_token != Token::LBrace {
                      self.next_token()?;
-                     post = Some(self.parse_expression_statement()?);
+                     _post = Some(self.parse_expression_statement()?);
                  } else {
-                     post = None;
+                     _post = None;
                  }
                  
                  // Expect opening brace for body
@@ -520,8 +520,8 @@ impl<'a> Parser<'a> {
                  return Ok(Box::new(ast::ForStatement {
                      token,
                      init: None, // No init in this form
-                     condition,
-                     post,
+                     condition: _condition,
+                     post: _post,
                      body,
                  }));
             } else {
@@ -1026,7 +1026,7 @@ impl<'a> Parser<'a> {
                     value: name.clone(),
                 };
                 
-                let curr_token = self.current_token.clone();
+                let _curr_token = self.current_token.clone();
                 self.next_token()?;
                 
                 // Check for assignment expressions

@@ -127,6 +127,11 @@ pub enum Error {
 
     /// System errors
     SystemError(String),
+
+    /// Not implemented errors
+    NotImplemented {
+        message: String,
+    },
 }
 
 /// Error reporting for CURSED
@@ -376,6 +381,7 @@ impl Error {
             Error::HeapOverflow(msg) => msg.clone(),
             Error::InvalidOperation(msg) => msg.clone(),
             Error::SystemError(msg) => msg.clone(),
+            Error::NotImplemented { message } => message.clone(),
         }
     }
 
@@ -390,9 +396,9 @@ impl Error {
         }
     }
 
-    /// Create a 'not implemented' error
-    pub fn NotImplemented<T: Into<String>>(message: T, location: SourceLocation) -> Self {
-        Error::Unknown(format!("Not implemented: {}", message.into()))
+    /// Creates a new `NotImplemented` error.
+    pub fn not_implemented<T: Into<String>>(message: T, _location: SourceLocation) -> Self {
+        Error::NotImplemented { message: message.into() }
     }
 }
 

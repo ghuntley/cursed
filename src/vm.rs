@@ -2,7 +2,6 @@
 use crate::compiler::{Bytecode, Instructions, Opcode, CompiledFunction};
 use crate::error::{Error, SourceLocation};
 use crate::object::Object;
-use crate::memory::gc::Trace;
 use std::rc::Rc;
 use std::collections::HashMap;
 

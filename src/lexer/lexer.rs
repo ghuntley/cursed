@@ -1,5 +1,4 @@
 use crate::error::{Error, ErrorReporter, SourceLocation};
-use crate::prelude::StrExt;
 
 /// Token type for the CURSED language
 #[derive(Debug, PartialEq, Clone)]

@@ -1,6 +1,6 @@
 // Evaluator for CURSED language
 use crate::ast::{Program, Statement, Expression};
-use crate::error::{Error, SourceLocation};
+use crate::error::Error;
 use crate::object::Object;
 use crate::symbol::SymbolTable;
 use std::collections::HashMap;
@@ -58,20 +58,20 @@ impl Evaluator {
     }
     
     /// Evaluate a program
-    pub fn eval_program(&mut self, program: &Program) -> Result<Rc<Object>, Error> {
+    pub fn eval_program(&mut self, _program: &Program) -> Result<Rc<Object>, Error> {
         // Stub implementation
-        Err(Error::NotImplemented("Evaluator not implemented".to_string(), SourceLocation::default()))
+        Err(Error::NotImplemented { message: "Evaluator not implemented".to_string() })
     }
     
     /// Evaluate a statement
-    pub fn eval_statement(&mut self, statement: &dyn Statement) -> Result<Rc<Object>, Error> {
+    pub fn eval_statement(&mut self, _statement: &dyn Statement) -> Result<Rc<Object>, Error> {
         // Stub implementation
-        Err(Error::NotImplemented("Statement evaluation not implemented".to_string(), SourceLocation::default()))
+        Err(Error::NotImplemented { message: "Statement evaluation not implemented".to_string() })
     }
     
     /// Evaluate an expression
-    pub fn eval_expression(&mut self, expression: &dyn Expression) -> Result<Rc<Object>, Error> {
+    pub fn eval_expression(&mut self, _expression: &dyn Expression) -> Result<Rc<Object>, Error> {
         // Stub implementation
-        Err(Error::NotImplemented("Expression evaluation not implemented".to_string(), SourceLocation::default()))
+        Err(Error::NotImplemented { message: "Expression evaluation not implemented".to_string() })
     }
 } 
