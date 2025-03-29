@@ -10,7 +10,7 @@ use inkwell::{IntPredicate, FloatPredicate};
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral};
+                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression};
 use crate::lexer::Token;
 // use crate::object::Object;
 
@@ -218,14 +218,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
     }
 
-    /// Compiles a block of statements
-    fn compile_block(&mut self, block: &BlockStatement) -> Result<(), String> {
-        for stmt in &block.statements {
-            self.compile_statement(stmt.as_ref())?;
-        }
-        Ok(())
-    }
-
     /// Compiles an AST Expression node into an LLVM value.
     fn compile_expression<'expr>(
         &self,
@@ -245,6 +237,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Ok(string_value.as_pointer_value().into())
         } else if let Some(array_lit) = expression.as_any().downcast_ref::<ArrayLiteral>() {
             self.compile_array_literal(array_lit)
+        } else if let Some(index_expr) = expression.as_any().downcast_ref::<IndexExpression>() {
+            self.compile_index_expression(index_expr)
         } else if let Some(ident) = expression.as_any().downcast_ref::<Identifier>() {
             let var_name = &ident.value;
             match self.variables.get(var_name) {
@@ -860,6 +854,58 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(array_alloca.into())
     }
 
+    /// Compile an array index expression into LLVM IR
+    fn compile_index_expression(&self, index_expr: &IndexExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Simplified implementation assuming left side is an array pointer and we want to index into it
+        
+        // Compile the array expression
+        let left = self.compile_expression(&*index_expr.left)?;
+        if !left.is_pointer_value() {
+            return Err("Expected a pointer value for array indexing".to_string());
+        }
+        
+        // Compile the index expression
+        let index = self.compile_expression(&*index_expr.index)?;
+        if !index.is_int_value() {
+            return Err("Array index must be an integer".to_string());
+        }
+        
+        // Convert index to i32 (required for GEP)
+        let index_i32 = self.builder.build_int_cast(
+            index.into_int_value(),
+            self.context.i32_type(),
+            "index_cast"
+        ).unwrap();
+        
+        // Using a direct approach accessing elements
+        // For this example, we'll just load the element as an i64 for now
+        let ptr = left.into_pointer_value();
+        let element_ptr = unsafe { 
+            self.builder.build_gep(
+                self.context.i64_type(),
+                ptr,
+                &[index_i32],
+                "element_ptr"
+            ).unwrap() 
+        };
+        
+        let element = self.builder.build_load(
+            self.context.i64_type(),
+            element_ptr,
+            "element"
+        ).unwrap();
+        
+        Ok(element)
+    }
+
+    /// Compiles a block of statements
+    fn compile_block(&mut self, block: &BlockStatement) -> Result<(), String> {
+        for stmt in &block.statements {
+            self.compile_statement(stmt.as_ref())?;
+        }
+        Ok(())
+    }
+
     /// Returns the generated LLVM module.
     pub fn module(&self) -> &Module<'ctx> {
         &self.module
@@ -1244,6 +1290,58 @@ mod tests {
         
         // Verify the number of elements in the array through the IR
         assert!(ir_string.contains("[3 x i64]"), "IR should contain array type with 3 elements");
+        
+        // Add a return to make the function valid
+        codegen.builder.build_return(Some(&context.i64_type().const_int(0, false))).unwrap();
+        
+        // Verify the module is well-formed
+        assert!(codegen.module.verify().is_ok());
+    }
+
+    #[test]
+    fn test_compile_index_expression() {
+        let context = Context::create();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_index");
+        
+        // Create a function context for test allocations
+        let fn_type = context.i64_type().fn_type(&[], false);
+        let function = codegen.module.add_function("test_func", fn_type, None);
+        let basic_block = context.append_basic_block(function, "entry");
+        codegen.builder.position_at_end(basic_block);
+        codegen.current_function = Some(function);
+        
+        // Create an array literal expression
+        let array_token = Token::Crew;
+        let array_elements = vec![
+            Box::new(IntegerLiteral { token: "1".into(), value: 1 }) as Box<dyn Expression>,
+            Box::new(IntegerLiteral { token: "2".into(), value: 2 }) as Box<dyn Expression>,
+            Box::new(IntegerLiteral { token: "3".into(), value: 3 }) as Box<dyn Expression>,
+        ];
+        
+        let array_lit = ArrayLiteral { token: array_token, elements: array_elements };
+        
+        // Create an index expression to access the second element (index 1)
+        let index_token = Token::LBracket;
+        let index_expr = IndexExpression {
+            token: index_token,
+            left: Box::new(array_lit),
+            index: Box::new(IntegerLiteral { token: "1".into(), value: 1 })
+        };
+        
+        // Compile the index expression
+        let result = codegen.compile_expression(&index_expr).unwrap();
+        
+        // Check that the result is an i64 value
+        assert!(result.is_int_value());
+        let int_val = result.into_int_value();
+        assert_eq!(int_val.get_type(), context.i64_type());
+        
+        // Get IR string representation for verification
+        let ir_string = codegen.module.print_to_string().to_string();
+        
+        // Verify the IR contains array allocation and GEP instructions
+        assert!(ir_string.contains("array"), "IR should contain array allocation");
+        assert!(ir_string.contains("getelementptr"), "IR should contain GEP instruction");
         
         // Add a return to make the function valid
         codegen.builder.build_return(Some(&context.i64_type().const_int(0, false))).unwrap();

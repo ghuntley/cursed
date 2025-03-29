@@ -43,7 +43,7 @@ The CURSED language implementation is progressing. Core components like the Lexe
 *   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >), Prefix (!, -). ❌ Logical (&&, ||), Assignment.
 *   **String Operations:** ✅ String concatenation with '+', String comparison with '==' and '!='.
 *   **Statements:** ✅ Let variables, Expression statements, Return statements, If statements, While loops. ❌ For loops, Function declarations.
-*   **Expressions:** ✅ Identifiers, Infix expressions, Prefix expressions, Function calls, Array literals. ❌ Index expressions, Property access.
+*   **Expressions:** ✅ Identifiers, Infix expressions, Prefix expressions, Function calls, Array literals, Index expressions (for arrays). ❌ Property access.
 *   **Control Flow:** ✅ If statements (with else), While loops. ❌ For loops, Switch/Match.
 *   **Functions:** ✅ Function calls. 🟡 Function literals (can be defined, but tests use alternative approach to avoid LLVM module cloning issues).
 
@@ -67,7 +67,6 @@ The CURSED language implementation is progressing. Core components like the Lexe
     *   Handling logical operators and assignment expressions.
     *   Implementing proper function declarations and callable function literals.
     *   Adding support for struct/type declarations and instantiations.
-    *   Adding array indexing support for array literals.
 
 ## Potential Next Steps
 
