@@ -244,55 +244,55 @@ impl Compiler {
     ///
     /// A result indicating success or an error
     pub fn compile_statement(&mut self, stmt: &dyn Statement) -> Result<(), Error> {
+        // Use dynamic dispatch to handle each statement type
         if let Some(expr_stmt) = stmt.as_any().downcast_ref::<ast::ExpressionStatement>() {
             // Compile expression statements
             if let Some(expr) = &expr_stmt.expression {
                 self.compile_expression(&**expr)?;
                 self.emit(Opcode::Pop, vec![]);
-                Ok(())
-            } else {
-                // Empty expression statement
-                Ok(())
             }
+            Ok(())
         } else if let Some(let_stmt) = stmt.as_any().downcast_ref::<ast::LetStatement>() {
             // Compile let statements (variable declarations)
-            if let Some(value) = &let_stmt.value {
-                // Compile the expression for the value
-                self.compile_expression(&**value)?;
+            if let Some(expr) = &let_stmt.value {
+                self.compile_expression(&**expr)?;
             } else {
-                // If no value is provided, use null as default
+                // If no value is provided, use null as the default
                 self.emit(Opcode::Null, vec![]);
             }
-
-            // Define the symbol in the symbol table
+            
             let symbol = self.symbol_table.borrow_mut().define(&let_stmt.name.value);
-
-            // Emit the right opcode based on scope
+            
             match symbol.scope {
                 SymbolScope::Global => {
                     self.emit(Opcode::SetGlobal, vec![symbol.index]);
-                }
+                },
                 SymbolScope::Local => {
                     self.emit(Opcode::SetLocal, vec![symbol.index]);
-                }
+                },
                 _ => {
                     return Err(Error::from_str(
-                        "Cannot define variable in this scope",
+                        &format!("Cannot define variable in this scope: {}", let_stmt.name.value),
                         None,
                     ));
                 }
             }
+            
             Ok(())
         } else if let Some(return_stmt) = stmt.as_any().downcast_ref::<ast::ReturnStatement>() {
             // Compile return statements
-            if let Some(return_value) = &return_stmt.return_value {
-                self.compile_expression(&**return_value)?;
-                self.emit(Opcode::ReturnValue, vec![]);
+            if let Some(expr) = &return_stmt.return_value {
+                self.compile_expression(&**expr)?;
             } else {
-                // Return without a value (return null)
-                self.emit(Opcode::Return, vec![]);
+                // If no return value is provided, return null
+                self.emit(Opcode::Null, vec![]);
             }
+            
+            self.emit(Opcode::ReturnValue, vec![]);
             Ok(())
+        } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
+            // Compile block statements
+            self.compile_block_statement(block_stmt)
         } else if let Some(if_stmt) = stmt.as_any().downcast_ref::<ast::IfStatement>() {
             // Compile if statements
             self.compile_if_statement(if_stmt)
@@ -306,19 +306,15 @@ impl Compiler {
             // Compile switch statements
             self.compile_switch_statement(switch_stmt)
         } else if let Some(package_stmt) = stmt.as_any().downcast_ref::<ast::PackageStatement>() {
-            // Compile package declarations
+            // Compile package statements
             self.compile_package_statement(package_stmt)
         } else if let Some(import_stmt) = stmt.as_any().downcast_ref::<ast::ImportStatement>() {
             // Compile import statements
             self.compile_import_statement(import_stmt)
         } else if let Some(squad_stmt) = stmt.as_any().downcast_ref::<ast::SquadStatement>() {
-            // Compile type (squad) declarations
+            // Compile type declarations (squad in CURSED)
             self.compile_squad_statement(squad_stmt)
-        } else if let Some(block_stmt) = stmt.as_any().downcast_ref::<ast::BlockStatement>() {
-            // Compile block statements
-            self.compile_block_statement(block_stmt)
         } else {
-            // Unknown statement type
             Err(Error::from_str(
                 &format!("Unknown statement type: {}", stmt.string()),
                 None,
@@ -539,32 +535,43 @@ impl Compiler {
     
     /// Compile an if statement
     pub fn compile_if_statement(&mut self, if_stmt: &ast::IfStatement) -> Result<(), Error> {
-        // Compile the condition expression
+        // 1. Compile the condition
         self.compile_expression(&*if_stmt.condition)?;
         
-        // Emit a jump-if-not-truthy instruction.
-        // We don't know the jump offset yet, so use a placeholder
+        // 2. Emit jump-not-truthy with a placeholder jump address
         let jump_not_truthy_pos = self.emit(Opcode::JumpNotTruthy, vec![9999]);
         
-        // Compile the consequence block
+        // 3. Compile the consequence block
         self.compile_block_statement(&if_stmt.consequence)?;
         
-        // If we have a consequence with no return, we need to jump over the alternative
+        // 4. If the last instruction in the consequence is a pop, remove it
+        if self.last_instruction_is(Opcode::Pop) {
+            self.current_instructions_mut().pop(); // Remove the pop
+            self.scopes[self.scope_index].last_instruction = self.scopes[self.scope_index].previous_instruction.clone();
+        }
+        
+        // 5. Emit a jump to skip the alternative with a placeholder
         let jump_pos = self.emit(Opcode::Jump, vec![9999]);
         
-        // Update the JumpNotTruthy instruction with the correct offset
+        // 6. Update the jump-not-truthy address to point after the consequence
         let after_consequence_pos = self.current_instructions().len();
         self.change_operand(jump_not_truthy_pos, after_consequence_pos);
         
-        // If there's an alternative (else branch), compile it
+        // 7. If there's an alternative, compile it
         if let Some(alternative) = &if_stmt.alternative {
             self.compile_block_statement(alternative)?;
+            
+            // If the last instruction is a pop, remove it
+            if self.last_instruction_is(Opcode::Pop) {
+                self.current_instructions_mut().pop(); // Remove the pop
+                self.scopes[self.scope_index].last_instruction = self.scopes[self.scope_index].previous_instruction.clone();
+            }
         } else {
-            // If no alternative, emit a null value
+            // If no alternative, emit null
             self.emit(Opcode::Null, vec![]);
         }
         
-        // Update the Jump instruction with the correct offset
+        // 8. Update the jump address to point after the alternative
         let after_alternative_pos = self.current_instructions().len();
         self.change_operand(jump_pos, after_alternative_pos);
         
@@ -620,6 +627,10 @@ impl Compiler {
                 self.emit(Opcode::False, vec![]);
             }
             Ok(())
+        } else if let Some(null_literal) = expr.as_any().downcast_ref::<ast::NullLiteral>() {
+            // Compile null literals
+            self.emit(Opcode::Null, vec![]);
+            Ok(())
         } else if let Some(identifier) = expr.as_any().downcast_ref::<ast::Identifier>() {
             // Compile identifiers (variable references)
             let symbol = match self.symbol_table.borrow_mut().resolve(&identifier.value) {
@@ -650,38 +661,6 @@ impl Compiler {
                 }
             }
             Ok(())
-        } else if let Some(assignment_expr) = expr.as_any().downcast_ref::<ast::AssignmentExpression>() {
-            // Compile assignment expressions
-            
-            // Compile the right side expression first
-            self.compile_expression(&*assignment_expr.value)?;
-            
-            // Get the symbol for the variable being assigned
-            let symbol = match self.symbol_table.borrow_mut().resolve(&assignment_expr.name.value) {
-                Some(symbol) => symbol,
-                None => {
-                    // If symbol doesn't exist, define it in the current scope
-                    self.symbol_table.borrow_mut().define(&assignment_expr.name.value)
-                }
-            };
-            
-            // Emit the appropriate opcode based on scope
-            match symbol.scope {
-                SymbolScope::Global => {
-                    self.emit(Opcode::SetGlobal, vec![symbol.index]);
-                }
-                SymbolScope::Local => {
-                    self.emit(Opcode::SetLocal, vec![symbol.index]);
-                }
-                _ => {
-                    return Err(Error::from_str(
-                        &format!("Cannot assign to {:?}", symbol.scope),
-                        None,
-                    ));
-                }
-            }
-            
-            Ok(())
         } else if let Some(prefix_expr) = expr.as_any().downcast_ref::<ast::PrefixExpression>() {
             // Compile prefix expressions (like "!x" or "-y")
             self.compile_expression(&*prefix_expr.right)?;
@@ -708,55 +687,61 @@ impl Compiler {
                 self.compile_expression(&*infix_expr.right)?;
                 self.compile_expression(&*infix_expr.left)?;
                 self.emit(Opcode::GreaterThan, vec![]);
-                return Ok(());
+                Ok(())
             } else if infix_expr.operator == "<=" {
                 // For x <= y, compile y then x then use GreaterThanEqual (flipped order)
                 self.compile_expression(&*infix_expr.right)?;
                 self.compile_expression(&*infix_expr.left)?;
                 self.emit(Opcode::GreaterThanEqual, vec![]);
-                return Ok(());
+                Ok(())
+            } else if infix_expr.operator == ">" {
+                // For x > y, compile x then y then use GreaterThan
+                self.compile_expression(&*infix_expr.left)?;
+                self.compile_expression(&*infix_expr.right)?;
+                self.emit(Opcode::GreaterThan, vec![]);
+                Ok(())
+            } else if infix_expr.operator == ">=" {
+                // For x >= y, compile x then y then use GreaterThanEqual
+                self.compile_expression(&*infix_expr.left)?;
+                self.compile_expression(&*infix_expr.right)?;
+                self.emit(Opcode::GreaterThanEqual, vec![]);
+                Ok(())
+            } else {
+                // For other operators, compile normally
+                self.compile_expression(&*infix_expr.left)?;
+                self.compile_expression(&*infix_expr.right)?;
+                
+                match infix_expr.operator.as_str() {
+                    "+" => {
+                        self.emit(Opcode::Add, vec![]);
+                    }
+                    "-" => {
+                        self.emit(Opcode::Sub, vec![]);
+                    }
+                    "*" => {
+                        self.emit(Opcode::Mul, vec![]);
+                    }
+                    "/" => {
+                        self.emit(Opcode::Div, vec![]);
+                    }
+                    "%" => {
+                        self.emit(Opcode::Modulo, vec![]);
+                    }
+                    "==" => {
+                        self.emit(Opcode::Equal, vec![]);
+                    }
+                    "!=" => {
+                        self.emit(Opcode::NotEqual, vec![]);
+                    }
+                    _ => {
+                        return Err(Error::from_str(
+                            &format!("Unknown infix operator: {}", infix_expr.operator),
+                            None,
+                        ));
+                    }
+                }
+                Ok(())
             }
-
-            // For normal order operators
-            self.compile_expression(&*infix_expr.left)?;
-            self.compile_expression(&*infix_expr.right)?;
-
-            match infix_expr.operator.as_str() {
-                "+" => {
-                    self.emit(Opcode::Add, vec![]);
-                }
-                "-" => {
-                    self.emit(Opcode::Sub, vec![]);
-                }
-                "*" => {
-                    self.emit(Opcode::Mul, vec![]);
-                }
-                "/" => {
-                    self.emit(Opcode::Div, vec![]);
-                }
-                "%" => {
-                    self.emit(Opcode::Modulo, vec![]);
-                }
-                ">" => {
-                    self.emit(Opcode::GreaterThan, vec![]);
-                }
-                ">=" => {
-                    self.emit(Opcode::GreaterThanEqual, vec![]);
-                }
-                "==" => {
-                    self.emit(Opcode::Equal, vec![]);
-                }
-                "!=" => {
-                    self.emit(Opcode::NotEqual, vec![]);
-                }
-                _ => {
-                    return Err(Error::from_str(
-                        &format!("Unknown infix operator: {}", infix_expr.operator),
-                        None,
-                    ));
-                }
-            }
-            Ok(())
         } else if let Some(index_expr) = expr.as_any().downcast_ref::<ast::IndexExpression>() {
             // Compile index expressions like array[index] or hash[key]
             self.compile_expression(&*index_expr.left)?;
@@ -915,76 +900,57 @@ impl Compiler {
 
     /// Compile a function literal to bytecode
     pub fn compile_function_literal(&mut self, func: &ast::FunctionLiteral) -> Result<(), Error> {
-        // Enter a new scope for the function body
+        // 1. Enter a new scope for the function
         self.enter_scope();
         
-        // Define parameters in the function's scope
-        for param in &func.parameters {
+        // 2. Define parameters in function scope
+        for (i, param) in func.parameters.iter().enumerate() {
             self.symbol_table.borrow_mut().define(&param.value);
         }
         
-        // Compile the function body
-        self.compile_block_statement(&func.body)?;
-        
-        // If the function doesn't end with a return, add an implicit return
-        if self.last_instruction_is(Opcode::Pop) {
-            // Replace the last Pop with ReturnValue
-            self.replace_last_pop_with_return();
+        // 3. Compile function body
+        for stmt in &func.body.statements {
+            self.compile_statement(&**stmt)?;
         }
         
-        // Ensure all functions end with a return
+        // 4. Ensure function ends with a return
+        // If the last instruction is not a return, add one
         if !self.last_instruction_is(Opcode::ReturnValue) && !self.last_instruction_is(Opcode::Return) {
-            self.emit(Opcode::Return, vec![]);
+            // If the last instruction is a pop, replace it with a return
+            if self.last_instruction_is(Opcode::Pop) {
+                self.replace_last_pop_with_return();
+            } else {
+                // Otherwise, add a return without value
+                self.emit(Opcode::Return, vec![]);
+            }
         }
         
-        // Get the local binding count and free variables
+        // 5. Get local bindings and free variables
         let num_locals = self.symbol_table.borrow().num_definitions;
-        let free_symbols = self.symbol_table.borrow().free_symbols().to_vec();
-        let num_params = func.parameters.len();
+        let num_parameters = func.parameters.len();
+        let free_symbols = self.symbol_table.borrow().free_symbols.clone();
         
-        // Capture the compiled instructions and leave the function's scope
+        // 6. Create compiled function
         let instructions = self.leave_scope();
-        
-        // Create a compiled function object
-        let compiled_func = Object::CompiledFunction {
+        let function_index = self.add_constant(Object::CompiledFunction(CompiledFunction::new(
             instructions,
-            num_locals,
-            num_parameters: num_params,
-            name: None,
-            is_variadic: false,
-        };
+            num_locals as u8,
+            num_parameters as u8,
+        )));
         
-        // Add the function to constants
-        let fn_index = self.add_constant(compiled_func);
-        
-        // If we have free variables (for closures), handle them
+        // 7. Handle closures if needed
         if !free_symbols.is_empty() {
-            // Push the free variables onto the stack
-            for free_symbol in &free_symbols {
-                match free_symbol.scope {
-                    SymbolScope::Global => {
-                        self.emit(Opcode::GetGlobal, vec![free_symbol.index]);
-                    }
-                    SymbolScope::Local => {
-                        self.emit(Opcode::GetLocal, vec![free_symbol.index]);
-                    }
-                    SymbolScope::Free => {
-                        self.emit(Opcode::GetFree, vec![free_symbol.index]);
-                    }
-                    _ => {
-                        return Err(Error::from_str(
-                            &format!("Invalid symbol scope for free variable: {:?}", free_symbol.scope),
-                            None,
-                        ));
-                    }
-                }
-            }
+            // For closures, emit code to get the free variables
+            let free_var_indices: Vec<usize> = free_symbols.iter().map(|sym| sym.index).collect();
+            self.emit(Opcode::Closure, vec![function_index, free_var_indices.len()]);
             
-            // Create a closure with the free variables
-            self.emit(Opcode::Closure, vec![fn_index, free_symbols.len()]);
+            // Emit each free variable's index
+            for index in free_var_indices {
+                self.emit(Opcode::GetFree, vec![index]);
+            }
         } else {
-            // No free variables, just emit the function
-            self.emit(Opcode::Constant, vec![fn_index]);
+            // For normal functions, just emit the closure opcode with no free vars
+            self.emit(Opcode::Closure, vec![function_index, 0]);
         }
         
         Ok(())

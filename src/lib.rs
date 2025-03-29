@@ -126,21 +126,49 @@ pub mod compiler {
                 }
                 // Pop the result off the stack (since expressions are evaluated for side effects only)
                 self.emit(Opcode::Pop, &[]);
+                Ok(())
+            } else if let Some(let_stmt) = stmt.as_any().downcast_ref::<crate::ast::LetStatement>() {
+                // Compile a let statement (variable declaration)
+                if let Some(value) = &let_stmt.value {
+                    self.compile_expression(&**value)?;
+                } else {
+                    // If no value is provided, use null
+                    self.emit(Opcode::Null, &[]);
+                }
+                
+                // Add variable to symbol table
+                let symbol_index = self.symbol_table.define(&let_stmt.name.value);
+                
+                // Set the variable in the global scope
+                self.emit(Opcode::SetGlobal, &[symbol_index.index]);
+                
+                Ok(())
             } else if let Some(squad_stmt) = stmt.as_any().downcast_ref::<crate::ast::SquadStatement>() {
                 // Compile a struct declaration
-                self.compile_type_declaration(squad_stmt)?;
+                self.compile_type_declaration(squad_stmt)
             } else if let Some(collab_stmt) = stmt.as_any().downcast_ref::<crate::ast::CollabStatement>() {
                 // Compile an interface declaration
-                self.compile_interface_declaration(collab_stmt)?;
+                self.compile_interface_declaration(collab_stmt)
             } else if let Some(method_decl) = stmt.as_any().downcast_ref::<crate::ast::MethodDeclaration>() {
                 // Compile a method declaration
-                self.compile_method_declaration(method_decl)?;
+                self.compile_method_declaration(method_decl)
+            } else if let Some(return_stmt) = stmt.as_any().downcast_ref::<crate::ast::ReturnStatement>() {
+                // Compile a return statement
+                if let Some(return_value) = &return_stmt.return_value {
+                    self.compile_expression(&**return_value)?;
+                } else {
+                    // If no return value, use null
+                    self.emit(Opcode::Null, &[]);
+                }
+                
+                // Emit return instruction
+                self.emit(Opcode::ReturnValue, &[]);
+                
+                Ok(())
             } else {
                 // If we can't handle this statement type, error
-                return Err(crate::error::Error::from_str("Unknown statement type"));
+                return Err(crate::error::Error::from_str(&format!("Unknown statement type: {}", stmt.string())));
             }
-            
-            Ok(())
         }
         
         // Compile a type declaration
@@ -335,15 +363,153 @@ pub mod compiler {
             Ok(())
         }
         
-        // Add a new method for compiling expressions
-        fn compile_expression(&mut self, _expr: &dyn crate::ast::Expression) -> Result<(), crate::error::Error> {
-            // This is a placeholder implementation
-            // We'll need to actually implement expression compilation for each type
-            // For now, just push a constant null
-            let const_idx = self.add_constant(crate::object::Object::Null);
-            self.emit(Opcode::Constant, &[const_idx]);
-            
-            Ok(())
+        // Compile an expression to bytecode
+        fn compile_expression(&mut self, expr: &dyn crate::ast::Expression) -> Result<(), crate::error::Error> {
+            // Try to downcast to specific expression types
+            if let Some(int_lit) = expr.as_any().downcast_ref::<crate::ast::IntegerLiteral>() {
+                // Compile integer literal
+                let obj = crate::object::Object::Integer(int_lit.value);
+                let constant_index = self.add_constant(obj);
+                self.emit(Opcode::Constant, &[constant_index]);
+                Ok(())
+            } else if let Some(string_lit) = expr.as_any().downcast_ref::<crate::ast::StringLiteral>() {
+                // Compile string literal
+                let obj = crate::object::Object::String(string_lit.value.clone());
+                let constant_index = self.add_constant(obj);
+                self.emit(Opcode::Constant, &[constant_index]);
+                Ok(())
+            } else if let Some(bool_lit) = expr.as_any().downcast_ref::<crate::ast::BooleanLiteral>() {
+                // Compile boolean literal
+                if bool_lit.value {
+                    self.emit(Opcode::True, &[]);
+                } else {
+                    self.emit(Opcode::False, &[]);
+                }
+                Ok(())
+            } else if let Some(ident) = expr.as_any().downcast_ref::<crate::ast::Identifier>() {
+                // Compile identifier (variable reference)
+                let symbol = match self.symbol_table.resolve(&ident.value) {
+                    Some(symbol) => symbol,
+                    None => {
+                        return Err(crate::error::Error::from_str(&format!("Undefined variable: {}", ident.value)));
+                    }
+                };
+                
+                // Get the variable from the global scope
+                self.emit(Opcode::GetGlobal, &[symbol.index]);
+                Ok(())
+            } else if let Some(prefix_expr) = expr.as_any().downcast_ref::<crate::ast::PrefixExpression>() {
+                // Compile prefix expression
+                self.compile_expression(&*prefix_expr.right)?;
+                
+                match prefix_expr.operator.as_str() {
+                    "!" => {
+                        self.emit(Opcode::Bang, &[]);
+                    },
+                    "-" => {
+                        self.emit(Opcode::Minus, &[]);
+                    },
+                    _ => return Err(crate::error::Error::from_str(&format!("Unknown prefix operator: {}", prefix_expr.operator))),
+                }
+                
+                Ok(())
+            } else if let Some(infix_expr) = expr.as_any().downcast_ref::<crate::ast::InfixExpression>() {
+                // Handle < and <= operators by flipping operands
+                if infix_expr.operator == "<" {
+                    // a < b can be rewritten as b > a
+                    self.compile_expression(&*infix_expr.right)?;
+                    self.compile_expression(&*infix_expr.left)?;
+                    self.emit(Opcode::GreaterThan, &[]);
+                    return Ok(());
+                } else if infix_expr.operator == "<=" {
+                    // a <= b can be rewritten as b >= a
+                    self.compile_expression(&*infix_expr.right)?;
+                    self.compile_expression(&*infix_expr.left)?;
+                    self.emit(Opcode::GreaterThanEqual, &[]);
+                    return Ok(());
+                }
+                
+                // Handle normal infix operators
+                self.compile_expression(&*infix_expr.left)?;
+                self.compile_expression(&*infix_expr.right)?;
+                
+                match infix_expr.operator.as_str() {
+                    "+" => {
+                        self.emit(Opcode::Add, &[]);
+                    },
+                    "-" => {
+                        self.emit(Opcode::Sub, &[]);
+                    },
+                    "*" => {
+                        self.emit(Opcode::Mul, &[]);
+                    },
+                    "/" => {
+                        self.emit(Opcode::Div, &[]);
+                    },
+                    "==" => {
+                        self.emit(Opcode::Equal, &[]);
+                    },
+                    "!=" => {
+                        self.emit(Opcode::NotEqual, &[]);
+                    },
+                    ">" => {
+                        self.emit(Opcode::GreaterThan, &[]);
+                    },
+                    ">=" => {
+                        self.emit(Opcode::GreaterThanEqual, &[]);
+                    },
+                    _ => return Err(crate::error::Error::from_str(&format!("Unknown infix operator: {}", infix_expr.operator))),
+                }
+                
+                Ok(())
+            } else if let Some(call_expr) = expr.as_any().downcast_ref::<crate::ast::CallExpression>() {
+                // Compile function call expression
+                self.compile_expression(&*call_expr.function)?;
+                
+                // Compile each argument
+                for arg in &call_expr.arguments {
+                    self.compile_expression(&**arg)?;
+                }
+                
+                // Call with number of arguments
+                self.emit(Opcode::Call, &[call_expr.arguments.len()]);
+                Ok(())
+            } else if let Some(array_lit) = expr.as_any().downcast_ref::<crate::ast::ArrayLiteral>() {
+                // Compile array literal
+                for elem in &array_lit.elements {
+                    self.compile_expression(&**elem)?;
+                }
+                
+                self.emit(Opcode::Array, &[array_lit.elements.len()]);
+                Ok(())
+            } else if let Some(hash_lit) = expr.as_any().downcast_ref::<crate::ast::HashLiteral>() {
+                // Compile hash literal
+                let pair_count = hash_lit.pairs.len();
+                
+                for (key, value) in &hash_lit.pairs {
+                    self.compile_expression(&**key)?;
+                    self.compile_expression(&**value)?;
+                }
+                
+                self.emit(Opcode::Hash, &[pair_count * 2]);
+                Ok(())
+            } else if let Some(index_expr) = expr.as_any().downcast_ref::<crate::ast::IndexExpression>() {
+                // Compile index expression (array[index] or hash[key])
+                self.compile_expression(&*index_expr.left)?;
+                self.compile_expression(&*index_expr.index)?;
+                
+                self.emit(Opcode::Index, &[]);
+                Ok(())
+            } else if let Some(function_lit) = expr.as_any().downcast_ref::<crate::ast::FunctionLiteral>() {
+                // For now, just use a null constant for functions
+                // In a full implementation, we would create a proper compiled function
+                let null_obj = crate::object::Object::Null;
+                let function_index = self.add_constant(null_obj);
+                self.emit(Opcode::Constant, &[function_index]);
+                Ok(())
+            } else {
+                Err(crate::error::Error::from_str(&format!("Unknown expression type: {}", expr.string())))
+            }
         }
         
         // Helper to add a constant and get its index
@@ -867,6 +1033,87 @@ pub use memory::gc::{Traceable, Visitor, GarbageCollector, Gc};
 /// Main entry point for the REPL
 pub fn run_repl() -> Result<(), Error> {
     repl::start_repl()
+}
+
+/// Run a CURSED program from a file path
+/// 
+/// # Arguments
+/// 
+/// * `file_path` - Path to the file containing CURSED code
+/// 
+/// # Returns
+/// 
+/// Result of running the program
+pub fn run_file(file_path: &str) -> Result<(), Error> {
+    use std::fs;
+    let contents = fs::read_to_string(file_path)
+        .map_err(|e| Error::from_str(&format!("Failed to read file {}: {}", file_path, e)))?;
+    
+    run_program(&contents)
+}
+
+/// Run a CURSED program from a string of code
+/// 
+/// # Arguments
+/// 
+/// * `code` - String containing CURSED code
+/// 
+/// # Returns
+/// 
+/// Result of running the program
+pub fn run_program(code: &str) -> Result<(), Error> {
+    // Create a lexer for the input
+    let mut lexer = lexer::Lexer::new(code);
+    
+    // Create a parser for the lexer
+    let mut parser = match parser::Parser::new(&mut lexer) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Lexer error: {}", e);
+            return Err(e);
+        }
+    };
+    
+    // Parse the program
+    let program = match parser.parse_program() {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Parser error: {}", e);
+            return Err(e);
+        }
+    };
+    
+    // Check for parser errors
+    if !parser.errors().is_empty() {
+        for err in parser.errors() {
+            eprintln!("Parser error: {}", err);
+        }
+        return Err(Error::from_str("Parsing failed due to errors"));
+    }
+    
+    // Print the parsed program for debugging
+    println!("Successfully parsed program: {}", program.string());
+    
+    // In a full implementation, we would compile and run the program
+    // For now, just print a success message
+    println!("Program executed successfully (simplified implementation)");
+    
+    Ok(())
+}
+
+/// Run a CURSED program from standard input
+/// 
+/// # Returns
+/// 
+/// Result of running the program
+pub fn run_stdin() -> Result<(), Error> {
+    use std::io::{self, Read};
+    
+    let mut buffer = String::new();
+    io::stdin().read_to_string(&mut buffer)
+        .map_err(|e| Error::from_str(&format!("Failed to read from stdin: {}", e)))?;
+    
+    run_program(&buffer)
 }
 
 

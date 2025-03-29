@@ -741,4 +741,261 @@ fn test_compile_and_run_interface_declaration() {
         },
         _ => panic!("Expected interface, got {:?}", result_obj),
     }
+}
+
+#[test]
+fn test_compile_expression_statements() {
+    let input = "5; 10; 15;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    let expected_constants = vec![
+        Object::Integer(5),
+        Object::Integer(10),
+        Object::Integer(15),
+    ];
+    
+    let mut expected_instructions = Vec::new();
+    expected_instructions.extend(make(Opcode::Constant, &[0])); // Push 5
+    expected_instructions.extend(make(Opcode::Pop, &[]));       // Pop result
+    expected_instructions.extend(make(Opcode::Constant, &[1])); // Push 10
+    expected_instructions.extend(make(Opcode::Pop, &[]));       // Pop result
+    expected_instructions.extend(make(Opcode::Constant, &[2])); // Push 15
+    expected_instructions.extend(make(Opcode::Pop, &[]));       // Pop result
+    
+    let bytecode = result.unwrap();
+    assert_eq!(expected_constants, bytecode.constants);
+    assert_eq!(expected_instructions, bytecode.instructions);
+}
+
+#[test]
+fn test_compile_let_statements() {
+    let input = "vibe x = 5; vibe y = 10; vibe z = x + y;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    let expected_constants = vec![
+        Object::Integer(5),
+        Object::Integer(10),
+    ];
+    
+    let mut expected_instructions = Vec::new();
+    expected_instructions.extend(make(Opcode::Constant, &[0]));   // Push 5
+    expected_instructions.extend(make(Opcode::SetGlobal, &[0]));  // Set global 'x'
+    expected_instructions.extend(make(Opcode::Constant, &[1]));   // Push 10
+    expected_instructions.extend(make(Opcode::SetGlobal, &[1]));  // Set global 'y'
+    expected_instructions.extend(make(Opcode::GetGlobal, &[0]));  // Get global 'x'
+    expected_instructions.extend(make(Opcode::GetGlobal, &[1]));  // Get global 'y'
+    expected_instructions.extend(make(Opcode::Add, &[]));         // Add x + y
+    expected_instructions.extend(make(Opcode::SetGlobal, &[2]));  // Set global 'z'
+    
+    let bytecode = result.unwrap();
+    assert_eq!(expected_constants, bytecode.constants);
+    assert_eq!(expected_instructions, bytecode.instructions);
+}
+
+#[test]
+fn test_compile_function_call() {
+    let input = "stan add(x, y) { yeet x + y; }; add(5, 10);";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    // Check if bytecode contains function and the call
+    let bytecode = result.unwrap();
+    
+    // Verify we have our function and integer constants
+    assert!(bytecode.constants.len() >= 3);
+    assert!(matches!(bytecode.constants[0], Object::CompiledFunction(_)));
+    assert_eq!(bytecode.constants[1], Object::Integer(5));
+    assert_eq!(bytecode.constants[2], Object::Integer(10));
+    
+    // Verify that the function is called with the right arguments
+    let has_call = bytecode.instructions.windows(1).any(|window| {
+        let opcode_byte = window[0];
+        Opcode::from(opcode_byte) == Opcode::Call
+    });
+    
+    assert!(has_call, "Bytecode should contain a Call instruction");
+}
+
+#[test]
+fn test_compile_array_literal() {
+    let input = "crew[1, 2 * 3, 4 + 5];";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    let expected_constants = vec![
+        Object::Integer(1),
+        Object::Integer(2),
+        Object::Integer(3),
+        Object::Integer(4),
+        Object::Integer(5),
+    ];
+    
+    let mut expected_instructions = Vec::new();
+    expected_instructions.extend(make(Opcode::Constant, &[0]));  // Push 1
+    expected_instructions.extend(make(Opcode::Constant, &[1]));  // Push 2
+    expected_instructions.extend(make(Opcode::Constant, &[2]));  // Push 3
+    expected_instructions.extend(make(Opcode::Mul, &[]));        // Multiply 2 * 3
+    expected_instructions.extend(make(Opcode::Constant, &[3]));  // Push 4
+    expected_instructions.extend(make(Opcode::Constant, &[4]));  // Push 5
+    expected_instructions.extend(make(Opcode::Add, &[]));        // Add 4 + 5
+    expected_instructions.extend(make(Opcode::Array, &[3]));     // Create array with 3 elements
+    expected_instructions.extend(make(Opcode::Pop, &[]));        // Pop the array
+    
+    let bytecode = result.unwrap();
+    assert_eq!(expected_constants, bytecode.constants);
+    assert_eq!(expected_instructions, bytecode.instructions);
+}
+
+#[test]
+fn test_compile_hash_literal() {
+    let input = "tea{\"one\": 1, \"two\": 2, \"three\": 3};";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    let expected_constants = vec![
+        Object::String("one".to_string()),
+        Object::Integer(1),
+        Object::String("two".to_string()),
+        Object::Integer(2),
+        Object::String("three".to_string()),
+        Object::Integer(3),
+    ];
+    
+    let mut expected_instructions = Vec::new();
+    expected_instructions.extend(make(Opcode::Constant, &[0]));  // Push "one"
+    expected_instructions.extend(make(Opcode::Constant, &[1]));  // Push 1
+    expected_instructions.extend(make(Opcode::Constant, &[2]));  // Push "two"
+    expected_instructions.extend(make(Opcode::Constant, &[3]));  // Push 2
+    expected_instructions.extend(make(Opcode::Constant, &[4]));  // Push "three"
+    expected_instructions.extend(make(Opcode::Constant, &[5]));  // Push 3
+    expected_instructions.extend(make(Opcode::Hash, &[6]));      // Create hash with 3 pairs (6 items)
+    expected_instructions.extend(make(Opcode::Pop, &[]));        // Pop the hash
+    
+    let bytecode = result.unwrap();
+    assert_eq!(expected_constants, bytecode.constants);
+    assert_eq!(expected_instructions, bytecode.instructions);
+}
+
+#[test]
+fn test_compile_prefix_expressions() {
+    let input = "!true; -5;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    let expected_constants = vec![
+        Object::Integer(5),
+    ];
+    
+    let mut expected_instructions = Vec::new();
+    expected_instructions.extend(make(Opcode::True, &[]));      // Push true
+    expected_instructions.extend(make(Opcode::Bang, &[]));      // Negate (!)
+    expected_instructions.extend(make(Opcode::Pop, &[]));       // Pop result
+    expected_instructions.extend(make(Opcode::Constant, &[0])); // Push 5
+    expected_instructions.extend(make(Opcode::Minus, &[]));     // Negate (-)
+    expected_instructions.extend(make(Opcode::Pop, &[]));       // Pop result
+    
+    let bytecode = result.unwrap();
+    assert_eq!(expected_constants, bytecode.constants);
+    assert_eq!(expected_instructions, bytecode.instructions);
+}
+
+#[test]
+fn test_compile_comparison_operators() {
+    let input = "5 > 2; 3 < 8; 5 == 5; 6 != 7; 4 >= 4; 3 <= 5;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation failed: {:?}", result.err());
+    
+    let expected_constants = vec![
+        Object::Integer(5),
+        Object::Integer(2),
+        Object::Integer(3),
+        Object::Integer(8),
+        Object::Integer(5),
+        Object::Integer(5),
+        Object::Integer(6),
+        Object::Integer(7),
+        Object::Integer(4),
+        Object::Integer(4),
+        Object::Integer(3),
+        Object::Integer(5),
+    ];
+    
+    let mut expected_instructions = Vec::new();
+    
+    // 5 > 2
+    expected_instructions.extend(make(Opcode::Constant, &[0]));       // Push 5
+    expected_instructions.extend(make(Opcode::Constant, &[1]));       // Push 2
+    expected_instructions.extend(make(Opcode::GreaterThan, &[]));     // Compare >
+    expected_instructions.extend(make(Opcode::Pop, &[]));             // Pop result
+    
+    // 3 < 8 (compiled as 8 > 3)
+    expected_instructions.extend(make(Opcode::Constant, &[3]));       // Push 8
+    expected_instructions.extend(make(Opcode::Constant, &[2]));       // Push 3
+    expected_instructions.extend(make(Opcode::GreaterThan, &[]));     // Compare >
+    expected_instructions.extend(make(Opcode::Pop, &[]));             // Pop result
+    
+    // 5 == 5
+    expected_instructions.extend(make(Opcode::Constant, &[4]));       // Push 5
+    expected_instructions.extend(make(Opcode::Constant, &[5]));       // Push 5
+    expected_instructions.extend(make(Opcode::Equal, &[]));           // Compare ==
+    expected_instructions.extend(make(Opcode::Pop, &[]));             // Pop result
+    
+    // 6 != 7
+    expected_instructions.extend(make(Opcode::Constant, &[6]));       // Push 6
+    expected_instructions.extend(make(Opcode::Constant, &[7]));       // Push 7
+    expected_instructions.extend(make(Opcode::NotEqual, &[]));        // Compare !=
+    expected_instructions.extend(make(Opcode::Pop, &[]));             // Pop result
+    
+    // 4 >= 4
+    expected_instructions.extend(make(Opcode::Constant, &[8]));       // Push 4
+    expected_instructions.extend(make(Opcode::Constant, &[9]));       // Push 4
+    expected_instructions.extend(make(Opcode::GreaterThanEqual, &[])); // Compare >=
+    expected_instructions.extend(make(Opcode::Pop, &[]));             // Pop result
+    
+    // 3 <= 5 (compiled as 5 >= 3)
+    expected_instructions.extend(make(Opcode::Constant, &[11]));      // Push 5
+    expected_instructions.extend(make(Opcode::Constant, &[10]));      // Push 3
+    expected_instructions.extend(make(Opcode::GreaterThanEqual, &[])); // Compare >=
+    expected_instructions.extend(make(Opcode::Pop, &[]));             // Pop result
+    
+    let bytecode = result.unwrap();
+    assert_eq!(expected_constants, bytecode.constants);
+    assert_eq!(expected_instructions, bytecode.instructions);
 } 

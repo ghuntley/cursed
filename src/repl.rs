@@ -125,13 +125,22 @@ pub fn start_repl() -> Result<(), Error> {
 fn print_help() {
     println!("CURSED Language Help");
     println!("====================");
-    println!("exit/quit - Exit the REPL");
-    println!("help      - Display this help message");
+    println!("REPL Commands:");
+    println!("  exit/quit  - Exit the REPL");
+    println!("  help       - Display this help message");
     println!();
-    println!("Examples:");
-    println!("  sus x = 5;");
-    println!("  sus y = 10;");
-    println!("  x + y;");
+    println!("Basic Examples:");
+    println!("  vibe x = 5;          - Define a variable");
+    println!("  vibe y = 10;         - Define another variable");
+    println!("  x + y;               - Evaluate an expression");
+    println!("  yolo x + y;          - Print a value");
+    println!();
+    println!("Running Programs Outside REPL:");
+    println!("  ./cursed file.csd           - Run a CURSED program from a file");
+    println!("  ./cursed -e \"vibe x = 5;\"   - Execute code from command line");
+    println!("  cat file.csd | ./cursed -   - Run code from standard input");
+    println!();
+    println!("For more help, run: ./cursed --help");
 }
 
 /// Repeat a string n times
