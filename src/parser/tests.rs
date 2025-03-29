@@ -228,4 +228,63 @@ fn test_parse_return_statements() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+#[test]
+fn test_parse_if_statements() -> Result<(), Error> {
+    // Test case 1: Simple if statement
+    let input1 = "lowkey (x < y) { yolo x; }";
+    let program1 = test_parser_with_input(input1)?;
+    assert_eq!(program1.statements.len(), 1, "Program 1 failed: incorrect statement count");
+    if let Some(if_stmt) = program1.statements[0].as_any().downcast_ref::<ast::IfStatement>() {
+        assert_eq!(if_stmt.token_literal(), "lowkey");
+        // Check condition (simplified check)
+        assert!(if_stmt.condition.string().contains("x"));
+        assert!(if_stmt.condition.string().contains("<"));
+        assert!(if_stmt.condition.string().contains("y"));
+        // Check consequence
+        assert_eq!(if_stmt.consequence.statements.len(), 1, "Consequence block in program 1 should have 1 statement");
+        assert!(if_stmt.consequence.statements[0].as_any().is::<ast::ReturnStatement>(), "Consequence statement in program 1 is not ReturnStatement");
+        // Check alternative (should be None)
+        assert!(if_stmt.alternative.is_none(), "Alternative block in program 1 should be None");
+    } else {
+        panic!("Program 1 is not an IfStatement");
+    }
+
+    // Test case 2: If-else statement
+    let input2 = "lowkey (x > y) { yolo x; } highkey { yolo y; }";
+    let program2 = test_parser_with_input(input2)?;
+    assert_eq!(program2.statements.len(), 1, "Program 2 failed: incorrect statement count");
+    if let Some(if_stmt) = program2.statements[0].as_any().downcast_ref::<ast::IfStatement>() {
+        assert_eq!(if_stmt.token_literal(), "lowkey");
+        // Check condition
+        assert!(if_stmt.condition.string().contains("x > y"));
+        // Check consequence
+        assert_eq!(if_stmt.consequence.statements.len(), 1, "Consequence block in program 2 should have 1 statement");
+        // Check alternative (should exist)
+        assert!(if_stmt.alternative.is_some(), "Alternative block in program 2 should exist");
+        if let Some(alt_block) = &if_stmt.alternative {
+            assert_eq!(alt_block.statements.len(), 1, "Alternative block in program 2 should have 1 statement");
+            assert!(alt_block.statements[0].as_any().is::<ast::ReturnStatement>(), "Alternative statement in program 2 is not ReturnStatement");
+        } else {
+            panic!("Alternative block expected but not found in program 2");
+        }
+    } else {
+        panic!("Program 2 is not an IfStatement");
+    }
+    
+    // Test case 3: If statement with multiple statements in consequence
+    let input3 = "lowkey (based) { sus a = 1; yolo a; }";
+    let program3 = test_parser_with_input(input3)?;
+    assert_eq!(program3.statements.len(), 1, "Program 3 failed: incorrect statement count");
+    if let Some(if_stmt) = program3.statements[0].as_any().downcast_ref::<ast::IfStatement>() {
+        assert_eq!(if_stmt.consequence.statements.len(), 2, "Consequence block in program 3 should have 2 statements");
+        assert!(if_stmt.consequence.statements[0].as_any().is::<ast::LetStatement>(), "First consequence statement in program 3 is not LetStatement");
+        assert!(if_stmt.consequence.statements[1].as_any().is::<ast::ReturnStatement>(), "Second consequence statement in program 3 is not ReturnStatement");
+        assert!(if_stmt.alternative.is_none(), "Alternative block in program 3 should be None");
+    } else {
+        panic!("Program 3 is not an IfStatement");
+    }
+
+    Ok(())
 } 

@@ -320,8 +320,61 @@ impl<'a> Parser<'a> {
     
     /// Parse an if statement
     pub fn parse_if_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("If statement parsing not implemented yet"))
+        let token = self.current_token.token_literal(); // 'lowkey' token
+        
+        // Expect an opening parenthesis for the condition
+        if !self.expect_peek(&Token::LParen) {
+            return Err(Error::from_str(
+                &format!("Expected '(' after lowkey, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Move past '('
+        self.next_token()?;
+        
+        // Parse the condition expression
+        let condition = self.parse_expression(Precedence::Lowest)?;
+        
+        // Expect a closing parenthesis
+        if !self.expect_peek(&Token::RParen) {
+            return Err(Error::from_str(
+                &format!("Expected ')' after condition, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Expect an opening brace for the consequence block
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(
+                &format!("Expected '{{' after condition, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse the consequence block
+        let consequence = self.parse_block_statement()?;
+        
+        // Check for an optional 'highkey' (else) block
+        let mut alternative = None;
+        if self.peek_token == Token::Highkey {
+            // Move past 'highkey'
+            self.next_token()?;
+            
+            // Expect an opening brace for the alternative block
+            if !self.expect_peek(&Token::LBrace) {
+                return Err(Error::from_str(
+                    &format!("Expected '{{' after highkey, got {:?}", self.peek_token)
+                ));
+            }
+            
+            // Parse the alternative block
+            alternative = Some(self.parse_block_statement()?);
+        }
+        
+        Ok(Box::new(ast::IfStatement {
+            token,
+            condition,
+            consequence,
+            alternative,
+        }))
     }
     
     /// Parse a for statement

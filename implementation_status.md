@@ -41,7 +41,7 @@ The CURSED language implementation is underway. Core components like the lexer, 
     *   `yeet` (import): ✅ (Parser, AST, Stub Compiler)
     *   `sus` (let): ❌ (Parser needs implementation)
     *   `facts` (const): ✅ (Parser, AST)
-    *   `yolo` (return): ❌ (Parser needs implementation)
+    *   `yolo` (return): ✅ (Parser, AST)
     *   `lowkey`/`highkey` (if/else): ❌ (Parser needs implementation)
     *   `periodt` (while): ✅ (Parser, AST, Compiler needs work)
     *   `bestie` (for): ❌ (Parser needs implementation)
