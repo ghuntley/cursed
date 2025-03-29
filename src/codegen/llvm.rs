@@ -10,7 +10,8 @@ use inkwell::{IntPredicate, FloatPredicate};
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral};
+                PrefixExpression, StringLiteral, WhileStatement};
+use crate::lexer::Token;
 // use crate::object::Object;
 
 /// Manages the state for LLVM Intermediate Representation generation.
@@ -210,6 +211,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Ok(())
         } else if let Some(if_stmt) = statement.as_any().downcast_ref::<IfStatement>() {
             self.compile_if_statement(if_stmt)
+        } else if let Some(while_stmt) = statement.as_any().downcast_ref::<WhileStatement>() {
+            self.compile_while_statement(while_stmt)
         } else {
              Err(format!("Unsupported statement type: {}", statement.string()))
         }
@@ -626,6 +629,63 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(())
     }
 
+    // Compile a while statement
+    fn compile_while_statement(&mut self, while_stmt: &WhileStatement) -> Result<(), String> {
+        // Ensure we're in a function
+        let function = match self.current_function {
+            Some(f) => f,
+            None => return Err("While statement outside of function context".to_string()),
+        };
+        
+        // Create the basic blocks for the loop
+        let condition_block = self.context.append_basic_block(function, "loop.cond");
+        let loop_body = self.context.append_basic_block(function, "loop.body");
+        let after_loop = self.context.append_basic_block(function, "loop.end");
+        
+        // Jump to the condition block first
+        self.builder.build_unconditional_branch(condition_block).unwrap();
+        
+        // Emit the condition check block
+        self.builder.position_at_end(condition_block);
+        
+        // Compile the condition expression
+        let condition_value = self.compile_expression(&*while_stmt.condition)?;
+        
+        // Ensure the condition is a boolean value
+        let condition_value = if condition_value.is_int_value() {
+            let int_val = condition_value.into_int_value();
+            // If not already a boolean (i1), convert to boolean by comparing with 0
+            if int_val.get_type() != self.context.bool_type() {
+                let zero = self.context.i64_type().const_int(0, false);
+                self.builder.build_int_compare(IntPredicate::NE, int_val, zero, "loopcond").unwrap()
+            } else {
+                int_val
+            }
+        } else {
+            return Err("While condition must be a boolean or integer expression".to_string());
+        };
+        
+        // Build the conditional branch: if condition is true, enter loop body, otherwise go to after_loop
+        self.builder.build_conditional_branch(condition_value, loop_body, after_loop).unwrap();
+        
+        // Emit the loop body
+        self.builder.position_at_end(loop_body);
+        
+        // Compile the loop body statements
+        self.compile_block(&while_stmt.body)?;
+        
+        // Jump back to the condition block to check again before next iteration
+        // but only if the block doesn't already have a terminator (like a return)
+        if self.builder.get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder.build_unconditional_branch(condition_block).unwrap();
+        }
+        
+        // Continue building code after the loop
+        self.builder.position_at_end(after_loop);
+        
+        Ok(())
+    }
+
     /// Initializes string helper functions like string_concat and strcmp.
     /// This should be called before compilation if string operations will be used.
     pub fn init_string_helpers(&mut self) {
@@ -1002,6 +1062,97 @@ mod tests {
         
         // Check that there's a return instruction and that the module verifies
         assert!(module_str.contains("ret i32") || module_str.contains("ret i64"));
+        assert!(codegen.module.verify().is_ok());
+    }
+
+    #[test]
+    fn test_compile_program_with_while_stmt() {
+        let context = Context::create();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_while");
+        
+        // Build AST for: 
+        // let x = 0;
+        // periodt (x < 10) {
+        //     x = x + 1;
+        // }
+        
+        // 1. First statement: let x = 0;
+        let let_stmt = LetStatement {
+            token: "let".into(),
+            name: Identifier { token: "x".into(), value: "x".to_string() },
+            value: Some(Box::new(IntegerLiteral {
+                token: "0".into(),
+                value: 0,
+            })),
+        };
+        
+        // 2. Second statement: periodt (x < 10) { x = x + 1; }
+        
+        // 2.1 Condition: x < 10
+        let condition = InfixExpression {
+            token: Token::Lt,
+            left: Box::new(Identifier { token: "x".into(), value: "x".to_string() }),
+            operator: "<".to_string(),
+            right: Box::new(IntegerLiteral { token: "10".into(), value: 10 }),
+        };
+        
+        // 2.2 Loop body: x = x + 1;
+        let increment = InfixExpression {
+            token: Token::Plus,
+            left: Box::new(Identifier { token: "x".into(), value: "x".to_string() }),
+            operator: "+".to_string(),
+            right: Box::new(IntegerLiteral { token: "1".into(), value: 1 }),
+        };
+        
+        // 2.3 Assignment expression for body
+        let body_expr = ExpressionStatement {
+            token: ";".into(),
+            expression: Some(Box::new(Identifier { token: "x".into(), value: "x".to_string() })),
+        };
+        
+        // LLVM doesn't handle direct assignment like x = x + 1 yet, so we'll just use a simple expression
+        // to test the loop structure.
+        
+        // 2.4 Create the block statement for loop body
+        let body = BlockStatement {
+            token: "{".into(),
+            statements: vec![Box::new(body_expr)],
+        };
+        
+        // 2.5 Create the while statement
+        let while_stmt = WhileStatement {
+            token: "periodt".into(),
+            condition: Box::new(condition),
+            body: body,
+        };
+        
+        // Create the program with both statements
+        let program = Program {
+            statements: vec![Box::new(let_stmt), Box::new(while_stmt)],
+        };
+        
+        // Compile the program
+        let result = codegen.compile(&program);
+        
+        // Print the error message if any
+        if let Err(e) = &result {
+            println!("Error: {}", e);
+        }
+        
+        // The compilation should succeed
+        assert!(result.is_ok());
+        
+        // Verify the generated LLVM IR
+        let module_str = codegen.module.print_to_string().to_string();
+        
+        // Check for key components of while loop implementation
+        assert!(module_str.contains("loop.cond"), "Missing loop condition block");
+        assert!(module_str.contains("loop.body"), "Missing loop body block");
+        assert!(module_str.contains("loop.end"), "Missing loop end block");
+        assert!(module_str.contains("br i1"), "Missing conditional branch");
+        assert!(module_str.contains("br label"), "Missing unconditional branch");
+        
+        // Verify LLVM module is valid
         assert!(codegen.module.verify().is_ok());
     }
 

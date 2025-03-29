@@ -52,6 +52,7 @@ The following sections outline how core CURSED language features will map to LLV
 
 -   Conditional statements (`lowkey`/`highkey`) mapped to LLVM conditional branch instructions (`br i1 ..., label %true, label %false`).
 -   Loops (`periodt`) mapped using LLVM basic blocks and branch instructions to create loop structures.
+-   While loops implemented using conditional branches with loop header, body, and exit blocks.
 -   Switch-like statements (`bestie`) mapped using `switch` instructions or cascaded conditional branches.
 
 ### 5. Concurrency (`stan`, `dm`)
