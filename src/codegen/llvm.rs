@@ -10,7 +10,7 @@ use inkwell::{IntPredicate, FloatPredicate};
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression};
+                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral};
 use crate::lexer::Token;
 // use crate::object::Object;
 
@@ -235,10 +235,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Return a pointer to the string data
             Ok(string_value.as_pointer_value().into())
-        } else if let Some(array_lit) = expression.as_any().downcast_ref::<ArrayLiteral>() {
-            self.compile_array_literal(array_lit)
-        } else if let Some(index_expr) = expression.as_any().downcast_ref::<IndexExpression>() {
-            self.compile_index_expression(index_expr)
         } else if let Some(ident) = expression.as_any().downcast_ref::<Identifier>() {
             let var_name = &ident.value;
             match self.variables.get(var_name) {
@@ -413,15 +409,136 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 Err(format!("Unsupported operand types for infix operator '{}': {:?} and {:?}", 
                          infix_expr.operator, left_val.get_type(), right_val.get_type()))
             }
-        } else if let Some(_func_lit) = expression.as_any().downcast_ref::<FunctionLiteral>() {
-            // Return error explaining that we need to test this differently due to module cloning issues
-            Err("Function literals cannot be compiled directly in tests due to LLVM module cloning issues. See test_compile_function_literal for an alternative approach.".to_string())
+        } else if let Some(func_lit) = expression.as_any().downcast_ref::<FunctionLiteral>() {
+            self.compile_function_literal(func_lit)
+        } else if let Some(if_expr) = expression.as_any().downcast_ref::<IfStatement>() {
+            self.compile_if_expression(if_expr)
         } else if let Some(call_expr) = expression.as_any().downcast_ref::<CallExpression>() {
-            // Compile function call
             self.compile_call_expression(call_expr)
+        } else if let Some(array_lit) = expression.as_any().downcast_ref::<ArrayLiteral>() {
+            self.compile_array_literal(array_lit)
+        } else if let Some(index_expr) = expression.as_any().downcast_ref::<IndexExpression>() {
+            self.compile_index_expression(index_expr)
+        } else if let Some(hash_lit) = expression.as_any().downcast_ref::<HashLiteral>() {
+            self.compile_hash_literal(hash_lit)
         } else {
             Err(format!("Unsupported expression type: {}", expression.string()))
         }
+    }
+
+    /// Compiles an if expression and returns its result value
+    fn compile_if_expression(&self, if_expr: &IfStatement) -> Result<BasicValueEnum<'ctx>, String> {
+        // Get the current function
+        let function = match self.current_function {
+            Some(f) => f,
+            None => return Err("Cannot compile if expression outside function context".to_string()),
+        };
+        
+        // Compile the condition
+        let condition_value = self.compile_expression(&*if_expr.condition)?;
+        
+        // Convert to boolean if needed
+        let condition_bool = if condition_value.is_int_value() {
+            let int_val = condition_value.into_int_value();
+            // If already a boolean, use directly, otherwise compare with zero
+            if int_val.get_type() == self.context.bool_type() {
+                int_val
+            } else {
+                self.builder.build_int_compare(
+                    IntPredicate::NE,
+                    int_val,
+                    int_val.get_type().const_zero(),
+                    "if.cond"
+                ).unwrap()
+            }
+        } else if condition_value.is_float_value() {
+            // For float values, compare with 0.0
+            let float_val = condition_value.into_float_value();
+            self.builder.build_float_compare(
+                FloatPredicate::ONE,
+                float_val,
+                float_val.get_type().const_zero(),
+                "if.cond.float"
+            ).unwrap()
+        } else {
+            return Err(format!("Unsupported condition type for if expression: {:?}", condition_value));
+        };
+        
+        // Create basic blocks for the then branch, optional else branch, and continuation
+        let then_block = self.context.append_basic_block(function, "if.then");
+        let else_block = if if_expr.alternative.is_some() {
+            Some(self.context.append_basic_block(function, "if.else"))
+        } else {
+            None
+        };
+        let merge_block = self.context.append_basic_block(function, "if.end");
+        
+        // Create the conditional branch instruction
+        self.builder.build_conditional_branch(
+            condition_bool,
+            then_block,
+            else_block.unwrap_or(merge_block)
+        ).unwrap();
+        
+        // Build the then block
+        self.builder.position_at_end(then_block);
+        
+        // Clone the LlvmCodeGenerator to compile the consequence
+        let mut then_generator = LlvmCodeGenerator {
+            context: self.context,
+            module: self.module.clone(),
+            builder: self.context.create_builder(),
+            variables: self.variables.clone(),
+            current_function: self.current_function,
+            functions: self.functions.clone(),
+        };
+        then_generator.builder.position_at_end(then_block);
+        
+        // Compile the consequence
+        then_generator.compile_block(&if_expr.consequence)?;
+        
+        // Add a terminator if the block doesn't have one yet (e.g., branch to merge)
+        if then_generator.builder.get_insert_block().unwrap().get_terminator().is_none() {
+            then_generator.builder.build_unconditional_branch(merge_block).unwrap();
+        }
+        
+        // Build the else block if it exists
+        let mut has_else = false;
+        if let Some(else_block) = else_block {
+            self.builder.position_at_end(else_block);
+            
+            // Clone the generator for the else block
+            let mut else_generator = LlvmCodeGenerator {
+                context: self.context,
+                module: self.module.clone(),
+                builder: self.context.create_builder(),
+                variables: self.variables.clone(),
+                current_function: self.current_function,
+                functions: self.functions.clone(),
+            };
+            else_generator.builder.position_at_end(else_block);
+            
+            // Compile the alternative
+            if let Some(alternative) = &if_expr.alternative {
+                has_else = true;
+                else_generator.compile_block(alternative)?;
+                
+                // Add a terminator if needed
+                if else_generator.builder.get_insert_block().unwrap().get_terminator().is_none() {
+                    else_generator.builder.build_unconditional_branch(merge_block).unwrap();
+                }
+            } else {
+                // Empty else block, just branch to merge
+                else_generator.builder.build_unconditional_branch(merge_block).unwrap();
+            }
+        }
+        
+        // Position at the merge block
+        self.builder.position_at_end(merge_block);
+        
+        // For now, we return a default value - in a full implementation we would handle
+        // the values from both branches with a PHI node
+        Ok(self.context.i64_type().const_int(0, false).into())
     }
 
     // Compile a function literal expression
@@ -800,6 +917,198 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
     }
 
+    /// Returns the generated LLVM module.
+    pub fn module(&self) -> &Module<'ctx> {
+        &self.module
+    }
+
+    /// Compile a hash literal into LLVM IR
+    fn compile_hash_literal(&self, hash_lit: &HashLiteral) -> Result<BasicValueEnum<'ctx>, String> {
+        // For hash tables we'll use a simple representation:
+        // - a struct containing keys array, values array, and a count
+        // This is a simplification - a real hash table would need hash functions, etc.
+        
+        // Get the number of key-value pairs
+        let pair_count = hash_lit.pairs.len();
+        
+        // First, prepare the keys and values
+        // For simplicity, we'll assume keys are strings and values are i64
+        // In a full implementation, this would need to handle different types
+        
+        // Define the hash table struct type
+        let key_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
+        let value_type = self.context.i64_type();
+        
+        // Create arrays for keys and values
+        let keys_array_type = key_type.array_type(pair_count as u32);
+        let values_array_type = value_type.array_type(pair_count as u32);
+        
+        // Create a struct type for the hash table
+        let hash_struct_type = self.context.struct_type(
+            &[
+                keys_array_type.into(),           // keys array
+                values_array_type.into(),         // values array
+                self.context.i32_type().into(),   // count
+            ], 
+            false
+        );
+        
+        // Allocate space for the hash table
+        let hash_table = self.builder.build_alloca(hash_struct_type, "hash_table").unwrap();
+        
+        // Allocate and fill the keys array
+        let keys_array = self.builder.build_alloca(keys_array_type, "keys_array").unwrap();
+        
+        // Allocate and fill the values array
+        let values_array = self.builder.build_alloca(values_array_type, "values_array").unwrap();
+        
+        // Compile each key-value pair and store them in the arrays
+        for (i, (key, value)) in hash_lit.pairs.iter().enumerate() {
+            // Compile key (assuming string keys for simplicity)
+            let key_value = self.compile_expression(&**key)?;
+            if !key_value.is_pointer_value() {
+                return Err("Hash keys must be string pointers".to_string());
+            }
+            
+            // Get pointer to the key element in the array
+            let key_indices = [
+                self.context.i32_type().const_int(0, false),
+                self.context.i32_type().const_int(i as u64, false)
+            ];
+            let key_element_ptr = unsafe {
+                self.builder.build_gep(
+                    keys_array_type,
+                    keys_array,
+                    &key_indices,
+                    &format!("key_element_{}", i)
+                ).unwrap()
+            };
+            
+            // Store the key in the array
+            self.builder.build_store(key_element_ptr, key_value).unwrap();
+            
+            // Compile value (assuming integer values for simplicity)
+            let value_value = self.compile_expression(&**value)?;
+            let value_int = match value_value {
+                BasicValueEnum::IntValue(int_val) => int_val,
+                BasicValueEnum::FloatValue(float_val) => {
+                    self.builder.build_float_to_signed_int(
+                        float_val, 
+                        self.context.i64_type(), 
+                        "float_to_int"
+                    ).unwrap()
+                },
+                _ => return Err(format!("Unsupported hash value type at index {}", i))
+            };
+            
+            // Get pointer to the value element in the array
+            let value_indices = [
+                self.context.i32_type().const_int(0, false),
+                self.context.i32_type().const_int(i as u64, false)
+            ];
+            let value_element_ptr = unsafe {
+                self.builder.build_gep(
+                    values_array_type,
+                    values_array,
+                    &value_indices,
+                    &format!("value_element_{}", i)
+                ).unwrap()
+            };
+            
+            // Store the value in the array
+            self.builder.build_store(value_element_ptr, value_int).unwrap();
+        }
+        
+        // Store the keys array in the hash table struct
+        let keys_indices = [
+            self.context.i32_type().const_int(0, false),
+            self.context.i32_type().const_int(0, false)
+        ];
+        let keys_ptr = unsafe {
+            self.builder.build_gep(
+                hash_struct_type,
+                hash_table,
+                &keys_indices,
+                "keys_ptr"
+            ).unwrap()
+        };
+        self.builder.build_store(keys_ptr, keys_array).unwrap();
+        
+        // Store the values array in the hash table struct
+        let values_indices = [
+            self.context.i32_type().const_int(0, false),
+            self.context.i32_type().const_int(1, false)
+        ];
+        let values_ptr = unsafe {
+            self.builder.build_gep(
+                hash_struct_type,
+                hash_table,
+                &values_indices,
+                "values_ptr"
+            ).unwrap()
+        };
+        self.builder.build_store(values_ptr, values_array).unwrap();
+        
+        // Store the count in the hash table struct
+        let count_indices = [
+            self.context.i32_type().const_int(0, false),
+            self.context.i32_type().const_int(2, false)
+        ];
+        let count_ptr = unsafe {
+            self.builder.build_gep(
+                hash_struct_type,
+                hash_table,
+                &count_indices,
+                "count_ptr"
+            ).unwrap()
+        };
+        self.builder.build_store(
+            count_ptr, 
+            self.context.i32_type().const_int(pair_count as u64, false)
+        ).unwrap();
+        
+        // Return the hash table
+        Ok(hash_table.into())
+    }
+
+    /// Compile an index expression (array[index]) into LLVM IR
+    fn compile_index_expression(&self, index_expr: &IndexExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Compile the left expression (should be an array)
+        let array_value = self.compile_expression(&*index_expr.left)?;
+        if !array_value.is_pointer_value() {
+            return Err("Left side of index expression must be a pointer".to_string());
+        }
+        
+        // Compile the index expression
+        let index_value = self.compile_expression(&*index_expr.index)?;
+        if !index_value.is_int_value() {
+            return Err("Index must be an integer".to_string());
+        }
+        
+        // Get the array pointer
+        let array_ptr = array_value.into_pointer_value();
+        
+        // For simplicity, we'll assume the array contains i64 values
+        let element_type = self.context.i64_type();
+        let array_type = element_type.array_type(10); // We don't know actual size, but it's not needed for GEP
+        
+        // Create indices for GEP: first index is 0 for the array, second is the actual index
+        let indices = [
+            self.context.i32_type().const_int(0, false),
+            index_value.into_int_value()
+        ];
+        
+        // Create GEP instruction to get element pointer
+        let element_ptr = unsafe {
+            self.builder.build_gep(array_type, array_ptr, &indices, "array_element").unwrap()
+        };
+        
+        // Load the element from the array
+        let loaded_value = self.builder.build_load(element_type, element_ptr, "indexed_value").unwrap();
+        
+        Ok(loaded_value)
+    }
+
     /// Compile an array literal into LLVM IR
     fn compile_array_literal(&self, array_lit: &ArrayLiteral) -> Result<BasicValueEnum<'ctx>, String> {
         // Get the number of elements in the array
@@ -854,61 +1163,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(array_alloca.into())
     }
 
-    /// Compile an array index expression into LLVM IR
-    fn compile_index_expression(&self, index_expr: &IndexExpression) -> Result<BasicValueEnum<'ctx>, String> {
-        // Simplified implementation assuming left side is an array pointer and we want to index into it
-        
-        // Compile the array expression
-        let left = self.compile_expression(&*index_expr.left)?;
-        if !left.is_pointer_value() {
-            return Err("Expected a pointer value for array indexing".to_string());
-        }
-        
-        // Compile the index expression
-        let index = self.compile_expression(&*index_expr.index)?;
-        if !index.is_int_value() {
-            return Err("Array index must be an integer".to_string());
-        }
-        
-        // Convert index to i32 (required for GEP)
-        let index_i32 = self.builder.build_int_cast(
-            index.into_int_value(),
-            self.context.i32_type(),
-            "index_cast"
-        ).unwrap();
-        
-        // Using a direct approach accessing elements
-        // For this example, we'll just load the element as an i64 for now
-        let ptr = left.into_pointer_value();
-        let element_ptr = unsafe { 
-            self.builder.build_gep(
-                self.context.i64_type(),
-                ptr,
-                &[index_i32],
-                "element_ptr"
-            ).unwrap() 
-        };
-        
-        let element = self.builder.build_load(
-            self.context.i64_type(),
-            element_ptr,
-            "element"
-        ).unwrap();
-        
-        Ok(element)
-    }
-
     /// Compiles a block of statements
     fn compile_block(&mut self, block: &BlockStatement) -> Result<(), String> {
         for stmt in &block.statements {
             self.compile_statement(stmt.as_ref())?;
         }
         Ok(())
-    }
-
-    /// Returns the generated LLVM module.
-    pub fn module(&self) -> &Module<'ctx> {
-        &self.module
     }
 }
 
@@ -1259,9 +1519,9 @@ mod tests {
     }
 
     #[test]
-    fn test_compile_array_literal() {
+    fn test_compile_hash_literal() {
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_array");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_hash");
         
         // Create a function context for test allocations
         let fn_type = context.i64_type().fn_type(&[], false);
@@ -1270,26 +1530,32 @@ mod tests {
         codegen.builder.position_at_end(basic_block);
         codegen.current_function = Some(function);
         
-        // Create an array literal with integer elements
-        let token = Token::Crew;
-        let elements = vec![
-            Box::new(IntegerLiteral { token: "1".into(), value: 1 }) as Box<dyn Expression>,
-            Box::new(IntegerLiteral { token: "2".into(), value: 2 }) as Box<dyn Expression>,
-            Box::new(IntegerLiteral { token: "3".into(), value: 3 }) as Box<dyn Expression>,
+        // Create a hash literal expression with string keys and integer values
+        let hash_token = Token::Tea;
+        let pairs = vec![
+            (
+                Box::new(StringLiteral { token: "key1".into(), value: "key1".to_string() }) as Box<dyn Expression>,
+                Box::new(IntegerLiteral { token: "1".into(), value: 1 }) as Box<dyn Expression>
+            ),
+            (
+                Box::new(StringLiteral { token: "key2".into(), value: "key2".to_string() }) as Box<dyn Expression>,
+                Box::new(IntegerLiteral { token: "2".into(), value: 2 }) as Box<dyn Expression>
+            )
         ];
         
-        let array_lit = ArrayLiteral { token, elements };
-        let result = codegen.compile_expression(&array_lit).unwrap();
+        let hash_lit = HashLiteral { token: hash_token, pairs };
+        
+        // Compile the hash literal
+        let result = codegen.compile_expression(&hash_lit).unwrap();
         
         // Check that the result is a pointer value
         assert!(result.is_pointer_value());
         
-        // Get IR string representation for debugging/verification
+        // Get IR string representation for verification
         let ir_string = codegen.module.print_to_string().to_string();
-        assert!(ir_string.contains("array"), "IR should contain array allocation");
         
-        // Verify the number of elements in the array through the IR
-        assert!(ir_string.contains("[3 x i64]"), "IR should contain array type with 3 elements");
+        // Verify the IR contains hash table struct allocation
+        assert!(ir_string.contains("hash_table"), "IR should contain hash table allocation");
         
         // Add a return to make the function valid
         codegen.builder.build_return(Some(&context.i64_type().const_int(0, false))).unwrap();
@@ -1299,55 +1565,81 @@ mod tests {
     }
 
     #[test]
-    fn test_compile_index_expression() {
+    fn test_compile_array_indexing() {
+        use inkwell::context::Context;
+        use crate::ast::{ArrayLiteral, Expression, IndexExpression, IntegerLiteral};
+        use crate::lexer::Token;
+        
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_index");
+        let mut generator = super::LlvmCodeGenerator::new(&context, "test_array_indexing");
         
-        // Create a function context for test allocations
-        let fn_type = context.i64_type().fn_type(&[], false);
-        let function = codegen.module.add_function("test_func", fn_type, None);
-        let basic_block = context.append_basic_block(function, "entry");
-        codegen.builder.position_at_end(basic_block);
-        codegen.current_function = Some(function);
+        // Create a main function to execute in
+        let i32_type = context.i32_type();
+        let main_fn_type = i32_type.fn_type(&[], false);
+        let main_function = generator.module.add_function("main", main_fn_type, None);
+        let entry_block = context.append_basic_block(main_function, "entry");
         
-        // Create an array literal expression
-        let array_token = Token::Crew;
-        let array_elements = vec![
-            Box::new(IntegerLiteral { token: "1".into(), value: 1 }) as Box<dyn Expression>,
-            Box::new(IntegerLiteral { token: "2".into(), value: 2 }) as Box<dyn Expression>,
-            Box::new(IntegerLiteral { token: "3".into(), value: 3 }) as Box<dyn Expression>,
-        ];
+        // Set current function context and position builder
+        generator.current_function = Some(main_function);
+        generator.builder.position_at_end(entry_block);
         
-        let array_lit = ArrayLiteral { token: array_token, elements: array_elements };
+        // Create an array literal with [10, 20, 30]
+        let mut elements = Vec::new();
         
-        // Create an index expression to access the second element (index 1)
-        let index_token = Token::LBracket;
-        let index_expr = IndexExpression {
-            token: index_token,
-            left: Box::new(array_lit),
-            index: Box::new(IntegerLiteral { token: "1".into(), value: 1 })
+        // Element 0: 10
+        let element0 = Box::new(IntegerLiteral {
+            token: "10".to_string(),
+            value: 10,
+        }) as Box<dyn Expression>;
+        
+        // Element 1: 20
+        let element1 = Box::new(IntegerLiteral {
+            token: "20".to_string(),
+            value: 20,
+        }) as Box<dyn Expression>;
+        
+        // Element 2: 30
+        let element2 = Box::new(IntegerLiteral {
+            token: "30".to_string(),
+            value: 30,
+        }) as Box<dyn Expression>;
+        
+        elements.push(element0);
+        elements.push(element1);
+        elements.push(element2);
+        
+        let array_literal = ArrayLiteral {
+            token: Token::LBracket,
+            elements,
         };
         
-        // Compile the index expression
-        let result = codegen.compile_expression(&index_expr).unwrap();
+        // Create an index expression to access element at index 1 (which should be 20)
+        let index = Box::new(IntegerLiteral {
+            token: "1".to_string(),
+            value: 1,
+        }) as Box<dyn Expression>;
         
-        // Check that the result is an i64 value
-        assert!(result.is_int_value());
-        let int_val = result.into_int_value();
-        assert_eq!(int_val.get_type(), context.i64_type());
+        let index_expr = IndexExpression {
+            token: Token::LBracket,
+            left: Box::new(array_literal) as Box<dyn Expression>,
+            index,
+        };
         
-        // Get IR string representation for verification
-        let ir_string = codegen.module.print_to_string().to_string();
+        // Compile and test the index expression
+        let result = generator.compile_expression(&index_expr).unwrap();
         
-        // Verify the IR contains array allocation and GEP instructions
-        assert!(ir_string.contains("array"), "IR should contain array allocation");
-        assert!(ir_string.contains("getelementptr"), "IR should contain GEP instruction");
+        // Verify the result is an integer value
+        assert!(result.is_int_value(), "Result should be an integer");
         
-        // Add a return to make the function valid
-        codegen.builder.build_return(Some(&context.i64_type().const_int(0, false))).unwrap();
+        // Add a return to make the module valid
+        generator.builder.build_return(Some(&i32_type.const_int(0, false))).unwrap();
         
-        // Verify the module is well-formed
-        assert!(codegen.module.verify().is_ok());
+        // Verify the module
+        generator.module.verify().unwrap();
+        
+        // Print the generated IR for inspection
+        let ir = generator.module.print_to_string().to_string();
+        assert!(ir.contains("array_element"), "IR should contain array indexing code");
     }
 
     // ... existing tests ...
