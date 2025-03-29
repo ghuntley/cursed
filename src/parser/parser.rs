@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
         match &self.current_token {
             Token::Vibe => self.parse_package_statement(),
             Token::Yeet => self.parse_import_statement(),
-            Token::Sus => self.parse_let_statement(),
+            Token::Sus => self.parse_sus_statement(),
             Token::Facts => self.parse_facts_statement(),
             Token::Yolo => self.parse_return_statement(),
             Token::Lowkey => self.parse_if_statement(),
@@ -201,8 +201,8 @@ impl<'a> Parser<'a> {
         }
     }
     
-    /// Parse a let statement
-    pub fn parse_let_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+    /// Parse a let statement (now 'sus')
+    pub fn parse_sus_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         let token = self.current_token.token_literal();
         
         // Expect the identifier name
@@ -223,7 +223,7 @@ impl<'a> Parser<'a> {
         // Expect the assignment operator
         if !self.expect_peek(&Token::Assign) {
             return Err(Error::from_str(
-                &format!("Expected '=' after identifier in let statement, got {:?}", self.peek_token)
+                &format!("Expected '=' after identifier in sus statement, got {:?}", self.peek_token)
             ));
         }
         
@@ -293,8 +293,29 @@ impl<'a> Parser<'a> {
     
     /// Parse a return statement
     pub fn parse_return_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("Return statement parsing not implemented yet"))
+        let token = self.current_token.token_literal();
+        
+        // Move past the 'yolo' token
+        self.next_token()?;
+        
+        let return_value = if self.current_token == Token::Semicolon {
+            // No return value provided
+            None
+        } else {
+            // Parse the expression for the return value
+            Some(self.parse_expression(Precedence::Lowest)?)
+        };
+        
+        // Optionally consume a semicolon
+        if self.current_token == Token::Semicolon {
+            self.next_token()?;
+        }
+        
+        // Create and return the ReturnStatement
+        Ok(Box::new(ast::ReturnStatement {
+            token,
+            return_value,
+        }))
     }
     
     /// Parse an if statement
