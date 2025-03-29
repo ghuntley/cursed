@@ -13,7 +13,7 @@ The CURSED language implementation is underway. Core components like the lexer, 
 | **Project Setup** | ✅ Completed   | Basic structure, modules.                                                                            | N/A             |
 | **Lexer**         | ✅ Completed   | Handles keywords, identifiers, literals (int, float, string, char), operators, punctuation, comments. | Property, Unit  |
 | **AST**           | ✅ Completed   | Defines nodes for parsed language constructs (expressions, statements, types, etc.).                   | Unit            |
-| **Parser**        | 🟡 In Progress | Parses: package, import, type (squad), interface (collab), method (`slay`), while (`periodt`), expressions. Needs: let (`sus`), const (`facts`), return (`yolo`), if (`lowkey`), for (`bestie`), switch (`vibe_check`), some expression types (prefix, infix, call, index). | Unit (Basic)    |
+| **Parser**        | 🟡 In Progress | Parses: package, import, type (squad), interface (collab), method (`slay`), while (`periodt`), const (`facts`), expressions. Needs: let (`sus`), return (`yolo`), if (`lowkey`), for (`bestie`), switch (`vibe_check`), some expression types (prefix, infix, call, index). | Unit (Basic)    |
 | **Symbol Table**  | ✅ Completed   | Handles symbol definition and resolution, including basic nested scopes.                               | Property, Unit  |
 | **Compiler**      | 🔴 Stubbed     | `src/lib.rs` uses a stub compiler. `compiler_implementation.rs` exists but is not integrated. Needs full implementation according to specs. | Stub Tests Only |
 | **Bytecode**      | 🔴 Stubbed     | Minimal definition in the stub compiler. Needs full instruction set implementation.                   | Needs Tests     |
@@ -40,7 +40,7 @@ The CURSED language implementation is underway. Core components like the lexer, 
     *   `vibe` (package): ✅ (Parser, AST, Stub Compiler)
     *   `yeet` (import): ✅ (Parser, AST, Stub Compiler)
     *   `sus` (let): ❌ (Parser needs implementation)
-    *   `facts` (const): ❌ (Not specified in parser/AST yet)
+    *   `facts` (const): ✅ (Parser, AST)
     *   `yolo` (return): ❌ (Parser needs implementation)
     *   `lowkey`/`highkey` (if/else): ❌ (Parser needs implementation)
     *   `periodt` (while): ✅ (Parser, AST, Compiler needs work)
@@ -53,10 +53,10 @@ The CURSED language implementation is underway. Core components like the lexer, 
 *   **Expressions:**
     *   Identifier: ✅
     *   Literals: ✅
-    *   Prefix: ❌ (Parser needs implementation)
-    *   Infix: ❌ (Parser needs implementation)
-    *   Call: ❌ (Parser needs implementation)
-    *   Index: ❌ (Parser needs implementation)
+    *   Prefix: ✅ (Parser, AST)
+    *   Infix: ✅ (Parser, AST)
+    *   Call: ✅ (Parser, AST)
+    *   Index: ✅ (Parser, AST)
     *   Struct Instantiation: ❌ (Needs parser/compiler support)
     *   Method Call: ❌ (Needs parser/compiler/VM support)
 *   **Types:**
@@ -72,7 +72,7 @@ The CURSED language implementation is underway. Core components like the lexer, 
 
 ## Prioritized Next Steps
 
-1.  **Complete Parser:** Implement parsing for all remaining statements (`sus`, `facts`, `yolo`, `lowkey`, `bestie`, `vibe_check`) and expressions (prefix, infix, call, index, struct instantiation, method calls).
+1.  **Complete Parser:** Implement parsing for all remaining statements (`sus`, `yolo`, `lowkey`, `bestie`, `vibe_check`) and expression types (struct instantiation, method calls).
 2.  **Integrate & Complete Compiler:** Replace the stub compiler (`src/compiler.rs` in `lib.rs`) with the more complete version (`src/compiler_implementation.rs`) or finish the stub. Implement compilation logic for all AST nodes to generate correct bytecode.
 3.  **Complete VM:** Implement remaining opcodes, especially for method calls and instance creation/manipulation. Ensure all existing opcodes work correctly with the real compiler's output.
 4.  **Implement Memory Management:** Replace memory stubs with a functional Garbage Collector.
