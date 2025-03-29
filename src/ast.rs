@@ -58,6 +58,16 @@ pub trait Expression: Node {
     fn as_index_expression(&self) -> Option<(&dyn Expression, &dyn Expression)> {
         None
     }
+    
+    /// Returns true if this expression is a property access expression
+    fn is_property_expression(&self) -> bool {
+        false
+    }
+    
+    /// Returns the object and property if this is a property access expression
+    fn as_property_expression(&self) -> Option<(&dyn Expression, &Identifier)> {
+        None
+    }
 }
 
 /// Program represents a CURSED program
@@ -1069,6 +1079,41 @@ impl Expression for HashLiteral {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+}
+
+/// PropertyExpression represents a property access expression (e.g., obj.prop)
+pub struct PropertyExpression {
+    pub token: Token,       // The '.' token
+    pub object: Box<dyn Expression>,
+    pub property: Identifier,
+}
+
+impl Node for PropertyExpression {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        format!("{}.{}", self.object.string(), self.property.string())
+    }
+}
+
+impl Expression for PropertyExpression {
+    fn expression_node(&self) {}
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    /// Returns true if this expression is a property access expression
+    fn is_property_expression(&self) -> bool {
+        true
+    }
+    
+    /// Returns the object and property if this is a property access expression
+    fn as_property_expression(&self) -> Option<(&dyn Expression, &Identifier)> {
+        Some((self.object.as_ref(), &self.property))
     }
 }
 

@@ -4,6 +4,7 @@ use crate::error::{Error, SourceLocation};
 use crate::object::Object;
 use std::rc::Rc;
 use std::collections::HashMap;
+use std::fmt;
 
 pub mod constants {
     // VM constants
@@ -137,6 +138,10 @@ impl VM {
         self.register_builtin("is_array", builtin_is_array);
         self.register_builtin("is_hash", builtin_is_hash);
         self.register_builtin("is_null", builtin_is_null);
+        
+        // Register vibez module functions
+        self.register_builtin("vibez_spill", builtin_vibez_spill);
+        self.register_builtin("vibez.spill", builtin_vibez_spill);
     }
     
     /// Register a built-in function
@@ -1491,4 +1496,17 @@ fn builtin_is_null(args: Vec<Object>) -> Result<Object, Error> {
         Object::Null => Ok(Object::Boolean(true)),
         _ => Ok(Object::Boolean(false)),
     }
+}
+
+/// Implementation of vibez.spill - prints arguments followed by a newline
+fn builtin_vibez_spill(args: Vec<Object>) -> Result<Object, Error> {
+    for (i, arg) in args.iter().enumerate() {
+        if i > 0 {
+            print!(" ");
+        }
+        print!("{}", arg);
+    }
+    println!();
+    
+    Ok(Object::Null)
 }

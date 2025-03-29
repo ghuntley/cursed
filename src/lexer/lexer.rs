@@ -221,9 +221,21 @@ impl<'a> Lexer<'a> {
     /// Read an identifier
     fn read_identifier(&mut self) -> String {
         let position = self.position;
+        let mut allow_dot = false;  // Initially don't allow dots
+        
         while let Some(c) = self.ch {
             if Self::is_letter(c) || Self::is_digit(c) || c == '_' {
+                allow_dot = true;  // After a letter, digit, or underscore, a dot can follow
                 self.read_char();
+            } else if c == '.' && allow_dot {
+                // If this is a dot and we've seen a character before,
+                // include it only if the next character is a letter
+                if self.peek_char().map_or(false, Self::is_letter) {
+                    self.read_char();
+                    allow_dot = false;  // Only allow one dot at a time
+                } else {
+                    break;
+                }
             } else {
                 break;
             }

@@ -13,6 +13,7 @@ enum Precedence {
     Prefix,      // -X or !X
     Call,        // myFunction(X)
     Index,       // array[index]
+    Dot,         // object.property
 }
 
 /// Parser for the CURSED language
@@ -1157,6 +1158,10 @@ impl<'a> Parser<'a> {
                     // Parse index expression
                     left_expr = self.parse_index_expression(left_expr)?;
                 },
+                Token::Dot => {
+                    // Parse property access expression
+                    left_expr = self.parse_property_expression(left_expr)?;
+                },
                 _ => {
                     // No infix parser for this token, return the expression as is
                     return Ok(left_expr);
@@ -1260,6 +1265,36 @@ impl<'a> Parser<'a> {
         }))
     }
     
+    /// Parse a property access expression
+    fn parse_property_expression(&mut self, object: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        // Move past the '.'
+        self.next_token()?;
+        
+        // Parse the property name
+        if !self.expect_peek_identifier() {
+            return Err(Error::from_str(
+                &format!("Expected identifier after '.', got {:?}", self.peek_token)
+            ));
+        }
+        
+        let property_name = match &self.current_token {
+            Token::Identifier(name) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: name.clone(),
+            },
+            _ => unreachable!(), // We already checked it's an identifier
+        };
+        
+        // Create the property expression (don't advance token yet)
+        Ok(Box::new(ast::PropertyExpression {
+            token,
+            object,
+            property: property_name,
+        }))
+    }
+    
     /// Get the precedence of a token
     fn get_precedence(&self, token: &Token) -> Precedence {
         match token {
@@ -1269,6 +1304,7 @@ impl<'a> Parser<'a> {
             Token::Asterisk | Token::Slash => Precedence::Product,
             Token::LParen => Precedence::Call,
             Token::LBracket => Precedence::Index,
+            Token::Dot => Precedence::Dot,
             _ => Precedence::Lowest,
         }
     }

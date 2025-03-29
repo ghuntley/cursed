@@ -65,6 +65,18 @@ impl SymbolTable {
         })
     }
     
+    /// Define a built-in function symbol
+    pub fn define_builtin(&mut self, index: usize, name: &str) -> Symbol {
+        let symbol = Symbol {
+            name: name.to_string(),
+            scope: SymbolScope::Builtin,
+            index,
+        };
+        
+        self.store.insert(name.to_string(), symbol.clone());
+        symbol
+    }
+    
     /// Get the number of definitions in this symbol table
     pub fn get_definition_count(&self) -> usize {
         self.num_definitions
