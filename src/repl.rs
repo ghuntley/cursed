@@ -1,12 +1,12 @@
 use crate::error::Error;
-use crate::lexer::Lexer;
+use crate::lexer::lexer;
 use crate::parser::Parser;
-use crate::compiler::Compiler;
-use crate::vm::VM;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use rustyline::history::DefaultHistory;
 use log::info;
+use inkwell::context::Context;
+use crate::codegen::llvm::LlvmCodeGenerator;
 
 /// REPL header to display when starting interactive mode
 const REPL_HEADER: &str = r#"
@@ -38,6 +38,9 @@ pub fn start_repl() -> Result<(), Error> {
     println!("Welcome to CURSED v{}", crate::VERSION);
     println!("Type 'exit' or 'quit' to exit, 'help' for help.");
     
+    // Create LLVM context for the REPL session
+    let context = Context::create();
+    
     // Main REPL loop
     loop {
         // Read
@@ -67,13 +70,25 @@ pub fn start_repl() -> Result<(), Error> {
                 }
                 
                 // Create a lexer for the input
-                let mut lexer = Lexer::new(&line);
+                let mut lexer = lexer::Lexer::new(&line);
                 
                 // Create a parser for the lexer
-                let mut parser = Parser::new(&mut lexer)?;
+                let mut parser = match Parser::new(&mut lexer) {
+                    Ok(parser) => parser,
+                    Err(e) => {
+                        eprintln!("Parser initialization error: {}", e);
+                        continue;
+                    }
+                };
                 
                 // Parse the program
-                let program = parser.parse_program()?;
+                let program = match parser.parse_program() {
+                    Ok(prog) => prog,
+                    Err(e) => {
+                        eprintln!("Parser error: {}", e);
+                        continue;
+                    }
+                };
                 
                 // Check for parser errors
                 if !parser.errors().is_empty() {
@@ -83,19 +98,22 @@ pub fn start_repl() -> Result<(), Error> {
                     continue;
                 }
                 
-                // Create a compiler
-                let mut compiler = Compiler::new();
+                // Create LLVM code generator for this expression
+                let mut code_gen = LlvmCodeGenerator::new(&context, "repl");
                 
-                // Compile the program
-                let bytecode = compiler.compile_program(&program)?;
-                
-                // Create a VM
-                let mut vm = VM::with_bytecode(bytecode);
-                
-                // Run the VM
-                match vm.run() {
-                    Ok(obj) => println!("{}", obj),
-                    Err(e) => eprintln!("VM error: {}", e)
+                // Generate LLVM IR
+                match code_gen.compile(&program) {
+                    Ok(()) => {
+                        // Print the generated LLVM IR (for now, eventually we would JIT execute)
+                        println!("Generated LLVM IR:");
+                        println!("{}", code_gen.module().print_to_string().to_string());
+                        
+                        // TODO: Add JIT execution once ready
+                    },
+                    Err(e) => {
+                        eprintln!("Code generation error: {}", e);
+                        continue;
+                    }
                 }
             },
             Err(ReadlineError::Interrupted) => {
@@ -130,14 +148,14 @@ fn print_help() {
     println!("  help       - Display this help message");
     println!();
     println!("Basic Examples:");
-    println!("  vibe x = 5;          - Define a variable");
-    println!("  vibe y = 10;         - Define another variable");
+    println!("  sus x = 5;          - Define a variable");
+    println!("  sus y = 10;         - Define another variable");
     println!("  x + y;               - Evaluate an expression");
-    println!("  yolo x + y;          - Print a value");
+    println!("  yolo x + y;          - Return a value");
     println!();
     println!("Running Programs Outside REPL:");
     println!("  ./cursed file.csd           - Run a CURSED program from a file");
-    println!("  ./cursed -e \"vibe x = 5;\"   - Execute code from command line");
+    println!("  ./cursed -e \"sus x = 5;\"   - Execute code from command line");
     println!("  cat file.csd | ./cursed -   - Run code from standard input");
     println!();
     println!("For more help, run: ./cursed --help");

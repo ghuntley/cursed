@@ -10,20 +10,60 @@ pub enum RuntimeObject {
     Placeholder,
 }
 
-use std::collections::HashMap;
-use std::fmt;
-use std::hash::Hasher;
 use std::rc::Rc;
 use std::ptr::NonNull;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::fmt;
+use std::fmt::{Display, Formatter, Debug};
+use std::cell::RefCell;
 use crate::prelude::{VecExt, StrExt, VecStrJoinExt};
 // use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};
 use crate::memory::gc::Trace;
 use crate::memory::Traceable;
 use crate::memory::Visitor;
-use crate::compiler::CompiledFunction;
-use crate::vm::ErrorLocation;
+use crate::core::CompiledFunction;
 use crate::error::Error;
 use std::str;
+use std::mem;
+
+/// A location in the code for error reporting
+#[derive(Debug, Clone, PartialEq)]
+pub struct ErrorLocation {
+    pub ip: usize,
+    pub function_name: Option<String>,
+    pub line: Option<usize>,
+    pub column: Option<usize>,
+}
+
+impl ErrorLocation {
+    pub fn new(ip: usize) -> Self {
+        Self {
+            ip,
+            function_name: None,
+            line: None,
+            column: None,
+        }
+    }
+    
+    pub fn with_function(ip: usize, function_name: String) -> Self {
+        Self {
+            ip,
+            function_name: Some(function_name),
+            line: None,
+            column: None,
+        }
+    }
+    
+    pub fn with_location(ip: usize, function_name: Option<String>, line: usize, column: usize) -> Self {
+        Self {
+            ip,
+            function_name,
+            line: Some(line),
+            column: Some(column),
+        }
+    }
+}
 
 /// Object represents a runtime value
 #[derive(Debug, Clone, PartialEq)]
@@ -36,7 +76,7 @@ pub enum Object {
     Array(Vec<Object>),
     HashTable(HashMap<String, Object>),
     CompiledFunction {
-        instructions: Vec<u8>,
+        ir_representation: String,
         num_locals: usize,
         num_parameters: usize,
         free_variables: Vec<Object>,
@@ -79,7 +119,7 @@ pub enum Object {
 }
 
 /// Builtin function type for the CURSED language
-pub type BuiltinFunction = fn(args: Vec<Object>) -> Result<Object, crate::error::Error>;
+pub type BuiltinFunction = fn(args: &[Rc<Object>]) -> Result<Rc<Object>, Error>;
 
 impl Trace for Object {
     // Trace is an empty marker trait, so we don't need to implement any methods
@@ -164,11 +204,11 @@ impl Traceable for Object {
                 }
                 size
             },
-            Object::CompiledFunction { instructions, .. } => {
-                std::mem::size_of::<Object>() + instructions.len()
+            Object::CompiledFunction { ir_representation, .. } => {
+                std::mem::size_of::<String>() + ir_representation.len()
             },
             Object::Closure { function, free_vars } => {
-                let mut size = std::mem::size_of::<Rc<CompiledFunction>>() + function.instructions.len();
+                let mut size = std::mem::size_of::<Rc<CompiledFunction>>() + function.ir_representation.len();
                 for var in free_vars {
                     size += var.size();
                 }
@@ -228,8 +268,8 @@ impl Traceable for Object {
     }
 }
 
-impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Display for Object {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Object::Integer(val) => write!(f, "{}", val),
             Object::Float(val) => write!(f, "{}", val),
@@ -624,12 +664,17 @@ impl Object {
 
     pub fn to_function(&self) -> Option<Rc<CompiledFunction>> {
         match self {
-            Object::CompiledFunction { instructions, num_locals, num_parameters, free_variables, name, is_variadic } => {
-                let func = crate::compiler::CompiledFunction {
-                    instructions: instructions.clone(),
-                    num_locals: *num_locals as u8,
-                    num_parameters: *num_parameters as u8,
-                    free_variables: free_variables.clone(),
+            Object::CompiledFunction { ir_representation, num_locals, num_parameters, free_variables, name, is_variadic } => {
+                let func = CompiledFunction {
+                    ir_representation: ir_representation.clone(),
+                    num_locals: *num_locals,
+                    num_parameters: *num_parameters,
+                    free_variables: free_variables.iter().map(|obj| {
+                        match obj {
+                            Object::String(s) => s.clone(),
+                            _ => obj.to_string()
+                        }
+                    }).collect(),
                     name: name.clone(),
                     is_variadic: *is_variadic,
                 };
@@ -880,10 +925,12 @@ impl From<HashMap<String, Object>> for Object {
 impl From<Rc<CompiledFunction>> for Object {
     fn from(val: Rc<CompiledFunction>) -> Self {
         Object::CompiledFunction {
-            instructions: val.instructions.clone(),
-            num_locals: val.num_locals as usize,
-            num_parameters: val.num_parameters as usize,
-            free_variables: Vec::new(),
+            ir_representation: val.ir_representation.clone(),
+            num_locals: val.num_locals,
+            num_parameters: val.num_parameters,
+            free_variables: val.free_variables.iter()
+                .map(|s| Object::String(s.clone()))
+                .collect(),
             name: val.name.clone(),
             is_variadic: val.is_variadic,
         }

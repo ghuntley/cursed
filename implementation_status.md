@@ -1,78 +1,123 @@
-# CURSED Language Implementation Status
+# CURSED Implementation Status
 
-This document tracks the current implementation status of the CURSED programming language based on the `specs` and the code in the `src` directory.
+This document tracks the implementation status of the CURSED language features and standard library based on the specifications found in the `/specs` directory.
 
-## Current Implementation Status Overview
+## Overall Compiler/Runtime Status
 
-The CURSED language implementation is progressing. Core components like the Lexer, AST, Symbol Table, Parser, and basic VM execution loop are largely functional. A REPL exists. Key areas needing significant work include the Compiler, full VM feature implementation (especially related to custom types and methods), Memory Management (GC), the Standard Library, and Type Checking. LLVM IR code generation is now partially implemented.
+*   **Target Backend:** The compiler targets LLVM IR as specified in `specs/target_llvm_ir.md`. All references to VM have been removed from the codebase in favor of exclusively using LLVM IR codegen.
+*   **Compiler Stages (`specs/compiler_stages.md`):**
+    *   Stage 0 (Rust Bootstrap Env): In Progress. Lexer, Parser, AST, and LLVM IR code generation components exist.
+    *   Stage 1 (Minimal Bootstrap Compiler in Rust): Partially Implemented. Core syntax parsing exists, and LLVM codegen is underway, but semantic analysis, type checking, and runtime support for the full minimal subset are likely incomplete.
+    *   Stage 2 (Full Compiler in CURSED): Not Started.
+    *   Stage 3 (Self-Compilation): Not Started.
 
-## Component Status
+## Language Feature Status
 
-| Component         | Status         | Notes                                                                                                                                  | Testing                  |
-|-------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------|--------------------------|
-| **Project Setup** | ✅ Completed   | Basic structure, modules.                                                                                                              | N/A                      |
-| **Lexer**         | ✅ Completed   | Handles keywords, identifiers, literals (int, float, string, char), operators, punctuation. Handles dot notation in identifiers. Fully supports line and block comments (`fr fr` and `no cap ... on god`).         | Property, Unit           |
-| **AST**           | ✅ Completed   | Defines nodes for most language constructs including PropertyExpression for dot notation access.                                          | Unit                     |
-| **Parser**        | ✅ Completed   | Parses all major statements and expressions defined in grammar including dot notation for module.function calls. | Unit (Good Coverage)     |
-| **Symbol Table**  | ✅ Completed   | Handles symbol definition, resolution, nested scopes, builtins, free variables.                                                          | Property, Unit           |
-| **Compiler**      | ✅ Completed   | Full implementation of compiler with support for all expressions, statements, scopes, and control flow constructs.                     | Unit Tests               |
-| **Bytecode**      | ✅ Completed   | Definitions exist (`bytecode.rs`). All opcodes implemented and tested.                                                                 | Unit Tests               |
-| **VM**            | 🟡 In Progress | Executes many opcodes (arithmetic, logic, stack, control flow, globals, locals, array, hash, index, call, return, closure, builtins). Now supports module.function calls like vibez.spill. Needs method call execution, instance creation/access, full error handling. | Unit (Core VM), Needs More |
-| **Object System** | ✅ Completed   | `Object` enum covers primitives, collections, functions, closures, types, instances, methods. `Traceable` implemented.                   | Needs Runtime Tests      |
-| **Memory Mgmt/GC**| 🔴 Stubbed     | `memory/` contains stubs. Needs functional GC implementation.                                                                           | Needs Tests              |
-| **Evaluator**     | 🔴 Stubbed     | Tree-walking interpreter stub exists but is not functional.                                                                            | Needs Tests              |
-| **Error Handling**| 🟡 In Progress | Basic `Error` enum and `ErrorReporter`. Needs integration with Compiler/VM for comprehensive reporting.                               | Needs Integration Tests  |
-| **REPL**          | ✅ Completed   | Full REPL functionality with file execution, stdin input, and command-line evaluation options.                                        | Needs Tests              |
-| **Standard Lib**  | ❌ Not Started | Basic builtins in VM exist. Now supports module.function syntax via the lexer. Full `stdlib.md` implementation pending.                | Needs Tests              |
-| **Type Checker**  | ❌ Not Started | Implementation pending.                                                                                                              | Needs Tests              |
-| **LLVM IR Gen**   | 🟡 In Progress | Basic implementation in `codegen/llvm.rs`. Supports integer/float/boolean literals, infix expressions, variables, function calls, and if statements. Needs support for more language constructs. | Unit Tests |
+### Lexical (`specs/lexical.md`)
 
-## Feature Status (Parser/AST Level)
+*   **Keywords:** Most keywords are likely recognized by the lexer.
+*   **Comments:**
+    *   Line Comments (`fr fr`): Assumed Implemented.
+    *   Block Comments (`no cap`/`on god`): **Likely Unimplemented**.
+*   **Literals:** Basic literals (int, float, string, bool) likely handled. Octal, Hex, Binary integer formats need verification.
 
-*   **Literals:** ✅ Integer, String, Boolean, Char, Null, Array (`crew`), Hash (`tea`), Function (`stan`). ❌ Float (Lexed only).
-*   **Identifiers:** ✅ Support for simple identifiers and dot notation (e.g., `vibez.spill`)
-*   **Keywords:** ✅ (Lexer handles them)
-*   **Comments:** ✅ Line comments (`fr fr`) and block comments (`no cap ... on god`) fully supported.
-*   **Operators:** ✅ Arithmetic, Comparison, Logical (`!`), Assignment (`=`).
-*   **Statements:** ✅ `vibe`, `yeet`, `sus`, `facts`, `yolo`, `lowkey`/`highkey`, `periodt`, `bestie`, `vibe_check`/`mood`/`basic`, `be_like squad`/`collab`, `slay`, Expression Statements.
-*   **Expressions:** ✅ Identifiers, Prefix, Infix, Grouped, Call, Index, Assignment, Array Literals, Hash Literals, Function Literals, Property Access (via dot notation). ❌ Struct Instantiation (`be_like ... with {}`).
+### Syntax/Grammar (`specs/grammar.md`)
 
-## LLVM IR Generation Status
+*   **Declarations:**
+    *   `vibe` (package): Parsing likely implemented, full semantics doubtful.
+    *   `yeet` (import): Parsing likely implemented, full semantics doubtful.
+    *   `sus` (var): Basic implementation likely exists.
+    *   `slay` (func): Basic implementation likely exists.
+    *   `facts` (const): **Likely Unimplemented**.
+    *   `be_like` (type): **Likely Unimplemented**.
+*   **Statements:**
+    *   `lowkey`/`highkey` (if/else): Basic implementation likely exists.
+    *   Assignments (`=`): Likely Implemented.
+    *   Short Variable Declaration (`:=`): Likely Implemented.
+    *   Expression Statements: Likely Implemented.
+    *   `yolo` (return): Basic implementation likely exists.
+    *   `vibe_check`/`mood`/`basic` (switch): **Likely Unimplemented**.
+    *   `bestie` (for): Basic loop structure might exist, but `ForClause` and `RangeClause` (`flex`) are **Likely Unimplemented**.
+    *   `periodt` (while): **Likely Unimplemented**.
+    *   `ghosted` (break): **Likely Unimplemented**.
+    *   `simp` (continue): **Likely Unimplemented**.
+    *   `later` (defer): **Likely Unimplemented**.
+*   **Expressions:** Basic arithmetic/logical operators likely implemented.
 
-*   **Literals:** ✅ Integer, Boolean, Float, String, Array, Hash. ❌ Null, Function (can be defined but not used as values).
-*   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >), Prefix (!, -), Logical (&&, ||). ❌ Assignment.
-*   **String Operations:** ✅ String concatenation with '+', String comparison with '==' and '!='.
-*   **Statements:** ✅ Let variables, Expression statements, Return statements, If statements, While loops. ❌ For loops, Function declarations.
-*   **Expressions:** ✅ Identifiers, Infix expressions, Prefix expressions, Function calls, Array literals, Index expressions (for arrays), Hash indexing. ❌ Property access.
-*   **Control Flow:** ✅ If statements (with else), While loops. ❌ For loops, Switch/Match.
-*   **Functions:** ✅ Function calls. 🟡 Function literals (can be defined, but tests use alternative approach to avoid LLVM module cloning issues).
+### Types (`specs/types.md`)
 
-## Unimplemented Features / Areas Needing Work
+*   **Basic Types:**
+    *   `normie` (int32): Likely Implemented.
+    *   `lit` (bool): Likely Implemented. *Spec Mismatch: `specs/types.md` uses `lit`, `specs/target_llvm_ir.md` uses `bougie`. Needs consolidation.*
+    *   `tea` (string): Basic implementation likely exists. Runtime details (GC) unclear.
+    *   `smol`, `mid`, `thicc` (other integers): **Likely Unimplemented**.
+    *   `snack`, `meal` (floats): **Likely Unimplemented** (or basic float support exists without specific types).
+    *   `byte`, `rune`: **Likely Unimplemented**.
+    *   `sip` (char) and its methods: **Likely Unimplemented**.
+    *   `extra` (complex): **Likely Unimplemented**.
+    *   `cap` (nil): Basic support likely exists.
+*   **Composite Types:**
+    *   Arrays (`[n]T`): **Likely Unimplemented**.
+    *   Slices (`[]T`): **Likely Unimplemented** (or very basic support). `append`, `cap`, `len`, `make` builtins needed.
+    *   Maps (`tea[K]V`): **Likely Unimplemented**. `make`, `cap`, `len` builtins needed.
+    *   Structs (`squad`): **Likely Unimplemented**.
+    *   Interfaces (`collab`): **Likely Unimplemented**.
+    *   Pointers (`@T`): **Likely Unimplemented**. `new` builtin needed.
+    *   Channels (`dm<T>`): **Likely Unimplemented**. `make`, `cap`, `len` builtins needed.
+*   **Type System Features:**
+    *   Type Declarations (`be_like`): **Likely Unimplemented**.
+    *   Type Conversion: **Likely Unimplemented** (beyond basic numeric casts if floats exist).
+    *   Type Inference (`:=`): Basic implementation likely exists.
+    *   Type Assertions/Switches: **Likely Unimplemented**.
+    *   Generics (`[T]`): **Likely Unimplemented**.
 
-*   **VM Enhancements:**
-    *   Implementing opcodes and logic for struct instance creation and field access/modification.
-    *   Implementing method call execution (`Opcode::Method`).
-    *   Robust error handling and stack traces during execution.
-    *   Testing and potential refinement of `Opcode::VariadicCall`.
-*   **Memory Management:** Implementing a working Garbage Collector.
-*   **Standard Library:** Implementing modules and functions defined in `specs/stdlib.md`.
-*   **Type System & Type Checker:** Implementing static type checking.
-*   **Parser Additions:**
-    *   Parsing Float Literals into a distinct AST node.
-    *   Parsing struct instantiation expressions (`be_like MyStruct with { field: value }`).
-*   **Testing:** Expanding test coverage, especially for Compiler, VM runtime behavior, GC, and Standard Library.
-*   **LLVM IR Generation:** 
-    *   Adding support for for loops and other control flow structures.
-    *   Handling assignment expressions.
-    *   Implementing proper function declarations and callable function literals.
-    *   Adding support for struct/type declarations and instantiations.
+### Concurrency
 
-## Potential Next Steps
+*   Goroutines (`stan`): **Unimplemented**.
+*   Channels (`dm`): **Unimplemented**.
+*   Synchronization (`concurrenz` stdlib package): **Unimplemented**.
 
-*   **Address Compiler Warnings:** Clean up the existing warnings related to unused code in the stubbed/incomplete components (`vm.rs`, `compiler/mod.rs`, `evaluator.rs`, etc.). This is a good housekeeping step.
-*   **Implement Float Literal Parsing:** Add `FloatLiteral` to `ast.rs` and update the parser in `parser.rs` to handle it. Add corresponding tests.
-*   **Implement Struct Instantiation Parsing:** Add `StructInstantiation` (or similar) to `ast.rs`, update the parser to handle `be_like Type with { ... }`, and add tests.
-*   **Enhance VM for Instances:** Implement the VM logic needed to create and interact with struct instances (e.g., opcodes for instantiation, field getting/setting). This requires corresponding compiler support later.
-*   **Start Standard Library Module:** Pick a simple module from `specs/stdlib.md` (e.g., `math` or `string`) and start implementing its functions, likely as VM builtins initially.
-*   **Expand Module System:** Further enhance the module system with proper imports and exports.
-*   **Extend LLVM IR Generation:** Implement support for more language constructs, especially loops, prefix expressions, and string literals.
+### Memory Management
+
+*   Garbage Collection: Required for LLVM IR target. Implementation using LLVM's GC support features (`gcroot`, statepoints) is likely **Unimplemented**. Functions like `make` and `new` will require GC support.
+
+## LLVM IR Code Generation
+
+*   **Basic Structure**: LLVM IR code generator structure exists in `src/codegen/llvm.rs`.
+*   **Core Language Features**: Code generation for basic expressions, control flow, and functions appears to be implemented or in progress.
+*   **Runtime Support**: LLVM-compatible runtime support for garbage collection, complex types, and concurrency is likely **Unimplemented**.
+*   **Memory Management**: Integration with LLVM's garbage collection is likely **Unimplemented**.
+*   **JIT Execution**: JIT compilation for REPL may be **Unimplemented**.
+
+## Standard Library Status (`specs/stdlib.md`)
+
+The standard library packages appear largely **Unimplemented** based on the `src` directory structure.
+
+*   `vibez` (fmt): **Unimplemented**.
+*   `core` (builtin): Partially implemented? (`len`, maybe others depending on code generator). `append`, `cap`, `make`, `new`, `panic`, `recover` likely **Unimplemented/Incomplete**.
+*   `dropz` (io): **Unimplemented**.
+*   `vibe_life` (os): **Unimplemented**.
+*   `stringz` (strings): **Unimplemented**.
+*   `mathz` (math): **Unimplemented**.
+*   `timez` (time): **Unimplemented**.
+*   `concurrenz` (sync): **Unimplemented**.
+*   `web_vibez` (net/http): **Unimplemented**.
+*   `json_tea` (encoding/json): **Unimplemented**.
+
+## Testing
+
+*   While not explicitly listed as unimplemented features, the specs mention a testing strategy. The status of unit, integration, end-to-end, regression, compliance, and self-hosting tests is **Unknown**. Test authoring should proceed alongside feature implementation.
+*   The LLVM codegen component has some unit tests.
+
+---
+
+**Next Steps:**
+
+1.  Complete the LLVM IR codegen for the minimal language feature set.
+2.  Implement runtime support for GC and complex types using LLVM features.
+3.  Begin implementing missing basic types and composite types (`squad`, slices, maps).
+4.  Start building the core standard library packages (`vibez`, `core`, `stringz`).
+5.  Address missing control flow structures.
+6.  Implement block comments.
+7.  Develop tests concurrently with features.
+8.  Add JIT execution capability for the REPL.

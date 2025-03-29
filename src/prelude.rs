@@ -3,22 +3,34 @@
 // This module provides a convenient prelude for the CURSED language implementation, 
 // exporting and re-exporting all important types.
 
+// Standard prelude for the CURSED language
+// Re-exports common types and traits
+
+use std::fmt;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
+use std::cell::{RefCell, Ref, RefMut};
+
+use crate::core::symbol_table::{SymbolScope, SymbolTable};
+use crate::ast::Node;
+
 // Common utilities and re-exports for CURSED language
 use std::vec::Vec;
 use std::str::{self, Chars};
-use std::cell::{RefCell, Ref, RefMut};
-use crate::compiler::symbol_table::{SymbolScope, SymbolTable};
 use std::string::ToString;
 
 // Export the Vec extension trait
 pub trait VecExt<T> {
-    fn push(&mut self, item: T);
-    fn len(&self) -> usize;
-    fn capacity(&self) -> usize;
-    fn clear(&mut self);
-    fn is_empty(&self) -> bool;
-    fn as_slice(&self) -> &[T];
-    fn as_mut_slice(&mut self) -> &mut [T];
+    fn push_all(&mut self, other: &[T]) where T: Clone;
+}
+
+impl<T> VecExt<T> for Vec<T> {
+    fn push_all(&mut self, other: &[T]) where T: Clone {
+        for item in other {
+            self.push(item.clone());
+        }
+    }
 }
 
 // Export the String extension trait
@@ -27,6 +39,8 @@ pub trait StrExt {
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
     fn as_bytes(&self) -> &[u8];
+    fn is_letter(&self) -> bool;
+    fn is_digit(&self) -> bool;
 }
 
 impl StrExt for str {
@@ -44,6 +58,55 @@ impl StrExt for str {
     
     fn as_bytes(&self) -> &[u8] {
         <str>::as_bytes(self)
+    }
+    
+    fn is_letter(&self) -> bool {
+        false // Default implementation for str
+    }
+    
+    fn is_digit(&self) -> bool {
+        false // Default implementation for str
+    }
+}
+
+impl StrExt for char {
+    fn chars(&self) -> Chars<'_> {
+        // This is a workaround - we create a static string containing our char
+        // that lives for the 'static lifetime, so we can return Chars from it
+        match *self {
+            'a' => "a".chars(),
+            'b' => "b".chars(),
+            'c' => "c".chars(),
+            // ... add more cases for common chars
+            _ => {
+                // For other chars, we'll use an allocated string but it's not ideal
+                // This is inherently unsafe but necessary due to API constraints
+                let s = Box::leak(self.to_string().into_boxed_str());
+                s.chars()
+            }
+        }
+    }
+    
+    fn len(&self) -> usize {
+        self.len_utf8()
+    }
+    
+    fn is_empty(&self) -> bool {
+        false // A char is never empty
+    }
+    
+    fn as_bytes(&self) -> &[u8] {
+        // This is a bit of a hack, but char doesn't have as_bytes
+        // and we can't return a slice from a local variable
+        &[0u8; 0]
+    }
+    
+    fn is_letter(&self) -> bool {
+        self.is_ascii_alphabetic() || *self == '_'
+    }
+    
+    fn is_digit(&self) -> bool {
+        self.is_ascii_digit()
     }
 }
 
@@ -104,18 +167,21 @@ impl<T> RawPtrExt for *mut T {
 
 // Vector string join extension
 pub trait VecStrJoinExt {
-    fn join(&self, separator: &str) -> String;
+    fn join(&self, delimiter: &str) -> String;
 }
 
 impl VecStrJoinExt for Vec<String> {
-    fn join(&self, separator: &str) -> String {
-        self.iter().fold(String::new(), |acc, s| {
-            if acc.is_empty() {
-                s.clone()
-            } else {
-                acc + separator + s
+    fn join(&self, delimiter: &str) -> String {
+        let mut result = String::new();
+        
+        for (i, s) in self.iter().enumerate() {
+            result.push_str(s);
+            if i < self.len() - 1 {
+                result.push_str(delimiter);
             }
-        })
+        }
+        
+        result
     }
 }
 
@@ -128,4 +194,10 @@ impl<T> SliceExt<T> for &[T] {
     fn into_vec(self) -> Vec<T> where T: Clone {
         self.to_vec()
     }
+}
+
+// Placeholder for builtins
+pub fn len(_args: &[Rc<crate::object::Object>]) -> Result<Rc<crate::object::Object>, crate::error::Error> {
+    // Implementation TBD
+    Err(crate::error::Error::not_implemented("len built-in function", crate::error::SourceLocation::default()))
 }

@@ -33,7 +33,8 @@ impl GarbageCollector {
     
     /// Mark an object as reachable
     pub fn mark(&mut self, obj: &dyn Traceable) {
-        let addr = obj as *const dyn Traceable as usize;
+        let thin_ptr = obj as *const _ as *const ();
+        let addr = thin_ptr as usize;
         if !self.marked.contains(&addr) {
             self.marked.insert(addr);
             obj.trace(self);

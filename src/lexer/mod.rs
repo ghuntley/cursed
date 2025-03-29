@@ -1,4 +1,4 @@
 // Re-export lexer components
-mod lexer;
+pub mod lexer;
 
 pub use lexer::*; 

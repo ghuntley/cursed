@@ -132,6 +132,9 @@ pub enum Error {
     NotImplemented {
         message: String,
     },
+
+    /// Code generation errors
+    CodeGenError(String),
 }
 
 /// Error reporting for CURSED
@@ -325,6 +328,11 @@ impl Error {
         Error::VMError(message.into())
     }
     
+    /// Create a code generation error
+    pub fn codegen<T: Into<String>>(message: T) -> Self {
+        Error::CodeGenError(message.into())
+    }
+
     /// Create a bytecode error
     pub fn bytecode<T: Into<String>>(message: T) -> Self {
         Error::BytecodeError(message.into())
@@ -382,6 +390,7 @@ impl Error {
             Error::InvalidOperation(msg) => msg.clone(),
             Error::SystemError(msg) => msg.clone(),
             Error::NotImplemented { message } => message.clone(),
+            Error::CodeGenError(msg) => msg.clone(),
         }
     }
 
