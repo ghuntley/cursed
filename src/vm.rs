@@ -2,8 +2,6 @@
 use crate::compiler::{Bytecode, Instructions, Opcode};
 use crate::error::{Error, SourceLocation};
 use crate::object::Object;
-use crate::object;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 pub mod constants {
@@ -80,6 +78,9 @@ impl VM {
             builtins: Vec::new(),
         };
         
+        // Initialize with an empty frame
+        vm.frames.push(Frame::new(Vec::new(), 0));
+        
         // Register built-in functions
         vm.register_builtins();
         
@@ -93,10 +94,31 @@ impl VM {
         
         // Create the main frame with the bytecode instructions
         let main_frame = Frame::new(bytecode.instructions, 0);
-        vm.frames.push(main_frame);
+        vm.frames[0] = main_frame;
         vm.frame_index = 0;
         
         vm
+    }
+    
+    /// Create a new VM with the given bytecode and global state (for testing)
+    pub fn with_bytecode_and_state(&mut self, bytecode: Bytecode, globals: Vec<Rc<Object>>) {
+        // Create the main frame with the bytecode instructions
+        let main_frame = Frame::new(bytecode.instructions, 0);
+        self.frames[0] = main_frame;
+        
+        // Add the constants
+        self.constants = bytecode.constants.into_iter().map(Rc::new).collect();
+        
+        // Set the globals
+        if !globals.is_empty() {
+            self.globals = globals;
+        }
+    }
+    
+    /// Run a VM with the given bytecode
+    pub fn run_with_bytecode(&mut self, bytecode: Bytecode) -> Result<Rc<Object>, Error> {
+        self.with_bytecode_and_state(bytecode, Vec::new());
+        self.run()
     }
     
     /// Register all built-in functions
@@ -405,6 +427,72 @@ impl VM {
                     
                     self.execute_index_operation(left, index)?;
                 },
+                Opcode::Dup => {
+                    // Duplicate the top stack value
+                    if self.sp == 0 {
+                        return Err(Error::vm("Cannot duplicate from empty stack".to_string()));
+                    }
+                    
+                    let value = self.stack[self.sp - 1].clone();
+                    self.push(value)?;
+                },
+                Opcode::DefineType => {
+                    let num_fields = self.read_u16(self.current_frame()?.ip)? as usize;
+                    self.current_frame_mut()?.ip += 2; // Skip operand bytes
+                    
+                    // Get the type name from the stack
+                    let type_name = self.pop()?;
+                    let name = match &*type_name {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Type name must be a string, got {}", type_name))),
+                    };
+                    
+                    // Create an empty struct object
+                    let struct_obj = Rc::new(Object::Struct {
+                        name,
+                        fields: Vec::with_capacity(num_fields),
+                    });
+                    
+                    // Push the struct object back onto the stack
+                    self.push(struct_obj)?;
+                },
+                Opcode::DefineField => {
+                    // Get field type and name from the stack
+                    let field_type = self.pop()?;
+                    let field_name = self.pop()?;
+                    
+                    // Get the struct object from the stack (don't pop it yet as we need to put it back)
+                    let struct_obj = self.pop()?;
+                    
+                    // Get the field name and type as strings
+                    let name = match &*field_name {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Field name must be a string, got {}", field_name))),
+                    };
+                    
+                    let typ = match &*field_type {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Field type must be a string, got {}", field_type))),
+                    };
+                    
+                    // Add the field to the struct definition
+                    match &*struct_obj {
+                        Object::Struct { name: struct_name, fields } => {
+                            // We need to create a new struct object with the updated fields
+                            let mut new_fields = fields.clone();
+                            new_fields.push((name, typ));
+                            
+                            let updated_struct = Rc::new(Object::Struct {
+                                name: struct_name.clone(),
+                                fields: new_fields,
+                            });
+                            
+                            // Push the updated struct back onto the stack
+                            self.push(updated_struct)?;
+                        },
+                        _ => return Err(Error::vm(format!("Cannot define field on non-struct object: {}", struct_obj))),
+                    }
+                },
                 Opcode::Closure => {
                     let const_idx = self.read_u16(self.current_frame()?.ip)? as usize;
                     self.current_frame_mut()?.ip += 2; // Skip const index bytes
@@ -698,6 +786,9 @@ impl VM {
             32 => Ok(Opcode::LessThan),
             33 => Ok(Opcode::LessThanEqual),
             34 => Ok(Opcode::Modulo),
+            35 => Ok(Opcode::Dup),
+            36 => Ok(Opcode::DefineType),
+            37 => Ok(Opcode::DefineField),
             _ => Err(Error::vm(format!("Unknown opcode: {}", op_byte))),
         }
     }
@@ -1795,5 +1886,79 @@ mod tests {
         let result = builtin_is_string(vec![Object::Integer(42)]);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Object::Boolean(false));
+    }
+    
+    #[test]
+    fn test_type_declarations() {
+        // Test defining a struct/type and adding fields
+        let mut instructions = Vec::new();
+        let mut constants = Vec::new();
+        
+        // Add constants for the type name and field names/types
+        constants.push(Object::String("Person".to_string())); // 0: type name
+        constants.push(Object::String("name".to_string()));   // 1: field1 name
+        constants.push(Object::String("tea".to_string()));    // 2: field1 type
+        constants.push(Object::String("age".to_string()));    // 3: field2 name
+        constants.push(Object::String("normie".to_string())); // 4: field2 type
+        
+        // Load the type name and create a struct type with 2 fields
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0); // const index hi byte
+        instructions.push(0); // const index lo byte
+        
+        instructions.push(Opcode::DefineType as u8);
+        instructions.push(0); // num fields hi byte
+        instructions.push(2); // num fields lo byte
+        
+        // Define first field (name: tea)
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0); // const index hi byte
+        instructions.push(1); // const index lo byte (field name)
+        
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0); // const index hi byte
+        instructions.push(2); // const index lo byte (field type)
+        
+        instructions.push(Opcode::DefineField as u8);
+        
+        // Define second field (age: normie)
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0); // const index hi byte
+        instructions.push(3); // const index lo byte (field name)
+        
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0); // const index hi byte
+        instructions.push(4); // const index lo byte (field type)
+        
+        instructions.push(Opcode::DefineField as u8);
+        
+        // Store in global variable
+        instructions.push(Opcode::SetGlobal as u8);
+        instructions.push(0); // global index hi byte
+        instructions.push(0); // global index lo byte
+        
+        // Get the struct definition back
+        instructions.push(Opcode::GetGlobal as u8);
+        instructions.push(0); // global index hi byte
+        instructions.push(0); // global index lo byte
+        
+        let bytecode = Bytecode { instructions, constants };
+        let mut vm = VM::new();
+        vm.with_bytecode_and_state(bytecode, Vec::new());
+        
+        let result = vm.run().unwrap();
+        
+        // Verify the result is a struct with the correct fields
+        match &*result {
+            Object::Struct { name, fields } => {
+                assert_eq!(name, "Person");
+                assert_eq!(fields.len(), 2);
+                assert_eq!(fields[0].0, "name");
+                assert_eq!(fields[0].1, "tea");
+                assert_eq!(fields[1].0, "age");
+                assert_eq!(fields[1].1, "normie");
+            },
+            _ => panic!("Expected struct, got {:?}", result),
+        }
     }
 } 

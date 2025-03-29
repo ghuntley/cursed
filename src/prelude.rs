@@ -4,21 +4,10 @@
 // exporting and re-exporting all important types.
 
 // Common utilities and re-exports for CURSED language
-use std::ops::RangeBounds;
-use std::vec::{Vec, Drain};
-use std::slice::{Iter, SliceIndex};
-use crate::memory::gc::Traceable;
-use std::borrow::Cow;
-use std::alloc;
-use std::ptr::NonNull;
-use std::str::{self, FromStr, Chars, SplitWhitespace};
-use std::collections::HashMap;
-use std::fmt;
+use std::vec::Vec;
+use std::str::{self, Chars};
 use std::cell::{RefCell, Ref, RefMut};
-use crate::compiler::symbol_table::{Symbol, SymbolScope, SymbolTable};
-use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::rc::Rc;
-use std::cell::Cell;
+use crate::compiler::symbol_table::{SymbolScope, SymbolTable};
 use std::borrow::Borrow;
 use std::string::ToString;
 

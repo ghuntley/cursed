@@ -1,16 +1,12 @@
-use crate::error::{Error, ErrorReporter, SourceLocation};
+use crate::error::{Error, SourceLocation};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::compiler::Compiler;
-use crate::compiler::Bytecode;
 use crate::vm::VM;
-use crate::object::Object;
-use crate::vm::ErrorLocation;
-use std::io::{self, Write};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use rustyline::history::DefaultHistory;
-use log::{debug, info};
+use log::info;
 
 /// REPL header to display when starting interactive mode
 const REPL_HEADER: &str = r#"

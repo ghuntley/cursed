@@ -1,5 +1,5 @@
 // Evaluator for CURSED language
-use crate::ast::{Node, Program, Statement, Expression};
+use crate::ast::{Program, Statement, Expression};
 use crate::error::{Error, SourceLocation};
 use crate::object::Object;
 use crate::symbol::SymbolTable;

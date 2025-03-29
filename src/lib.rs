@@ -68,6 +68,9 @@ pub mod compiler {
         LessThan = 32,
         LessThanEqual = 33,
         Modulo = 34,
+        Dup = 35,
+        DefineType = 36,
+        DefineField = 37,
     }
     
     // Basic bytecode structure
@@ -92,6 +95,11 @@ pub mod compiler {
         }
         
         // Compile a program
+        pub fn compile(&mut self, program: &crate::ast::Program) -> Result<Bytecode, crate::error::Error> {
+            self.compile_program(program)
+        }
+        
+        // Compile a program
         pub fn compile_program(&mut self, program: &crate::ast::Program) -> Result<Bytecode, crate::error::Error> {
             for stmt in &program.statements {
                 self.compile_statement(&**stmt)?;
@@ -101,8 +109,90 @@ pub mod compiler {
         
         // Compile a statement
         fn compile_statement(&mut self, stmt: &dyn crate::ast::Statement) -> Result<(), crate::error::Error> {
-            // Stub implementation
+            // For type declarations
+            if let Some(squad_stmt) = stmt.as_any().downcast_ref::<crate::ast::SquadStatement>() {
+                return self.compile_type_declaration(squad_stmt);
+            }
+            
+            // Handle other statement types
+            
+            // Add a Pop instruction to clean up the stack
+            self.emit(Opcode::Pop, &[]);
             Ok(())
+        }
+        
+        // Compile a type declaration
+        fn compile_type_declaration(&mut self, squad_stmt: &crate::ast::SquadStatement) -> Result<(), crate::error::Error> {
+            // Add the type name to constants and get its index
+            let type_name_index = self.add_constant(crate::object::Object::String(squad_stmt.name.value.clone()));
+            
+            // Emit instruction to load the type name onto the stack
+            self.emit(Opcode::Constant, &[type_name_index]);
+            
+            // Emit the DefineType instruction with the number of fields
+            self.emit(Opcode::DefineType, &[squad_stmt.fields.len()]);
+            
+            // For each field, add its name and type to constants
+            for field in &squad_stmt.fields {
+                // Add field name to constants
+                let field_name_index = self.add_constant(crate::object::Object::String(field.name.value.clone()));
+                
+                // Add field type to constants
+                let field_type_index = self.add_constant(crate::object::Object::String(field.type_name.value.clone()));
+                
+                // Load field name onto stack
+                self.emit(Opcode::Constant, &[field_name_index]);
+                
+                // Load field type onto stack
+                self.emit(Opcode::Constant, &[field_type_index]);
+                
+                // Define the field
+                self.emit(Opcode::DefineField, &[]);
+            }
+            
+            Ok(())
+        }
+        
+        // Helper to add a constant and get its index
+        fn add_constant(&mut self, obj: crate::object::Object) -> usize {
+            self.constants.push(obj);
+            self.constants.len() - 1
+        }
+        
+        // Helper to emit an instruction
+        fn emit(&mut self, op: Opcode, operands: &[usize]) -> usize {
+            let pos = self.instructions.len();
+            
+            // Convert opcode to u8
+            let op_byte: u8 = op as u8;
+            self.instructions.push(op_byte);
+            
+            // Add operands based on opcode
+            match op {
+                Opcode::Constant | Opcode::GetGlobal | Opcode::SetGlobal |
+                Opcode::GetLocal | Opcode::SetLocal | Opcode::GetBuiltin |
+                Opcode::Jump | Opcode::JumpNotTruthy => {
+                    if !operands.is_empty() {
+                        let operand = operands[0];
+                        // Encode as u16 (big-endian)
+                        self.instructions.push(((operand >> 8) & 0xFF) as u8);
+                        self.instructions.push((operand & 0xFF) as u8);
+                    }
+                },
+                Opcode::Array | Opcode::Hash | Opcode::DefineType => {
+                    if !operands.is_empty() {
+                        let operand = operands[0];
+                        // Encode as u16 (big-endian)
+                        self.instructions.push(((operand >> 8) & 0xFF) as u8);
+                        self.instructions.push((operand & 0xFF) as u8);
+                    }
+                },
+                _ => {
+                    // No operands for other opcodes
+                }
+            }
+            
+            pos
         }
         
         pub fn bytecode(&self) -> Bytecode {
@@ -138,6 +228,108 @@ pub mod compiler {
             let mut compiler = Compiler::new();
             let result = compiler.compile_program(&program);
             assert!(result.is_ok());
+        }
+        
+        #[test]
+        fn test_compile_type_declaration() {
+            // Test basic type declaration
+            let input = "be_like Person squad { name tea; age normie; }";
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer).unwrap();
+            let program_result = parser.parse_program();
+            assert!(program_result.is_ok(), "Failed to parse program: {:?}", program_result.err());
+            
+            let program = program_result.unwrap();
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok(), "Compilation of type declaration failed: {:?}", result.err());
+            
+            // Verify the bytecode contains the type name and field information
+            let bytecode = result.unwrap();
+            
+            // Print bytecode information for debugging
+            println!("Compiled bytecode:");
+            println!("Constants: {:?}", bytecode.constants);
+            println!("Instructions length: {}", bytecode.instructions.len());
+            
+            // Check that we have constants for type name and field names/types
+            assert!(bytecode.constants.len() >= 5, "Not enough constants generated");
+            
+            // Check for type name and field names/types in the constants
+            let mut found_person = false;
+            let mut found_name = false;
+            let mut found_tea = false;
+            let mut found_age = false;
+            let mut found_normie = false;
+            
+            for constant in &bytecode.constants {
+                if let Object::String(value) = constant {
+                    match value.as_str() {
+                        "Person" => found_person = true,
+                        "name" => found_name = true,
+                        "tea" => found_tea = true,
+                        "age" => found_age = true,
+                        "normie" => found_normie = true,
+                        _ => {}
+                    }
+                }
+            }
+            
+            assert!(found_person, "Type name 'Person' not found in constants");
+            assert!(found_name, "Field name 'name' not found in constants");
+            assert!(found_tea, "Field type 'tea' not found in constants");
+            assert!(found_age, "Field name 'age' not found in constants");
+            assert!(found_normie, "Field type 'normie' not found in constants");
+        }
+        
+        #[test]
+        fn test_compile_and_run_type_declaration() {
+            // Test compiling and running type declarations through the VM
+            let input = "be_like Person squad { name tea; age normie; }";
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer).unwrap();
+            let program_result = parser.parse_program();
+            assert!(program_result.is_ok(), "Failed to parse program: {:?}", program_result.err());
+            
+            let program = program_result.unwrap();
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok(), "Compilation of type declaration failed: {:?}", result.err());
+            
+            let bytecode = result.unwrap();
+            
+            // Print bytecode information for debugging
+            println!("Compiled bytecode:");
+            println!("Constants: {:?}", bytecode.constants);
+            println!("Instructions length: {}", bytecode.instructions.len());
+            
+            // Create a VM and run the bytecode
+            let mut vm = crate::vm::VM::new();
+            
+            // Run the bytecode
+            let result = vm.run_with_bytecode(bytecode);
+            match &result {
+                Ok(obj) => println!("Execution succeeded: {:?}", obj),
+                Err(e) => println!("Execution failed: {:?}", e)
+            }
+            assert!(result.is_ok(), "VM execution failed: {:?}", result.err());
+            
+            // Assert that we got a Struct object back for type declarations
+            let result_obj = result.unwrap();
+            match result_obj.as_ref() {
+                Object::Struct { name, fields } => {
+                    assert_eq!(name, "Person", "Expected type name 'Person'");
+                    assert_eq!(fields.len(), 2, "Expected 2 fields");
+                    
+                    // Verify field names and types
+                    assert_eq!(fields[0].0, "name", "Expected first field name to be 'name'");
+                    assert_eq!(fields[0].1, "tea", "Expected first field type to be 'tea'");
+                    
+                    assert_eq!(fields[1].0, "age", "Expected second field name to be 'age'");
+                    assert_eq!(fields[1].1, "normie", "Expected second field type to be 'normie'");
+                },
+                _ => panic!("Expected struct, got {:?}", result_obj),
+            }
         }
     }
 }

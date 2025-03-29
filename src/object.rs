@@ -14,22 +14,18 @@ pub enum RuntimeObject {
 
 use std::collections::HashMap;
 use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::hash::Hasher;
 use std::rc::Rc;
 use std::ptr::NonNull;
-use crate::prelude::{VecExt, StrExt, RawPtrExt, VecStrJoinExt, SliceExt};
+use crate::prelude::{VecExt, StrExt, VecStrJoinExt};
 // use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};
 use crate::memory::gc::Trace;
 use crate::memory::Traceable;
 use crate::memory::Visitor;
-use crate::memory::tagged::{TaggedDynPtr};
 use crate::compiler::CompiledFunction;
 use crate::vm::ErrorLocation;
 use crate::error::Error;
 use std::str;
-use std::cell::RefCell;
-use num_traits::{FromPrimitive, ToPrimitive};
-use std::cell::{Ref, RefMut};
 
 /// Object represents a runtime value
 #[derive(Debug, Clone, PartialEq)]

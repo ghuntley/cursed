@@ -538,4 +538,54 @@ fn test_compile_type_declaration() {
     let mut compiler = Compiler::new();
     let result = compiler.compile(&program);
     assert!(result.is_ok(), "Compilation of type declaration with semicolons failed: {:?}", result.err());
+}
+
+#[test]
+fn test_compile_and_run_type_declaration() {
+    // Test compiling and running type declarations through the VM
+    let input = "be_like Person squad { name tea; age normie; }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation of type declaration failed: {:?}", result.err());
+    
+    let bytecode = result.unwrap();
+    
+    // Print bytecode information for debugging
+    println!("Compiled bytecode:");
+    println!("Constants: {:?}", bytecode.constants);
+    println!("Instructions length: {}", bytecode.instructions.len());
+    
+    // Create a VM and run the bytecode
+    let mut vm = crate::vm::VM::new();
+    
+    // Run the bytecode
+    let result = vm.run_with_bytecode(bytecode);
+    match &result {
+        Ok(obj) => println!("Execution succeeded: {:?}", obj),
+        Err(e) => println!("Execution failed: {:?}", e)
+    }
+    assert!(result.is_ok(), "VM execution failed: {:?}", result.err());
+    
+    // The result should be a struct definition
+    let result_obj = result.unwrap();
+    
+    // Verify the result is a struct with the correct fields
+    match &*result_obj {
+        Object::Struct { name, fields } => {
+            assert_eq!(name, "Person", "Expected type name 'Person'");
+            assert_eq!(fields.len(), 2, "Expected 2 fields");
+            
+            // Verify field names and types
+            assert_eq!(fields[0].0, "name", "Expected first field name to be 'name'");
+            assert_eq!(fields[0].1, "tea", "Expected first field type to be 'tea'");
+            
+            assert_eq!(fields[1].0, "age", "Expected second field name to be 'age'");
+            assert_eq!(fields[1].1, "normie", "Expected second field type to be 'normie'");
+        },
+        _ => panic!("Expected struct, got {:?}", result_obj),
+    }
 } 

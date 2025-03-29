@@ -204,7 +204,7 @@ impl<'a> Parser<'a> {
         let token = self.current_token.token_literal();
         
         // Next token should be the struct name (identifier)
-        if !self.expect_peek(&Token::Identifier("".to_string())) {
+        if !self.expect_peek_identifier() {
             return Err(Error::from_str(
                 &format!("Expected identifier after 'be_like', got {:?}", self.peek_token)
             ));
@@ -252,34 +252,39 @@ impl<'a> Parser<'a> {
                 // Next token should be the field type
                 self.next_token()?;
                 
-                if let Token::Identifier(type_name) = &self.current_token {
-                    let type_token = self.current_token.token_literal();
-                    let type_id = ast::Identifier {
-                        token: type_token,
+                // Get the type name - can be an identifier or certain special tokens
+                let type_id = if let Token::Identifier(type_name) = &self.current_token {
+                    ast::Identifier {
+                        token: self.current_token.token_literal(),
                         value: type_name.clone(),
-                    };
-                    
-                    // Create field statement
-                    let field = ast::FieldStatement {
-                        token: field_token,
-                        name: field_id,
-                        type_name: type_id,
-                    };
-                    
-                    fields.push(field);
-                    
-                    // Field may be followed by semicolon or newline
-                    if self.peek_token == Token::Semicolon {
-                        self.next_token()?;
                     }
-                    
-                    // Move to the next field
-                    self.next_token()?;
+                } else if let Some(token_value) = self.token_to_type_name() {
+                    ast::Identifier {
+                        token: self.current_token.token_literal(),
+                        value: token_value,
+                    }
                 } else {
                     return Err(Error::from_str(
                         &format!("Expected field type, got {:?}", self.current_token)
                     ));
+                };
+                
+                // Create field statement
+                let field = ast::FieldStatement {
+                    token: field_token,
+                    name: field_id,
+                    type_name: type_id,
+                };
+                
+                fields.push(field);
+                
+                // Field may be followed by semicolon or newline
+                if self.peek_token == Token::Semicolon {
+                    self.next_token()?;
                 }
+                
+                // Move to the next field
+                self.next_token()?;
             } else {
                 return Err(Error::from_str(
                     &format!("Expected field name, got {:?}", self.current_token)
@@ -659,10 +664,37 @@ impl<'a> Parser<'a> {
         }
     }
     
+    /// Helper to check if the next token is an identifier (any identifier)
+    fn expect_peek_identifier(&mut self) -> bool {
+        if let Token::Identifier(_) = &self.peek_token {
+            match self.next_token() {
+                Ok(_) => true,
+                Err(_) => false,
+            }
+        } else {
+            self.errors.push(Error::from_str(
+                &format!("Expected next token to be an identifier, got {:?}", self.peek_token)
+            ));
+            false
+        }
+    }
+    
     fn peek_error(&mut self, token: &Token) {
         self.errors.push(Error::from_str(
             &format!("Expected next token to be {:?}, got {:?}", token, self.peek_token)
         ));
+    }
+    
+    /// Helper function to convert certain tokens to type names
+    fn token_to_type_name(&self) -> Option<String> {
+        match &self.current_token {
+            Token::Tea => Some("tea".to_string()),
+            Token::Squad => Some("squad".to_string()),
+            Token::Collab => Some("collab".to_string()),
+            Token::Dm => Some("dm".to_string()),
+            // Add other token types that should be valid as type names
+            _ => None,
+        }
     }
 }
 

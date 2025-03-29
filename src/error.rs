@@ -1,6 +1,5 @@
 use std::fmt;
 use std::io;
-use thiserror::Error;
 
 /// Represents a location in the source code
 #[derive(Debug, Clone, PartialEq, Eq)]
