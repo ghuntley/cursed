@@ -17,10 +17,12 @@ The CURSED programming language is in early development with some core component
 - [x] Object system foundation ❌ *Needs property-based tests*
 - [x] Basic error handling framework ❌ *Needs property-based tests*
 - [x] Bytecode infrastructure stub ❌ *Needs property-based tests*
+- [x] VM core functionality (stack operations, local variables, function calls) ✅ *Has unit tests*
+- [x] VM Array and Hash support ✅ *Has unit tests for basic and complex operations*
 
 ## Testing Status
 
-The implementation currently has **25 tests passing**, covering the Lexer, Symbol Table, AST, and Parser components. Property-based testing is implemented using the `proptest` crate for some components, while others use standard unit tests:
+The implementation currently has **33 tests passing**, covering the Lexer, Symbol Table, AST, Parser, and VM components. Property-based testing is implemented using the `proptest` crate for some components, while others use standard unit tests:
 
 | Component | Property Tests | Unit Tests | Testing Status |
 |-----------|---------------|------------|----------------|
@@ -32,11 +34,19 @@ The implementation currently has **25 tests passing**, covering the Lexer, Symbo
 | Object System | No        | No         | Needs tests    |
 | Error Handling | No       | No         | Needs tests    |
 | Bytecode  | No            | No         | Needs tests    |
+| VM        | No            | Yes        | Good coverage for basic operations, arrays, and hashes |
 
 ## In-Progress Components
 
 - [ ] Compiler implementation (partial)
-- [ ] Virtual machine implementation (partial)
+- [x] Virtual machine implementation (partial)
+  - [x] Basic stack operations
+  - [x] Local variables
+  - [x] Function calls and returns
+  - [x] Array operations
+  - [x] Hash table operations
+  - [x] Closures and free variables
+  - [x] Builtin functions
 - [ ] Memory management/GC (partial)
 - [ ] Evaluator implementation (partial)
 

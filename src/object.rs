@@ -46,6 +46,10 @@ pub enum Object {
         function: Rc<CompiledFunction>,
         free_vars: Vec<Object>,
     },
+    Builtin {
+        name: String,
+        function: BuiltinFunction,
+    },
     Struct {
         name: String,
         fields: Vec<(String, String)>, // (name, type)
@@ -61,6 +65,9 @@ pub enum Object {
     },
     Null,
 }
+
+/// Builtin function type for the CURSED language
+pub type BuiltinFunction = fn(args: Vec<Object>) -> Result<Object, crate::error::Error>;
 
 impl Trace for Object {
 }
@@ -113,6 +120,10 @@ impl Traceable for Object {
                 std::mem::size_of::<Rc<CompiledFunction>>() + 
                 std::mem::size_of::<Vec<Object>>() + 
                 (free_vars.capacity() * std::mem::size_of::<Object>())
+            },
+            Object::Builtin { name, .. } => {
+                std::mem::size_of::<String>() + name.capacity() +
+                std::mem::size_of::<BuiltinFunction>()
             },
             Object::Struct { name, fields } => {
                 std::mem::size_of::<String>() + name.capacity() +
@@ -169,6 +180,9 @@ impl fmt::Display for Object {
             },
             Object::Closure { function, free_vars } => {
                 write!(f, "closure[{}]", function.name.as_ref().unwrap_or(&"anon".to_string()))
+            },
+            Object::Builtin { name, .. } => {
+                write!(f, "builtin[{}]", name)
             },
             Object::Struct { name, .. } => write!(f, "struct[{}]", name),
             Object::Instance { struct_type, .. } => {
@@ -228,6 +242,46 @@ impl Object {
         matches!(self, Object::Struct { .. })
     }
     
+    /// Get the type name of this object
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            Object::Integer(_) => "integer",
+            Object::Float(_) => "float",
+            Object::Boolean(_) => "boolean",
+            Object::Char(_) => "char",
+            Object::String(_) => "string",
+            Object::Array(_) => "array",
+            Object::HashTable(_) => "hash",
+            Object::CompiledFunction(_) => "function",
+            Object::Closure { .. } => "closure",
+            Object::Builtin { .. } => "builtin",
+            Object::Struct { .. } => "struct",
+            Object::Instance { .. } => "instance",
+            Object::Error { .. } => "error",
+            Object::Null => "null",
+        }
+    }
+    
+    /// Check if the object is of the given type
+    pub fn is_type(&self, type_name: &str) -> bool {
+        match self {
+            Object::Integer(_) => type_name == "integer",
+            Object::Float(_) => type_name == "float",
+            Object::Boolean(_) => type_name == "boolean",
+            Object::Char(_) => type_name == "char",
+            Object::String(_) => type_name == "string",
+            Object::Array(_) => type_name == "array",
+            Object::HashTable(_) => type_name == "hash",
+            Object::CompiledFunction(_) => type_name == "function",
+            Object::Closure { .. } => type_name == "closure",
+            Object::Builtin { .. } => type_name == "builtin",
+            Object::Struct { .. } => type_name == "struct",
+            Object::Instance { .. } => type_name == "instance",
+            Object::Error { .. } => type_name == "error",
+            Object::Null => type_name == "null",
+        }
+    }
+    
     pub fn is_instance(&self) -> bool {
         matches!(self, Object::Instance { .. })
     }
@@ -280,105 +334,70 @@ impl Object {
     
     pub fn is_truthy(&self) -> bool {
         match self {
-            Object::Boolean(val) => *val,
-            Object::Integer(val) => *val != 0,
-            Object::Float(val) => *val != 0.0,
-            Object::String(val) => !val.is_empty(),
-            Object::Array(arr) => !arr.is_empty(),
-            Object::HashTable(hash) => !hash.is_empty(),
             Object::Null => false,
-            _ => true,
-        }
-    }
-
-    /// Get the type name of this object
-    pub fn type_name(&self) -> &'static str {
-        match self {
-            Object::Integer(_) => "integer",
-            Object::Float(_) => "float",
-            Object::Boolean(_) => "boolean",
-            Object::Char(_) => "char",
-            Object::String(_) => "string",
-            Object::Array(_) => "array",
-            Object::HashTable(_) => "hash",
-            Object::CompiledFunction(_) => "function",
-            Object::Closure { .. } => "closure",
-            Object::Struct { .. } => "struct",
-            Object::Instance { .. } => "instance",
-            Object::Error { .. } => "error",
-            Object::Null => "null",
-        }
-    }
-
-    /// Check if the object is of the given type
-    pub fn is_type(&self, type_name: &str) -> bool {
-        match self {
-            Object::Integer(_) => type_name == "integer",
-            Object::Float(_) => type_name == "float",
-            Object::Boolean(_) => type_name == "boolean",
-            Object::Char(_) => type_name == "char",
-            Object::String(_) => type_name == "string",
-            Object::Array(_) => type_name == "array",
-            Object::HashTable(_) => type_name == "hash",
-            Object::CompiledFunction(_) => type_name == "function",
-            Object::Closure { .. } => type_name == "closure",
-            Object::Struct { .. } => type_name == "struct",
-            Object::Instance { .. } => type_name == "instance",
-            Object::Error { .. } => type_name == "error",
-            Object::Null => type_name == "null",
+            Object::Boolean(b) => *b,
+            Object::Integer(i) => *i != 0,
+            Object::Float(f) => *f != 0.0,
+            Object::String(s) => !s.is_empty(),
+            Object::Char(_) => true,
+            Object::Array(arr) => !arr.is_empty(),
+            Object::HashTable(map) => !map.is_empty(),
+            Object::CompiledFunction(_) => true,
+            Object::Closure { .. } => true,
+            Object::Builtin { .. } => true,
+            Object::Struct { .. } => true,
+            Object::Instance { .. } => true,
+            Object::Error { .. } => false,
         }
     }
 
     pub fn to_string(&self) -> String {
         match self {
-            Object::Integer(i) => i.to_string(),
+            Object::Integer(n) => n.to_string(),
             Object::Float(f) => f.to_string(),
             Object::Boolean(b) => b.to_string(),
             Object::String(s) => s.clone(),
             Object::Char(c) => c.to_string(),
             Object::Array(arr) => {
                 let elements: Vec<String> = arr.iter().map(|obj| obj.to_string()).collect();
-                let str_elements: Vec<&str> = elements.iter().map(|s| s.as_str()).collect();
-                format!("[{}]", str_elements.join(", "))
-            }
+                format!("[{}]", elements.join(", "))
+            },
             Object::HashTable(map) => {
-                let entries: Vec<String> = map
-                    .iter()
-                    .map(|(k, v)| format!("{}: {}", k, v.to_string()))
-                    .collect();
-                let str_entries: Vec<&str> = entries.iter().map(|s| s.as_str()).collect();
-                format!("{{{}}}", str_entries.join(", "))
-            }
-            Object::CompiledFunction(func) => format!("fn<{}>", func.name.as_ref().unwrap_or(&"anonymous".to_string())),
-            Object::Closure { function, free_vars: _ } => {
-                format!("closure<{}>", function.name.as_ref().unwrap_or(&"anonymous".to_string()))
-            }
-            Object::Struct { name, fields } => {
-                let field_strs: Vec<String> = fields
-                    .iter()
-                    .map(|(field_name, field_type)| format!("{}: {}", field_name, field_type))
-                    .collect();
-                let str_fields: Vec<&str> = field_strs.iter().map(|s| s.as_str()).collect();
-                format!("struct {}{{ {} }}", name, str_fields.join(", "))
-            }
-            Object::Instance { struct_type, fields: _ } => {
-                let str_type = match &**struct_type {
-                    Object::Struct { name, .. } => name.clone(),
-                    _ => "UnknownType".to_string(),
-                };
-                format!("{}::instance", str_type)
-            }
-            Object::Error {
-                message,
-                error_type,
-                ..
-            } => {
-                if let Some(t) = error_type {
-                    format!("error<{}>: {}", t, message)
+                let entries: Vec<String> = map.iter().map(|(k, v)| format!("{}: {}", k, v.to_string())).collect();
+                format!("{{{}}}", entries.join(", "))
+            },
+            Object::CompiledFunction(f) => {
+                if let Some(ref name) = f.name {
+                    format!("function[{}]", name)
                 } else {
-                    format!("error: {}", message)
+                    "function[anonymous]".to_string()
                 }
-            }
+            },
+            Object::Closure { function, .. } => {
+                if let Some(ref name) = function.name {
+                    format!("closure[{}]", name)
+                } else {
+                    "closure[anonymous]".to_string()
+                }
+            },
+            Object::Builtin { name, .. } => {
+                format!("builtin function: {}", name)
+            },
+            Object::Struct { name, .. } => format!("struct {}", name),
+            Object::Instance { struct_type, .. } => {
+                if let Object::Struct { name, .. } = struct_type.as_ref() {
+                    format!("instance[{}]", name)
+                } else {
+                    "instance[unknown]".to_string()
+                }
+            },
+            Object::Error { message, error_type, .. } => {
+                if let Some(ref err_type) = error_type {
+                    format!("{}Error: {}", err_type, message)
+                } else {
+                    format!("Error: {}", message)
+                }
+            },
             Object::Null => "null".to_string(),
         }
     }
