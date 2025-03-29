@@ -537,6 +537,18 @@ mod tests {
         assert_eq!(int_lit.token_literal(), expected_value.to_string());
     }
 
+    /// Helper to test float literal parsing
+    fn test_float_literal(expr: &Box<dyn Expression>, expected_value: f64) {
+        let float_lit = expr.as_any().downcast_ref::<ast::FloatLiteral>();
+        assert!(float_lit.is_some(), "Expression is not a FloatLiteral");
+        let float_lit = float_lit.unwrap();
+        // Use approximate comparison for floats
+        assert!((float_lit.value - expected_value).abs() < f64::EPSILON, 
+                "Float value mismatch. Expected {}, got {}", expected_value, float_lit.value);
+        // Check token literal if needed, assuming it represents the float string
+        // assert_eq!(float_lit.token_literal(), expected_value.to_string());
+    }
+
     /// Helper to test boolean literal parsing
     fn test_boolean_literal(expr: &Box<dyn Expression>, expected_value: bool) {
         let bool_lit = expr.as_any().downcast_ref::<BooleanLiteral>();
@@ -693,6 +705,21 @@ mod tests {
         assert_eq!(program.statements.len(), 1);
         let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
         test_integer_literal(stmt.expression.as_ref().unwrap(), 5);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_float_literal_expression() -> Result<(), Error> {
+        let input = "3.14159;";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        test_float_literal(stmt.expression.as_ref().unwrap(), 3.14159);
 
         Ok(())
     }

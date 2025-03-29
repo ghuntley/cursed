@@ -1055,10 +1055,10 @@ impl<'a> Parser<'a> {
                 self.next_token()?;
                 Box::new(literal)
             },
-            Token::String(value) => {
-                let literal = ast::StringLiteral {
+            Token::Float(value) => {
+                let literal = ast::FloatLiteral {
                     token: self.current_token.token_literal(),
-                    value: value.clone(),
+                    value: *value,
                 };
                 
                 self.next_token()?;
@@ -1096,6 +1096,15 @@ impl<'a> Parser<'a> {
                 self.next_token()?;
                 
                 expr
+            },
+            Token::String(value) => {
+                let literal = ast::StringLiteral {
+                    token: self.current_token.token_literal(),
+                    value: value.clone(),
+                };
+                
+                self.next_token()?;
+                Box::new(literal)
             },
             Token::Bang | Token::Minus => {
                 let operator = self.current_token.token_literal();
@@ -1601,6 +1610,59 @@ impl<'a> Parser<'a> {
             body,
             is_variadic,
         }))
+    }
+
+    /// Parse an identifier expression
+    fn parse_identifier(&self) -> Result<Box<dyn Expression>, Error> {
+        if let Token::Identifier(ref ident) = self.current_token {
+            Ok(Box::new(ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: ident.clone(),
+            }))
+        } else {
+            Err(Error::from_str(&format!("Expected identifier, got {:?}", self.current_token)))
+        }
+    }
+    
+    /// Parse an integer literal expression
+    fn parse_integer_literal(&self) -> Result<Box<dyn Expression>, Error> {
+        if let Token::Int(value) = self.current_token {
+            Ok(Box::new(ast::IntegerLiteral {
+                token: self.current_token.token_literal(),
+                value,
+            }))
+        } else {
+            Err(Error::from_str(&format!("Expected integer literal, got {:?}", self.current_token)))
+        }
+    }
+    
+    /// Parse a float literal expression
+    fn parse_float_literal(&self) -> Result<Box<dyn Expression>, Error> {
+        if let Token::Float(value) = self.current_token {
+            Ok(Box::new(ast::FloatLiteral {
+                token: self.current_token.token_literal(),
+                value,
+            }))
+        } else {
+            Err(Error::from_str(&format!("Expected float literal, got {:?}", self.current_token)))
+        }
+    }
+    
+    /// Parse a boolean literal expression
+    fn parse_boolean_literal(&self) -> Result<Box<dyn Expression>, Error> {
+        if let Token::Based = self.current_token {
+            Ok(Box::new(ast::BooleanLiteral {
+                token: self.current_token.token_literal(),
+                value: true,
+            }))
+        } else if let Token::Cap = self.current_token {
+            Ok(Box::new(ast::BooleanLiteral {
+                token: self.current_token.token_literal(),
+                value: false,
+            }))
+        } else {
+            Err(Error::from_str(&format!("Expected boolean literal (based/cap), got {:?}", self.current_token)))
+        }
     }
 }
 
