@@ -131,14 +131,77 @@ impl<'a> Lexer<'a> {
         }
     }
     
-    /// Skip whitespace characters
+    /// Skip whitespace characters and comments
     pub fn skip_whitespace(&mut self) {
-        while let Some(ch) = self.ch {
-            if ch.is_whitespace() {
-                self.read_char();
-            } else {
-                break;
+        loop {
+            // Skip standard whitespace
+            while let Some(ch) = self.ch {
+                if ch.is_whitespace() {
+                    self.read_char();
+                } else {
+                    break;
+                }
             }
+            
+            // Check for comments
+            if self.ch == Some('f') && self.peek_sequence("fr fr") {
+                // Skip 'f', 'r', ' ', 'f', 'r'
+                self.read_char(); // f
+                self.read_char(); // r
+                self.read_char(); // space
+                self.read_char(); // f
+                self.read_char(); // r
+                
+                // Skip the rest of the line
+                while let Some(ch) = self.ch {
+                    if ch == '\n' {
+                        self.read_char(); // Consume the newline
+                        break; // Stop at the end of the line
+                    }
+                    self.read_char();
+                }
+                // Continue the outer loop to check for more whitespace/comments
+                continue;
+            } else if self.ch == Some('n') && self.peek_sequence("no cap") {
+                // Skip 'n', 'o', ' ', 'c', 'a', 'p'
+                self.read_char(); // n
+                self.read_char(); // o
+                self.read_char(); // space
+                self.read_char(); // c
+                self.read_char(); // a
+                self.read_char(); // p
+                
+                // Skip until "on god"
+                loop {
+                    match self.ch {
+                        Some('o') if self.peek_sequence("on god") => {
+                            // Skip 'o', 'n', ' ', 'g', 'o', 'd'
+                             self.read_char(); // o
+                             self.read_char(); // n
+                             self.read_char(); // space
+                             self.read_char(); // g
+                             self.read_char(); // o
+                             self.read_char(); // d
+                             break; // End of block comment
+                        },
+                        None => {
+                            // Error: Unterminated block comment - We can't return Error here directly
+                            // Mark as illegal state or handle in next_token maybe?
+                            // For now, just break to avoid infinite loop on EOF
+                             println!("Warning: Unterminated block comment"); // Temporary warning
+                             break; 
+                        },
+                        _ => {
+                            self.read_char(); // Consume character inside the comment
+                        }
+                    }
+                }
+                // Continue the outer loop to check for more whitespace/comments
+                continue;
+            }
+            
+            // If it's not whitespace and not a comment, break the loop
+            break;
         }
     }
     
@@ -387,6 +450,11 @@ impl<'a> Lexer<'a> {
             Some(ch) => Self::is_digit(ch),
             None => false,
         }
+    }
+    
+    /// Check if the next characters match a specific sequence without consuming them
+    fn peek_sequence(&self, sequence: &str) -> bool {
+        self.input[self.position..].starts_with(sequence)
     }
 }
 
@@ -840,4 +908,112 @@ mod tests {
         assert_eq!(tokens[11], Token::RBrace);  // }
         assert_eq!(tokens[12], Token::Eof);  // EOF
     }
+    
+    #[test]
+    fn test_line_comments() -> Result<(), Error> {
+        let input = r#"
+        sus x = 5; fr fr this is a comment
+        x = 10; fr fr another comment
+        fr fr full line comment
+        yolo x; fr fr comment after statement
+        "#;
+        
+        let expected_tokens = vec![
+            Token::Sus,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::Int(5),
+            Token::Semicolon,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::Int(10),
+            Token::Semicolon,
+            Token::Yolo,
+            Token::Identifier("x".to_string()),
+            Token::Semicolon,
+            Token::Eof,
+        ];
+        
+        let tokens = tokenize(input)?;
+        assert_eq!(tokens, expected_tokens, "Line comments not skipped correctly");
+        Ok(())
+    }
+    
+    #[test]
+    fn test_block_comments() -> Result<(), Error> {
+        let input = r#"
+        sus y = based;
+        no cap this is a 
+        multi-line
+        block comment on god
+        yolo y;
+        no cap single line block comment on god sus z = cap;
+        "#;
+        
+        let expected_tokens = vec![
+            Token::Sus,
+            Token::Identifier("y".to_string()),
+            Token::Assign,
+            Token::Based,
+            Token::Semicolon,
+            Token::Yolo,
+            Token::Identifier("y".to_string()),
+            Token::Semicolon,
+             Token::Sus, // This should be tokenized after the block comment
+             Token::Identifier("z".to_string()),
+             Token::Assign,
+             Token::Cap,
+             Token::Semicolon,
+            Token::Eof,
+        ];
+        
+        let tokens = tokenize(input)?;
+        assert_eq!(tokens, expected_tokens, "Block comments not skipped correctly");
+        Ok(())
+    }
+    
+    #[test]
+    fn test_mixed_comments() -> Result<(), Error> {
+        let input = r#"
+        fr fr Start with a line comment
+        sus a = 1; no cap block comment on god fr fr line comment
+        lowkey based { fr fr inside if
+           no cap nested? no on god maybe not? on god
+        } fr fr end
+        "#;
+        
+        // This input should cause an error because the lexer encounters '?' 
+        // after the first "on god" closes the block comment.
+        let result = tokenize(input);
+        assert!(result.is_err(), "Expected an error due to unexpected character after non-nested block comment, but got Ok({:?})", result.ok());
+        
+        // Optionally, check the specific error details if needed
+        if let Err(e) = result {
+            assert!(e.message().contains("Unexpected character: Some('?')"), "Expected error message about '?', got {}", e.message());
+        }
+        
+        Ok(())
+    }
+    
+     #[test]
+     fn test_comment_within_string() -> Result<(), Error> {
+         let input = r#"sus message = "hello fr fr world no cap on god";"#;
+         let expected_tokens = vec![
+             Token::Sus,
+             Token::Identifier("message".to_string()),
+             Token::Assign,
+             Token::String("hello fr fr world no cap on god".to_string()),
+             Token::Semicolon,
+             Token::Eof,
+         ];
+         let tokens = tokenize(input)?;
+         assert_eq!(tokens, expected_tokens, "Comment markers within strings incorrectly processed");
+         Ok(())
+     }
+
+     // Note: Testing unterminated block comments requires adjustments
+     // to how errors are handled or returned by the lexer/skip_whitespace.
+     // The current implementation prints a warning and might lead to 
+     // unexpected token sequences if not handled carefully in the parser.
+
 } 

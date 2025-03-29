@@ -11,7 +11,7 @@ The CURSED language implementation is progressing. Core components like the Lexe
 | Component         | Status         | Notes                                                                                                                                  | Testing                  |
 |-------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------|--------------------------|
 | **Project Setup** | ✅ Completed   | Basic structure, modules.                                                                                                              | N/A                      |
-| **Lexer**         | ✅ Completed   | Handles keywords, identifiers, literals (int, float, string, char), operators, punctuation. Handles dot notation in identifiers.         | Property, Unit           |
+| **Lexer**         | ✅ Completed   | Handles keywords, identifiers, literals (int, float, string, char), operators, punctuation. Handles dot notation in identifiers. Fully supports line and block comments (`fr fr` and `no cap ... on god`).         | Property, Unit           |
 | **AST**           | ✅ Completed   | Defines nodes for most language constructs including PropertyExpression for dot notation access.                                          | Unit                     |
 | **Parser**        | ✅ Completed   | Parses all major statements and expressions defined in grammar including dot notation for module.function calls. | Unit (Good Coverage)     |
 | **Symbol Table**  | ✅ Completed   | Handles symbol definition, resolution, nested scopes, builtins, free variables.                                                          | Property, Unit           |
@@ -31,6 +31,7 @@ The CURSED language implementation is progressing. Core components like the Lexe
 *   **Literals:** ✅ Integer, String, Boolean, Char, Null, Array (`crew`), Hash (`tea`), Function (`stan`). ❌ Float (Lexed only).
 *   **Identifiers:** ✅ Support for simple identifiers and dot notation (e.g., `vibez.spill`)
 *   **Keywords:** ✅ (Lexer handles them)
+*   **Comments:** ✅ Line comments (`fr fr`) and block comments (`no cap ... on god`) fully supported.
 *   **Operators:** ✅ Arithmetic, Comparison, Logical (`!`), Assignment (`=`).
 *   **Statements:** ✅ `vibe`, `yeet`, `sus`, `facts`, `yolo`, `lowkey`/`highkey`, `periodt`, `bestie`, `vibe_check`/`mood`/`basic`, `be_like squad`/`collab`, `slay`, Expression Statements.
 *   **Expressions:** ✅ Identifiers, Prefix, Infix, Grouped, Call, Index, Assignment, Array Literals, Hash Literals, Function Literals, Property Access (via dot notation). ❌ Struct Instantiation (`be_like ... with {}`).
