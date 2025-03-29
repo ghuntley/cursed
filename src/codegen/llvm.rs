@@ -9,7 +9,8 @@ use inkwell::{IntPredicate, FloatPredicate};
 // Potentially add imports for your AST, Object types, SymbolTable, etc. later
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
-                ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral};
+                ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
+                PrefixExpression};
 // use crate::object::Object;
 
 /// Manages the state for LLVM Intermediate Representation generation.
@@ -213,7 +214,62 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 }
                 None => Err(format!("Undefined variable: {}", var_name)),
             }
+        } else if let Some(prefix_expr) = expression.as_any().downcast_ref::<PrefixExpression>() {
+            // Compile the right expression
+            let right_val = self.compile_expression(prefix_expr.right.as_ref())?;
+
+            // Ensure we are inside a function to use the builder
+            if self.current_function.is_none() {
+                return Err("Cannot compile prefix expression outside a function context".to_string());
+            }
+
+            match prefix_expr.operator.as_str() {
+                // Logical NOT operator (!)
+                "!" => {
+                    if right_val.is_int_value() {
+                        // For boolean values (represented as i1 in LLVM)
+                        let right_int = right_val.into_int_value();
+                        
+                        // If it's a boolean (i1)
+                        if right_int.get_type() == self.context.bool_type() {
+                            // Simple logical NOT using xor with true (1)
+                            Ok(self.builder.build_int_compare(
+                                IntPredicate::EQ, 
+                                right_int, 
+                                self.context.bool_type().const_int(0, false), 
+                                "nottmp"
+                            ).unwrap().into())
+                        } else {
+                            // For other integers, compare with 0 (true if value is 0)
+                            Ok(self.builder.build_int_compare(
+                                IntPredicate::EQ, 
+                                right_int, 
+                                right_int.get_type().const_zero(), 
+                                "nottmp"
+                            ).unwrap().into())
+                        }
+                    } else {
+                        Err(format!("Cannot apply logical NOT to non-integer type: {:?}", right_val.get_type()))
+                    }
+                },
+                // Numerical negation (-)
+                "-" => {
+                    if right_val.is_int_value() {
+                        // Integer negation
+                        let right_int = right_val.into_int_value();
+                        Ok(self.builder.build_int_neg(right_int, "negtmp").unwrap().into())
+                    } else if right_val.is_float_value() {
+                        // Float negation
+                        let right_float = right_val.into_float_value();
+                        Ok(self.builder.build_float_neg(right_float, "fnegtmp").unwrap().into())
+                    } else {
+                        Err(format!("Cannot apply numerical negation to type: {:?}", right_val.get_type()))
+                    }
+                },
+                _ => Err(format!("Unsupported prefix operator: {}", prefix_expr.operator)),
+            }
         } else if let Some(infix_expr) = expression.as_any().downcast_ref::<InfixExpression>() {
+            // ... existing infix expression handling ...
             let left_val = self.compile_expression(infix_expr.left.as_ref())?;
             let right_val = self.compile_expression(infix_expr.right.as_ref())?;
 
@@ -1040,6 +1096,113 @@ mod tests {
         assert!(func_ir.contains("br i1"), "Missing conditional branch in IR");
         assert!(func_ir.contains("ret i64 42"), "Missing 'return 42' in IR");
         assert!(func_ir.contains("ret i64 24"), "Missing 'return 24' in IR");
+    }
+
+    #[test]
+    fn test_compile_prefix_not() {
+        let context = Context::create();
+        let module_name = "test_module_not";
+        let (mut codegen, main_fn) = setup_test_context(&context, module_name);
+        
+        // Set up function context and position builder
+        let entry_block = context.append_basic_block(main_fn, "entry");
+        codegen.builder.position_at_end(entry_block);
+        codegen.current_function = Some(main_fn);
+        
+        // Create a boolean literal and a ! prefix expression
+        let bool_literal = BooleanLiteral {
+            token: "true".to_string(),
+            value: true,
+        };
+        let prefix_expr = PrefixExpression {
+            token: crate::lexer::Token::Bang,
+            operator: "!".to_string(),
+            right: Box::new(bool_literal),
+        };
+        
+        // Compile the expression
+        let result = codegen.compile_expression(&prefix_expr).unwrap();
+        
+        // Verify the result is a boolean value
+        assert!(result.is_int_value());
+        let result_type = result.get_type();
+        assert!(result_type.to_string().contains("i1"));
+        
+        // Verify the result is false (since we applied ! to true)
+        let result_int = result.into_int_value();
+        assert!(result_int.print_to_string().to_string().contains("false"));
+    }
+
+    #[test]
+    fn test_compile_prefix_negate_int() {
+        let context = Context::create();
+        let module_name = "test_module_negate_int";
+        let (mut codegen, main_fn) = setup_test_context(&context, module_name);
+        
+        // Set up function context and position builder
+        let entry_block = context.append_basic_block(main_fn, "entry");
+        codegen.builder.position_at_end(entry_block);
+        codegen.current_function = Some(main_fn);
+        
+        // Create an integer literal and a - prefix expression
+        let int_literal = IntegerLiteral {
+            token: "42".to_string(),
+            value: 42,
+        };
+        let prefix_expr = PrefixExpression {
+            token: crate::lexer::Token::Minus,
+            operator: "-".to_string(),
+            right: Box::new(int_literal),
+        };
+        
+        // Compile the expression
+        let result = codegen.compile_expression(&prefix_expr).unwrap();
+        
+        // Verify the result is an integer value
+        assert!(result.is_int_value());
+        let result_type = result.get_type();
+        assert!(result_type.to_string().contains("i64"));
+        
+        // Verify the result is -42
+        let result_int = result.into_int_value();
+        assert!(result_int.print_to_string().to_string().contains("-42"));
+    }
+
+    #[test]
+    fn test_compile_prefix_negate_float() {
+        let context = Context::create();
+        let module_name = "test_module_negate_float";
+        let (mut codegen, main_fn) = setup_test_context(&context, module_name);
+        
+        // Set up function context and position builder
+        let entry_block = context.append_basic_block(main_fn, "entry");
+        codegen.builder.position_at_end(entry_block);
+        codegen.current_function = Some(main_fn);
+        
+        // Create a float literal and a - prefix expression
+        let float_literal = FloatLiteral {
+            token: "3.14".to_string(),
+            value: 3.14,
+        };
+        let prefix_expr = PrefixExpression {
+            token: crate::lexer::Token::Minus,
+            operator: "-".to_string(),
+            right: Box::new(float_literal),
+        };
+        
+        // Compile the expression
+        let result = codegen.compile_expression(&prefix_expr).unwrap();
+        
+        // Verify the result is a float value
+        assert!(result.is_float_value());
+        let result_type = result.get_type();
+        assert!(result_type.to_string().contains("double"));
+        
+        // Verify it has a negative value
+        let result_float = result.into_float_value();
+        let ir_string = result_float.print_to_string().to_string();
+        assert!(ir_string.contains("-3.14") || ir_string.contains("-0.314") || ir_string.contains("-3.140"),
+                "Expected negative value in: {}", ir_string);
     }
 
     // ... existing tests ...
