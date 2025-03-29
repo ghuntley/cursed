@@ -8,6 +8,7 @@
 
 pub mod ast;
 pub mod code;
+pub mod codegen;
 // pub mod compiler;  // Using stub version for now
 pub mod error;
 pub mod lexer;

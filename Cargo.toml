@@ -19,6 +19,7 @@ env_logger = "0.10"  # Logging implementation
 dirs = "5.0"  # For finding home directory
 num-traits = "0.2"  # For numerical traits
 libc = "0.2"  # For C functions like strlen
+inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking

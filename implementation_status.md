@@ -4,7 +4,7 @@ This document tracks the current implementation status of the CURSED programming
 
 ## Current Implementation Status Overview
 
-The CURSED language implementation is progressing. Core components like the Lexer, AST, Symbol Table, Parser, and basic VM execution loop are largely functional. A REPL exists. Key areas needing significant work include the Compiler, full VM feature implementation (especially related to custom types and methods), Memory Management (GC), the Standard Library, and Type Checking.
+The CURSED language implementation is progressing. Core components like the Lexer, AST, Symbol Table, Parser, and basic VM execution loop are largely functional. A REPL exists. Key areas needing significant work include the Compiler, full VM feature implementation (especially related to custom types and methods), Memory Management (GC), the Standard Library, and Type Checking. LLVM IR code generation is now partially implemented.
 
 ## Component Status
 
@@ -25,6 +25,7 @@ The CURSED language implementation is progressing. Core components like the Lexe
 | **REPL**          | ✅ Completed   | Full REPL functionality with file execution, stdin input, and command-line evaluation options.                                        | Needs Tests              |
 | **Standard Lib**  | ❌ Not Started | Basic builtins in VM exist. Now supports module.function syntax via the lexer. Full `stdlib.md` implementation pending.                | Needs Tests              |
 | **Type Checker**  | ❌ Not Started | Implementation pending.                                                                                                              | Needs Tests              |
+| **LLVM IR Gen**   | 🟡 In Progress | Basic implementation in `codegen/llvm.rs`. Supports integer/float/boolean literals, infix expressions, variables, function calls, and if statements. Needs support for more language constructs. | Unit Tests |
 
 ## Feature Status (Parser/AST Level)
 
@@ -35,6 +36,15 @@ The CURSED language implementation is progressing. Core components like the Lexe
 *   **Operators:** ✅ Arithmetic, Comparison, Logical (`!`), Assignment (`=`).
 *   **Statements:** ✅ `vibe`, `yeet`, `sus`, `facts`, `yolo`, `lowkey`/`highkey`, `periodt`, `bestie`, `vibe_check`/`mood`/`basic`, `be_like squad`/`collab`, `slay`, Expression Statements.
 *   **Expressions:** ✅ Identifiers, Prefix, Infix, Grouped, Call, Index, Assignment, Array Literals, Hash Literals, Function Literals, Property Access (via dot notation). ❌ Struct Instantiation (`be_like ... with {}`).
+
+## LLVM IR Generation Status
+
+*   **Literals:** ✅ Integer, Boolean, Float. ❌ String, Null, Array, Hash, Function (can be defined but not used as values).
+*   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >). ❌ Logical (&&, ||, !), Assignment.
+*   **Statements:** ✅ Let variables, Expression statements, Return statements, If statements. ❌ While/For loops, Function declarations.
+*   **Expressions:** ✅ Identifiers, Infix expressions, Function calls. ❌ Prefix expressions, Index expressions, Property access.
+*   **Control Flow:** ✅ If statements (with else). ❌ Loops, Switch/Match.
+*   **Functions:** ✅ Function calls. 🟡 Function literals (can be defined, but tests use alternative approach to avoid LLVM module cloning issues).
 
 ## Unimplemented Features / Areas Needing Work
 
@@ -50,6 +60,12 @@ The CURSED language implementation is progressing. Core components like the Lexe
     *   Parsing Float Literals into a distinct AST node.
     *   Parsing struct instantiation expressions (`be_like MyStruct with { field: value }`).
 *   **Testing:** Expanding test coverage, especially for Compiler, VM runtime behavior, GC, and Standard Library.
+*   **LLVM IR Generation:** 
+    *   Implementing support for string literals, arrays, and hashes.
+    *   Adding support for loops and other control flow structures.
+    *   Handling prefix expressions, logical operators, and assignment expressions.
+    *   Implementing proper function declarations and callable function literals.
+    *   Adding support for struct/type declarations and instantiations.
 
 ## Potential Next Steps
 
@@ -59,3 +75,4 @@ The CURSED language implementation is progressing. Core components like the Lexe
 *   **Enhance VM for Instances:** Implement the VM logic needed to create and interact with struct instances (e.g., opcodes for instantiation, field getting/setting). This requires corresponding compiler support later.
 *   **Start Standard Library Module:** Pick a simple module from `specs/stdlib.md` (e.g., `math` or `string`) and start implementing its functions, likely as VM builtins initially.
 *   **Expand Module System:** Further enhance the module system with proper imports and exports.
+*   **Extend LLVM IR Generation:** Implement support for more language constructs, especially loops, prefix expressions, and string literals.

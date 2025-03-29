@@ -5,41 +5,31 @@
   env.GREET = "devenv";
 
   # https://devenv.sh/packages/
-  packages = [ pkgs.git ];
+  packages = [ 
+    pkgs.git 
+    pkgs.ninja
+    pkgs.cmake
+    pkgs.llvmPackages_17.clang
+    pkgs.llvmPackages_17.llvm
+    pkgs.llvmPackages_17.libllvm
+    pkgs.llvmPackages_17.libllvm.dev
+    pkgs.llvmPackages_17.mlir
+    pkgs.llvmPackages_17.stdenv
+    pkgs.libffi
+    pkgs.libxml2
+  ];
 
   # https://devenv.sh/languages/
   languages.rust.enable = true;
 
-  # https://devenv.sh/processes/
-  # processes.cargo-watch.exec = "cargo-watch";
-
-  # https://devenv.sh/services/
-  # services.postgres.enable = true;
-
-  # https://devenv.sh/scripts/
-  scripts.hello.exec = ''
-    echo hello from $GREET
-  '';
+  env.LLVM_CONFIG_PATH = "${pkgs.llvmPackages_17.llvm}/bin/llvm-config";
+  env.LLVM_SYS_170_PREFIX = "${pkgs.llvmPackages_17.libllvm.dev}";
 
   enterShell = ''
-    hello
-    git --version
+    export LLVM_SYS_170_PREFIX="${pkgs.llvmPackages_17.libllvm.dev}"
+    export LLVM_CONFIG_PATH="${pkgs.llvmPackages_17.llvm}/bin/llvm-config"
   '';
 
-  # https://devenv.sh/tasks/
-  # tasks = {
-  #   "myproj:setup".exec = "mytool build";
-  #   "devenv:enterShell".after = [ "myproj:setup" ];
-  # };
-
-  # https://devenv.sh/tests/
-  enterTest = ''
-    echo "Running tests"
-    git --version | grep --color=auto "${pkgs.git.version}"
-  '';
-
-  # https://devenv.sh/git-hooks/
-  # git-hooks.hooks.shellcheck.enable = true;
 
   # See full reference at https://devenv.sh/reference/options/
 }
