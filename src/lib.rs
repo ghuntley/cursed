@@ -71,6 +71,8 @@ pub mod compiler {
         Dup = 35,
         DefineType = 36,
         DefineField = 37,
+        DefineInterface = 38,
+        DefineMethod = 39,
     }
     
     // Basic bytecode structure
@@ -114,6 +116,11 @@ pub mod compiler {
                 return self.compile_type_declaration(squad_stmt);
             }
             
+            // For interface declarations
+            if let Some(collab_stmt) = stmt.as_any().downcast_ref::<crate::ast::CollabStatement>() {
+                return self.compile_interface_declaration(collab_stmt);
+            }
+            
             // Handle other statement types
             
             // Add a Pop instruction to clean up the stack
@@ -153,6 +160,74 @@ pub mod compiler {
             Ok(())
         }
         
+        // Compile an interface declaration
+        fn compile_interface_declaration(&mut self, collab_stmt: &crate::ast::CollabStatement) -> Result<(), crate::error::Error> {
+            // Add the interface name to constants and get its index
+            let interface_name_index = self.add_constant(crate::object::Object::String(collab_stmt.name.value.clone()));
+            println!("DEBUG: Added interface name: {} at index {}", collab_stmt.name.value, interface_name_index);
+            
+            // Emit instruction to load the interface name onto the stack
+            self.emit(Opcode::Constant, &[interface_name_index]);
+            
+            // Emit the DefineInterface instruction with the number of methods
+            self.emit(Opcode::DefineInterface, &[collab_stmt.methods.len()]);
+            println!("DEBUG: DefineInterface with {} methods", collab_stmt.methods.len());
+            
+            // For each method, add its name, parameters, and return type to constants
+            for method in &collab_stmt.methods {
+                // Add method name to constants
+                let method_name_index = self.add_constant(crate::object::Object::String(method.name.value.clone()));
+                println!("DEBUG: Added method name: {} at index {}", method.name.value, method_name_index);
+                
+                // Load method name onto stack
+                self.emit(Opcode::Constant, &[method_name_index]);
+                
+                // Add parameter count to constants
+                let param_count_index = self.add_constant(crate::object::Object::Integer(method.parameters.len() as i64));
+                println!("DEBUG: Added param count: {} at index {}", method.parameters.len(), param_count_index);
+                
+                // Load parameter count onto stack
+                self.emit(Opcode::Constant, &[param_count_index]);
+                
+                // For each parameter, add its name and type to constants
+                for param in &method.parameters {
+                    // Add parameter name to constants
+                    let param_name_index = self.add_constant(crate::object::Object::String(param.name.value.clone()));
+                    println!("DEBUG: Added param name: {} at index {}", param.name.value, param_name_index);
+                    
+                    // Add parameter type to constants
+                    let param_type_index = self.add_constant(crate::object::Object::String(param.type_name.value.clone()));
+                    println!("DEBUG: Added param type: {} at index {}", param.type_name.value, param_type_index);
+                    
+                    // Load parameter name onto stack
+                    self.emit(Opcode::Constant, &[param_name_index]);
+                    
+                    // Load parameter type onto stack
+                    self.emit(Opcode::Constant, &[param_type_index]);
+                }
+                
+                // Add return type to constants (if it exists)
+                let return_type_index = if let Some(return_type) = &method.return_type {
+                    let idx = self.add_constant(crate::object::Object::String(return_type.value.clone()));
+                    println!("DEBUG: Added return type: {} at index {}", return_type.value, idx);
+                    idx
+                } else {
+                    let idx = self.add_constant(crate::object::Object::Null);
+                    println!("DEBUG: Added null return type at index {}", idx);
+                    idx
+                };
+                
+                // Load return type onto stack
+                self.emit(Opcode::Constant, &[return_type_index]);
+                
+                // Define the method
+                self.emit(Opcode::DefineMethod, &[]);
+                println!("DEBUG: Emitted DefineMethod");
+            }
+            
+            Ok(())
+        }
+        
         // Helper to add a constant and get its index
         fn add_constant(&mut self, obj: crate::object::Object) -> usize {
             self.constants.push(obj);
@@ -179,7 +254,7 @@ pub mod compiler {
                         self.instructions.push((operand & 0xFF) as u8);
                     }
                 },
-                Opcode::Array | Opcode::Hash | Opcode::DefineType => {
+                Opcode::Array | Opcode::Hash | Opcode::DefineType | Opcode::DefineInterface => {
                     if !operands.is_empty() {
                         let operand = operands[0];
                         // Encode as u16 (big-endian)
@@ -329,6 +404,167 @@ pub mod compiler {
                     assert_eq!(fields[1].1, "normie", "Expected second field type to be 'normie'");
                 },
                 _ => panic!("Expected struct, got {:?}", result_obj),
+            }
+        }
+        
+        #[test]
+        fn test_compile_interface_declaration() {
+            // Test basic interface declaration
+            let input = "be_like Greeter collab { greet(name string) string; farewell(name string); }";
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer).unwrap();
+            let program_result = parser.parse_program();
+            assert!(program_result.is_ok(), "Failed to parse program: {:?}", program_result.err());
+            
+            let program = program_result.unwrap();
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok(), "Compilation of interface declaration failed: {:?}", result.err());
+            
+            // Verify the bytecode contains the interface name and method information
+            let bytecode = result.unwrap();
+            
+            // Print bytecode information for debugging
+            println!("Compiled bytecode:");
+            println!("Constants: {:?}", bytecode.constants);
+            println!("Instructions length: {}", bytecode.instructions.len());
+            
+            // Check that we have constants for interface name and method details
+            assert!(bytecode.constants.len() >= 6, "Not enough constants generated");
+            
+            // Check for interface name and method names/parameter types in the constants
+            let mut found_greeter = false;
+            let mut found_greet = false;
+            let mut found_farewell = false;
+            let mut found_name = false;
+            let mut found_string = false;
+            
+            for constant in &bytecode.constants {
+                if let Object::String(value) = constant {
+                    match value.as_str() {
+                        "Greeter" => found_greeter = true,
+                        "greet" => found_greet = true,
+                        "farewell" => found_farewell = true,
+                        "name" => found_name = true,
+                        "string" => found_string = true,
+                        _ => {}
+                    }
+                }
+            }
+            
+            assert!(found_greeter, "Interface name 'Greeter' not found in constants");
+            assert!(found_greet, "Method name 'greet' not found in constants");
+            assert!(found_farewell, "Method name 'farewell' not found in constants");
+            assert!(found_name, "Parameter name 'name' not found in constants");
+            assert!(found_string, "Parameter type 'string' not found in constants");
+            
+            // Test interface declaration with return type
+            let input = "be_like Writer collab { write(data string) number; close() bool; }";
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer).unwrap();
+            let program_result = parser.parse_program();
+            assert!(program_result.is_ok(), "Failed to parse program: {:?}", program_result.err());
+            
+            let program = program_result.unwrap();
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok(), "Compilation of interface with return types failed: {:?}", result.err());
+        }
+        
+        #[test]
+        fn test_compile_and_run_interface_declaration() {
+            // Test compiling and running interface declarations through the VM
+            let input = "be_like Greeter collab { greet(name string) string; farewell(name string); }";
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer).unwrap();
+            let program_result = parser.parse_program();
+            assert!(program_result.is_ok(), "Failed to parse program: {:?}", program_result.err());
+            
+            let program = program_result.unwrap();
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok(), "Compilation of interface declaration failed: {:?}", result.err());
+            
+            let bytecode = result.unwrap();
+            
+            // Print bytecode information for debugging
+            println!("Compiled interface bytecode:");
+            println!("Constants: {:?}", bytecode.constants);
+            println!("Instructions length: {}", bytecode.instructions.len());
+            
+            // Create a VM and run the bytecode
+            let mut vm = crate::vm::VM::new();
+            
+            // Run the bytecode
+            let result = vm.run_with_bytecode(bytecode);
+            match &result {
+                Ok(obj) => println!("Execution succeeded: {:?}", obj),
+                Err(e) => println!("Execution failed: {:?}", e)
+            }
+            assert!(result.is_ok(), "VM execution failed: {:?}", result.err());
+            
+            // The result should be an interface definition
+            let result_obj = result.unwrap();
+            
+            // Verify the result is an interface with the correct methods
+            match &*result_obj {
+                Object::Interface { name, methods } => {
+                    assert_eq!(name, "Greeter", "Expected interface name 'Greeter'");
+                    assert_eq!(methods.len(), 2, "Expected 2 methods");
+                    
+                    // Verify first method (greet)
+                    let greet_method = &methods[0];
+                    assert_eq!(greet_method.0, "greet", "Expected first method name to be 'greet'");
+                    assert_eq!(greet_method.1.len(), 1, "Expected 'greet' to have 1 parameter");
+                    assert_eq!(greet_method.1[0].0, "name", "Expected parameter name to be 'name'");
+                    assert_eq!(greet_method.1[0].1, "string", "Expected parameter type to be 'string'");
+                    assert_eq!(greet_method.2.as_ref().unwrap(), "string", "Expected return type to be 'string'");
+                    
+                    // Verify second method (farewell)
+                    let farewell_method = &methods[1];
+                    assert_eq!(farewell_method.0, "farewell", "Expected second method name to be 'farewell'");
+                    assert_eq!(farewell_method.1.len(), 1, "Expected 'farewell' to have 1 parameter");
+                    assert_eq!(farewell_method.1[0].0, "name", "Expected parameter name to be 'name'");
+                    assert_eq!(farewell_method.1[0].1, "string", "Expected parameter type to be 'string'");
+                    assert!(farewell_method.2.is_none(), "Expected no return type for 'farewell'");
+                },
+                _ => panic!("Expected interface, got {:?}", result_obj),
+            }
+            
+            // Test with multiple parameters and different return types
+            let input = "be_like Calculator collab { add(a number, b number) number; multiply(a number, b number) number; }";
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer).unwrap();
+            let program_result = parser.parse_program();
+            assert!(program_result.is_ok(), "Failed to parse program: {:?}", program_result.err());
+            
+            let program = program_result.unwrap();
+            let mut compiler = Compiler::new();
+            let result = compiler.compile_program(&program);
+            assert!(result.is_ok(), "Compilation of multi-parameter interface failed: {:?}", result.err());
+            
+            let bytecode = result.unwrap();
+            
+            // Create a VM and run the bytecode
+            let mut vm = crate::vm::VM::new();
+            
+            // Run the bytecode
+            let result = vm.run_with_bytecode(bytecode);
+            assert!(result.is_ok(), "VM execution of multi-parameter interface failed: {:?}", result.err());
+            
+            // Verify the result is an interface with the correct methods
+            let result_obj = result.unwrap();
+            match &*result_obj {
+                Object::Interface { name, methods } => {
+                    assert_eq!(name, "Calculator", "Expected interface name 'Calculator'");
+                    assert_eq!(methods.len(), 2, "Expected 2 methods");
+                    
+                    // Check both methods have 2 parameters each
+                    for method in methods {
+                        assert_eq!(method.1.len(), 2, "Expected method to have 2 parameters");
+                    }
+                },
+                _ => panic!("Expected interface, got {:?}", result_obj),
             }
         }
     }

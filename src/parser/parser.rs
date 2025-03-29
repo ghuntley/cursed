@@ -203,14 +203,14 @@ impl<'a> Parser<'a> {
         // Store the 'be_like' token
         let token = self.current_token.token_literal();
         
-        // Next token should be the struct name (identifier)
+        // Next token should be the type name (identifier)
         if !self.expect_peek_identifier() {
             return Err(Error::from_str(
                 &format!("Expected identifier after 'be_like', got {:?}", self.peek_token)
             ));
         }
         
-        // Get the struct name
+        // Get the type name
         let name = match &self.current_token {
             Token::Identifier(val) => ast::Identifier {
                 token: self.current_token.token_literal(),
@@ -219,13 +219,19 @@ impl<'a> Parser<'a> {
             _ => unreachable!(), // We already checked it's an identifier
         };
         
-        // Next token should be 'squad' for struct definitions
-        if !self.expect_peek(&Token::Squad) {
-            return Err(Error::from_str(
-                &format!("Expected 'squad' after struct name, got {:?}", self.peek_token)
-            ));
+        // Next token determines if this is a struct or interface declaration
+        self.next_token()?;
+        match &self.current_token {
+            Token::Squad => self.parse_squad_statement(token, name),
+            Token::Collab => self.parse_collab_statement(token, name),
+            _ => Err(Error::from_str(
+                &format!("Expected 'squad' or 'collab' after type name, got {:?}", self.current_token)
+            ))
         }
-        
+    }
+    
+    /// Parse a struct (squad) declaration
+    fn parse_squad_statement(&mut self, token: String, name: ast::Identifier) -> Result<Box<dyn Statement>, Error> {
         // Next token should be opening brace '{'
         if !self.expect_peek(&Token::LBrace) {
             return Err(Error::from_str(
@@ -305,6 +311,182 @@ impl<'a> Parser<'a> {
             name,
             fields,
         }))
+    }
+    
+    /// Parse an interface (collab) declaration
+    fn parse_collab_statement(&mut self, token: String, name: ast::Identifier) -> Result<Box<dyn Statement>, Error> {
+        // Next token should be opening brace '{'
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(
+                &format!("Expected '{{' after 'collab', got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse the interface methods
+        let mut methods = Vec::new();
+        
+        // Move past the '{'
+        self.next_token()?;
+        
+        // Parse methods until closing brace or EOF
+        while self.current_token != Token::RBrace && self.current_token != Token::Eof {
+            // Parse method name
+            if let Token::Identifier(method_name) = &self.current_token {
+                let method_token = self.current_token.token_literal();
+                let method_id = ast::Identifier {
+                    token: method_token.clone(),
+                    value: method_name.clone(),
+                };
+                
+                // Next token should be the opening paren for parameters
+                if !self.expect_peek(&Token::LParen) {
+                    return Err(Error::from_str(
+                        &format!("Expected '(' after method name, got {:?}", self.peek_token)
+                    ));
+                }
+                
+                // Parse parameters
+                let parameters = self.parse_parameters()?;
+                
+                // Handle optional return type
+                let mut return_type = None;
+                
+                // Check if next token is a return type
+                if let Token::Identifier(_) = &self.current_token {
+                    // It's a return type
+                    if let Token::Identifier(type_name) = &self.current_token {
+                        return_type = Some(ast::Identifier {
+                            token: self.current_token.token_literal(),
+                            value: type_name.clone(),
+                        });
+                    } else if let Some(token_value) = self.token_to_type_name() {
+                        return_type = Some(ast::Identifier {
+                            token: self.current_token.token_literal(),
+                            value: token_value,
+                        });
+                    }
+                    
+                    // Move to the next token
+                    self.next_token()?;
+                }
+                
+                // Create method signature
+                let method = ast::MethodSignature {
+                    token: method_token,
+                    name: method_id,
+                    parameters,
+                    return_type,
+                };
+                
+                methods.push(method);
+                
+                // Method may be followed by semicolon
+                if self.current_token == Token::Semicolon {
+                    self.next_token()?;
+                }
+            } else {
+                return Err(Error::from_str(
+                    &format!("Expected method name, got {:?}", self.current_token)
+                ));
+            }
+        }
+        
+        // Ensure we have a closing brace
+        if self.current_token != Token::RBrace {
+            return Err(Error::from_str(
+                "Expected '}' to close interface declaration"
+            ));
+        }
+        
+        // Create and return the collab statement
+        Ok(Box::new(ast::CollabStatement {
+            token,
+            name,
+            methods,
+        }))
+    }
+    
+    /// Parse parameters for a method
+    fn parse_parameters(&mut self) -> Result<Vec<ast::ParameterStatement>, Error> {
+        let mut parameters = Vec::new();
+        
+        // Move past the '('
+        self.next_token()?;
+        
+        // Empty parameter list case
+        if self.current_token == Token::RParen {
+            self.next_token()?;
+            return Ok(parameters);
+        }
+        
+        // Parse first parameter
+        parameters.push(self.parse_parameter()?);
+        
+        // Parse remaining parameters
+        while self.current_token == Token::Comma {
+            self.next_token()?;
+            parameters.push(self.parse_parameter()?);
+        }
+        
+        // Expect closing paren
+        if self.current_token != Token::RParen {
+            return Err(Error::from_str(
+                &format!("Expected ')' after parameters, got {:?}", self.current_token)
+            ));
+        }
+        
+        // Move past the ')'
+        self.next_token()?;
+        
+        Ok(parameters)
+    }
+    
+    /// Parse a single parameter
+    fn parse_parameter(&mut self) -> Result<ast::ParameterStatement, Error> {
+        // Parse parameter name
+        if let Token::Identifier(param_name) = &self.current_token {
+            let param_token = self.current_token.token_literal();
+            let param_id = ast::Identifier {
+                token: param_token.clone(),
+                value: param_name.clone(),
+            };
+            
+            // Next token should be the parameter type
+            self.next_token()?;
+            
+            // Get the type name
+            let type_id = if let Token::Identifier(type_name) = &self.current_token {
+                ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: type_name.clone(),
+                }
+            } else if let Some(token_value) = self.token_to_type_name() {
+                ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: token_value,
+                }
+            } else {
+                return Err(Error::from_str(
+                    &format!("Expected parameter type, got {:?}", self.current_token)
+                ));
+            };
+            
+            // Move to the next token
+            self.next_token()?;
+            
+            // Create parameter statement
+            let param = ast::ParameterStatement {
+                token: param_token,
+                name: param_id,
+                type_name: type_id,
+            };
+            
+            Ok(param)
+        } else {
+            Err(Error::from_str(
+                &format!("Expected parameter name, got {:?}", self.current_token)
+            ))
+        }
     }
     
     /// Parse an expression statement
@@ -692,6 +874,7 @@ impl<'a> Parser<'a> {
             Token::Squad => Some("squad".to_string()),
             Token::Collab => Some("collab".to_string()),
             Token::Dm => Some("dm".to_string()),
+            Token::Based => Some("lit".to_string()),  // true -> lit (boolean)
             // Add other token types that should be valid as type names
             _ => None,
         }

@@ -49,8 +49,8 @@ The implementation currently has **33 tests passing**, covering the Lexer, Symbo
   - [x] For loops
   - [x] Switch statements
   - [x] Package and import statements
-  - [ ] Type/Struct declarations (partially implemented)
-  - [ ] Interface declarations
+  - [x] Type/Struct declarations (implemented and tested)
+  - [x] Interface declarations (implemented but tests failing)
   - [ ] Method declarations
   - [ ] Variadic functions
   - [ ] Error handling (try/catch)

@@ -811,6 +811,103 @@ impl Expression for BeLikeExpression {
     }
 }
 
+/// CollabStatement represents an interface definition
+pub struct CollabStatement {
+    pub token: String, // Token::Collab
+    pub name: Identifier,
+    pub methods: Vec<MethodSignature>,
+}
+
+impl Node for CollabStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let mut out = String::new();
+        out.push_str(&format!("be_like {} collab {{\n", self.name.string()));
+        
+        for method in &self.methods {
+            out.push_str(&format!("    {}\n", method.string()));
+        }
+        
+        out.push_str("}\n");
+        out
+    }
+}
+
+impl Statement for CollabStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// MethodSignature represents a method signature in an interface
+pub struct MethodSignature {
+    pub token: String, // Usually the method name token
+    pub name: Identifier,
+    pub parameters: Vec<ParameterStatement>,
+    pub return_type: Option<Identifier>,
+}
+
+impl Node for MethodSignature {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let params: Vec<String> = self.parameters.iter()
+            .map(|p| p.string())
+            .collect();
+        
+        let return_type_str = match &self.return_type {
+            Some(rt) => format!(" {}", rt.string()),
+            None => String::new(),
+        };
+        
+        format!("{}({}){}",
+            self.name.string(),
+            params.join(", "),
+            return_type_str
+        )
+    }
+}
+
+impl Statement for MethodSignature {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// ParameterStatement represents a parameter in a method signature
+pub struct ParameterStatement {
+    pub token: String, // Usually the parameter name token
+    pub name: Identifier,
+    pub type_name: Identifier,
+}
+
+impl Node for ParameterStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{} {}", self.name.string(), self.type_name.string())
+    }
+}
+
+impl Statement for ParameterStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

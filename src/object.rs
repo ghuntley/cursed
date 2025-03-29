@@ -54,6 +54,10 @@ pub enum Object {
         struct_type: Rc<Object>,
         fields: HashMap<String, Object>,
     },
+    Interface {
+        name: String,
+        methods: Vec<(String, Vec<(String, String)>, Option<String>)>, // (method_name, parameters [(name, type)], return_type)
+    },
     Error {
         message: String,
         error_type: Option<String>,
@@ -66,34 +70,61 @@ pub enum Object {
 pub type BuiltinFunction = fn(args: Vec<Object>) -> Result<Object, crate::error::Error>;
 
 impl Trace for Object {
+    // Trace is an empty marker trait, so we don't need to implement any methods
 }
 
 impl Traceable for Object {
     fn trace(&self, visitor: &mut dyn Visitor) {
         match self {
-            Object::Array(arr) => {
-                for obj in arr {
-                    visitor.visit(obj);
+            Object::Integer(_) |
+            Object::Float(_) |
+            Object::Boolean(_) |
+            Object::String(_) |
+            Object::Char(_) |
+            Object::Null => {
+                // These types don't contain any references to trace
+            },
+            Object::Array(elements) => {
+                // Trace array elements
+                for element in elements {
+                    element.trace(visitor);
                 }
             },
-            Object::HashTable(map) => {
-                for obj in map.values() {
-                    visitor.visit(obj);
+            Object::HashTable(entries) => {
+                // Trace hash table entries
+                for (_, value) in entries {
+                    value.trace(visitor);
                 }
             },
-            Object::Closure { function, free_vars } => {
-                visitor.visit_ptr(Rc::as_ptr(function) as usize, crate::memory::tagged::Tag::Function);
+            Object::CompiledFunction(_) => {
+                // CompiledFunction doesn't implement Traceable
+            },
+            Object::Closure { function: _, free_vars } => {
+                // function doesn't implement Traceable
                 for var in free_vars {
-                    visitor.visit(var);
+                    var.trace(visitor);
                 }
+            },
+            Object::Builtin { .. } => {
+                // Builtins don't have any references to trace
+            },
+            Object::Struct { .. } => {
+                // Type definitions don't have any references to trace
+            },
+            Object::Interface { .. } => {
+                // Interface definitions don't have any references to trace
             },
             Object::Instance { struct_type, fields } => {
-                visitor.visit(struct_type.as_ref());
-                for (_, value) in fields.iter() {
-                    visitor.visit(value);
+                // Trace the struct type
+                struct_type.trace(visitor);
+                // Trace field values
+                for (_, value) in fields {
+                    value.trace(visitor);
                 }
             },
-            _ => {}
+            Object::Error { stack_trace: _, .. } => {
+                // ErrorLocation doesn't implement Traceable
+            },
         }
     }
     
@@ -103,42 +134,70 @@ impl Traceable for Object {
             Object::Float(_) => std::mem::size_of::<f64>(),
             Object::Boolean(_) => std::mem::size_of::<bool>(),
             Object::Char(_) => std::mem::size_of::<char>(),
-            Object::String(s) => std::mem::size_of::<String>() + s.capacity(),
-            Object::Array(a) => std::mem::size_of::<Vec<Object>>() + (a.capacity() * std::mem::size_of::<Object>()),
-            Object::HashTable(h) => {
-                let key_size = h.keys().map(|k| k.capacity()).sum::<usize>();
-                std::mem::size_of::<HashMap<String, Object>>() + 
-                    (h.capacity() * (std::mem::size_of::<String>() + std::mem::size_of::<Object>())) +
-                    key_size
+            Object::String(s) => std::mem::size_of::<String>() + s.len(),
+            Object::Array(elements) => {
+                let mut size = std::mem::size_of::<Vec<Object>>();
+                for element in elements {
+                    size += element.size();
+                }
+                size
             },
-            Object::CompiledFunction(_) => std::mem::size_of::<Rc<CompiledFunction>>() + std::mem::size_of::<CompiledFunction>(),
-            Object::Closure { function: _, free_vars } => {
-                std::mem::size_of::<Rc<CompiledFunction>>() + 
-                std::mem::size_of::<Vec<Object>>() + 
-                (free_vars.capacity() * std::mem::size_of::<Object>())
+            Object::HashTable(entries) => {
+                let mut size = std::mem::size_of::<HashMap<String, Object>>();
+                for (key, value) in entries {
+                    size += key.len() + value.size();
+                }
+                size
+            },
+            Object::CompiledFunction(function) => {
+                std::mem::size_of::<Rc<CompiledFunction>>() + function.instructions.len()
+            },
+            Object::Closure { function, free_vars } => {
+                let mut size = std::mem::size_of::<Rc<CompiledFunction>>() + function.instructions.len();
+                for var in free_vars {
+                    size += var.size();
+                }
+                size
             },
             Object::Builtin { name, .. } => {
-                std::mem::size_of::<String>() + name.capacity() +
-                std::mem::size_of::<BuiltinFunction>()
+                std::mem::size_of::<String>() + name.len() + std::mem::size_of::<fn(Vec<Object>) -> Result<Object, Error>>()
             },
             Object::Struct { name, fields } => {
-                std::mem::size_of::<String>() + name.capacity() +
-                std::mem::size_of::<Vec<(String, String)>>() + 
-                fields.iter().map(|(n, t)| n.capacity() + t.capacity() + std::mem::size_of::<(String, String)>()).sum::<usize>()
+                let mut size = std::mem::size_of::<String>() + name.len();
+                for (field_name, field_type) in fields {
+                    size += field_name.len() + field_type.len();
+                }
+                size
             },
-            Object::Instance { struct_type: _, fields } => {
-                std::mem::size_of::<Rc<Object>>() +
-                std::mem::size_of::<HashMap<String, Object>>() +
-                fields.keys().map(|k| k.capacity()).sum::<usize>() +
-                (fields.capacity() * (std::mem::size_of::<String>() + std::mem::size_of::<Object>()))
+            Object::Interface { name, methods } => {
+                let mut size = std::mem::size_of::<String>() + name.len();
+                for (method_name, params, return_type) in methods {
+                    size += method_name.len();
+                    for (param_name, param_type) in params {
+                        size += param_name.len() + param_type.len();
+                    }
+                    if let Some(ret_type) = return_type {
+                        size += ret_type.len();
+                    }
+                }
+                size
+            },
+            Object::Instance { struct_type, fields } => {
+                let mut size = std::mem::size_of::<Rc<Object>>() + struct_type.size();
+                for (key, value) in fields {
+                    size += key.len() + value.size();
+                }
+                size
             },
             Object::Error { message, error_type, stack_trace } => {
-                std::mem::size_of::<String>() + message.capacity() +
-                (error_type.as_ref().map_or(0, |t| t.capacity()) + std::mem::size_of::<Option<String>>()) +
-                std::mem::size_of::<Vec<ErrorLocation>>() +
-                (stack_trace.capacity() * std::mem::size_of::<ErrorLocation>())
+                let mut size = std::mem::size_of::<String>() + message.len();
+                if let Some(error_type) = error_type {
+                    size += error_type.len();
+                }
+                size += std::mem::size_of::<Vec<ErrorLocation>>() + stack_trace.len() * std::mem::size_of::<ErrorLocation>();
+                size
             },
-            Object::Null => 0,
+            Object::Null => std::mem::size_of::<()>(),
         }
     }
 }
@@ -181,6 +240,7 @@ impl fmt::Display for Object {
                 write!(f, "builtin[{}]", name)
             },
             Object::Struct { name, .. } => write!(f, "struct[{}]", name),
+            Object::Interface { name, .. } => write!(f, "interface[{}]", name),
             Object::Instance { struct_type, .. } => {
                 if let Object::Struct { name, .. } = struct_type.as_ref() {
                     write!(f, "instance[{}]", name)
@@ -252,6 +312,7 @@ impl Object {
             Object::Closure { .. } => "closure",
             Object::Builtin { .. } => "builtin",
             Object::Struct { .. } => "struct",
+            Object::Interface { .. } => "interface",
             Object::Instance { .. } => "instance",
             Object::Error { .. } => "error",
             Object::Null => "null",
@@ -260,21 +321,23 @@ impl Object {
     
     /// Check if the object is of the given type
     pub fn is_type(&self, type_name: &str) -> bool {
-        match self {
-            Object::Integer(_) => type_name == "integer",
-            Object::Float(_) => type_name == "float",
-            Object::Boolean(_) => type_name == "boolean",
-            Object::Char(_) => type_name == "char",
-            Object::String(_) => type_name == "string",
-            Object::Array(_) => type_name == "array",
-            Object::HashTable(_) => type_name == "hash",
-            Object::CompiledFunction(_) => type_name == "function",
-            Object::Closure { .. } => type_name == "closure",
-            Object::Builtin { .. } => type_name == "builtin",
-            Object::Struct { .. } => type_name == "struct",
-            Object::Instance { .. } => type_name == "instance",
-            Object::Error { .. } => type_name == "error",
-            Object::Null => type_name == "null",
+        match (self, type_name) {
+            (Object::Integer(_), "integer") => true,
+            (Object::Float(_), "float") => true,
+            (Object::Boolean(_), "boolean") => true,
+            (Object::String(_), "string") => true,
+            (Object::Char(_), "char") => true,
+            (Object::Array(_), "array") => true,
+            (Object::HashTable(_), "hash") => true,
+            (Object::CompiledFunction(_), "function") => true,
+            (Object::Closure { .. }, "closure") => true,
+            (Object::Builtin { .. }, "builtin") => true,
+            (Object::Struct { .. }, "struct") => true,
+            (Object::Interface { .. }, "interface") => true,
+            (Object::Instance { .. }, "instance") => true,
+            (Object::Error { .. }, "error") => true,
+            (Object::Null, "null") => true,
+            _ => false,
         }
     }
     
@@ -330,20 +393,21 @@ impl Object {
     
     pub fn is_truthy(&self) -> bool {
         match self {
-            Object::Null => false,
+            Object::Integer(n) => *n != 0,
+            Object::Float(n) => *n != 0.0,
             Object::Boolean(b) => *b,
-            Object::Integer(i) => *i != 0,
-            Object::Float(f) => *f != 0.0,
             Object::String(s) => !s.is_empty(),
             Object::Char(_) => true,
-            Object::Array(arr) => !arr.is_empty(),
-            Object::HashTable(map) => !map.is_empty(),
+            Object::Array(a) => !a.is_empty(),
+            Object::HashTable(h) => !h.is_empty(),
             Object::CompiledFunction(_) => true,
             Object::Closure { .. } => true,
             Object::Builtin { .. } => true,
             Object::Struct { .. } => true,
+            Object::Interface { .. } => true,
             Object::Instance { .. } => true,
             Object::Error { .. } => false,
+            Object::Null => false,
         }
     }
 
@@ -380,6 +444,7 @@ impl Object {
                 format!("builtin function: {}", name)
             },
             Object::Struct { name, .. } => format!("struct {}", name),
+            Object::Interface { name, .. } => format!("interface {}", name),
             Object::Instance { struct_type, .. } => {
                 if let Object::Struct { name, .. } = struct_type.as_ref() {
                     format!("instance[{}]", name)
@@ -546,7 +611,121 @@ impl Object {
                     visitor.visit_ptr(value_ptr, crate::memory::tagged::Tag::Object);
                 }
             },
+            Object::Interface { .. } => {
+                // Interface objects don't contain references that need tracing
+            },
             _ => {}
+        }
+    }
+
+    /// Checks if the object is exactly of the given type
+    pub fn type_check_exact(&self, type_name: &str) -> bool {
+        match self {
+            Object::Integer(_) => type_name == "integer",
+            Object::Float(_) => type_name == "float",
+            Object::Boolean(_) => type_name == "boolean",
+            Object::String(_) => type_name == "string",
+            Object::Char(_) => type_name == "char",
+            Object::Array(_) => type_name == "array",
+            Object::HashTable(_) => type_name == "hash",
+            Object::CompiledFunction(_) => type_name == "function",
+            Object::Closure { .. } => type_name == "closure",
+            Object::Builtin { .. } => type_name == "builtin",
+            Object::Struct { .. } => type_name == "struct",
+            Object::Interface { .. } => type_name == "interface",
+            Object::Instance { .. } => type_name == "instance",
+            Object::Error { .. } => type_name == "error",
+            Object::Null => type_name == "null",
+        }
+    }
+
+    /// Returns a string representation of the object
+    pub fn inspect(&self) -> String {
+        match self {
+            Object::Integer(value) => value.to_string(),
+            Object::Float(value) => value.to_string(),
+            Object::Boolean(value) => value.to_string(),
+            Object::String(value) => format!("\"{}\"", value),
+            Object::Char(value) => format!("'{}'", value),
+            Object::Array(elements) => {
+                let elements_str = elements
+                    .iter()
+                    .map(|e| e.inspect())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("[{}]", elements_str)
+            },
+            Object::HashTable(pairs) => {
+                let mut entries: Vec<String> = Vec::new();
+                for (key, value) in pairs {
+                    entries.push(format!("\"{}\": {}", key, value.inspect()));
+                }
+                format!("{{{}}}", entries.join(", "))
+            },
+            Object::CompiledFunction(func) => {
+                format!("CompiledFunction[{:p}]", Rc::as_ptr(&func))
+            },
+            Object::Closure { function, free_vars } => {
+                let free_vars_str = free_vars
+                    .iter()
+                    .map(|v| v.inspect())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("Closure[function={:p}, free_vars=[{}]]", Rc::as_ptr(&function), free_vars_str)
+            },
+            Object::Builtin { name, .. } => {
+                format!("Builtin[{}]", name)
+            },
+            Object::Struct { name, fields } => {
+                let fields_str = fields
+                    .iter()
+                    .map(|(name, type_name)| format!("{}: {}", name, type_name))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("struct {}{{ {} }}", name, fields_str)
+            },
+            Object::Interface { name, methods } => {
+                let methods_str = methods
+                    .iter()
+                    .map(|(method_name, params, ret_type)| {
+                        let params_str = params
+                            .iter()
+                            .map(|(param_name, param_type)| format!("{}: {}", param_name, param_type))
+                            .collect::<Vec<String>>()
+                            .join(", ");
+                        
+                        if let Some(return_type) = ret_type {
+                            format!("{}({}): {}", method_name, params_str, return_type)
+                        } else {
+                            format!("{}({})", method_name, params_str)
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("interface {}{{ {} }}", name, methods_str)
+            },
+            Object::Instance { struct_type, fields } => {
+                let type_name = match &**struct_type {
+                    Object::Struct { name, .. } => name.clone(),
+                    _ => "Unknown".to_string(),
+                };
+                
+                let fields_str = fields
+                    .iter()
+                    .map(|(name, value)| format!("{}: {}", name, value.inspect()))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                
+                format!("{}{{ {} }}", type_name, fields_str)
+            },
+            Object::Error { message, error_type, .. } => {
+                if let Some(err_type) = error_type {
+                    format!("Error: {} ({})", message, err_type)
+                } else {
+                    format!("Error: {}", message)
+                }
+            },
+            Object::Null => "null".to_string(),
         }
     }
 }
@@ -670,4 +849,5 @@ impl ObjectTraceableExt for Object {
             _ => None
         }
     }
-} 
+}
+

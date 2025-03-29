@@ -588,4 +588,157 @@ fn test_compile_and_run_type_declaration() {
         },
         _ => panic!("Expected struct, got {:?}", result_obj),
     }
+}
+
+#[test]
+fn test_compile_interface_declaration() {
+    // Test basic interface declaration
+    let input = "be_like Greeter collab { greet(name tea) tea; farewell(name tea); }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation of interface declaration failed: {:?}", result.err());
+    
+    // Verify the bytecode contains the interface name and method information
+    let bytecode = result.unwrap();
+    
+    // Print bytecode information for debugging
+    println!("Compiled bytecode:");
+    println!("Constants: {:?}", bytecode.constants);
+    println!("Instructions length: {}", bytecode.instructions.len());
+    
+    // Check that we have constants for interface name and method details
+    assert!(bytecode.constants.len() >= 6, "Not enough constants generated");
+    
+    // Check for interface name and method names/parameter types in the constants
+    let mut found_greeter = false;
+    let mut found_greet = false;
+    let mut found_farewell = false;
+    let mut found_name = false;
+    let mut found_tea = false;
+    
+    for constant in &bytecode.constants {
+        if let Object::String(value) = constant {
+            match value.as_str() {
+                "Greeter" => found_greeter = true,
+                "greet" => found_greet = true,
+                "farewell" => found_farewell = true,
+                "name" => found_name = true,
+                "tea" => found_tea = true,
+                _ => {}
+            }
+        }
+    }
+    
+    assert!(found_greeter, "Interface name 'Greeter' not found in constants");
+    assert!(found_greet, "Method name 'greet' not found in constants");
+    assert!(found_farewell, "Method name 'farewell' not found in constants");
+    assert!(found_name, "Parameter name 'name' not found in constants");
+    assert!(found_tea, "Parameter type 'tea' not found in constants");
+    
+    // Test interface declaration with return type
+    let input = "be_like Writer collab { write(data tea) normie; close() lit; }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation of interface with return types failed: {:?}", result.err());
+}
+
+#[test]
+fn test_compile_and_run_interface_declaration() {
+    // Test compiling and running interface declarations through the VM
+    let input = "be_like Greeter collab { greet(name string) string; farewell(name string); }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation of interface declaration failed: {:?}", result.err());
+    
+    let bytecode = result.unwrap();
+    
+    // Print bytecode information for debugging
+    println!("Compiled interface bytecode:");
+    println!("Constants: {:?}", bytecode.constants);
+    println!("Instructions length: {}", bytecode.instructions.len());
+    
+    // Create a VM and run the bytecode
+    let mut vm = crate::vm::VM::new();
+    
+    // Run the bytecode
+    let result = vm.run_with_bytecode(bytecode);
+    match &result {
+        Ok(obj) => println!("Execution succeeded: {:?}", obj),
+        Err(e) => println!("Execution failed: {:?}", e)
+    }
+    assert!(result.is_ok(), "VM execution failed: {:?}", result.err());
+    
+    // The result should be an interface definition
+    let result_obj = result.unwrap();
+    
+    // Verify the result is an interface with the correct methods
+    match &*result_obj {
+        Object::Interface { name, methods } => {
+            assert_eq!(name, "Greeter", "Expected interface name 'Greeter'");
+            assert_eq!(methods.len(), 2, "Expected 2 methods");
+            
+            // Verify first method (greet)
+            let greet_method = &methods[0];
+            assert_eq!(greet_method.0, "greet", "Expected first method name to be 'greet'");
+            assert_eq!(greet_method.1.len(), 1, "Expected 'greet' to have 1 parameter");
+            assert_eq!(greet_method.1[0].0, "name", "Expected parameter name to be 'name'");
+            assert_eq!(greet_method.1[0].1, "string", "Expected parameter type to be 'string'");
+            assert_eq!(greet_method.2.as_ref().unwrap(), "string", "Expected return type to be 'string'");
+            
+            // Verify second method (farewell)
+            let farewell_method = &methods[1];
+            assert_eq!(farewell_method.0, "farewell", "Expected second method name to be 'farewell'");
+            assert_eq!(farewell_method.1.len(), 1, "Expected 'farewell' to have 1 parameter");
+            assert_eq!(farewell_method.1[0].0, "name", "Expected parameter name to be 'name'");
+            assert_eq!(farewell_method.1[0].1, "string", "Expected parameter type to be 'string'");
+            assert!(farewell_method.2.is_none(), "Expected no return type for 'farewell'");
+        },
+        _ => panic!("Expected interface, got {:?}", result_obj),
+    }
+    
+    // Test with multiple parameters and different return types
+    let input = "be_like Calculator collab { add(a number, b number) number; multiply(a number, b number) number; }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program().unwrap();
+    
+    let mut compiler = Compiler::new();
+    let result = compiler.compile(&program);
+    assert!(result.is_ok(), "Compilation of multi-parameter interface failed: {:?}", result.err());
+    
+    let bytecode = result.unwrap();
+    
+    // Create a VM and run the bytecode
+    let mut vm = crate::vm::VM::new();
+    
+    // Run the bytecode
+    let result = vm.run_with_bytecode(bytecode);
+    assert!(result.is_ok(), "VM execution of multi-parameter interface failed: {:?}", result.err());
+    
+    // Verify the result is an interface with the correct methods
+    let result_obj = result.unwrap();
+    match &*result_obj {
+        Object::Interface { name, methods } => {
+            assert_eq!(name, "Calculator", "Expected interface name 'Calculator'");
+            assert_eq!(methods.len(), 2, "Expected 2 methods");
+            
+            // Check both methods have 2 parameters each
+            for method in methods {
+                assert_eq!(method.1.len(), 2, "Expected method to have 2 parameters");
+            }
+        },
+        _ => panic!("Expected interface, got {:?}", result_obj),
+    }
 } 

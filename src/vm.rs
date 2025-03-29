@@ -525,6 +525,125 @@ impl VM {
                     let builtin = self.builtins[builtin_idx].clone();
                     self.push(builtin)?;
                 },
+                Opcode::DefineInterface => {
+                    let num_methods = self.read_u16(self.current_frame()?.ip)? as usize;
+                    self.current_frame_mut()?.ip += 2; // Skip operand bytes
+                    
+                    // Get the interface name from the stack
+                    let interface_name = self.pop()?;
+                    let name = match &*interface_name {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Interface name must be a string, got {}", interface_name))),
+                    };
+                    
+                    // Create an empty interface object
+                    let interface_obj = Rc::new(Object::Interface {
+                        name,
+                        methods: Vec::with_capacity(num_methods),
+                    });
+                    
+                    // Push the interface object back onto the stack
+                    self.push(interface_obj)?;
+                },
+                
+                Opcode::DefineMethod => {
+                    // Add debug print for the stack
+                    println!("DEBUG VM: Stack before DefineMethod:");
+                    for i in (0..self.sp).rev() {
+                        println!("  {} ({}): {:?}", self.sp - i - 1, i, self.stack[i]);
+                    }
+                    
+                    // Reverse order of popping operations to match compiler output
+                    
+                    // Get return type from the stack
+                    let return_type = self.pop()?;
+                    println!("DEBUG VM: Popped return type: {:?}", return_type);
+                    
+                    // Extract return type (if any)
+                    let return_type_str = match &*return_type {
+                        Object::String(s) => Some(s.clone()),
+                        Object::Null => None,
+                        _ => return Err(Error::vm(format!("Return type must be a string or null, got {}", return_type))),
+                    };
+                    
+                    // Get the parameters from the stack
+                    // We need to know the parameter count before we can start popping parameters
+                    
+                    // Method parameters are loaded onto the stack in this order by the compiler:
+                    // [interface, method_name, param_count, param1_name, param1_type, ..., return_type]
+                    
+                    // Let's pop all the way to the parameter count first
+                    let params_on_stack = (self.sp - 3) / 2; // Calculate how many params are on stack
+                    println!("DEBUG VM: Estimated parameters on stack: {}", params_on_stack);
+                    
+                    // Initialize parameters vec
+                    let mut parameters = Vec::new();
+                    
+                    // Get each parameter (name and type)
+                    for _ in 0..params_on_stack {
+                        // Get parameter type and name from the stack
+                        let param_type = self.pop()?;
+                        let param_name = self.pop()?;
+                        
+                        // Get the parameter name and type as strings
+                        let name = match &*param_name {
+                            Object::String(s) => s.clone(),
+                            _ => return Err(Error::vm(format!("Parameter name must be a string, got {}", param_name))),
+                        };
+                        
+                        let typ = match &*param_type {
+                            Object::String(s) => s.clone(),
+                            _ => return Err(Error::vm(format!("Parameter type must be a string, got {}", param_type))),
+                        };
+                        
+                        // Add parameter to the list (at beginning since we're popping in reverse)
+                        parameters.insert(0, (name, typ));
+                    }
+                    
+                    // Get the parameter count as verification
+                    let param_count_obj = self.pop()?;
+                    println!("DEBUG VM: Popped param count: {:?}", param_count_obj);
+                    
+                    let expected_param_count = match &*param_count_obj {
+                        Object::Integer(n) => *n as usize,
+                        _ => return Err(Error::vm(format!("Parameter count must be an integer, got {}", param_count_obj))),
+                    };
+                    
+                    // Verify param count matches what we found
+                    if parameters.len() != expected_param_count {
+                        return Err(Error::vm(format!("Parameter count mismatch: expected {}, got {}", expected_param_count, parameters.len())));
+                    }
+                    
+                    // Get method name from the stack
+                    let method_name_obj = self.pop()?;
+                    println!("DEBUG VM: Popped method name: {:?}", method_name_obj);
+                    
+                    let method_name = match &*method_name_obj {
+                        Object::String(s) => s.clone(),
+                        _ => return Err(Error::vm(format!("Method name must be a string, got {}", method_name_obj))),
+                    };
+                    
+                    // Get the interface object from the stack
+                    let interface_obj = self.pop()?;
+                    
+                    // Add the method to the interface definition
+                    match &*interface_obj {
+                        Object::Interface { name: interface_name, methods } => {
+                            // We need to create a new interface object with the updated methods
+                            let mut new_methods = methods.clone();
+                            new_methods.push((method_name, parameters, return_type_str));
+                            
+                            let updated_interface = Rc::new(Object::Interface {
+                                name: interface_name.clone(),
+                                methods: new_methods,
+                            });
+                            
+                            // Push the updated interface back onto the stack
+                            self.push(updated_interface)?;
+                        },
+                        _ => return Err(Error::vm(format!("Cannot define method on non-interface object: {}", interface_obj))),
+                    }
+                },
                 _ => {
                     return Err(Error::vm(format!("Opcode not implemented: {:?}", opcode)));
                 }
@@ -789,6 +908,8 @@ impl VM {
             35 => Ok(Opcode::Dup),
             36 => Ok(Opcode::DefineType),
             37 => Ok(Opcode::DefineField),
+            38 => Ok(Opcode::DefineInterface),
+            39 => Ok(Opcode::DefineMethod),
             _ => Err(Error::vm(format!("Unknown opcode: {}", op_byte))),
         }
     }
@@ -1256,6 +1377,7 @@ pub fn builtin_type(args: Vec<Object>) -> Result<Object, Error> {
         Object::Builtin { .. } => "builtin",
         Object::Struct { .. } => "struct",
         Object::Instance { .. } => "instance",
+        Object::Interface { .. } => "interface",
         Object::Error { .. } => "error",
         Object::Null => "null",
     };
@@ -1959,6 +2081,166 @@ mod tests {
                 assert_eq!(fields[1].1, "normie");
             },
             _ => panic!("Expected struct, got {:?}", result),
+        }
+    }
+    
+    #[test]
+    fn test_interface_declarations() {
+        // Test creating an interface with methods
+        let mut constants = Vec::new();
+        let mut instructions = Vec::new();
+        
+        // Add interface name as constant[0]
+        constants.push(Rc::new(Object::String("Greeter".to_string())));
+        
+        // Add method name "greet" as constant[1]
+        constants.push(Rc::new(Object::String("greet".to_string())));
+        
+        // Add parameter count (1) as constant[2]
+        constants.push(Rc::new(Object::Integer(1)));
+        
+        // Add parameter name "name" as constant[3]
+        constants.push(Rc::new(Object::String("name".to_string())));
+        
+        // Add parameter type "tea" as constant[4]
+        constants.push(Rc::new(Object::String("tea".to_string())));
+        
+        // Add return type "tea" as constant[5]
+        constants.push(Rc::new(Object::String("tea".to_string())));
+        
+        // Add method name "farewell" as constant[6]
+        constants.push(Rc::new(Object::String("farewell".to_string())));
+        
+        // Add parameter count (1) as constant[7]
+        constants.push(Rc::new(Object::Integer(1)));
+        
+        // Add parameter name "name" as constant[8]
+        constants.push(Rc::new(Object::String("name".to_string())));
+        
+        // Add parameter type "tea" as constant[9]
+        constants.push(Rc::new(Object::String("tea".to_string())));
+        
+        // Add return type null as constant[10]
+        constants.push(Rc::new(Object::Null));
+        
+        // Push interface name onto stack
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(0);
+        
+        // Define interface with 2 methods
+        instructions.push(Opcode::DefineInterface as u8);
+        instructions.push(0);
+        instructions.push(2);
+        
+        // Define greet method
+        // The stack must have: (from top to bottom)
+        // - Return type
+        // - Param type
+        // - Param name
+        // - Param count
+        // - Method name
+        // - Interface object
+        
+        // Push method name "greet"
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(1);
+        
+        // Push param count
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(2);
+        
+        // Push param name
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(3);
+        
+        // Push param type
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(4);
+        
+        // Push return type
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(5);
+        
+        instructions.push(Opcode::DefineMethod as u8);
+        
+        // Define farewell method
+        // Push method name "farewell"
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(6);
+        
+        // Push param count
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(7);
+        
+        // Push param name
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(8);
+        
+        // Push param type
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(9);
+        
+        // Push return type (null)
+        instructions.push(Opcode::Constant as u8);
+        instructions.push(0);
+        instructions.push(10);
+        
+        instructions.push(Opcode::DefineMethod as u8);
+        
+        // Create a new VM and set up the bytecode
+        let mut vm = VM::new();
+        
+        // Create a bytecode object with our constants and instructions
+        let bytecode = Bytecode {
+            constants: constants.iter().map(|rc| (**rc).clone()).collect(),
+            instructions: instructions,
+        };
+        
+        // Set up the VM with our bytecode
+        vm.with_bytecode_and_state(bytecode, Vec::new());
+        
+        // Add debug prints
+        println!("Running test_interface_declarations with {} constants and {} instructions",
+                 vm.constants.len(), vm.frames[0].instructions.len());
+        
+        // Run the VM
+        let result = vm.run();
+        assert!(result.is_ok(), "VM execution failed: {:?}", result.err());
+        
+        // Check the result is an interface
+        let interface = result.unwrap();
+        println!("Result: {:?}", interface);
+        
+        match &*interface {
+            Object::Interface { name, methods } => {
+                assert_eq!(name, "Greeter", "Interface name should be 'Greeter'");
+                assert_eq!(methods.len(), 2, "Interface should have 2 methods");
+                
+                // Check greet method
+                assert_eq!(methods[0].0, "greet", "First method should be 'greet'");
+                assert_eq!(methods[0].1.len(), 1, "greet should have 1 parameter");
+                assert_eq!(methods[0].1[0].0, "name", "Parameter name should be 'name'");
+                assert_eq!(methods[0].1[0].1, "tea", "Parameter type should be 'tea'");
+                assert_eq!(methods[0].2.as_ref().unwrap(), "tea", "Return type should be 'tea'");
+                
+                // Check farewell method
+                assert_eq!(methods[1].0, "farewell", "Second method should be 'farewell'");
+                assert_eq!(methods[1].1.len(), 1, "farewell should have 1 parameter");
+                assert_eq!(methods[1].1[0].0, "name", "Parameter name should be 'name'");
+                assert_eq!(methods[1].1[0].1, "tea", "Parameter type should be 'tea'");
+                assert!(methods[1].2.is_none(), "farewell should have no return type");
+            },
+            _ => panic!("Expected interface, got: {:?}", interface),
         }
     }
 } 
