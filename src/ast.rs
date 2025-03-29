@@ -993,6 +993,31 @@ impl Expression for FunctionLiteral {
     }
 }
 
+/// FactsStatement represents a constant declaration
+pub struct FactsStatement {
+    pub token: String, // Token::Facts
+    pub name: Identifier,
+    pub value: Box<dyn Expression>,
+}
+
+impl Node for FactsStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{} {} = {};", self.token_literal(), self.name.string(), self.value.string())
+    }
+}
+
+impl Statement for FactsStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
