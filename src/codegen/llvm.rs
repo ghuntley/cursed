@@ -1121,32 +1121,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 ).unwrap()
             };
             
-            // Load the keys array
-            let keys_array = self.builder.build_load(
-                keys_array_type,
+            // Load the keys array pointer
+            let keys_array_ptr = self.builder.build_load(
+                keys_array_type.ptr_type(inkwell::AddressSpace::default()),
                 keys_array_ptr,
                 "keys_array"
-            ).unwrap();
-
-            // We need the array as a pointer
-            let keys_array_ptr = match keys_array {
-                BasicValueEnum::ArrayValue(arr) => {
-                    // Get a pointer to the array
-                    unsafe {
-                        self.builder.build_gep(
-                            keys_array_type,
-                            keys_array_ptr,
-                            &[
-                                self.context.i32_type().const_int(0, false),
-                                self.context.i32_type().const_int(0, false)
-                            ],
-                            "keys_array_ptr_elem"
-                        ).unwrap()
-                    }
-                },
-                BasicValueEnum::PointerValue(ptr) => ptr,
-                _ => return Err("Expected array or pointer type for keys array".to_string())
-            };
+            ).unwrap().into_pointer_value();
             
             // 2. Get values array from hash table (field 1)
             let values_array_ptr = unsafe {
@@ -1158,32 +1138,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 ).unwrap()
             };
             
-            // Load the values array
-            let values_array = self.builder.build_load(
-                values_array_type,
+            // Load the values array pointer
+            let values_array_ptr = self.builder.build_load(
+                values_array_type.ptr_type(inkwell::AddressSpace::default()),
                 values_array_ptr,
                 "values_array"
-            ).unwrap();
-
-            // We need the array as a pointer
-            let values_array_ptr = match values_array {
-                BasicValueEnum::ArrayValue(arr) => {
-                    // Get a pointer to the array
-                    unsafe {
-                        self.builder.build_gep(
-                            values_array_type,
-                            values_array_ptr,
-                            &[
-                                self.context.i32_type().const_int(0, false),
-                                self.context.i32_type().const_int(0, false)
-                            ],
-                            "values_array_ptr_elem"
-                        ).unwrap()
-                    }
-                },
-                BasicValueEnum::PointerValue(ptr) => ptr,
-                _ => return Err("Expected array or pointer type for values array".to_string())
-            };
+            ).unwrap().into_pointer_value();
             
             // 3. Get count from hash table (field 2)
             let count_ptr = unsafe {
@@ -1243,13 +1203,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.builder.position_at_end(compare_block);
             
             // Get the current key from the keys array
-            let key_indices = [
-                self.context.i32_type().const_int(0, false),
-                current_counter.into_int_value()
-            ];
+            let key_indices = [current_counter.into_int_value()];
             let current_key_ptr = unsafe {
-                self.builder.build_gep(
-                    keys_array_type.get_element_type(),
+                self.builder.build_in_bounds_gep(
+                    key_type,
                     keys_array_ptr,
                     &key_indices,
                     "current_key_ptr"
@@ -1258,7 +1215,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Load the current key
             let current_key = self.builder.build_load(
-                self.context.i8_type().ptr_type(inkwell::AddressSpace::default()),
+                key_type,
                 current_key_ptr,
                 "current_key"
             ).unwrap();
@@ -1316,13 +1273,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.builder.position_at_end(found_block);
             
             // Get the corresponding value from the values array
-            let value_indices = [
-                self.context.i32_type().const_int(0, false),
-                current_counter.into_int_value()
-            ];
+            let value_indices = [current_counter.into_int_value()];
             let value_ptr = unsafe {
-                self.builder.build_gep(
-                    values_array_type.get_element_type(),
+                self.builder.build_in_bounds_gep(
+                    value_type,
                     values_array_ptr,
                     &value_indices,
                     "value_ptr"
@@ -1331,7 +1285,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Load the value
             let found_value = self.builder.build_load(
-                self.context.i64_type(),
+                value_type,
                 value_ptr,
                 "found_value"
             ).unwrap();

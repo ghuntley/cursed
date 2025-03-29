@@ -40,10 +40,10 @@ The CURSED language implementation is progressing. Core components like the Lexe
 ## LLVM IR Generation Status
 
 *   **Literals:** ✅ Integer, Boolean, Float, String, Array, Hash. ❌ Null, Function (can be defined but not used as values).
-*   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >), Prefix (!, -). ❌ Logical (&&, ||), Assignment.
+*   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >), Prefix (!, -), Logical (&&, ||). ❌ Assignment.
 *   **String Operations:** ✅ String concatenation with '+', String comparison with '==' and '!='.
 *   **Statements:** ✅ Let variables, Expression statements, Return statements, If statements, While loops. ❌ For loops, Function declarations.
-*   **Expressions:** ✅ Identifiers, Infix expressions, Prefix expressions, Function calls, Array literals, Index expressions (for arrays). 🟡 Hash indexing (implementation started). ❌ Property access.
+*   **Expressions:** ✅ Identifiers, Infix expressions, Prefix expressions, Function calls, Array literals, Index expressions (for arrays), Hash indexing. ❌ Property access.
 *   **Control Flow:** ✅ If statements (with else), While loops. ❌ For loops, Switch/Match.
 *   **Functions:** ✅ Function calls. 🟡 Function literals (can be defined, but tests use alternative approach to avoid LLVM module cloning issues).
 
@@ -62,9 +62,8 @@ The CURSED language implementation is progressing. Core components like the Lexe
     *   Parsing struct instantiation expressions (`be_like MyStruct with { field: value }`).
 *   **Testing:** Expanding test coverage, especially for Compiler, VM runtime behavior, GC, and Standard Library.
 *   **LLVM IR Generation:** 
-    *   Improving hash indexing support.
     *   Adding support for for loops and other control flow structures.
-    *   Handling logical operators and assignment expressions.
+    *   Handling assignment expressions.
     *   Implementing proper function declarations and callable function literals.
     *   Adding support for struct/type declarations and instantiations.
 
