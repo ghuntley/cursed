@@ -10,7 +10,7 @@ use inkwell::{IntPredicate, FloatPredicate};
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral, WhileStatement};
+                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral};
 use crate::lexer::Token;
 // use crate::object::Object;
 
@@ -243,6 +243,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Return a pointer to the string data
             Ok(string_value.as_pointer_value().into())
+        } else if let Some(array_lit) = expression.as_any().downcast_ref::<ArrayLiteral>() {
+            self.compile_array_literal(array_lit)
         } else if let Some(ident) = expression.as_any().downcast_ref::<Identifier>() {
             let var_name = &ident.value;
             match self.variables.get(var_name) {
@@ -804,6 +806,60 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
     }
 
+    /// Compile an array literal into LLVM IR
+    fn compile_array_literal(&self, array_lit: &ArrayLiteral) -> Result<BasicValueEnum<'ctx>, String> {
+        // Get the number of elements in the array
+        let element_count = array_lit.elements.len();
+        
+        // For now, we'll assume all elements are the same type (starting with i64)
+        // In a more complete implementation, we would need to handle mixed types
+        let element_type = self.context.i64_type();
+        
+        // Create an array type with the given element count
+        let array_type = element_type.array_type(element_count as u32);
+        
+        // Allocate space for the array on the stack
+        let array_alloca = self.builder.build_alloca(array_type, "array").unwrap();
+        
+        // Compile each element and store it in the array
+        for (i, element) in array_lit.elements.iter().enumerate() {
+            // Compile the element expression
+            let element_value = self.compile_expression(&**element)?;
+            
+            // Create a GEP instruction to get a pointer to the array element
+            let indices = [
+                self.context.i32_type().const_int(0, false),
+                self.context.i32_type().const_int(i as u64, false)
+            ];
+            let element_ptr = unsafe {
+                self.builder.build_gep(array_type, array_alloca, &indices, &format!("array_element_{}", i)).unwrap()
+            };
+            
+            // Cast the element value to the expected type if needed
+            let element_store_value = match element_value {
+                BasicValueEnum::IntValue(int_val) => {
+                    if int_val.get_type() != element_type {
+                        BasicValueEnum::IntValue(self.builder.build_int_cast(int_val, element_type, "cast_to_i64").unwrap())
+                    } else {
+                        BasicValueEnum::IntValue(int_val)
+                    }
+                },
+                BasicValueEnum::FloatValue(float_val) => {
+                    // Convert float to int if the array type is integer
+                    BasicValueEnum::IntValue(self.builder.build_float_to_signed_int(float_val, element_type, "float_to_i64").unwrap())
+                },
+                // Handle other value types as needed
+                _ => return Err(format!("Unsupported array element type at index {}", i)),
+            };
+            
+            // Store the element in the array
+            self.builder.build_store(element_ptr, element_store_value).unwrap();
+        }
+        
+        // Return the array pointer
+        Ok(array_alloca.into())
+    }
+
     /// Returns the generated LLVM module.
     pub fn module(&self) -> &Module<'ctx> {
         &self.module
@@ -1153,6 +1209,46 @@ mod tests {
         assert!(module_str.contains("br label"), "Missing unconditional branch");
         
         // Verify LLVM module is valid
+        assert!(codegen.module.verify().is_ok());
+    }
+
+    #[test]
+    fn test_compile_array_literal() {
+        let context = Context::create();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_array");
+        
+        // Create a function context for test allocations
+        let fn_type = context.i64_type().fn_type(&[], false);
+        let function = codegen.module.add_function("test_func", fn_type, None);
+        let basic_block = context.append_basic_block(function, "entry");
+        codegen.builder.position_at_end(basic_block);
+        codegen.current_function = Some(function);
+        
+        // Create an array literal with integer elements
+        let token = Token::Crew;
+        let elements = vec![
+            Box::new(IntegerLiteral { token: "1".into(), value: 1 }) as Box<dyn Expression>,
+            Box::new(IntegerLiteral { token: "2".into(), value: 2 }) as Box<dyn Expression>,
+            Box::new(IntegerLiteral { token: "3".into(), value: 3 }) as Box<dyn Expression>,
+        ];
+        
+        let array_lit = ArrayLiteral { token, elements };
+        let result = codegen.compile_expression(&array_lit).unwrap();
+        
+        // Check that the result is a pointer value
+        assert!(result.is_pointer_value());
+        
+        // Get IR string representation for debugging/verification
+        let ir_string = codegen.module.print_to_string().to_string();
+        assert!(ir_string.contains("array"), "IR should contain array allocation");
+        
+        // Verify the number of elements in the array through the IR
+        assert!(ir_string.contains("[3 x i64]"), "IR should contain array type with 3 elements");
+        
+        // Add a return to make the function valid
+        codegen.builder.build_return(Some(&context.i64_type().const_int(0, false))).unwrap();
+        
+        // Verify the module is well-formed
         assert!(codegen.module.verify().is_ok());
     }
 
