@@ -39,10 +39,11 @@ The CURSED language implementation is progressing. Core components like the Lexe
 
 ## LLVM IR Generation Status
 
-*   **Literals:** ✅ Integer, Boolean, Float. ❌ String, Null, Array, Hash, Function (can be defined but not used as values).
-*   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >). ❌ Logical (&&, ||, !), Assignment.
+*   **Literals:** ✅ Integer, Boolean, Float, String. ❌ Null, Array, Hash, Function (can be defined but not used as values).
+*   **Operators:** ✅ Arithmetic (+, -, *, /), Comparison (==, !=, <, >), Prefix (!, -). ❌ Logical (&&, ||), Assignment.
+*   **String Operations:** ✅ String concatenation with '+', String comparison with '==' and '!='.
 *   **Statements:** ✅ Let variables, Expression statements, Return statements, If statements. ❌ While/For loops, Function declarations.
-*   **Expressions:** ✅ Identifiers, Infix expressions, Function calls. ❌ Prefix expressions, Index expressions, Property access.
+*   **Expressions:** ✅ Identifiers, Infix expressions, Prefix expressions, Function calls. ❌ Index expressions, Property access.
 *   **Control Flow:** ✅ If statements (with else). ❌ Loops, Switch/Match.
 *   **Functions:** ✅ Function calls. 🟡 Function literals (can be defined, but tests use alternative approach to avoid LLVM module cloning issues).
 
@@ -61,9 +62,9 @@ The CURSED language implementation is progressing. Core components like the Lexe
     *   Parsing struct instantiation expressions (`be_like MyStruct with { field: value }`).
 *   **Testing:** Expanding test coverage, especially for Compiler, VM runtime behavior, GC, and Standard Library.
 *   **LLVM IR Generation:** 
-    *   Implementing support for string literals, arrays, and hashes.
+    *   Implementing support for arrays and hashes.
     *   Adding support for loops and other control flow structures.
-    *   Handling prefix expressions, logical operators, and assignment expressions.
+    *   Handling logical operators and assignment expressions.
     *   Implementing proper function declarations and callable function literals.
     *   Adding support for struct/type declarations and instantiations.
 
