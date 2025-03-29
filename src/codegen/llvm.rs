@@ -759,7 +759,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         if result.left().is_some() {
             Ok(result.left().unwrap())
         } else {
-            Err("Function call produced void value but a value was expected".to_string())
+            // The function is a void function and doesn't return a value
+            // For expressions, we need to return something, so return a dummy value
+            // This allows void functions to be used in expression statements
+            Ok(self.context.i64_type().const_int(0, false).into())
         }
     }
 
@@ -1399,6 +1402,72 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         for stmt in &block.statements {
             self.compile_statement(stmt.as_ref())?;
         }
+        Ok(())
+    }
+
+    pub fn compile_program(&mut self, program: &Program) -> Result<(), String> {
+        // Create the LLVM main function
+        let main_fn_type = self.context.void_type().fn_type(&[], false);
+        let main_fn = self.module.add_function("main", main_fn_type, None);
+        let entry_block = self.context.append_basic_block(main_fn, "entry");
+        self.builder.position_at_end(entry_block);
+
+        // Store the current function
+        self.current_function = Some(main_fn);
+
+        // Create built-in functions
+        self.create_builtin_functions()?;
+
+        // Compile statements
+        for statement in &program.statements {
+            self.compile_statement(statement.as_ref())?;
+        }
+
+        // Return from main
+        self.builder.build_return(None).unwrap();
+
+        // Verify the module
+        if let Err(err) = self.module.verify() {
+            return Err(format!("Module verification failed: {}", err));
+        }
+
+        Ok(())
+    }
+
+    pub fn create_builtin_functions(&mut self) -> Result<(), String> {
+        // Create puts function (takes an i64 and prints it)
+        let i64_type = self.context.i64_type();
+        let puts_fn_type = self.context.void_type().fn_type(&[i64_type.into()], false);
+        let puts_fn = self.module.add_function("puts", puts_fn_type, None);
+        
+        // Add to function map
+        self.functions.insert("puts".to_string(), puts_fn);
+        
+        // Create the body of puts
+        let entry = self.context.append_basic_block(puts_fn, "entry");
+        let old_position = self.builder.get_insert_block();
+        self.builder.position_at_end(entry);
+        
+        // Get printf from libc
+        let printf_fn_type = self.context.i32_type().fn_type(&[self.context.i8_type().ptr_type(inkwell::AddressSpace::default()).into()], true);
+        let printf_fn = self.module.add_function("printf", printf_fn_type, None);
+        
+        // Create the format string for printing an integer
+        let format_str = self.builder.build_global_string_ptr("%lld\n", "int_format").unwrap();
+        
+        // Get the parameter and call printf
+        let param = puts_fn.get_nth_param(0).unwrap();
+        let args = &[format_str.as_pointer_value().into(), param.into()];
+        self.builder.build_call(printf_fn, args, "printf_call").unwrap();
+        
+        // Return from puts
+        self.builder.build_return(None).unwrap();
+        
+        // Restore the original position
+        if let Some(block) = old_position {
+            self.builder.position_at_end(block);
+        }
+        
         Ok(())
     }
 }

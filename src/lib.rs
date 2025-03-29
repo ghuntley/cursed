@@ -97,8 +97,8 @@ pub fn run_program(code: &str) -> Result<(), Error> {
     let context = inkwell::context::Context::create();
     let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, "main");
     
-    // Generate LLVM IR
-    match code_gen.compile(&program) {
+    // Generate LLVM IR using compile_program instead of compile
+    match code_gen.compile_program(&program) {
         Ok(()) => {
             println!("Generated LLVM IR:");
             println!("{}", code_gen.module().print_to_string().to_string());
