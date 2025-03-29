@@ -334,4 +334,86 @@ fn test_parse_for_statements() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+#[test]
+fn test_parse_switch_statements() -> Result<(), Error> {
+    // Test case 1: Basic switch with mood and basic
+    let input1 = r#"
+        vibe_check day {
+            mood "Monday", "Tuesday":
+                yolo 1;
+            mood "Friday":
+                yolo 2;
+            basic:
+                yolo 0;
+        }
+    "#;
+    let program1 = test_parser_with_input(input1)?;
+    assert_eq!(program1.statements.len(), 1, "Program 1 failed: incorrect statement count");
+    if let Some(switch_stmt) = program1.statements[0].as_any().downcast_ref::<ast::SwitchStatement>() {
+        assert_eq!(switch_stmt.token_literal(), "vibe_check");
+        // Check value (should be identifier 'day')
+        assert!(switch_stmt.value.as_any().is::<ast::Identifier>(), "Switch value is not Identifier");
+        assert_eq!(switch_stmt.value.string(), "day");
+        // Check cases
+        assert_eq!(switch_stmt.cases.len(), 2, "Program 1 should have 2 mood cases");
+        // Case 1: mood "Monday", "Tuesday"
+        assert_eq!(switch_stmt.cases[0].expressions.len(), 2, "Case 1 should have 2 expressions");
+        assert_eq!(switch_stmt.cases[0].expressions[0].string(), "\"Monday\"");
+        assert_eq!(switch_stmt.cases[0].expressions[1].string(), "\"Tuesday\"");
+        assert_eq!(switch_stmt.cases[0].body.statements.len(), 1, "Case 1 body should have 1 statement");
+        // Case 2: mood "Friday"
+        assert_eq!(switch_stmt.cases[1].expressions.len(), 1, "Case 2 should have 1 expression");
+        assert_eq!(switch_stmt.cases[1].expressions[0].string(), "\"Friday\"");
+        assert_eq!(switch_stmt.cases[1].body.statements.len(), 1, "Case 2 body should have 1 statement");
+        // Check default
+        assert!(switch_stmt.default.is_some(), "Program 1 should have a basic case");
+        assert_eq!(switch_stmt.default.as_ref().unwrap().statements.len(), 1, "Basic case should have 1 statement");
+    } else {
+        panic!("Program 1 is not a SwitchStatement");
+    }
+
+    // Test case 2: Switch without basic case
+    let input2 = r#"
+        vibe_check status {
+            mood 1:
+                yolo "ok";
+            mood 2:
+                yolo "error";
+        }
+    "#;
+    let program2 = test_parser_with_input(input2)?;
+    assert_eq!(program2.statements.len(), 1, "Program 2 failed: incorrect statement count");
+    if let Some(switch_stmt) = program2.statements[0].as_any().downcast_ref::<ast::SwitchStatement>() {
+        assert_eq!(switch_stmt.cases.len(), 2, "Program 2 should have 2 mood cases");
+        assert!(switch_stmt.default.is_none(), "Program 2 should not have a basic case");
+    } else {
+        panic!("Program 2 is not a SwitchStatement");
+    }
+
+    // Test case 3: Switch with complex expression
+    let input3 = r#"
+        vibe_check x + 10 {
+            mood 20:
+                y = "twenty";
+            mood 30:
+                y = "thirty";
+            basic:
+                y = "other";
+        }
+    "#;
+    let program3 = test_parser_with_input(input3)?;
+    assert_eq!(program3.statements.len(), 1, "Program 3 failed: incorrect statement count");
+    if let Some(switch_stmt) = program3.statements[0].as_any().downcast_ref::<ast::SwitchStatement>() {
+        // Check value (should be infix expression)
+        assert!(switch_stmt.value.as_any().is::<ast::InfixExpression>(), "Switch value is not InfixExpression");
+        assert_eq!(switch_stmt.value.string(), "x + 10");
+        assert_eq!(switch_stmt.cases.len(), 2, "Program 3 should have 2 mood cases");
+        assert!(switch_stmt.default.is_some(), "Program 3 should have a basic case");
+    } else {
+        panic!("Program 3 is not a SwitchStatement");
+    }
+
+    Ok(())
 } 

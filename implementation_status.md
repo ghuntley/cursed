@@ -45,7 +45,7 @@ The CURSED language implementation is underway. Core components like the lexer, 
     *   `lowkey`/`highkey` (if/else): ✅ (Parser, AST)
     *   `periodt` (while): ✅ (Parser, AST)
     *   `bestie` (for): ❌ (Parser needs implementation)
-    *   `vibe_check`/`mood`/`basic` (switch): ❌ (Parser needs implementation)
+    *   `vibe_check`/`mood`/`basic` (switch): ✅ (Parser, AST)
     *   `be_like ... squad` (struct def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)
     *   `be_like ... collab` (interface def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)
     *   `slay` (method def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)

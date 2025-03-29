@@ -507,8 +507,101 @@ impl<'a> Parser<'a> {
     
     /// Parse a switch statement
     pub fn parse_switch_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        // For now, just return a not implemented error
-        Err(Error::from_str("Switch statement parsing not implemented yet"))
+        let token = self.current_token.token_literal(); // 'vibe_check' token
+
+        // Move past 'vibe_check'
+        self.next_token()?;
+
+        // Parse the value expression being switched on
+        let value = self.parse_expression(Precedence::Lowest)?;
+
+        // Expect opening brace '{'
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(
+                &format!("Expected '{{' after switch value, got {:?}", self.peek_token)
+            ));
+        }
+
+        let mut cases = Vec::new();
+        let mut default: Option<ast::BlockStatement> = None;
+
+        // Move past '{'
+        self.next_token()?;
+
+        // Parse case statements until closing brace '}'
+        while self.current_token != Token::RBrace && self.current_token != Token::Eof {
+            match &self.current_token {
+                Token::Mood => {
+                    cases.push(self.parse_case_statement()?);
+                }
+                Token::Basic => {
+                    if default.is_some() {
+                        return Err(Error::from_str("Only one 'basic' (default) case allowed in vibe_check statement"));
+                    }
+                    self.next_token()?; // Consume 'basic'
+                    if !self.expect_peek(&Token::Colon) {
+                        return Err(Error::from_str(
+                            &format!("Expected ':' after 'basic', got {:?}", self.peek_token)
+                        ));
+                    }
+                    default = Some(self.parse_block_statement()?);
+                }
+                _ => {
+                    return Err(Error::from_str(
+                        &format!("Expected 'mood' or 'basic' inside vibe_check, got {:?}", self.current_token)
+                    ));
+                }
+            }
+        }
+
+        // Ensure we have a closing brace
+        if self.current_token != Token::RBrace {
+            return Err(Error::from_str(
+                "Expected '}' to close vibe_check statement"
+            ));
+        }
+
+        Ok(Box::new(ast::SwitchStatement {
+            token,
+            value,
+            cases,
+            default,
+        }))
+    }
+
+    /// Parse a case statement (mood) within a switch
+    fn parse_case_statement(&mut self) -> Result<ast::CaseStatement, Error> {
+        let token = self.current_token.token_literal(); // 'mood' token
+
+        // Move past 'mood'
+        self.next_token()?;
+
+        let mut expressions = Vec::new();
+
+        // Parse first case expression
+        expressions.push(self.parse_expression(Precedence::Lowest)?);
+
+        // Parse additional comma-separated expressions
+        while self.current_token == Token::Comma {
+            self.next_token()?; // Consume ','
+            expressions.push(self.parse_expression(Precedence::Lowest)?);
+        }
+
+        // Expect colon ':' after expressions
+        if !self.expect_peek(&Token::Colon) {
+            return Err(Error::from_str(
+                &format!("Expected ':' after mood expressions, got {:?}", self.peek_token)
+            ));
+        }
+
+        // Parse the block statement for the case body
+        let body = self.parse_block_statement()?;
+
+        Ok(ast::CaseStatement {
+            token,
+            expressions,
+            body,
+        })
     }
     
     /// Parse a type statement
