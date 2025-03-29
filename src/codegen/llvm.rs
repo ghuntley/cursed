@@ -1073,40 +1073,322 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 
     /// Compile an index expression (array[index]) into LLVM IR
     fn compile_index_expression(&self, index_expr: &IndexExpression) -> Result<BasicValueEnum<'ctx>, String> {
-        // Compile the left expression (should be an array)
-        let array_value = self.compile_expression(&*index_expr.left)?;
-        if !array_value.is_pointer_value() {
+        // Compile the left expression (should be an array or hash)
+        let left_value = self.compile_expression(&*index_expr.left)?;
+        if !left_value.is_pointer_value() {
             return Err("Left side of index expression must be a pointer".to_string());
         }
         
         // Compile the index expression
         let index_value = self.compile_expression(&*index_expr.index)?;
-        if !index_value.is_int_value() {
-            return Err("Index must be an integer".to_string());
+        
+        // Get the left value pointer
+        let left_ptr = left_value.into_pointer_value();
+        
+        // Check if we're indexing into an array or hash based on the index type
+        // If index is a string, assume it's a hash lookup
+        // If index is an integer, assume it's an array lookup
+        
+        if index_value.is_pointer_value() {
+            // Likely a hash table access with string key
+            let key_ptr = index_value.into_pointer_value();
+            
+            // For hash tables, we'll use a simplified approach
+            // We'll create a struct type for the hash table with two fields: keys and values arrays
+            
+            // Create a hash struct type for the GEP operations
+            let key_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
+            let value_type = self.context.i64_type();
+            
+            let keys_array_type = key_type.array_type(10); // Arbitrary size
+            let values_array_type = value_type.array_type(10); // Arbitrary size
+            
+            let hash_struct_type = self.context.struct_type(
+                &[
+                    keys_array_type.into(),           // keys array
+                    values_array_type.into(),         // values array
+                    self.context.i32_type().into(),   // count
+                ], 
+                false
+            );
+            
+            // 1. Get keys array from hash table (field 0)
+            let keys_indices = [
+                self.context.i32_type().const_int(0, false),
+                self.context.i32_type().const_int(0, false)
+            ];
+            let keys_array_ptr = unsafe {
+                self.builder.build_struct_gep(
+                    hash_struct_type,
+                    left_ptr,
+                    0,
+                    "keys_array_ptr"
+                ).unwrap()
+            };
+            
+            // Load the keys array
+            let keys_array = self.builder.build_load(
+                keys_array_type,
+                keys_array_ptr,
+                "keys_array"
+            ).unwrap();
+
+            // We need the array as a pointer
+            let keys_array_ptr = match keys_array {
+                BasicValueEnum::ArrayValue(arr) => {
+                    // Get a pointer to the array
+                    unsafe {
+                        self.builder.build_gep(
+                            keys_array_type,
+                            keys_array_ptr,
+                            &[
+                                self.context.i32_type().const_int(0, false),
+                                self.context.i32_type().const_int(0, false)
+                            ],
+                            "keys_array_ptr_elem"
+                        ).unwrap()
+                    }
+                },
+                BasicValueEnum::PointerValue(ptr) => ptr,
+                _ => return Err("Expected array or pointer type for keys array".to_string())
+            };
+            
+            // 2. Get values array from hash table (field 1)
+            let values_array_ptr = unsafe {
+                self.builder.build_struct_gep(
+                    hash_struct_type,
+                    left_ptr,
+                    1,
+                    "values_array_ptr"
+                ).unwrap()
+            };
+            
+            // Load the values array
+            let values_array = self.builder.build_load(
+                values_array_type,
+                values_array_ptr,
+                "values_array"
+            ).unwrap();
+
+            // We need the array as a pointer
+            let values_array_ptr = match values_array {
+                BasicValueEnum::ArrayValue(arr) => {
+                    // Get a pointer to the array
+                    unsafe {
+                        self.builder.build_gep(
+                            values_array_type,
+                            values_array_ptr,
+                            &[
+                                self.context.i32_type().const_int(0, false),
+                                self.context.i32_type().const_int(0, false)
+                            ],
+                            "values_array_ptr_elem"
+                        ).unwrap()
+                    }
+                },
+                BasicValueEnum::PointerValue(ptr) => ptr,
+                _ => return Err("Expected array or pointer type for values array".to_string())
+            };
+            
+            // 3. Get count from hash table (field 2)
+            let count_ptr = unsafe {
+                self.builder.build_struct_gep(
+                    hash_struct_type,
+                    left_ptr,
+                    2,
+                    "count_ptr"
+                ).unwrap()
+            };
+            
+            // Load the count
+            let count = self.builder.build_load(
+                self.context.i32_type(),
+                count_ptr,
+                "hash_count"
+            ).unwrap().into_int_value();
+            
+            // 4. Linear search through keys to find match (in real implementation, we'd use a hash function)
+            // Create basic blocks for the search loop
+            let func = self.current_function.unwrap();
+            let search_block = self.context.append_basic_block(func, "hash_search");
+            let found_block = self.context.append_basic_block(func, "key_found");
+            let not_found_block = self.context.append_basic_block(func, "key_not_found");
+            let merge_block = self.context.append_basic_block(func, "search_merge");
+            
+            // Declare a phi node value that will be assigned in the merge block
+            let result_alloca = self.builder.build_alloca(self.context.i64_type(), "hash_result").unwrap();
+            
+            // Initialize loop counter
+            let counter_alloca = self.builder.build_alloca(self.context.i32_type(), "search_counter").unwrap();
+            self.builder.build_store(counter_alloca, self.context.i32_type().const_int(0, false)).unwrap();
+            
+            // Jump to the search block
+            self.builder.build_unconditional_branch(search_block).unwrap();
+            self.builder.position_at_end(search_block);
+            
+            // Load the current counter value
+            let current_counter = self.builder.build_load(self.context.i32_type(), counter_alloca, "current_counter").unwrap();
+            
+            // Check if we've reached the end of the keys array
+            let continue_condition = self.builder.build_int_compare(
+                IntPredicate::SLT,
+                current_counter.into_int_value(),
+                count,
+                "counter_lt_count"
+            ).unwrap();
+            
+            // Create blocks for the comparison and the counter increment
+            let compare_block = self.context.append_basic_block(func, "compare_key");
+            let increment_block = self.context.append_basic_block(func, "increment_counter");
+            
+            // Branch based on the condition
+            self.builder.build_conditional_branch(continue_condition, compare_block, not_found_block).unwrap();
+            
+            // Position at the compare block
+            self.builder.position_at_end(compare_block);
+            
+            // Get the current key from the keys array
+            let key_indices = [
+                self.context.i32_type().const_int(0, false),
+                current_counter.into_int_value()
+            ];
+            let current_key_ptr = unsafe {
+                self.builder.build_gep(
+                    keys_array_type.get_element_type(),
+                    keys_array_ptr,
+                    &key_indices,
+                    "current_key_ptr"
+                ).unwrap()
+            };
+            
+            // Load the current key
+            let current_key = self.builder.build_load(
+                self.context.i8_type().ptr_type(inkwell::AddressSpace::default()),
+                current_key_ptr,
+                "current_key"
+            ).unwrap();
+            
+            // Compare with our target key using strcmp
+            // First, make sure strcmp is declared
+            let strcmp_fn = if let Some(f) = self.module.get_function("strcmp") {
+                f
+            } else {
+                let char_ptr_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
+                let strcmp_type = self.context.i32_type().fn_type(&[char_ptr_type.into(), char_ptr_type.into()], false);
+                self.module.add_function("strcmp", strcmp_type, None)
+            };
+            
+            // Call strcmp
+            let strcmp_result = self.builder
+                .build_call(
+                    strcmp_fn,
+                    &[current_key.into(), key_ptr.into()],
+                    "strcmp_result"
+                ).unwrap()
+                .try_as_basic_value()
+                .left()
+                .unwrap()
+                .into_int_value();
+            
+            // Check if strcmp result is 0 (strings are equal)
+            let keys_equal = self.builder.build_int_compare(
+                IntPredicate::EQ,
+                strcmp_result,
+                self.context.i32_type().const_int(0, false),
+                "keys_equal"
+            ).unwrap();
+            
+            // Branch based on the comparison result
+            self.builder.build_conditional_branch(keys_equal, found_block, increment_block).unwrap();
+            
+            // Position at the increment block
+            self.builder.position_at_end(increment_block);
+            
+            // Increment the counter
+            let incremented_counter = self.builder.build_int_add(
+                current_counter.into_int_value(),
+                self.context.i32_type().const_int(1, false),
+                "incremented_counter"
+            ).unwrap();
+            
+            // Store the incremented counter
+            self.builder.build_store(counter_alloca, incremented_counter).unwrap();
+            
+            // Jump back to the search block
+            self.builder.build_unconditional_branch(search_block).unwrap();
+            
+            // Position at the found block
+            self.builder.position_at_end(found_block);
+            
+            // Get the corresponding value from the values array
+            let value_indices = [
+                self.context.i32_type().const_int(0, false),
+                current_counter.into_int_value()
+            ];
+            let value_ptr = unsafe {
+                self.builder.build_gep(
+                    values_array_type.get_element_type(),
+                    values_array_ptr,
+                    &value_indices,
+                    "value_ptr"
+                ).unwrap()
+            };
+            
+            // Load the value
+            let found_value = self.builder.build_load(
+                self.context.i64_type(),
+                value_ptr,
+                "found_value"
+            ).unwrap();
+            
+            // Store the found value in the result
+            self.builder.build_store(result_alloca, found_value).unwrap();
+            
+            // Jump to the merge block
+            self.builder.build_unconditional_branch(merge_block).unwrap();
+            
+            // Position at the not found block
+            self.builder.position_at_end(not_found_block);
+            
+            // If key not found, return 0 (null value)
+            self.builder.build_store(result_alloca, self.context.i64_type().const_int(0, false)).unwrap();
+            
+            // Jump to the merge block
+            self.builder.build_unconditional_branch(merge_block).unwrap();
+            
+            // Position at the merge block
+            self.builder.position_at_end(merge_block);
+            
+            // Load the final result
+            let result = self.builder.build_load(self.context.i64_type(), result_alloca, "hash_result").unwrap();
+            
+            Ok(result)
+        } else {
+            // Handle array indexing
+            if !index_value.is_int_value() {
+                return Err("Array index must be an integer".to_string());
+            }
+            
+            // For simplicity, we'll assume the array contains i64 values
+            let element_type = self.context.i64_type();
+            let array_type = element_type.array_type(10); // We don't know actual size, but it's not needed for GEP
+            
+            // Create indices for GEP: first index is 0 for the array, second is the actual index
+            let indices = [
+                self.context.i32_type().const_int(0, false),
+                index_value.into_int_value()
+            ];
+            
+            // Create GEP instruction to get element pointer
+            let element_ptr = unsafe {
+                self.builder.build_gep(array_type, left_ptr, &indices, "array_element").unwrap()
+            };
+            
+            // Load the element from the array
+            let loaded_value = self.builder.build_load(element_type, element_ptr, "indexed_value").unwrap();
+            
+            Ok(loaded_value)
         }
-        
-        // Get the array pointer
-        let array_ptr = array_value.into_pointer_value();
-        
-        // For simplicity, we'll assume the array contains i64 values
-        let element_type = self.context.i64_type();
-        let array_type = element_type.array_type(10); // We don't know actual size, but it's not needed for GEP
-        
-        // Create indices for GEP: first index is 0 for the array, second is the actual index
-        let indices = [
-            self.context.i32_type().const_int(0, false),
-            index_value.into_int_value()
-        ];
-        
-        // Create GEP instruction to get element pointer
-        let element_ptr = unsafe {
-            self.builder.build_gep(array_type, array_ptr, &indices, "array_element").unwrap()
-        };
-        
-        // Load the element from the array
-        let loaded_value = self.builder.build_load(element_type, element_ptr, "indexed_value").unwrap();
-        
-        Ok(loaded_value)
     }
 
     /// Compile an array literal into LLVM IR
@@ -1640,6 +1922,88 @@ mod tests {
         // Print the generated IR for inspection
         let ir = generator.module.print_to_string().to_string();
         assert!(ir.contains("array_element"), "IR should contain array indexing code");
+    }
+
+    #[test]
+    fn test_compile_hash_indexing() {
+        use inkwell::context::Context;
+        use crate::ast::{HashLiteral, Expression, IndexExpression, StringLiteral, IntegerLiteral};
+        use crate::lexer::Token;
+        
+        let context = Context::create();
+        let mut generator = super::LlvmCodeGenerator::new(&context, "test_hash_indexing");
+        
+        // Create a main function to execute in
+        let i32_type = context.i32_type();
+        let main_fn_type = i32_type.fn_type(&[], false);
+        let main_function = generator.module.add_function("main", main_fn_type, None);
+        let entry_block = context.append_basic_block(main_function, "entry");
+        
+        // Set current function context and position builder
+        generator.current_function = Some(main_function);
+        generator.builder.position_at_end(entry_block);
+        
+        // Create a hash literal with {"key1": 10, "key2": 20}
+        let mut pairs = Vec::new();
+        
+        // Key 1: "key1" -> 10
+        let key1 = Box::new(StringLiteral {
+            token: "key1".to_string(),
+            value: "key1".to_string(),
+        }) as Box<dyn Expression>;
+        
+        let value1 = Box::new(IntegerLiteral {
+            token: "10".to_string(),
+            value: 10,
+        }) as Box<dyn Expression>;
+        
+        // Key 2: "key2" -> 20
+        let key2 = Box::new(StringLiteral {
+            token: "key2".to_string(),
+            value: "key2".to_string(),
+        }) as Box<dyn Expression>;
+        
+        let value2 = Box::new(IntegerLiteral {
+            token: "20".to_string(),
+            value: 20,
+        }) as Box<dyn Expression>;
+        
+        pairs.push((key1, value1));
+        pairs.push((key2, value2));
+        
+        let hash_literal = HashLiteral {
+            token: Token::Tea,
+            pairs,
+        };
+        
+        // Create an index expression to access value with key "key2" (which should be 20)
+        let index_key = Box::new(StringLiteral {
+            token: "key2".to_string(),
+            value: "key2".to_string(),
+        }) as Box<dyn Expression>;
+        
+        let index_expr = IndexExpression {
+            token: Token::LBracket,
+            left: Box::new(hash_literal) as Box<dyn Expression>,
+            index: index_key,
+        };
+        
+        // Compile and test the index expression
+        let result = generator.compile_expression(&index_expr).unwrap();
+        
+        // Verify the result is an integer value
+        assert!(result.is_int_value(), "Result should be an integer");
+        
+        // Add a return to make the module valid
+        generator.builder.build_return(Some(&i32_type.const_int(0, false))).unwrap();
+        
+        // Verify the module
+        generator.module.verify().unwrap();
+        
+        // Print the generated IR for inspection
+        let ir = generator.module.print_to_string().to_string();
+        assert!(ir.contains("hash_search"), "IR should contain hash search code");
+        assert!(ir.contains("strcmp_result"), "IR should contain string comparison code");
     }
 
     // ... existing tests ...
