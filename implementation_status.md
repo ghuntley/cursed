@@ -13,7 +13,7 @@ The CURSED language implementation is underway. Core components like the lexer, 
 | **Project Setup** | ✅ Completed   | Basic structure, modules.                                                                            | N/A             |
 | **Lexer**         | ✅ Completed   | Handles keywords, identifiers, literals (int, float, string, char), operators, punctuation, comments. | Property, Unit  |
 | **AST**           | ✅ Completed   | Defines nodes for parsed language constructs (expressions, statements, types, etc.).                   | Unit            |
-| **Parser**        | 🟡 In Progress | Parses: package, import, type (squad), interface (collab), method (`slay`), while (`periodt`), const (`facts`), expressions. Needs: let (`sus`), return (`yolo`), if (`lowkey`), for (`bestie`), switch (`vibe_check`), some expression types (prefix, infix, call, index). | Unit (Basic)    |
+| **Parser**        | 🟡 In Progress | Parses: package, import, type (squad), interface (collab), method (`slay`), while (`periodt`), const (`facts`), return (`yolo`), if (`lowkey`/`highkey`), expressions. Needs: let (`sus`), for (`bestie`), switch (`vibe_check`), some expression types (struct instantiation, method calls). | Unit (Basic)    |
 | **Symbol Table**  | ✅ Completed   | Handles symbol definition and resolution, including basic nested scopes.                               | Property, Unit  |
 | **Compiler**      | 🔴 Stubbed     | `src/lib.rs` uses a stub compiler. `compiler_implementation.rs` exists but is not integrated. Needs full implementation according to specs. | Stub Tests Only |
 | **Bytecode**      | 🔴 Stubbed     | Minimal definition in the stub compiler. Needs full instruction set implementation.                   | Needs Tests     |
@@ -42,8 +42,8 @@ The CURSED language implementation is underway. Core components like the lexer, 
     *   `sus` (let): ❌ (Parser needs implementation)
     *   `facts` (const): ✅ (Parser, AST)
     *   `yolo` (return): ✅ (Parser, AST)
-    *   `lowkey`/`highkey` (if/else): ❌ (Parser needs implementation)
-    *   `periodt` (while): ✅ (Parser, AST, Compiler needs work)
+    *   `lowkey`/`highkey` (if/else): ✅ (Parser, AST)
+    *   `periodt` (while): ✅ (Parser, AST)
     *   `bestie` (for): ❌ (Parser needs implementation)
     *   `vibe_check`/`mood`/`basic` (switch): ❌ (Parser needs implementation)
     *   `be_like ... squad` (struct def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)
