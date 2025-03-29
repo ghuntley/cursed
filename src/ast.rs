@@ -1018,6 +1018,60 @@ impl Statement for FactsStatement {
     }
 }
 
+/// ArrayLiteral represents an array literal expression
+pub struct ArrayLiteral {
+    pub token: Token, // Token::Crew
+    pub elements: Vec<Box<dyn Expression>>,
+}
+
+impl Node for ArrayLiteral {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        let elements: Vec<String> = self.elements.iter()
+            .map(|el| el.string())
+            .collect();
+        format!("crew[{}]", elements.join(", "))
+    }
+}
+
+impl Expression for ArrayLiteral {
+    fn expression_node(&self) {}
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// HashLiteral represents a hash (map) literal expression
+pub struct HashLiteral {
+    pub token: Token, // Token::Tea
+    pub pairs: Vec<(Box<dyn Expression>, Box<dyn Expression>)>, // Key-value pairs
+}
+
+impl Node for HashLiteral {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        let pairs: Vec<String> = self.pairs.iter()
+            .map(|(k, v)| format!("{}: {}", k.string(), v.string()))
+            .collect();
+        format!("tea {{{}}}", pairs.join(", "))
+    }
+}
+
+impl Expression for HashLiteral {
+    fn expression_node(&self) {}
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

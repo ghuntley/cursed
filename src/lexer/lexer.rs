@@ -66,6 +66,7 @@ pub enum Token {
     Yolo,        // return (yolo)
     Based,       // true (based)
     Cap,         // nil (cap)
+    Crew,        // array literal
     
     // Comment tokens
     LineComment, // fr fr
@@ -314,6 +315,7 @@ impl<'a> Lexer<'a> {
             "yolo" => Token::Yolo,
             "based" => Token::Based,
             "cap" => Token::Cap,
+            "crew" => Token::Crew,
             "fr" => {
                 // Check for "fr fr" comment
                 if self.peek_char() == Some(' ') && 
@@ -434,6 +436,7 @@ impl Token {
             Token::Yolo => "yolo".to_string(),
             Token::Based => "based".to_string(),
             Token::Cap => "cap".to_string(),
+            Token::Crew => "crew".to_string(),
             Token::LineComment => "fr fr".to_string(),
             Token::BlockCommentStart => "no cap".to_string(),
             Token::BlockCommentEnd => "on god".to_string(),

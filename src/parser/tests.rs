@@ -290,50 +290,133 @@ fn test_parse_if_statements() -> Result<(), Error> {
 }
 
 #[test]
-fn test_parse_for_statements() -> Result<(), Error> {
-    // Test case 1: C-style for loop
-    let input1 = "bestie sus i = 0; i < 10; i = i + 1 { yolo i; }";
-    let program1 = test_parser_with_input(input1)?;
-    assert_eq!(program1.statements.len(), 1, "Program 1 (C-style) failed: incorrect statement count");
-    if let Some(for_stmt) = program1.statements[0].as_any().downcast_ref::<ast::ForStatement>() {
-        assert_eq!(for_stmt.token_literal(), "bestie");
-        assert!(for_stmt.init.is_some(), "Program 1 init should exist");
-        assert!(for_stmt.condition.is_some(), "Program 1 condition should exist");
-        assert!(for_stmt.post.is_some(), "Program 1 post should exist");
-        assert_eq!(for_stmt.body.statements.len(), 1, "Program 1 body should have 1 statement");
-    } else {
-        panic!("Program 1 is not a ForStatement");
+fn test_parse_for_statements() {
+    struct TestCase {
+        input: &'static str,
+        expected_init_type: Option<&'static str>, // "sus" or "facts" or expression
+        expected_condition_type: Option<&'static str>, // expression
+        expected_post_type: Option<&'static str>, // expression
+        expected_body_stmts: usize,
     }
 
-    // Test case 2: Condition-only for loop
-    let input2 = "bestie i < 10 { yolo i; }";
-    let program2 = test_parser_with_input(input2)?;
-    assert_eq!(program2.statements.len(), 1, "Program 2 (Condition-only) failed: incorrect statement count");
-    if let Some(for_stmt) = program2.statements[0].as_any().downcast_ref::<ast::ForStatement>() {
-        assert_eq!(for_stmt.token_literal(), "bestie");
-        assert!(for_stmt.init.is_none(), "Program 2 init should be None");
-        assert!(for_stmt.condition.is_some(), "Program 2 condition should exist");
-        assert!(for_stmt.post.is_none(), "Program 2 post should be None");
-        assert_eq!(for_stmt.body.statements.len(), 1, "Program 2 body should have 1 statement");
-    } else {
-        panic!("Program 2 is not a ForStatement");
-    }
+    let tests = vec![
+        TestCase {
+            input: "bestie { sus x = 1; }", // Infinite loop
+            expected_init_type: None,
+            expected_condition_type: None,
+            expected_post_type: None,
+            expected_body_stmts: 1,
+        },
+        TestCase {
+            input: "bestie i < 10 { sus y = 2; facts z = 3; }", // Condition-only loop
+            expected_init_type: None,
+            expected_condition_type: Some("infix"),
+            expected_post_type: None,
+            expected_body_stmts: 2,
+        },
+        TestCase {
+            input: "bestie sus i = 0; i < 10; i = i + 1 { sus a = i; }", // C-style loop
+            expected_init_type: Some("sus"),
+            expected_condition_type: Some("infix"),
+            expected_post_type: Some("expression"),
+            expected_body_stmts: 1,
+        },
+        TestCase {
+            input: "bestie ; i < 5; { }", // C-style loop, no init or post
+            expected_init_type: None,
+            expected_condition_type: Some("infix"),
+            expected_post_type: None,
+            expected_body_stmts: 0,
+        },
+        TestCase {
+            input: "bestie ; ; i = i + 1 { }", // C-style loop, no init or condition
+            expected_init_type: None,
+            expected_condition_type: None,
+            expected_post_type: Some("expression"),
+            expected_body_stmts: 0,
+        },
+         TestCase {
+            input: "bestie facts i = 0; ; { }", // C-style loop, no condition or post
+            expected_init_type: Some("facts"),
+            expected_condition_type: None,
+            expected_post_type: None,
+            expected_body_stmts: 0,
+        },
+        TestCase {
+            input: "bestie ; ; { }", // C-style loop, only body
+            expected_init_type: None,
+            expected_condition_type: None,
+            expected_post_type: None,
+            expected_body_stmts: 0,
+        },
+    ];
 
-    // Test case 3: Infinite for loop
-    let input3 = "bestie { yolo 1; }";
-    let program3 = test_parser_with_input(input3)?;
-    assert_eq!(program3.statements.len(), 1, "Program 3 (Infinite) failed: incorrect statement count");
-    if let Some(for_stmt) = program3.statements[0].as_any().downcast_ref::<ast::ForStatement>() {
-        assert_eq!(for_stmt.token_literal(), "bestie");
-        assert!(for_stmt.init.is_none(), "Program 3 init should be None");
-        assert!(for_stmt.condition.is_none(), "Program 3 condition should be None");
-        assert!(for_stmt.post.is_none(), "Program 3 post should be None");
-        assert_eq!(for_stmt.body.statements.len(), 1, "Program 3 body should have 1 statement");
-    } else {
-        panic!("Program 3 is not a ForStatement");
-    }
+    for test in tests {
+        let mut lexer = Lexer::new(test.input);
+        let mut parser = Parser::new(&mut lexer).unwrap();
+        let program = parser.parse_program().unwrap();
+        check_parser_errors(&parser);
 
-    Ok(())
+        assert_eq!(program.statements.len(), 1, "program should have 1 statement");
+
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ForStatement>();
+        assert!(stmt.is_some(), "Statement is not ForStatement");
+        let for_stmt = stmt.unwrap();
+
+        // Check init
+        match (test.expected_init_type, &for_stmt.init) {
+            (Some("sus"), Some(init_stmt)) => {
+                assert!(init_stmt.as_any().is::<ast::LetStatement>());
+            }
+            (Some("facts"), Some(init_stmt)) => {
+                assert!(init_stmt.as_any().is::<ast::FactsStatement>());
+            }
+            (Some("expression"), Some(init_stmt)) => {
+                 // Note: Init can only be 'sus' or 'facts' currently
+                 // If we allow expression statements later, this would check:
+                 // assert!(init_stmt.as_any().is::<ast::ExpressionStatement>());
+                 panic!("Unexpected expression init type check");
+            }
+             (None, None) => { /* Expected no init */ }
+             (Some(_), None) => panic!("Expected init statement, got None"),
+             (None, Some(_)) => panic!("Expected no init statement, got Some"),
+             _ => panic!("Mismatch in init statement check logic"),
+        }
+        
+        // Check condition
+        match (test.expected_condition_type, &for_stmt.condition) {
+            (Some("infix"), Some(cond_expr)) => {
+                assert!(cond_expr.as_any().is::<ast::InfixExpression>());
+            }
+            (Some("identifier"), Some(cond_expr)) => {
+                 assert!(cond_expr.as_any().is::<ast::Identifier>());
+             }
+             // Add other expected condition expression types if needed
+             (None, None) => { /* Expected no condition */ }
+             (Some(_), None) => panic!("Expected condition expression, got None"),
+             (None, Some(_)) => panic!("Expected no condition expression, got Some"),
+             _ => panic!("Mismatch in condition expression check logic"),
+        }
+
+        // Check post
+        match (test.expected_post_type, &for_stmt.post) {
+            (Some("expression"), Some(post_stmt)) => {
+                assert!(post_stmt.as_any().is::<ast::ExpressionStatement>());
+                // Further check the expression type within ExpressionStatement if needed
+            }
+            (None, None) => { /* Expected no post */ }
+            (Some(_), None) => panic!("Expected post statement, got None"),
+            (None, Some(_)) => panic!("Expected no post statement, got Some"),
+             _ => panic!("Mismatch in post statement check logic"),
+        }
+
+        // Check body
+        assert_eq!(for_stmt.body.statements.len(), test.expected_body_stmts);
+    }
+}
+
+fn check_parser_errors(parser: &Parser) {
+    // Implementation of check_parser_errors function
 }
 
 #[test]
@@ -416,4 +499,718 @@ fn test_parse_switch_statements() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::{Expression, Identifier, IntegerLiteral, StringLiteral, BooleanLiteral, PrefixExpression, InfixExpression, ArrayLiteral, HashLiteral, FunctionLiteral};
+
+    /// Test the parser with the given input string
+    fn test_parser_with_input(input: &str) -> Result<Program, Error> {
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        parser.parse_program()
+    }
+
+    /// Helper to check for parser errors
+    fn check_parser_errors(parser: &Parser) {
+        let errors = parser.errors();
+        if errors.is_empty() {
+            return;
+        }
+
+        eprintln!("\nParser encountered {} errors:", errors.len());
+        for msg in errors {
+            eprintln!("  Parser error: {}", msg);
+        }
+        eprintln!(); // Add a newline for better formatting
+        panic!("Parser errors occurred");
+    }
+
+    /// Helper to test integer literal parsing
+    fn test_integer_literal(expr: &Box<dyn Expression>, expected_value: i64) {
+        let int_lit = expr.as_any().downcast_ref::<IntegerLiteral>();
+        assert!(int_lit.is_some(), "Expression is not an IntegerLiteral");
+        let int_lit = int_lit.unwrap();
+        assert_eq!(int_lit.value, expected_value);
+        assert_eq!(int_lit.token_literal(), expected_value.to_string());
+    }
+
+    /// Helper to test boolean literal parsing
+    fn test_boolean_literal(expr: &Box<dyn Expression>, expected_value: bool) {
+        let bool_lit = expr.as_any().downcast_ref::<BooleanLiteral>();
+        assert!(bool_lit.is_some(), "Expression is not a BooleanLiteral");
+        let bool_lit = bool_lit.unwrap();
+        assert_eq!(bool_lit.value, expected_value);
+        assert_eq!(bool_lit.token_literal(), if expected_value { "based" } else { "cap" });
+    }
+
+    /// Helper to test identifier parsing
+    fn test_identifier(expr: &Box<dyn Expression>, expected_value: &str) {
+        let ident = expr.as_any().downcast_ref::<Identifier>();
+        assert!(ident.is_some(), "Expression is not an Identifier");
+        let ident = ident.unwrap();
+        assert_eq!(ident.value, expected_value);
+        assert_eq!(ident.token_literal(), expected_value);
+    }
+
+    /// Helper to test literal expression parsing
+    fn test_literal_expression(expr: &Box<dyn Expression>, expected: &LiteralType) {
+        match expected {
+            LiteralType::Int(val) => test_integer_literal(expr, *val),
+            LiteralType::Bool(val) => test_boolean_literal(expr, *val),
+            LiteralType::Ident(val) => test_identifier(expr, val),
+            LiteralType::String(val) => {
+                let str_lit = expr.as_any().downcast_ref::<StringLiteral>();
+                assert!(str_lit.is_some(), "Expression is not a StringLiteral");
+                let str_lit = str_lit.unwrap();
+                assert_eq!(str_lit.value, *val);
+                assert_eq!(str_lit.token_literal(), *val); // Assuming token_literal includes quotes
+            }
+        }
+    }
+
+    /// Helper to test infix expression parsing
+    fn test_infix_expression(
+        expr: &Box<dyn Expression>,
+        expected_left: &LiteralType,
+        expected_op: &str,
+        expected_right: &LiteralType,
+    ) {
+        let infix_expr = expr.as_any().downcast_ref::<InfixExpression>();
+        assert!(infix_expr.is_some(), "Expression is not an InfixExpression");
+        let infix_expr = infix_expr.unwrap();
+
+        test_literal_expression(&infix_expr.left, expected_left);
+        assert_eq!(infix_expr.operator, expected_op);
+        test_literal_expression(&infix_expr.right, expected_right);
+    }
+
+    #[test]
+    fn test_parse_sus_statements() -> Result<(), Error> {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_ident: &'a str,
+            expected_value: LiteralType<'a>,
+        }
+
+        let tests = vec![
+            TestCase { input: "sus x = 5;", expected_ident: "x", expected_value: LiteralType::Int(5) },
+            TestCase { input: "sus y = based;", expected_ident: "y", expected_value: LiteralType::Bool(true) },
+            TestCase { input: "sus z = cap;", expected_ident: "z", expected_value: LiteralType::Bool(false) },
+            TestCase { input: "sus foo = \"bar\";", expected_ident: "foo", expected_value: LiteralType::String("bar") },
+            TestCase { input: "sus another = y;", expected_ident: "another", expected_value: LiteralType::Ident("y") },
+        ];
+
+        for tt in tests {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            assert_eq!(program.statements.len(), 1, "program.statements does not contain 1 statement. got={}", program.statements.len());
+
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::LetStatement>();
+            assert!(stmt.is_some(), "statement is not LetStatement");
+            let stmt = stmt.unwrap();
+
+            assert_eq!(stmt.name.value, tt.expected_ident);
+            assert_eq!(stmt.name.token_literal(), tt.expected_ident);
+
+            match &stmt.value {
+                Some(val) => test_literal_expression(val, &tt.expected_value),
+                None => panic!("LetStatement value is None"),
+            }
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_return_statements() -> Result<(), Error> {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_value: Option<LiteralType<'a>>,
+        }
+
+        let tests = vec![
+            TestCase { input: "yolo 5;", expected_value: Some(LiteralType::Int(5)) },
+            TestCase { input: "yolo based;", expected_value: Some(LiteralType::Bool(true)) },
+            TestCase { input: "yolo;", expected_value: None },
+            TestCase { input: "yolo x;", expected_value: Some(LiteralType::Ident("x")) },
+        ];
+
+        for tt in tests {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            assert_eq!(program.statements.len(), 1, "program.statements does not contain 1 statement. got={}", program.statements.len());
+
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::ReturnStatement>();
+            assert!(stmt.is_some(), "statement is not ReturnStatement");
+            let stmt = stmt.unwrap();
+
+            match (&stmt.return_value, &tt.expected_value) {
+                (Some(val), Some(expected)) => test_literal_expression(val, expected),
+                (None, None) => { /* Both are None, this is correct */ },
+                (Some(_), None) => panic!("Expected no return value, but got one"),
+                (None, Some(_)) => panic!("Expected a return value, but got none"),
+            }
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_identifier_expression() -> Result<(), Error> {
+        let input = "foobar;";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let ident = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<Identifier>().unwrap();
+
+        assert_eq!(ident.value, "foobar");
+        assert_eq!(ident.token_literal(), "foobar");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_integer_literal_expression() -> Result<(), Error> {
+        let input = "5;";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        test_integer_literal(stmt.expression.as_ref().unwrap(), 5);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_boolean_literal_expression() -> Result<(), Error> {
+        let tests = vec![
+            ("based;", true),
+            ("cap;", false),
+        ];
+
+        for (input, expected) in tests {
+            let mut lexer = Lexer::new(input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            assert_eq!(program.statements.len(), 1);
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+            test_boolean_literal(stmt.expression.as_ref().unwrap(), expected);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_prefix_expressions() -> Result<(), Error> {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_operator: &'a str,
+            expected_value: LiteralType<'a>,
+        }
+
+        let tests = vec![
+            TestCase { input: "!5;", expected_operator: "!", expected_value: LiteralType::Int(5) },
+            TestCase { input: "-15;", expected_operator: "-", expected_value: LiteralType::Int(15) },
+            TestCase { input: "!based;", expected_operator: "!", expected_value: LiteralType::Bool(true) },
+            TestCase { input: "!cap;", expected_operator: "!", expected_value: LiteralType::Bool(false) },
+        ];
+
+        for tt in tests {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            assert_eq!(program.statements.len(), 1);
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+            let expr = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<PrefixExpression>().unwrap();
+
+            assert_eq!(expr.operator, tt.expected_operator);
+            test_literal_expression(&expr.right, &tt.expected_value);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_infix_expressions() -> Result<(), Error> {
+        struct TestCase<'a> {
+            input: &'a str,
+            left_value: LiteralType<'a>,
+            operator: &'a str,
+            right_value: LiteralType<'a>,
+        }
+
+        let tests = vec![
+            TestCase { input: "5 + 5;", left_value: LiteralType::Int(5), operator: "+", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 - 5;", left_value: LiteralType::Int(5), operator: "-", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 * 5;", left_value: LiteralType::Int(5), operator: "*", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 / 5;", left_value: LiteralType::Int(5), operator: "/", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 > 5;", left_value: LiteralType::Int(5), operator: ">", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 < 5;", left_value: LiteralType::Int(5), operator: "<", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 == 5;", left_value: LiteralType::Int(5), operator: "==", right_value: LiteralType::Int(5) },
+            TestCase { input: "5 != 5;", left_value: LiteralType::Int(5), operator: "!=", right_value: LiteralType::Int(5) },
+            TestCase { input: "based == based;", left_value: LiteralType::Bool(true), operator: "==", right_value: LiteralType::Bool(true) },
+            TestCase { input: "based != cap;", left_value: LiteralType::Bool(true), operator: "!=", right_value: LiteralType::Bool(false) },
+            TestCase { input: "cap == cap;", left_value: LiteralType::Bool(false), operator: "==", right_value: LiteralType::Bool(false) },
+        ];
+
+        for tt in tests {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            assert_eq!(program.statements.len(), 1);
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+            test_infix_expression(stmt.expression.as_ref().unwrap(), &tt.left_value, tt.operator, &tt.right_value);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_operator_precedence_parsing() -> Result<(), Error> {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected: &'a str,
+        }
+
+        let tests = vec![
+            TestCase { input: "-a * b", expected: "((-a) * b)" },
+            TestCase { input: "!-a", expected: "(!(-a))" },
+            TestCase { input: "a + b + c", expected: "((a + b) + c)" },
+            TestCase { input: "a + b - c", expected: "((a + b) - c)" },
+            TestCase { input: "a * b * c", expected: "((a * b) * c)" },
+            TestCase { input: "a * b / c", expected: "((a * b) / c)" },
+            TestCase { input: "a + b / c", expected: "(a + (b / c))" },
+            TestCase { input: "a + b * c + d / e - f", expected: "(((a + (b * c)) + (d / e)) - f)" },
+            TestCase { input: "3 + 4; -5 * 5", expected: "(3 + 4)((-5) * 5)" }, // Two separate statements
+            TestCase { input: "5 > 4 == 3 < 4", expected: "((5 > 4) == (3 < 4))" },
+            TestCase { input: "5 < 4 != 3 > 4", expected: "((5 < 4) != (3 > 4))" },
+            TestCase { input: "3 + 4 * 5 == 3 * 1 + 4 * 5", expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))" },
+            TestCase { input: "based", expected: "based" },
+            TestCase { input: "cap", expected: "cap" },
+            TestCase { input: "3 > 5 == cap", expected: "((3 > 5) == cap)" },
+            TestCase { input: "3 < 5 == based", expected: "((3 < 5) == based)" },
+            TestCase { input: "1 + (2 + 3) + 4", expected: "((1 + (2 + 3)) + 4)" },
+            TestCase { input: "(5 + 5) * 2", expected: "((5 + 5) * 2)" },
+            TestCase { input: "2 / (5 + 5)", expected: "(2 / (5 + 5))" },
+            TestCase { input: "-(5 + 5)", expected: "(-(5 + 5))" },
+            TestCase { input: "!(based == based)", expected: "(!(based == based))" },
+            TestCase { input: "a + add(b * c) + d", expected: "((a + add((b * c))) + d)" },
+            TestCase { input: "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", expected: "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))" },
+            TestCase { input: "add(a + b + c * d / f + g)", expected: "add((((a + b) + ((c * d) / f)) + g))" },
+            TestCase { input: "a * [1, 2, 3, 4][b * c] * d", expected: "((a * (crew[1, 2, 3, 4][(b * c)])) * d)" },
+            TestCase { input: "add(a * b[2], b[1], 2 * [1, 2][1])", expected: "add((a * (b[2])), (b[1]), (2 * (crew[1, 2][1])))" },
+        ];
+
+        for tt in tests {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            let actual = program.to_string();
+            assert_eq!(actual, tt.expected, "for input: \"{}\"", tt.input);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_if_statement() -> Result<(), Error> {
+        let input = "lowkey (x < y) { x } highkey { y }";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::IfStatement>().unwrap();
+
+        test_infix_expression(&stmt.condition, &LiteralType::Ident("x"), "<", &LiteralType::Ident("y"));
+
+        assert_eq!(stmt.consequence.statements.len(), 1);
+        let consequence_stmt = stmt.consequence.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        test_identifier(consequence_stmt.expression.as_ref().unwrap(), "x");
+
+        assert!(stmt.alternative.is_some());
+        let alternative = stmt.alternative.as_ref().unwrap();
+        assert_eq!(alternative.statements.len(), 1);
+        let alternative_stmt = alternative.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        test_identifier(alternative_stmt.expression.as_ref().unwrap(), "y");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_if_no_else_statement() -> Result<(), Error> {
+        let input = "lowkey (x < y) { x }";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::IfStatement>().unwrap();
+
+        test_infix_expression(&stmt.condition, &LiteralType::Ident("x"), "<", &LiteralType::Ident("y"));
+
+        assert_eq!(stmt.consequence.statements.len(), 1);
+        let consequence_stmt = stmt.consequence.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        test_identifier(consequence_stmt.expression.as_ref().unwrap(), "x");
+
+        assert!(stmt.alternative.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_for_statements() -> Result<(), Error> {
+        #[derive(Debug)]
+        enum StatementType {
+            Sus, // LetStatement
+            Facts, // FactsStatement
+            Expression, // ExpressionStatement
+            None, // Option is None
+        }
+
+        #[derive(Debug)]
+        enum ExpressionType {
+            Infix, // InfixExpression
+            Expression, // Any Expression
+            None, // Option is None
+        }
+
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_init: StatementType,
+            expected_condition: ExpressionType,
+            expected_post: StatementType,
+            expected_body_statements: usize,
+        }
+
+        let tests = vec![
+            TestCase {
+                input: "bestie { sus x = 1; }",
+                expected_init: StatementType::None,
+                expected_condition: ExpressionType::None,
+                expected_post: StatementType::None,
+                expected_body_statements: 1,
+            },
+            TestCase {
+                input: "bestie i < 10 { sus y = 2; facts z = 3; }",
+                expected_init: StatementType::None,
+                expected_condition: ExpressionType::Infix,
+                expected_post: StatementType::None,
+                expected_body_statements: 2,
+            },
+            TestCase {
+                input: "bestie sus i = 0; i < 10; i = i + 1 { sus a = i; }",
+                expected_init: StatementType::Sus,
+                expected_condition: ExpressionType::Infix,
+                expected_post: StatementType::Expression,
+                expected_body_statements: 1,
+            },
+            TestCase {
+                input: "bestie ; i < 10 ; i = i + 1 { sus b = 1; }",
+                expected_init: StatementType::None,
+                expected_condition: ExpressionType::Infix,
+                expected_post: StatementType::Expression,
+                expected_body_statements: 1,
+            },
+            TestCase {
+                input: "bestie facts j = 0; ; j = j + 1 { sus c = 2; }",
+                expected_init: StatementType::Facts,
+                expected_condition: ExpressionType::None,
+                expected_post: StatementType::Expression,
+                expected_body_statements: 1,
+            },
+            TestCase {
+                input: "bestie sus k = 0; k < 5 ; { sus d = 3; }",
+                expected_init: StatementType::Sus,
+                expected_condition: ExpressionType::Infix,
+                expected_post: StatementType::None,
+                expected_body_statements: 1,
+            },
+            TestCase {
+                input: "bestie ; ; { /* empty */ }",
+                expected_init: StatementType::None,
+                expected_condition: ExpressionType::None,
+                expected_post: StatementType::None,
+                expected_body_statements: 0,
+            },
+        ];
+
+        for (i, tt) in tests.iter().enumerate() {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            assert_eq!(program.statements.len(), 1, "Test[{}]: program.statements does not contain 1 statement. got={}", i, program.statements.len());
+
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::ForStatement>();
+            assert!(stmt.is_some(), "Test[{}]: statement is not ForStatement", i);
+            let stmt = stmt.unwrap();
+
+            // Check init statement type
+            match tt.expected_init {
+                StatementType::Sus => assert!(stmt.init.as_ref().map_or(false, |s| s.as_any().is::<ast::LetStatement>()), "Test[{}]: Init is not Sus", i),
+                StatementType::Facts => assert!(stmt.init.as_ref().map_or(false, |s| s.as_any().is::<ast::FactsStatement>()), "Test[{}]: Init is not Facts", i),
+                StatementType::Expression => assert!(stmt.init.as_ref().map_or(false, |s| s.as_any().is::<ast::ExpressionStatement>()), "Test[{}]: Init is not Expression", i),
+                StatementType::None => assert!(stmt.init.is_none(), "Test[{}]: Init is not None", i),
+            }
+
+            // Check condition expression type
+            match tt.expected_condition {
+                ExpressionType::Infix => assert!(stmt.condition.as_ref().map_or(false, |e| e.as_any().is::<ast::InfixExpression>()), "Test[{}]: Condition is not Infix", i),
+                ExpressionType::Expression => assert!(stmt.condition.is_some(), "Test[{}]: Condition is None", i),
+                ExpressionType::None => assert!(stmt.condition.is_none(), "Test[{}]: Condition is not None", i),
+            }
+
+            // Check post statement type
+            match tt.expected_post {
+                StatementType::Sus => assert!(stmt.post.as_ref().map_or(false, |s| s.as_any().is::<ast::LetStatement>()), "Test[{}]: Post is not Sus", i),
+                StatementType::Facts => assert!(stmt.post.as_ref().map_or(false, |s| s.as_any().is::<ast::FactsStatement>()), "Test[{}]: Post is not Facts", i),
+                StatementType::Expression => assert!(stmt.post.as_ref().map_or(false, |s| s.as_any().is::<ast::ExpressionStatement>()), "Test[{}]: Post is not Expression", i),
+                StatementType::None => assert!(stmt.post.is_none(), "Test[{}]: Post is not None", i),
+            }
+
+            // Check body statement count
+            assert_eq!(stmt.body.statements.len(), tt.expected_body_statements, "Test[{}]: Incorrect number of body statements", i);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_periodt_statements() -> Result<(), Error> {
+        // Test with different while statement (periodt) formats
+        let inputs = vec![
+            "periodt x < 10 { x = x + 1; }",
+            "periodt (x < 10) { x = x + 1; }",
+            "periodt based { x = x + 1; }",
+            "periodt 1 < 2 { print(\"hello\"); }"
+        ];
+
+        for input in inputs {
+            let program = test_parser_with_input(input)?;
+            check_parser_errors(&Parser::new(&mut Lexer::new(input))?);
+
+            // Verify we have exactly one statement
+            assert_eq!(program.statements.len(), 1, "Failed to parse: {}", input);
+
+            // Verify it's a while statement (periodt)
+            let while_stmt = program.statements[0].as_any().downcast_ref::<ast::WhileStatement>();
+            assert!(while_stmt.is_some(), "Not a while statement: {}", input);
+
+            // Verify it has a condition and body
+            let while_stmt = while_stmt.unwrap();
+            assert!(while_stmt.condition.token_literal().len() > 0, "Missing condition in: {}", input);
+            assert!(while_stmt.body.statements.len() > 0, "Empty body in: {}", input);
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_parenthesized_periodt() -> Result<(), Error> {
+        let input = "periodt (x < 10) { x = x + 1; }";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+
+        // Start parsing
+        let token = parser.current_token.clone();
+        assert_eq!(token, Token::Periodt);
+
+        // Move to next token after periodt
+        parser.next_token()?;
+        assert_eq!(parser.current_token, Token::LParen);
+
+        // Parse the condition
+        let condition = parser.parse_expression(Precedence::Lowest)?;
+
+        // After parsing the condition, the current token should be LBrace
+        assert_eq!(parser.current_token, Token::LBrace, "Current token after parsing condition should be LBrace but is {:?}", parser.current_token);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_array_literals() -> Result<(), Error> {
+        let input = "crew[1, 2 * 2, 3 + 3]";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let array_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<ArrayLiteral>().unwrap();
+
+        assert_eq!(array_lit.elements.len(), 3);
+        test_integer_literal(&array_lit.elements[0], 1);
+        test_infix_expression(&array_lit.elements[1], &LiteralType::Int(2), "*", &LiteralType::Int(2));
+        test_infix_expression(&array_lit.elements[2], &LiteralType::Int(3), "+", &LiteralType::Int(3));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_empty_array_literal() -> Result<(), Error> {
+        let input = "crew[]";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let array_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<ArrayLiteral>().unwrap();
+
+        assert_eq!(array_lit.elements.len(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_hash_literals() -> Result<(), Error> {
+        let input = "tea{\"one\": 1, \"two\": 2, \"three\": 3}";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let hash_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<HashLiteral>().unwrap();
+
+        assert_eq!(hash_lit.pairs.len(), 3);
+
+        let expected = vec![
+            ("one", LiteralType::Int(1)),
+            ("two", LiteralType::Int(2)),
+            ("three", LiteralType::Int(3)),
+        ];
+
+        for (i, (key, value)) in hash_lit.pairs.iter().enumerate() {
+             let (expected_key, expected_val) = &expected[i];
+             let key_str_lit = key.as_any().downcast_ref::<StringLiteral>();
+             assert!(key_str_lit.is_some(), "Key is not a StringLiteral. got={:?}", key);
+             assert_eq!(&key_str_lit.unwrap().value, expected_key);
+             test_literal_expression(value, expected_val);
+        }
+        Ok(())
+    }
+
+     #[test]
+    fn test_parse_empty_hash_literal() -> Result<(), Error> {
+        let input = "tea{}";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let hash_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<HashLiteral>().unwrap();
+
+        assert_eq!(hash_lit.pairs.len(), 0);
+        Ok(())
+    }
+
+     #[test]
+    fn test_parse_hash_literals_with_expressions() -> Result<(), Error> {
+        let input = "tea{\"one\": 0 + 1, \"two\": 10 - 8, \"three\": 15 / 5}";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let hash_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<HashLiteral>().unwrap();
+
+        assert_eq!(hash_lit.pairs.len(), 3);
+
+        let expected_values = vec![
+            (LiteralType::Int(0), "+", LiteralType::Int(1)),
+            (LiteralType::Int(10), "-", LiteralType::Int(8)),
+            (LiteralType::Int(15), "/", LiteralType::Int(5)),
+        ];
+
+        for (i, (_key, value)) in hash_lit.pairs.iter().enumerate() {
+             let (left, op, right) = &expected_values[i];
+             test_infix_expression(value, left, op, right);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_function_literal() -> Result<(), Error> {
+        let input = "stan(x, y) { x + y; }";
+        let mut lexer = Lexer::new(input);
+        let mut parser = Parser::new(&mut lexer)?;
+        let program = parser.parse_program()?;
+        check_parser_errors(&parser);
+
+        assert_eq!(program.statements.len(), 1);
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let func_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<FunctionLiteral>().unwrap();
+
+        assert_eq!(func_lit.parameters.len(), 2);
+        assert_eq!(func_lit.parameters[0].value, "x");
+        assert_eq!(func_lit.parameters[1].value, "y");
+
+        assert_eq!(func_lit.body.statements.len(), 1);
+        let body_stmt = func_lit.body.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        test_infix_expression(&body_stmt.expression.as_ref().unwrap(), &LiteralType::Ident("x"), "+", &LiteralType::Ident("y"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_function_parameters() -> Result<(), Error> {
+        struct TestCase<'a> {
+            input: &'a str,
+            expected_params: Vec<&'a str>,
+        }
+
+        let tests = vec![
+            TestCase { input: "stan() {};", expected_params: vec![] },
+            TestCase { input: "stan(x) {};", expected_params: vec!["x"] },
+            TestCase { input: "stan(x, y, z) {};", expected_params: vec!["x", "y", "z"] },
+        ];
+
+        for tt in tests {
+            let mut lexer = Lexer::new(tt.input);
+            let mut parser = Parser::new(&mut lexer)?;
+            let program = parser.parse_program()?;
+            check_parser_errors(&parser);
+
+            let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+            let func_lit = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<FunctionLiteral>().unwrap();
+
+            assert_eq!(func_lit.parameters.len(), tt.expected_params.len());
+            for (i, expected_param) in tt.expected_params.iter().enumerate() {
+                assert_eq!(func_lit.parameters[i].value, *expected_param);
+            }
+        }
+        Ok(())
+    }
 } 

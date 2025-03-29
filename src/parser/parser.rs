@@ -406,92 +406,52 @@ impl<'a> Parser<'a> {
         // We need to check for semicolons to distinguish
         
         // Try parsing the first part (could be init statement or condition expression)
-        // We can't immediately tell if it's an init statement or condition expression
-        // Let's try parsing as an expression first. If the next token is a semicolon, it might be C-style.
-        let first_part_is_expression = !matches!(self.current_token, Token::Sus | Token::Facts);
-        
-        if first_part_is_expression {
-            // Could be condition (e.g., bestie i < 10 {...}) or start of C-style (e.g., bestie i = 0; ...)
-            condition = Some(self.parse_expression(Precedence::Lowest)?);
-            
-            // If the next token is '{', it's a condition-only loop
-            if self.current_token == Token::LBrace {
-                 let body = self.parse_block_statement()?;
-                 return Ok(Box::new(ast::ForStatement {
-                     token,
-                     init: None,
-                     condition,
-                     post: None,
-                     body,
-                 }));
-            }
-            
-            // If the next token is ';', it must be C-style, and what we parsed was the condition
-            if self.current_token == Token::Semicolon {
-                 self.next_token()?; // Consume ';'
-                 
-                 // Parse post statement (optional)
-                 if self.current_token != Token::LBrace {
-                     post = Some(self.parse_expression_statement()?);
-                 } 
-                 
-                 // Expect closing brace for body
-                 if self.current_token != Token::LBrace {
-                     return Err(Error::from_str(
-                         &format!("Expected '{{' to start for loop body, got {:?}", self.current_token)
-                     ));
-                 }
-                 
-                 let body = self.parse_block_statement()?;
-                 return Ok(Box::new(ast::ForStatement {
-                     token,
-                     init: None, // Condition was parsed first, no init here
-                     condition,
-                     post,
-                     body,
-                 }));
-            } else {
-                 // Syntax error if it's not '{' or ';' after the condition
-                 return Err(Error::from_str(
-                     &format!("Expected '{{' or ';' after for loop condition, got {:?}", self.current_token)
-                 ));
-            }
-        } else {
-            // First part must be an init statement (sus or facts)
+        // Determine if the first part looks like an init statement (sus or facts)
+        let first_part_is_init_stmt = matches!(self.current_token, Token::Sus | Token::Facts);
+
+        if first_part_is_init_stmt {
+            // C-style loop with init statement
             init = Some(self.parse_statement()?);
-            
+
             // Expect semicolon after init
-            if self.current_token != Token::Semicolon {
-                 return Err(Error::from_str(
-                     &format!("Expected ';' after for loop initializer, got {:?}", self.current_token)
-                 ));
+            if !self.expect_peek(&Token::Semicolon) {
+                return Err(Error::from_str(
+                    &format!("Expected ';' after for loop initializer, got {:?}", self.peek_token)
+                ));
             }
-            self.next_token()?; // Consume ';'
             
             // Parse condition (optional)
-            if self.current_token != Token::Semicolon {
-                 condition = Some(self.parse_expression(Precedence::Lowest)?);
+            if self.peek_token != Token::Semicolon {
+                self.next_token()?;
+                condition = Some(self.parse_expression(Precedence::Lowest)?);
+            } else {
+                // If it's a semicolon, there's no condition
+                condition = None;
             }
             
             // Expect semicolon after condition
-            if self.current_token != Token::Semicolon {
-                 return Err(Error::from_str(
-                     &format!("Expected ';' after for loop condition, got {:?}", self.current_token)
-                 ));
+            if !self.expect_peek(&Token::Semicolon) {
+                return Err(Error::from_str(
+                    &format!("Expected ';' after for loop condition, got {:?}", self.peek_token)
+                ));
             }
-            self.next_token()?; // Consume ';'
             
             // Parse post statement (optional)
-            if self.current_token != Token::LBrace {
-                 // Treat post as an expression statement for simplicity
-                 post = Some(self.parse_expression_statement()?);
+            if self.peek_token != Token::LBrace {
+                self.next_token()?;
+                // Treat post as an expression statement for simplicity
+                // Need to ensure parse_statement can handle expressions correctly here
+                post = Some(self.parse_expression_statement()?);
+            } else {
+                // If next is LBrace, there's no post statement
+                post = None;
             }
             
             // Expect opening brace for body
-            if self.current_token != Token::LBrace {
-                 return Err(Error::from_str(
-                     &format!("Expected '{{' to start for loop body, got {:?}", self.current_token)
-                 ));
+            if !self.expect_peek(&Token::LBrace) {
+                return Err(Error::from_str(
+                    &format!("Expected '{{' to start for loop body, got {:?}", self.peek_token)
+                ));
             }
             let body = self.parse_block_statement()?;
 
@@ -502,6 +462,74 @@ impl<'a> Parser<'a> {
                 post,
                 body,
             }));
+
+        } else {
+            // Either Condition-only or C-style loop without init
+            // The first part MUST be the condition
+            condition = Some(self.parse_expression(Precedence::Lowest)?);
+            
+            if self.current_token == Token::LBrace {
+                // Condition-only loop: bestie condition { body }
+                 let body = self.parse_block_statement()?;
+                 return Ok(Box::new(ast::ForStatement {
+                     token,
+                     init: None, // No init in this form
+                     condition,
+                     post: None, // No post in this form
+                     body,
+                 }));
+            } else if self.current_token == Token::Semicolon {
+                 // C-style loop without init: bestie ; condition ; post { body }
+                 // We've already parsed the condition. We need to adjust.
+                 // Let's restart the parsing for this specific sub-case for clarity.
+                 
+                 // Reset condition, we will parse it again after the first semicolon.
+                 condition = None;
+                 
+                 // We already consumed the first semicolon implicitly by checking self.current_token
+                 
+                 // Parse condition (optional) - after the first semicolon
+                 if self.peek_token != Token::Semicolon {
+                    self.next_token()?;
+                    condition = Some(self.parse_expression(Precedence::Lowest)?);
+                 }
+                 
+                 // Expect semicolon after condition
+                 if !self.expect_peek(&Token::Semicolon) {
+                     return Err(Error::from_str(
+                         &format!("Expected ';' after for loop condition, got {:?}", self.peek_token)
+                     ));
+                 }
+                 
+                 // Parse post statement (optional)
+                 if self.peek_token != Token::LBrace {
+                     self.next_token()?;
+                     post = Some(self.parse_expression_statement()?);
+                 } else {
+                     post = None;
+                 }
+                 
+                 // Expect opening brace for body
+                 if !self.expect_peek(&Token::LBrace) {
+                     return Err(Error::from_str(
+                         &format!("Expected '{{' to start for loop body, got {:?}", self.peek_token)
+                     ));
+                 }
+                 let body = self.parse_block_statement()?;
+
+                 return Ok(Box::new(ast::ForStatement {
+                     token,
+                     init: None, // No init in this form
+                     condition,
+                     post,
+                     body,
+                 }));
+            } else {
+                 // Syntax error if it's not '{' or ';' after the first part
+                 return Err(Error::from_str(
+                     &format!("Expected '{{' or ';' after for loop clause, got {:?}", self.current_token)
+                 ));
+            }
         }
     }
     
@@ -1003,7 +1031,7 @@ impl<'a> Parser<'a> {
                 
                 // Check for assignment expressions
                 if self.current_token == Token::Assign {
-                    // Move past the '='
+                    // Move past the '=' 
                     self.next_token()?;
                     
                     // Parse the right side of the assignment
@@ -1084,6 +1112,15 @@ impl<'a> Parser<'a> {
                     operator,
                     right,
                 })
+            },
+            Token::Crew => {
+                self.parse_array_literal()?
+            },
+            Token::Tea => {
+                self.parse_hash_literal()?
+            },
+            Token::Stan => {
+                self.parse_function_literal()?
             },
             _ => {
                 return Err(Error::from_str(
@@ -1389,6 +1426,182 @@ impl<'a> Parser<'a> {
             body,
         }))
     }
+    
+    /// Parse an array literal (crew [...] in CURSED)
+    fn parse_array_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone(); // Token::Crew
+
+        if !self.expect_peek(&Token::LBracket) {
+            return Err(Error::from_str(&format!(
+                "Expected '[' after crew, got {:?}",
+                self.peek_token
+            )));
+        }
+
+        let elements = self.parse_expression_list(&Token::RBracket)?;
+
+        Ok(Box::new(ast::ArrayLiteral { token, elements }))
+    }
+
+    /// Parse a hash literal (tea {...} in CURSED)
+    fn parse_hash_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone(); // Token::Tea
+        let mut pairs = Vec::new();
+
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(&format!(
+                "Expected '{{' after tea, got {:?}",
+                self.peek_token
+            )));
+        }
+
+        // Move past '{'
+        self.next_token()?;
+
+        // Parse key-value pairs
+        while self.current_token != Token::RBrace {
+            // Parse key
+            let key = self.parse_expression(Precedence::Lowest)?;
+
+            // Expect colon
+            if !self.expect_peek(&Token::Colon) {
+                return Err(Error::from_str(&format!(
+                    "Expected ':' after hash key, got {:?}",
+                    self.peek_token
+                )));
+            }
+
+            // Move past ':'
+            self.next_token()?;
+
+            // Parse value
+            let value = self.parse_expression(Precedence::Lowest)?;
+
+            pairs.push((key, value));
+
+            // Expect comma or closing brace
+            if self.current_token != Token::RBrace && !self.expect_peek(&Token::Comma) {
+                 return Err(Error::from_str(&format!(
+                     "Expected ',' or '}}' after hash pair, got {:?}",
+                     self.peek_token
+                 )));
+            }
+            
+            // If it was a comma, consume it and continue
+            if self.current_token == Token::Comma {
+                 self.next_token()?; // Consume ','
+                 // Handle trailing comma before '}'
+                 if self.current_token == Token::RBrace {
+                     break;
+                 }
+            }
+        }
+
+        // Expect closing brace
+        if self.current_token != Token::RBrace {
+            return Err(Error::from_str(&format!(
+                "Expected '}}' to close hash literal, got {:?}",
+                self.current_token
+            )));
+        }
+
+        // Move past '}'
+        self.next_token()?;
+
+        Ok(Box::new(ast::HashLiteral { token, pairs }))
+    }
+
+    /// Parse function parameters (identifiers only for now)
+    fn parse_function_parameters(&mut self) -> Result<Vec<ast::Identifier>, Error> {
+        let mut identifiers = Vec::new();
+
+        if !self.expect_peek(&Token::LParen) {
+            return Err(Error::from_str(&format!(
+                "Expected '(' for function parameters, got {:?}",
+                self.peek_token
+            )));
+        }
+        // Move past '('
+        self.next_token()?;
+
+        if self.current_token == Token::RParen {
+            // No parameters
+            self.next_token()?; // Consume ')'
+            return Ok(identifiers);
+        }
+
+        // Parse first parameter
+        match &self.current_token {
+            Token::Identifier(name) => {
+                identifiers.push(ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: name.clone(),
+                });
+                self.next_token()?;
+            }
+            _ => return Err(Error::from_str(&format!(
+                "Expected identifier as function parameter, got {:?}",
+                self.current_token
+            ))),
+        }
+
+        // Parse remaining parameters
+        while self.current_token == Token::Comma {
+            self.next_token()?; // Consume ','
+            match &self.current_token {
+                Token::Identifier(name) => {
+                    identifiers.push(ast::Identifier {
+                        token: self.current_token.token_literal(),
+                        value: name.clone(),
+                    });
+                    self.next_token()?;
+                }
+                _ => return Err(Error::from_str(&format!(
+                    "Expected identifier after comma in parameters, got {:?}",
+                    self.current_token
+                ))),
+            }
+        }
+
+        // Expect closing parenthesis
+        if self.current_token != Token::RParen {
+            return Err(Error::from_str(&format!(
+                "Expected ')' after function parameters, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Consume ')'
+
+        Ok(identifiers)
+    }
+
+
+    /// Parse a function literal (stan (...) { ... } in CURSED)
+    fn parse_function_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone(); // Token::Stan
+
+        let parameters = self.parse_function_parameters()?;
+
+        // Expect opening brace for body
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(&format!(
+                "Expected '{{' for function body, got {:?}",
+                self.peek_token
+            )));
+        }
+
+        let body = self.parse_block_statement()?;
+
+        // For now, is_variadic is always false
+        let is_variadic = false;
+
+        Ok(Box::new(ast::FunctionLiteral {
+            token,
+            parameters,
+            body,
+            is_variadic,
+        }))
+    }
 }
 
 #[cfg(test)]
@@ -1452,7 +1665,7 @@ mod tests {
         let inputs = vec![
             "periodt x < 10 { x = x + 1; }",
             "periodt (x < 10) { x = x + 1; }",
-            "periodt true { x = x + 1; }",
+            "periodt based { x = x + 1; }",
             "periodt 1 < 2 { print(\"hello\"); }"
         ];
         

@@ -39,54 +39,33 @@ The CURSED language implementation is underway. Core components like the lexer, 
 *   **Statements:**
     *   `vibe` (package): ✅ (Parser, AST, Stub Compiler)
     *   `yeet` (import): ✅ (Parser, AST, Stub Compiler)
-    *   `sus` (let): ❌ (Parser needs implementation)
+    *   `sus` (let): ✅ (Parser, AST)
     *   `facts` (const): ✅ (Parser, AST)
     *   `yolo` (return): ✅ (Parser, AST)
     *   `lowkey`/`highkey` (if/else): ✅ (Parser, AST)
     *   `periodt` (while): ✅ (Parser, AST)
-    *   `bestie` (for): ❌ (Parser needs implementation)
-    *   `vibe_check`/`mood`/`basic` (switch): ✅ (Parser, AST)
-    *   `be_like ... squad` (struct def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)
-    *   `be_like ... collab` (interface def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)
-    *   `slay` (method def): ✅ (Parser, AST, Stub Compiler, VM Opcodes)
-    *   Expression Statements: ✅
-*   **Expressions:**
-    *   Identifier: ✅
-    *   Literals: ✅
-    *   Prefix: ✅ (Parser, AST)
-    *   Infix: ✅ (Parser, AST)
-    *   Call: ✅ (Parser, AST)
-    *   Index: ✅ (Parser, AST)
-    *   Struct Instantiation: ❌ (Needs parser/compiler support)
-    *   Method Call: ❌ (Needs parser/compiler/VM support)
-*   **Types:**
-    *   Primitives: ✅ (Object system)
-    *   Array: ✅ (Object, VM)
-    *   Map/Hash: ✅ (Object, VM)
-    *   Struct Definition: ✅ (Object, Parser, AST, VM)
-    *   Interface Definition: ✅ (Object, Parser, AST, VM)
-    *   Struct Instance: 🟡 (Object exists, needs compiler/VM support)
-    *   Functions/Closures: ✅ (Object, VM)
-    *   Slice: ❌
-    *   Complex: ❌
+    *   `bestie` (for): ✅ (Parser, AST)
+    *   `vibe_check`/`mood`
 
-## Prioritized Next Steps
-
-1.  **Complete Parser:** Implement parsing for all remaining statements (`sus`, `yolo`, `lowkey`, `bestie`, `vibe_check`) and expression types (struct instantiation, method calls).
-2.  **Integrate & Complete Compiler:** Replace the stub compiler (`src/compiler.rs` in `lib.rs`) with the more complete version (`src/compiler_implementation.rs`) or finish the stub. Implement compilation logic for all AST nodes to generate correct bytecode.
-3.  **Complete VM:** Implement remaining opcodes, especially for method calls and instance creation/manipulation. Ensure all existing opcodes work correctly with the real compiler's output.
-4.  **Implement Memory Management:** Replace memory stubs with a functional Garbage Collector.
-5.  **Add Comprehensive Tests:** Create thorough unit and property-based tests for the Parser, Compiler, VM execution, Object system, and Memory Management.
-6.  **Implement Type Checker:** Build the static type checker according to `specs/types.md`.
-7.  **Build Standard Library:** Implement packages defined in `specs/stdlib.md`.
-
-## Timeline Estimation (Rough)
-
-Based on `specs/compiler_stages.md`:
-
-*   **Stage 0 (Foundation):** Mostly Complete (Lexer, AST, Symbol Table, Basic VM/Object/Error/REPL)
-*   **Stage 1 (Core Language):** In Progress (Parser needs completion, Compiler needs major work, VM needs completion) - *Estimate: 2-4 months*
-*   **Stage 2 (Refinement):** Mostly Not Started (Type System, Advanced Features, Standard Library) - *Estimate: 3-6 months*
-*   **Stage 3 (Tooling/Optimization):** Not Started - *Estimate: 1-3 months*
-
-**Total Estimated Time:** 6-13 months (highly dependent on complexity and testing effort). 
+| `slay` (method)             | ✅ (Parser, AST) | ❓          | ❓        |                |
+| `yolo` (return)             | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Expression Statement        | ✅ (Parser, AST) | ❓          | ❓        |                |
+|                             |                  |             |           |                |
+| **Expressions**             |                  |             |           |                |
+|                             |                  |             |           |                |
+| Integer Literals            | ✅ (Parser, AST) | ❓          | ❓        |                |
+| String Literals             | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Boolean Literals (`based`/`cap`) | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Identifier Expressions      | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Prefix Expressions (`!`, `-`) | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Infix Expressions           | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Grouped Expressions (`()`)  | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Call Expressions (`ident()`) | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Index Expressions (`arr[idx]`) | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Assignment Expressions (`=`) | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Array Literals (`crew [...]`) | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Hash Literals (`tea {...}`)   | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Function Literals (`stan`)  | ✅ (Parser, AST) | ❓          | ❓        |                |
+| Float Literals              | ✅ (Lexer)       | ❌          | ❌        | Not needed yet |
+|                             |                  |             |           |                |
+| **Other**                   |                  |             |           |                |
