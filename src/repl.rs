@@ -1,6 +1,6 @@
 use crate::error::Error;
-use crate::lexer::lexer;
-use crate::parser::Parser;
+use crate::lexer;
+use crate::parser;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use rustyline::history::DefaultHistory;
@@ -73,7 +73,7 @@ pub fn start_repl() -> Result<(), Error> {
                 let mut lexer = lexer::Lexer::new(&line);
                 
                 // Create a parser for the lexer
-                let mut parser = match Parser::new(&mut lexer) {
+                let mut parser = match parser::Parser::new(&mut lexer) {
                     Ok(parser) => parser,
                     Err(e) => {
                         eprintln!("Parser initialization error: {}", e);
@@ -99,7 +99,9 @@ pub fn start_repl() -> Result<(), Error> {
                 }
                 
                 // Create LLVM code generator for this expression
-                let mut code_gen = LlvmCodeGenerator::new(&context, "repl");
+                // Provide a dummy path for REPL context
+                let repl_dummy_path = std::path::PathBuf::from("./repl_line.csd");
+                let mut code_gen = LlvmCodeGenerator::new(&context, "repl", repl_dummy_path);
                 
                 // Generate LLVM IR
                 match code_gen.compile(&program) {

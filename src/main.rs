@@ -48,12 +48,14 @@ fn main() {
         _ => {
             match args[1].as_str() {
                 "-e" | "--eval" => {
-                    // Evaluate code directly
+                    // Execute code from -e argument
                     if let Some(code) = args.get(2) {
-                        cursed::run_program(code)
+                        // Provide a dummy path for code from -e
+                        let execute_path = std::path::PathBuf::from("./execute_arg.csd");
+                        // Return the result directly
+                        cursed::run_program(code, false, execute_path)
                     } else {
                         eprintln!("Error: The --eval option requires a code string");
-                        print_usage(&program_name);
                         process::exit(1);
                     }
                 },

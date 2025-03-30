@@ -1082,36 +1082,36 @@ impl Expression for HashLiteral {
     }
 }
 
-/// PropertyExpression represents a property access expression (e.g., obj.prop)
-pub struct PropertyExpression {
-    pub token: Token,       // The '.' token
-    pub object: Box<dyn Expression>,
-    pub property: Identifier,
+/// PropertyAccessExpression represents accessing a property (field or method) of an object, 
+/// or accessing an exported symbol from a package.
+/// Examples: myStruct.field, myPackage.ExportedFunc
+pub struct PropertyAccessExpression {
+    pub token: String, // The '.' token
+    pub object: Box<dyn Expression>, // The expression being accessed (e.g., identifier for package or struct variable)
+    pub property: Identifier, // The identifier of the property being accessed
 }
 
-impl Node for PropertyExpression {
+impl Node for PropertyAccessExpression {
     fn token_literal(&self) -> String {
-        self.token.token_literal()
+        self.token.clone() // Typically '.'
     }
 
     fn string(&self) -> String {
-        format!("{}.{}", self.object.string(), self.property.string())
+        format!("({}.{})", self.object.string(), self.property.string())
     }
 }
 
-impl Expression for PropertyExpression {
+impl Expression for PropertyAccessExpression {
     fn expression_node(&self) {}
-
+    
     fn as_any(&self) -> &dyn Any {
         self
     }
     
-    /// Returns true if this expression is a property access expression
     fn is_property_expression(&self) -> bool {
         true
     }
     
-    /// Returns the object and property if this is a property access expression
     fn as_property_expression(&self) -> Option<(&dyn Expression, &Identifier)> {
         Some((self.object.as_ref(), &self.property))
     }

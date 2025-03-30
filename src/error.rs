@@ -438,4 +438,10 @@ impl From<String> for Error {
     fn from(message: String) -> Self {
         Error::Unknown(message)
     }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::IoError(err)
+    }
 } 

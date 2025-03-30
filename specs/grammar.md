@@ -18,7 +18,7 @@ Imports declare dependencies on other packages.
 
 ```
 ImportDecl       = "yeet" ( ImportSpec | "(" { ImportSpec ";" } ")" ) .
-ImportSpec       = [ "." | PackageName ] ImportPath .
+ImportSpec       = [ identifier | "." ] ImportPath .
 ImportPath       = string_lit .
 ```
 
@@ -246,16 +246,17 @@ Expressions compute values.
 ```
 Expression       = UnaryExpr | Expression binary_op Expression .
 UnaryExpr        = PrimaryExpr | unary_op UnaryExpr .
+PrimaryExpr      = Operand | Conversion | PrimaryExpr Selector | PrimaryExpr Index | PrimaryExpr Slice | PrimaryExpr TypeAssertion | PrimaryExpr Arguments .
 ```
 
 ### Primary Expressions
 
 ```
-PrimaryExpr      = Operand | Conversion | MethodExpr | PrimaryExpr Selector |
-                   PrimaryExpr Index | PrimaryExpr Slice | PrimaryExpr TypeAssertion |
-                   PrimaryExpr Arguments .
 Operand          = Literal | OperandName | "(" Expression ")" .
 Literal          = BasicLit | CompositeLit | FunctionLit .
+BasicLit         = int_lit | float_lit | string_lit .
+OperandName      = identifier | QualifiedIdentifier .
+QualifiedIdentifier = identifier "." identifier .
 ```
 
 ### Method Calls and Selectors
@@ -279,7 +280,8 @@ value.(tea)
 ### Function Calls
 
 ```
-Arguments        = "(" [ ExpressionList [ "..." ] [ "," ] ] ")" .
+Arguments        = "(" [ ( ExpressionList [ "," ] ) | Type [ "," ExpressionList [ "," ] ] ] ")" .
+ExpressionList   = Expression { "," Expression } .
 ```
 
 Example:

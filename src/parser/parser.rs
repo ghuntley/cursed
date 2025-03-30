@@ -1160,7 +1160,7 @@ impl<'a> Parser<'a> {
                 },
                 Token::Dot => {
                     // Parse property access expression
-                    left_expr = self.parse_property_expression(left_expr)?;
+                    left_expr = self.parse_property_access_expression(left_expr)?;
                 },
                 _ => {
                     // No infix parser for this token, return the expression as is
@@ -1266,8 +1266,8 @@ impl<'a> Parser<'a> {
     }
     
     /// Parse a property access expression
-    fn parse_property_expression(&mut self, object: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
+    fn parse_property_access_expression(&mut self, object: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token_literal = self.current_token.token_literal(); // Store the literal (".")
         
         // Move past the '.'
         self.next_token()?;
@@ -1288,8 +1288,8 @@ impl<'a> Parser<'a> {
         };
         
         // Create the property expression (don't advance token yet)
-        Ok(Box::new(ast::PropertyExpression {
-            token,
+        Ok(Box::new(ast::PropertyAccessExpression {
+            token: token_literal, // Use the stored string literal
             object,
             property: property_name,
         }))

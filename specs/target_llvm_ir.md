@@ -80,4 +80,39 @@ The output of the CURSED compiler's LLVM IR generation stage will typically be:
 2.  This IR is then processed by standard LLVM tools:
     -   `opt`: To apply LLVM optimization passes.
     -   `llc`: To generate native assembly or object code for the target architecture.
-    -   A linker (like `clang` or `ld`) combines the object code with the CURSED runtime library and standard library to produce the final executable. 
+    -   A linker (like `clang` or `ld`) combines the object code with the CURSED runtime library and standard library to produce the final executable.
+
+## Name Mangling and Module Compilation
+
+### Initial Strategy: Single Module Compilation
+
+To simplify the initial implementation, the CURSED compiler will adopt a **single-module compilation strategy**. This means:
+
+1.  When the compiler processes the main source file and encounters `yeet` (import) statements, it recursively parses and analyzes all imported CURSED source files.
+2.  All parsed code (from the main file and all imported files) is compiled into a single LLVM module (`.ll` file or in-memory representation).
+
+### Name Mangling Scheme
+
+To avoid naming conflicts between symbols (functions, globals) defined in different packages within this single LLVM module, a name mangling scheme is employed:
+
+*   **Format:** `_<package_name>_<symbol_name>`
+*   **Example:** A function `DoThing` in package `myutils` will have the LLVM name `_myutils_DoThing`.
+*   **Private Symbols:** Private symbols (starting with lowercase) are also mangled using the same scheme (e.g., `_myutils_internalHelper`). This ensures they don't clash with symbols from other packages but doesn't imply they are accessible from outside their package at the CURSED language level.
+*   **Main Package:** Symbols in the `main` package might use a slightly simpler mangling or none if guaranteed unique (e.g., `_main_MyFunc` or just `MyFunc` if no conflicts are possible, TBD).
+*   **Built-ins:** Built-in functions (like `puts`) might have special, unmangled names (e.g., `@cursed_puts`) or follow a convention like `_builtin_puts`.
+
+### Symbol Resolution
+
+The compiler is responsible for resolving CURSED-level symbol access (e.g., `myutils.DoThing()`) to the correct mangled LLVM symbol name (`_myutils_DoThing`) during code generation.
+
+### Future Goal: Separate Compilation
+
+The long-term goal is to support separate compilation, where each CURSED package is compiled into its own LLVM module or object file, and these are then linked together. The single-module strategy is a stepping stone towards this more complex model.
+
+## Runtime Considerations
+
+The CURSED runtime will need to support the following:
+
+1.  **Garbage Collection**: The runtime must manage memory allocation and deallocation efficiently.
+2.  **Concurrency**: The runtime must handle multiple goroutines and channels effectively.
+3.  **Standard Library**: The runtime must provide access to the standard library functions.

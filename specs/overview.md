@@ -40,4 +40,27 @@ The CURSED compiler will be implemented following the bootstrap compiler approac
 3. Stage 2: Development of a full CURSED compiler in CURSED
 4. Stage 3: Self-compilation of the full compiler
 
-Each stage will expand the language's feature set until it reaches its complete specification. 
+Each stage will expand the language's feature set until it reaches its complete specification.
+
+## Key Concepts
+
+*   **Gen Z Slang Keywords:** Core language constructs are represented by popular Gen Z slang terms (e.g., `slay` for function, `sus` for variable, `lowkey` for if).
+*   **Simplicity and Expressiveness:** Aims for a clean syntax inspired by Go and Python, while incorporating unique slang-based keywords.
+*   **Static Typing:** Uses a static type system with type inference.
+*   **Compilation to LLVM:** Targets LLVM IR for performance and portability.
+*   **Garbage Collection:** Manages memory automatically.
+
+## Modules and Packages
+
+CURSED uses a simple module system based on packages:
+
+*   **Package Declaration:** Every source file (`.csd`) belongs to a package, declared at the top using `vibe PackageName;`.
+*   **Exports:** Symbols (functions, variables, types) starting with an **uppercase** letter are exported (public) from their package. Symbols starting with a lowercase letter are private.
+*   **Imports:** The `yeet` keyword imports other packages. `yeet "path/to/package";` imports the package found at `path/to/package.csd`. Standard library packages have predefined paths.
+*   **Qualified Access:** Imported symbols are *always* accessed using the package name (or an import alias) as a qualifier, e.g., `packageName.ExportedSymbol`.
+*   **Import Aliases:** An optional alias can be provided during import: `yeet aliasName "path/to/package";`. Access is then done via `aliasName.ExportedSymbol`.
+
+## Goals
+
+*   Create a fun, expressive, and modern programming language.
+*   Explore the use of unconventional keywords in language design. 
