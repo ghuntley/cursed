@@ -46,4 +46,9 @@ strip = true  # Strip symbols from the binary
 opt-level = 0  # No optimization for faster compilation
 debug = true  # Full debug info
 
+[[test]]
+name = "jit_integration_tests"
+path = "tests/jit_integration_tests.rs"
+harness = true
+
 # Test configuration removed
