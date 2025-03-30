@@ -18,7 +18,7 @@ This document tracks the implementation status of the CURSED language features a
 *   **Keywords:** Most keywords are likely recognized by the lexer.
 *   **Comments:**
     *   Line Comments (`fr fr`): Implemented.
-    *   Block Comments (`no cap`/`on god`): **Likely Unimplemented**.
+    *   Block Comments (`no cap`/`on god`): Implemented.
 *   **Literals:** Basic literals (int, float, string, bool) handled. Octal, Hex, Binary integer formats need verification.
 
 ### Syntax/Grammar (`specs/grammar.md`)
@@ -112,6 +112,9 @@ Integration tests are implemented in Rust and verify end-to-end functionality:
     - `puts` function with integer arguments
     - `println` function with string arguments
     - Variable declarations and arithmetic operations
+    - Line comments (`fr fr`)
+    - Block comments (`no cap`/`on god`)
+    - Mixed comments (combination of line and block comments)
   - Tests for features in development:
     - Conditional statements (`lowkey`/`highkey`)
     - Loops (`periodt`)
@@ -121,9 +124,8 @@ Tests can be run with `cargo test` or selectively with `cargo test --test jit_in
 
 ## Next Steps
 
-1. Complete implementation of block comments
-2. Complete implementation of the import mechanism for modules
-3. Enhance JIT execution with error handling and debugging capabilities
-4. Implement break/continue for loops
-5. Add proper support for struct and interface types
-6. Implement basic standard library packages
+1. Complete implementation of the import mechanism for modules
+2. Enhance JIT execution with error handling and debugging capabilities
+3. Implement break/continue for loops
+4. Add proper support for struct and interface types
+5. Implement basic standard library packages

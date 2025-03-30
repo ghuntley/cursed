@@ -54,3 +54,4 @@ To add new tests:
 1. Create a new `.csd` file in this directory
 2. Write CURSED code that tests specific language features
 3. Run the tests to verify that the feature works as expected
+
