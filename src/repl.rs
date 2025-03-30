@@ -116,12 +116,34 @@ pub fn start_repl() -> Result<(), Error> {
                 match code_gen.compile(&program) {
                     Ok(()) => {
                         println!("✅ Compilation successful");
-                        // Print the generated LLVM IR (for now, eventually we would JIT execute)
+                        // Print the generated LLVM IR
                         println!("📄 Generated LLVM IR:");
                         println!("{}", code_gen.module().print_to_string().to_string());
                         
-                        // TODO: Add JIT execution once ready
-                        println!("⚠️ JIT Execution not yet implemented, compilation only");
+                        // Execute the code using JIT
+                        println!("🚀 Executing code using JIT...");
+                        match code_gen.module().create_jit_execution_engine(inkwell::OptimizationLevel::Default) {
+                            Ok(execution_engine) => {
+                                // Get main function
+                                unsafe {
+                                    match execution_engine.get_function::<unsafe extern "C" fn()>("main") {
+                                        Ok(main_fn) => {
+                                            println!("📌 Function 'main' found, executing...");
+                                            println!("--- Execution Output ---");
+                                            main_fn.call();
+                                            println!("------------------------");
+                                            println!("✅ Execution completed successfully");
+                                        },
+                                        Err(e) => {
+                                            println!("⚠️ Function 'main' not found in the module: {}", e);
+                                        }
+                                    }
+                                }
+                            },
+                            Err(e) => {
+                                eprintln!("❌ Failed to create execution engine: {}", e);
+                            }
+                        }
                     },
                     Err(e) => {
                         eprintln!("❌ Compilation failed: {}", e);

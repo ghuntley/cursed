@@ -87,7 +87,7 @@ This document tracks the implementation status of the CURSED language features a
   * Hash tables and arrays with basic indexing
 * Functions are correctly identified and looked up in the local variable environment or function registry
 * Import mechanism partially implemented with tests that gracefully handle unfinished functionality
-* **JIT Execution**: Not yet implemented, hardcoded simulation for simple cases.
+* **JIT Execution**: Implemented. The REPL and command-line file execution now execute compiled programs using LLVM's JIT execution engine.
 
 ## Standard Library Status (`specs/stdlib.md`)
 
@@ -97,7 +97,7 @@ The standard library packages appear largely **Unimplemented** based on the `src
 
 1. Complete implementation of block comments
 2. Complete implementation of the import mechanism for modules
-3. Add proper JIT execution support
+3. Enhance JIT execution with error handling and debugging capabilities
 4. Implement break/continue for loops
 5. Add proper support for struct and interface types
 6. Implement basic standard library packages

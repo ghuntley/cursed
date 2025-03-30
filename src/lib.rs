@@ -128,9 +128,31 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     println!("{}", ir);
     println!("-------------------------");
     
-    // TODO: JIT Execution
-    println!("⚠️ JIT Execution not yet implemented, compilation only");
-    // For now, just returning success if compilation worked
+    // JIT Execution
+    println!("🚀 Executing code using JIT...");
+    match code_gen.module().create_jit_execution_engine(inkwell::OptimizationLevel::Default) {
+        Ok(execution_engine) => {
+            // Get main function
+            unsafe {
+                match execution_engine.get_function::<unsafe extern "C" fn()>("main") {
+                    Ok(main_fn) => {
+                        println!("📌 Function 'main' found, executing...");
+                        println!("--- Execution Output ---");
+                        main_fn.call();
+                        println!("------------------------");
+                        println!("✅ Execution completed successfully");
+                    },
+                    Err(e) => {
+                        println!("⚠️ Function 'main' not found in the module: {}", e);
+                    }
+                }
+            }
+        },
+        Err(e) => {
+            println!("❌ Failed to create execution engine: {}", e);
+            return Err(Error::from_str(&format!("JIT execution error: {}", e)));
+        }
+    }
 
     Ok(())
 }
