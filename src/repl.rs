@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::lexer;
 use crate::parser;
+use crate::ast::Node;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 use rustyline::history::DefaultHistory;
@@ -70,13 +71,15 @@ pub fn start_repl() -> Result<(), Error> {
                 }
                 
                 // Create a lexer for the input
+                println!("🔍 Lexical Analysis...");
                 let mut lexer = lexer::Lexer::new(&line);
                 
                 // Create a parser for the lexer
+                println!("🔨 Parsing...");
                 let mut parser = match parser::Parser::new(&mut lexer) {
                     Ok(parser) => parser,
                     Err(e) => {
-                        eprintln!("Parser initialization error: {}", e);
+                        eprintln!("❌ Parser initialization error: {}", e);
                         continue;
                     }
                 };
@@ -85,35 +88,43 @@ pub fn start_repl() -> Result<(), Error> {
                 let program = match parser.parse_program() {
                     Ok(prog) => prog,
                     Err(e) => {
-                        eprintln!("Parser error: {}", e);
+                        eprintln!("❌ Parser error: {}", e);
                         continue;
                     }
                 };
                 
                 // Check for parser errors
                 if !parser.errors().is_empty() {
+                    println!("❌ Parser found {} errors", parser.errors().len());
                     for err in parser.errors() {
                         eprintln!("Parser error: {}", err);
                     }
                     continue;
                 }
                 
+                println!("✅ Successfully parsed program");
+                println!("📊 Program structure:\n{}", program.string());
+                
                 // Create LLVM code generator for this expression
                 // Provide a dummy path for REPL context
+                println!("🏗️ Setting up LLVM code generation...");
                 let repl_dummy_path = std::path::PathBuf::from("./repl_line.csd");
                 let mut code_gen = LlvmCodeGenerator::new(&context, "repl", repl_dummy_path);
                 
                 // Generate LLVM IR
+                println!("🔧 Compiling to LLVM IR...");
                 match code_gen.compile(&program) {
                     Ok(()) => {
+                        println!("✅ Compilation successful");
                         // Print the generated LLVM IR (for now, eventually we would JIT execute)
-                        println!("Generated LLVM IR:");
+                        println!("📄 Generated LLVM IR:");
                         println!("{}", code_gen.module().print_to_string().to_string());
                         
                         // TODO: Add JIT execution once ready
+                        println!("⚠️ JIT Execution not yet implemented, compilation only");
                     },
                     Err(e) => {
-                        eprintln!("Code generation error: {}", e);
+                        eprintln!("❌ Compilation failed: {}", e);
                         continue;
                     }
                 }

@@ -88,30 +88,48 @@ pub fn run_stdin() -> Result<(), Error> {
 
 // Make internal helper public for now (consider a dedicated public fn later)
 pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> Result<(), Error> {
+    println!("📝 Processing file: {:?}", file_path);
+    println!("📦 Input size: {} bytes", input.len());
+    
+    println!("🔍 Lexical Analysis...");
     let mut lexer = lexer::Lexer::new(input);
+    
+    println!("🔨 Parsing...");
     let mut parser = parser::Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
 
     if !parser.errors().is_empty() {
+        println!("❌ Parser found {} errors", parser.errors().len());
         let errors_str = parser.errors().iter().map(|e| e.to_string()).collect::<Vec<String>>().join("\n");
         return Err(Error::from_str(&format!("Parser errors:\n{}", errors_str))); 
     }
 
-    println!("Successfully parsed program: {}", program.string());
+    println!("✅ Successfully parsed program");
+    println!("📊 Program structure:\n{}", program.string());
     
     // Create LLVM context and code generator
+    println!("🏗️ Setting up LLVM code generation...");
     let context = inkwell::context::Context::create();
     let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, "main", file_path);
     
     // Compile the program
-    code_gen.compile_program(&program).map_err(|e| Error::from_str(&format!("CodeGen error: {}", e)))?;
+    println!("🔧 Compiling to LLVM IR...");
+    let compile_result = code_gen.compile_program(&program);
+    if let Err(ref e) = compile_result {
+        println!("❌ Compilation failed: {}", e);
+        return Err(Error::from_str(&format!("CodeGen error: {}", e)));
+    }
+    println!("✅ Compilation successful");
     
     // Print the generated LLVM IR for debugging
+    println!("📄 Generated LLVM IR:");
     println!("--- Generated LLVM IR ---");
-    code_gen.module().print_to_stderr();
+    let ir = code_gen.module().print_to_string().to_string();
+    println!("{}", ir);
     println!("-------------------------");
     
     // TODO: JIT Execution
+    println!("⚠️ JIT Execution not yet implemented, compilation only");
     // For now, just returning success if compilation worked
 
     Ok(())
