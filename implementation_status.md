@@ -50,7 +50,7 @@ This document tracks the implementation status of the CURSED language features a
     *   `normie` (int32): Implemented.
     *   `lit` (bool): Implemented. *Spec Mismatch: `specs/types.md` uses `lit`, `specs/target_llvm_ir.md` uses `bougie`. Needs consolidation.*
     *   `tea` (string): Basic implementation exists. Runtime details (GC) unclear.
-    *   `smol`, `mid`, `thicc` (other integers): **Unimplemented**.
+    *   `smol`, `mid`, `thicc` (other integers): **Implemented**. Support for int8, int16, and int64 types with proper LLVM IR code generation.
     *   `snack`, `meal` (floats): Basic float support exists without specific types.
     *   `byte`, `rune`: **Unimplemented**.
     *   `sip` (char) and its methods: **Unimplemented**.
@@ -145,7 +145,7 @@ The following items need to be implemented to progress the CURSED language compi
 - [ ] **Type System**
   - Implement `be_like` type declarations
   - ~~Implement `facts` constant declarations~~
-  - Add explicit type definitions for integer types: `smol` (int8), `mid` (int16), `thicc` (int64)
+  - ~~Add explicit type definitions for integer types: `smol` (int8), `mid` (int16), `thicc` (int64)~~
   - Add explicit float types: `snack` (float32), `meal` (float64)
   - Implement `byte` and `rune` types
   - Implement `sip` (char) type and methods

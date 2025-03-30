@@ -13,6 +13,7 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, PropertyAccessExpression, AssignmentExpression, FactsStatement};
+use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
 
@@ -174,16 +175,70 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 }
             };
 
-            let llvm_basic_type = rhs_val.get_type();
+            // Determine the LLVM type based on the type annotation
+            let llvm_type = if let Some(type_token) = &let_stmt.type_annotation {
+                // Use the specific integer type
+                if matches!(type_token, Token::Smol | Token::Mid | Token::Normie | Token::Thicc) {
+                    // Get the appropriate integer type
+                    let int_type = self.get_integer_type_from_token(type_token);
+                    
+                    // Convert the right-hand side value if needed
+                    let rhs_val = if rhs_val.is_int_value() {
+                        // Get the integer value
+                        let int_val = rhs_val.into_int_value();
+                        
+                        // Create a constant of the target type
+                        let const_val = int_type.const_int(int_val.get_zero_extended_constant().unwrap_or(0), false);
+                        
+                        // Return as BasicValueEnum
+                        BasicValueEnum::IntValue(const_val)
+                    } else {
+                        // If it's not an integer, just use the original value (will likely cause a type error)
+                        rhs_val
+                    };
+                    
+                    // Return the basic type enum
+                    BasicTypeEnum::IntType(int_type)
+                } else {
+                    // Unsupported type annotation, use the RHS type
+                    rhs_val.get_type()
+                }
+            } else {
+                // No type annotation, use the RHS type
+                rhs_val.get_type()
+            };
 
             // Allocate memory on the stack in the entry block
-            let alloca = self.create_entry_block_alloca(llvm_basic_type, var_name);
+            let alloca = self.create_entry_block_alloca(llvm_type, var_name);
 
-            // Store the initial value
-            self.builder.build_store(alloca, rhs_val).unwrap();
+            // Store the initial value, with potential truncation/extension based on the target type
+            if llvm_type.is_int_type() && rhs_val.is_int_value() {
+                let int_type = llvm_type.into_int_type();
+                let rhs_int = rhs_val.into_int_value();
+                
+                // Check if we need to truncate or extend
+                let converted_int = if rhs_int.get_type().get_bit_width() != int_type.get_bit_width() {
+                    if rhs_int.get_type().get_bit_width() > int_type.get_bit_width() {
+                        // Truncate
+                        self.builder.build_int_truncate(rhs_int, int_type, "truncated").unwrap()
+                    } else {
+                        // Sign extend (assuming signed integers)
+                        self.builder.build_int_s_extend(rhs_int, int_type, "extended").unwrap()
+                    }
+                } else {
+                    // Same bit width, no conversion needed
+                    rhs_int
+                };
+                
+                // Store the value
+                self.builder.build_store(alloca, converted_int).unwrap();
+            } else {
+                // For non-integer types or types that match, just store directly
+                self.builder.build_store(alloca, rhs_val).unwrap();
+            }
 
             // Fixed: Store (Pointer, Type) tuple
-            self.variables.insert(var_name.clone(), (alloca, llvm_basic_type));
+            self.variables.insert(var_name.clone(), (alloca, llvm_type));
 
             Ok(())
         } else if let Some(facts_stmt) = statement.as_any().downcast_ref::<FactsStatement>() {
@@ -749,22 +804,85 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             return Err("Call target is not a resolved function pointer".to_string());
         };
 
+        // Get the callee name - this helps us with special case handling for built-ins
+        let callee_name = callee.get_name().to_str().unwrap_or("unknown");
+
         // Compile arguments (need &mut self)
         let mut args = Vec::new();
-        for arg in &call_expr.arguments {
+        for (i, arg) in call_expr.arguments.iter().enumerate() {
             let arg_value = self.compile_expression(arg.as_ref())?;
+            
+            // Handle type conversions for parameters - special handling for puts
+            if callee_name == "puts" && i == 0 && arg_value.is_int_value() {
+                // puts expects i64, so convert any smaller integer types
+                let arg_int = arg_value.into_int_value();
+                let i64_type = self.context.i64_type();
+                
+                // Only convert if the types don't match
+                if arg_int.get_type() != i64_type {
+                    // Convert to i64 (sign extend smaller integers)
+                    let converted = self.builder.build_int_s_extend(arg_int, i64_type, "int_to_i64").unwrap();
+                    args.push(converted.into());
+                    continue; // Skip the regular push below
+                }
+            }
+            
             args.push(arg_value);
         }
         
         // Check argument count
-        // ... (rest of function remains similar, using &mut self implicitly for builder) ...
         let expected_args = callee.count_params();
         if !callee.get_type().is_var_arg() && args.len() != expected_args as usize {
             return Err(format!("Function takes {} arguments but got {}", expected_args, args.len()));
         }
-        let args_meta: Vec<BasicMetadataValueEnum> = args.iter().map(|&arg| arg.into()).collect();
+        
+        // Convert args to the expected parameter types
+        let mut converted_args = Vec::new();
+        for (i, arg) in args.into_iter().enumerate() {
+            if i < expected_args as usize {
+                let param_type = callee.get_nth_param(i as u32)
+                    .map(|param| param.get_type())
+                    .ok_or_else(|| format!("Could not get parameter type for argument {}", i))?;
+                
+                if arg.is_int_value() && param_type.is_int_type() {
+                    let arg_int = arg.into_int_value();
+                    let param_int_type = param_type.into_int_type();
+                    
+                    // Only convert if the types don't match
+                    if arg_int.get_type() != param_int_type {
+                        // Determine if we need to truncate or extend
+                        let arg_bits = arg_int.get_type().get_bit_width();
+                        let param_bits = param_int_type.get_bit_width();
+                        
+                        if arg_bits > param_bits {
+                            // Truncate larger integers
+                            let converted = self.builder.build_int_truncate(
+                                arg_int, param_int_type, &format!("truncate_arg_{}", i)).unwrap();
+                            converted_args.push(converted.into());
+                            continue; // Skip the regular push below
+                        } else if arg_bits < param_bits {
+                            // Sign extend smaller integers
+                            let converted = self.builder.build_int_s_extend(
+                                arg_int, param_int_type, &format!("extend_arg_{}", i)).unwrap();
+                            converted_args.push(converted.into());
+                            continue; // Skip the regular push below
+                        }
+                    }
+                }
+            }
+            
+            // Default case - no conversion needed
+            converted_args.push(arg);
+        }
+        
+        // Convert to BasicMetadataValueEnum for the LLVM call
+        let args_meta: Vec<BasicMetadataValueEnum> = converted_args.iter().map(|&arg| arg.into()).collect();
+        
+        // Build the function call
         let call_site_value = self.builder.build_call(callee, &args_meta, "calltmp")
             .map_err(|e| format!("Failed to build function call: {}", e))?;
+        
+        // Return the result if the function returns something, otherwise return 0
         let result = call_site_value.try_as_basic_value();
         if result.left().is_some() {
             Ok(result.left().unwrap())
@@ -1649,6 +1767,18 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         Err(format!("Variable '{}' not found in current scope", name))
     }
+
+    // Add this helper method to the LlvmCodeGenerator implementation
+    /// Determines the appropriate LLVM integer type based on the CURSED integer type token
+    fn get_integer_type_from_token(&self, token: &crate::lexer::Token) -> inkwell::types::IntType<'ctx> {
+        match token {
+            crate::lexer::Token::Smol => self.context.i8_type(),    // 8-bit integer
+            crate::lexer::Token::Mid => self.context.i16_type(),    // 16-bit integer 
+            crate::lexer::Token::Normie => self.context.i32_type(), // 32-bit integer
+            crate::lexer::Token::Thicc => self.context.i64_type(),  // 64-bit integer
+            _ => self.context.i64_type(), // Default to i64 if not a recognized integer type
+        }
+    }
 }
 
 // /// Entry point for LLVM code generation from an AST.
@@ -1860,6 +1990,7 @@ mod tests {
                 token: "42".into(),
                 value: 42,
             })),
+            type_annotation: None, // No explicit type annotation
         };
         
         let program = Program {
@@ -1935,6 +2066,7 @@ mod tests {
                 token: "0".into(),
                 value: 0,
             })),
+            type_annotation: None, // No explicit type annotation
         };
         
         // 2. Second statement: periodt (x < 10) { x = x + 1; }

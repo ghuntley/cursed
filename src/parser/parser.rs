@@ -221,6 +221,13 @@ impl<'a> Parser<'a> {
             _ => unreachable!(), // Already checked
         };
         
+        // Check for optional type annotation (smol, mid, normie, thicc)
+        let mut type_annotation = None;
+        if matches!(self.peek_token, Token::Smol | Token::Mid | Token::Normie | Token::Thicc) {
+            self.next_token()?; // Consume the type token
+            type_annotation = Some(self.current_token.clone());
+        }
+        
         // Expect the assignment operator
         if !self.expect_peek(&Token::Assign) {
             return Err(Error::from_str(
@@ -239,12 +246,15 @@ impl<'a> Parser<'a> {
             self.next_token()?;
         }
         
-        // Create and return the let statement
-        Ok(Box::new(ast::LetStatement {
+        // Create and return the let statement with type annotation
+        let let_stmt = ast::LetStatement {
             token,
             name,
             value: Some(value),
-        }))
+            type_annotation, // Include the type annotation
+        };
+        
+        Ok(Box::new(let_stmt))
     }
     
     /// Parse a facts statement (constant declaration)
