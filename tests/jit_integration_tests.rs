@@ -146,6 +146,77 @@ fn test_if_no_parens() {
             "Expected output containing '42' (from the if block), got:\n{}", output);
 }
 
+/// Tests line comments (fr fr) parsing and execution
+#[test]
+fn test_line_comments() {
+    let test_file = "tests/jit/line_comments.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Verify that both puts statements were executed and comments were ignored
+    assert!(output.contains("42"), "Expected output containing '42', got:\n{}", output);
+    assert!(output.contains("100"), "Expected output containing '100', got:\n{}", output);
+    
+    // Make sure no comment text is in the output
+    assert!(!output.contains("This is a line comment"), 
+            "Comment text should not be in output: {}", output);
+    assert!(!output.contains("This is a comment after code"), 
+            "Comment text should not be in output: {}", output);
+}
+
+/// Tests block comments (no cap / on god) parsing and execution
+#[test]
+fn test_block_comments() {
+    let test_file = "tests/jit/block_comments.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Verify that all puts statements were executed and comments were ignored
+    assert!(output.contains("42"), "Expected output containing '42', got:\n{}", output);
+    assert!(output.contains("100"), "Expected output containing '100', got:\n{}", output);
+    assert!(output.contains("200"), "Expected output containing '200', got:\n{}", output);
+    
+    // Make sure no comment text is in the output
+    assert!(!output.contains("This is a block comment"), 
+            "Comment text should not be in output: {}", output);
+    assert!(!output.contains("Multi-line block comment"), 
+            "Comment text should not be in output: {}", output);
+    assert!(!output.contains("Nested block comment"), 
+            "Comment text should not be in output: {}", output);
+}
+
+/// Tests mixed line and block comments parsing and execution
+#[test]
+fn test_mixed_comments() {
+    let test_file = "tests/jit/mixed_comments.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Verify that all puts statements were executed and comments were ignored
+    assert!(output.contains("42"), "Expected output containing '42', got:\n{}", output);
+    assert!(output.contains("100"), "Expected output containing '100', got:\n{}", output);
+    assert!(output.contains("200"), "Expected output containing '200', got:\n{}", output);
+    assert!(output.contains("300"), "Expected output containing '300', got:\n{}", output);
+    
+    // Make sure no comment text is in the output
+    assert!(!output.contains("Line comment at the start"), 
+            "Comment text should not be in output: {}", output);
+    assert!(!output.contains("Block comment before code"), 
+            "Comment text should not be in output: {}", output);
+}
+
 /// Run all JIT tests in the directory that are expected to pass
 #[test]
 fn test_all_jit_files() {

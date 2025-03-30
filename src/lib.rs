@@ -153,7 +153,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
             return Err(Error::from_str(&format!("JIT execution error: {}", e)));
         }
     }
-
+    
     Ok(())
 }
 
