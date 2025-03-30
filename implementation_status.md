@@ -28,7 +28,7 @@ This document tracks the implementation status of the CURSED language features a
     *   `yeet` (import): Parsing implemented, import mechanism partially implemented with tests that skip failed imports.
     *   `sus` (var): Basic implementation exists.
     *   `slay` (func): Basic implementation exists.
-    *   `facts` (const): **Likely Unimplemented**.
+    *   `facts` (const): **Implemented**. Constants can be declared with any value type and used like variables. Proper tests are in place.
     *   `be_like` (type): **Likely Unimplemented**.
 *   **Statements:**
     *   `lowkey`/`highkey` (if/else): Fully implemented, supporting both forms with and without parentheses around conditions as per grammar specification. Test cases exist for both syntaxes.
@@ -124,8 +124,96 @@ Tests can be run with `cargo test` or selectively with `cargo test --test jit_in
 
 ## Next Steps
 
-1. Complete implementation of the import mechanism for modules
-2. Enhance JIT execution with error handling and debugging capabilities
-3. Implement break/continue for loops
-4. Add proper support for struct and interface types
-5. Implement basic standard library packages
+The following items need to be implemented to progress the CURSED language compiler and runtime:
+
+### High Priority Items
+
+#### Core Language Features
+- [ ] **Complete Import Mechanism**
+  - Implement full module resolution system for `yeet` imports
+  - Add proper error handling for missing imports
+  - Support circular dependencies
+  - Implement import aliases
+
+- [ ] **Control Flow Constructs**
+  - Implement `ghosted` (break) statement for loops
+  - Implement `simp` (continue) statement for loops
+  - Complete `bestie` (for) loop implementation with ForClause and RangeClause support
+  - Implement `flex` range clause syntax (e.g., `bestie i flex 0..10`)
+  - Implement `vibe_check`/`mood`/`basic` (switch) statements
+
+- [ ] **Type System**
+  - Implement `be_like` type declarations
+  - ~~Implement `facts` constant declarations~~
+  - Add explicit type definitions for integer types: `smol` (int8), `mid` (int16), `thicc` (int64)
+  - Add explicit float types: `snack` (float32), `meal` (float64)
+  - Implement `byte` and `rune` types
+  - Implement `sip` (char) type and methods
+  - Implement `extra` (complex number) type
+  - Resolve the type naming inconsistency between `lit` and `bougie` for boolean type
+
+#### Advanced Language Features
+- [ ] **Memory Management Features**
+  - Implement `@T` pointer syntax
+  - Add `new` builtin function for dynamic memory allocation
+  - Implement proper garbage collection for heap-allocated objects
+
+- [ ] **Composite Types**
+  - Complete implementation of `[]T` slice type
+  - Implement `append`, `cap`, `len`, and `make` built-in functions for slices
+  - Implement `squad` (struct) type creation and instantiation
+  - Implement `collab` (interface) type definition and implementation
+  - Add support for `dm<T>` channels with send/receive operations
+
+- [ ] **Function and Method Features**
+  - Add support for method declarations and receiver types
+  - Implement `later` (defer) statement for cleanup operations
+  - Add full support for recursive functions
+  - Implement proper function/method overloading
+
+### Medium Priority Items
+
+- [ ] **Built-in Functions and Standard Library**
+  - Extend `puts` to support all base types
+  - Implement string manipulation functions
+  - Add mathematical functions and operations
+  - Implement I/O operations
+  - Add array/slice manipulation utilities
+  - Implement error handling constructs
+
+- [ ] **Type System Features**
+  - Implement generics (`[T]`) for polymorphic types
+  - Add type assertions and type switches
+  - Implement interfaces for polymorphic behavior
+
+- [ ] **Performance Optimization**
+  - Optimize code generation for common patterns
+  - Implement more efficient runtime for strings and complex types
+  - Add optimization passes to the LLVM IR generation
+
+### Lower Priority Items
+
+- [ ] **Documentation and Examples**
+  - Create comprehensive documentation for the language
+  - Develop example programs showcasing language features
+  - Add inline documentation to compiler internals
+
+- [ ] **Tooling**
+  - Implement a debug information generator
+  - Add source code location tracking for better error messages
+  - Create a package manager for CURSED libraries
+  - Implement a language server for IDE integration
+
+- [ ] **Stage 2: Full Compiler in CURSED**
+  - Once Stage 1 is complete, begin work on implementing the compiler in CURSED itself
+  - Design a bootstrap process to transition from Rust to CURSED
+  - Create a test suite specifically for the self-hosted compiler
+
+## Testing Requirements
+
+For each implemented feature:
+- [ ] Unit tests should verify correct AST creation
+- [ ] Integration tests should demonstrate working JIT execution
+- [ ] Error cases should be tested with appropriate error messages
+- [ ] Edge cases and boundary conditions should be explicitly tested
+- [ ] Performance benchmarks should be created for key operations
