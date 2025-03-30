@@ -217,6 +217,34 @@ fn test_mixed_comments() {
             "Comment text should not be in output: {}", output);
 }
 
+/// Tests JIT execution of constant declarations using facts keyword
+#[test]
+fn test_facts_constant() {
+    let test_file = "tests/jit/facts_constant.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Test area calculation using integer constants (5 * 3 = 15)
+    assert!(output.contains("15"), 
+            "Expected area output containing '15', got:\n{}", output);
+    
+    // Test string constant
+    assert!(output.contains("Hello, CURSED!"), 
+            "Expected output containing 'Hello, CURSED!', got:\n{}", output);
+    
+    // Test integer constant
+    assert!(output.contains("42"), 
+            "Expected output containing '42', got:\n{}", output);
+    
+    // Test boolean constant used in conditional
+    assert!(output.contains("Feature is enabled"), 
+            "Expected output containing 'Feature is enabled', got:\n{}", output);
+}
+
 /// Run all JIT tests in the directory that are expected to pass
 #[test]
 fn test_all_jit_files() {

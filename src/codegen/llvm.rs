@@ -12,7 +12,7 @@ use inkwell::{IntPredicate, FloatPredicate};
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, PropertyAccessExpression, AssignmentExpression};
+                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, PropertyAccessExpression, AssignmentExpression, FactsStatement};
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
 
@@ -184,6 +184,27 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 
             // Fixed: Store (Pointer, Type) tuple
             self.variables.insert(var_name.clone(), (alloca, llvm_basic_type));
+
+            Ok(())
+        } else if let Some(facts_stmt) = statement.as_any().downcast_ref::<FactsStatement>() {
+            // Handle constant declaration (facts statement)
+            let const_name = &facts_stmt.name.value;
+
+            // Compile the constant value expression
+            let rhs_val = self.compile_expression(facts_stmt.value.as_ref())?;
+            let llvm_basic_type = rhs_val.get_type();
+
+            // For constants, we create an alloca but mark it internally as immutable
+            // Note: LLVM IR doesn't have a true constant concept for local variables
+            // The immutability will be enforced at the language level by the parser/semantic analyzer
+            let alloca = self.create_entry_block_alloca(llvm_basic_type, const_name);
+
+            // Store the constant value
+            self.builder.build_store(alloca, rhs_val).unwrap();
+
+            // Add to the variables hashmap but we'll track it as a constant internally
+            // In a more sophisticated implementation, we might have a separate hashmap for constants
+            self.variables.insert(const_name.clone(), (alloca, llvm_basic_type));
 
             Ok(())
         } else if let Some(return_stmt) = statement.as_any().downcast_ref::<ReturnStatement>() {
