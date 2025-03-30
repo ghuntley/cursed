@@ -245,6 +245,31 @@ fn test_facts_constant() {
             "Expected output containing 'Feature is enabled', got:\n{}", output);
 }
 
+/// Tests JIT execution of explicit integer type definitions (smol, mid, normie, thicc)
+#[test]
+fn test_integer_types() {
+    let test_file = "tests/jit/integer_types.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Each puts should output the correct number
+    assert!(output.contains("42"), 
+            "Expected output containing '42' (smol), got:\n{}", output);
+    
+    assert!(output.contains("1000"), 
+            "Expected output containing '1000' (mid), got:\n{}", output);
+    
+    assert!(output.contains("70000"), 
+            "Expected output containing '70000' (normie), got:\n{}", output);
+    
+    assert!(output.contains("3000000000"), 
+            "Expected output containing '3000000000' (thicc), got:\n{}", output);
+}
+
 /// Run all JIT tests in the directory that are expected to pass
 #[test]
 fn test_all_jit_files() {

@@ -474,6 +474,7 @@ pub struct LetStatement {
     pub token: String, // Token::Let
     pub name: Identifier,
     pub value: Option<Box<dyn Expression>>,
+    pub type_annotation: Option<Token>, // Type annotation (smol, mid, normie, thicc)
 }
 
 impl Node for LetStatement {
@@ -482,7 +483,14 @@ impl Node for LetStatement {
     }
 
     fn string(&self) -> String {
-        let mut out = format!("{} {} = ", self.token_literal(), self.name.string());
+        let mut out = format!("{} {}", self.token_literal(), self.name.string());
+        
+        // Include type annotation if present
+        if let Some(type_token) = &self.type_annotation {
+            out.push_str(&format!(" {}", type_token.token_literal()));
+        }
+        
+        out.push_str(" = ");
         if let Some(value) = &self.value {
             out.push_str(&value.string());
         }

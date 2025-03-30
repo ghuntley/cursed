@@ -67,6 +67,12 @@ pub enum Token {
     Cap,         // nil (cap)
     Crew,        // array literal
     
+    // Integer types
+    Smol,        // int8 (smol)
+    Mid,         // int16 (mid)
+    Normie,      // int32 (normie)
+    Thicc,       // int64 (thicc)
+    
     // Comment tokens
     LineComment, // fr fr
     BlockCommentStart, // no cap
@@ -390,6 +396,10 @@ impl<'a> Lexer<'a> {
             "based" => Token::Based,
             "cap" => Token::Cap,
             "crew" => Token::Crew,
+            "smol" => Token::Smol,
+            "mid" => Token::Mid,
+            "normie" => Token::Normie,
+            "thicc" => Token::Thicc,
             "fr" => {
                 // Check for "fr fr" comment
                 if self.peek_char() == Some(' ') && 
@@ -516,6 +526,10 @@ impl Token {
             Token::Based => "based".to_string(),
             Token::Cap => "cap".to_string(),
             Token::Crew => "crew".to_string(),
+            Token::Smol => "smol".to_string(),
+            Token::Mid => "mid".to_string(),
+            Token::Normie => "normie".to_string(),
+            Token::Thicc => "thicc".to_string(),
             Token::LineComment => "fr fr".to_string(),
             Token::BlockCommentStart => "no cap".to_string(),
             Token::BlockCommentEnd => "on god".to_string(),
