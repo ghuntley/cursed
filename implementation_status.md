@@ -93,6 +93,32 @@ This document tracks the implementation status of the CURSED language features a
 
 The standard library packages appear largely **Unimplemented** based on the `src` directory structure.
 
+## Testing
+
+### Unit Tests
+
+The codebase contains unit tests covering:
+- Lexer functionality
+- Parser functionality 
+- AST evaluation
+- Code generation
+
+### Integration Tests
+
+Integration tests are implemented in Rust and verify end-to-end functionality:
+
+- **JIT Execution Tests**: Located in `tests/jit_integration_tests.rs`, these tests verify that CURSED code can be compiled to LLVM IR and executed correctly using JIT.
+  - Currently passing tests:
+    - `puts` function with integer arguments
+    - `println` function with string arguments
+    - Variable declarations and arithmetic operations
+  - Tests for features in development:
+    - Conditional statements (`lowkey`/`highkey`)
+    - Loops (`periodt`)
+    - Complex program structures
+
+Tests can be run with `cargo test` or selectively with `cargo test --test jit_integration_tests`.
+
 ## Next Steps
 
 1. Complete implementation of block comments
