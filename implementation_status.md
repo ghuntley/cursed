@@ -31,7 +31,7 @@ This document tracks the implementation status of the CURSED language features a
     *   `facts` (const): **Likely Unimplemented**.
     *   `be_like` (type): **Likely Unimplemented**.
 *   **Statements:**
-    *   `lowkey`/`highkey` (if/else): Basic implementation exists.
+    *   `lowkey`/`highkey` (if/else): Fully implemented, supporting both forms with and without parentheses around conditions as per grammar specification. Test cases exist for both syntaxes.
     *   Assignments (`=`): Implemented, including in loop bodies.
     *   Short Variable Declaration (`:=`): Implemented.
     *   Expression Statements: Implemented.

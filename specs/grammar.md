@@ -139,6 +139,16 @@ lowkey x > 0 {
 }
 ```
 
+Parentheses around the condition expression are optional:
+
+```
+lowkey (x > 0) {
+    yolo x
+}
+```
+
+Both forms are valid in CURSED.
+
 ### Switch Statements
 
 ```
