@@ -32,13 +32,13 @@ This document tracks the implementation status of the CURSED language features a
     *   `be_like` (type): **Likely Unimplemented**.
 *   **Statements:**
     *   `lowkey`/`highkey` (if/else): Basic implementation exists.
-    *   Assignments (`=`): Implemented.
+    *   Assignments (`=`): Implemented, including in loop bodies.
     *   Short Variable Declaration (`:=`): Implemented.
     *   Expression Statements: Implemented.
     *   `yolo` (return): Basic implementation exists.
     *   `vibe_check`/`mood`/`basic` (switch): **Unimplemented**.
     *   `bestie` (for): Basic loop structure might exist, but `ForClause` and `RangeClause` (`flex`) are **Unimplemented**.
-    *   `periodt` (while): Implemented.
+    *   `periodt` (while): Implemented with full support for variable assignments within loop bodies.
     *   `ghosted` (break): **Unimplemented**.
     *   `simp` (continue): **Unimplemented**.
     *   `later` (defer): **Unimplemented**.
