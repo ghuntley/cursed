@@ -320,33 +320,42 @@ impl<'a> Parser<'a> {
     }
     
     /// Parse an if statement
+    /// 
+    /// The CURSED language allows for optional parentheses around the condition.
+    /// Both `lowkey expression { ... }` and `lowkey (expression) { ... }` are valid.
     pub fn parse_if_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         let token = self.current_token.token_literal(); // 'lowkey' token
         
-        // Expect an opening parenthesis for the condition
-        if !self.expect_peek(&Token::LParen) {
-            return Err(Error::from_str(
-                &format!("Expected '(' after lowkey, got {:?}", self.peek_token)
-            ));
-        }
-        
-        // Move past '('
+        // Move past 'lowkey'
         self.next_token()?;
+        
+        // Check if there's an opening parenthesis (optional according to the grammar)
+        let has_parens = self.current_token == Token::LParen;
+        
+        // If there's an opening parenthesis, consume it
+        if has_parens {
+            // Move past '('
+            self.next_token()?;
+        }
         
         // Parse the condition expression
         let condition = self.parse_expression(Precedence::Lowest)?;
         
-        // Expect a closing parenthesis
-        if !self.expect_peek(&Token::RParen) {
-            return Err(Error::from_str(
-                &format!("Expected ')' after condition, got {:?}", self.peek_token)
-            ));
+        // If we had an opening parenthesis, expect a closing one
+        if has_parens {
+            if self.current_token != Token::RParen {
+                return Err(Error::from_str(
+                    &format!("Expected next token to be RParen, got {:?}", self.current_token)
+                ));
+            }
+            // Move past ')'
+            self.next_token()?;
         }
         
         // Expect an opening brace for the consequence block
-        if !self.expect_peek(&Token::LBrace) {
+        if self.current_token != Token::LBrace {
             return Err(Error::from_str(
-                &format!("Expected '{{' after condition, got {:?}", self.peek_token)
+                &format!("Expected '{{' after condition, got {:?}", self.current_token)
             ));
         }
         

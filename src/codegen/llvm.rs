@@ -12,7 +12,7 @@ use inkwell::{IntPredicate, FloatPredicate};
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, PropertyAccessExpression};
+                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, PropertyAccessExpression, AssignmentExpression};
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
 
@@ -544,6 +544,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.compile_hash_literal(hash_lit)
         } else if let Some(prop_expr) = expression.as_any().downcast_ref::<PropertyAccessExpression>() {
             self.compile_property_access(prop_expr)
+        } else if let Some(assign_expr) = expression.as_any().downcast_ref::<AssignmentExpression>() {
+            self.compile_assignment_expression(assign_expr)
         } else {
             Err(format!("Unsupported expression type: {}", expression.string()))
         }
@@ -1595,6 +1597,36 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else {
             Err("Property access only supported on identifiers for now".to_string())
         }
+    }
+
+    fn compile_assignment_expression(&mut self, assign_expr: &AssignmentExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        let name = &assign_expr.name.value;
+        
+        // Compile the value expression
+        let value = self.compile_expression(&*assign_expr.value)?;
+        
+        // Check if the variable exists in the current scope
+        if let Some((var_ptr, var_type)) = self.variables.get(name) {
+            // Ensure the types are compatible
+            if var_type.is_int_type() && value.is_int_value() {
+                self.builder.build_store(*var_ptr, value).unwrap();
+            }
+            else if var_type.is_float_type() && value.is_float_value() {
+                self.builder.build_store(*var_ptr, value).unwrap();
+            }
+            else if var_type.is_pointer_type() && value.is_pointer_value() {
+                // Handle pointers (like strings)
+                self.builder.build_store(*var_ptr, value).unwrap();
+            }
+            else {
+                return Err(format!("Type mismatch in assignment to variable '{}'", name));
+            }
+            
+            // Return the assigned value
+            return Ok(value);
+        }
+        
+        Err(format!("Variable '{}' not found in current scope", name))
     }
 }
 

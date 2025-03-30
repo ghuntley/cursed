@@ -27,9 +27,10 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
 /// List of tests that are known to fail due to unimplemented features
 fn known_failing_tests() -> HashSet<&'static str> {
     let mut failures = HashSet::new();
-    failures.insert("tests/jit/while_loop.csd"); // Assignment in while loop not implemented
-    failures.insert("tests/jit/complex_test.csd"); // Contains while loops
-    failures.insert("tests/jit/if_else.csd"); // Issue with token parsing
+    // While loop should work now that we've implemented assignment expressions
+    // failures.insert("tests/jit/while_loop.csd"); // Assignment in while loop not implemented
+    failures.insert("tests/jit/complex_test.csd"); // Contains other unimplemented features
+    // failures.insert("tests/jit/if_else.csd"); // Issue with token parsing
     return failures;
 }
 
@@ -74,9 +75,8 @@ fn test_variable_arithmetic() {
             "Expected output containing '15' (5 + 10), got:\n{}", output);
 }
 
-/// Tests JIT execution of if-else statements
+/// Tests JIT execution of if-else statements with parentheses around the condition (optional)
 #[test]
-#[ignore = "issues with token parsing"]
 fn test_if_else() {
     let test_file = "tests/jit/if_else.csd";
     assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
@@ -96,7 +96,6 @@ fn test_if_else() {
 
 /// Tests JIT execution of while loops
 #[test]
-#[ignore = "feature not implemented yet"]
 fn test_while_loop() {
     let test_file = "tests/jit/while_loop.csd";
     assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
@@ -104,8 +103,19 @@ fn test_while_loop() {
     let (output, success) = run_cursed_file(test_file)
         .expect("Failed to run CURSED compiler");
     
-    // This test is expected to fail until while loops with assignments are implemented
-    println!("While loop test output: {}", output);
+    // This test should now pass with our implementation of assignments in while loops
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Check that we get outputs for 0, 1, 2, 3, 4
+    assert!(output.contains("0"), "Expected output to contain '0'");
+    assert!(output.contains("1"), "Expected output to contain '1'");
+    assert!(output.contains("2"), "Expected output to contain '2'");
+    assert!(output.contains("3"), "Expected output to contain '3'");
+    assert!(output.contains("4"), "Expected output to contain '4'");
+    
+    // But not 5, since we loop while counter < 5
+    assert!(!output.contains("Execution Output ---\n5"), 
+           "Output should not contain '5' as we loop while counter < 5");
 }
 
 /// Tests JIT execution of the complex test with multiple language features
@@ -120,6 +130,20 @@ fn test_complex() {
     
     // This test contains unimplemented features
     println!("Complex test output: {}", output);
+}
+
+/// Tests JIT execution of if-else statements without parentheses around the condition
+#[test]
+fn test_if_no_parens() {
+    let test_file = "tests/jit/if_no_parens.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    assert!(output.contains("42"), 
+            "Expected output containing '42' (from the if block), got:\n{}", output);
 }
 
 /// Run all JIT tests in the directory that are expected to pass
