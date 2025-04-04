@@ -31,7 +31,7 @@ fn known_failing_tests() -> HashSet<&'static str> {
     // failures.insert("tests/jit/while_loop.csd"); // Assignment in while loop not implemented
     failures.insert("tests/jit/complex_test.csd"); // Contains other unimplemented features
     failures.insert("tests/jit/later_test.csd"); // Defer implementation is partial
-    failures.insert("tests/jit/byte_rune.csd"); // Missing type conversion support (normie)
+    failures.insert("tests/jit/byte_rune.csd"); // There are syntax issues with this test file
     // failures.insert("tests/jit/if_else.csd"); // Issue with token parsing
     return failures;
 }
