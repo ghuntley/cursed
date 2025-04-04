@@ -30,6 +30,10 @@ fn main() {
                     println!("CURSED v{}", cursed::VERSION);
                     Ok(())
                 },
+                "--debug-tokens" => {
+                    eprintln!("Error: The --debug-tokens option requires a file path");
+                    process::exit(1);
+                },
                 "-e" | "--eval" => {
                     eprintln!("Error: The --eval option requires a code string");
                     print_usage(&program_name);
@@ -47,6 +51,27 @@ fn main() {
         // Two or more arguments - check for options
         _ => {
             match args[1].as_str() {
+                "--debug-tokens" => {
+                    // Debug token stream for the specified file
+                    if let Some(file_path) = args.get(2) {
+                        match std::fs::read_to_string(file_path) {
+                            Ok(input) => {
+                                if let Err(err) = cursed::lexer::debug_tokens(&input) {
+                                    eprintln!("Error debugging tokens: {}", err);
+                                    process::exit(1);
+                                }
+                                Ok(())
+                            }
+                            Err(err) => {
+                                eprintln!("Error reading file: {}", err);
+                                process::exit(1);
+                            }
+                        }
+                    } else {
+                        eprintln!("Error: The --debug-tokens option requires a file path");
+                        process::exit(1);
+                    }
+                },
                 "-e" | "--eval" => {
                     // Execute code from -e argument
                     if let Some(code) = args.get(2) {
@@ -79,10 +104,11 @@ fn main() {
 fn print_usage(program_name: &str) {
     println!("Usage: {} [OPTIONS] [FILE]", program_name);
     println!("Options:");
-    println!("  -h, --help      Display this help message");
-    println!("  -v, --version   Display version information");
-    println!("  -e, --eval CODE Execute CODE");
-    println!("  -               Read from standard input");
+    println!("  -h, --help         Display this help message");
+    println!("  -v, --version      Display version information");
+    println!("  -e, --eval CODE    Execute CODE");
+    println!("  -                  Read from standard input");
+    println!("  --debug-tokens FILE Debug token stream for FILE");
     println!("");
     println!("If no arguments are provided, the REPL will start in interactive mode.");
     println!("If a file path is provided, the file will be executed.");
