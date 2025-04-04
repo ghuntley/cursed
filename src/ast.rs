@@ -305,6 +305,54 @@ impl Expression for BooleanLiteral {
     }
 }
 
+/// ByteLiteral represents a byte literal (single ASCII character)
+pub struct ByteLiteral {
+    pub token: String,
+    pub value: u8,
+}
+
+impl Node for ByteLiteral {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("b'{}'", self.value as char)
+    }
+}
+
+impl Expression for ByteLiteral {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// RuneLiteral represents a rune (Unicode character) literal
+pub struct RuneLiteral {
+    pub token: String,
+    pub value: char,
+}
+
+impl Node for RuneLiteral {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("'{}'", self.value)
+    }
+}
+
+impl Expression for RuneLiteral {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 /// PrefixExpression represents a prefix expression
 pub struct PrefixExpression {
     pub token: Token,
@@ -1268,6 +1316,79 @@ mod tests {
         let expr: &dyn Expression = &true_literal;
         assert_eq!(expr.token_literal(), "true");
         assert_eq!(expr.string(), "true");
+    }
+    
+    #[test]
+    fn test_byte_literal_node() {
+        let byte_literal = ByteLiteral {
+            token: "b'a'".to_string(),
+            value: b'a',
+        };
+        
+        assert_eq!(byte_literal.token_literal(), "b'a'");
+        assert_eq!(byte_literal.string(), "b'a'");
+        
+        // Test different byte values
+        let byte_values = vec![
+            (b'x', "b'x'"),
+            (b'0', "b'0'"),
+            (b'\n', "b'\n'"),
+            (b'\t', "b'\t'"),
+            (b'\\', "b'\\'"),
+        ];
+        
+        for (byte, expected) in byte_values {
+            let literal = ByteLiteral {
+                token: expected.to_string(),
+                value: byte,
+            };
+            assert_eq!(literal.string(), expected);
+        }
+        
+        // Test Expression trait implementation
+        let expr: &dyn Expression = &byte_literal;
+        assert_eq!(expr.token_literal(), "b'a'");
+        assert_eq!(expr.string(), "b'a'");
+    }
+    
+    #[test]
+    fn test_rune_literal_node() {
+        let rune_literal = RuneLiteral {
+            token: "'X'".to_string(),
+            value: 'X',
+        };
+        
+        assert_eq!(rune_literal.token_literal(), "'X'");
+        assert_eq!(rune_literal.string(), "'X'");
+        
+        // Test different rune values including Unicode
+        let rune_values = vec![
+            ('a', "'a'"),
+            ('7', "'7'"),
+            ('\n', "'\n'"),
+            ('\t', "'\t'"),
+            ('\\', "'\\'")
+        ];
+        
+        for (rune, expected) in rune_values {
+            let literal = RuneLiteral {
+                token: expected.to_string(),
+                value: rune,
+            };
+            assert_eq!(literal.string(), expected);
+        }
+        
+        // Test Unicode rune
+        let unicode_rune = RuneLiteral {
+            token: "'🙂'".to_string(),
+            value: '🙂',
+        };
+        assert_eq!(unicode_rune.string(), "'🙂'");
+        
+        // Test Expression trait implementation
+        let expr: &dyn Expression = &rune_literal;
+        assert_eq!(expr.token_literal(), "'X'");
+        assert_eq!(expr.string(), "'X'");
     }
     
     #[test]
