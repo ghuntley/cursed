@@ -83,6 +83,7 @@ impl<'a> Parser<'a> {
             Token::VibeCheck => self.parse_switch_statement(),
             Token::BeLike => self.parse_type_statement(),
             Token::Ghosted => self.parse_break_statement(),
+            Token::Later => self.parse_later_statement(),
             Token::Slay => {
                 // Check if this is a method declaration (look ahead for colon)
                 // First save the current position
@@ -343,6 +344,28 @@ impl<'a> Parser<'a> {
         // Create and return the BreakStatement
         Ok(Box::new(ast::BreakStatement {
             token,
+        }))
+    }
+    
+    /// Parse a later statement (defer)
+    pub fn parse_later_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        let token = self.current_token.token_literal();
+        
+        // Move past the 'later' token
+        self.next_token()?;
+        
+        // Parse the expression to be deferred
+        let expression = self.parse_expression(Precedence::Lowest)?;
+        
+        // Optionally consume a semicolon
+        if self.peek_token == Token::Semicolon {
+            self.next_token()?;
+        }
+        
+        // Create and return the LaterStatement
+        Ok(Box::new(ast::LaterStatement {
+            token,
+            expression,
         }))
     }
     
@@ -1761,6 +1784,39 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    #[test]
+    fn test_parse_later_statement() -> Result<(), Error> {
+        let input = "later close_file(resource);";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have exactly one statement
+        assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
+        
+        // Check that the statement is a later statement
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::LaterStatement>();
+        assert!(stmt.is_some(), "Statement is not a LaterStatement");
+        
+        // Check the token and expression
+        let stmt = stmt.unwrap();
+        assert_eq!(stmt.token, "later", "Expected 'later' token");
+        
+        // Verify the expression is a call expression
+        assert!(stmt.expression.is_call_expression(), "Expression is not a call expression");
+        
+        // Test more complex later statements
+        let inputs = vec![
+            "later resource.close();",
+            "later println(\"Cleaning up...\");"
+        ];
+        
+        for input in inputs {
+            let result = test_parser_with_input(input);
+            assert!(result.is_ok(), "Failed to parse: {}", input);
+        }
+        
+        Ok(())
+    }
     
     /// Test the parser with the given input string
     fn test_parser_with_input(input: &str) -> Result<Program, Error> {
