@@ -39,7 +39,7 @@ This document tracks the implementation status of the CURSED language features a
     *   `vibe_check`/`mood`/`basic` (switch): **Unimplemented**.
     *   `bestie` (for): Basic loop structure might exist, but `ForClause` and `RangeClause` (`flex`) are **Unimplemented**.
     *   `periodt` (while): Implemented with full support for variable assignments within loop bodies.
-    *   `ghosted` (break): **Partially Implemented**. Lexical support is complete with comprehensive tests covering simple usage and nested loop contexts. Parser/code generation not yet implemented.
+    *   `ghosted` (break): **Implemented**. Lexical support is complete with comprehensive tests covering simple usage and nested loop contexts. The Token enum has a `Ghosted` variant and the lexer correctly tokenizes "ghosted" to Token::Ghosted. Parser correctly parses break statements and the LLVM code generator properly handles break statements by jumping to the loop exit block.
     *   `simp` (continue): **Unimplemented**.
     *   `later` (defer): **Unimplemented**.
 *   **Expressions:** Basic arithmetic/logical operators implemented.
@@ -137,7 +137,7 @@ The following items need to be implemented to progress the CURSED language compi
 
 - [ ] **Control Flow Constructs**
   - [x] Implement lexical support for `ghosted` (break) keyword
-  - [ ] Implement full parser and code generation for `ghosted` (break) statement for loops
+  - [x] Implement full parser and code generation for `ghosted` (break) statement for loops
   - Implement `simp` (continue) statement for loops
   - Complete `bestie` (for) loop implementation with ForClause and RangeClause support
   - Implement `flex` range clause syntax (e.g., `bestie i flex 0..10`)

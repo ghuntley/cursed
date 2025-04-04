@@ -82,6 +82,7 @@ impl<'a> Parser<'a> {
             Token::Bestie => self.parse_for_statement(),
             Token::VibeCheck => self.parse_switch_statement(),
             Token::BeLike => self.parse_type_statement(),
+            Token::Ghosted => self.parse_break_statement(),
             Token::Slay => {
                 // Check if this is a method declaration (look ahead for colon)
                 // First save the current position
@@ -326,6 +327,24 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::ReturnStatement {
             token,
             return_value,
+        }))
+    }
+    
+    /// Parse a break statement
+    pub fn parse_break_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        let token = self.current_token.token_literal();
+        
+        // Move past the 'ghosted' token
+        self.next_token()?;
+        
+        // Optionally consume a semicolon
+        if self.current_token == Token::Semicolon {
+            self.next_token()?;
+        }
+        
+        // Create and return the BreakStatement
+        Ok(Box::new(ast::BreakStatement {
+            token,
         }))
     }
     
@@ -1801,6 +1820,25 @@ mod tests {
             assert!(while_stmt.condition.token_literal().len() > 0, "Missing condition in: {}", input);
             assert!(while_stmt.body.statements.len() > 0, "Empty body in: {}", input);
         }
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_parse_break_statement() -> Result<(), Error> {
+        let input = "ghosted;";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have exactly one statement
+        assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
+        
+        // Check that the statement is a break statement
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::BreakStatement>();
+        assert!(stmt.is_some(), "Statement is not a BreakStatement");
+        
+        // Check the token is correct
+        let stmt = stmt.unwrap();
+        assert_eq!(stmt.token, "ghosted", "Expected 'ghosted' token");
         
         Ok(())
     }

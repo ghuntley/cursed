@@ -301,4 +301,18 @@ fn test_all_jit_files() {
         assert!(success, "Execution of {:?} failed. Output:\n{}", path, output);
         println!("Test passed: {:?}", path);
     }
-} 
+}
+
+/// Tests JIT execution of break statements (ghosted in CURSED)
+#[test]
+fn test_break() {
+    let test_file = "tests/jit/break_test.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    assert!(output.contains("15"), 
+            "Expected output containing '15' (sum of 1 to 5), got:\n{}", output);
+}

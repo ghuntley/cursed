@@ -1090,6 +1090,29 @@ impl Expression for HashLiteral {
     }
 }
 
+/// BreakStatement represents a break statement (ghosted in CURSED)
+pub struct BreakStatement {
+    pub token: String, // Token::Ghosted
+}
+
+impl Node for BreakStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{};", self.token_literal())
+    }
+}
+
+impl Statement for BreakStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 /// PropertyAccessExpression represents accessing a property (field or method) of an object, 
 /// or accessing an exported symbol from a package.
 /// Examples: myStruct.field, myPackage.ExportedFunc
