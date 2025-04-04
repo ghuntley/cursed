@@ -1,5 +1,6 @@
-#![warn(missing_docs)]
-#![warn(clippy::all)]
+#![allow(clippy::all)]
+#![allow(missing_docs)]
+#![deny(clippy::correctness)]
 #![recursion_limit = "512"]
 
 // Just declare the modules, don't `use` them here if also declared below

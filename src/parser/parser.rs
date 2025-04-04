@@ -337,10 +337,8 @@ impl<'a> Parser<'a> {
         // Move past the 'ghosted' token
         self.next_token()?;
         
-        // Optionally consume a semicolon
-        if self.current_token == Token::Semicolon {
-            self.next_token()?;
-        }
+        // Optionally consume a semicolon, but don't advance past it as that will be done
+        // by the calling function
         
         // Create and return the BreakStatement
         Ok(Box::new(ast::BreakStatement {
@@ -988,8 +986,27 @@ impl<'a> Parser<'a> {
         // Move to the next token after 'periodt'
         self.next_token()?;
         
+        // Check for optional parentheses
+        let has_parens = self.current_token == Token::LParen;
+        
+        // If there's an opening parenthesis, consume it
+        if has_parens {
+            // Move past '('
+            self.next_token()?;
+        }
+        
         // Parse the condition
         let condition = self.parse_expression(Precedence::Lowest)?;
+        
+        // If we had an opening parenthesis, expect and consume a closing one
+        if has_parens {
+            if self.current_token != Token::RParen {
+                return Err(Error::from_str(
+                    &format!("Expected ')' after condition in periodt statement, got {:?}", self.current_token)
+                ));
+            }
+            self.next_token()?; // Consume the closing parenthesis
+        }
         
         // Check if the current token is already a '{'
         if self.current_token == Token::LBrace {
@@ -1044,8 +1061,9 @@ impl<'a> Parser<'a> {
         
         // Check if we exited because of EOF (which would be an error)
         if self.current_token != Token::RBrace {
+            // Include token info in error message for better debugging
             return Err(Error::from_str(
-                "Expected '}' to close block statement, got EOF"
+                &format!("Expected '}}' to close block statement, got {:?}", self.current_token)
             ));
         }
         
