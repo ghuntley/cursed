@@ -924,6 +924,68 @@ mod tests {
     }
     
     #[test]
+    fn test_ghosted_keyword_tokenization() -> Result<(), Error> {
+        let input = "ghosted";
+        let expected_tokens = vec![Token::Ghosted, Token::Eof];
+        let tokens = tokenize(input)?;
+        assert_eq!(tokens, expected_tokens, "Failed to tokenize 'ghosted' keyword");
+        Ok(())
+    }
+    
+    #[test]
+    fn test_ghosted_in_loop_context() -> Result<(), Error> {
+        let input = "bestie i := 0; i < 10; i++ { lowkey i == 5 { ghosted; } }";
+        let result = tokenize(input);
+        
+        assert!(result.is_ok(), "Failed to tokenize loop with ghosted statement");
+        let tokens = result.unwrap();
+        
+        // Verify that the 'ghosted' keyword is correctly tokenized in a loop context
+        let ghosted_index = tokens.iter().position(|t| t == &Token::Ghosted);
+        assert!(ghosted_index.is_some(), "'ghosted' token not found in the token stream");
+        
+        // Verify the sequence: lowkey -> identifier -> eq -> int -> lbrace -> ghosted -> semicolon -> rbrace
+        let idx = tokens.iter().position(|t| t == &Token::Lowkey).unwrap();
+        assert!(matches!(tokens[idx+1], Token::Identifier(ref s) if s == "i"), "Expected identifier 'i' after 'lowkey'");
+        assert_eq!(tokens[idx+2], Token::Eq, "Expected '==' after identifier");
+        assert_eq!(tokens[idx+3], Token::Int(5), "Expected integer 5 after '=='");
+        assert_eq!(tokens[idx+4], Token::LBrace, "Expected '{{' after condition");
+        assert_eq!(tokens[idx+5], Token::Ghosted, "Expected 'ghosted' inside the conditional block");
+        assert_eq!(tokens[idx+6], Token::Semicolon, "Expected ';' after 'ghosted'");
+        assert_eq!(tokens[idx+7], Token::RBrace, "Expected '}}' to close the conditional block");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_nested_loops_with_ghosted() -> Result<(), Error> {
+        let input = r#"
+        bestie i := 0; i < 5; i++ {
+            bestie j := 0; j < 5; j++ {
+                lowkey i + j > 5 {
+                    ghosted; fr fr break out of inner loop
+                }
+                lowkey i == 3 {
+                    lowkey j == 3 {
+                        ghosted; ghosted; fr fr double break, syntax error but should tokenize
+                    }
+                }
+            }
+        }
+        "#;
+        
+        let result = tokenize(input);
+        assert!(result.is_ok(), "Failed to tokenize nested loops with ghosted");
+        let tokens = result.unwrap();
+        
+        // Count the number of 'ghosted' tokens
+        let ghosted_count = tokens.iter().filter(|&t| t == &Token::Ghosted).count();
+        assert_eq!(ghosted_count, 3, "Expected 3 'ghosted' tokens, found {}", ghosted_count);
+        
+        Ok(())
+    }
+    
+    #[test]
     fn test_line_comments() -> Result<(), Error> {
         let input = r#"
         sus x = 5; fr fr this is a comment
