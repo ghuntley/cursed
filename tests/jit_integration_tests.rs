@@ -31,6 +31,7 @@ fn known_failing_tests() -> HashSet<&'static str> {
     // failures.insert("tests/jit/while_loop.csd"); // Assignment in while loop not implemented
     failures.insert("tests/jit/complex_test.csd"); // Contains other unimplemented features
     failures.insert("tests/jit/later_test.csd"); // Defer implementation is partial
+    failures.insert("tests/jit/byte_rune.csd"); // Missing type conversion support (normie)
     // failures.insert("tests/jit/if_else.csd"); // Issue with token parsing
     return failures;
 }
@@ -334,4 +335,58 @@ fn test_break() {
     assert!(success, "Execution failed. Output:\n{}", output);
     assert!(output.contains("15"), 
             "Expected output containing '15' (sum of 1 to 5), got:\n{}", output);
+}
+
+/// Tests parsing of byte and rune literals
+#[test]
+fn test_byte_rune() {
+    // For now, we're only testing that the parsing stage works correctly
+    // since code generation for byte and rune literals is not yet implemented.
+    
+    let test_file = "tests/byte_rune.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    // Use just the Lexer and Parser, without running code generation
+    let input = fs::read_to_string(test_file).expect("Failed to read test file");
+    
+    // Create a lexer and parser
+    use cursed::lexer::Lexer;
+    use cursed::parser::Parser;
+    
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    
+    // Parse the program 
+    let program_result = parser.parse_program();
+    
+    // Assert that parsing succeeds
+    assert!(program_result.is_ok(), "Failed to parse program with byte and rune literals. Errors: {:?}", 
+            program_result.err());
+    
+    // Ensure we have the expected number of statements
+    let program = program_result.unwrap();
+    assert_eq!(program.statements.len(), 12, "Expected 12 statements (6 byte literals + 6 rune literals)");
+    
+    // Check we have no parser errors
+    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors());
+}
+
+/// Tests code generation for byte and rune literals
+#[test]
+fn test_byte_rune_codegen() {
+    let test_file = "tests/jit/byte_rune_codegen.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    let (output, success) = run_cursed_file(test_file)
+        .expect("Failed to run CURSED compiler");
+    
+    assert!(success, "Execution failed. Output:\n{}", output);
+    
+    // Check byte literal output
+    assert!(output.contains("97"), 
+            "Expected output containing '97' (ASCII for 'a'), got:\n{}", output);
+    
+    // Check rune literal output
+    assert!(output.contains("88"), 
+            "Expected output containing '88' (ASCII/Unicode for 'X'), got:\n{}", output);
 }

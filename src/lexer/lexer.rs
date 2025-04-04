@@ -12,6 +12,8 @@ pub enum Token {
     String(String),
     Int(i64),
     Float(f64),
+    Byte(u8),    // byte literal (single byte value)
+    Rune(char),  // rune literal (Unicode code point)
     
     // Operators
     Assign,      // =
@@ -20,12 +22,15 @@ pub enum Token {
     Bang,        // !
     Asterisk,    // *
     Slash,       // /
+    Percent,     // %
     Lt,          // <
     Gt,          // >
     Eq,          // ==
     NotEq,       // !=
     LtEq,        // <=
     GtEq,        // >=
+    And,         // &&
+    Or,          // ||
     
     // Delimiters
     Comma,       // ,
@@ -239,8 +244,29 @@ impl<'a> Lexer<'a> {
                     Token::Bang
                 }
             },
+            Some('&') => {
+                if self.peek_char() == Some('&') {
+                    self.read_char();
+                    Token::And
+                } else {
+                    let location = self.location();
+                    let message = "Unexpected single '&', did you mean '&&'?";
+                    return Err(ErrorReporter::lexer_error(location, message));
+                }
+            },
+            Some('|') => {
+                if self.peek_char() == Some('|') {
+                    self.read_char();
+                    Token::Or
+                } else {
+                    let location = self.location();
+                    let message = "Unexpected single '|', did you mean '||'?";
+                    return Err(ErrorReporter::lexer_error(location, message));
+                }
+            },
             Some('*') => Token::Asterisk,
             Some('/') => Token::Slash,
+            Some('%') => Token::Percent,
             Some('<') => {
                 if self.peek_char() == Some('=') {
                     self.read_char();
@@ -268,6 +294,11 @@ impl<'a> Lexer<'a> {
             Some(']') => Token::RBracket,
             Some('.') => Token::Dot,
             Some('"') => self.read_string()?,
+            Some('\'') => self.read_rune()?,
+            Some('b') if self.peek_char() == Some('\'') => {
+                self.read_char(); // consume 'b'
+                return self.read_byte();
+            },
             Some(c) if Self::is_letter(c) => {
                 let identifier = self.read_identifier();
                 return Ok(self.lookup_identifier(identifier));
@@ -365,6 +396,176 @@ impl<'a> Lexer<'a> {
         }
         
         Ok(Token::String(self.input[position..self.position].to_string()))
+    }
+    
+    /// Read a rune literal (Unicode code point)
+    fn read_rune(&mut self) -> Result<Token, Error> {
+        self.read_char(); // Skip the opening single quote
+        
+        let position = self.position;
+        let ch = self.ch;
+        
+        // Check for escape sequences
+        if ch == Some('\\') {
+            self.read_char(); // Skip the backslash
+            let escape_char = self.ch;
+            
+            match escape_char {
+                Some('n') => {
+                    self.read_char(); // Consume 'n'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated rune literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Rune('\n'));
+                },
+                Some('t') => {
+                    self.read_char(); // Consume 't'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated rune literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Rune('\t'));
+                },
+                Some('r') => {
+                    self.read_char(); // Consume 'r'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated rune literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Rune('\r'));
+                },
+                Some('\'') => {
+                    self.read_char(); // Consume '\''
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated rune literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Rune('\''));
+                },
+                Some('\\') => {
+                    self.read_char(); // Consume '\\'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated rune literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Rune('\\'));
+                },
+                _ => {
+                    let location = self.location();
+                    return Err(ErrorReporter::lexer_error(location, &format!("Unknown escape sequence: \\{:?}", escape_char)));
+                }
+            }
+        }
+        
+        // Regular character
+        self.read_char(); // Move past the character
+        
+        if ch.is_none() {
+            let location = self.location();
+            return Err(ErrorReporter::lexer_error(location, "Empty rune literal"));
+        }
+        
+        if self.ch != Some('\'') {
+            let location = self.location();
+            return Err(ErrorReporter::lexer_error(location, "Unterminated rune literal"));
+        }
+        
+        self.read_char(); // Consume closing quote
+        Ok(Token::Rune(ch.unwrap()))
+    }
+    
+    /// Read a byte literal
+    fn read_byte(&mut self) -> Result<Token, Error> {
+        self.read_char(); // Skip the opening single quote
+        
+        let ch = self.ch;
+        
+        // Check for escape sequences
+        if ch == Some('\\') {
+            self.read_char(); // Skip the backslash
+            let escape_char = self.ch;
+            
+            match escape_char {
+                Some('n') => {
+                    self.read_char(); // Consume 'n'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated byte literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Byte(b'\n'));
+                },
+                Some('t') => {
+                    self.read_char(); // Consume 't'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated byte literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Byte(b'\t'));
+                },
+                Some('r') => {
+                    self.read_char(); // Consume 'r'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated byte literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Byte(b'\r'));
+                },
+                Some('\'') => {
+                    self.read_char(); // Consume '\''
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated byte literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Byte(b'\''));
+                },
+                Some('\\') => {
+                    self.read_char(); // Consume '\\'
+                    if self.ch != Some('\'') {
+                        let location = self.location();
+                        return Err(ErrorReporter::lexer_error(location, "Unterminated byte literal"));
+                    }
+                    self.read_char(); // Consume closing quote
+                    return Ok(Token::Byte(b'\\'));
+                },
+                _ => {
+                    let location = self.location();
+                    return Err(ErrorReporter::lexer_error(location, &format!("Unknown escape sequence: \\{:?}", escape_char)));
+                }
+            }
+        }
+        
+        // Regular character
+        if ch.is_none() {
+            let location = self.location();
+            return Err(ErrorReporter::lexer_error(location, "Empty byte literal"));
+        }
+        
+        // Check if character is within ASCII range (0-127)
+        let ch_val = ch.unwrap() as u32;
+        if ch_val > 127 {
+            let location = self.location();
+            return Err(ErrorReporter::lexer_error(location, &format!("Byte literal must be ASCII (0-127), got: {:?} ({})", ch, ch_val)));
+        }
+        
+        self.read_char(); // Move past the character
+        
+        if self.ch != Some('\'') {
+            let location = self.location();
+            return Err(ErrorReporter::lexer_error(location, "Unterminated byte literal"));
+        }
+        
+        self.read_char(); // Consume closing quote
+        Ok(Token::Byte(ch.unwrap() as u8))
     }
     
     /// Convert an identifier to a token
@@ -476,6 +677,8 @@ impl Token {
             Token::String(s) => s.clone(),
             Token::Int(i) => i.to_string(),
             Token::Float(f) => f.to_string(),
+            Token::Byte(b) => format!("b'{}'" , *b as char),
+            Token::Rune(r) => format!("'{}'", *r),
             Token::Illegal(s) => s.clone(),
             // Default literals for non-literal tokens
             Token::Assign => "=".to_string(),
@@ -484,12 +687,15 @@ impl Token {
             Token::Bang => "!".to_string(),
             Token::Asterisk => "*".to_string(),
             Token::Slash => "/".to_string(),
+            Token::Percent => "%".to_string(),
             Token::Lt => "<".to_string(),
             Token::Gt => ">".to_string(),
             Token::Eq => "==".to_string(),
             Token::NotEq => "!=".to_string(),
             Token::LtEq => "<=".to_string(),
             Token::GtEq => ">=".to_string(),
+            Token::And => "&&".to_string(),
+            Token::Or => "||".to_string(),
             Token::Comma => ",".to_string(),
             Token::Semicolon => ";".to_string(),
             Token::Colon => ":".to_string(),
@@ -715,7 +921,7 @@ mod tests {
         fn prop_compound_operators(
             // Test patterns with compound operators, one at a time
             op in prop::sample::select(vec![
-                "==", "!=", "<=", ">=", "=", "+", "-", "*", "/", "<", ">", "!"
+                "==", "!=", "<=", ">=", "=", "+", "-", "*", "/", "%", "<", ">", "!", "&&", "||"
             ])
         ) {
             let result = tokenize(&op);
@@ -737,9 +943,12 @@ mod tests {
                 "-" => Token::Minus,
                 "*" => Token::Asterisk,
                 "/" => Token::Slash,
+                "%" => Token::Percent,
                 "<" => Token::Lt,
                 ">" => Token::Gt,
                 "!" => Token::Bang,
+                "&&" => Token::And,
+                "||" => Token::Or,
                 _ => panic!("Unexpected operator: {}", op),
             };
             
@@ -933,6 +1142,15 @@ mod tests {
     }
     
     #[test]
+    fn test_simp_keyword_tokenization() -> Result<(), Error> {
+        let input = "simp";
+        let expected_tokens = vec![Token::Simp, Token::Eof];
+        let tokens = tokenize(input)?;
+        assert_eq!(tokens, expected_tokens, "Failed to tokenize 'simp' keyword");
+        Ok(())
+    }
+    
+    #[test]
     fn test_ghosted_in_loop_context() -> Result<(), Error> {
         let input = "bestie i := 0; i < 10; i++ { lowkey i == 5 { ghosted; } }";
         let result = tokenize(input);
@@ -953,6 +1171,110 @@ mod tests {
         assert_eq!(tokens[idx+5], Token::Ghosted, "Expected 'ghosted' inside the conditional block");
         assert_eq!(tokens[idx+6], Token::Semicolon, "Expected ';' after 'ghosted'");
         assert_eq!(tokens[idx+7], Token::RBrace, "Expected '}}' to close the conditional block");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_simp_in_loop_context() -> Result<(), Error> {
+        let input = "periodt x > 0 { lowkey x % 2 == 0 { simp; } x = x - 1; }";
+        let result = tokenize(input);
+        
+        assert!(result.is_ok(), "Failed to tokenize loop with simp statement");
+        let tokens = result.unwrap();
+        
+        // Verify that the 'simp' keyword is correctly tokenized in a loop context
+        let simp_index = tokens.iter().position(|t| t == &Token::Simp);
+        assert!(simp_index.is_some(), "'simp' token not found in the token stream");
+        
+        // Verify the sequence: lowkey -> identifier -> % -> int -> eq -> int -> lbrace -> simp -> semicolon -> rbrace
+        let idx = tokens.iter().position(|t| t == &Token::Lowkey).unwrap();
+        assert!(matches!(tokens[idx+1], Token::Identifier(ref s) if s == "x"), "Expected identifier 'x' after 'lowkey'");
+        // Check for modulo token followed by identifier
+        assert_eq!(tokens[idx+2], Token::Percent, "Expected '%' after identifier 'x'");
+        // Find the simp and check surrounding structure
+        let simp_idx = simp_index.unwrap();
+        assert_eq!(tokens[simp_idx-1], Token::LBrace, "Expected '{{' before 'simp'");
+        assert_eq!(tokens[simp_idx+1], Token::Semicolon, "Expected ';' after 'simp'");
+        assert_eq!(tokens[simp_idx+2], Token::RBrace, "Expected '}}' to close the conditional block");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_byte_literals() -> Result<(), Error> {
+        // Test various byte literals
+        let inputs = vec![
+            ("b'a'", Token::Byte(b'a')),
+            ("b'0'", Token::Byte(b'0')),
+            ("b'\\n'", Token::Byte(b'\n')),
+            ("b'\\t'", Token::Byte(b'\t')),
+            ("b'\\r'", Token::Byte(b'\r')),
+            ("b'\\\\'", Token::Byte(b'\\')),
+            ("b'\\''", Token::Byte(b'\'')),
+        ];
+        
+        for (input, expected_token) in inputs {
+            let result = tokenize(input);
+            assert!(result.is_ok(), "Failed to tokenize byte literal: {}", input);
+            
+            let tokens = result.unwrap();
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens for '{}', got {} - tokens: {:?}", input, tokens.len(), tokens);
+            assert_eq!(tokens[0], expected_token, "Token mismatch for byte literal {}", input);
+            assert_eq!(tokens[1], Token::Eof, "Second token should be EOF");
+        }
+        
+        // Test invalid byte literals
+        let invalid_inputs = vec![
+            "b''",              // Empty byte literal
+            "b'ab'",           // Too many characters
+            "b'\\x'",          // Invalid escape sequence
+            "b'🙂'",           // Non-ASCII character
+        ];
+        
+        for input in invalid_inputs {
+            let result = tokenize(input);
+            assert!(result.is_err(), "Expected error for invalid byte literal: {}, but got: {:?}", input, result);
+        }
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_rune_literals() -> Result<(), Error> {
+        // Test various rune literals
+        let inputs = vec![
+            ("'a'", Token::Rune('a')),
+            ("'0'", Token::Rune('0')),
+            ("'\\n'", Token::Rune('\n')),
+            ("'\\t'", Token::Rune('\t')),
+            ("'\\r'", Token::Rune('\r')),
+            ("'\\\\'", Token::Rune('\\')),
+            ("'\\''", Token::Rune('\'')),
+            ("'🙂'", Token::Rune('🙂')),  // Unicode rune (emoji)
+        ];
+        
+        for (input, expected_token) in inputs {
+            let result = tokenize(input);
+            assert!(result.is_ok(), "Failed to tokenize rune literal: {}", input);
+            
+            let tokens = result.unwrap();
+            assert_eq!(tokens.len(), 2, "Expected 2 tokens for '{}', got {} - tokens: {:?}", input, tokens.len(), tokens);
+            assert_eq!(tokens[0], expected_token, "Token mismatch for rune literal {}", input);
+            assert_eq!(tokens[1], Token::Eof, "Second token should be EOF");
+        }
+        
+        // Test invalid rune literals
+        let invalid_inputs = vec![
+            "''",              // Empty rune literal
+            "'ab'",           // Too many characters
+            "'\\x'",          // Invalid escape sequence
+        ];
+        
+        for input in invalid_inputs {
+            let result = tokenize(input);
+            assert!(result.is_err(), "Expected error for invalid rune literal: {}, but got: {:?}", input, result);
+        }
         
         Ok(())
     }
@@ -981,6 +1303,91 @@ mod tests {
         // Count the number of 'ghosted' tokens
         let ghosted_count = tokens.iter().filter(|&t| t == &Token::Ghosted).count();
         assert_eq!(ghosted_count, 3, "Expected 3 'ghosted' tokens, found {}", ghosted_count);
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_logical_operators() -> Result<(), Error> {
+        let input = "lowkey x > 0 && y < 10 || z == 5 { ghosted; }";
+        let result = tokenize(input);
+        
+        assert!(result.is_ok(), "Failed to tokenize statement with logical operators");
+        let tokens = result.unwrap();
+        
+        // Verify the sequence with logical operators
+        assert_eq!(tokens[0], Token::Lowkey);
+        assert!(matches!(tokens[1], Token::Identifier(ref s) if s == "x"));
+        assert_eq!(tokens[2], Token::Gt);
+        assert_eq!(tokens[3], Token::Int(0));
+        assert_eq!(tokens[4], Token::And);
+        assert!(matches!(tokens[5], Token::Identifier(ref s) if s == "y"));
+        assert_eq!(tokens[6], Token::Lt);
+        assert_eq!(tokens[7], Token::Int(10));
+        assert_eq!(tokens[8], Token::Or);
+        assert!(matches!(tokens[9], Token::Identifier(ref s) if s == "z"));
+        assert_eq!(tokens[10], Token::Eq);
+        assert_eq!(tokens[11], Token::Int(5));
+        assert_eq!(tokens[12], Token::LBrace);
+        assert_eq!(tokens[13], Token::Ghosted);
+        assert_eq!(tokens[14], Token::Semicolon);
+        assert_eq!(tokens[15], Token::RBrace);
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_nested_loops_with_simp() -> Result<(), Error> {
+        let input = r#"
+        bestie i := 0; i < 10; i++ {
+            lowkey i % 3 == 0 {
+                simp; fr fr skip multiples of 3
+            }
+            bestie j := 0; j < i; j++ {
+                lowkey j % 2 == 0 {
+                    simp; fr fr skip even j values
+                }
+                fr fr process only when i is not multiple of 3 and j is odd
+            }
+        }
+        "#;
+        
+        let result = tokenize(input);
+        assert!(result.is_ok(), "Failed to tokenize nested loops with simp");
+        let tokens = result.unwrap();
+        
+        // Count the number of 'simp' tokens
+        let simp_count = tokens.iter().filter(|&t| t == &Token::Simp).count();
+        assert_eq!(simp_count, 2, "Expected 2 'simp' tokens, found {}", simp_count);
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_mixed_ghosted_and_simp() -> Result<(), Error> {
+        let input = r#"
+        periodt x > 0 {
+            lowkey x > 100 {
+                ghosted; fr fr exit the loop if x > 100
+            }
+            lowkey x % 2 == 0 {
+                x = x / 2;
+                simp; fr fr continue to next iteration
+            }
+            x = x * 3 + 1;
+        }
+        "#;
+        
+        let result = tokenize(input);
+        assert!(result.is_ok(), "Failed to tokenize with mixed ghosted and simp");
+        let tokens = result.unwrap();
+        
+        // Verify we have both 'ghosted' and 'simp' tokens
+        let ghosted_index = tokens.iter().position(|t| t == &Token::Ghosted);
+        let simp_index = tokens.iter().position(|t| t == &Token::Simp);
+        
+        assert!(ghosted_index.is_some(), "'ghosted' token not found in the token stream");
+        assert!(simp_index.is_some(), "'simp' token not found in the token stream");
         
         Ok(())
     }

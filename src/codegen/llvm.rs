@@ -14,7 +14,8 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
-                PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement};
+                PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement,
+                ByteLiteral, RuneLiteral};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -340,6 +341,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Ok(self.context.bool_type().const_int(lit.value as u64, false).into())
         } else if let Some(lit) = expression.as_any().downcast_ref::<FloatLiteral>() {
             Ok(self.context.f64_type().const_float(lit.value).into())
+        } else if let Some(lit) = expression.as_any().downcast_ref::<ByteLiteral>() {
+            // Byte literals are represented as 8-bit integers in LLVM IR
+            Ok(self.context.i8_type().const_int(lit.value as u64, false).into())
+        } else if let Some(lit) = expression.as_any().downcast_ref::<RuneLiteral>() {
+            // Rune literals are represented as 32-bit integers (Unicode code points) in LLVM IR
+            Ok(self.context.i32_type().const_int(lit.value as u32 as u64, false).into())
         } else if let Some(lit) = expression.as_any().downcast_ref::<StringLiteral>() {
             // Create a constant global string
             let string_value = self.builder.build_global_string_ptr(&lit.value, "str").unwrap();
