@@ -8,11 +8,13 @@ use inkwell::module::Module;
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue, BasicMetadataValueEnum};
 use inkwell::types::{BasicType, BasicTypeEnum, BasicMetadataTypeEnum}; // Keep BasicMetadataTypeEnum if used elsewhere
 use inkwell::{IntPredicate, FloatPredicate};
+use inkwell::basic_block::BasicBlock;
 
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
-                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, PropertyAccessExpression, AssignmentExpression, FactsStatement};
+                PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
+                PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -43,6 +45,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     current_package_name: String, // Make sure this is included
     imported_packages: HashMap<String, ImportedPackageInfo<'ctx>>, // Make sure this is included
     current_file_path: PathBuf, // Make sure this is included
+    // Loop control flow tracking
+    loop_exit_blocks: Vec<BasicBlock<'ctx>>, // Stack of exit blocks for nested loops
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -62,6 +66,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             current_package_name,
             imported_packages: HashMap::new(),
             current_file_path: initial_file_path,
+            loop_exit_blocks: Vec::new(),
         }
     }
     
@@ -306,6 +311,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.compile_if_statement(if_stmt)
         } else if let Some(while_stmt) = statement.as_any().downcast_ref::<WhileStatement>() {
             self.compile_while_statement(while_stmt)
+        } else if let Some(break_stmt) = statement.as_any().downcast_ref::<BreakStatement>() {
+            self.compile_break_statement(break_stmt)
         } else if let Some(import_stmt) = statement.as_any().downcast_ref::<ImportStatement>() {
             // For now, just acknowledge the import statement.
             // TODO: Implement actual module loading and symbol resolution.
@@ -969,6 +976,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let loop_body = self.context.append_basic_block(function, "loop.body");
         let after_loop = self.context.append_basic_block(function, "loop.end");
         
+        // Push the exit block onto the stack for break statements
+        self.loop_exit_blocks.push(after_loop);
+        
         // Jump to the condition block first
         self.builder.build_unconditional_branch(condition_block).unwrap();
         
@@ -1010,9 +1020,28 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Continue building code after the loop
         self.builder.position_at_end(after_loop);
         
+        // Pop the exit block from the stack
+        self.loop_exit_blocks.pop();
+        
         Ok(())
     }
 
+    /// Compile a break statement (ghosted in CURSED)
+    fn compile_break_statement(&mut self, _break_stmt: &BreakStatement) -> Result<(), String> {
+        // Check if we're currently in a loop
+        if self.loop_exit_blocks.is_empty() {
+            return Err("Break statement (ghosted) outside of loop context".to_string());
+        }
+        
+        // Get the exit block for the innermost loop
+        let exit_block = *self.loop_exit_blocks.last().unwrap();
+        
+        // Build an unconditional branch to the exit block
+        self.builder.build_unconditional_branch(exit_block).unwrap();
+        
+        Ok(())
+    }
+    
     /// Initializes string helper functions like string_concat and strcmp.
     /// This should be called before compilation if string operations will be used.
     pub fn init_string_helpers(&mut self) {
@@ -2136,6 +2165,130 @@ mod tests {
         assert!(module_str.contains("br label"), "Missing unconditional branch");
         
         // Verify LLVM module is valid
+        assert!(codegen.module.verify().is_ok());
+    }
+
+    #[test]
+    fn test_compile_break_statement() {
+        let context = Context::create();
+        let dummy_path = PathBuf::from("./dummy_break.csd"); 
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_break", dummy_path);
+        
+        // Build AST for: 
+        // let x = 0;
+        // periodt (x < 10) {
+        //     x = x + 1;
+        //     lowkey x > 5 {
+        //         ghosted;
+        //     }
+        // }
+        
+        // 1. First statement: let x = 0;
+        let let_stmt = LetStatement {
+            token: "let".into(),
+            name: Identifier { token: "x".into(), value: "x".to_string() },
+            value: Some(Box::new(IntegerLiteral {
+                token: "0".into(),
+                value: 0,
+            })),
+            type_annotation: None, // No explicit type annotation
+        };
+        
+        // 2. Second statement: periodt (x < 10) { ... }
+        
+        // 2.1 Condition: x < 10
+        let loop_condition = InfixExpression {
+            token: Token::Lt,
+            left: Box::new(Identifier { token: "x".into(), value: "x".to_string() }),
+            operator: "<".to_string(),
+            right: Box::new(IntegerLiteral { token: "10".into(), value: 10 }),
+        };
+        
+        // 2.2 Loop body first statement: x = x + 1;
+        let increment = InfixExpression {
+            token: Token::Plus,
+            left: Box::new(Identifier { token: "x".into(), value: "x".to_string() }),
+            operator: "+".to_string(),
+            right: Box::new(IntegerLiteral { token: "1".into(), value: 1 }),
+        };
+        
+        let assign_stmt = ExpressionStatement {
+            token: ";".into(),
+            expression: Some(Box::new(AssignmentExpression {
+                token: "=".into(),
+                name: Identifier { token: "x".into(), value: "x".to_string() },
+                value: Box::new(increment),
+            })),
+        };
+        
+        // 2.3 Inner if condition: lowkey x > 5 { ghosted; }
+        
+        // If condition: x > 5
+        let if_condition = InfixExpression {
+            token: Token::Gt,
+            left: Box::new(Identifier { token: "x".into(), value: "x".to_string() }),
+            operator: ">".to_string(),
+            right: Box::new(IntegerLiteral { token: "5".into(), value: 5 }),
+        };
+        
+        // If body: ghosted;
+        let break_stmt = BreakStatement {
+            token: "ghosted".into(),
+        };
+        
+        // Create the if body block statement
+        let if_body = BlockStatement {
+            token: "{".into(),
+            statements: vec![Box::new(break_stmt)],
+        };
+        
+        // Create the if statement
+        let if_stmt = IfStatement {
+            token: "lowkey".into(),
+            condition: Box::new(if_condition),
+            consequence: if_body,
+            alternative: None,
+        };
+        
+        // 2.4 Create the block statement for loop body with increment and if
+        let loop_body = BlockStatement {
+            token: "{".into(),
+            statements: vec![Box::new(assign_stmt), Box::new(if_stmt)],
+        };
+        
+        // 2.5 Create the while statement
+        let while_stmt = WhileStatement {
+            token: "periodt".into(),
+            condition: Box::new(loop_condition),
+            body: loop_body,
+        };
+        
+        // Create the program with both statements
+        let program = Program {
+            statements: vec![Box::new(let_stmt), Box::new(while_stmt)],
+        };
+        
+        // Compile the program
+        let result = codegen.compile(&program);
+        
+        // Print the error message if any
+        if let Err(e) = &result {
+            println!("Error: {}", e);
+        }
+        
+        // The compilation should succeed
+        assert!(result.is_ok());
+        
+        // Verify the generated LLVM IR
+        let module_str = codegen.module.print_to_string().to_string();
+        
+        // Check for key components of loop implementation
+        assert!(module_str.contains("loop.cond"), "Missing loop condition block");
+        assert!(module_str.contains("loop.body"), "Missing loop body block");
+        assert!(module_str.contains("loop.end"), "Missing loop end block");
+        
+        // Check for the break - should have an unconditional branch from the if body to the loop.end
+        // We can only check that the module compiles correctly, as the exact LLVM IR may vary
         assert!(codegen.module.verify().is_ok());
     }
 
