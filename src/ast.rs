@@ -1113,6 +1113,30 @@ impl Statement for BreakStatement {
     }
 }
 
+/// LaterStatement represents a defer statement (later in CURSED)
+pub struct LaterStatement {
+    pub token: String, // Token::Later
+    pub expression: Box<dyn Expression>,
+}
+
+impl Node for LaterStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{} {};", self.token_literal(), self.expression.string())
+    }
+}
+
+impl Statement for LaterStatement {
+    fn statement_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 /// PropertyAccessExpression represents accessing a property (field or method) of an object, 
 /// or accessing an exported symbol from a package.
 /// Examples: myStruct.field, myPackage.ExportedFunc

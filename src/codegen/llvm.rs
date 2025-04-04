@@ -14,7 +14,7 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
-                PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement};
+                PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -322,6 +322,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             }
             // Currently, this does nothing semantically.
             Ok(())
+        } else if let Some(later_stmt) = statement.as_any().downcast_ref::<LaterStatement>() {
+            self.compile_later_statement(later_stmt)
         } else {
              Err(format!("Unsupported statement type: {}", statement.string()))
         }
@@ -1038,6 +1040,22 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Build an unconditional branch to the exit block
         self.builder.build_unconditional_branch(exit_block).unwrap();
+        
+        Ok(())
+    }
+    
+    /// Compile a later statement (defer in CURSED)
+    fn compile_later_statement(&mut self, later_stmt: &LaterStatement) -> Result<(), String> {
+        // LaterStatement is not fully implemented yet in this version
+        // This would require more complex control flow tracking
+        // For now, just compile the expression but note that execution will happen immediately
+        // rather than being deferred until scope exit
+        
+        // Compile the expression to be deferred
+        let _ = self.compile_expression(later_stmt.expression.as_ref())?;
+        
+        // Print a warning in development mode
+        println!("Warning: 'later' statement compiled as immediate execution - deferral not implemented yet");
         
         Ok(())
     }
@@ -2168,6 +2186,38 @@ mod tests {
         assert!(codegen.module.verify().is_ok());
     }
 
+    #[test]
+    fn test_compile_later_statement() {
+        let context = Context::create();
+        let dummy_path = PathBuf::from("./dummy_later.csd");
+        
+        // Setup function context
+        let (mut codegen, function) = setup_test_context(&context, "test_later");
+        codegen.current_function = Some(function);
+        
+        // First we need to register a puts function since we'll call it
+        let i64_type = context.i64_type();
+        let puts_fn_type = context.void_type().fn_type(&[i64_type.into()], false);
+        let puts_fn = codegen.module.add_function("puts", puts_fn_type, None);
+        codegen.functions.insert("puts".to_string(), puts_fn);
+        
+        // Create a later statement with a simple puts call
+        let later_stmt = LaterStatement { 
+            token: "later".into(),
+            expression: Box::new(CallExpression {
+                token: Token::LParen,
+                function: Box::new(Identifier{token:"puts".into(), value: "puts".into()}),
+                arguments: vec![Box::new(IntegerLiteral{token: "42".into(), value: 42})],
+            }), 
+        };
+        
+        // Compile the later statement
+        let result = codegen.compile_later_statement(&later_stmt);
+        
+        // The compilation should succeed
+        assert!(result.is_ok());
+    }
+    
     #[test]
     fn test_compile_break_statement() {
         let context = Context::create();
