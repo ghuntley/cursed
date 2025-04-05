@@ -390,3 +390,37 @@ fn test_byte_rune_codegen() {
     assert!(output.contains("88"), 
             "Expected output containing '88' (ASCII/Unicode for 'X'), got:\n{}", output);
 }
+
+/// Tests parsing of struct (squad) declarations
+#[test]
+fn test_parse_struct() {
+    // For now, we're only testing that the parsing stage works correctly
+    // since code generation for structs is not yet implemented.
+    
+    let test_file = "tests/struct_test.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    // Use just the Lexer and Parser, without running code generation
+    let input = fs::read_to_string(test_file).expect("Failed to read test file");
+    
+    // Create a lexer and parser
+    use cursed::lexer::Lexer;
+    use cursed::parser::Parser;
+    
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    
+    // Parse the program 
+    let program_result = parser.parse_program();
+    
+    // Assert that parsing succeeds
+    assert!(program_result.is_ok(), "Failed to parse program with struct declaration. Errors: {:?}", 
+            program_result.err());
+    
+    // Ensure we have the expected number of statements (package declaration + struct declaration)
+    let program = program_result.unwrap();
+    assert_eq!(program.statements.len(), 2, "Expected 2 statements (package and struct declaration)");
+    
+    // Check we have no parser errors
+    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors());
+}

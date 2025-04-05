@@ -60,12 +60,12 @@ This document tracks the implementation status of the CURSED language features a
     *   Arrays (`[n]T`): Basic implementation with limited functionality.
     *   Slices (`[]T`): **Unimplemented**. `append`, `cap`, `len`, `make` builtins needed.
     *   Maps (`tea[K]V`): Basic hash table implementation exists with string keys.
-    *   Structs (`squad`): **Unimplemented**.
+    *   Structs (`squad`): Basic parser implementation. Code generation **Unimplemented**.
     *   Interfaces (`collab`): **Unimplemented**.
     *   Pointers (`@T`): **Unimplemented**. `new` builtin needed.
     *   Channels (`dm<T>`): **Unimplemented**. `make`, `cap`, `len` builtins needed.
 *   **Type System Features:**
-    *   Type Declarations (`be_like`): **Unimplemented**.
+    *   Type Declarations (`be_like`): Basic parser implementation. Code generation **Unimplemented**.
     *   Type Conversion: Basic implementation for numeric types.
     *   Type Inference (`:=`): Basic implementation exists.
     *   Type Assertions/Switches: **Unimplemented**.
