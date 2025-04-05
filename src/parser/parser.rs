@@ -226,15 +226,15 @@ impl<'a> Parser<'a> {
                             
                             // Parse first type parameter
                             if let Token::Identifier(type_name) = &self.current_token.clone() {
-                            type_parameters.push(ast::Identifier {
-                            token: self.current_token.token_literal(),
-                            value: type_name.clone(),
-                            });
-                            self.next_token()?;
+                                type_parameters.push(ast::Identifier {
+                                    token: self.current_token.token_literal(),
+                                    value: type_name.clone(),
+                                });
+                                self.next_token()?;
                             } else {
-                            return Err(Error::from_str(
-                            &format!("Expected type parameter name after '[', got {:?}", self.current_token)
-                            ));
+                                return Err(Error::from_str(
+                                    &format!("Expected type parameter name after '[', got {:?}", self.current_token)
+                                ));
                             }
                             
                             // Parse additional type parameters
@@ -272,13 +272,13 @@ impl<'a> Parser<'a> {
                         }
                         
                         // Parse parameters directly without expecting LParen again
-                        let parameters = self.parse_function_parameters()?
+                        let parameters = self.parse_function_parameters()?;
                         
                         // Check for optional return type
                         let mut return_type = None;
                         
-                        // Check if the current token is a type identifier before the opening brace
-                        if self.current_token != Token::LBrace {
+                        // Check if we're at the opening brace or need to handle return type
+                        if self.current_token != Token::LBrace && !self.current_token.token_literal().is_empty() {
                             if let Token::Identifier(type_name) = &self.current_token {
                                 return_type = Some(ast::Identifier {
                                     token: self.current_token.token_literal(),
@@ -298,12 +298,18 @@ impl<'a> Parser<'a> {
                             }
                         }
                         
-                        // Expect block
+                        // Expect an opening brace for the function body
                         if self.current_token != Token::LBrace {
-                            // There must be a return type or a block
-                            return Err(Error::from_str(
-                                &format!("Expected '{{' after function parameters or return type, got {:?}", self.current_token)
-                            ));
+                            // Check if we're looking at a valid type token - then it must be a return type
+                            if let Token::Identifier(_) = &self.current_token {
+                                // It's a valid identifier - likely a return type
+                                // Don't return error, return types are handled above
+                            } else if self.token_to_type_name().is_none() {
+                                // Not a valid type and not an opening brace - syntax error
+                                return Err(Error::from_str(
+                                    &format!("Expected '{{' or return type after function parameters, got {:?}", self.current_token)
+                                ));
+                            }
                         }
                         
                         // Parse body
