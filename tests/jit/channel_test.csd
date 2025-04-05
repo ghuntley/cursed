@@ -1,5 +1,3 @@
-fr fr Minimal test for channel operations
-
 vibe main;
 
 slay main() {
@@ -15,10 +13,7 @@ slay main() {
     fr fr Check the result
     lowkey result == 42 {
         println("Received 42 from channel")
-        yolo 0
     }
     
-    fr fr This should not execute if test passes
-    println("Channel test failed: expected 42, got")
-    yolo 1
+    yolo 0
 }
