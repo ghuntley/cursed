@@ -1220,6 +1220,32 @@ impl Expression for PropertyAccessExpression {
     }
 }
 
+/// TypeConversionExpression represents a type conversion expression
+/// Examples: normie(3.14), smol(42), snack(42)
+pub struct TypeConversionExpression {
+    pub token: String, // The type name
+    pub type_name: String, // The name of the target type
+    pub expression: Box<dyn Expression>, // The expression to convert
+}
+
+impl Node for TypeConversionExpression {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{}({})", self.type_name, self.expression.string())
+    }
+}
+
+impl Expression for TypeConversionExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

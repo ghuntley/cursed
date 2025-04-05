@@ -86,12 +86,12 @@ pub enum Token {
 
 /// Lexer for the CURSED language
 pub struct Lexer<'a> {
-    input: &'a str,
-    position: usize,
-    read_position: usize,
-    ch: Option<char>,
-    line: usize,
-    column: usize,
+    pub input: &'a str,
+    pub position: usize,
+    pub read_position: usize,
+    pub ch: Option<char>,
+    pub line: usize,
+    pub column: usize,
 }
 
 impl<'a> Lexer<'a> {

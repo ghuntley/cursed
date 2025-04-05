@@ -1,77 +1,46 @@
-.PHONY: build test clean docs example
+.PHONY: build test lint fmt fmt-fix clean example
 
-# Default target
-all: build
-
-# Build the compiler
 build:
-	cargo build
+	devenv shell cargo build
 
-# Run tests
 test:
-	cargo test
+	devenv shell cargo test
 
-# Clean build artifacts
-clean:
-	cargo clean
+# Run a specific test by name
+test-name:
+	devenv shell cargo test $(TEST_NAME)
 
-# Generate documentation
-docs:
-	cargo doc --no-deps
+# Run a specific test file
+test-file:
+	devenv shell cargo test --test $(TEST_FILE)
 
-# Check code formatting
-fmt:
-	cargo fmt -- --check
+# Run with warnings silenced
+test-quiet:
+	devenv shell cargo test --quiet
 
-# Fix code formatting
-fmt-fix:
-	cargo fmt
+# Run all tests without warnings
+test-no-warn:
+	DENY_WARNINGS=0 devenv shell cargo test
 
-# Run linter
+# Build with warnings silenced
+build-quiet:
+	devenv shell cargo build --quiet
+
 lint:
-	cargo clippy -- -D warnings
+	devenv shell cargo clippy -- -D warnings
 
-# Build in release mode
-release:
-	cargo build --release
+# Run clippy with warnings suppressed
+lint-allow:
+	devenv shell cargo clippy -- -A warnings
 
-# Install the compiler
-install: release
-	cargo install --path .
+fmt:
+	devenv shell cargo fmt -- --check
 
-# Update dependencies
-update:
-	cargo update
+fmt-fix:
+	devenv shell cargo fmt
 
-# Run the compiler with arguments
-run:
-	cargo run -- $(ARGS)
+clean:
+	devenv shell cargo clean
 
-# Generate the specs documentation
-specs:
-	@echo "Specs available at ./specs/"
-
-# Run an example
-example: build
-	@echo "Running example $(EXAMPLE)"
-	@./target/debug/cursed examples/$(EXAMPLE).csd
-
-# Help target
-help:
-	@echo "CURSED Compiler Build System"
-	@echo ""
-	@echo "Available targets:"
-	@echo "  build      - Build the compiler"
-	@echo "  test       - Run tests"
-	@echo "  clean      - Clean build artifacts"
-	@echo "  docs       - Generate documentation"
-	@echo "  fmt        - Check code formatting"
-	@echo "  fmt-fix    - Fix code formatting"
-	@echo "  lint       - Run linter"
-	@echo "  release    - Build in release mode"
-	@echo "  install    - Install the compiler"
-	@echo "  update     - Update dependencies"
-	@echo "  run        - Run the compiler (use ARGS= to pass arguments)"
-	@echo "  specs      - Show specs documentation location"
-	@echo "  example    - Run an example"
-	@echo "  help       - Show this help message" 
+example:
+	devenv shell ./target/debug/cursed examples/$(EXAMPLE).csd

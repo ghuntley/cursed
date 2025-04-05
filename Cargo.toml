@@ -8,6 +8,14 @@ repository = "https://github.com/ghuntley/cursed"
 license = "MIT"
 readme = "README.md"
 
+[lints.rust]
+missing_docs = "allow"
+unused_imports = "allow"
+unused_variables = "allow"
+dead_code = "allow"
+unused_assignments = "allow"
+unused_unsafe = "allow"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

@@ -6,6 +6,11 @@ use std::fmt;
 /// Symbol table module for tracking variables and scopes
 pub mod symbol_table;
 
+/// Character type (sip) methods
+pub mod char;
+#[cfg(test)]
+mod char_test;
+
 /// Compiled function representation for the runtime
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompiledFunction {
