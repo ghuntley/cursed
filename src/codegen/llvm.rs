@@ -567,6 +567,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 
         builder.build_alloca(llvm_type, name).unwrap()
     }
+    
+    /// Get the LLVM integer type for a given token type (smol, mid, normie, thicc)
+    fn get_integer_type_from_token(&self, token: &Token) -> inkwell::types::IntType<'ctx> {
+        match token {
+            Token::Smol => self.context.i8_type(),   // 8-bit integer
+            Token::Mid => self.context.i16_type(),   // 16-bit integer
+            Token::Normie => self.context.i32_type(), // 32-bit integer
+            Token::Thicc => self.context.i64_type(),  // 64-bit integer
+            _ => {
+                // Default to i64 for unknown tokens
+                println!("Warning: Unknown integer type token {:?}, defaulting to i64", token);
+                self.context.i64_type()
+            }
+        }
+    }
 
     /// Compiles the program into LLVM IR.
     pub fn compile(&mut self, program: &Program) -> Result<(), String> {
@@ -2330,17 +2345,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Err(format!("Variable '{}' not found in current scope", name))
     }
 
-    // Add this helper method to the LlvmCodeGenerator implementation
-    /// Determines the appropriate LLVM integer type based on the CURSED integer type token
-    fn get_integer_type_from_token(&self, token: &crate::lexer::Token) -> inkwell::types::IntType<'ctx> {
-        match token {
-            crate::lexer::Token::Smol => self.context.i8_type(),    // 8-bit integer
-            crate::lexer::Token::Mid => self.context.i16_type(),    // 16-bit integer 
-            crate::lexer::Token::Normie => self.context.i32_type(), // 32-bit integer
-            crate::lexer::Token::Thicc => self.context.i64_type(),  // 64-bit integer
-            _ => self.context.i64_type(), // Default to i64 if not a recognized integer type
-        }
-    }
+
     
     /// Compile a stan (goroutine) expression
     fn compile_stan_expression(&mut self, expr: &StanExpression) -> Result<BasicValueEnum<'ctx>, String> {
@@ -2366,7 +2371,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Compiles a type conversion expression
-    /// This handles explicit type conversions like smol(x), normie(y), snack(z)
+    /// This handles explicit type conversions like smol(x), normie(y), snack(z), thicc(z)
     fn compile_type_conversion(&mut self, expr: &TypeConversionExpression) -> Result<BasicValueEnum<'ctx>, String> {
         // Compile the expression to be converted
         let value = self.compile_expression(expr.expression.as_ref())?;
