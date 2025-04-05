@@ -2,29 +2,31 @@
 
 use crate::object::{Object, Callable};
 use crate::error::Error;
+use crate::core::thread_safe_goroutine;
 use std::thread;
 use std::sync::Arc;
 
 /// Launch a new goroutine with the given callable and arguments
-/// This is a simplified implementation that doesn't actually execute functions concurrently yet
-/// but returns immediately to simulate goroutine behavior.
+/// Using thread-safe object implementation for actual concurrent execution
 pub fn launch_goroutine(callable: &Object, args: Vec<Object>) -> Result<Object, Error> {
-    // For now, we just return immediately without actually spawning a thread
-    // since there are thread-safety issues with the current Object implementation
-    // In a real implementation, we would need to make Object thread-safe (using Arc instead of Rc)
-    // and properly handle execution in a separate thread
+    // Convert objects to thread-safe variants
+    let thread_safe_callable = thread_safe_goroutine::convert_to_thread_safe_object(callable)?;
     
-    // Log the goroutine call for debugging
-    println!("Stan (goroutine) called with: {} and {} args", callable.type_name(), args.len());
+    let mut thread_safe_args = Vec::new();
+    for arg in args {
+        thread_safe_args.push(thread_safe_goroutine::convert_to_thread_safe_object(&arg)?); 
+    }
     
-    // Immediate return, simulating goroutine launch
-    Ok(Object::Null)
+    // Launch the goroutine using the thread-safe implementation
+    match thread_safe_goroutine::launch_thread_safe_goroutine(&thread_safe_callable, thread_safe_args) {
+        Ok(_) => Ok(Object::Null),
+        Err(e) => Err(e),
+    }
 }
 
 /// Sleep for the specified number of seconds
 /// This is a utility function for goroutine testing
 pub fn sleep(seconds: f64) -> Result<Object, Error> {
-    let millis = (seconds * 1000.0) as u64;
-    thread::sleep(std::time::Duration::from_millis(millis));
+    thread_safe_goroutine::thread_safe_sleep(seconds)?;
     Ok(Object::Null)
 }

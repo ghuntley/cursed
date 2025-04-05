@@ -1,20 +1,26 @@
-fr fr Minimal channel test
-
 vibe main
 
-yeet "vibez"
-
 slay main() {
-    vibez.spill("Channel Test")
+    sus ch = dm normie;
     
-    fr fr Create a channel
-    sus ch = dm smol
+    fr fr Start a goroutine
+    stan sendValue();
     
-    fr fr Send a value
-    ch <- 42
+    fr fr Sleep a bit
+    sleep(0.1);
     
     fr fr Receive the value
-    sus result = <-ch
+    sus value = <-ch;
     
-    vibez.spill("Received from channel:", result)
+    fr fr Check value
+    lowkey value == 42 {
+        print("Success!");
+    }
+    
+    yolo 0;
+}
+
+fr fr Function to run in a goroutine
+slay sendValue() {
+    ch <- 42;
 }

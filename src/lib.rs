@@ -29,6 +29,7 @@ pub mod parser;
 pub mod symbol;
 pub mod prelude;
 pub mod object;
+pub mod object_thread_safe;
 pub mod repl;
 pub mod helpers;
 pub mod core;
