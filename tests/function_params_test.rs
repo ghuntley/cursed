@@ -13,27 +13,6 @@ slay empty() {
     
     println!("Testing input:\n{}", input);
     let mut lexer = Lexer::new(input);
-    
-    // Collect all tokens for debugging
-    let mut tokens = Vec::new();
-    loop {
-        match lexer.next_token() {
-            Ok(token) => {
-                let is_eof = token == cursed::lexer::Token::Eof;
-                tokens.push(token.clone());
-                if is_eof { break; }
-            },
-            Err(e) => {
-                println!("Lexer error: {:?}", e);
-                break;
-            }
-        }
-    }
-    
-    println!("Tokens: {:?}", tokens);
-    
-    // Start over with a new lexer
-    let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program();
     
