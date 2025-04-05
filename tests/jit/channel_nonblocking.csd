@@ -1,20 +1,33 @@
 vibe main;
 
 slay main() {
-    fr fr Create a channel (we'll simplify for now)
-    sus ch = dm smol
+    // Create a buffered channel with capacity 1
+    sus ch = dm lit(1);
     
-    fr fr Try to send without blocking (should succeed)
-    fr fr For now, we'll just send/receive normally since our implementation is simplified
-    ch <- 42
-    
-    fr fr Try to receive without blocking (should succeed)
-    sus result = <-ch
-    
-    fr fr Check the result
-    lowkey result == 42 {
-        println("Received 42 from channel")
+    // Try non-blocking send - should succeed (channel has space)
+    bestie ok := ch <-? 42 {
+        lowkey ok {
+            puts("Send successful");
+        } highkey {
+            puts("Send would block");
+        }
     }
     
-    yolo 0
+    // Try non-blocking send again - should fail (channel is full)
+    bestie ok := ch <-? 100 {
+        lowkey ok {
+            puts("Second send successful");
+        } highkey {
+            puts("Would block");
+        }
+    }
+    
+    // Try non-blocking receive - should succeed
+    bestie ok, val := <-? ch {
+        lowkey ok {
+            puts("Received: " + val);
+        } highkey {
+            puts("Receive would block");
+        }
+    }
 }

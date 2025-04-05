@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-fix clean example
+.PHONY: build test lint fmt fmt-fix clean example jit-test
 
 build:
 	devenv shell cargo build
@@ -44,3 +44,6 @@ clean:
 
 example:
 	devenv shell ./target/debug/cursed examples/$(EXAMPLE).csd
+
+jit-test:
+	devenv shell cargo test jit_integration_full

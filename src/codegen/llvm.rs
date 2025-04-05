@@ -16,7 +16,7 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
                 PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement,
                 ByteLiteral, RuneLiteral, SquadStatement, FieldStatement, BeLikeExpression, TypeConversionExpression, 
-                ChannelExpression, SendExpression, ReceiveExpression};
+                ChannelExpression, SendExpression, ReceiveExpression, StanExpression};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -614,6 +614,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else if let Some(recv_expr) = expression.as_any().downcast_ref::<ReceiveExpression>() {
             // Handle receive from channel
             return self.compile_receive_expression(recv_expr);
+        } else if let Some(stan_expr) = expression.as_any().downcast_ref::<StanExpression>() {
+            // Handle goroutine (stan) expression
+            return self.compile_stan_expression(stan_expr);
         }
         if let Some(lit) = expression.as_any().downcast_ref::<IntegerLiteral>() {
             Ok(self.context.i64_type().const_int(lit.value as u64, false).into())
@@ -2118,6 +2121,29 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             crate::lexer::Token::Normie => self.context.i32_type(), // 32-bit integer
             crate::lexer::Token::Thicc => self.context.i64_type(),  // 64-bit integer
             _ => self.context.i64_type(), // Default to i64 if not a recognized integer type
+        }
+    }
+    
+    /// Compile a stan (goroutine) expression
+    fn compile_stan_expression(&mut self, expr: &StanExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        use crate::codegen::stan::gen_stan_expr;
+        
+        // Get the current function
+        let current_function = match self.current_function {
+            Some(func) => func,
+            None => return Err(String::from("No current function for goroutine compilation"))
+        };
+        
+        // Use the stan-specific code generator
+        match gen_stan_expr(
+            self.context,
+            &self.module,
+            &self.builder,
+            expr,
+            current_function
+        ) {
+            Ok(value) => Ok(value),
+            Err(e) => Err(format!("Error compiling goroutine: {}", e))
         }
     }
     
