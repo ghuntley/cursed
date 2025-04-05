@@ -31,6 +31,7 @@ pub enum Token {
     GtEq,        // >=
     And,         // &&
     Or,          // ||
+    Arrow,       // <-
     
     // Delimiters
     Comma,       // ,
@@ -271,6 +272,9 @@ impl<'a> Lexer<'a> {
                 if self.peek_char() == Some('=') {
                     self.read_char();
                     Token::LtEq
+                } else if self.peek_char() == Some('-') {
+                    self.read_char();
+                    Token::Arrow
                 } else {
                     Token::Lt
                 }
@@ -696,6 +700,7 @@ impl Token {
             Token::GtEq => ">=".to_string(),
             Token::And => "&&".to_string(),
             Token::Or => "||".to_string(),
+            Token::Arrow => "<-".to_string(),
             Token::Comma => ",".to_string(),
             Token::Semicolon => ";".to_string(),
             Token::Colon => ":".to_string(),

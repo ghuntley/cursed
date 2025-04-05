@@ -7,6 +7,7 @@ pub mod tagged;
 pub mod allocator;
 pub mod block;
 pub mod bump;
+pub mod channel;
 
 // Re-exports
 pub use gc::{Traceable, Visitor, GarbageCollector, Gc};
@@ -14,6 +15,7 @@ pub use tagged::{TaggedPtr, Tag, NonNullExt};
 pub use allocator::{Allocator, AllocatorBase};
 pub use block::BlockAllocator;
 pub use bump::BumpAllocator;
+pub use channel::Channel;
 
 /// Represents an allocated object in memory
 pub struct Allocated<T> {

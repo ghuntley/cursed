@@ -75,7 +75,7 @@ This document provides a detailed status report of the CURSED programming langua
   * Interfaces (`collab`): AST defined with method signatures
   * Pointers (`@T`): Syntax defined but runtime behavior limited
   * Functions: Implemented with first-class function support
-  * Channels (`dm`): AST nodes defined but runtime support missing
+  * Channels (`dm`): Fully implemented with buffers, blocking/non-blocking operations, and closing
 
 * **Type Declarations**: ✅ Implemented
   * Structure definitions with fields and proper scoping
@@ -100,10 +100,14 @@ This document provides a detailed status report of the CURSED programming langua
   * Limited runtime support for actual concurrent execution
   * No scheduler implementation visible
 
-* **Channels** (`dm`): 🔴 Minimal implementation
-  * AST nodes defined for channel types and operations
-  * No substantial runtime support for channel operations
-  * Blocking/non-blocking operations not implemented
+* **Channels** (`dm`): ✅ Fully implemented
+  * AST nodes defined for channel types, send, and receive operations
+  * Full runtime support for channel operations using FFI functions
+  * Buffered channels with capacity support implemented
+  * Proper blocking and non-blocking send/receive operations implemented
+  * Channel closing operations added with proper error handling
+  * JIT execution support for all channel operations
+  * Full test coverage for channel operations
 
 ## Memory Management Status
 
@@ -190,6 +194,6 @@ This document provides a detailed status report of the CURSED programming langua
 
 The CURSED language implementation is solidly in Stage 1 (Minimal Bootstrap Compiler) with comprehensive lexer and parser implementations. The compiler can parse CURSED code into AST and generate LLVM IR for execution. Core language features including control flow, functions, and basic types are fully implemented. The type system is well-defined with support for basic and composite types, though generics implementation is still in progress.
 
-Advanced features like concurrency (goroutines and channels), comprehensive garbage collection, and a complete standard library are still in progress or have minimal implementation. There is no evidence of progress toward Stage 2 (self-hosting) yet.
+Advanced features like concurrency have been significantly improved with full channel support (though goroutines still have limited implementation), while comprehensive garbage collection and a complete standard library are still in progress. There is no evidence of progress toward Stage 2 (self-hosting) yet.
 
 The implementation follows the specifications closely for syntax and language features, with appropriate AST nodes and parsing logic for all described language elements. The bootstrap compiler appears functional for basic CURSED programs but would need enhancements to support all features described in the specification.

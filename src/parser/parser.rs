@@ -1345,6 +1345,14 @@ impl<'a> Parser<'a> {
         
         // First try to find a prefix parsing function
         let mut left_expr: Box<dyn Expression> = match &self.current_token {
+            Token::Arrow => {
+                // Receive expression (<-ch)
+                self.parse_receive_expression()?
+            },
+            Token::Dm => {
+                // Channel type (dm<T>)
+                self.parse_channel_expression()?
+            },
             Token::Identifier(name) => {
                 let identifier = ast::Identifier {
                     token: self.current_token.token_literal(),
@@ -1553,6 +1561,10 @@ impl<'a> Parser<'a> {
                 Token::Eq | Token::NotEq | Token::Lt | Token::Gt | Token::LtEq | Token::GtEq => {
                     left_expr = self.parse_infix_expression(left_expr)?;
                 },
+                Token::Arrow => {
+                    // Parse send expression (ch <- value)
+                    left_expr = self.parse_send_expression(left_expr)?;
+                },
                 Token::LParen => {
                     // Parse function call
                     left_expr = self.parse_call_expression(left_expr)?;
@@ -1723,6 +1735,7 @@ impl<'a> Parser<'a> {
             Token::Lt | Token::Gt | Token::LtEq | Token::GtEq => Precedence::LessGreater,
             Token::Plus | Token::Minus => Precedence::Sum,
             Token::Asterisk | Token::Slash => Precedence::Product,
+            Token::Arrow => Precedence::Sum, // Same precedence as + and -
             Token::LParen => Precedence::Call,
             Token::LBracket => Precedence::Index,
             Token::Dot => Precedence::Dot,
@@ -1992,6 +2005,92 @@ impl<'a> Parser<'a> {
         });
     }
     
+    /// Parse a channel expression (dm<T> or dm<T>[capacity])
+    fn parse_channel_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.token_literal();
+        
+        // Expect element type after 'dm'
+        self.next_token()?;
+        
+        // Parse the element type
+        let element_type = if let Some(token_value) = self.token_to_type_name() {
+            // Create an identifier for the type
+            let type_ident = ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: token_value,
+            };
+            Box::new(type_ident) as Box<dyn Expression>
+        } else {
+            // If it's not a built-in type, parse it as a regular expression
+            self.parse_expression(Precedence::Lowest)?
+        };
+        
+        // Move past the element type
+        if self.current_token != Token::Eof {
+            self.next_token()?;
+        }
+        
+        // Check for optional capacity specification with []  
+        let capacity = if self.current_token == Token::LBracket {
+            // Move past '['
+            self.next_token()?;
+            
+            // Parse the capacity expression
+            let cap_expr = self.parse_expression(Precedence::Lowest)?;
+            
+            // Expect closing ']'
+            if !self.expect_peek(&Token::RBracket) {
+                return Err(Error::Parser {
+                    location: SourceLocation::default(),
+                    message: format!("Expected closing ']' after channel capacity")
+                });
+            }
+            
+            Some(cap_expr)
+        } else {
+            None
+        };
+        
+        Ok(Box::new(ast::ChannelExpression {
+            token,
+            element_type,
+            capacity,
+        }))
+    }
+
+    /// Parse a send expression (ch <- value)
+    fn parse_send_expression(&mut self, channel: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.token_literal(); // Should be '<-'
+        
+        // Move past the '<-' token
+        self.next_token()?;
+        
+        // Parse the value to send
+        let value = self.parse_expression(Precedence::Lowest)?;
+        
+        Ok(Box::new(ast::SendExpression {
+            token,
+            channel,
+            value,
+        }))
+    }
+
+    /// Parse a receive expression (<-ch)
+    fn parse_receive_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.token_literal(); // Should be '<-'
+        
+        // Move past the '<-' token
+        self.next_token()?;
+        
+        // Parse the channel expression
+        let channel = self.parse_expression(Precedence::Lowest)?;
+        
+        Ok(Box::new(ast::ReceiveExpression {
+            token,
+            channel,
+        }))
+    }
+
     /// Helper function to convert certain tokens to type names
     fn token_to_type_name(&self) -> Option<String> {
         match &self.current_token {
@@ -2801,6 +2900,47 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    #[test]
+    fn test_channel_expressions() -> Result<(), Error> {
+        // Test channel type declaration
+        let input = "sus ch = dm smol";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have one statement
+        assert_eq!(program.statements.len(), 1);
+        
+        // Check that it's a LetStatement with a ChannelExpression value
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::LetStatement>().unwrap();
+        let expr = stmt.value.as_ref().unwrap().as_any().downcast_ref::<ast::ChannelExpression>();
+        assert!(expr.is_some(), "Expression is not a ChannelExpression");
+        
+        // Test send operation
+        let input = "ch <- 42";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have one statement
+        assert_eq!(program.statements.len(), 1);
+        
+        // Check that it's an ExpressionStatement with a SendExpression
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let expr = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<ast::SendExpression>();
+        assert!(expr.is_some(), "Expression is not a SendExpression");
+        
+        // Test receive operation
+        let input = "sus value = <-ch";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have one statement
+        assert_eq!(program.statements.len(), 1);
+        
+        // Check that it's a LetStatement with a ReceiveExpression value
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::LetStatement>().unwrap();
+        let expr = stmt.value.as_ref().unwrap().as_any().downcast_ref::<ast::ReceiveExpression>();
+        assert!(expr.is_some(), "Expression is not a ReceiveExpression");
+        
+        Ok(())
+    }
     
     #[test]
     fn test_parse_later_statement() -> Result<(), Error> {
