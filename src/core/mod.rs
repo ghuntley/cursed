@@ -3,6 +3,7 @@ pub mod type_checker;
 pub mod generic_instantiation;
 pub mod channel;
 pub mod goroutine;
+pub mod thread_safe_goroutine;
 
 /// Represents a compiled function in CURSED
 #[derive(Debug, Clone, PartialEq)]
