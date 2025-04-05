@@ -1496,13 +1496,31 @@ impl<'a> Parser<'a> {
         }))
     }
     
-    /// Parse a call expression
+    /// Parse a call expression or type conversion
     fn parse_call_expression(&mut self, function: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
         let token = self.current_token.clone();
         
         // Parse the arguments
-        let arguments = self.parse_expression_list(&Token::RParen)?;
+        let mut arguments = self.parse_expression_list(&Token::RParen)?;
         
+        // Check if this is a type conversion
+        if let Some(ident) = function.as_any().downcast_ref::<ast::Identifier>() {
+            // Check if the identifier is a type name (smol, mid, normie, thicc, snack, meal)
+            let is_type_name = matches!(ident.value.as_str(), 
+                  "smol" | "mid" | "normie" | "thicc" | "snack" | "meal" | 
+                  "byte" | "rune" | "tea" | "lit");
+            
+            // If this is a type name and we have exactly one argument, this is a type conversion
+            if is_type_name && arguments.len() == 1 {
+                return Ok(Box::new(ast::TypeConversionExpression {
+                    token: ident.token.clone(),
+                    type_name: ident.value.clone(),
+                    expression: arguments.remove(0),
+                }));
+            }
+        }
+        
+        // Otherwise, this is a regular function call
         Ok(Box::new(ast::CallExpression {
             token,
             function,

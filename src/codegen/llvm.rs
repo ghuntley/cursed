@@ -15,7 +15,7 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
                 PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement,
-                ByteLiteral, RuneLiteral};
+                ByteLiteral, RuneLiteral, SquadStatement, FieldStatement, BeLikeExpression, TypeConversionExpression};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -46,11 +46,31 @@ pub struct LlvmCodeGenerator<'ctx> {
     current_package_name: String, // Make sure this is included
     imported_packages: HashMap<String, ImportedPackageInfo<'ctx>>, // Make sure this is included
     current_file_path: PathBuf, // Make sure this is included
+    // Struct types mapping: package name -> struct name -> LLVM struct type
+    struct_types: HashMap<String, HashMap<String, inkwell::types::StructType<'ctx>>>,
     // Loop control flow tracking
     loop_exit_blocks: Vec<BasicBlock<'ctx>>, // Stack of exit blocks for nested loops
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Get a type for a struct based on its name
+    /// If the struct doesn't exist yet, return None
+    fn get_struct_type(&self, package_name: &str, struct_name: &str) -> Option<inkwell::types::StructType<'ctx>> {
+        self.struct_types
+            .get(package_name)
+            .and_then(|pkg_structs| pkg_structs.get(struct_name))
+            .copied()
+    }
+    
+    /// Register a struct type with the code generator
+    fn register_struct_type(&mut self, package_name: &str, struct_name: &str, struct_type: inkwell::types::StructType<'ctx>) {
+        let pkg_structs = self.struct_types
+            .entry(package_name.to_string())
+            .or_insert_with(HashMap::new);
+            
+        pkg_structs.insert(struct_name.to_string(), struct_type);
+    }
+    
     /// Creates a new LlvmCodeGenerator instance.
     pub fn new(context: &'ctx Context, module_name: &str, initial_file_path: PathBuf) -> Self { // Ensure 3 args
         let module = context.create_module(module_name);
@@ -67,6 +87,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             current_package_name,
             imported_packages: HashMap::new(),
             current_file_path: initial_file_path,
+            struct_types: HashMap::new(),
             loop_exit_blocks: Vec::new(),
         }
     }
@@ -76,6 +97,106 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         format!("_{}_{}", package_name, symbol_name)
     }
 
+    /// Compile a struct declaration
+    fn compile_squad_statement(&mut self, squad_stmt: &SquadStatement) -> Result<(), String> {
+        let struct_name = &squad_stmt.name.value;
+        
+        // Create a list of field types for the struct
+        let mut field_types = Vec::new();
+        let mut field_names = Vec::new();
+        
+        // Process each field
+        for field in &squad_stmt.fields {
+            let field_name = &field.name.value;
+            let type_name = &field.type_name.value;
+            
+            // Get the LLVM type for this field
+            let field_type = self.get_llvm_type_for_name(type_name)?;
+            
+            field_types.push(field_type);
+            field_names.push(field_name.clone());
+        }
+        
+        // Create the struct type
+        let struct_type = self.context.struct_type(&field_types, false);
+        
+        // To avoid borrowing issues, clone the package name
+        let package_name = self.current_package_name.clone();
+        
+        // Register the struct type
+        self.register_struct_type(&package_name, struct_name, struct_type);
+        
+        // Debugging output
+        println!("Compiled struct '{}' with {} fields", struct_name, field_types.len());
+        
+        Ok(())
+    }
+    
+    /// Helper function to get LLVM type for a CURSED type name
+    fn get_llvm_type_for_name(&self, type_name: &str) -> Result<BasicTypeEnum<'ctx>, String> {
+        match type_name {
+            "smol" => Ok(self.context.i8_type().into()),
+            "mid" => Ok(self.context.i16_type().into()),  
+            "normie" => Ok(self.context.i32_type().into()), 
+            "thicc" => Ok(self.context.i64_type().into()),
+            "snack" => Ok(self.context.f32_type().into()),
+            "meal" => Ok(self.context.f64_type().into()),
+            "lit" => Ok(self.context.bool_type().into()),
+            "tea" => Ok(self.context.i8_type().ptr_type(inkwell::AddressSpace::default()).into()),
+            "byte" => Ok(self.context.i8_type().into()),
+            "rune" => Ok(self.context.i32_type().into()),
+            _ => {
+                // Check if it's a struct type
+                if let Some(struct_type) = self.get_struct_type(&self.current_package_name, type_name) {
+                    Ok(struct_type.ptr_type(inkwell::AddressSpace::default()).into())
+                } else {
+                    Err(format!("Unknown type: {}", type_name))
+                }
+            }
+        }
+    }
+    
+    /// Compile struct instantiation expression
+    fn compile_struct_instantiation(&mut self, expr: &BeLikeExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        let struct_name = &expr.struct_name.value;
+        
+        // Get the struct type
+        let package_name = self.current_package_name.clone();
+        let struct_type = self.get_struct_type(&package_name, struct_name)
+            .ok_or_else(|| format!("Unknown struct type: {}", struct_name))?;
+            
+        // Allocate memory for the struct
+        let struct_ptr = self.builder.build_alloca(struct_type, &format!("{}_instance", struct_name)).unwrap();
+        
+        // Set each field value
+        for (i, (field_name, field_value_expr)) in expr.fields.iter().enumerate() {
+            // Compile the field value
+            let field_value = self.compile_expression(field_value_expr.as_ref())?;
+            
+            // Calculate the pointer to the field
+            let indices = [
+                self.context.i32_type().const_int(0, false),
+                self.context.i32_type().const_int(i as u64, false)
+            ];
+            
+            // GEP to get pointer to the field
+            let field_ptr = unsafe {
+                self.builder.build_gep(
+                    struct_type,
+                    struct_ptr,
+                    &indices,
+                    &format!("{}_field_{}", struct_name, field_name)
+                ).unwrap()
+            };
+            
+            // Store the value in the field
+            self.builder.build_store(field_ptr, field_value).unwrap();
+        }
+        
+        // Return the pointer to the struct
+        Ok(struct_ptr.into())
+    }
+    
     /// Helper to create an alloca instruction in the entry block of the current function.
     /// Allocas should typically be grouped in the entry block for optimal SSA form via mem2reg.
     fn create_entry_block_alloca<T: BasicType<'ctx>>(
@@ -166,6 +287,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             } else {
                 Ok(()) // No expression in the statement
             }
+        } else if let Some(squad_stmt) = statement.as_any().downcast_ref::<SquadStatement>() {
+            // Handle struct declarations
+            self.compile_squad_statement(squad_stmt)
         } else if let Some(let_stmt) = statement.as_any().downcast_ref::<LetStatement>() {
             let var_name = &let_stmt.name.value;
 
@@ -335,6 +459,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         &mut self, 
         expression: &'expr dyn Expression,
     ) -> Result<BasicValueEnum<'ctx>, String> {
+        if let Some(type_conv_expr) = expression.as_any().downcast_ref::<TypeConversionExpression>() {
+            // Handle type conversion
+            return self.compile_type_conversion(type_conv_expr);
+        } else if let Some(be_like_expr) = expression.as_any().downcast_ref::<BeLikeExpression>() {
+            // Handle struct instantiation
+            return self.compile_struct_instantiation(be_like_expr);
+        }
         if let Some(lit) = expression.as_any().downcast_ref::<IntegerLiteral>() {
             Ok(self.context.i64_type().const_int(lit.value as u64, false).into())
         } else if let Some(lit) = expression.as_any().downcast_ref::<BooleanLiteral>() {
@@ -1759,13 +1890,20 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(()) // Explicitly return Ok(()) to satisfy Result<(), String>
     }
 
-    // Compile a property access expression (e.g., myPackage.Symbol)
-    // Takes &self because it currently only *reads* state (module, imported_packages)
-    // If it needed to modify state (e.g., cache resolved symbols), it would need &mut self.
-    fn compile_property_access(&self, prop_expr: &PropertyAccessExpression) -> Result<BasicValueEnum<'ctx>, String> {
+    // Compile a property access expression (e.g., myPackage.Symbol or struct.field)
+    // Now requires &mut self to compile struct field expressions
+    fn compile_property_access(&mut self, prop_expr: &PropertyAccessExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // First try to compile the object expression
+        let object_result = self.compile_expression(prop_expr.object.as_ref());
+        let symbol_name = &prop_expr.property.value;
+        
+        // TODO: Struct field access is currently disabled due to compatibility issues with inkwell
+        // We'll focus on getting type conversion working first
+        // Struct field access will be implemented in a future update
+        
+        // If not a struct field, try package property access
         if let Some(package_ident) = prop_expr.object.as_any().downcast_ref::<Identifier>() {
             let package_alias = &package_ident.value;
-            let symbol_name = &prop_expr.property.value;
             
             if let Some(package_info) = self.imported_packages.get(package_alias) {
                 if let Some(func_info) = package_info.exported_functions.get(symbol_name) {
@@ -1777,19 +1915,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                                 let fn_type = i64_type.fn_type(&[i64_type.into()], false);
                                 self.module.add_function(&func_info.mangled_name, fn_type, None)
                             });
-                        Ok(llvm_func.as_global_value().as_pointer_value().into())
+                        return Ok(llvm_func.as_global_value().as_pointer_value().into());
                     } else {
-                        Err(format!("Symbol '{}' in package '{}' is not exported", symbol_name, package_alias))
+                        return Err(format!("Symbol '{}' in package '{}' is not exported", symbol_name, package_alias));
                     }
                 } else {
-                    Err(format!("Symbol '{}' not found in imported package '{}'", symbol_name, package_alias))
+                    return Err(format!("Symbol '{}' not found in imported package '{}'", symbol_name, package_alias));
                 }
             } else {
-                Err(format!("Package or variable '{}' not found or not imported", package_alias))
+                return Err(format!("Package or variable '{}' not found or not imported", package_alias));
             }
-        } else {
-            Err("Property access only supported on identifiers for now".to_string())
         }
+        
+        Err(format!("Unsupported property access: {}.{}", prop_expr.object.string(), symbol_name))
     }
 
     fn compile_assignment_expression(&mut self, assign_expr: &AssignmentExpression) -> Result<BasicValueEnum<'ctx>, String> {
@@ -1831,6 +1969,129 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             crate::lexer::Token::Normie => self.context.i32_type(), // 32-bit integer
             crate::lexer::Token::Thicc => self.context.i64_type(),  // 64-bit integer
             _ => self.context.i64_type(), // Default to i64 if not a recognized integer type
+        }
+    }
+    
+    /// Compiles a type conversion expression
+    /// This handles explicit type conversions like smol(x), normie(y), snack(z)
+    fn compile_type_conversion(&mut self, expr: &TypeConversionExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Compile the expression to be converted
+        let value = self.compile_expression(expr.expression.as_ref())?;
+        
+        // Determine the target type based on the type name
+        match expr.type_name.as_str() {
+            // Integer type conversions
+            "smol" => {
+                if value.is_int_value() {
+                    // Integer to i8
+                    let int_val = value.into_int_value();
+                    Ok(self.builder.build_int_truncate(int_val, self.context.i8_type(), "to_smol").unwrap().into())
+                } else if value.is_float_value() {
+                    // Float to i8
+                    let float_val = value.into_float_value();
+                    let int_val = self.builder.build_float_to_signed_int(float_val, self.context.i8_type(), "float_to_smol").unwrap();
+                    Ok(int_val.into())
+                } else {
+                    Err(format!("Cannot convert {:?} to smol (i8)", value.get_type()))
+                }
+            },
+            "mid" => {
+                if value.is_int_value() {
+                    // Integer to i16
+                    let int_val = value.into_int_value();
+                    let current_width = int_val.get_type().get_bit_width();
+                    if current_width > 16 {
+                        Ok(self.builder.build_int_truncate(int_val, self.context.i16_type(), "to_mid").unwrap().into())
+                    } else if current_width < 16 {
+                        Ok(self.builder.build_int_s_extend(int_val, self.context.i16_type(), "to_mid").unwrap().into())
+                    } else {
+                        Ok(int_val.into())
+                    }
+                } else if value.is_float_value() {
+                    // Float to i16
+                    let float_val = value.into_float_value();
+                    let int_val = self.builder.build_float_to_signed_int(float_val, self.context.i16_type(), "float_to_mid").unwrap();
+                    Ok(int_val.into())
+                } else {
+                    Err(format!("Cannot convert {:?} to mid (i16)", value.get_type()))
+                }
+            },
+            "normie" => {
+                if value.is_int_value() {
+                    // Integer to i32
+                    let int_val = value.into_int_value();
+                    let current_width = int_val.get_type().get_bit_width();
+                    if current_width > 32 {
+                        Ok(self.builder.build_int_truncate(int_val, self.context.i32_type(), "to_normie").unwrap().into())
+                    } else if current_width < 32 {
+                        Ok(self.builder.build_int_s_extend(int_val, self.context.i32_type(), "to_normie").unwrap().into())
+                    } else {
+                        Ok(int_val.into())
+                    }
+                } else if value.is_float_value() {
+                    // Float to i32
+                    let float_val = value.into_float_value();
+                    let int_val = self.builder.build_float_to_signed_int(float_val, self.context.i32_type(), "float_to_normie").unwrap();
+                    Ok(int_val.into())
+                } else {
+                    Err(format!("Cannot convert {:?} to normie (i32)", value.get_type()))
+                }
+            },
+            "thicc" => {
+                if value.is_int_value() {
+                    // Integer to i64
+                    let int_val = value.into_int_value();
+                    let current_width = int_val.get_type().get_bit_width();
+                    if current_width < 64 {
+                        Ok(self.builder.build_int_s_extend(int_val, self.context.i64_type(), "to_thicc").unwrap().into())
+                    } else {
+                        Ok(int_val.into())
+                    }
+                } else if value.is_float_value() {
+                    // Float to i64
+                    let float_val = value.into_float_value();
+                    let int_val = self.builder.build_float_to_signed_int(float_val, self.context.i64_type(), "float_to_thicc").unwrap();
+                    Ok(int_val.into())
+                } else {
+                    Err(format!("Cannot convert {:?} to thicc (i64)", value.get_type()))
+                }
+            },
+            // Float type conversions
+            "snack" => {
+                if value.is_float_value() {
+                    // Float to f32
+                    let float_val = value.into_float_value();
+                    if float_val.get_type() == self.context.f32_type() {
+                        Ok(float_val.into())
+                    } else {
+                        Ok(self.builder.build_float_trunc(float_val, self.context.f32_type(), "to_snack").unwrap().into())
+                    }
+                } else if value.is_int_value() {
+                    // Integer to f32
+                    let int_val = value.into_int_value();
+                    Ok(self.builder.build_signed_int_to_float(int_val, self.context.f32_type(), "int_to_snack").unwrap().into())
+                } else {
+                    Err(format!("Cannot convert {:?} to snack (f32)", value.get_type()))
+                }
+            },
+            "meal" => {
+                if value.is_float_value() {
+                    // Float to f64
+                    let float_val = value.into_float_value();
+                    if float_val.get_type() == self.context.f64_type() {
+                        Ok(float_val.into())
+                    } else {
+                        Ok(self.builder.build_float_ext(float_val, self.context.f64_type(), "to_meal").unwrap().into())
+                    }
+                } else if value.is_int_value() {
+                    // Integer to f64
+                    let int_val = value.into_int_value();
+                    Ok(self.builder.build_signed_int_to_float(int_val, self.context.f64_type(), "int_to_meal").unwrap().into())
+                } else {
+                    Err(format!("Cannot convert {:?} to meal (f64)", value.get_type()))
+                }
+            },
+            _ => Err(format!("Unknown type conversion target: {}", expr.type_name))
         }
     }
 }
@@ -2491,5 +2752,92 @@ mod tests {
         assert_eq!(mixed_result.into_int_value().get_type(), context.bool_type());
     }
 
-    // ... existing tests ...
+    #[test]
+    fn test_compile_struct_declaration() {
+        let context = Context::create();
+        let dummy_path = PathBuf::from("./dummy_struct.csd"); 
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_struct_decl", dummy_path);
+        
+        // Create a simple struct statement
+        let struct_name = Identifier { token: "Person".to_string(), value: "Person".to_string() };
+        
+        let field1_name = Identifier { token: "name".to_string(), value: "name".to_string() };
+        let field1_type = Identifier { token: "tea".to_string(), value: "tea".to_string() };
+        let field1 = FieldStatement { token: "name".to_string(), name: field1_name, type_name: field1_type };
+        
+        let field2_name = Identifier { token: "age".to_string(), value: "age".to_string() };
+        let field2_type = Identifier { token: "normie".to_string(), value: "normie".to_string() };
+        let field2 = FieldStatement { token: "age".to_string(), name: field2_name, type_name: field2_type };
+        
+        let squad_stmt = SquadStatement {
+            token: "squad".to_string(),
+            name: struct_name,
+            fields: vec![field1, field2],
+        };
+        
+        // Compile the struct declaration
+        let result = codegen.compile_squad_statement(&squad_stmt);
+        assert!(result.is_ok(), "Failed to compile struct declaration: {:?}", result.err());
+        
+        // Check that the struct type was registered
+        let struct_type = codegen.get_struct_type("test_struct_decl", "Person");
+        assert!(struct_type.is_some(), "Struct type was not registered");
+        
+        // Verify the struct type has the correct fields
+        let struct_type = struct_type.unwrap();
+        assert_eq!(struct_type.get_field_types().len(), 2, "Expected 2 fields");
+    }
+    
+    #[test]
+    fn test_compile_type_conversion() {
+        let context = Context::create();
+        let dummy_path = PathBuf::from("./dummy_type_conv.csd");
+        
+        // Setup function context
+        let (mut codegen, function) = setup_test_context(&context, "test_type_conversion");
+        codegen.current_function = Some(function);
+        
+        // Test integer to integer conversion
+        // Create a TypeConversionExpression for int64 -> int8 (thicc -> smol)
+        let int_expr = TypeConversionExpression {
+            token: "smol".to_string(),
+            type_name: "smol".to_string(),
+            expression: Box::new(IntegerLiteral {
+                token: "42".to_string(),
+                value: 42
+            }),
+        };
+        
+        let result = codegen.compile_expression(&int_expr).unwrap();
+        assert!(result.is_int_value());
+        assert_eq!(result.into_int_value().get_type(), context.i8_type());
+        
+        // Test float to integer conversion
+        let float_to_int_expr = TypeConversionExpression {
+            token: "normie".to_string(),
+            type_name: "normie".to_string(),
+            expression: Box::new(FloatLiteral {
+                token: "3.14".to_string(),
+                value: 3.14
+            }),
+        };
+        
+        let result = codegen.compile_expression(&float_to_int_expr).unwrap();
+        assert!(result.is_int_value());
+        assert_eq!(result.into_int_value().get_type(), context.i32_type());
+        
+        // Test integer to float conversion
+        let int_to_float_expr = TypeConversionExpression {
+            token: "snack".to_string(),
+            type_name: "snack".to_string(),
+            expression: Box::new(IntegerLiteral {
+                token: "42".to_string(),
+                value: 42
+            }),
+        };
+        
+        let result = codegen.compile_expression(&int_to_float_expr).unwrap();
+        assert!(result.is_float_value());
+        assert_eq!(result.into_float_value().get_type(), context.f32_type());
+    }
 }

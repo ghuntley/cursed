@@ -14,4 +14,4 @@ periodt i < 10 {
 }
 
 fr fr This should print 15 (1+2+3+4+5) since we break when i is 5
-yolo sum;
+puts(sum);
