@@ -181,7 +181,7 @@ impl<'a> Parser<'a> {
                 // Look ahead to see if this is a method declaration
                 let is_method_declaration = {
                     // Move past 'slay'
-                    if !self.expect_peek_identifier() {
+                    if !self.expect_peek_any_identifier() {
                         return self.parse_expression_statement();
                     }
                     
@@ -201,7 +201,66 @@ impl<'a> Parser<'a> {
                 if is_method_declaration {
                     self.parse_method_declaration()
                 } else {
-                    self.parse_expression_statement()
+                    // This is a regular function declaration or a function expression
+                    // Determine if this is a function declaration
+                    let function_token = self.current_token.token_literal();
+                    
+                    // Move past 'slay'
+                    self.next_token()?;
+                    
+                    // Check if we have an identifier followed by params
+                    if let Token::Identifier(name) = &self.current_token {
+                        // This is a function declaration
+                        let func_name = ast::Identifier {
+                            token: self.current_token.token_literal(),
+                            value: name.clone(),
+                        };
+                        
+                        // Expect opening parenthesis
+                        if !self.expect_peek(&Token::LParen) {
+                            return Err(Error::from_str(
+                                &format!("Expected '(' after function name, got {:?}", self.peek_token)
+                            ));
+                        }
+                        
+                        // Parse parameters
+                        let parameters = self.parse_function_parameters()?;
+                        
+                        // Optional return type (not implemented yet)
+                        
+                        // Expect block
+                        if !self.expect_peek(&Token::LBrace) {
+                            return Err(Error::from_str(
+                                &format!("Expected '{{' after function parameters, got {:?}", self.peek_token)
+                            ));
+                        }
+                        
+                        // Parse body
+                        let body = self.parse_block_statement()?;
+                        
+                        // Create expression statement with function literal
+                        let func_expr = ast::FunctionLiteral {
+                            token: Token::Slay, // Use Slay token
+                            parameters, 
+                            body,
+                            is_variadic: false,
+                        };
+                        
+                        // Create assignment expression
+                        let assign_expr = ast::AssignmentExpression {
+                            token: "=".to_string(),
+                            name: func_name,
+                            value: Box::new(func_expr),
+                        };
+                        
+                        return Ok(Box::new(ast::ExpressionStatement {
+                            token: function_token,
+                            expression: Some(Box::new(assign_expr)),
+                        }));
+                    } else {
+                        // Not a function declaration, treat as expression
+                        self.parse_expression_statement()
+                    }
                 }
             },
             _ => self.parse_expression_statement(),
@@ -214,7 +273,7 @@ impl<'a> Parser<'a> {
         let token = self.current_token.token_literal();
         
         // Next token should be the package name (identifier)
-        if !self.expect_peek(&Token::Identifier("".to_string())) {
+        if !self.expect_peek_any_identifier() {
             return Err(Error::from_str(
                 &format!("Expected identifier after 'vibe', got {:?}", self.peek_token)
             ));
@@ -800,7 +859,7 @@ impl<'a> Parser<'a> {
         let token = self.current_token.token_literal();
         
         // Next token should be the type name (identifier)
-        if !self.expect_peek_identifier() {
+        if !self.expect_peek_any_identifier() {
             return Err(Error::from_str(
                 &format!("Expected identifier after 'be_like', got {:?}", self.peek_token)
             ));
@@ -828,6 +887,8 @@ impl<'a> Parser<'a> {
     
     /// Parse a struct (squad) declaration
     fn parse_squad_statement(&mut self, token: String, name: ast::Identifier) -> Result<Box<dyn Statement>, Error> {
+        // Store squad token for error reporting
+        let squad_token = self.current_token.token_literal();
         // Next token should be opening brace '{'
         if !self.expect_peek(&Token::LBrace) {
             return Err(Error::from_str(
@@ -900,7 +961,7 @@ impl<'a> Parser<'a> {
             let previous_token = format!("{:?}", self.peek_token);
             
             return Err(Error::from_str(
-                &format!("Expected '}}' to close type declaration, got {:?}, previous token was {}", 
+                &format!("Expected '}}' to close struct (squad) declaration, got {:?}, previous token was {}", 
                     self.current_token, previous_token)
             ));
         }
@@ -1651,6 +1712,46 @@ impl<'a> Parser<'a> {
         }
     }
     
+    /// Helper to check if the next token is any valid identifier without checking specific values
+    fn expect_peek_any_identifier(&mut self) -> bool {
+        if let Token::Identifier(_) = &self.peek_token {
+            match self.next_token() {
+                Ok(_) => true,
+                Err(e) => {
+                    // Log the error for better debugging
+                    println!("PARSER ERROR: Failed to advance token: {}", e);
+                    false
+                },
+            }
+        } else {
+            // Get location from the lexer if possible
+            let location = SourceLocation::new(self.lexer.line, self.lexer.column);
+            
+            // Get a snippet of source code around the current position with line number
+            let (snippet, line_num) = self.get_source_snippet_with_line();
+            let source_context = if !snippet.is_empty() {
+                format!("\n  --> {}:{}\n     |\n{:4} | {}", 
+                       "input", self.lexer.line, self.lexer.line, snippet)
+            } else {
+                String::new()
+            };
+            
+            // Create detailed error message in a Rust-like style
+            let message = format!("error[E0002]: expected identifier, found {:?}{}\n\nhelp: Variable or field names must be identifiers", 
+                                self.peek_token,
+                                source_context);
+            
+            // Print error for immediate debugging
+            println!("{}", message);
+            
+            self.errors.push(Error::Parser {
+                location,
+                message
+            });
+            false
+        }
+    }
+    
     fn peek_error(&mut self, token: &Token) {
         // Add more context to the error message
         let context = format!("Current token: {:?}, Next token: {:?}", self.current_token, self.peek_token);
@@ -1665,14 +1766,29 @@ impl<'a> Parser<'a> {
     /// Helper function to convert certain tokens to type names
     fn token_to_type_name(&self) -> Option<String> {
         match &self.current_token {
+            // String type
             Token::Tea => Some("tea".to_string()),
+            // Struct
             Token::Squad => Some("squad".to_string()),
+            // Interface
             Token::Collab => Some("collab".to_string()),
+            // Channels
             Token::Dm => Some("dm".to_string()),
+            // Boolean (lit type)
             Token::Based => Some("lit".to_string()),  // true -> lit (boolean)
-            // Type names for byte and rune
+            // Integer types
+            Token::Smol => Some("smol".to_string()), // int8
+            Token::Mid => Some("mid".to_string()),   // int16  
+            Token::Normie => Some("normie".to_string()), // int32
+            Token::Thicc => Some("thicc".to_string()), // int64
+            // Float types (identified as snack/meal in CURSED)
+            Token::Identifier(s) if s == "snack" => Some("snack".to_string()), // float32
+            Token::Identifier(s) if s == "meal" => Some("meal".to_string()),  // float64
+            // Byte and Rune types
             Token::Identifier(s) if s == "byte" => Some("byte".to_string()),
             Token::Identifier(s) if s == "rune" => Some("rune".to_string()),
+            // Lit (boolean) type identifier
+            Token::Identifier(s) if s == "lit" => Some("lit".to_string()),
             // Add other token types that should be valid as type names
             _ => None,
         }
