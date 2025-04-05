@@ -243,7 +243,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     // Create LLVM context and code generator
     println!("🏗️ Setting up LLVM code generation...");
     let context = inkwell::context::Context::create();
-    let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, "main", file_path);
+    let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, "main", file_path.clone());
     
     // Compile the program
     println!("🔧 Compiling to LLVM IR...");
@@ -263,27 +263,48 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     
     // JIT Execution
     println!("🚀 Executing code using JIT...");
-    match code_gen.module().create_jit_execution_engine(inkwell::OptimizationLevel::Default) {
-        Ok(execution_engine) => {
-            // Get main function
-            unsafe {
-                match execution_engine.get_function::<unsafe extern "C" fn()>("main") {
-                    Ok(main_fn) => {
-                        println!("📌 Function 'main' found, executing...");
-                        println!("--- Execution Output ---");
-                        main_fn.call();
-                        println!("------------------------");
-                        println!("✅ Execution completed successfully");
-                    },
-                    Err(e) => {
-                        println!("⚠️ Function 'main' not found in the module: {}", e);
-                    }
-                }
+    
+    // Initialize the goroutine manager
+    codegen::jit::init_goroutine_manager();
+    
+    // Register external functions with the execution engine
+    let register_result = codegen::jit::register_external_functions(&context, &code_gen.module());
+    if let Err(e) = register_result {
+        println!("⚠️ Warning: Failed to register external functions: {}", e);
+        // Continue even if registration fails
+    }
+    
+    // Create JIT execution engine
+    println!("ud83dude80 Creating JIT execution engine...");
+    let execution_engine = match code_gen.module().create_jit_execution_engine(inkwell::OptimizationLevel::Default) {
+        Ok(engine) => engine,
+        Err(e) => return Err(Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))
+    };
+    
+    // Create JIT compiler
+    let mut jit_compiler = codegen::jit::JitCompiler::new(&context, execution_engine, "main", file_path.clone());
+    
+    // Use existing code_gen to avoid recompilation
+    *jit_compiler.code_generator_mut() = code_gen;
+    
+    println!("📌 Function 'main' found, executing...");
+    println!("--- Execution Output ---");
+    
+    // Execute the program
+    match jit_compiler.execute() {
+        Ok(_) => {
+            // Wait for any goroutines to complete (100ms timeout)
+            let remaining = codegen::jit::wait_for_goroutines(100);
+            if remaining > 0 {
+                println!("Note: {} goroutines still running", remaining);
             }
+            println!("------------------------");
+            println!("✅ Execution completed successfully");
         },
         Err(e) => {
-            println!("❌ Failed to create execution engine: {}", e);
-            return Err(Error::from_str(&format!("JIT execution error: {}", e)));
+            println!("------------------------");
+            println!("❌ JIT execution failed: {}", e);
+            return Err(e);
         }
     }
     

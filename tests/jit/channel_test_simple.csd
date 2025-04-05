@@ -1,7 +1,7 @@
 vibe main;
 
 slay main() {
-    // Create an unbuffered channel
+    // Create a channel for integers
     sus ch = dm lit();
     
     // Send a value to the channel
@@ -10,6 +10,6 @@ slay main() {
     // Receive the value from the channel
     sus value = <-ch;
     
-    // Print the value received
+    // Print the value
     puts(value);
 }

@@ -1,45 +1,95 @@
 //! Goroutine implementation for CURSED language
 
-use crate::ast::{StanExpression, Expression};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::ffi::c_void;
+use inkwell::context::Context;
+use inkwell::values::{FunctionValue, PointerValue, BasicValueEnum};
+use inkwell::types::BasicTypeEnum;
+use inkwell::module::Module;
+use inkwell::builder::Builder;
+
+use crate::ast::{StanExpression, Expression, CallExpression, Identifier};
 use crate::object::Object;
 use crate::error::Error;
-use crate::core::goroutine::launch_goroutine;
 
-/// Evaluate a stan expression (goroutine)
-pub fn eval_stan_expression(expr: &StanExpression, env: &mut Environment) -> Result<Object, Error> {
-    // First, evaluate the expression to get the function/closure that will be executed as a goroutine
-    let callable_obj = eval_expression(&expr.expression, env)?;
+/// Generates JIT code for a stan expression (goroutine)
+pub fn gen_stan_expr<'ctx>(
+    ctx: &'ctx Context,
+    module: &Module<'ctx>,
+    builder: &Builder<'ctx>,
+    expr: &StanExpression,
+    function_value: FunctionValue<'ctx>,
+) -> Result<BasicValueEnum<'ctx>, Error> {
+    // Create a function type for the launch_goroutine function
+    let void_type = ctx.void_type();
+    let fn_type = void_type.fn_type(&[ctx.i8_type().ptr_type(inkwell::AddressSpace::default()).into()], false);
     
-    // Extract any arguments from the expression if it's a function call
-    let args = if expr.expression.is_call_expression() {
-        if let Some((_, arg_exprs)) = expr.expression.as_call_expression() {
-            // Evaluate each argument expression
-            let mut evaluated_args = Vec::new();
-            for arg_expr in arg_exprs {
-                let arg_value = eval_expression(arg_expr, env)?;
-                evaluated_args.push(arg_value);
+    // Get the function to execute in the goroutine
+    let function_to_execute = match expr.expression.as_ref() {
+        // Match call expression
+        ex if ex.is_call_expression() => {
+            // Get the call expression from any Expression
+            let call_expr = match ex.as_call_expression() {
+                Some((func, _)) => func,
+                None => return Err(Error::from_str("Failed to extract call expression"))
+            };
+            // Get the function name from the call expression
+            let func_name = extract_function_name(call_expr);
+            
+            // Look up the function in the module
+            match module.get_function(&func_name) {
+                Some(func) => func,
+                None => return Err(Error::from_str(&format!("Function '{}' not found for goroutine", func_name)))
             }
-            evaluated_args
-        } else {
-            Vec::new()
-        }
-    } else {
-        Vec::new()
+        },
+        _ => return Err(Error::from_str("Only function calls are supported in goroutines"))
     };
     
-    // Launch the goroutine with the callable and its arguments
-    launch_goroutine(&callable_obj, args)
+    // Get or create the launch_goroutine function
+    let launch_goroutine_fn = match module.get_function("launch_goroutine") {
+        Some(f) => f,
+        None => {
+            let launch_fn_type = ctx.void_type().fn_type(&[ctx.i8_type().ptr_type(inkwell::AddressSpace::default()).into()], false);
+            module.add_function("launch_goroutine", launch_fn_type, None)
+        }
+    };
+    
+    // Cast the function to a void pointer for passing to launch_goroutine
+    let func_ptr = builder.build_bitcast(
+        function_to_execute.as_global_value().as_pointer_value(),
+        ctx.i8_type().ptr_type(inkwell::AddressSpace::default()),
+        "func_ptr"
+    ).unwrap();
+    
+    // Call launch_goroutine with the function pointer
+    let call_result = builder.build_call(
+        launch_goroutine_fn,
+        &[func_ptr.into()],
+        "goroutine_launch"
+    );
+    
+    // Return null Object as goroutines don't return a value
+    Ok(ctx.i32_type().const_int(0, false).into())
 }
 
-// We need to mock the Environment and eval_expression since we don't have access to the actual interpreter
-// In a real implementation, these would be imported from the appropriate modules
-
-pub struct Environment {
-    // Environment fields would be here
+/// Extract the function name from a function expression
+fn extract_function_name(func_expr: &dyn Expression) -> String {
+    // In a real implementation, you would need to handle different kinds of function calls
+    // For simplicity, we'll just extract the name from the function expression
+    // This is a simplified version and would need to be enhanced for a full implementation
+    if let Some(ident) = func_expr.as_any().downcast_ref::<Identifier>() {
+        return ident.value.clone();
+    }
+    
+    // Default if we can't determine the function name
+    String::from("unknown_function")
 }
 
-pub fn eval_expression(expr: &dyn Expression, env: &mut Environment) -> Result<Object, Error> {
-    // This is a mock implementation
-    // In a real implementation, this would dispatch to the appropriate eval_* function based on expr type
-    Ok(Object::Null)
+/// Launch a goroutine that will execute the given function
+pub fn launch_goroutine(func_ptr: *mut c_void) {
+    let func: extern "C" fn() = unsafe { std::mem::transmute(func_ptr) };
+    thread::spawn(move || {
+        func();
+    });
 }
