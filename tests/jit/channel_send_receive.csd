@@ -6,21 +6,21 @@ yeet "vibez";
 
 slay main() {
     fr fr Create a channel
-    sus ch = dm smol;
+    sus ch = dm smol
     
     fr fr Send a value
-    ch <- 42;
+    ch <- 42
     
     fr fr Receive the value
-    sus result = <-ch;
+    sus result = <-ch
     
     fr fr Check the result
     lowkey result == 42 {
-        vibez.spill("Channel test passed: value received is 42");
-        yolo 0;
+        spill("Received 42 from channel")
+        yolo 0
     }
     
     fr fr This should not execute if test passes
-    vibez.spill("Channel test failed: expected 42, got", result);
-    yolo 1;
+    spill("Channel test failed: expected 42, got")
+    yolo 1
 }
