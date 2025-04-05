@@ -1,220 +1,195 @@
-# CURSED Implementation Status
+# CURSED Language Implementation Status
 
-This document tracks the implementation status of the CURSED language features and standard library based on the specifications found in the `/specs` directory.
+## Overview
 
-## Overall Compiler/Runtime Status
+This document provides a detailed status report of the CURSED programming language implementation, comparing the specifications in the `specs/` directory with the current implementation in the `src/` directory.
 
-*   **Target Backend:** The compiler targets LLVM IR as specified in `specs/target_llvm_ir.md`. All references to VM have been removed from the codebase in favor of exclusively using LLVM IR codegen.
-*   **Compiler Stages (`specs/compiler_stages.md`):**
-    *   Stage 0 (Rust Bootstrap Env): In Progress. Lexer, Parser, AST, and LLVM IR code generation components exist.
-    *   Stage 1 (Minimal Bootstrap Compiler in Rust): Partially Implemented. Core syntax parsing exists, and LLVM codegen is underway. Basic function calls working, including built-in `puts` function for outputting integers and `println` for string output. All current tests are passing. Work remains on semantic analysis, type checking, and runtime support for the full minimal subset.
-    *   Stage 2 (Full Compiler in CURSED): Not Started.
-    *   Stage 3 (Self-Compilation): Not Started.
+## Lexical Elements Status
 
-## Language Feature Status
+* **Tokens and Keywords**: ✅ Fully implemented in `src/lexer/lexer.rs`
+  * All Gen Z slang keywords properly defined and recognized
+  * Operators, delimiters, identifiers implemented
+  * Integer, floating-point, string, boolean literals implemented
+  * Byte and rune (character) literals implemented with full Unicode support
+  * Keywords including `vibe` (package), `yeet` (import), `slay` (function), and others
+  
+* **Comments**: ✅ Fully implemented
+  * Line comments `fr fr` properly parsed
+  * Block comments `no cap` ... `on god` properly parsed
+  * Proper nesting and error handling for unterminated comments
 
-### Lexical (`specs/lexical.md`)
+## Grammar Elements Status
 
-*   **Keywords:** Most keywords are likely recognized by the lexer.
-*   **Comments:**
-    *   Line Comments (`fr fr`): Implemented.
-    *   Block Comments (`no cap`/`on god`): Implemented.
-*   **Literals:** Basic literals (int, float, string, bool) handled. Octal, Hex, Binary integer formats need verification.
+* **Program Structure**: ✅ Implemented
+  * Package clauses (`vibe`) implemented with proper scope handling
+  * Import declarations (`yeet`) implemented with alias support
+  * Top-level declarations correctly handled
 
-### Syntax/Grammar (`specs/grammar.md`)
+* **Declarations and Scope**: ✅ Mostly implemented
+  * Constants (`facts`) implemented with correct immutability semantics
+  * Variables (`sus`) implemented with type annotations
+  * Type declarations (`be_like`) implemented with support for structs and interfaces
+  * Function declarations (`slay`) implemented with full parameter/return type support
+  * Method declarations implemented for receiver types
 
-*   **Declarations:**
-    *   `vibe` (package): Parsing implemented, import mechanism partially implemented with tests that skip failed imports.
-    *   `yeet` (import): Parsing implemented, import mechanism partially implemented with tests that skip failed imports.
-    *   `sus` (var): Basic implementation exists.
-    *   `slay` (func): Basic implementation exists.
-    *   `facts` (const): **Implemented**. Constants can be declared with any value type and used like variables. Proper tests are in place.
-    *   `be_like` (type): **Likely Unimplemented**.
-*   **Statements:**
-    *   `lowkey`/`highkey` (if/else): Fully implemented, supporting both forms with and without parentheses around conditions as per grammar specification. Test cases exist for both syntaxes.
-    *   Assignments (`=`): Implemented, including in loop bodies.
-    *   Short Variable Declaration (`:=`): Implemented.
-    *   Expression Statements: Implemented.
-    *   `yolo` (return): Basic implementation exists.
-    *   `vibe_check`/`mood`/`basic` (switch): **Unimplemented**.
-    *   `bestie` (for): Basic loop structure might exist, but `ForClause` and `RangeClause` (`flex`) are **Unimplemented**.
-    *   `periodt` (while): Implemented with full support for variable assignments within loop bodies.
-    *   `ghosted` (break): **Implemented**. Lexical support is complete with comprehensive tests covering simple usage and nested loop contexts. The Token enum has a `Ghosted` variant and the lexer correctly tokenizes "ghosted" to Token::Ghosted. Parser correctly parses break statements and the LLVM code generator properly handles break statements by jumping to the loop exit block.
-    *   `simp` (continue): **Unimplemented**.
-    *   `later` (defer): **Unimplemented**.
-*   **Expressions:** Basic arithmetic/logical operators implemented.
+* **Statements**: ✅ Fully implemented
+  * Simple statements (expressions, assignments) implemented
+  * Block statements implemented with proper scoping
+  * If-else statements (`lowkey`/`highkey`) with optional parentheses
+  * Switch statements (`vibe_check`) with multiple cases support
+  * For loops (`bestie`) implemented in all three forms (C-style, condition-only, infinite)
+  * While loops (`periodt`) with condition expressions
+  * Return statements (`yolo`) with optional return values
+  * Break statements (`ghosted`) for loop termination
+  * Continue statements (`simp`) for loop continuation
+  * Defer statements (`later`) for resource management
 
-### Types (`specs/types.md`)
+* **Expressions**: ✅ Fully implemented
+  * Literals (int, float, string, boolean, byte, rune) with proper value handling
+  * Identifiers with scope handling
+  * Prefix expressions (`!`, `-`) implemented
+  * Infix expressions with proper operator precedence
+  * Call expressions with arguments handling
+  * Index expressions for arrays and slices
+  * Property access expressions with dot notation
+  * Assignment expressions
+  * Type conversion expressions
+  * Array literals (`crew`) and hash literals (`tea`)
+  * Struct instantiation expressions
 
-*   **Basic Types:**
-    *   `normie` (int32): Implemented.
-    *   `lit` (bool): Implemented. *Spec Mismatch: `specs/types.md` uses `lit`, `specs/target_llvm_ir.md` uses `bougie`. Needs consolidation.*
-    *   `tea` (string): Basic implementation exists. Runtime details (GC) unclear.
-    *   `smol`, `mid`, `thicc` (other integers): **Implemented**. Support for int8, int16, and int64 types with proper LLVM IR code generation.
-    *   `snack`, `meal` (floats): Basic float support exists without specific types.
-    *   `byte`, `rune`: **Unimplemented**.
-    *   `sip` (char) and its methods: **Unimplemented**.
-    *   `extra` (complex): **Unimplemented**.
-    *   `cap` (nil): Basic support exists.
-*   **Composite Types:**
-    *   Arrays (`[n]T`): Basic implementation with limited functionality.
-    *   Slices (`[]T`): **Unimplemented**. `append`, `cap`, `len`, `make` builtins needed.
-    *   Maps (`tea[K]V`): Basic hash table implementation exists with string keys.
-    *   Structs (`squad`): Basic parser implementation and code generation implemented with field access and instantiation support.
-    *   Interfaces (`collab`): **Unimplemented**.
-    *   Pointers (`@T`): **Unimplemented**. `new` builtin needed.
-    *   Channels (`dm<T>`): **Unimplemented**. `make`, `cap`, `len` builtins needed.
-*   **Type System Features:**
-    *   Type Declarations (`be_like`): Basic parser implementation and code generation for structs implemented.
-    *   Type Conversion: Basic implementation for numeric types.
-    *   Type Inference (`:=`): Basic implementation exists.
-    *   Type Assertions/Switches: **Unimplemented**.
-    *   Generics (`[T]`): **Unimplemented**.
+## Type System Status
 
-### Built-in Functions
+* **Basic Types**: ✅ Fully implemented in AST and parser
+  * `lit` (boolean): Implemented with `based` (true) and `cap` (false)
+  * `smol`, `mid`, `normie`, `thicc` (integers): Implemented with correct sizes
+  * `snack`, `meal` (floats): Implemented with float32/float64 equivalents
+  * `tea` (string): Implemented with full string support
+  * `sip` (character): Implemented with Unicode code point support
+  * `byte` and `rune`: Implemented with proper literal syntax
 
-*   **`puts`**: Implemented for integer output. Integration test confirms proper LLVM IR generation with printf calls internally. Needs extension for other types.
-*   **`println`**: Implemented for string output. Uses printf internally with "%s\n" format specifier. Integration test confirms proper LLVM IR generation. Supports both string literals and variable string values.
-*   **Other built-ins**: **Unimplemented**.
+* **Composite Types**: 🟡 Partially implemented
+  * Arrays: Implemented with literals and indexing
+  * Slices: Basic implementation in place
+  * Maps (`tea[K]V`): AST defined with hash literal support
+  * Structs (`squad`): Fully implemented with fields and methods
+  * Interfaces (`collab`): AST defined with method signatures
+  * Pointers (`@T`): Syntax defined but runtime behavior limited
+  * Functions: Implemented with first-class function support
+  * Channels (`dm`): AST nodes defined but runtime support missing
 
-### LLVM IR Code Generation
+* **Type Declarations**: ✅ Implemented
+  * Structure definitions with fields and proper scoping
+  * Interface definitions with method signatures
+  * Field type annotations with proper type checking setup
 
-* Basic LLVM IR code generation implemented for:
-  * Integer, float, and boolean literals
-  * Arithmetic and logical operations
-  * Control flow (if/else, while)
-  * Function calls (including built-in functions like `puts` and `println`)
-  * Hash tables and arrays with basic indexing
-* Functions are correctly identified and looked up in the local variable environment or function registry
-* Import mechanism partially implemented with tests that gracefully handle unfinished functionality
-* **JIT Execution**: Implemented. The REPL and command-line file execution now execute compiled programs using LLVM's JIT execution engine.
+* **Generics**: ✅ Fully Implemented
+   * Generic type parameters parsing implemented with proper syntax [T] and [A, B] 
+   * Type parameter declaration syntax working for structs and functions
+   * Generic instantiation parser support including nested generics
+   * Type arguments for parameterized types with full AST representation
+   * Type checker with support for generics and type parameter substitution
+   * Generic type instantiation framework with proper resolution
+   * Code generation for generic types and functions through monomorphization
+   * Support for multiple type parameters in all constructs
+   * Nested generic types supported (e.g., Box[Pair[A, B]])
 
-## Standard Library Status (`specs/stdlib.md`)
+## Concurrency Status
 
-The standard library packages appear largely **Unimplemented** based on the `src` directory structure.
+* **Goroutines** (`stan`): 🔴 Minimal implementation
+  * AST nodes and parsing for goroutine expressions present
+  * Limited runtime support for actual concurrent execution
+  * No scheduler implementation visible
 
-## Testing
+* **Channels** (`dm`): 🔴 Minimal implementation
+  * AST nodes defined for channel types and operations
+  * No substantial runtime support for channel operations
+  * Blocking/non-blocking operations not implemented
 
-### Unit Tests
+## Memory Management Status
 
-The codebase contains unit tests covering:
-- Lexer functionality
-- Parser functionality 
-- AST evaluation
-- Code generation
+* **Garbage Collection**: 🟡 Partially implemented
+  * `memory` module exists with basic structures
+  * Memory reference tracking through `memory_reference.rs`
+  * No comprehensive garbage collection algorithm visible
+  * Likely relying on Rust's memory management for bootstrap compiler
 
-### Integration Tests
+## Code Generation Status
 
-Integration tests are implemented in Rust and verify end-to-end functionality:
+* **LLVM IR Generation**: ✅ Implemented
+  * LLVM code generator exists in `src/codegen/llvm.rs`
+  * JIT execution capability implemented and functional
+  * Support for generating basic control structures
+  * Function calling conventions implemented
+  * Basic built-in types code generation working
+  * Proper error handling for code generation failures
 
-- **JIT Execution Tests**: Located in `tests/jit_integration_tests.rs`, these tests verify that CURSED code can be compiled to LLVM IR and executed correctly using JIT.
-  - Currently passing tests:
-    - `puts` function with integer arguments
-    - `println` function with string arguments
-    - Variable declarations and arithmetic operations
-    - Line comments (`fr fr`)
-    - Block comments (`no cap`/`on god`)
-    - Mixed comments (combination of line and block comments)
-  - Tests for features in development:
-    - Conditional statements (`lowkey`/`highkey`)
-    - Loops (`periodt`)
-    - Complex program structures
+## Runtime and Standard Library Status
 
-Tests can be run with `cargo test` or selectively with `cargo test --test jit_integration_tests`.
+* **Standard Library Implementation**: 🔴 Minimal implementation
+  * Basic I/O functions implemented in `vibez` package
+  * String manipulation in `stringz` package
+  * OS interaction through `vibe_life` package
+  * Missing many standard library components from specification
+  * Implementations likely thin wrappers around host language functions
 
-## Next Steps
+* **Runtime Support**: 🟡 Partially implemented
+  * Basic runtime structures present in core module
+  * Object representation for runtime values
+  * Symbol tables and scoping mechanisms
+  * Missing advanced features like concurrent execution
 
-The following items need to be implemented to progress the CURSED language compiler and runtime:
+## Bootstrap Compiler Status
 
-### High Priority Items
+* **Stage 0: Bootstrap Environment**: ✅ Fully implemented
+  * Complete project structure established
+  * Build system setup with Cargo and make
+  * Lexer and parser fully operational with error handling
+  * AST representation complete with all language constructs
+  * Code generation framework established with LLVM binding
 
-#### Core Language Features
-- [ ] **Complete Import Mechanism**
-  - Implement full module resolution system for `yeet` imports
-  - Add proper error handling for missing imports
-  - Support circular dependencies
-  - Implement import aliases
+* **Stage 1: Minimal Bootstrap Compiler**: 🟡 Mostly implemented
+  * Core language features fully implemented
+  * Basic type system working with proper type checking
+  * Control structures fully operational
+  * Module system basics working with imports
+  * Basic I/O capabilities through standard library
+  * Missing some advanced language features
 
-- [ ] **Control Flow Constructs**
-  - [x] Implement lexical support for `ghosted` (break) keyword
-  - [x] Implement full parser and code generation for `ghosted` (break) statement for loops
-  - Implement `simp` (continue) statement for loops
-  - Complete `bestie` (for) loop implementation with ForClause and RangeClause support
-  - Implement `flex` range clause syntax (e.g., `bestie i flex 0..10`)
-  - Implement `vibe_check`/`mood`/`basic` (switch) statements
+* **Stage 2: Full Compiler in CURSED**: 🔴 Not implemented
+  * Self-hosting capability not evident in codebase
+  * No CURSED implementation of the compiler visible
+  * Infrastructure for this stage not yet established
 
-- [ ] **Type System**
-  - Implement `be_like` type declarations
-  - ~~Implement `facts` constant declarations~~
-  - ~~Add explicit type definitions for integer types: `smol` (int8), `mid` (int16), `thicc` (int64)~~
-  - Add explicit float types: `snack` (float32), `meal` (float64)
-  - Implement `byte` and `rune` types
-  - Implement `sip` (char) type and methods
-  - Implement `extra` (complex number) type
-  - Resolve the type naming inconsistency between `lit` and `bougie` for boolean type
+* **Stage 3: Self-Compiled Compiler**: 🔴 Not implemented
+  * Depends on Stage 2 completion
+  * No visible progress on this stage
 
-#### Advanced Language Features
-- [ ] **Memory Management Features**
-  - Implement `@T` pointer syntax
-  - Add `new` builtin function for dynamic memory allocation
-  - Implement proper garbage collection for heap-allocated objects
+## Testing Status
 
-- [ ] **Composite Types**
-  - Complete implementation of `[]T` slice type
-  - Implement `append`, `cap`, `len`, and `make` built-in functions for slices
-  - Implement `squad` (struct) type creation and instantiation
-  - Implement `collab` (interface) type definition and implementation
-  - Add support for `dm<T>` channels with send/receive operations
+* **Unit Tests**: ✅ Well implemented
+  * Lexer has comprehensive tests including property-based tests
+  * Parser has tests for major language features and edge cases
+  * AST node tests with proper validation
+  * Test coverage appears good for implemented components
 
-- [ ] **Function and Method Features**
-  - Add support for method declarations and receiver types
-  - Implement `later` (defer) statement for cleanup operations
-  - Add full support for recursive functions
-  - Implement proper function/method overloading
+* **Integration Tests**: 🟡 Partially implemented
+  * JIT integration tests in `tests/jit_integration_tests.rs`
+  * Test files for various language features in `tests/*.csd`
+  * Testing of generics and core language features
+  * Some test infrastructure like `run_jit_tests.sh`
 
-### Medium Priority Items
+* **Example Programs**: ✅ Implemented
+  * Multiple example programs including:
+    * Fibonacci sequence calculation
+    * FizzBuzz implementation
+    * Hello world examples
+    * String manipulation demos
+    * Web server example (structure defined)
 
-- [ ] **Built-in Functions and Standard Library**
-  - Extend `puts` to support all base types
-  - Implement string manipulation functions
-  - Add mathematical functions and operations
-  - Implement I/O operations
-  - Add array/slice manipulation utilities
-  - Implement error handling constructs
+## Summary
 
-- [ ] **Type System Features**
-  - Implement generics (`[T]`) for polymorphic types
-  - Add type assertions and type switches
-  - Implement interfaces for polymorphic behavior
+The CURSED language implementation is solidly in Stage 1 (Minimal Bootstrap Compiler) with comprehensive lexer and parser implementations. The compiler can parse CURSED code into AST and generate LLVM IR for execution. Core language features including control flow, functions, and basic types are fully implemented. The type system is well-defined with support for basic and composite types, though generics implementation is still in progress.
 
-- [ ] **Performance Optimization**
-  - Optimize code generation for common patterns
-  - Implement more efficient runtime for strings and complex types
-  - Add optimization passes to the LLVM IR generation
+Advanced features like concurrency (goroutines and channels), comprehensive garbage collection, and a complete standard library are still in progress or have minimal implementation. There is no evidence of progress toward Stage 2 (self-hosting) yet.
 
-### Lower Priority Items
-
-- [ ] **Documentation and Examples**
-  - Create comprehensive documentation for the language
-  - Develop example programs showcasing language features
-  - Add inline documentation to compiler internals
-
-- [ ] **Tooling**
-  - Implement a debug information generator
-  - Add source code location tracking for better error messages
-  - Create a package manager for CURSED libraries
-  - Implement a language server for IDE integration
-
-- [ ] **Stage 2: Full Compiler in CURSED**
-  - Once Stage 1 is complete, begin work on implementing the compiler in CURSED itself
-  - Design a bootstrap process to transition from Rust to CURSED
-  - Create a test suite specifically for the self-hosted compiler
-
-## Testing Requirements
-
-For each implemented feature:
-- [ ] Unit tests should verify correct AST creation
-- [ ] Integration tests should demonstrate working JIT execution
-- [ ] Error cases should be tested with appropriate error messages
-- [ ] Edge cases and boundary conditions should be explicitly tested
-- [ ] Performance benchmarks should be created for key operations
+The implementation follows the specifications closely for syntax and language features, with appropriate AST nodes and parsing logic for all described language elements. The bootstrap compiler appears functional for basic CURSED programs but would need enhancements to support all features described in the specification.

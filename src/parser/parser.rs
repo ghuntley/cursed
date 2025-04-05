@@ -216,63 +216,31 @@ impl<'a> Parser<'a> {
                             value: name.clone(),
                         };
                         
+                        // Move past the function name
+                        self.next_token()?;
+                        
                         // Check for optional type parameters (e.g. [T] or [A, B])
-                        // In CURSED we use the syntax: function_name[T]
+                        // In CURSED we use the syntax: slay function_name[T](x T) T
                         let mut type_parameters = Vec::new();
                         
                         // Check for a left bracket immediately after the function name
-                        if self.peek_token == Token::LBracket {
-                            self.next_token()?; // Move past '['
-                            
-                            // Parse first type parameter
-                            if let Token::Identifier(type_name) = &self.current_token.clone() {
-                                type_parameters.push(ast::Identifier {
-                                    token: self.current_token.token_literal(),
-                                    value: type_name.clone(),
-                                });
-                                self.next_token()?;
-                            } else {
-                                return Err(Error::from_str(
-                                    &format!("Expected type parameter name after '[', got {:?}", self.current_token)
-                                ));
-                            }
-                            
-                            // Parse additional type parameters
-                            while self.current_token == Token::Comma {
-                                self.next_token()?; // Move past ','
-                                
-                                if let Token::Identifier(type_name) = &self.current_token.clone() {
-                                    type_parameters.push(ast::Identifier {
-                                        token: self.current_token.token_literal(),
-                                        value: type_name.clone(),
-                                    });
-                                    self.next_token()?;
-                                } else {
-                                    return Err(Error::from_str(
-                                        &format!("Expected type parameter name after ',', got {:?}", self.current_token)
-                                    ));
-                                }
-                            }
-                            
-                            // Check for closing bracket
-                            if self.current_token != Token::RBracket {
-                                return Err(Error::from_str(
-                                    &format!("Expected ']' after type parameters, got {:?}", self.current_token)
-                                ));
-                            }
-                            
-                            self.next_token()?; // Move past ']'
+                        if self.current_token == Token::LBracket {
+                            // Parse the type parameters
+                            type_parameters = self.parse_type_parameters()?
                         }
                         
                         // The next token after function name or type parameters should be '('
-                        if !self.expect_peek(&Token::LParen) {
+                        if self.current_token != Token::LParen {
                             return Err(Error::from_str(
-                                &format!("Expected '(' after function name or type parameters, got {:?}", self.peek_token)
+                                &format!("Expected '(' after function name or type parameters, got {:?}", self.current_token)
                             ));
                         }
                         
-                        // Parse parameters directly without expecting LParen again
-                        let parameters = self.parse_function_parameters()?;
+                        // Parse parameter names with their types
+                        // For a typed parameter function like: slay identity[T](x T) T
+                        let parameters = self.parse_typed_function_parameters()?.iter()
+                            .map(|param| param.name.clone())
+                            .collect();
                         
                         // Check for optional return type
                         let mut return_type = None;
@@ -1364,6 +1332,8 @@ impl<'a> Parser<'a> {
     }
     
     /// Parse an expression with the given precedence
+    /// This handles all expressions, including identifiers, literals, and complex expressions
+    /// It also handles generic function calls like `identity[T](x)` by detecting the `[T]` syntax
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Box<dyn Expression>, Error> {
         // Get current location for error reporting
         let location = SourceLocation::new(self.lexer.line, self.lexer.column);
@@ -1397,6 +1367,40 @@ impl<'a> Parser<'a> {
                         name: identifier,
                         value,
                     }));
+                }
+                
+                // Check for generic type arguments
+                if self.current_token == Token::LBracket {
+                    // This might be generic type arguments for a function call
+                    // e.g., identity[T](x)
+                    
+                    // Clone the identifier before we move past it
+                    let ident_clone = identifier.clone();
+                    
+                    // Try to parse the generic type arguments
+                    let result = self.parse_type_arguments();
+                    
+                    if let Ok(type_args) = result {
+                        // Successfully parsed type arguments
+                        // Check if we're followed by a function call - '('
+                        if self.current_token == Token::LParen {
+                            // This is a generic function call
+                            let token = self.current_token.clone(); // LParen token
+                            let arguments = self.parse_expression_list(&Token::RParen)?;
+                            
+                            return Ok(Box::new(ast::GenericCallExpression {
+                                token,
+                                function: Box::new(ident_clone),
+                                type_arguments: type_args,
+                                arguments,
+                            }));
+                        }
+                    }
+                    
+                    // If we get here, we either couldn't parse type arguments or
+                    // there was no opening parenthesis for arguments afterward.
+                    // Since we've already consumed tokens, we'll just return the identifier
+                    return Ok(Box::new(ident_clone));
                 }
                 
                 Box::new(identifier)
@@ -1825,6 +1829,118 @@ impl<'a> Parser<'a> {
         }
     }
     
+    /// Parse typed function parameters, which include parameter name and type
+    /// For example: "x normie, y tea"
+    fn parse_typed_function_parameters(&mut self) -> Result<Vec<ast::ParameterStatement>, Error> {
+        let mut parameters = Vec::new();
+        
+        // The current token should already be '('
+        
+        // Move past '('
+        self.next_token()?;
+
+        if self.current_token == Token::RParen {
+            // No parameters
+            self.next_token()?; // Consume ')'
+            return Ok(parameters);
+        }
+
+        // Parse first parameter
+        if let Token::Identifier(param_name) = &self.current_token.clone() {
+            let name = ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: param_name.clone(),
+            };
+            
+            // Move past parameter name
+            self.next_token()?;
+            
+            // Expect parameter type
+            let type_name = if let Token::Identifier(type_name) = &self.current_token {
+                ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: type_name.clone(),
+                }
+            } else if let Some(token_value) = self.token_to_type_name() {
+                ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: token_value,
+                }
+            } else {
+                return Err(Error::from_str(
+                    &format!("Expected parameter type, got {:?}", self.current_token)
+                ));
+            };
+            
+            // Create parameter statement
+            parameters.push(ast::ParameterStatement {
+                token: name.token.clone(),
+                name,
+                type_name,
+            });
+            
+            // Move past type name
+            self.next_token()?;
+        }
+
+        // Parse remaining parameters
+        while self.current_token == Token::Comma {
+            self.next_token()?; // Consume ','
+            
+            // Parse parameter name
+            if let Token::Identifier(param_name) = &self.current_token.clone() {
+                let name = ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: param_name.clone(),
+                };
+                
+                // Move past parameter name
+                self.next_token()?;
+                
+                // Expect parameter type
+                let type_name = if let Token::Identifier(type_name) = &self.current_token {
+                    ast::Identifier {
+                        token: self.current_token.token_literal(),
+                        value: type_name.clone(),
+                    }
+                } else if let Some(token_value) = self.token_to_type_name() {
+                    ast::Identifier {
+                        token: self.current_token.token_literal(),
+                        value: token_value,
+                    }
+                } else {
+                    return Err(Error::from_str(
+                        &format!("Expected parameter type, got {:?}", self.current_token)
+                    ));
+                };
+                
+                // Create parameter statement
+                parameters.push(ast::ParameterStatement {
+                    token: name.token.clone(),
+                    name,
+                    type_name,
+                });
+                
+                // Move past type name
+                self.next_token()?;
+            } else {
+                return Err(Error::from_str(
+                    &format!("Expected parameter name after comma, got {:?}", self.current_token)
+                ));
+            }
+        }
+
+        // Expect closing parenthesis
+        if self.current_token != Token::RParen {
+            return Err(Error::from_str(
+                &format!("Expected ')' after parameters, got {:?}", self.current_token)
+            ));
+        }
+        self.next_token()?; // Consume ')'
+
+        Ok(parameters)
+    }
+
     /// Helper to check if the next token is any valid identifier without checking specific values
     fn expect_peek_any_identifier(&mut self) -> bool {
         if let Token::Identifier(_) = &self.peek_token {
@@ -2235,6 +2351,7 @@ impl<'a> Parser<'a> {
     /// This method parses parameters in the form "name type" or just "name"
     /// For example: "x normie, y tea"
     /// It also handles complex types like function types: "f slay(X) Y"
+    /// For generic function declarations with type parameters like: identity[T](x T) T
     fn parse_function_parameters(&mut self) -> Result<Vec<ast::Identifier>, Error> {
         let mut identifiers = Vec::new();
 
@@ -2472,13 +2589,45 @@ impl<'a> Parser<'a> {
             return Ok(type_args);
         }
         
-        // Parse first type argument (can be an identifier or a type expression)
-        type_args.push(self.parse_expression(Precedence::Lowest)?);
+        // Handle the case where we have a type name like 'normie'
+        if let Some(token_value) = self.token_to_type_name() {
+            // Create an identifier for the type
+            let type_ident = ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: token_value,
+            };
+            
+            // Add it to the type arguments
+            type_args.push(Box::new(type_ident));
+            
+            // Move past the type name
+            self.next_token()?;
+        } else {
+            // Parse first type argument (can be an identifier or a type expression)
+            type_args.push(self.parse_expression(Precedence::Lowest)?);
+        }
         
         // Parse remaining type arguments
         while self.current_token == Token::Comma {
             self.next_token()?; // Consume ','
-            type_args.push(self.parse_expression(Precedence::Lowest)?);
+            
+            // Handle built-in type names like 'normie'
+            if let Some(token_value) = self.token_to_type_name() {
+                // Create an identifier for the type
+                let type_ident = ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: token_value,
+                };
+                
+                // Add it to the type arguments
+                type_args.push(Box::new(type_ident));
+                
+                // Move past the type name
+                self.next_token()?;
+            } else {
+                // Parse the expression as normal
+                type_args.push(self.parse_expression(Precedence::Lowest)?);
+            }
         }
         
         // Expect closing bracket
