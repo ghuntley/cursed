@@ -210,9 +210,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     // Compile a send expression (either blocking or non-blocking)
     fn compile_send_expression(&mut self, send_expr: &SendExpression) -> Result<BasicValueEnum<'ctx>, String> {
-        if send_expr.non_blocking {
-            return self.compile_nonblocking_send_expression(send_expr);
-        }
+        // Non-blocking send would be identified by a different AST node type
+        // For now, we assume all sends are blocking
+        // if send_expr.non_blocking { return self.compile_nonblocking_send_expression(send_expr); }
         
         // Import the send_to_channel function
         self.init_channel_helpers();
@@ -229,7 +229,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             let value_type = value_val.get_type();
             let temp_alloca = self.builder.build_alloca(value_type, "send_value_temp").unwrap();
             self.builder.build_store(temp_alloca, value_val).unwrap();
-            temp_alloca.as_pointer_value()
+            temp_alloca // PointerValue is already a pointer, no need to call as_pointer_value()
         } else {
             value_val.into_pointer_value()
         };
@@ -272,7 +272,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             let value_type = value_val.get_type();
             let temp_alloca = self.builder.build_alloca(value_type, "send_value_temp").unwrap();
             self.builder.build_store(temp_alloca, value_val).unwrap();
-            temp_alloca.as_pointer_value()
+            temp_alloca // PointerValue is already a pointer, no need to call as_pointer_value()
         } else {
             value_val.into_pointer_value()
         };
@@ -300,9 +300,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     // Compile a receive expression (either blocking or non-blocking)
     fn compile_receive_expression(&mut self, recv_expr: &ReceiveExpression) -> Result<BasicValueEnum<'ctx>, String> {
-        if recv_expr.non_blocking {
-            return self.compile_nonblocking_receive_expression(recv_expr);
-        }
+        // Non-blocking receive would be identified by a different AST node type
+        // For now, we assume all receives are blocking
+        // if recv_expr.non_blocking { return self.compile_nonblocking_receive_expression(recv_expr); }
         
         // Import the receive_from_channel function
         self.init_channel_helpers();
@@ -330,9 +330,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // For now, we'll assume it's an integer value
         
         // Load the value from the void pointer by casting it to the appropriate type
-        let i64_ptr_type = self.context.i64_type().ptr_type(inkwell::AddressSpace::default());
+        let i64_type = self.context.i64_type();
+        let i64_ptr_type = i64_type.ptr_type(inkwell::AddressSpace::default());
         let value_ptr = self.builder.build_bitcast(void_ptr, i64_ptr_type, "value_ptr").unwrap();
-        let value = self.builder.build_load(self.context.i64_type(), value_ptr, "received_value").unwrap();
+        let value = self.builder.build_load(i64_type, value_ptr.into_pointer_value(), "received_value").unwrap();
         
         // Return the received value
         Ok(value)
@@ -386,7 +387,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Check if the returned pointer is null
         let null_ptr = self.context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
-        let is_null = self.builder.build_ptr_eq(void_ptr, null_ptr, "is_null").unwrap();
+        let is_null = self.builder.build_int_compare(inkwell::IntPredicate::EQ, void_ptr, null_ptr, "is_null").unwrap();
         
         // Branch based on null check
         self.builder.build_conditional_branch(is_null, fail_block, success_block).unwrap();
@@ -395,9 +396,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         self.builder.position_at_end(success_block);
         
         // Load the value from the void pointer by casting it to the appropriate type
-        let i64_ptr_type = self.context.i64_type().ptr_type(inkwell::AddressSpace::default());
+        let i64_type = self.context.i64_type();
+        let i64_ptr_type = i64_type.ptr_type(inkwell::AddressSpace::default());
         let value_ptr = self.builder.build_bitcast(void_ptr, i64_ptr_type, "value_ptr").unwrap();
-        let received_value = self.builder.build_load(self.context.i64_type(), value_ptr, "received_value").unwrap();
+        let received_value = self.builder.build_load(i64_type, value_ptr.into_pointer_value(), "received_value").unwrap();
         
         // Create a struct to return {ok: true, value: value}
         let success_struct = self.context.struct_type(&[phi_type.into(), self.context.i64_type().into()], false);
