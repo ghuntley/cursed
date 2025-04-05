@@ -95,10 +95,12 @@ This document provides a detailed status report of the CURSED programming langua
 
 ## Concurrency Status
 
-* **Goroutines** (`stan`): 🔴 Minimal implementation
-  * AST nodes and parsing for goroutine expressions present
-  * Limited runtime support for actual concurrent execution
-  * No scheduler implementation visible
+* **Goroutines** (`stan`): 🟡 Basic implementation
+  * AST nodes and parsing for goroutine expressions fully implemented
+  * Runtime support implemented with simplified concurrent execution
+  * Thread-safety issues addressed with a simplified model
+  * Limited scheduler implementation (simulated concurrency)
+  * Integration tests for basic goroutine operations
 
 * **Channels** (`dm`): ✅ Fully implemented
   * AST nodes defined for channel types, send, and receive operations

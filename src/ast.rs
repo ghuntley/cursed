@@ -1425,6 +1425,30 @@ impl Expression for TypeConversionExpression {
     }
 }
 
+/// StanExpression represents a goroutine launch expression (stan expression)
+pub struct StanExpression {
+    pub token: String, // The 'stan' token
+    pub expression: Box<dyn Expression>, // The expression to execute in a goroutine (typically a function call)
+}
+
+impl Node for StanExpression {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("stan {}", self.expression.string())
+    }
+}
+
+impl Expression for StanExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

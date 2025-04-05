@@ -25,6 +25,20 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
+    /// Parse a stan expression (goroutine)
+    fn parse_stan_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone(); // Token::Stan
+        self.next_token()?; // Move past 'stan'
+        
+        // Parse the expression to be executed as a goroutine
+        // This will typically be a function call
+        let expression = self.parse_expression(Precedence::Lowest)?;
+        
+        Ok(Box::new(ast::StanExpression {
+            token: token.token_literal(),
+            expression,
+        }))
+    }
     /// Helper method to provide debug information about current parser state
     fn parser_state_debug(&self) -> String {
         let mut info = String::new();
@@ -1517,7 +1531,7 @@ impl<'a> Parser<'a> {
                 self.parse_be_like_expression()?                
             },
             Token::Stan => {
-                self.parse_function_literal()?
+                self.parse_stan_expression()?
             },
             _ => {
                 // Get a snippet of the input around the error location with line number

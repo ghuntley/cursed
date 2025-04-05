@@ -2,6 +2,7 @@ pub mod symbol_table;
 pub mod type_checker;
 pub mod generic_instantiation;
 pub mod channel;
+pub mod goroutine;
 
 /// Represents a compiled function in CURSED
 #[derive(Debug, Clone, PartialEq)]
