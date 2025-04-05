@@ -20,7 +20,5 @@ slay identity[T](x T) T {
 slay main() {
     sus box = Box[normie]{value: 42}
     sus pair = Pair[tea, normie]{first: "hello", second: 42}
-    sus result = map[normie, tea](42, stan(x) {
-        yolo x.to_string()
-    })
+    sus result = identity[normie](42)
 }

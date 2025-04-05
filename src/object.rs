@@ -10,6 +10,19 @@ pub enum RuntimeObject {
     Placeholder,
 }
 
+/// Channel represents a communication channel between goroutines
+#[derive(Debug, Clone, PartialEq)]
+pub struct Channel {
+    /// The type of elements in the channel
+    pub element_type: String,
+    /// The buffer for channel messages
+    pub buffer: Vec<Object>,
+    /// Maximum buffer size (0 for unbuffered)
+    pub buffer_size: usize,
+    /// Flag indicating if channel is closed
+    pub closed: bool,
+}
+
 use std::rc::Rc;
 use std::ptr::NonNull;
 use std::collections::HashMap;
@@ -75,6 +88,7 @@ pub enum Object {
     Char(char),
     Array(Vec<Object>),
     HashTable(HashMap<String, Object>),
+    Channel(Rc<RefCell<Channel>>),
     CompiledFunction {
         ir_representation: String,
         num_locals: usize,
@@ -148,6 +162,13 @@ impl Traceable for Object {
                     value.trace(visitor);
                 }
             },
+            Object::Channel(channel) => {
+                // Trace channel buffer elements
+                let channel = channel.borrow();
+                for value in &channel.buffer {
+                    value.trace(visitor);
+                }
+            },
             Object::CompiledFunction { .. } => {
                 // CompiledFunction doesn't implement Traceable
             },
@@ -201,6 +222,14 @@ impl Traceable for Object {
                 let mut size = std::mem::size_of::<HashMap<String, Object>>();
                 for (key, value) in entries {
                     size += key.len() + value.size();
+                }
+                size
+            },
+            Object::Channel(channel) => {
+                let channel = channel.borrow();
+                let mut size = std::mem::size_of::<Channel>() + channel.element_type.len();
+                for value in &channel.buffer {
+                    size += value.size();
                 }
                 size
             },
@@ -296,6 +325,10 @@ impl Display for Object {
                 }
                 write!(f, "}}")
             },
+            Object::Channel(channel) => {
+                let channel = channel.borrow();
+                write!(f, "channel<{}>[{}]", channel.element_type, channel.buffer.len())
+            },
             Object::CompiledFunction { name, .. } => {
                 if let Some(name) = name {
                     write!(f, "[Function: {}]", name)
@@ -304,7 +337,7 @@ impl Display for Object {
                 }
             },
             Object::Closure { function, free_vars } => {
-                write!(f, "closure[{}]", function.name.as_ref().unwrap_or(&"anon".to_string()))
+                write!(f, "closure[{}]", function.name)
             },
             Object::Builtin { name, .. } => {
                 write!(f, "builtin[{}]", name)
@@ -341,6 +374,138 @@ impl Display for Object {
                 write!(f, "method {}:{}({}){}{{ ... }}", receiver_type, name, params_str, return_str)
             },
         }
+    }
+}
+
+/// Implementation of channel operations
+use std::sync::{Mutex, Condvar};
+use std::sync::Arc;
+
+impl Channel {
+    pub fn new(element_type: String, buffer_size: usize) -> Self {
+        Self {
+            element_type,
+            buffer: Vec::with_capacity(buffer_size),
+            buffer_size,
+            closed: false,
+        }
+    }
+    
+    /// Send a value to the channel
+    /// 
+    /// For buffered channels:
+    /// - If buffer not full, adds value and returns Ok
+    /// - If buffer full, returns an Error (would block in full implementation)
+    /// 
+    /// For unbuffered channels (buffer_size = 0):
+    /// - Always returns Ok as we don't implement true blocking in this version
+    pub fn send(&mut self, value: Object) -> Result<(), Error> {
+        // Check if channel is closed
+        if self.closed {
+            return Err(Error::Runtime("send on closed channel".to_string()));
+        }
+        
+        // Check if buffer is full for buffered channels
+        if self.buffer_size > 0 && self.buffer.len() >= self.buffer_size {
+            return Err(Error::Runtime("send on full channel would block".to_string()));
+        }
+        
+        // Add the value to the buffer
+        self.buffer.push(value);
+        Ok(())
+    }
+    
+    /// Send a value to the channel with non-blocking behavior
+    /// 
+    /// Returns:
+    /// - Ok(true) if value was sent successfully
+    /// - Ok(false) if channel would block (buffer full)
+    /// - Err if channel is closed
+    pub fn try_send(&mut self, value: Object) -> Result<bool, Error> {
+        // Check if channel is closed
+        if self.closed {
+            return Err(Error::Runtime("send on closed channel".to_string()));
+        }
+        
+        // Check if buffer is full for buffered channels
+        if self.buffer_size > 0 && self.buffer.len() >= self.buffer_size {
+            return Ok(false); // Would block, but this is non-blocking
+        }
+        
+        // Add the value to the buffer
+        self.buffer.push(value);
+        Ok(true)
+    }
+    
+    /// Receive a value from the channel
+    /// 
+    /// For both buffered and unbuffered channels:
+    /// - If buffer has values, removes first value and returns it
+    /// - If buffer empty and channel not closed, returns an Error (would block in full implementation)
+    /// - If buffer empty and channel closed, returns an Error indicating closed channel
+    pub fn receive(&mut self) -> Result<Object, Error> {
+        // Check if buffer is empty
+        if self.buffer.is_empty() {
+            // If channel is closed, this is a receive from closed channel
+            if self.closed {
+                return Err(Error::Runtime("receive from closed channel".to_string()));
+            }
+            // Otherwise, this would block in a full implementation
+            return Err(Error::Runtime("receive from empty channel would block".to_string()));
+        }
+        
+        // Remove and return the first value
+        Ok(self.buffer.remove(0))
+    }
+    
+    /// Receive a value from the channel with non-blocking behavior
+    /// 
+    /// Returns:
+    /// - Ok(Some(value)) if a value was received
+    /// - Ok(None) if channel is empty (would block)
+    /// - Err if channel is closed and empty
+    pub fn try_receive(&mut self) -> Result<Option<Object>, Error> {
+        // Check if buffer is empty
+        if self.buffer.is_empty() {
+            // If channel is closed, this is a receive from closed channel
+            if self.closed {
+                return Err(Error::Runtime("receive from closed channel".to_string()));
+            }
+            // Otherwise, return None to indicate would block
+            return Ok(None);
+        }
+        
+        // Remove and return the first value
+        Ok(Some(self.buffer.remove(0)))
+    }
+    
+    /// Close the channel
+    /// 
+    /// After closing:
+    /// - No more sends are allowed
+    /// - Receives are allowed until the buffer is empty
+    pub fn close(&mut self) {
+        self.closed = true;
+    }
+    
+    /// Check if the channel is closed
+    pub fn is_closed(&self) -> bool {
+        self.closed
+    }
+    
+    /// Get the current buffer capacity
+    pub fn capacity(&self) -> usize {
+        self.buffer_size
+    }
+    
+    /// Get the current number of items in the buffer
+    pub fn len(&self) -> usize {
+        self.buffer.len()
+    }
+    
+    /// Check if the buffer is empty
+    pub fn is_empty(&self) -> bool {
+        self.buffer.is_empty()
     }
 }
 
@@ -397,6 +562,7 @@ impl Object {
             Object::String(_) => "string",
             Object::Array(_) => "array",
             Object::HashTable(_) => "hash",
+            Object::Channel(_) => "channel",
             Object::CompiledFunction { .. } => "function",
             Object::Closure { .. } => "closure",
             Object::Builtin { .. } => "builtin",
@@ -419,6 +585,7 @@ impl Object {
             (Object::Char(_), "char") => true,
             (Object::Array(_), "array") => true,
             (Object::HashTable(_), "hash") => true,
+            (Object::Channel(_), "channel") => true,
             (Object::CompiledFunction { .. }, "function") => true,
             (Object::Closure { .. }, "closure") => true,
             (Object::Builtin { .. }, "builtin") => true,
@@ -491,6 +658,10 @@ impl Object {
             Object::Char(_) => true,
             Object::Array(a) => !a.is_empty(),
             Object::HashTable(h) => !h.is_empty(),
+            Object::Channel(ch) => {
+                let channel = ch.borrow();
+                !channel.closed // Channel is truthy if it's not closed
+            },
             Object::CompiledFunction { .. } => true,
             Object::Closure { .. } => true,
             Object::Builtin { .. } => true,
@@ -518,6 +689,10 @@ impl Object {
                 let entries: Vec<String> = map.iter().map(|(k, v)| format!("{}: {}", k, v.to_string())).collect();
                 format!("{{{}}}", entries.join(", "))
             },
+            Object::Channel(ch) => {
+                let channel = ch.borrow();
+                format!("channel<{}>[{}]", channel.element_type, channel.buffer.len())
+            },
             Object::CompiledFunction { name, .. } => {
                 if let Some(name) = name {
                     format!("[Function: {}]", name)
@@ -526,11 +701,7 @@ impl Object {
                 }
             },
             Object::Closure { function, .. } => {
-                if let Some(ref name) = function.name {
-                    format!("closure[{}]", name)
-                } else {
-                    "closure[anonymous]".to_string()
-                }
+                format!("closure[{}]", function.name)
             },
             Object::Builtin { name, .. } => {
                 format!("builtin function: {}", name)
@@ -661,11 +832,39 @@ impl Object {
             _ => None,
         }
     }
+    
+    /// Create a new channel object
+    pub fn new_channel(element_type: String, buffer_size: usize) -> Self {
+        let channel = Channel::new(element_type, buffer_size);
+        Object::Channel(Rc::new(RefCell::new(channel)))
+    }
+    
+    /// Send a value to a channel
+    pub fn channel_send(&self, value: Object) -> Result<(), Error> {
+        match self {
+            Object::Channel(channel) => {
+                channel.borrow_mut().send(value)
+            },
+            _ => Err(Error::Runtime(format!("Cannot send to non-channel object: {}", self.type_name())))
+        }
+    }
+    
+    /// Receive a value from a channel
+    pub fn channel_receive(&self) -> Result<Object, Error> {
+        match self {
+            Object::Channel(channel) => {
+                channel.borrow_mut().receive()
+            },
+            _ => Err(Error::Runtime(format!("Cannot receive from non-channel object: {}", self.type_name())))
+        }
+    }
 
     pub fn to_function(&self) -> Option<Rc<CompiledFunction>> {
         match self {
             Object::CompiledFunction { ir_representation, num_locals, num_parameters, free_variables, name, is_variadic } => {
                 let func = CompiledFunction {
+                    name: name.clone().unwrap_or_else(|| "anonymous".to_string()),
+                    bytecode: vec![],  // Empty bytecode since we're converting from IR
                     ir_representation: ir_representation.clone(),
                     num_locals: *num_locals,
                     num_parameters: *num_parameters,
@@ -675,7 +874,6 @@ impl Object {
                             _ => obj.to_string()
                         }
                     }).collect(),
-                    name: name.clone(),
                     is_variadic: *is_variadic,
                 };
                 Some(Rc::new(func))
@@ -753,6 +951,7 @@ impl Object {
             Object::Char(_) => type_name == "char",
             Object::Array(_) => type_name == "array",
             Object::HashTable(_) => type_name == "hash",
+            Object::Channel(_) => type_name == "channel",
             Object::CompiledFunction { .. } => type_name == "function",
             Object::Closure { .. } => type_name == "closure",
             Object::Builtin { .. } => type_name == "builtin",
@@ -787,6 +986,13 @@ impl Object {
                     entries.push(format!("\"{}\": {}", key, value.inspect()));
                 }
                 format!("{{{}}}", entries.join(", "))
+            },
+            Object::Channel(channel) => {
+                let channel = channel.borrow();
+                let buffer_elements: Vec<String> = channel.buffer.iter()
+                    .map(|e| e.inspect())
+                    .collect();
+                format!("dm<{}>[{}]: [{}]", channel.element_type, channel.buffer.len(), buffer_elements.join(", "))
             },
             Object::CompiledFunction { name, .. } => {
                 if let Some(name) = name {
@@ -931,7 +1137,7 @@ impl From<Rc<CompiledFunction>> for Object {
             free_variables: val.free_variables.iter()
                 .map(|s| Object::String(s.clone()))
                 .collect(),
-            name: val.name.clone(),
+            name: Some(val.name.clone()),
             is_variadic: val.is_variadic,
         }
     }

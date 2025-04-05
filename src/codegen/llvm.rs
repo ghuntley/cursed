@@ -15,7 +15,8 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 ReturnStatement, CallExpression, BlockStatement, IfStatement, FunctionLiteral,
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
                 PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement,
-                ByteLiteral, RuneLiteral, SquadStatement, FieldStatement, BeLikeExpression, TypeConversionExpression};
+                ByteLiteral, RuneLiteral, SquadStatement, FieldStatement, BeLikeExpression, TypeConversionExpression, 
+                ChannelExpression, SendExpression, ReceiveExpression};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -157,6 +158,145 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Compile struct instantiation expression
+
+    
+    /// Compile a channel creation expression
+    fn compile_channel_creation(&mut self, channel_expr: &ChannelExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Import the create_channel function from core::channel
+        self.init_channel_helpers();
+        
+        // Get the element type as a string
+        let element_type_str = channel_expr.element_type.string();
+        
+        // Create a string constant for the element type
+        let element_type_const = self.builder.build_global_string_ptr(&element_type_str, "element_type").unwrap();
+        
+        // Determine which function to call based on whether capacity is provided
+        if let Some(capacity_expr) = &channel_expr.capacity {
+            // This is a buffered channel with capacity
+            let create_buffered_channel_fn = self.module.get_function("create_buffered_channel").ok_or_else(|| 
+                "create_buffered_channel function not found".to_string()
+            )?;
+            
+            // Compile the capacity expression
+            let capacity_value = self.compile_expression(capacity_expr.as_ref())?;
+            
+            // Call function with element type and capacity
+            let result = self.builder.build_call(
+                create_buffered_channel_fn,
+                &[element_type_const.as_pointer_value().into(), capacity_value.into()],
+                "buffered_channel"
+            ).unwrap();
+            
+            // Return the channel object
+            Ok(result.try_as_basic_value().left().unwrap())
+        } else {
+            // This is an unbuffered channel
+            let create_channel_fn = self.module.get_function("create_channel").ok_or_else(|| 
+                "create_channel function not found".to_string()
+            )?;
+            
+            // Call the function with just the element type
+            let result = self.builder.build_call(
+                create_channel_fn,
+                &[element_type_const.as_pointer_value().into()],
+                "channel"
+            ).unwrap();
+            
+            // Return the channel object
+            Ok(result.try_as_basic_value().left().unwrap())
+        }
+    }
+    
+    // Compile a send expression
+    fn compile_send_expression(&mut self, send_expr: &SendExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Import the send_to_channel function
+        self.init_channel_helpers();
+        
+        // Compile the channel and value expressions
+        let channel_val = self.compile_expression(send_expr.channel.as_ref())?;
+        let value_val = self.compile_expression(send_expr.value.as_ref())?;
+        
+        // Get the send_to_channel function
+        let send_fn = self.module.get_function("send_to_channel").ok_or_else(|| 
+            "send_to_channel function not found".to_string()
+        )?;
+        
+        // Call the function with channel and value
+        let result = self.builder.build_call(
+            send_fn,
+            &[channel_val.into(), value_val.into()],
+            "send_result"
+        ).unwrap();
+        
+        // Return null/void result as channels don't return anything on send
+        Ok(self.context.i32_type().const_int(0, false).into())
+    }
+    
+    // Compile a receive expression
+    fn compile_receive_expression(&mut self, recv_expr: &ReceiveExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Import the receive_from_channel function
+        self.init_channel_helpers();
+        
+        // Compile the channel expression
+        let channel_val = self.compile_expression(recv_expr.channel.as_ref())?;
+        
+        // Get the receive_from_channel function
+        let receive_fn = self.module.get_function("receive_from_channel").ok_or_else(|| 
+            "receive_from_channel function not found".to_string()
+        )?;
+        
+        // Call the function with channel
+        let result = self.builder.build_call(
+            receive_fn,
+            &[channel_val.into()],
+            "receive_result"
+        ).unwrap();
+        
+        // Return the received value
+        Ok(result.try_as_basic_value().left().unwrap())
+    }
+    
+    // Initialize the channel helper functions
+    fn init_channel_helpers(&mut self) {
+        // Skip initialization if we're already done it
+        if self.module.get_function("create_channel").is_some() {
+            return;
+        }
+        
+        // Set up common types
+        let void_ptr_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
+        let int32_type = self.context.i32_type();
+        
+        // Declare the unbuffered channel creation function
+        let create_channel_type = void_ptr_type.fn_type(&[void_ptr_type.into()], false);
+        self.module.add_function("create_channel", create_channel_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the buffered channel creation function
+        let create_buffered_type = void_ptr_type.fn_type(&[void_ptr_type.into(), int32_type.into()], false);
+        self.module.add_function("create_buffered_channel", create_buffered_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the send function
+        let send_type = int32_type.fn_type(&[void_ptr_type.into(), void_ptr_type.into()], false);
+        self.module.add_function("send_to_channel", send_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the non-blocking send function
+        let try_send_type = int32_type.fn_type(&[void_ptr_type.into(), void_ptr_type.into()], false);
+        self.module.add_function("try_send_to_channel", try_send_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the receive function
+        let receive_type = void_ptr_type.fn_type(&[void_ptr_type.into()], false);
+        self.module.add_function("receive_from_channel", receive_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the non-blocking receive function
+        let try_receive_type = void_ptr_type.fn_type(&[void_ptr_type.into()], false);
+        self.module.add_function("try_receive_from_channel", try_receive_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the close channel function
+        let close_type = int32_type.fn_type(&[void_ptr_type.into()], false);
+        self.module.add_function("close_channel", close_type, Some(inkwell::module::Linkage::External));
+    }
+    
     fn compile_struct_instantiation(&mut self, expr: &BeLikeExpression) -> Result<BasicValueEnum<'ctx>, String> {
         let struct_name = &expr.struct_name.value;
         
@@ -465,6 +605,15 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else if let Some(be_like_expr) = expression.as_any().downcast_ref::<BeLikeExpression>() {
             // Handle struct instantiation
             return self.compile_struct_instantiation(be_like_expr);
+        } else if let Some(channel_expr) = expression.as_any().downcast_ref::<ChannelExpression>() {
+            // Handle channel creation
+            return self.compile_channel_creation(channel_expr);
+        } else if let Some(send_expr) = expression.as_any().downcast_ref::<SendExpression>() {
+            // Handle send to channel
+            return self.compile_send_expression(send_expr);
+        } else if let Some(recv_expr) = expression.as_any().downcast_ref::<ReceiveExpression>() {
+            // Handle receive from channel
+            return self.compile_receive_expression(recv_expr);
         }
         if let Some(lit) = expression.as_any().downcast_ref::<IntegerLiteral>() {
             Ok(self.context.i64_type().const_int(lit.value as u64, false).into())

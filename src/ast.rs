@@ -1321,6 +1321,84 @@ impl Expression for PropertyAccessExpression {
     }
 }
 
+/// ChannelExpression represents a channel type declaration (dm<T>) with optional capacity
+pub struct ChannelExpression {
+    pub token: String, // The 'dm' token
+    pub element_type: Box<dyn Expression>, // The type of elements in the channel
+    pub capacity: Option<Box<dyn Expression>>, // Optional capacity (for buffered channels)
+}
+
+impl Node for ChannelExpression {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        if let Some(capacity) = &self.capacity {
+            format!("dm<{}>[{}]", self.element_type.string(), capacity.string())
+        } else {
+            format!("dm<{}>", self.element_type.string())
+        }
+    }
+}
+
+impl Expression for ChannelExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// SendExpression represents a send operation on a channel (ch <- value)
+pub struct SendExpression {
+    pub token: String, // The '<-' token
+    pub channel: Box<dyn Expression>, // The channel to send to
+    pub value: Box<dyn Expression>, // The value to send
+}
+
+impl Node for SendExpression {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("{} <- {}", self.channel.string(), self.value.string())
+    }
+}
+
+impl Expression for SendExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// ReceiveExpression represents a receive operation from a channel (<-ch)
+pub struct ReceiveExpression {
+    pub token: String, // The '<-' token
+    pub channel: Box<dyn Expression>, // The channel to receive from
+}
+
+impl Node for ReceiveExpression {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        format!("<-{}", self.channel.string())
+    }
+}
+
+impl Expression for ReceiveExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 /// TypeConversionExpression represents a type conversion expression
 /// Examples: normie(3.14), smol(42), snack(42)
 pub struct TypeConversionExpression {
