@@ -226,15 +226,15 @@ impl<'a> Parser<'a> {
                             
                             // Parse first type parameter
                             if let Token::Identifier(type_name) = &self.current_token.clone() {
-                                type_parameters.push(ast::Identifier {
-                                    token: self.current_token.token_literal(),
-                                    value: type_name.clone(),
-                                });
-                                self.next_token()?;
+                            type_parameters.push(ast::Identifier {
+                            token: self.current_token.token_literal(),
+                            value: type_name.clone(),
+                            });
+                            self.next_token()?;
                             } else {
-                                return Err(Error::from_str(
-                                    &format!("Expected type parameter name after '[', got {:?}", self.current_token)
-                                ));
+                            return Err(Error::from_str(
+                            &format!("Expected type parameter name after '[', got {:?}", self.current_token)
+                            ));
                             }
                             
                             // Parse additional type parameters
@@ -272,7 +272,7 @@ impl<'a> Parser<'a> {
                         }
                         
                         // Parse parameters directly without expecting LParen again
-                        let parameters = self.parse_function_parameters()?;
+                        let parameters = self.parse_function_parameters()?
                         
                         // Check for optional return type
                         let mut return_type = None;
@@ -299,10 +299,10 @@ impl<'a> Parser<'a> {
                         }
                         
                         // Expect block
-                        println!("Checking for opening brace - current token: {:?}, peek token: {:?}", self.current_token, self.peek_token);
                         if self.current_token != Token::LBrace {
+                            // There must be a return type or a block
                             return Err(Error::from_str(
-                                &format!("Expected '{{' after function parameters, got {:?}", self.current_token)
+                                &format!("Expected '{{' after function parameters or return type, got {:?}", self.current_token)
                             ));
                         }
                         
@@ -1896,6 +1896,32 @@ impl<'a> Parser<'a> {
             Token::Identifier(s) if s == "rune" => Some("rune".to_string()),
             // Lit (boolean) type identifier
             Token::Identifier(s) if s == "lit" => Some("lit".to_string()),
+            // Array or slice types
+            Token::LBracket => {
+                // Try to get the original text for this token
+                let start_pos = self.lexer.position - 1; // Adjust for the current position
+                let mut type_str = "[".to_string();
+                if start_pos < self.lexer.input.len() {
+                    let bracket_index = start_pos;
+                    let mut lookahead = bracket_index + 1;
+                    
+                    // Look ahead to check if it's a slice [] or array [N]
+                    while lookahead < self.lexer.input.len() {
+                        let ch = self.lexer.input.chars().nth(lookahead);
+                        if let Some(c) = ch {
+                            if c == ']' {
+                                type_str.push(c);
+                                // It could be a slice or an array, return it as is
+                                return Some(type_str);
+                            } else {
+                                type_str.push(c);
+                            }
+                        }
+                        lookahead += 1;
+                    }
+                }
+                None // Couldn't determine the type
+            },
             // Add other token types that should be valid as type names
             _ => None,
         }
@@ -2202,6 +2228,7 @@ impl<'a> Parser<'a> {
     /// Parse function parameters, including type annotations
     /// This method parses parameters in the form "name type" or just "name"
     /// For example: "x normie, y tea"
+    /// It also handles complex types like function types: "f slay(X) Y"
     fn parse_function_parameters(&mut self) -> Result<Vec<ast::Identifier>, Error> {
         let mut identifiers = Vec::new();
 
@@ -2230,8 +2257,32 @@ impl<'a> Parser<'a> {
             // Skip the type annotation if present
             // We're only collecting parameter names, not full parameter declarations
             if self.current_token != Token::Comma && self.current_token != Token::RParen {
-                // Skip the type token (either an identifier like T or a built-in type)
-                self.next_token()?;
+                // Handle complex type cases like "f slay(A) B" (function types)
+                if self.current_token == Token::Slay {
+                    // Skip until we reach a comma or closing paren
+                    let mut depth = 0;
+                    
+                    while self.current_token != Token::Comma && 
+                          self.current_token != Token::RParen &&
+                          self.current_token != Token::Eof {
+                        
+                        // Track nested parentheses to handle function types properly
+                        if self.current_token == Token::LParen {
+                            depth += 1;
+                        } else if self.current_token == Token::RParen {
+                            depth -= 1;
+                            if depth < 0 && !matches!(self.peek_token, Token::Identifier(_)) {
+                                // We've reached the end of the parameter list
+                                break;
+                            }
+                        }
+                        
+                        self.next_token()?;
+                    }
+                } else {
+                    // Skip just a single token for simple types
+                    self.next_token()?;
+                }
             }
         } else {
             return Err(Error::from_str(&format!(
@@ -2257,8 +2308,32 @@ impl<'a> Parser<'a> {
                 
                 // Skip the type annotation if present
                 if self.current_token != Token::Comma && self.current_token != Token::RParen {
-                    // Skip the type token
-                    self.next_token()?;
+                    // Handle complex type cases like "f slay(A) B" (function types)
+                    if self.current_token == Token::Slay {
+                        // Skip until we reach a comma or closing paren
+                        let mut depth = 0;
+                        
+                        while self.current_token != Token::Comma && 
+                              self.current_token != Token::RParen &&
+                              self.current_token != Token::Eof {
+                            
+                            // Track nested parentheses to handle function types properly
+                            if self.current_token == Token::LParen {
+                                depth += 1;
+                            } else if self.current_token == Token::RParen {
+                                depth -= 1;
+                                if depth < 0 && !matches!(self.peek_token, Token::Identifier(_)) {
+                                    // We've reached the end of the parameter list
+                                    break;
+                                }
+                            }
+                            
+                            self.next_token()?;
+                        }
+                    } else {
+                        // Skip just a single token for simple types
+                        self.next_token()?;
+                    }
                 }
             } else {
                 return Err(Error::from_str(&format!(
@@ -2281,6 +2356,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse type parameters for generic functions/structs ([T], [A, B], etc.)
+    /// This method also supports type constraint parameters in the future.
     fn parse_type_parameters(&mut self) -> Result<Vec<ast::Identifier>, Error> {
         let mut type_parameters = Vec::new();
         
@@ -2302,11 +2378,26 @@ impl<'a> Parser<'a> {
         
         // Parse first type parameter
         if let Token::Identifier(param_name) = &self.current_token {
+            let param_name_value = param_name.clone();
             type_parameters.push(ast::Identifier {
                 token: self.current_token.token_literal(),
-                value: param_name.clone(),
+                value: param_name_value,
             });
             self.next_token()?;
+            
+            // Skip any constraint that might be present (for future compatibility)
+            // For example: [T: Comparable]
+            if self.current_token == Token::Colon {
+                // Consume ':'
+                self.next_token()?;
+                
+                // Skip the constraint (can be an identifier or more complex constraint)
+                // We're just preparing for this syntax, not fully implementing it yet
+                if let Token::Identifier(_) = &self.current_token {
+                    // Simple constraint like [T: Comparable]
+                    self.next_token()?;
+                }
+            }
         } else {
             return Err(Error::from_str(
                 &format!("Expected identifier as type parameter, got {:?}", self.current_token)
@@ -2318,11 +2409,23 @@ impl<'a> Parser<'a> {
             self.next_token()?; // Consume ','
             
             if let Token::Identifier(param_name) = &self.current_token {
+                let param_name_value = param_name.clone();
                 type_parameters.push(ast::Identifier {
                     token: self.current_token.token_literal(),
-                    value: param_name.clone(),
+                    value: param_name_value,
                 });
                 self.next_token()?;
+                
+                // Skip any constraint that might be present (for future compatibility)
+                if self.current_token == Token::Colon {
+                    // Consume ':'
+                    self.next_token()?;
+                    
+                    // Skip the constraint (only single identifier constraints for now)
+                    if let Token::Identifier(_) = &self.current_token {
+                        self.next_token()?;
+                    }
+                }
             } else {
                 return Err(Error::from_str(
                     &format!("Expected identifier after comma in type parameters, got {:?}", self.current_token)
@@ -2406,7 +2509,45 @@ impl<'a> Parser<'a> {
         
         // Check if the current token is a type identifier before the opening brace
         if self.current_token != Token::LBrace {
-            if let Token::Identifier(type_name) = &self.current_token {
+            // Check for complex return types like "slay(A) B"
+            if self.current_token == Token::Slay {
+                // Capture the full return type as a string
+                let start_pos = self.lexer.position;
+                let mut depth = 0;
+                let mut has_encountered_lparen = false;
+                
+                // Parse until we hit either the opening brace or EOF
+                while self.current_token != Token::LBrace && self.current_token != Token::Eof {
+                    if self.current_token == Token::LParen {
+                        has_encountered_lparen = true;
+                        depth += 1;
+                    } else if self.current_token == Token::RParen {
+                        depth -= 1;
+                    }
+                    
+                    // If we've balanced all parentheses and we've seen at least one opening paren,
+                    // and we've encountered an identifier after closing the last paren, we're done
+                    if depth == 0 && has_encountered_lparen && !matches!(self.peek_token, Token::Identifier(_)) {
+                        self.next_token()?; // Move past the last token of the return type
+                        break;
+                    }
+                    
+                    self.next_token()?;
+                }
+                
+                // Create a string from the parsed tokens for the return type
+                let end_pos = self.lexer.position;
+                let type_text = if start_pos < end_pos && start_pos < self.lexer.input.len() {
+                    self.lexer.input[start_pos..end_pos].trim().to_string()
+                } else {
+                    "slay(?) ?".to_string() // Fallback if we can't get the text
+                };
+                
+                return_type = Some(ast::Identifier {
+                    token: "return_type".to_string(),
+                    value: type_text,
+                });
+            } else if let Token::Identifier(type_name) = &self.current_token {
                 return_type = Some(ast::Identifier {
                     token: self.current_token.token_literal(),
                     value: type_name.clone(),
