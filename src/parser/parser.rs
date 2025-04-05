@@ -1,5 +1,5 @@
 use crate::ast::{self, Program, Statement, Expression};
-use crate::error::Error;
+use crate::error::{Error, SourceLocation};
 use crate::lexer::{Lexer, Token};
 
 /// Precedence levels for expression parsing
@@ -25,6 +25,85 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
+    /// Helper method to provide debug information about current parser state
+    fn parser_state_debug(&self) -> String {
+        let mut info = String::new();
+        info.push_str(&format!("Parser state:\n"));
+        info.push_str(&format!("  Position: line {}, column {}\n", self.lexer.line, self.lexer.column));
+        info.push_str(&format!("  Current token: {:?}\n", self.current_token));
+        info.push_str(&format!("  Next token: {:?}\n", self.peek_token));
+        
+        // Add token history if available
+        // (in a more complete implementation we could keep a token history buffer)
+        
+        info
+    }
+    
+    /// Helper method to get a snippet of source code around the current position with line number
+    fn get_source_snippet_with_line(&self) -> (String, usize) {
+        // Get the current position in the input
+        let pos = self.lexer.position;
+        let input = self.lexer.input;
+        let line = self.lexer.line;
+        
+        // Find the start of the current line
+        let mut line_start = pos;
+        while line_start > 0 && input.as_bytes().get(line_start - 1).map_or(false, |&c| c != b'\n') {
+            line_start -= 1;
+        }
+        
+        // Find the end of the current line
+        let mut line_end = pos;
+        while line_end < input.len() && input.as_bytes().get(line_end).map_or(false, |&c| c != b'\n') {
+            line_end += 1;
+        }
+        
+        // Extract the line
+        if line_start < line_end {
+            let line_content = &input[line_start..line_end];
+            
+            // Calculate column for the caret
+            let caret_pos = self.lexer.column - 1; // Convert to 0-based
+            
+            // Add the caret pointing at the error position
+            let mut result = line_content.to_string();
+            result.push_str("\n     |");
+            result.push_str(&" ".repeat(caret_pos));
+            result.push_str("^"); // Red caret would go here
+            
+            (result, line)
+        } else {
+            (String::new(), line)
+        }
+    }
+    
+    /// Helper method to get a snippet of source code around the current position
+    fn get_source_snippet(&self) -> String {
+        // Get the current position in the input
+        let pos = self.lexer.position;
+        let input = self.lexer.input;
+        
+        // Get a snippet of context (30 chars before and after if possible)
+        let start = pos.saturating_sub(30);
+        let end = (pos + 30).min(input.len());
+        
+        if start < end {
+            // Add markers around the current position
+            let before = &input[start..pos];
+            let after = if pos < input.len() {
+                &input[pos..end]
+            } else {
+                ""
+            };
+            
+            // Highlight the position with markers
+            format!("{}{}{}{}{}", before, "[31m", "^", "[0m", after)
+        } else {
+            // Return empty string if we can't get a good snippet
+            String::new()
+        }
+    }
+    
     /// Create a new parser from a lexer
     pub fn new(lexer: &'a mut Lexer<'a>) -> Result<Self, Error> {
         let mut parser = Parser {
@@ -62,7 +141,16 @@ impl<'a> Parser<'a> {
         }
         
         if !self.errors.is_empty() {
-            // If we had parsing errors, return the first one
+            // If we had parsing errors, print them in Rust compiler style
+            if self.errors.len() > 1 {
+                println!("error: aborting due to {} previous errors\n", self.errors.len());
+            }
+            
+            // Display a summary similar to Rust compiler
+            println!("error: could not parse CURSED code successfully");
+            println!("note: check the error details above for more information");
+            
+            // Return the first error
             return Err(self.errors.remove(0));
         }
         
@@ -223,17 +311,27 @@ impl<'a> Parser<'a> {
             _ => unreachable!(), // Already checked
         };
         
-        // Check for optional type annotation (smol, mid, normie, thicc)
+        // Check for optional type annotation (smol, mid, normie, thicc, byte, rune, etc.)
         let mut type_annotation = None;
         if matches!(self.peek_token, Token::Smol | Token::Mid | Token::Normie | Token::Thicc) {
             self.next_token()?; // Consume the type token
             type_annotation = Some(self.current_token.clone());
+        } else if let Token::Identifier(type_name) = &self.peek_token.clone() {
+            // Check if the identifier is a known type name (byte, rune, etc.)
+            let is_type = type_name == "byte" || type_name == "rune";
+            if is_type {
+                let type_name_str = type_name.clone();  // Clone to avoid borrowing issues
+                self.next_token()?; // Consume the type token
+                type_annotation = Some(self.current_token.clone());
+                println!("DEBUG: Found type annotation: {} for variable {}", type_name_str, name.value);
+            }
         }
         
         // Expect the assignment operator
         if !self.expect_peek(&Token::Assign) {
             return Err(Error::from_str(
-                &format!("Expected '=' after identifier in sus statement, got {:?}", self.peek_token)
+                &format!("Expected '=' after identifier in sus statement, got {:?}. Current token: {:?}, current position: variable '{}', type annotation: {:?}", 
+                    self.peek_token, self.current_token, name.value, type_annotation)
             ));
         }
         
@@ -644,8 +742,12 @@ impl<'a> Parser<'a> {
 
         // Ensure we have a closing brace
         if self.current_token != Token::RBrace {
+            // Get previous token for better error context
+            let previous_token = format!("{:?}", self.peek_token);
+            
             return Err(Error::from_str(
-                "Expected '}' to close vibe_check statement"
+                &format!("Expected '}}' to close vibe_check statement, got {:?}, previous token was {}", 
+                    self.current_token, previous_token)
             ));
         }
 
@@ -794,8 +896,12 @@ impl<'a> Parser<'a> {
         
         // Ensure we have a closing brace
         if self.current_token != Token::RBrace {
+            // Get previous token for better error context
+            let previous_token = format!("{:?}", self.peek_token);
+            
             return Err(Error::from_str(
-                "Expected '}' to close type declaration"
+                &format!("Expected '}}' to close type declaration, got {:?}, previous token was {}", 
+                    self.current_token, previous_token)
             ));
         }
         
@@ -887,8 +993,12 @@ impl<'a> Parser<'a> {
         
         // Ensure we have a closing brace
         if self.current_token != Token::RBrace {
+            // Get previous token for better error context
+            let previous_token = format!("{:?}", self.peek_token);
+            
             return Err(Error::from_str(
-                "Expected '}' to close interface declaration"
+                &format!("Expected '}}' to close interface declaration, got {:?}, previous token was {}", 
+                    self.current_token, previous_token)
             ));
         }
         
@@ -1085,8 +1195,12 @@ impl<'a> Parser<'a> {
         // Check if we exited because of EOF (which would be an error)
         if self.current_token != Token::RBrace {
             // Include token info in error message for better debugging
+            // Get previous token for better error context
+            let previous_token = format!("{:?}", self.peek_token);
+            
             return Err(Error::from_str(
-                &format!("Expected '}}' to close block statement, got {:?}", self.current_token)
+                &format!("Expected '}}' to close block statement, got {:?}, previous token was {}", 
+                    self.current_token, previous_token)
             ));
         }
         
@@ -1098,6 +1212,14 @@ impl<'a> Parser<'a> {
     
     /// Parse an expression with the given precedence
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Box<dyn Expression>, Error> {
+        // Get current location for error reporting
+        let location = SourceLocation::new(self.lexer.line, self.lexer.column);
+        
+        // We could log parsing attempts when a special debug flag is set
+        // But for normal operation, we'll keep it quiet
+        // println!("DEBUG: Parsing expression with token: {:?} at line {}, column {}", 
+        //          self.current_token, self.lexer.line, self.lexer.column);
+        
         // First try to find a prefix parsing function
         let mut left_expr: Box<dyn Expression> = match &self.current_token {
             Token::Identifier(name) => {
@@ -1186,6 +1308,24 @@ impl<'a> Parser<'a> {
                 self.next_token()?;
                 Box::new(literal)
             },
+            Token::Byte(value) => {
+                let literal = ast::ByteLiteral {
+                    token: self.current_token.token_literal(),
+                    value: *value,
+                };
+                
+                self.next_token()?;
+                Box::new(literal)
+            },
+            Token::Rune(value) => {
+                let literal = ast::RuneLiteral {
+                    token: self.current_token.token_literal(),
+                    value: *value,
+                };
+                
+                self.next_token()?;
+                Box::new(literal)
+            },
             Token::Bang | Token::Minus => {
                 let operator = self.current_token.token_literal();
                 let token = self.current_token.clone();
@@ -1212,9 +1352,33 @@ impl<'a> Parser<'a> {
                 self.parse_function_literal()?
             },
             _ => {
-                return Err(Error::from_str(
-                    &format!("No prefix parse function for {:?}", self.current_token)
-                ));
+                // Get a snippet of the input around the error location with line number
+                let (snippet, line_num) = self.get_source_snippet_with_line();
+                let source_context = if !snippet.is_empty() {
+                    format!("\n  --> {}:{}\n     |\n{:4} | {}", 
+                           "input", self.lexer.line, self.lexer.line, snippet)
+                } else {
+                    String::new()
+                };
+                
+                // Create a user-friendly error message in Rust compiler style
+                // Store previous token for error message
+                let previous_token = format!("{:?}", self.peek_token);
+                
+                let message = format!(
+                    "error[E0003]: unexpected token {:?}, previous token was {}{}\n\nhelp: This token cannot start an expression in CURSED\n      Did you mean to use a different expression or statement?", 
+                    self.current_token,
+                    previous_token,
+                    source_context
+                );
+                
+                // Print the error for immediate debugging
+                println!("{}\n", message);
+                
+                return Err(Error::Parser {
+                    location: SourceLocation::new(self.lexer.line, self.lexer.column),
+                    message,
+                });
             }
         };
         
@@ -1405,10 +1569,44 @@ impl<'a> Parser<'a> {
         if &self.peek_token == token {
             match self.next_token() {
                 Ok(_) => true,
-                Err(_) => false,
+                Err(e) => {
+                    // Log the error for better debugging
+                    println!("PARSER ERROR: Failed to advance token: {}", e);
+                    false
+                },
             }
         } else {
-            self.peek_error(token);
+            // Get location from the lexer if possible
+            let location = SourceLocation::new(self.lexer.line, self.lexer.column);
+            
+            // Get a snippet of source code around the current position with line number
+            let (snippet, line_num) = self.get_source_snippet_with_line();
+            let source_context = if !snippet.is_empty() {
+                format!("\n  --> {}:{}\n     |\n{:4} | {}", 
+                       "input", self.lexer.line, self.lexer.line, snippet)
+            } else {
+                String::new()
+            };
+            
+            // Create detailed error message
+            let context = format!("Current token: {:?}, Next token: {:?}, at line {}, column {}", 
+                                  self.current_token, 
+                                  self.peek_token, 
+                                  self.lexer.line, 
+                                  self.lexer.column);
+            let message = format!("error[E0001]: expected token {:?}, found {:?}{}\n\nhelp: {}", 
+                                 token, 
+                                 self.peek_token,
+                                 source_context,
+                                 "Make sure your syntax follows the CURSED language specification");
+            
+            // Print error for immediate debugging
+            println!("{}\n", message);
+            
+            self.errors.push(Error::Parser {
+                location,
+                message
+            });
             false
         }
     }
@@ -1418,20 +1616,50 @@ impl<'a> Parser<'a> {
         if let Token::Identifier(_) = &self.peek_token {
             match self.next_token() {
                 Ok(_) => true,
-                Err(_) => false,
+                Err(e) => {
+                    // Log the error for better debugging
+                    println!("PARSER ERROR: Failed to advance token: {}", e);
+                    false
+                },
             }
         } else {
-            self.errors.push(Error::from_str(
-                &format!("Expected next token to be an identifier, got {:?}", self.peek_token)
-            ));
+            // Get location from the lexer if possible
+            let location = SourceLocation::new(self.lexer.line, self.lexer.column);
+            
+            // Get a snippet of source code around the current position with line number
+            let (snippet, line_num) = self.get_source_snippet_with_line();
+            let source_context = if !snippet.is_empty() {
+                format!("\n  --> {}:{}\n     |\n{:4} | {}", 
+                       "input", self.lexer.line, self.lexer.line, snippet)
+            } else {
+                String::new()
+            };
+            
+            // Create detailed error message in a Rust-like style
+            let message = format!("error[E0002]: expected identifier, found {:?}{}\n\nhelp: Variable or field names must be identifiers", 
+                                self.peek_token,
+                                source_context);
+            
+            // Print error for immediate debugging
+            println!("{}\n", message);
+            
+            self.errors.push(Error::Parser {
+                location,
+                message
+            });
             false
         }
     }
     
     fn peek_error(&mut self, token: &Token) {
-        self.errors.push(Error::from_str(
-            &format!("Expected next token to be {:?}, got {:?}", token, self.peek_token)
-        ));
+        // Add more context to the error message
+        let context = format!("Current token: {:?}, Next token: {:?}", self.current_token, self.peek_token);
+        let message = format!("Expected next token to be {:?}, got {:?}", token, self.peek_token);
+        
+        self.errors.push(Error::Parser {
+            location: SourceLocation::default(),
+            message: format!("{} - Context: {}", message, context)
+        });
     }
     
     /// Helper function to convert certain tokens to type names
@@ -1442,6 +1670,9 @@ impl<'a> Parser<'a> {
             Token::Collab => Some("collab".to_string()),
             Token::Dm => Some("dm".to_string()),
             Token::Based => Some("lit".to_string()),  // true -> lit (boolean)
+            // Type names for byte and rune
+            Token::Identifier(s) if s == "byte" => Some("byte".to_string()),
+            Token::Identifier(s) if s == "rune" => Some("rune".to_string()),
             // Add other token types that should be valid as type names
             _ => None,
         }
@@ -1913,6 +2144,57 @@ mod tests {
         // Check the token is correct
         let stmt = stmt.unwrap();
         assert_eq!(stmt.token, "ghosted", "Expected 'ghosted' token");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_parse_byte_literals() -> Result<(), Error> {
+        let input = "b'a';";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have exactly one statement (expression statement)
+        assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
+        
+        // Check that it's an expression statement containing a byte literal
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let expr = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<ast::ByteLiteral>();
+        assert!(expr.is_some(), "Expression is not a ByteLiteral");
+        
+        // Check the value is correct
+        let byte_literal = expr.unwrap();
+        assert_eq!(byte_literal.value, b'a', "Expected byte value 'a'");
+        
+        Ok(())
+    }
+    
+    #[test]
+    fn test_parse_rune_literals() -> Result<(), Error> {
+        let input = "'X';";
+        let program = test_parser_with_input(input)?;
+        
+        // Verify we have exactly one statement (expression statement)
+        assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
+        
+        // Check that it's an expression statement containing a rune literal
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let expr = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<ast::RuneLiteral>();
+        assert!(expr.is_some(), "Expression is not a RuneLiteral");
+        
+        // Check the value is correct
+        let rune_literal = expr.unwrap();
+        assert_eq!(rune_literal.value, 'X', "Expected rune value 'X'");
+        
+        // Test unicode characters
+        let input = "'🙂';";
+        let program = test_parser_with_input(input)?;
+        
+        let stmt = program.statements[0].as_any().downcast_ref::<ast::ExpressionStatement>().unwrap();
+        let expr = stmt.expression.as_ref().unwrap().as_any().downcast_ref::<ast::RuneLiteral>();
+        assert!(expr.is_some(), "Expression is not a RuneLiteral");
+        
+        let rune_literal = expr.unwrap();
+        assert_eq!(rune_literal.value, '🙂', "Expected rune value '🙂'");
         
         Ok(())
     }
