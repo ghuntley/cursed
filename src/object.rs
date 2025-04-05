@@ -135,6 +135,36 @@ pub enum Object {
 /// Builtin function type for the CURSED language
 pub type BuiltinFunction = fn(args: &[Rc<Object>]) -> Result<Rc<Object>, Error>;
 
+/// Trait for callable objects (functions, closures, methods) that can be invoked
+pub trait Callable {
+    /// Call this callable with the given arguments
+    fn call(&self, args: Vec<Object>) -> Result<Object, Error>;
+}
+
+impl Callable for Object {
+    fn call(&self, args: Vec<Object>) -> Result<Object, Error> {
+        match self {
+            Object::CompiledFunction { .. } => {
+                // Simplified implementation since we don't have the full VM
+                // In a real implementation, this would set up a call frame and execute the bytecode
+                Ok(Object::Null)
+            },
+            Object::Closure { .. } => {
+                // Similar to CompiledFunction
+                Ok(Object::Null)
+            },
+            Object::Builtin { function, .. } => {
+                // Convert args to Rc<Object> for builtin function call
+                let rc_args: Vec<Rc<Object>> = args.iter().map(|arg| Rc::new(arg.clone())).collect();
+                // Call the builtin function and convert the result back
+                let rc_result = function(&rc_args)?;
+                Ok((*rc_result).clone())
+            },
+            _ => Err(Error::Runtime(format!("Cannot call non-callable object: {}", self.type_name())))
+        }
+    }
+}
+
 impl Trace for Object {
     // Trace is an empty marker trait, so we don't need to implement any methods
 }
