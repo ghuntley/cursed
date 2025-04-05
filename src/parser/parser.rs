@@ -216,26 +216,60 @@ impl<'a> Parser<'a> {
                             value: name.clone(),
                         };
                         
-                        // Check for optional type parameters [T] or [A, B, C]
+                        // Check for optional type parameters (e.g. [T] or [A, B])
+                        // In CURSED we use the syntax: function_name[T]
                         let mut type_parameters = Vec::new();
                         
-                        // If next token is '[', we have type parameters
+                        // Check for a left bracket immediately after the function name
                         if self.peek_token == Token::LBracket {
-                            self.next_token()?; // Move to '['
-                            type_parameters = self.parse_type_parameters()?;
+                            self.next_token()?; // Move past '['
+                            
+                            // Parse first type parameter
+                            if let Token::Identifier(type_name) = &self.current_token.clone() {
+                                type_parameters.push(ast::Identifier {
+                                    token: self.current_token.token_literal(),
+                                    value: type_name.clone(),
+                                });
+                                self.next_token()?;
+                            } else {
+                                return Err(Error::from_str(
+                                    &format!("Expected type parameter name after '[', got {:?}", self.current_token)
+                                ));
+                            }
+                            
+                            // Parse additional type parameters
+                            while self.current_token == Token::Comma {
+                                self.next_token()?; // Move past ','
+                                
+                                if let Token::Identifier(type_name) = &self.current_token.clone() {
+                                    type_parameters.push(ast::Identifier {
+                                        token: self.current_token.token_literal(),
+                                        value: type_name.clone(),
+                                    });
+                                    self.next_token()?;
+                                } else {
+                                    return Err(Error::from_str(
+                                        &format!("Expected type parameter name after ',', got {:?}", self.current_token)
+                                    ));
+                                }
+                            }
+                            
+                            // Check for closing bracket
+                            if self.current_token != Token::RBracket {
+                                return Err(Error::from_str(
+                                    &format!("Expected ']' after type parameters, got {:?}", self.current_token)
+                                ));
+                            }
+                            
+                            self.next_token()?; // Move past ']'
                         }
                         
-                        // Check for opening parenthesis
-                        // The lexer test shows that after the type parameters and before parameters,
-                        // we should have a left paren
-                        if self.peek_token != Token::LParen {
+                        // The next token after function name or type parameters should be '('
+                        if !self.expect_peek(&Token::LParen) {
                             return Err(Error::from_str(
                                 &format!("Expected '(' after function name or type parameters, got {:?}", self.peek_token)
                             ));
                         }
-                        
-                        // Move to the left paren
-                        self.next_token()?;
                         
                         // Parse parameters directly without expecting LParen again
                         let parameters = self.parse_function_parameters()?;
@@ -265,6 +299,7 @@ impl<'a> Parser<'a> {
                         }
                         
                         // Expect block
+                        println!("Checking for opening brace - current token: {:?}, peek token: {:?}", self.current_token, self.peek_token);
                         if self.current_token != Token::LBrace {
                             return Err(Error::from_str(
                                 &format!("Expected '{{' after function parameters, got {:?}", self.current_token)
@@ -2171,7 +2206,6 @@ impl<'a> Parser<'a> {
         let mut identifiers = Vec::new();
 
         // The current token should already be '('
-        // This method is called after we've already found and moved to the LParen token
         
         // Move past '('
         self.next_token()?;
@@ -2183,7 +2217,7 @@ impl<'a> Parser<'a> {
         }
 
         // Parse first parameter
-        if let Token::Identifier(name) = &self.current_token {
+        if let Token::Identifier(name) = &self.current_token.clone() {
             let param_name = ast::Identifier {
                 token: self.current_token.token_literal(),
                 value: name.clone(),
@@ -2196,7 +2230,7 @@ impl<'a> Parser<'a> {
             // Skip the type annotation if present
             // We're only collecting parameter names, not full parameter declarations
             if self.current_token != Token::Comma && self.current_token != Token::RParen {
-                // Skip the type token
+                // Skip the type token (either an identifier like T or a built-in type)
                 self.next_token()?;
             }
         } else {
@@ -2211,7 +2245,7 @@ impl<'a> Parser<'a> {
             self.next_token()?; // Consume ','
             
             // Parse parameter name
-            if let Token::Identifier(name) = &self.current_token {
+            if let Token::Identifier(name) = &self.current_token.clone() {
                 let param_name = ast::Identifier {
                     token: self.current_token.token_literal(),
                     value: name.clone(),
