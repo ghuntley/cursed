@@ -1,4 +1,4 @@
-vibe main
+vibe main;
 
 slay main() {
     sus ch = dm smol

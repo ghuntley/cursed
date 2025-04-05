@@ -45,6 +45,7 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 use std::rc::Rc;
 use std::cell::RefCell;
+use crate::object::Object;
 
 // Channel operations for JIT execution
 #[no_mangle]

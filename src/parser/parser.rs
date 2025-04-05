@@ -144,13 +144,25 @@ impl<'a> Parser<'a> {
         while self.current_token != Token::Eof {
             match self.parse_statement() {
                 Ok(stmt) => program.statements.push(stmt),
-                Err(e) => self.errors.push(e),
+                Err(e) => {
+                    // Enhanced error reporting
+                    let (snippet, line) = self.get_source_snippet_with_line();
+                    println!("Parser error at line {}: {}", line, e);
+                    if !snippet.is_empty() {
+                        println!("{}", snippet);
+                    }
+                    println!("Current token: {:?}, Next token: {:?}", self.current_token, self.peek_token);
+                    self.errors.push(e);
+                }
             }
             
             // Advance to the next token
             match self.next_token() {
                 Ok(_) => {},
-                Err(e) => self.errors.push(e),
+                Err(e) => {
+                    println!("Error advancing token: {}", e);
+                    self.errors.push(e);
+                }
             }
         }
         
@@ -159,6 +171,10 @@ impl<'a> Parser<'a> {
             if self.errors.len() > 1 {
                 println!("error: aborting due to {} previous errors\n", self.errors.len());
             }
+            
+            // Display debugging information about the parser state
+            println!("Parser state debug information:");
+            println!("{}", self.parser_state_debug());
             
             // Display a summary similar to Rust compiler
             println!("error: could not parse CURSED code successfully");
@@ -1281,28 +1297,28 @@ impl<'a> Parser<'a> {
             // Parse the body
             let body = self.parse_block_statement()?;
             
-            Ok(Box::new(ast::WhileStatement {
+            return Ok(Box::new(ast::WhileStatement {
                 token,
                 condition,
                 body,
-            }))
-        } else {
-            // Otherwise, expect the next token to be a '{'
-            if !self.expect_peek(&Token::LBrace) {
-                return Err(Error::from_str(
-                    &format!("Expected '{{' after condition in periodt statement, got {:?}", self.peek_token)
-                ));
-            }
-            
-            // Parse the body
-            let body = self.parse_block_statement()?;
-            
-            Ok(Box::new(ast::WhileStatement {
-                token,
-                condition,
-                body,
-            }))
+            }));
         }
+        
+        // Otherwise, expect the next token to be a '{'
+        if !self.expect_peek(&Token::LBrace) {
+            return Err(Error::from_str(
+                &format!("Expected '{{' after condition in periodt statement, got {:?}", self.peek_token)
+            ));
+        }
+        
+        // Parse the body
+        let body = self.parse_block_statement()?;
+        
+        Ok(Box::new(ast::WhileStatement {
+            token,
+            condition,
+            body,
+        }))
     }
     
     /// Parse a block statement
@@ -1547,11 +1563,24 @@ impl<'a> Parser<'a> {
                 // Store previous token for error message
                 let previous_token = format!("{:?}", self.peek_token);
                 
+                // More detailed error message based on the token type
+                let expression_tips = match &self.current_token {
+                    Token::Assign => "Assignment is not allowed in this context. Did you mean to use ':=' for declaration?",
+                    Token::Semicolon => "Unexpected semicolon. Did you forget an expression?",
+                    Token::RBrace => "Unexpected closing brace. Did you forget to finish an expression?",
+                    Token::RParen => "Unexpected closing parenthesis. Check your parentheses matching.",
+                    Token::RBracket => "Unexpected closing bracket. Check your bracket matching.",
+                    Token::Eof => "Unexpected end of file. Your expression or statement is incomplete.",
+                    _ => "This token cannot start an expression in CURSED. Did you mean to use a different expression or statement?"
+                };
+                
                 let message = format!(
-                    "error[E0003]: unexpected token {:?}, previous token was {}{}\n\nhelp: This token cannot start an expression in CURSED\n      Did you mean to use a different expression or statement?", 
+                    "error[E0003]: unexpected token {:?}, previous token was {}{}\n\nSource context: {}\n\nhelp: {}", 
                     self.current_token,
                     previous_token,
-                    source_context
+                    source_context,
+                    format!("Line: {}, Column: {}", self.lexer.line, self.lexer.column),
+                    expression_tips
                 );
                 
                 // Print the error for immediate debugging
@@ -1799,11 +1828,22 @@ impl<'a> Parser<'a> {
                                   self.peek_token, 
                                   self.lexer.line, 
                                   self.lexer.column);
-            let message = format!("error[E0001]: expected token {:?}, found {:?}{}\n\nhelp: {}", 
+            // Add syntax guidance based on the expected token
+            let syntax_tip = match token {
+                Token::LParen => "Function calls and conditions require parentheses: main() or lowkey (x < 5)",
+                Token::RParen => "Missing closing parenthesis: main() or lowkey (x < 5)",
+                Token::LBrace => "Block statements require braces: slay main() { ... }",
+                Token::RBrace => "Missing closing brace for a block",
+                Token::Semicolon => "Statements must end with semicolons: vibe main; or sus x = 5;",
+                _ => "Make sure your syntax follows the CURSED language specification"
+            };
+            
+            let message = format!("error[E0001]: expected token {:?}, found {:?}{}\n\nContext: {}\n\nhelp: {}", 
                                  token, 
                                  self.peek_token,
                                  source_context,
-                                 "Make sure your syntax follows the CURSED language specification");
+                                 context,
+                                 syntax_tip);
             
             // Print error for immediate debugging
             println!("{}\n", message);
@@ -1841,9 +1881,26 @@ impl<'a> Parser<'a> {
             };
             
             // Create detailed error message in a Rust-like style
-            let message = format!("error[E0002]: expected identifier, found {:?}{}\n\nhelp: Variable or field names must be identifiers", 
+            let context = format!("Current token: {:?}, Peek token: {:?}, at line {}, column {}", 
+                                  self.current_token, 
+                                  self.peek_token, 
+                                  self.lexer.line, 
+                                  self.lexer.column);
+                                  
+            // Add specific guidance for identifiers
+            let identifier_tips = match &self.peek_token {
+                Token::Int(_) => "Identifiers cannot start with numbers. Try adding a letter prefix.",
+                Token::String(_) => "Strings cannot be used as identifiers. Try removing the quotes.",
+                Token::LParen => "Function parameters need names. Example: slay main(x, y) { ... }",
+                Token::Semicolon => "Missing identifier before semicolon. Example: sus name = value;",
+                _ => "Variable or field names must be identifiers"
+            };
+            
+            let message = format!("error[E0002]: expected identifier, found {:?}{}\n\nContext: {}\n\nhelp: {}", 
                                 self.peek_token,
-                                source_context);
+                                source_context,
+                                context,
+                                identifier_tips);
             
             // Print error for immediate debugging
             println!("{}\n", message);
