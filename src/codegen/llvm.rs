@@ -2772,6 +2772,7 @@ mod tests {
         let squad_stmt = SquadStatement {
             token: "squad".to_string(),
             name: struct_name,
+            type_parameters: Vec::new(), // No type parameters for this test
             fields: vec![field1, field2],
         };
         

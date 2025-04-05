@@ -421,6 +421,73 @@ fn test_byte_rune_codegen() {
             "Expected output containing '88' (ASCII/Unicode for 'X'), got:\n{}", output);
 }
 
+/// Tests parsing generics files
+#[test]
+fn test_parse_generics_file() {
+    let test_file = "tests/generics_test.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    // Use just the Lexer and Parser, without running code generation
+    let input = fs::read_to_string(test_file).expect("Failed to read test file");
+    
+    // Print the content of the file for debugging
+    println!("Testing generics file content:\n{}", input);
+    
+    // Create a lexer and parser
+    use cursed::lexer::Lexer;
+    use cursed::parser::Parser;
+    
+    // Test lexer first to make sure tokens are correct
+    let mut lexer = Lexer::new(&input);
+    let mut tokens = Vec::new();
+    
+    // Collect all tokens for debugging
+    loop {
+        match lexer.next_token() {
+            Ok(token) => {
+                let is_eof = token == cursed::lexer::Token::Eof;
+                tokens.push(token.clone());
+                if is_eof { break; }
+            },
+            Err(e) => {
+                println!("Lexer error: {:?}", e);
+                break;
+            }
+        }
+    }
+    
+    // Print the tokens for debugging
+    println!("Tokens: {:#?}", tokens);
+    
+    // Create a new lexer and parser since we consumed the first one
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    
+    // Parse the program
+    let program_result = parser.parse_program();
+    
+    // Check for parser errors before asserting
+    if !parser.errors().is_empty() {
+        println!("Parser errors: {:#?}", parser.errors());
+    }
+    
+    // Assert that parsing succeeds
+    assert!(program_result.is_ok(), "Failed to parse program with generics. Errors: {:?}", 
+            program_result.err());
+    
+    // Ensure we have the expected number of statements
+    let program = program_result.unwrap();
+    println!("Parsed statements: {}", program.statements.len());
+    for (i, stmt) in program.statements.iter().enumerate() {
+        println!("Statement {}: {}", i, stmt.string());
+    }
+    
+    assert_eq!(program.statements.len(), 5, "Expected 5 statements (package and 4 declarations)");
+    
+    // Check we have no parser errors
+    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors());
+}
+
 /// Tests parsing of struct (squad) declarations
 #[test]
 fn test_parse_struct() {

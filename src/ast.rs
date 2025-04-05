@@ -787,6 +787,7 @@ impl Statement for CaseStatement {
 pub struct SquadStatement {
     pub token: String, // Token::Squad
     pub name: Identifier,
+    pub type_parameters: Vec<Identifier>, // Generic type parameters [T], [A, B], etc.
     pub fields: Vec<FieldStatement>,
 }
 
@@ -797,7 +798,18 @@ impl Node for SquadStatement {
 
     fn string(&self) -> String {
         let mut out = String::new();
-        out.push_str(&format!("be_like {} squad {{\n", self.name.string()));
+        
+        // Format the struct name with optional type parameters
+        let type_params_str = if !self.type_parameters.is_empty() {
+            let params: Vec<String> = self.type_parameters.iter()
+                .map(|param| param.string())
+                .collect();
+            format!("[{}]", params.join(", "))
+        } else {
+            String::new()
+        };
+        
+        out.push_str(&format!("be_like {}{} squad {{\n", self.name.string(), type_params_str));
         
         for field in &self.fields {
             out.push_str(&format!("    {}\n", field.string()));
@@ -845,6 +857,7 @@ impl Statement for FieldStatement {
 pub struct BeLikeExpression {
     pub token: String,
     pub struct_name: Identifier,
+    pub type_arguments: Vec<Box<dyn Expression>>, // Generic type arguments [normie], [tea, normie], etc.
     pub fields: Vec<(String, Box<dyn Expression>)>,
 }
 
@@ -856,8 +869,16 @@ impl Node for BeLikeExpression {
     fn string(&self) -> String {
         let mut out = format!("be_like {}", self.struct_name.string());
         
+        // Format type arguments if present
+        if !self.type_arguments.is_empty() {
+            let type_args: Vec<String> = self.type_arguments.iter()
+                .map(|arg| arg.string())
+                .collect();
+            out.push_str(&format!("[{}]", type_args.join(", ")));
+        }
+        
         if !self.fields.is_empty() {
-            out.push_str(" with {");
+            out.push_str(" {");
             let fields_str: Vec<String> = self.fields.iter()
                 .map(|(name, expr)| format!("{}: {}", name, expr.string()))
                 .collect();
@@ -881,6 +902,7 @@ impl Expression for BeLikeExpression {
 pub struct CollabStatement {
     pub token: String, // Token::Collab
     pub name: Identifier,
+    pub type_parameters: Vec<Identifier>, // Generic type parameters [T], [A, B], etc.
     pub methods: Vec<MethodSignature>,
 }
 
@@ -891,7 +913,18 @@ impl Node for CollabStatement {
 
     fn string(&self) -> String {
         let mut out = String::new();
-        out.push_str(&format!("be_like {} collab {{\n", self.name.string()));
+        
+        // Format the type name with optional type parameters
+        let type_params_str = if !self.type_parameters.is_empty() {
+            let params: Vec<String> = self.type_parameters.iter()
+                .map(|param| param.string())
+                .collect();
+            format!("[{}]", params.join(", "))
+        } else {
+            String::new()
+        };
+        
+        out.push_str(&format!("be_like {}{} collab {{\n", self.name.string(), type_params_str));
         
         for method in &self.methods {
             out.push_str(&format!("    {}\n", method.string()));
@@ -1020,9 +1053,11 @@ impl Statement for MethodDeclaration {
 /// FunctionLiteral represents a function literal expression
 pub struct FunctionLiteral {
     pub token: Token,
+    pub type_parameters: Vec<Identifier>, // Generic type parameters [T], [A, B], etc.
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
     pub is_variadic: bool,
+    pub return_type: Option<Identifier>, // Optional return type identifier
 }
 
 impl Node for FunctionLiteral {
@@ -1031,6 +1066,17 @@ impl Node for FunctionLiteral {
     }
 
     fn string(&self) -> String {
+        // Format the type parameters if present
+        let type_params_str = if !self.type_parameters.is_empty() {
+            let type_params: Vec<String> = self.type_parameters.iter()
+                .map(|p| p.string())
+                .collect();
+            format!("[{}]", type_params.join(", "))
+        } else {
+            String::new()
+        };
+
+        // Format function parameters
         let params: Vec<String> = self.parameters.iter()
             .map(|p| p.string())
             .collect();
@@ -1047,7 +1093,14 @@ impl Node for FunctionLiteral {
             params.join(", ")
         };
         
-        format!("{}({}) {}", self.token_literal(), param_str, self.body.string())
+        // Format return type if present
+        let return_type_str = if let Some(rt) = &self.return_type {
+            format!(" {}", rt.string())
+        } else {
+            String::new()
+        };
+        
+        format!("{}{}{}{}{}) {}", self.token_literal(), type_params_str, "(", param_str, return_type_str, self.body.string())
     }
 }
 

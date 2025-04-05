@@ -1,0 +1,63 @@
+use std::process::Command;
+use std::fs;
+use std::path::Path;
+use std::io;
+use std::collections::HashSet;
+
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::ast::{Statement, Expression};
+
+/// Runs a CURSED file through the compiler and returns the output and exit status
+fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
+    let output = Command::new("cargo")
+        .args(&["run", "--", file_path])
+        .output()?;
+    
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    
+    // Combine stdout and stderr for debugging
+    let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
+    
+    // Return the combined output and success status
+    Ok((combined_output, output.status.success()))
+}
+
+/// List of tests that are known to fail due to unimplemented features
+fn known_failing_tests() -> HashSet<&'static str> {
+    let mut failures = HashSet::new();
+    // While loop should work now that we've implemented assignment expressions
+    // failures.insert("test_while_loop");
+    // failures.insert("test_all_jit_files"); // Fails if any individual test fails, so marked as known_failing
+    
+    failures
+}
+
+/// Tests parsing generics files
+#[test]
+fn test_parse_generics_file() {
+    let test_file = "tests/generics_test.csd";
+    assert!(Path::new(test_file).exists(), "Test file not found: {}", test_file);
+    
+    // Use just the Lexer and Parser, without running code generation
+    let input = fs::read_to_string(test_file).expect("Failed to read test file");
+    
+    // Create a lexer and parser
+    let mut lexer = Lexer::new(&input);
+    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    
+    // Parse the program
+    let program_result = parser.parse_program();
+    
+    // Assert that parsing succeeds
+    assert!(program_result.is_ok(), "Failed to parse program with generics. Errors: {:?}", 
+            program_result.err());
+    
+    // Ensure we have the expected number of statements
+    let program = program_result.unwrap();
+    assert_eq!(program.statements.len(), 5, "Expected 5 statements (package and 4 declarations)");
+    
+    // Check we have no parser errors
+    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors());
+}
