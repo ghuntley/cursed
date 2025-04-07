@@ -23,7 +23,7 @@ use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, Infix
                 PrefixExpression, StringLiteral, WhileStatement, ArrayLiteral, IndexExpression, HashLiteral, ImportStatement, 
                 PropertyAccessExpression, AssignmentExpression, FactsStatement, BreakStatement, LaterStatement,
                 ByteLiteral, RuneLiteral, SquadStatement, FieldStatement, BeLikeExpression, TypeConversionExpression, 
-                ChannelExpression, SendExpression, ReceiveExpression, StanExpression};
+                ChannelExpression, SendExpression, ReceiveExpression, StanExpression, PointerType, PointerDereference};
 use crate::lexer::Token; // Add the Token import
 use crate::lexer; // Use module directly
 use crate::parser; // Use module directly
@@ -848,6 +848,71 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else if let Some(recv_expr) = expression.as_any().downcast_ref::<ReceiveExpression>() {
             // Handle receive from channel
             return self.compile_receive_expression(recv_expr);
+        } else if let Some(pointer_type) = expression.as_any().downcast_ref::<PointerType>() {
+            // Handle pointer type expressions (@T)
+            // Create a null pointer of the specified type
+            // First get the target type
+            if let Some(target_ident) = pointer_type.target_type.as_any().downcast_ref::<crate::ast::Identifier>() {
+                let type_name = &target_ident.value;
+                // Get the LLVM type for the target type name
+                let llvm_type: BasicTypeEnum<'ctx> = match type_name.as_str() {
+                    "normie" => self.context.i32_type().into(),
+                    "smol" => self.context.i8_type().into(),
+                    "mid" => self.context.i16_type().into(),
+                    "thicc" => self.context.i64_type().into(),
+                    "snack" => self.context.f32_type().into(),
+                    "meal" => self.context.f64_type().into(),
+                    "tea" => self.context.i8_type().ptr_type(inkwell::AddressSpace::default()).into(), // String type (pointer to i8)
+                    "lit" => self.context.bool_type().into(),
+                    "byte" => self.context.i8_type().into(),
+                    "rune" => self.context.i32_type().into(),
+                    _ => {
+                        // Check if it's a struct type
+                        if let Some(struct_type) = self.get_struct_type(&self.current_package_name, type_name) {
+                            struct_type.into()
+                        } else {
+                            return Err(format!("Unknown type name: {}", type_name));
+                        }
+                    }
+                };
+                let ptr_type = llvm_type.ptr_type(inkwell::AddressSpace::default());
+                return Ok(ptr_type.const_null().into());
+            } else {
+                return Err(format!("Unsupported target type: {}", pointer_type.target_type.string()));
+            }
+        } else if let Some(pointer_deref) = expression.as_any().downcast_ref::<PointerDereference>() {
+            // Handle pointer dereference expressions (@ptr)
+            // First, get the pointer value
+            let ptr_val = self.compile_expression(pointer_deref.pointer.as_ref())?;
+            
+            if !ptr_val.is_pointer_value() {
+                return Err(format!("Cannot dereference non-pointer value"));
+            }
+            
+            let ptr = ptr_val.into_pointer_value();
+            // We need to load from the pointer
+            // In LLVM 17, we need to analyze the pointer type to get its pointee type
+            // Then use it with build_load
+            
+            // The safe way is to directly attempt to load using the appropriate type
+            // Try loading with different potential types
+            if let Ok(value) = self.builder.build_load(self.context.i32_type(), ptr, "deref_int") {
+                return Ok(value);
+            } else if let Ok(value) = self.builder.build_load(self.context.i64_type(), ptr, "deref_int64") {
+                return Ok(value);
+            } else if let Ok(value) = self.builder.build_load(self.context.f32_type(), ptr, "deref_float") {
+                return Ok(value);
+            } else if let Ok(value) = self.builder.build_load(self.context.f64_type(), ptr, "deref_double") {
+                return Ok(value);
+            } else {
+                // Last resort - try to load as a pointer type itself
+                if let Ok(value) = self.builder.build_load(ptr.get_type(), ptr, "deref_ptr") {
+                    return Ok(value);
+                }
+            }
+            
+            // If we get here, we couldn't load the value
+            return Err(format!("Failed to dereference pointer: unsupported type"));
         } else if let Some(stan_expr) = expression.as_any().downcast_ref::<StanExpression>() {
             // Handle goroutine (stan) expression
             return self.compile_stan_expression(stan_expr);
@@ -887,7 +952,33 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 Err(format!("Undefined variable: {}", var_name))
             }
         } else if let Some(prefix_expr) = expression.as_any().downcast_ref::<PrefixExpression>() {
-            // Compile the right expression
+            // Check if this is an address-of operation (@)
+            if prefix_expr.operator == "@" {
+                // This is an address-of operation
+                // Handle address-of operator (@var)
+                let target_expr = &prefix_expr.right;
+                
+                // Handle different types of expressions
+                if let Some(ident) = target_expr.as_any().downcast_ref::<crate::ast::Identifier>() {
+                    // Taking address of a variable
+                    let var_name = &ident.value;
+                    
+                    // Find the variable in our symbol table
+                    if let Some((ptr, _)) = self.variables.get(var_name) {
+                        // Just return the pointer directly - no need to take address since variables
+                        // are already allocated on stack/heap
+                        return Ok((*ptr).into());
+                    } else {
+                        return Err(format!("Cannot take address of unknown variable: {}", var_name));
+                    }
+                } else {
+                    // For other expression types, would need to evaluate to a temporary and get its address
+                    // This is more complex and would depend on what expressions are valid for address-of
+                    return Err(format!("Taking address of this expression type is not supported: {}", target_expr.string()));
+                }
+            }
+
+            // Compile the right expression for other prefix operators
             let right_val = self.compile_expression(prefix_expr.right.as_ref())?;
 
             // Ensure we are inside a function to use the builder

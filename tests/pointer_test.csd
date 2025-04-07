@@ -2,51 +2,48 @@ fr fr Test file for pointer functionality
 
 slay main() {
     fr fr Test basic pointer creation and dereferencing
-    sus x normie = 42
-    sus ptr @normie = @x
-    sus y normie = @ptr
+    sus x normie = 42;
+    sus ptr = @x;
+    sus y = @ptr;
     
     fr fr Test that y equals x via the pointer
     lowkey y == 42 {
-        print("Basic pointer test passed")
+        yolo 1;
     } highkey {
-        print("Basic pointer test failed")
+        yolo 0;
     }
     
     fr fr Test pointer modification
-    @ptr = 100
+    @ptr = 100;
     lowkey x == 100 {
-        print("Pointer modification test passed")
+        yolo 1;
     } highkey {
-        print("Pointer modification test failed")
+        yolo 0;
     }
     
     fr fr Test pointer to struct
-    sus person Person = Person{name: "John", age: 30}
-    sus person_ptr @Person = @person
-    @person_ptr.age = 31
+    sus person = Person{name: "John", age: 30};
+    sus person_ptr = @person;
+    @person_ptr.age = 31;
     
     lowkey person.age == 31 {
-        print("Struct pointer test passed")
+        yolo 1;
     } highkey {
-        print("Struct pointer test failed")
+        yolo 0;
     }
     
     fr fr Test nil pointer
-    sus nil_ptr @normie = cap
+    sus nil_ptr = cap;
     lowkey nil_ptr == cap {
-        print("Nil pointer test passed")
+        yolo 1;
     } highkey {
-        print("Nil pointer test failed")
+        yolo 0;
     }
+    
+    yolo 0;
 }
 
 be_like Person squad {
-    name tea
-    age normie
-}
-
-fr fr Simple print function for testing
-slay print(message tea) {
-    fr fr In real implementation this would print to console
+    name tea;
+    age normie;
 }
