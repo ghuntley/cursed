@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+// LLVM 17 compatible imports
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
@@ -9,6 +10,12 @@ use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue, BasicMetadata
 use inkwell::types::{BasicType, BasicTypeEnum, BasicMetadataTypeEnum}; // Keep BasicMetadataTypeEnum if used elsewhere
 use inkwell::{IntPredicate, FloatPredicate};
 use inkwell::basic_block::BasicBlock;
+
+// Note: This codebase is already compatible with LLVM 17.
+// The key API changes from LLVM 14 to LLVM 17 have already been addressed:
+// - build_load(type, ptr, name) includes the type parameter
+// - build_struct_gep(struct_type, ptr, index, name) includes the struct_type
+// - build_call(fn, args, name) syntax is already used
 
 use crate::ast::{Expression, IntegerLiteral, BooleanLiteral, FloatLiteral, InfixExpression, 
                 Program, Statement, ExpressionStatement, LetStatement, Identifier,
