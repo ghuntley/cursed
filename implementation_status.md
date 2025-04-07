@@ -59,13 +59,13 @@ This document provides a detailed status report of the CURSED programming langua
 
 ## Type System Status
 
-* **Basic Types**: ✅ Fully implemented in AST and parser
-  * `lit` (boolean): Implemented with `based` (true) and `cap` (false)
-  * `smol`, `mid`, `normie`, `thicc` (integers): Implemented with correct sizes
-  * `snack`, `meal` (floats): Implemented with float32/float64 equivalents
-  * `tea` (string): Implemented with full string support
-  * `sip` (character): Implemented with Unicode code point support
-  * `byte` and `rune`: Implemented with proper literal syntax
+* **Basic Types**: ✅ Fully implemented in AST, parser, and JIT
+  * `lit` (boolean): Implemented with `based` (true) and `cap` (false) - tested in JIT
+  * `smol`, `mid`, `normie`, `thicc` (integers): Implemented with correct sizes - tested in JIT
+  * `snack`, `meal` (floats): Implemented with float32/float64 equivalents - tested in JIT
+  * `tea` (string): Implemented with full string support - tested in JIT
+  * `sip` (character): Implemented with Unicode code point support - tested in JIT
+  * `byte` and `rune`: Implemented with proper literal syntax - tested in JIT
 
 * **Composite Types**: 🟡 Partially implemented
   * Arrays: Implemented with literals and indexing
