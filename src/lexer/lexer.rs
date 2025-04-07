@@ -32,6 +32,7 @@ pub enum Token {
     And,         // &&
     Or,          // ||
     Arrow,       // <-
+    At,          // @ (for pointers)
     
     // Delimiters
     Comma,       // ,
@@ -268,6 +269,7 @@ impl<'a> Lexer<'a> {
             Some('*') => Token::Asterisk,
             Some('/') => Token::Slash,
             Some('%') => Token::Percent,
+            Some('@') => Token::At,
             Some('<') => {
                 if self.peek_char() == Some('=') {
                     self.read_char();
@@ -701,6 +703,7 @@ impl Token {
             Token::And => "&&".to_string(),
             Token::Or => "||".to_string(),
             Token::Arrow => "<-".to_string(),
+            Token::At => "@".to_string(),
             Token::Comma => ",".to_string(),
             Token::Semicolon => ";".to_string(),
             Token::Colon => ":".to_string(),
