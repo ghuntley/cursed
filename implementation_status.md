@@ -92,6 +92,7 @@ This document provides a detailed status report of the CURSED programming langua
    * Code generation for generic types and functions through monomorphization
    * Support for multiple type parameters in all constructs
    * Nested generic types supported (e.g., Box[Pair[A, B]])
+   * Comprehensive test coverage for generic functions and types
 
 ## Concurrency Status
 
@@ -129,6 +130,7 @@ This document provides a detailed status report of the CURSED programming langua
   * Function calling conventions implemented
   * Basic built-in types code generation working
   * Proper error handling for code generation failures
+  * LLVM 17 migration in progress with updated API calls for builder methods
 
 ## Runtime and Standard Library Status
 
@@ -195,8 +197,8 @@ This document provides a detailed status report of the CURSED programming langua
 
 ## Summary
 
-The CURSED language implementation is solidly in Stage 1 (Minimal Bootstrap Compiler) with comprehensive lexer and parser implementations. The compiler can parse CURSED code into AST and generate LLVM IR for execution. Core language features including control flow, functions, and basic types are fully implemented. The type system is well-defined with support for basic and composite types, though generics implementation is still in progress.
+The CURSED language implementation is solidly in Stage 1 (Minimal Bootstrap Compiler) with comprehensive lexer and parser implementations. The compiler can parse CURSED code into AST and generate LLVM IR for execution. Core language features including control flow, functions, and basic types are fully implemented. The type system is well-defined with support for basic and composite types, with generics now fully implemented and tested.
 
-Advanced features like concurrency have been significantly improved with full channel support (though goroutines still have limited implementation), while comprehensive garbage collection and a complete standard library are still in progress. There is no evidence of progress toward Stage 2 (self-hosting) yet.
+Advanced features like concurrency have been fully implemented with robust channel support and goroutines, while comprehensive garbage collection and a complete standard library are still in progress. There is no evidence of progress toward Stage 2 (self-hosting) yet.
 
-The implementation follows the specifications closely for syntax and language features, with appropriate AST nodes and parsing logic for all described language elements. The bootstrap compiler appears functional for basic CURSED programs but would need enhancements to support all features described in the specification.
+The implementation follows the specifications closely for syntax and language features, with appropriate AST nodes and parsing logic for all described language elements. The bootstrap compiler is functional for most CURSED programs and is currently being upgraded to support LLVM 17.
