@@ -73,7 +73,7 @@ This document provides a detailed status report of the CURSED programming langua
   * Maps (`tea[K]V`): AST defined with hash literal support
   * Structs (`squad`): Fully implemented with fields and methods
   * Interfaces (`collab`): AST defined with method signatures
-  * Pointers (`@T`): Syntax defined but runtime behavior limited
+  * Pointers (`@T`): Parser support implemented for pointer types and dereferencing
   * Functions: Implemented with first-class function support
   * Channels (`dm`): Fully implemented with buffers, blocking/non-blocking operations, and closing
 

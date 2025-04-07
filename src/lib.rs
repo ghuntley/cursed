@@ -20,6 +20,7 @@ use std::io::{self, Read}; // Keep io import for run_stdin
 /// including lexer, parser, compiler, and LLVM code generation.
 
 pub mod ast;
+pub mod ast_pointer;
 pub mod code;
 pub mod codegen;
 pub mod error;

@@ -1,4 +1,5 @@
 use crate::ast::{self, Program, Statement, Expression};
+use crate::ast_pointer::{PointerType, PointerDereference};
 use crate::error::{Error, SourceLocation};
 use crate::lexer::{Lexer, Token};
 
@@ -1375,6 +1376,22 @@ impl<'a> Parser<'a> {
         
         // First try to find a prefix parsing function
         let mut left_expr: Box<dyn Expression> = match &self.current_token {
+            Token::At => {
+                // @ token - Handle as a pointer operation
+                let token = self.current_token.clone(); // Store Token::At
+                
+                // Move past @ token
+                self.next_token()?;
+                
+                // Parse the expression after @
+                let expr = self.parse_expression(Precedence::Prefix)?;
+                
+                // Create a PointerDereference expression
+                Box::new(PointerDereference {
+                    token,
+                    pointer: expr,
+                })
+            },
             Token::Arrow => {
                 // Receive expression (<-ch)
                 self.parse_receive_expression()?
