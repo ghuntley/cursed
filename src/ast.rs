@@ -2,6 +2,8 @@ use std::fmt;
 use std::any::Any;
 use crate::lexer::Token;
 
+pub use crate::ast_pointer::{PointerType, PointerDereference};
+
 /// Node represents a node in the abstract syntax tree
 pub trait Node {
     fn token_literal(&self) -> String;
