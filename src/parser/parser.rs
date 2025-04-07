@@ -451,6 +451,25 @@ impl<'a> Parser<'a> {
         if matches!(self.peek_token, Token::Smol | Token::Mid | Token::Normie | Token::Thicc) {
             self.next_token()?; // Consume the type token
             type_annotation = Some(self.current_token.clone());
+        } else if self.peek_token == Token::At {
+            // Handle pointer type annotation (@T)
+            self.next_token()?; // Consume the @ token
+            
+            // Next token should be the target type
+            if !self.expect_peek_any_identifier() {
+                return Err(Error::from_str(
+                    &format!("Expected type after '@' in pointer type, got {:?}", self.peek_token)
+                ));
+            }
+            
+            // Create a special token to indicate this is a pointer type
+            if let Token::Identifier(target_type) = &self.current_token {
+                let pointer_type_token = Token::Identifier(format!("@{}", target_type));
+                type_annotation = Some(pointer_type_token);
+                
+                // Move past the type name to avoid confusion with the value expression
+                self.next_token()?;
+            }
         } else if let Token::Identifier(type_name) = &self.peek_token.clone() {
             // Check if the identifier is a known type name (byte, rune, etc.)
             let is_type = type_name == "byte" || type_name == "rune";
@@ -1377,21 +1396,43 @@ impl<'a> Parser<'a> {
         // First try to find a prefix parsing function
         let mut left_expr: Box<dyn Expression> = match &self.current_token {
             Token::At => {
-                // @ token - Handle as a pointer operation
-                let token = self.current_token.clone(); // Store Token::At
+            // @ token - Handle as a pointer operation
+            let token = self.current_token.clone(); // Store Token::At
+            
+            // Move past @ token
+            self.next_token()?;
+            
+            // Check if the next token is an identifier that could be a type
+            if let Some(type_name) = self.token_to_type_name() {
+                // If it looks like a type, this is a pointer type expression (@normie)
+                let target_type = Box::new(ast::Identifier {
+                    token: self.current_token.token_literal(),
+                value: type_name.clone(),
+            }) as Box<dyn Expression>;
                 
-                // Move past @ token
-                self.next_token()?;
-                
-                // Parse the expression after @
-                let expr = self.parse_expression(Precedence::Prefix)?;
-                
-                // Create a PointerDereference expression
-                Box::new(PointerDereference {
-                    token,
-                    pointer: expr,
-                })
-            },
+                    // Move past the type name
+                        self.next_token()?;
+                        
+                        // Create a pointer type
+                        Box::new(PointerType {
+                            token,
+                            target_type,
+                        })
+                    } else {
+                        // If it's not a type, this is an address-of operation (@ptr)
+                        // Parse the expression after @
+                        let expr = self.parse_expression(Precedence::Prefix)?;
+                        
+                        // Create an address-of expression
+                        // We still use PointerDereference here since that's what the AST has,
+                        // but we'll need to handle it differently in code generation
+                        // IMPORTANT: In code generation, check if this is a variable identifier and treat it as address-of
+                        Box::new(PointerDereference {
+                            token,
+                            pointer: expr,
+                        })
+                    }
+                },
             Token::Arrow => {
                 // Receive expression (<-ch)
                 self.parse_receive_expression()?
@@ -2205,6 +2246,9 @@ impl<'a> Parser<'a> {
             Token::Identifier(s) if s == "rune" => Some("rune".to_string()),
             // Lit (boolean) type identifier
             Token::Identifier(s) if s == "lit" => Some("lit".to_string()),
+            // Handle pointer types
+            Token::Identifier(s) if s.starts_with('@') => Some(s.clone()),
+            // For direct @ token followed by a type name, handle in parse_expression
             // Array or slice types
             Token::LBracket => {
                 // Try to get the original text for this token

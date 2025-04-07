@@ -12,13 +12,17 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 fn test_jit_pointer_basic() -> Result<(), Error> {
     // Test basic pointer operations
     let input = r#"
-    slay main() normie {
+    vibe test;
+
+    slay main() {
         sus x normie = 42;
-        sus ptr @normie = @x;
-        sus y normie = @ptr;
+        sus ptr = @x;
+        sus y = @ptr;
         
         lowkey y == 42 {
-            yolo 1;
+            puts(1);
+        } highkey {
+            puts(0);
         }
         
         yolo 0;
@@ -65,13 +69,17 @@ fn test_jit_pointer_basic() -> Result<(), Error> {
 fn test_jit_pointer_modify() -> Result<(), Error> {
     // Test pointer modification
     let input = r#"
-    slay main() normie {
+    vibe test;
+
+    slay main() {
         sus x normie = 42;
-        sus ptr @normie = @x;
+        sus ptr = @x;
         @ptr = 100;
         
         lowkey x == 100 {
-            yolo 1;
+            puts(1);
+        } highkey {
+            puts(0);
         }
         
         yolo 0;
@@ -113,18 +121,22 @@ fn test_jit_pointer_modify() -> Result<(), Error> {
 fn test_jit_pointer_struct() -> Result<(), Error> {
     // Test struct pointers
     let input = r#"
+    vibe test;
+
     be_like Person squad {
-        name tea
-        age normie
+        name tea;
+        age normie;
     }
     
-    slay main() normie {
-        sus person Person = Person{name: "John", age: 30};
-        sus person_ptr @Person = @person;
+    slay main() {
+        sus person = Person{name: "John", age: 30};
+        sus person_ptr = @person;
         @person_ptr.age = 31;
         
         lowkey person.age == 31 {
-            yolo 1;
+            puts(1);
+        } highkey {
+            puts(0);
         }
         
         yolo 0;
