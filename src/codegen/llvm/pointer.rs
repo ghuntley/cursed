@@ -2,7 +2,7 @@
 
 use inkwell::values::BasicValueEnum;
 use inkwell::types::{BasicTypeEnum, BasicType};
-use crate::ast::pointer::{PointerType, PointerDereference};
+use crate::ast::{PointerType, PointerDereference};
 use crate::ast::expressions::Identifier;
 use super::context::LlvmCodeGenerator;
 

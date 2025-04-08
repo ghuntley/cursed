@@ -1,7 +1,5 @@
-//! Expression types related to concurrency and channels
-
 use std::any::Any;
-use crate::ast::traits::{Node, Expression};
+use crate::ast::{Node, Expression};
 use crate::lexer::token::Token;
 
 /// ChannelExpression represents a channel creation expression

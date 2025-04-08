@@ -20,10 +20,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         if let Some(be_like_expr) = expression.as_any().downcast_ref::<crate::ast::expressions::BeLikeExpression>() {
             // Handle struct instantiation
             return self.compile_be_like_expression(be_like_expr);
-        } else if let Some(pointer_type) = expression.as_any().downcast_ref::<crate::ast::pointer::PointerType>() {
+        } else if let Some(pointer_type) = expression.as_any().downcast_ref::<crate::ast::PointerType>() {
             // Handle pointer type expressions
             return self.compile_ptr_type(pointer_type);
-        } else if let Some(pointer_deref) = expression.as_any().downcast_ref::<crate::ast::pointer::PointerDereference>() {
+        } else if let Some(pointer_deref) = expression.as_any().downcast_ref::<crate::ast::PointerDereference>() {
             // Handle pointer dereference expressions
             return self.compile_ptr_dereference(pointer_deref);
         }
@@ -174,11 +174,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Err("BeLike expression compilation not implemented in this module".to_string())
     }
     
-    fn compile_ptr_type(&mut self, ptr_type: &crate::ast::pointer::PointerType) -> Result<BasicValueEnum<'ctx>, String> {
+    fn compile_ptr_type(&mut self, ptr_type: &crate::ast::PointerType) -> Result<BasicValueEnum<'ctx>, String> {
         Err("Pointer type compilation not implemented in this module".to_string())
     }
     
-    fn compile_ptr_dereference(&mut self, ptr_deref: &crate::ast::pointer::PointerDereference) -> Result<BasicValueEnum<'ctx>, String> {
+    fn compile_ptr_dereference(&mut self, ptr_deref: &crate::ast::PointerDereference) -> Result<BasicValueEnum<'ctx>, String> {
         Err("Pointer dereference compilation not implemented in this module".to_string())
     }
     
