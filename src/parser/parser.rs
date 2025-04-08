@@ -54,26 +54,16 @@ impl<'a> Parser<'a> {
         };
 
         while !self.current_token_is(Token::Eof) {
-            // Just create a simple expression statement for now
-            let stmt = self.parse_any_statement()?;
-            program.statements.push(stmt);
+            match self.parse_statement() {
+                Ok(stmt) => program.statements.push(stmt),
+                Err(e) => self.errors.push(e),
+            }
+            
+            // Advance to the next statement
             self.next_token()?;
         }
 
         Ok(program)
-    }
-
-    /// Parse any statement as a simple expression statement
-    fn parse_any_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
-        let token = self.current_token.clone();
-        
-        // Create a simple expression statement with the current token
-        let expr = ast::ExpressionStatement {
-            token: token.token_literal(),
-            expression: None
-        };
-        
-        Ok(Box::new(expr))
     }
 
     /// Check if the current token is of the expected type
