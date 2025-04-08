@@ -1,6 +1,9 @@
-// Re-export lexer components
+pub mod token;
+pub mod utils;
 pub mod lexer;
-pub mod cursed_eof_debug;
+pub mod lexer_methods;
+pub mod debug;
 
-pub use lexer::*;
-pub use cursed_eof_debug::debug_tokens; 
+pub use token::Token;
+pub use lexer::Lexer;
+pub use debug::debug_tokens;
