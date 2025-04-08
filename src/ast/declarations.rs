@@ -1,7 +1,7 @@
 use std::any::Any;
 use crate::ast::{Node, Statement, Expression};
 use super::expressions::Identifier;
-use super::statements::FieldStatement;
+use super::statements::fields::FieldStatement;
 
 /// SquadStatement represents a struct definition
 pub struct SquadStatement {
@@ -152,7 +152,7 @@ pub struct FunctionStatement {
     pub token: String, // Token::Function
     pub name: Identifier,
     pub parameters: Vec<ParameterStatement>,
-    pub body: super::statements::BlockStatement,
+    pub body: super::statements::block::BlockStatement,
     pub return_type: Option<Box<dyn Expression>>,
     pub type_parameters: Vec<Identifier>, // Generic type parameters for function [T], [A, B], etc.
 }

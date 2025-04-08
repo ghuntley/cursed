@@ -53,7 +53,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.compile_prefix_expression(prefix)
         } else if let Some(infix) = expression.as_any().downcast_ref::<crate::ast::expressions::InfixExpression>() {
             self.compile_infix_expression(infix)
-        } else if let Some(if_expr) = expression.as_any().downcast_ref::<crate::ast::control_flow::IfStatement>() {
+        } else if let Some(if_expr) = expression.as_any().downcast_ref::<crate::ast::control_flow::conditionals::IfStatement>() {
             // Forward to implementation in other modules
             Err("If statement implementation moved to separate module".to_string())
         } else if let Some(call_expr) = expression.as_any().downcast_ref::<crate::ast::expressions::CallExpression>() {

@@ -9,15 +9,15 @@ use super::context::LlvmCodeGenerator;
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Compiles a single AST Statement node.
     pub fn compile_statement(&mut self, statement: &dyn crate::ast::Statement) -> Result<(), String> {
-        if let Some(expr_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::ExpressionStatement>() {
+        if let Some(expr_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::expressions::ExpressionStatement>() {
             self.compile_expression_statement(expr_stmt)
         } else if let Some(squad_stmt) = statement.as_any().downcast_ref::<crate::ast::declarations::SquadStatement>() {
             self.compile_squad_statement(squad_stmt)
-        } else if let Some(let_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::LetStatement>() {
+        } else if let Some(let_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::LetStatement>() {
             self.compile_let_statement(let_stmt)
         /*} else if let Some(facts_stmt) = statement.as_any().downcast_ref::<FactsStatement>() {
             self.compile_facts_statement(facts_stmt)*/
-        } else if let Some(return_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::ReturnStatement>() {
+        } else if let Some(return_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::ReturnStatement>() {
             self.compile_return_statement(return_stmt)
         } else if let Some(if_stmt) = statement.as_any().downcast_ref::<crate::ast::control_flow::IfStatement>() {
             self.compile_if_statement(if_stmt)
@@ -25,7 +25,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.compile_while_statement(while_stmt)
         } else if let Some(break_stmt) = statement.as_any().downcast_ref::<crate::ast::control_flow::BreakStatement>() {
             self.compile_break_statement(break_stmt)
-        } else if let Some(import_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::ImportStatement>() {
+        } else if let Some(import_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::ImportStatement>() {
             self.compile_import_statement(import_stmt)
         /*} else if let Some(later_stmt) = statement.as_any().downcast_ref::<LaterStatement>() {
             self.compile_later_statement(later_stmt)*/
@@ -35,7 +35,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Expression statements simply evaluate the expression and discard the result
-    fn compile_expression_statement(&mut self, expr_stmt: &crate::ast::statements::ExpressionStatement) -> Result<(), String> {
+    fn compile_expression_statement(&mut self, expr_stmt: &crate::ast::statements::expressions::ExpressionStatement) -> Result<(), String> {
         if let Some(expr) = &expr_stmt.expression {
             // Compile the expression, potentially generating instructions
             let _ = self.compile_expression(expr.as_ref())?;
@@ -45,7 +45,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Let statements declare variables
-    fn compile_let_statement(&mut self, let_stmt: &crate::ast::statements::LetStatement) -> Result<(), String> {
+    fn compile_let_statement(&mut self, let_stmt: &crate::ast::statements::declarations::LetStatement) -> Result<(), String> {
         let var_name = &let_stmt.name.value;
 
         // Compile the initializer expression
@@ -115,7 +115,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Facts statements declare constants
-    fn compile_facts_statement(&mut self, facts_stmt: &FactsStatement) -> Result<(), String> {
+    fn compile_facts_statement(&mut self, facts_stmt: &crate::ast::statements::declarations::FactsStatement) -> Result<(), String> {
         // FactsStatement is a placeholder with minimal implementation
         // Using a fixed name for compatibility
         let const_name = "facts-placeholder".to_string();
@@ -140,7 +140,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Return statements
-    fn compile_return_statement(&mut self, return_stmt: &crate::ast::statements::ReturnStatement) -> Result<(), String> {
+    fn compile_return_statement(&mut self, return_stmt: &crate::ast::statements::declarations::ReturnStatement) -> Result<(), String> {
         // Ensure we're in a function
         if self.current_function.is_none() {
             return Err("Return statement outside of function context".to_string());
@@ -296,7 +296,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Import statements
-    fn compile_import_statement(&mut self, import_stmt: &crate::ast::statements::ImportStatement) -> Result<(), String> {
+    fn compile_import_statement(&mut self, import_stmt: &crate::ast::statements::declarations::ImportStatement) -> Result<(), String> {
         // For now, just acknowledge the import statement.
         // TODO: Implement actual module loading and symbol resolution.
         println!("Processing import statement for path: {}", import_stmt.path.value);

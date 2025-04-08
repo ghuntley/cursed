@@ -107,7 +107,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 
         // Compile all statements in the program
         for stmt in &program.statements {
-            match stmt.as_any().downcast_ref::<crate::ast::statements::ReturnStatement>() {
+            match stmt.as_any().downcast_ref::<crate::ast::statements::declarations::ReturnStatement>() {
                 Some(_) => has_return = true,
                 None => {}
             }
