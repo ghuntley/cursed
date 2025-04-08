@@ -1,6 +1,6 @@
 use std::any::Any;
 use crate::ast::{Node, Expression};
-use crate::lexer::Token;
+use crate::lexer::token::Token;
 
 /// PointerType represents a pointer type (@T)
 pub struct PointerType {
@@ -53,7 +53,7 @@ impl Expression for PointerDereference {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::Identifier;
+    use crate::ast::expressions::Identifier;
     
     #[test]
     fn test_pointer_type() {

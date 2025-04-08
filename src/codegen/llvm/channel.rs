@@ -1,7 +1,7 @@
 //! LLVM code generation for channels
 
 use inkwell::values::BasicValueEnum;
-use crate::ast::{ChannelExpression, SendExpression, ReceiveExpression, Expression};
+use crate::ast::{Expression, ChannelExpression, SendExpression, ReceiveExpression};
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {

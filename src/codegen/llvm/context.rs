@@ -13,7 +13,7 @@ use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::basic_block::BasicBlock;
 
-use crate::ast::Program;
+use crate::ast::base::Program;
 use super::types::*;
 use super::errors::*;
 
@@ -107,7 +107,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 
         // Compile all statements in the program
         for stmt in &program.statements {
-            match stmt.as_any().downcast_ref::<crate::ast::ReturnStatement>() {
+            match stmt.as_any().downcast_ref::<crate::ast::statements::ReturnStatement>() {
                 Some(_) => has_return = true,
                 None => {}
             }

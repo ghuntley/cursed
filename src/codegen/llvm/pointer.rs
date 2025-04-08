@@ -2,7 +2,8 @@
 
 use inkwell::values::BasicValueEnum;
 use inkwell::types::{BasicTypeEnum, BasicType};
-use crate::ast::{PointerType, PointerDereference, Identifier};
+use crate::ast::pointer::{PointerType, PointerDereference};
+use crate::ast::expressions::Identifier;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {

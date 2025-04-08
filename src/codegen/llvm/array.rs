@@ -2,7 +2,8 @@
 
 use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
-use crate::ast::{ArrayLiteral, IndexExpression};
+use crate::ast::expressions::IndexExpression;
+use crate::ast::ArrayLiteral;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {

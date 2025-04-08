@@ -1,7 +1,8 @@
 use crate::ast::{self, Expression};
+use crate::ast::expressions::*;
 use crate::error::Error;
 use crate::lexer::Token;
-use crate::ast_pointer::{PointerType, PointerDereference};
+use crate::ast::pointer::{PointerType, PointerDereference};
 
 use super::precedence::Precedence;
 use super::parser::Parser;
@@ -63,7 +64,7 @@ impl<'a> Parser<'a> {
             _ => unreachable!()
         };
         
-        let ident = ast::Identifier {
+        let ident = Identifier {
             token: token.token_literal(),
             value,
         };
@@ -82,7 +83,7 @@ impl<'a> Parser<'a> {
             _ => unreachable!()
         };
         
-        let int_lit = ast::IntegerLiteral {
+        let int_lit = IntegerLiteral {
             token: token.token_literal(),
             value,
         };

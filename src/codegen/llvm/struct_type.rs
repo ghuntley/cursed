@@ -2,7 +2,8 @@
 
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::{BasicValueEnum, BasicValue};
-use crate::ast::{SquadStatement, BeLikeExpression};
+use crate::ast::declarations::SquadStatement;
+use crate::ast::expressions::BeLikeExpression;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {

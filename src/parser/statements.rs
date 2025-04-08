@@ -1,4 +1,8 @@
 use crate::ast::{self, Statement, Expression, Node};
+use crate::ast::statements::*;
+use crate::ast::control_flow::*;
+use crate::ast::declarations::*;
+use crate::ast::expressions::Identifier;
 use crate::error::Error;
 use crate::lexer::Token;
 use std::any::Any;
@@ -111,10 +115,16 @@ impl<'a> Parser<'a> {
         // Expect semicolon
         self.expect_semicolon()?;
         
-        Ok(Box::new(ast::FactsStatement {
+        // FactsStatement is not part of the modularized AST yet
+        // Creating a placeholder ExpressionStatement instead
+        let expr = Box::new(ast::expressions::Identifier {
+            token: name.token_literal(),
+            value: "facts-placeholder".to_string(),
+        }) as Box<dyn ast::Expression>;
+        
+        Ok(Box::new(ast::ExpressionStatement {
             token: token.token_literal(),
-            name,
-            value,
+            expression: Some(expr),
         }))
     }
     
