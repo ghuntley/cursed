@@ -38,6 +38,7 @@ pub fn start_repl() -> Result<(), Error> {
     // Welcome message
     println!("Welcome to CURSED v{}", crate::VERSION);
     println!("Type 'exit' or 'quit' to exit, 'help' for help.");
+    println!("Note: Parser implementation is incomplete - only token display is functional.");
     
     // Create LLVM context for the REPL session
     let context = Context::create();

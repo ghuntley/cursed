@@ -231,6 +231,47 @@ impl ErrorReporter {
     }
 }
 
+impl Clone for Error {
+    fn clone(&self) -> Self {
+        match self {
+            Error::IoError(e) => Error::IoError(io::Error::new(e.kind(), format!("{}", e))),
+            Error::Lexer { location, message } => Error::Lexer {
+                location: location.clone(),
+                message: message.clone(),
+            },
+            Error::Parser { location, message } => Error::Parser {
+                location: location.clone(),
+                message: message.clone(),
+            },
+            Error::Type { location, message } => Error::Type {
+                location: location.clone(),
+                message: message.clone(),
+            },
+            Error::Syntax { location, message } => Error::Syntax {
+                location: location.clone(),
+                message: message.clone(),
+            },
+            Error::NotImplemented { message } => Error::NotImplemented {
+                message: message.clone(),
+            },
+            Error::SemanticError(msg) => Error::SemanticError(msg.clone()),
+            Error::Compilation(msg) => Error::Compilation(msg.clone()),
+            Error::Runtime(msg) => Error::Runtime(msg.clone()),
+            Error::Memory(msg) => Error::Memory(msg.clone()),
+            Error::BytecodeError(msg) => Error::BytecodeError(msg.clone()),
+            Error::VMError(msg) => Error::VMError(msg.clone()),
+            Error::Unknown(msg) => Error::Unknown(msg.clone()),
+            Error::IndexError(msg) => Error::IndexError(msg.clone()),
+            Error::DivisionByZero(msg) => Error::DivisionByZero(msg.clone()),
+            Error::StackOverflow(msg) => Error::StackOverflow(msg.clone()),
+            Error::HeapOverflow(msg) => Error::HeapOverflow(msg.clone()),
+            Error::InvalidOperation(msg) => Error::InvalidOperation(msg.clone()),
+            Error::SystemError(msg) => Error::SystemError(msg.clone()),
+            Error::CodeGenError(msg) => Error::CodeGenError(msg.clone()),
+        }
+    }
+}
+
 impl Error {
     /// Create a new runtime error
     pub fn new<T: Into<String>>(error_type: &str, message: T, location: Option<SourceLocation>) -> Self {
