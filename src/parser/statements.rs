@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
         // Expect semicolon
         self.expect_semicolon()?;
         
-        Ok(Box::new(ast::LetStatement {
+        Ok(Box::new(ast::statements::declarations::LetStatement {
             token: token.token_literal(),
             name,
             type_annotation,
@@ -122,7 +122,7 @@ impl<'a> Parser<'a> {
             value: "facts-placeholder".to_string(),
         }) as Box<dyn ast::Expression>;
         
-        Ok(Box::new(ast::ExpressionStatement {
+        Ok(Box::new(ast::statements::expressions::ExpressionStatement {
             token: token.token_literal(),
             expression: Some(expr),
         }))
@@ -140,7 +140,7 @@ impl<'a> Parser<'a> {
             self.next_token()?; // Advance past semicolon
         }
         
-        Ok(Box::new(ast::ExpressionStatement {
+        Ok(Box::new(ast::statements::expressions::ExpressionStatement {
             token: token.token_literal(),
             expression: Some(expression),
         }))
@@ -160,14 +160,14 @@ impl<'a> Parser<'a> {
         
         self.expect_semicolon()?;
         
-        Ok(Box::new(ast::ReturnStatement {
+        Ok(Box::new(ast::statements::declarations::ReturnStatement {
             token: token.token_literal(),
             return_value,
         }))
     }
     
     /// Parse a block statement ({ ... })
-    pub(super) fn parse_block_statement(&mut self) -> Result<ast::BlockStatement, Error> {
+    pub(super) fn parse_block_statement(&mut self) -> Result<ast::statements::block::BlockStatement, Error> {
         let token = self.current_token.clone();
         let mut statements = Vec::new();
         
@@ -184,7 +184,7 @@ impl<'a> Parser<'a> {
             return Err(self.error(&format!("Expected '}}', got {:?}", self.current_token)));
         }
         
-        Ok(ast::BlockStatement {
+        Ok(ast::statements::block::BlockStatement {
             token: token.token_literal(),
             statements,
         })
@@ -197,7 +197,7 @@ impl<'a> Parser<'a> {
         
         self.expect_semicolon()?;
         
-        Ok(Box::new(ast::BreakStatement {
+        Ok(Box::new(ast::control_flow::loops::BreakStatement {
             token: token.token_literal(),
         }))
     }
@@ -276,7 +276,7 @@ impl<'a> Parser<'a> {
                 let if_stmt = self.parse_if_statement()?;
                 let mut stmts = Vec::new();
                 stmts.push(if_stmt);
-                alternative = Some(ast::BlockStatement {
+                alternative = Some(ast::statements::block::BlockStatement {
                     token: "{".to_string(),
                     statements: stmts,
                 });
@@ -289,7 +289,7 @@ impl<'a> Parser<'a> {
             }
         }
         
-        Ok(Box::new(ast::IfStatement {
+        Ok(Box::new(ast::control_flow::conditionals::IfStatement {
             token: token.token_literal(),
             condition,
             consequence,
@@ -343,7 +343,7 @@ impl<'a> Parser<'a> {
         
         let body = self.parse_block_statement()?;
         
-        Ok(Box::new(ast::ForStatement {
+        Ok(Box::new(ast::control_flow::loops::ForStatement {
             token: token.token_literal(),
             init,
             condition,
@@ -381,7 +381,7 @@ impl<'a> Parser<'a> {
         
         let body = self.parse_block_statement()?;
         
-        Ok(Box::new(ast::WhileStatement {
+        Ok(Box::new(ast::control_flow::loops::WhileStatement {
             token: token.token_literal(),
             condition,
             body,

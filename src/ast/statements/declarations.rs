@@ -1,6 +1,8 @@
 use std::any::Any;
 use crate::lexer::token::Token;
 use crate::ast::{Node, Statement, Expression};
+use crate::ast::expressions::Identifier;
+use crate::ast::expressions::StringLiteral;
 
 /// FactsStatement represents a constant declaration
 pub struct FactsStatement {
@@ -22,89 +24,6 @@ impl Node for FactsStatement {
 impl Statement for FactsStatement {
     fn statement_node(&self) {}
     fn as_any(&self) -> &dyn Any { self }
-}
-
-use super::expressions::Identifier;
-
-/// ExpressionStatement represents an expression used as a statement
-pub struct ExpressionStatement {
-    pub token: String,
-    pub expression: Option<Box<dyn Expression>>,
-}
-
-impl Node for ExpressionStatement {
-    fn token_literal(&self) -> String {
-        self.token.clone()
-    }
-
-    fn string(&self) -> String {
-        if let Some(expr) = &self.expression {
-            expr.string()
-        } else {
-            String::new()
-        }
-    }
-}
-
-impl Statement for ExpressionStatement {
-    fn statement_node(&self) {}
-    
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-/// PackageStatement represents a package declaration
-pub struct PackageStatement {
-    pub token: String, // Token::Vibe
-    pub name: Identifier,
-}
-
-impl Node for PackageStatement {
-    fn token_literal(&self) -> String {
-        self.token.clone()
-    }
-
-    fn string(&self) -> String {
-        format!("{} {};", self.token_literal(), self.name.string())
-    }
-}
-
-impl Statement for PackageStatement {
-    fn statement_node(&self) {}
-    
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
-
-/// ImportStatement represents an import declaration
-pub struct ImportStatement {
-    pub token: String, // Token::Yeet
-    pub path: super::expressions::StringLiteral,
-    pub alias: Option<Identifier>,
-}
-
-impl Node for ImportStatement {
-    fn token_literal(&self) -> String {
-        self.token.clone()
-    }
-
-    fn string(&self) -> String {
-        if let Some(alias) = &self.alias {
-            format!("{} {} {};", self.token_literal(), alias.string(), self.path.string())
-        } else {
-            format!("{} {};", self.token_literal(), self.path.string())
-        }
-    }
-}
-
-impl Statement for ImportStatement {
-    fn statement_node(&self) {}
-    
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
 }
 
 /// LetStatement represents a let statement
@@ -174,27 +93,23 @@ impl Statement for ReturnStatement {
     }
 }
 
-/// BlockStatement represents a block of statements
-pub struct BlockStatement {
-    pub token: String, // Token::LBrace
-    pub statements: Vec<Box<dyn Statement>>,
+/// PackageStatement represents a package declaration
+pub struct PackageStatement {
+    pub token: String, // Token::Vibe
+    pub name: Identifier,
 }
 
-impl Node for BlockStatement {
+impl Node for PackageStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
     }
 
     fn string(&self) -> String {
-        let mut out = String::new();
-        for stmt in &self.statements {
-            out.push_str(&stmt.string());
-        }
-        out
+        format!("{} {};", self.token_literal(), self.name.string())
     }
 }
 
-impl Statement for BlockStatement {
+impl Statement for PackageStatement {
     fn statement_node(&self) {}
     
     fn as_any(&self) -> &dyn Any {
@@ -202,24 +117,28 @@ impl Statement for BlockStatement {
     }
 }
 
-/// FieldStatement represents a field definition in a struct
-pub struct FieldStatement {
-    pub token: String, // Usually the identifier token
-    pub name: Identifier,
-    pub type_name: Identifier,
+/// ImportStatement represents an import declaration
+pub struct ImportStatement {
+    pub token: String, // Token::Yeet
+    pub path: StringLiteral,
+    pub alias: Option<Identifier>,
 }
 
-impl Node for FieldStatement {
+impl Node for ImportStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
     }
 
     fn string(&self) -> String {
-        format!("{} {}", self.name.string(), self.type_name.string())
+        if let Some(alias) = &self.alias {
+            format!("{} {} {};", self.token_literal(), alias.string(), self.path.string())
+        } else {
+            format!("{} {};", self.token_literal(), self.path.string())
+        }
     }
 }
 
-impl Statement for FieldStatement {
+impl Statement for ImportStatement {
     fn statement_node(&self) {}
     
     fn as_any(&self) -> &dyn Any {
