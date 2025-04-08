@@ -1,6 +1,6 @@
 use std::fmt;
 use std::any::Any;
-use crate::lexer::Token;
+use crate::lexer::token::Token;
 
 pub use crate::ast_pointer::{PointerType, PointerDereference};
 
