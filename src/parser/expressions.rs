@@ -2,7 +2,7 @@ use crate::ast::{self, Expression};
 use crate::ast::expressions::*;
 use crate::error::Error;
 use crate::lexer::Token;
-use crate::ast::pointer::{PointerType, PointerDereference};
+use crate::ast::{PointerType, PointerDereference};
 
 use super::precedence::Precedence;
 use super::parser::Parser;

@@ -1,7 +1,5 @@
-//! Expression types for collections (arrays and maps/hashes)
-
 use std::any::Any;
-use crate::ast::traits::{Node, Expression};
+use crate::ast::{Node, Expression};
 use crate::lexer::token::Token;
 
 /// ArrayLiteral represents an array literal expression
@@ -56,4 +54,37 @@ impl Node for HashLiteral {
 impl Expression for HashLiteral {
     fn expression_node(&self) {}
     fn as_any(&self) -> &dyn Any { self }
+}
+
+/// IndexExpression represents an index expression
+pub struct IndexExpression {
+    pub token: Token,
+    pub left: Box<dyn Expression>,
+    pub index: Box<dyn Expression>,
+}
+
+impl Node for IndexExpression {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        format!("{} {} {}", self.left.string(), self.token_literal(), self.index.string())
+    }
+}
+
+impl Expression for IndexExpression {
+    fn expression_node(&self) {}
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn is_index_expression(&self) -> bool {
+        true
+    }
+
+    fn as_index_expression(&self) -> Option<(&dyn Expression, &dyn Expression)> {
+        Some((self.left.as_ref(), self.index.as_ref()))
+    }
 }
