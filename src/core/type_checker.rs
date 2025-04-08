@@ -1,4 +1,5 @@
-use crate::ast::{Program, Statement, Expression};
+use crate::ast::{Statement, Expression};
+use crate::ast::base::Program;
 use crate::error::Error;
 use std::collections::HashMap;
 

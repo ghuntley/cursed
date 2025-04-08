@@ -1,4 +1,5 @@
-use crate::ast::{self, Program, Statement, Expression};
+use crate::ast::{self, Statement, Expression};
+use crate::ast::base::Program;
 use crate::error::{Error, SourceLocation, ErrorReporter};
 use crate::lexer::{Lexer, Token};
 

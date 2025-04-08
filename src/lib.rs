@@ -12,7 +12,6 @@ use std::io::{self, Read}; // Keep io import for run_stdin
 /// including lexer, parser, compiler, and LLVM code generation.
 
 pub mod ast;
-pub mod ast_pointer;
 pub mod code;
 pub mod codegen;
 pub mod error;
@@ -169,7 +168,8 @@ pub use prelude::*;
 
 // Convenience re-exports at the crate level
 pub use error::{Error, ErrorReporter, SourceLocation};
-pub use ast::{Node, Statement, Expression, Program};
+pub use ast::{Node, Statement, Expression};
+pub use ast::base::Program;
 pub use lexer::Lexer;
 pub use parser::Parser;
 

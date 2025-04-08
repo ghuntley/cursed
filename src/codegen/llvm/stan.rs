@@ -1,7 +1,7 @@
 //! LLVM code generation for Stan (goroutine) operations
 
 use inkwell::values::BasicValueEnum;
-use crate::ast::StanExpression;
+use crate::ast::{Expression, StanExpression};
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {

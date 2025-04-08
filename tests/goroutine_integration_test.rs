@@ -31,8 +31,9 @@ fn test_goroutine_object_created() {
     }) as Box<dyn Expression>;
     
     // Create a stan expression with the identifier
+    use cursed::lexer::token::Token;
     let stan_expr = StanExpression {
-        token: "stan".to_string(),
+        token: Token::Stan,
         expression: identifier,
     };
     

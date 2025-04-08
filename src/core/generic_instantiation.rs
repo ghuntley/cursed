@@ -92,14 +92,14 @@ impl GenericInstantiator {
     }
     
     /// Generate LLVM code for a generic type instantiation
-    pub fn generate_instantiation(&self, generic_ast: &ast::Program, type_map: &HashMap<String, Type>) -> Result<ast::Program, Error> {
+    pub fn generate_instantiation(&self, generic_ast: &crate::ast::base::Program, type_map: &HashMap<String, Type>) -> Result<crate::ast::base::Program, Error> {
         // This is where we would implement monomorphization:
         // 1. Create a new program by cloning the generic one
         // 2. Replace all generic type parameters with concrete types
         // 3. Return the specialized program for code generation
         
         // For this implementation, we'll just return a skeleton
-        let program = ast::Program::default();
+        let program = crate::ast::base::Program::default();
         
         // TODO: Implement full monomorphization by traversing the AST
         // and replacing all type parameters with concrete types

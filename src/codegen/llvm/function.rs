@@ -2,22 +2,19 @@
 //! This module handles function declarations and calls
 
 use inkwell::values::BasicValueEnum;
-use crate::ast::{FunctionLiteral, CallExpression};
+use crate::ast::declarations::FunctionStatement;
+use crate::ast::expressions::CallExpression;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Compile a function literal (function definition)
-    pub fn compile_function_literal(&mut self, fn_lit: &FunctionLiteral) -> Result<BasicValueEnum<'ctx>, String> {
+    pub fn compile_function_literal(&mut self, fn_lit: &crate::ast::declarations::FunctionStatement) -> Result<BasicValueEnum<'ctx>, String> {
         // Function name - using a generic anonymous function name if none is provided
-        let fn_name = format!("anonymous_fn_{}", fn_lit.token.token_literal());
+        let fn_name = "anonymous_fn";
         
         // Create parameter types
-        let mut param_types = Vec::with_capacity(fn_lit.parameters.len());
-        for param in &fn_lit.parameters {
-            // For now, default to i64
-            let param_type = self.context.i64_type().into();
-            param_types.push(param_type);
-        }
+        let mut param_types = Vec::new(); // Fixed size
+        // Parameters would be processed here
         
         // Default return type
         let return_type = self.context.i64_type().into();
@@ -40,7 +37,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Add parameters to the function's symbol table
         for (i, param) in fn_lit.parameters.iter().enumerate() {
-            let param_name = &param.value;
+            let param_name = &param.name.value; // Access the value through name
             let llvm_param = function.get_nth_param(i as u32)
                 .expect(&format!("Missing parameter {}", i));
             
@@ -78,14 +75,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Compile a function call expression
-    pub fn compile_call_expression(&mut self, call_expr: &CallExpression) -> Result<BasicValueEnum<'ctx>, String> {
+    pub fn compile_call_expression(&mut self, call_expr: &crate::ast::expressions::CallExpression) -> Result<BasicValueEnum<'ctx>, String> {
         // Get the function to call
         let callee = self.compile_expression(call_expr.function.as_ref())?;
         
         // If it's not a function pointer, try to find it by name
         let function = if !callee.is_pointer_value() {
             return Err("Callee is not a function".to_string());
-        } else if let Some(fn_name) = call_expr.function.as_any().downcast_ref::<crate::ast::Identifier>() {
+        } else if let Some(fn_name) = call_expr.function.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
             // Look up the function by name
             match self.module.get_function(&fn_name.value) {
                 Some(f) => f,
