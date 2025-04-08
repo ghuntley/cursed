@@ -12,19 +12,17 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 fn test_jit_array_basic() -> Result<(), Error> {
     // Test basic array operations
     let input = r#"
-    vibe test;
-
     slay main() {
-        sus arr normie[5] = [10, 20, 30, 40, 50];
-        sus val = arr[2]; // Should be 30
+        sus arr normie = crew[10, 20, 30, 40, 50];
+        sus val = arr[2] fr fr Should be 30
         
-        lowkey val == 30 {
+        lowkey (val == 30) {
             puts(1);
+            yolo 1;
         } highkey {
             puts(0);
+            yolo 0;
         }
-        
-        yolo 0;
     }
     "#;
     
@@ -68,20 +66,18 @@ fn test_jit_array_basic() -> Result<(), Error> {
 fn test_jit_array_mutation() -> Result<(), Error> {
     // Test array mutation
     let input = r#"
-    vibe test;
-
     slay main() {
-        sus arr normie[5] = [10, 20, 30, 40, 50];
+        sus arr normie = crew[10, 20, 30, 40, 50];
         arr[2] = 99;
-        sus val = arr[2]; // Should be 99 now
+        sus val = arr[2] fr fr Should be 99 now
         
-        lowkey val == 99 {
+        lowkey (val == 99) {
             puts(1);
+            yolo 1;
         } highkey {
             puts(0);
+            yolo 0;
         }
-        
-        yolo 0;
     }
     "#;
     
@@ -120,20 +116,18 @@ fn test_jit_array_mutation() -> Result<(), Error> {
 fn test_jit_array_mixed_types() -> Result<(), Error> {
     // Test array with mixed type elements
     let input = r#"
-    vibe test;
-
     slay main() {
-        sus arr normie[5] = [10, 20, 30, 40, 50];
-        sus val1 = arr[0]; // Integer: 10
-        sus val2 = arr[1]; // Float: 20.5 (but stored as an integer in the array)
+        sus arr normie = crew[10, 20, 30, 40, 50];
+        sus val1 = arr[0] fr fr Integer: 10
+        sus val2 = arr[1] fr fr Integer: 20
         
-        lowkey val1 == 10 && val2 == 20 {
+        lowkey (val1 == 10 && val2 == 20) {
             puts(1);
+            yolo 1;
         } highkey {
             puts(0);
+            yolo 0;
         }
-        
-        yolo 0;
     }
     "#;
     

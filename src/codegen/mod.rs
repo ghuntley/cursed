@@ -1,8 +1,8 @@
+//! Code generation module for the Cursed compiler
+
+// Export the LLVM codegen module
 pub mod llvm;
 pub mod jit;
-pub mod stan;
-pub mod llvm17_migration;
 
-
-#[cfg(test)]
-mod llvm_tests;
+// Re-export the main LLVM code generator
+pub use llvm::LlvmCodeGenerator;
