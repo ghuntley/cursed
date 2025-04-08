@@ -3,16 +3,8 @@
 #![deny(clippy::correctness)]
 #![recursion_limit = "512"]
 
-// Just declare the modules, don't `use` them here if also declared below
-// use inkwell::context::Context; // Context is used directly in functions
-// use crate::lexer; // Declared below
-// use crate::parser; // Declared below
-// use crate::codegen; // Declared below
-// use crate::error::{Error, SourceLocation}; // Error is used, SourceLocation isn't directly
-// use crate::repl::start_repl; // Called directly below
 use std::fs;
 use std::io::{self, Read}; // Keep io import for run_stdin
-// use std::path::PathBuf; // PathBuf is used directly in functions
 
 /// The CURSED programming language implementation
 /// 
@@ -248,7 +240,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     
     // Compile the program
     println!("🔧 Compiling to LLVM IR...");
-    let compile_result = code_gen.compile_program(&program);
+    let compile_result = code_gen.compile(&program);
     if let Err(ref e) = compile_result {
         println!("❌ Compilation failed: {}", e);
         return Err(Error::from_str(&format!("CodeGen error: {}", e)));
@@ -286,7 +278,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     let mut jit_compiler = codegen::jit::JitCompiler::new(&context, execution_engine, "main", file_path.clone());
     
     // Use existing code_gen to avoid recompilation
-    *jit_compiler.code_generator_mut() = code_gen;
+    *jit_compiler.code_generator_mut() = Some(code_gen);
     
     println!("📌 Function 'main' found, executing...");
     println!("--- Execution Output ---");
@@ -305,7 +297,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
         Err(e) => {
             println!("------------------------");
             println!("❌ JIT execution failed: {}", e);
-            return Err(e);
+            return Err(Error::Compilation(e));
         }
     }
     
