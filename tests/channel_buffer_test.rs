@@ -16,13 +16,13 @@ fn test_buffered_channel() {
     assert!(source_code.contains("buffer_size: usize"), 
         "Channel should have buffer_size field");
     
-    // Verify that the parser supports capacity in channel expressions
-    let parser_code = std::fs::read_to_string("src/parser/parser.rs").expect("Failed to read parser.rs");
+    // Use our new parser/channel.rs to check capacity instead
+    let parser_code = std::fs::read_to_string("src/parser/channel.rs").expect("Failed to read channel.rs");
     assert!(parser_code.contains("capacity"), 
         "Parser should handle channel capacity");
     
     // Verify that the AST has capacity field
-    let ast_code = std::fs::read_to_string("src/ast.rs").expect("Failed to read ast.rs");
+    let ast_code = std::fs::read_to_string("src/ast/expressions/channel.rs").expect("Failed to read channel.rs");
     assert!(ast_code.contains("pub capacity: Option<Box<dyn Expression>>"), 
         "AST should have capacity field in ChannelExpression");
 }

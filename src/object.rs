@@ -610,6 +610,12 @@ impl Channel {
         self.closed = true;
     }
     
+    /// Close a channel via method call
+    pub fn channel_close(&mut self) -> Result<(), Error> {
+        self.close();
+        Ok(())
+    }
+    
     /// Check if the channel is closed
     pub fn is_closed(&self) -> bool {
         self.closed
