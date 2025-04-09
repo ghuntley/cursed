@@ -30,6 +30,7 @@ use std::hash::{Hash, Hasher};
 use std::fmt;
 use std::fmt::{Display, Formatter, Debug};
 use std::cell::RefCell;
+
 use crate::prelude::{VecExt, StrExt, VecStrJoinExt};
 // use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};
 use crate::memory::Tag;
@@ -129,6 +130,7 @@ pub enum Object {
         error_type: Option<String>,
         stack_trace: Vec<ErrorLocation>,
     },
+    Reference(Rc<RefCell<Object>>),
     Null,
 }
 
@@ -236,6 +238,9 @@ impl Clone for Object {
                 }
             },
             Object::Null => Object::Null,
+            Object::Reference(ref_obj) => {
+                Object::Reference(Rc::new(RefCell::new(ref_obj.borrow().clone())))
+            },
         }
     }
 }
@@ -301,6 +306,10 @@ impl Traceable for Object {
             },
             Object::Method { .. } => {
                 // Method doesn't contain references to trace
+            },
+            Object::Reference(ref_obj) => {
+                // Trace the referenced object
+                ref_obj.borrow().trace(visitor);
             },
         }
     }
@@ -394,6 +403,9 @@ impl Traceable for Object {
                 size
             },
             Object::Null => std::mem::size_of::<()>(),
+            Object::Reference(ref_obj) => {
+                std::mem::size_of::<Rc<RefCell<Object>>>() + ref_obj.borrow().size()
+            },
         }
     }
     
@@ -413,6 +425,7 @@ impl Traceable for Object {
             Object::Instance { .. } => Tag::Object,
             Object::Method { .. } => Tag::Function,
             Object::Error { .. } => Tag::Object,
+            Object::Reference(_) => Tag::Object,
             Object::Char(_) => Tag::Int,
             Object::Null => Tag::Null,
         }
@@ -445,7 +458,10 @@ impl Display for Object {
                     }
                     write!(f, "{}: {}", key, val)?;
                 }
-                write!(f, "}}")
+                write!(f, "}}")            
+            },
+            Object::Reference(ref_obj) => {
+                write!(f, "&{}", ref_obj.borrow())
             },
             Object::Channel(channel) => {
                 let channel = channel.borrow();
@@ -699,6 +715,7 @@ impl Object {
             Object::Method { .. } => "method",
             Object::Instance { .. } => "instance",
             Object::Error { .. } => "error",
+            Object::Reference(ref_obj) => ref_obj.borrow().type_name(),
             Object::Null => "null",
         }
     }
@@ -798,6 +815,7 @@ impl Object {
             Object::Method { .. } => true,
             Object::Instance { .. } => true,
             Object::Error { .. } => false,
+            Object::Reference(ref_obj) => ref_obj.borrow().is_truthy(),
             Object::Null => false,
         }
     }
@@ -851,6 +869,7 @@ impl Object {
                 }
             },
             Object::Null => "null".to_string(),
+            Object::Reference(ref_obj) => format!("&{}", ref_obj.borrow().to_string()),
             Object::Method { receiver_type, name, parameters, return_type, .. } => {
                 let params_str = parameters
                     .iter()
@@ -1088,6 +1107,7 @@ impl Object {
             Object::Method { .. } => type_name == "method",
             Object::Instance { .. } => type_name == "instance",
             Object::Error { .. } => type_name == "error",
+            Object::Reference(ref_obj) => ref_obj.borrow().type_check_exact(type_name),
             Object::Null => type_name == "null",
         }
     }
@@ -1204,6 +1224,7 @@ impl Object {
                 }
             },
             Object::Null => "null".to_string(),
+            Object::Reference(ref_obj) => format!("&{}", ref_obj.borrow().inspect()),
         }
     }
 }
