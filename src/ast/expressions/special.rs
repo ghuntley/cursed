@@ -94,3 +94,26 @@ impl Expression for BeLikeExpression {
         self
     }
 }
+
+/// DefaultCase represents a default case in a switch statement (using 'basic' keyword)
+pub struct DefaultCase {
+    pub token: String,
+}
+
+impl Node for DefaultCase {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+    
+    fn string(&self) -> String {
+        "basic".to_string()
+    }
+}
+
+impl Expression for DefaultCase {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}

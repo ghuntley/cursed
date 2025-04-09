@@ -100,11 +100,15 @@ pub enum Token {
     Cap,         // nil (cap)
     Crew,        // array literal
     
-    // Integer types
+    // Type tokens
     Smol,        // int8 (smol)
     Mid,         // int16 (mid)
     Normie,      // int32 (normie)
     Thicc,       // int64 (thicc)
+    Snack,       // float32 (snack)
+    Meal,        // float64 (meal)
+    Lit,         // bool (lit)
+    Sip,         // char (sip)
     
     // Comment tokens
     LineComment, // fr fr
@@ -210,11 +214,15 @@ impl Token {
             Token::Cap => String::from("cap"),
             Token::Crew => String::from("crew"),
             
-            // Integer types
+            // Type tokens
             Token::Smol => String::from("smol"),
             Token::Mid => String::from("mid"),
             Token::Normie => String::from("normie"),
             Token::Thicc => String::from("thicc"),
+            Token::Snack => String::from("snack"),
+            Token::Meal => String::from("meal"),
+            Token::Lit => String::from("lit"),
+            Token::Sip => String::from("sip"),
             
             // Comment tokens
             Token::LineComment => String::from("LineComment"),

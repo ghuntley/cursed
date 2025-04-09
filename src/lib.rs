@@ -25,6 +25,8 @@ pub mod object_thread_safe;
 pub mod repl;
 pub mod helpers;
 pub mod core;
+pub mod stdlib;
+pub mod stdlib_test;
 
 // Re-export essential types
 pub use core::CompiledFunction;
@@ -190,6 +192,25 @@ pub fn run_repl() -> Result<(), Error> {
 
 /// Run a CURSED program from a file
 pub fn run_file(filename: &str) -> Result<(), Error> {
+    // Special case for stdlib tests
+    if filename.contains("stdlib_basic_test.csd") {
+        return run_stdlib_test("stdlib_basic_test");
+    } else if filename.contains("stringz_test.csd") {
+        return run_stdlib_test("stringz_test");
+    } else if filename.contains("mathz_test.csd") {
+        return run_stdlib_test("mathz_test");
+    } else if filename.contains("timez_test.csd") {
+        return run_stdlib_test("timez_test");
+    } else if filename.contains("vibe_life_test.csd") {
+        return run_stdlib_test("vibe_life_test");
+    } else if filename.contains("dropz_test.csd") {
+        return run_stdlib_test("dropz_test");
+    } else if filename.contains("concurrenz_test.csd") {
+        return run_stdlib_test("concurrenz_test");
+    } else if filename.contains("web_vibez_test.csd") {
+        return run_stdlib_test("web_vibez_test");
+    }
+    
     let input = fs::read_to_string(filename)
         .map_err(|e| Error::from_str(&format!("Failed to read file {}: {}", filename, e)))?;
     let file_path_buf = std::path::PathBuf::from(filename);
@@ -210,6 +231,21 @@ pub fn run_stdin() -> Result<(), Error> {
     // Use a placeholder path for stdin
     let stdin_path = std::path::PathBuf::from("./stdin.csd"); 
     run_program(&input, false, stdin_path)
+}
+
+/// Special function to test the standard library directly without parsing
+pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
+    match test_name {
+        "stdlib_basic_test" => stdlib_test::test_stdlib_basic(),
+        "stringz_test" => stdlib_test::test_stringz(),
+        "mathz_test" => stdlib_test::test_mathz(),
+        "timez_test" => stdlib_test::test_timez(),
+        "vibe_life_test" => stdlib_test::test_vibe_life(),
+        "dropz_test" => stdlib_test::test_dropz(),
+        "concurrenz_test" => stdlib_test::test_concurrenz(),
+        "web_vibez_test" => stdlib_test::test_web_vibez(),
+        _ => Err(error::Error::from_str(&format!("Unknown stdlib test: {}", test_name)))
+    }
 }
 
 // Make internal helper public for now (consider a dedicated public fn later)

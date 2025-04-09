@@ -201,3 +201,9 @@ pub fn len(_args: &[Rc<crate::object::Object>]) -> Result<Rc<crate::object::Obje
     // Implementation TBD
     Err(crate::error::Error::not_implemented("len built-in function", crate::error::SourceLocation::default()))
 }
+
+// Standard library exports
+pub use crate::stdlib::vibez;
+
+// Export standard library modules for easy access
+pub use crate::stdlib::*;

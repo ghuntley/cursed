@@ -29,6 +29,20 @@ num-traits = "0.2"  # For numerical traits
 libc = "0.2"  # For C functions like strlen
 inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 
+# Cryptography related dependencies
+sha1 = "0.10"  # SHA-1 hash algorithm
+sha2 = "0.10"  # SHA-2 hash algorithms
+md5 = "0.7"    # MD5 hash algorithm
+hmac = "0.12"  # HMAC message authentication
+bcrypt = "0.15" # Password hashing
+aes = "0.8"     # AES encryption
+block-modes = "0.9" # Block cipher operation modes
+hex = "0.4"     # Hex encoding/decoding
+rand = "0.8"    # Random number generation
+
+# Regex support
+regex = "1.10"  # Regular expression support
+
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking
 pretty_assertions = "1.4"  # For nicer test output
