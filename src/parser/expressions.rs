@@ -33,6 +33,30 @@ impl<'a> Parser<'a> {
             Token::Int(_) => self.parse_integer_literal(),
             Token::Float(_) => self.parse_float_literal(),
             Token::String(_) => self.parse_string_literal(),
+            Token::Rune(_) => self.parse_rune_literal(),
+            Token::Basic => self.parse_default_case(),
+            Token::Vibe => self.parse_package_stmt(),
+            Token::Slay => self.parse_function_declaration(),
+            Token::Normie => self.parse_type_expression("normie"),
+            Token::Tea => self.parse_type_expression("tea"),
+            Token::Thicc => self.parse_type_expression("thicc"),
+            Token::Smol => self.parse_type_expression("smol"),
+            Token::Mid => self.parse_type_expression("mid"),
+            Token::RBrace => {
+                self.next_token()?; // Skip RBrace
+                Ok(Box::new(ast::StringLiteral {
+                    token: "}".to_string(),
+                    value: "}".to_string(),
+                }))
+            },
+            Token::RParen => {
+                self.next_token()?; // Skip RParen
+                self.parse_prefix_expression()
+            },
+            Token::Semicolon => {
+                self.next_token()?; // Skip Semicolon
+                self.parse_prefix_expression()
+            },
             Token::LParen => self.parse_grouped_expression(),
             Token::Bang | Token::Minus => self.parse_prefix_operator(),
             Token::Based | Token::Cap => self.parse_boolean_literal(),
@@ -356,12 +380,165 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
         
-        self.next_token()?; // Advance past property identifier
-        
-        // Create a simple string literal with the property access
-        Ok(Box::new(ast::StringLiteral {
+        // Create a simple string representation
+        let expr = ast::StringLiteral {
             token: token.token_literal(),
             value: format!("dot_access.{}", property),
-        }))
+        };
+        
+        self.next_token()?; // Advance past property identifier
+        
+        // If this is followed by a function call, parse that as well
+        if self.current_token_is(Token::LParen) {
+            // Treat the dot expression as the function to call
+            return self.parse_call_expression(Box::new(expr));
+        }
+        
+        // Otherwise, return the dot expression as is
+        Ok(Box::new(expr))
+    }
+
+    /// Parse a rune (character) literal
+    fn parse_rune_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        let value = match &token {
+            Token::Rune(val) => *val,
+            _ => unreachable!()
+        };
+        
+        // Create a rune literal (character)
+        let rune_lit = ast::RuneLiteral {
+            token: token.token_literal(),
+            value,
+        };
+        
+        self.next_token()?; // Advance past rune
+        
+        Ok(Box::new(rune_lit))
+    }
+
+    /// Parse a default case in a switch statement
+    fn parse_default_case(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        // Create a default case expression
+        let default_case = ast::DefaultCase {
+            token: token.token_literal(),
+        };
+        
+        self.next_token()?; // Advance past 'basic'
+        
+        Ok(Box::new(default_case))
+    }
+    
+    /// Parse a package statement
+    fn parse_package_stmt(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Advance past 'vibe'
+        
+        // Get the package name identifier
+        if !matches!(self.current_token, Token::Identifier(_)) {
+            return Err(self.error(&format!("Expected package name after 'vibe', got {:?}", self.current_token)));
+        }
+        
+        let pkg_name = match &self.current_token {
+            Token::Identifier(name) => name.clone(),
+            _ => unreachable!(),
+        };
+        
+        // Create a package declaration expression as a string literal (simplified for now)
+        let pkg_decl = ast::StringLiteral {
+            token: token.token_literal(),
+            value: format!("vibe {}", pkg_name),
+        };
+        
+        self.next_token()?; // Advance past package name
+        
+        Ok(Box::new(pkg_decl))
+    }
+    
+    /// Parse a type expression
+    fn parse_type_expression(&mut self, type_name: &str) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        // Create a type expression as a string literal (simplified for now)
+        let type_expr = ast::StringLiteral {
+            token: token.token_literal(),
+            value: type_name.to_string(),
+        };
+        
+        self.next_token()?; // Advance past type token
+        
+        Ok(Box::new(type_expr))
+    }
+    
+    /// Parse a function declaration
+    fn parse_function_declaration(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Advance past 'slay'
+        
+        // Get the function name identifier
+        if !matches!(self.current_token, Token::Identifier(_)) {
+            return Err(self.error(&format!("Expected function name after 'slay', got {:?}", self.current_token)));
+        }
+        
+        let func_name = match &self.current_token {
+            Token::Identifier(name) => name.clone(),
+            _ => unreachable!(),
+        };
+        
+        self.next_token()?; // Advance past function name
+        
+        // Parse parameter list
+        if !self.current_token_is(Token::LParen) {
+            return Err(self.error(&format!("Expected '(' after function name, got {:?}", self.current_token)));
+        }
+        
+        // Skip opening parenthesis
+        self.next_token()?; // Advance to first parameter or ')'  
+        
+        // Parse parameters (simplified for now)
+        while !self.current_token_is(Token::RParen) {
+            // Skip parameter
+            self.next_token()?;
+        }
+        
+        self.next_token()?; // Advance past ')'  
+        
+        // Parse return type (if any)
+        if matches!(self.current_token, Token::Normie | Token::Tea | Token::Thicc | Token::Smol | Token::Mid) {
+            // Skip return type
+            self.next_token()?;
+        }
+        
+        // Parse function body (if any)
+        if self.current_token_is(Token::LBrace) {
+            // Skip until matching RBrace for body
+            self.next_token()?; // Past '{'  
+            let mut brace_count = 1;
+            
+            while brace_count > 0 && !self.current_token_is(Token::Eof) {
+                if self.current_token_is(Token::LBrace) {
+                    brace_count += 1;
+                } else if self.current_token_is(Token::RBrace) {
+                    brace_count -= 1;
+                }
+                
+                if brace_count > 0 {
+                    self.next_token()?;
+                }
+            }
+            
+            self.next_token()?; // Past '}'  
+        }
+        
+        // Create a function declaration as a simplified string representation
+        let func_decl = ast::StringLiteral {
+            token: token.token_literal(),
+            value: format!("function {}", func_name),
+        };
+        
+        Ok(Box::new(func_decl))
     }
 }

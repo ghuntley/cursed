@@ -518,6 +518,10 @@ impl<'a> Lexer<'a> {
             "mid" => Token::Mid,
             "normie" => Token::Normie,
             "thicc" => Token::Thicc,
+            "snack" => Token::Snack,
+            "meal" => Token::Meal,
+            "lit" => Token::Lit,
+            "sip" => Token::Sip,
             "fr" => {
                 // Check for "fr fr" comment
                 if self.peek_char() == Some(' ') && 

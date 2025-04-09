@@ -1,7 +1,7 @@
 //! LLVM Code Generator Context
 //! Contains the main LlvmCodeGenerator struct and its core functionality
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -32,6 +32,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) struct_types: HashMap<String, HashMap<String, inkwell::types::StructType<'ctx>>>,
     // Loop control flow tracking
     pub(crate) loop_exit_blocks: Vec<BasicBlock<'ctx>>,
+    // Track declared constants for immutability checks
+    pub(crate) constants: HashSet<String>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -53,6 +55,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             current_file_path: initial_file_path,
             struct_types: HashMap::new(),
             loop_exit_blocks: Vec::new(),
+            constants: HashSet::new(),
         }
     }
     

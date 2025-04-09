@@ -1,18 +1,23 @@
-//! Common types used in the LLVM code generator
+//! Type conversion utilities for LLVM IR generation
 
-use std::collections::HashMap;
-use inkwell::values::FunctionValue;
+use inkwell::context::Context;
+use inkwell::types::{BasicTypeEnum, BasicType};
+use crate::core::type_checker::Type;
 
-// Structure to hold information about imported functions
-#[derive(Debug, Clone)]
-pub struct ImportedFunctionInfo<'ctx> {
-    pub mangled_name: String, 
-    pub llvm_function: Option<FunctionValue<'ctx>>, 
+/// Convert a Cursed AST type to an LLVM type.
+pub fn convert_type<'ctx>(context: &'ctx Context, ty: &Type) -> Result<BasicTypeEnum<'ctx>, String> {
+    // Implementation for type conversion
+    match ty {
+        // Handle various types here
+        _ => Err(format!("Unsupported type: {:?}", ty))
+    }
 }
 
-// Structure to hold information about an imported package
-#[derive(Debug, Clone, Default)]
-pub struct ImportedPackageInfo<'ctx> {
-    pub name: String, 
-    pub exported_functions: HashMap<String, ImportedFunctionInfo<'ctx>>,
+/// Create LLVM type for basic Cursed types like smol, mid, etc.
+pub fn create_basic_type<'ctx>(context: &'ctx Context, type_name: &str) -> Result<BasicTypeEnum<'ctx>, String> {
+    // Implementation for basic types
+    match type_name {
+        // Handle basic types here
+        _ => Err(format!("Unsupported type: {}", type_name))
+    }
 }

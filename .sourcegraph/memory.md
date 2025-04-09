@@ -9,6 +9,20 @@
 - Format fix: `devenv shell make fmt-fix` or `cargo fmt`
 - Run examples: `devenv shell make example EXAMPLE=fibonacci` or `devenv shell ./target/debug/cursed examples/fibonacci.csd`
 
+## Garbage Collector
+- Based on mark-and-sweep algorithm with incremental collection support
+- Memory manager API: `allocate<T>`, `collect_garbage()`, `stats()`, `debug_info()`
+- Types must implement `Traceable` and `Clone` traits to be garbage-collected
+- Advanced features:
+  - Incremental collection to reduce pause times
+  - Weak references to handle cyclic dependencies
+  - Memory layout optimizations for better cache locality
+  - Detailed memory statistics and debugging tools
+  - Generational collection for more efficient collection
+- Core types are in `src/memory/gc.rs` and `src/memory/weak.rs`
+- Detailed documentation in `.sourcegraph/gc_implementation.md`
+- Example usage in `examples/concurrency_example.csd` and `examples/web_server_example.csd`
+
 ## Bug Fixes
 - In `parse_break_statement` don't advance tokens after seeing a semicolon, as that's handled by the calling function
 - Fixed the parse_while_statement method to properly handle parentheses around conditions

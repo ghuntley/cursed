@@ -15,8 +15,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.compile_squad_statement(squad_stmt)
         } else if let Some(let_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::LetStatement>() {
             self.compile_let_statement(let_stmt)
-        /*} else if let Some(facts_stmt) = statement.as_any().downcast_ref::<FactsStatement>() {
-            self.compile_facts_statement(facts_stmt)*/
+        } else if let Some(facts_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::FactsStatement>() {
+            self.compile_facts_statement(facts_stmt)
         } else if let Some(return_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::ReturnStatement>() {
             self.compile_return_statement(return_stmt)
         } else if let Some(if_stmt) = statement.as_any().downcast_ref::<crate::ast::control_flow::IfStatement>() {
@@ -47,6 +47,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Let statements declare variables
     fn compile_let_statement(&mut self, let_stmt: &crate::ast::statements::declarations::LetStatement) -> Result<(), String> {
         let var_name = &let_stmt.name.value;
+
+        // Check if we're trying to reassign a constant
+        if self.constants.contains(var_name) {
+            return Err(format!("Cannot reassign constant '{}'", var_name));
+        }
 
         // Compile the initializer expression
         let rhs_val = match &let_stmt.value {
@@ -116,9 +121,15 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     // Facts statements declare constants
     fn compile_facts_statement(&mut self, facts_stmt: &crate::ast::statements::declarations::FactsStatement) -> Result<(), String> {
-        // FactsStatement is a placeholder with minimal implementation
-        // Using a fixed name for compatibility
-        let const_name = "facts-placeholder".to_string();
+        // Extract the name of the constant from the facts statement
+        let name_expr = facts_stmt.name.as_ref();
+        
+        // Get the name as a string - constants should use identifier expressions
+        let const_name = if let Some(ident) = name_expr.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
+            ident.value.clone()
+        } else {
+            return Err(format!("Facts name must be an identifier, got: {}", name_expr.string()));
+        };
 
         // Compile the constant value expression
         let rhs_val = self.compile_expression(facts_stmt.value.as_ref())?;
@@ -135,6 +146,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Add to the variables hashmap but we'll track it as a constant internally
         // In a more sophisticated implementation, we might have a separate hashmap for constants
         self.variables.insert(const_name.clone(), (alloca, llvm_basic_type));
+        
+        // Also track this as a constant in our constants map for enforcing immutability
+        self.constants.insert(const_name.clone());
 
         Ok(())
     }

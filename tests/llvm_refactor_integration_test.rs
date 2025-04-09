@@ -73,7 +73,7 @@ fn test_create_function() {
         &params,
         i32_type.into(),
         false
-    ).expect("Failed to create function");
+    );
     
     assert_eq!(function.count_params(), 2, "Function should have 2 parameters");
     

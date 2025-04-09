@@ -1,55 +1,25 @@
-pub mod symbol_table;
-pub mod type_checker;
-pub mod generic_instantiation;
-pub mod channel;
-pub mod goroutine;
-pub mod thread_safe_goroutine;
+//! Core runtime components for CURSED
 
-/// Represents a compiled function in CURSED
+pub mod thread_safe_goroutine;
+pub mod type_checker;
+pub mod symbol_table;
+pub mod channel;
+
+/// Compiled function representation
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompiledFunction {
+    /// Name of the function
     pub name: String,
+    /// Bytecode instructions
     pub bytecode: Vec<u8>,
+    /// IR representation of the function
     pub ir_representation: String,
+    /// Number of local variables
     pub num_locals: usize,
+    /// Number of parameters
     pub num_parameters: usize,
+    /// Names of free variables captured from outer scopes
     pub free_variables: Vec<String>,
+    /// Whether this function accepts variadic arguments
     pub is_variadic: bool,
-    // Add more fields as needed for the bytecode compiler
-}
-
-impl CompiledFunction {
-    /// Create a new compiled function
-    pub fn new(name: String, bytecode: Vec<u8>) -> Self {
-        CompiledFunction {
-            name,
-            bytecode,
-            ir_representation: String::new(),
-            num_locals: 0,
-            num_parameters: 0,
-            free_variables: Vec::new(),
-            is_variadic: false,
-        }
-    }
-    
-    /// Create a new compiled function with full details
-    pub fn with_details(
-        name: String, 
-        bytecode: Vec<u8>,
-        ir_representation: String,
-        num_locals: usize,
-        num_parameters: usize,
-        free_variables: Vec<String>,
-        is_variadic: bool
-    ) -> Self {
-        CompiledFunction {
-            name,
-            bytecode,
-            ir_representation,
-            num_locals,
-            num_parameters,
-            free_variables,
-            is_variadic,
-        }
-    }
 }

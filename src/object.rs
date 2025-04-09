@@ -32,7 +32,7 @@ use std::fmt::{Display, Formatter, Debug};
 use std::cell::RefCell;
 use crate::prelude::{VecExt, StrExt, VecStrJoinExt};
 // use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};
-use crate::memory::gc::Trace;
+use crate::memory::Tag;
 use crate::memory::Traceable;
 use crate::memory::Visitor;
 use crate::core::CompiledFunction;
@@ -79,7 +79,7 @@ impl ErrorLocation {
 }
 
 /// Object represents a runtime value
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Object {
     Integer(i64),
     Float(f64),
@@ -165,8 +165,79 @@ impl Callable for Object {
     }
 }
 
-impl Trace for Object {
-    // Trace is an empty marker trait, so we don't need to implement any methods
+// impl Trace for Object {}
+
+// This provides compatibility with our GC that requires Clone
+impl Clone for Object {
+    fn clone(&self) -> Self {
+        match self {
+            Object::Integer(val) => Object::Integer(*val),
+            Object::Float(val) => Object::Float(*val),
+            Object::Boolean(val) => Object::Boolean(*val),
+            Object::String(val) => Object::String(val.clone()),
+            Object::Char(val) => Object::Char(*val),
+            Object::Array(elements) => Object::Array(elements.clone()),
+            Object::HashTable(map) => Object::HashTable(map.clone()),
+            Object::Channel(channel) => Object::Channel(channel.clone()),
+            Object::CompiledFunction { ir_representation, num_locals, num_parameters, free_variables, name, is_variadic } => {
+                Object::CompiledFunction {
+                    ir_representation: ir_representation.clone(),
+                    num_locals: *num_locals,
+                    num_parameters: *num_parameters,
+                    free_variables: free_variables.clone(),
+                    name: name.clone(),
+                    is_variadic: *is_variadic,
+                }
+            },
+            Object::Closure { function, free_vars } => {
+                Object::Closure {
+                    function: function.clone(),
+                    free_vars: free_vars.clone(),
+                }
+            },
+            Object::Builtin { name, function } => {
+                Object::Builtin {
+                    name: name.clone(),
+                    function: *function,
+                }
+            },
+            Object::Struct { name, fields } => {
+                Object::Struct {
+                    name: name.clone(),
+                    fields: fields.clone(),
+                }
+            },
+            Object::Interface { name, methods } => {
+                Object::Interface {
+                    name: name.clone(),
+                    methods: methods.clone(),
+                }
+            },
+            Object::Instance { struct_type, fields } => {
+                Object::Instance {
+                    struct_type: struct_type.clone(),
+                    fields: fields.clone(),
+                }
+            },
+            Object::Error { message, error_type, stack_trace } => {
+                Object::Error {
+                    message: message.clone(),
+                    error_type: error_type.clone(),
+                    stack_trace: stack_trace.clone(),
+                }
+            },
+            Object::Method { receiver_type, name, parameters, return_type, function } => {
+                Object::Method {
+                    receiver_type: receiver_type.clone(),
+                    name: name.clone(),
+                    parameters: parameters.clone(),
+                    return_type: return_type.clone(),
+                    function: function.clone(),
+                }
+            },
+            Object::Null => Object::Null,
+        }
+    }
 }
 
 impl Traceable for Object {
@@ -323,6 +394,27 @@ impl Traceable for Object {
                 size
             },
             Object::Null => std::mem::size_of::<()>(),
+        }
+    }
+    
+    fn tag(&self) -> Tag {
+        match self {
+            Object::Integer(_) => Tag::Int,
+            Object::Float(_) => Tag::Float,
+            Object::Boolean(_) => Tag::Boolean,
+            Object::String(_) => Tag::String,
+            Object::Array(_) => Tag::Array,
+            Object::HashTable(_) => Tag::Map,
+            Object::CompiledFunction { .. } | Object::Closure { .. } => Tag::Function,
+            Object::Channel(_) => Tag::Object,
+            Object::Builtin { .. } => Tag::Function,
+            Object::Struct { .. } => Tag::Object,
+            Object::Interface { .. } => Tag::Object,
+            Object::Instance { .. } => Tag::Object,
+            Object::Method { .. } => Tag::Function,
+            Object::Error { .. } => Tag::Object,
+            Object::Char(_) => Tag::Int,
+            Object::Null => Tag::Null,
         }
     }
 }
@@ -930,34 +1022,34 @@ impl Object {
             Object::Array(elements) => {
                 for obj in elements {
                     let ptr = obj as *const Object as usize;
-                    visitor.visit_ptr(ptr, crate::memory::tagged::Tag::Object);
+                    // Memory tracing removed
                 }
             },
             Object::HashTable(map) => {
                 for (key, value) in map {
                     let key_ptr = key as *const String as usize;
-                    visitor.visit_ptr(key_ptr, crate::memory::tagged::Tag::String);
+                    // visitor.visit_ptr(key_ptr, Tag::String);
                     
                     let value_ptr = value as *const Object as usize;
-                    visitor.visit_ptr(value_ptr, crate::memory::tagged::Tag::Object);
+                    // visitor.visit_ptr(value_ptr, Tag::Object);
                 }
             },
             Object::Closure { function, free_vars } => {
                 let func_ptr = Rc::as_ptr(function) as usize;
-                visitor.visit_ptr(func_ptr, crate::memory::tagged::Tag::Function);
+                // visitor.visit_ptr(func_ptr, Tag::Function);
                 
                 for var in free_vars {
                     let var_ptr = var as *const Object as usize;
-                    visitor.visit_ptr(var_ptr, crate::memory::tagged::Tag::Object);
+                    // visitor.visit_ptr(var_ptr, Tag::Object);
                 }
             },
             Object::Instance { struct_type, fields } => {
                 let type_ptr = Rc::as_ptr(struct_type) as usize;
-                visitor.visit_ptr(type_ptr, crate::memory::tagged::Tag::Object);
+                // visitor.visit_ptr(type_ptr, Tag::Object);
                 
                 for (_, value) in fields {
                     let value_ptr = value as *const Object as usize;
-                    visitor.visit_ptr(value_ptr, crate::memory::tagged::Tag::Object);
+                    // visitor.visit_ptr(value_ptr, Tag::Object);
                 }
             },
             Object::Interface { .. } => {
@@ -965,7 +1057,7 @@ impl Object {
             },
             Object::Method { function, .. } => {
                 let func_ptr = Rc::as_ptr(function) as usize;
-                visitor.visit_ptr(func_ptr, crate::memory::tagged::Tag::Function);
+                // visitor.visit_ptr(func_ptr, Tag::Function);
             },
             _ => {}
         }

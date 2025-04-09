@@ -1,27 +1,23 @@
-//! LLVM Code Generator Module
-//! This module contains the LLVM code generator components for the Cursed compiler
+//! LLVM IR generation module for the Cursed compiler
+//!
+//! This module is responsible for generating LLVM IR from the AST
+//! and providing JIT compilation capabilities.
 
-// Import shared types and utilities
-mod types;
-mod core;
-mod errors;
-pub mod context;
-mod builder;
-mod expression;
-mod statement;
-mod function;
-mod channel;
-mod struct_type;
-mod pointer;
-mod string;
-mod stan;
-mod util;
-mod array;
-mod hash;
+// Re-export the LlvmCodeGenerator
+pub mod generator;
+pub use generator::LlvmCodeGenerator;
 
-// Re-export the main components
-pub use self::context::LlvmCodeGenerator;
-pub use self::errors::LlvmCodegenError;
-pub use self::types::{ImportedFunctionInfo, ImportedPackageInfo};
+// Type conversion utilities
+pub mod types;
 
-// Private utilities and shared functionality
+// Expression and statement code generation
+pub mod expressions;
+pub mod statements;
+
+// Concurrency support
+pub mod goroutines;
+pub mod channels;
+
+// LLVM optimization and intrinsics
+pub mod optimization;
+pub mod intrinsics;

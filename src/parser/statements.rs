@@ -26,8 +26,86 @@ impl<'a> Parser<'a> {
             Token::Periodt => self.parse_while_statement(),
             Token::Ghosted => self.parse_break_statement(),
             Token::Simp => self.parse_continue_statement(),
+            Token::Normie | Token::Tea | Token::Thicc | Token::Smol | Token::Mid | Token::Lit | Token::Snack | Token::Meal => {
+                // Check if this is a type followed by identifier and :=
+                if self.is_decl_assign() {
+                    self.parse_decl_assign_statement()
+                } else {
+                    self.parse_expression_statement()
+                }
+            },
             _ => self.parse_expression_statement()
         }
+    }
+    
+    /// Check if the current token is part of a declaration-assignment
+    fn is_decl_assign(&mut self) -> bool {
+        // Ensure we have enough tokens to check: type identifier :=
+        if !matches!(self.peek_token, Token::Identifier(_)) {
+            return false;
+        }
+        
+        // Look ahead to find :=
+        let current_token = self.current_token.clone();
+        let peek_token = self.peek_token.clone();
+        let mut result = false;
+        
+        // Try to peek ahead
+        if let Ok(_) = self.next_token() { // Move to identifier
+            if self.peek_token_is(Token::DeclAssign) {
+                result = true;
+            }
+        }
+        
+        // Restore state
+        self.current_token = current_token;
+        self.peek_token = peek_token;
+        
+        result
+    }
+    
+    /// Parse a declaration-assignment statement (tea x := 5)
+    pub(super) fn parse_decl_assign_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        let type_token = self.current_token.clone();
+        let type_name = type_token.token_literal();
+        
+        self.next_token()?; // Advance past type token
+        
+        // Parse identifier
+        if !matches!(self.current_token, Token::Identifier(_)) {
+            return Err(self.error(&format!("Expected identifier, got {:?}", self.current_token)));
+        }
+        
+        // Get variable name
+        let name = match &self.current_token {
+            Token::Identifier(ident) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: ident.clone(),
+            },
+            _ => unreachable!(),
+        };
+        
+        self.next_token()?; // Advance past identifier
+        
+        // Expect ':=' token
+        if !self.current_token_is(Token::DeclAssign) {
+            return Err(self.error(&format!("Expected ':=', got {:?}", self.current_token)));
+        }
+        
+        self.next_token()?; // Advance past ':='
+        
+        // Parse value expression
+        let value = self.parse_expression(Precedence::Lowest)?;
+        
+        // Expect semicolon
+        self.expect_semicolon()?;
+        
+        // Create a simple expression statement instead since we can't access DeclAssignStatement
+        use crate::ast::statements::expressions::ExpressionStatement;
+        Ok(Box::new(ExpressionStatement {
+            token: type_token.token_literal(),
+            expression: Some(value)
+        }))
     }
     
     /// Parse a variable declaration statement (sus x = 5)
@@ -115,16 +193,11 @@ impl<'a> Parser<'a> {
         // Expect semicolon
         self.expect_semicolon()?;
         
-        // FactsStatement is not part of the modularized AST yet
-        // Creating a placeholder ExpressionStatement instead
-        let expr = Box::new(ast::expressions::Identifier {
-            token: name.token_literal(),
-            value: "facts-placeholder".to_string(),
-        }) as Box<dyn ast::Expression>;
-        
-        Ok(Box::new(ast::statements::expressions::ExpressionStatement {
+        // Create a proper FactsStatement instance
+        Ok(Box::new(ast::statements::declarations::FactsStatement {
             token: token.token_literal(),
-            expression: Some(expr),
+            name: Box::new(name) as Box<dyn ast::Expression>,
+            value,
         }))
     }
     
