@@ -37,6 +37,7 @@ impl<'a> Parser<'a> {
             Token::Basic => self.parse_default_case(),
             Token::Vibe => self.parse_package_stmt(),
             Token::Slay => self.parse_function_declaration(),
+            Token::Dm => self.parse_channel_expression(),
             Token::Normie => self.parse_type_expression("normie"),
             Token::Tea => self.parse_type_expression("tea"),
             Token::Thicc => self.parse_type_expression("thicc"),

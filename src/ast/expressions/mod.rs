@@ -5,6 +5,7 @@ pub mod calls;
 pub mod collections;
 pub mod concurrency;
 pub mod special;
+pub mod channel;
 
 pub use literals::*;
 pub use identifiers::*;
@@ -13,3 +14,4 @@ pub use calls::*;
 pub use collections::*;
 pub use concurrency::*;
 pub use special::*;
+pub use channel::*;
