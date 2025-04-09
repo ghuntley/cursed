@@ -4,6 +4,29 @@
 
 This document provides a detailed status report of the CURSED programming language implementation, comparing the specifications in the `specs/` directory with the current implementation in the `src/` directory.
 
+## Known Limitations and Issues
+
+* **Parser Limitations**: 🟡 Some known issues
+  * Complex expressions parsing can be problematic in certain cases
+  * Nested function calls with complex expressions need more robust handling
+  * Error recovery needs improvement for better development experience
+
+* **Type System Issues**: 🟡 Some limitations
+  * Type inference system needs further development
+  * Interface implementation verification needs improvement
+  * Some type checking edge cases need better handling
+
+* **Compiler Performance**: 🟡 Needs optimization
+  * Performance benchmarking infrastructure not implemented
+  * Potential performance regressions after recent refactoring
+  * Optimization passes need implementation
+
+* **Code Generation Gaps**: 🟡 Some features incomplete
+  * Break statement compilation needs work
+  * Import statement handling incomplete
+  * Defer statement implementation partial
+  * Switch/case statement implementation needs completion
+
 ## Lexical Elements Status
 
 * **Tokens and Keywords**: ✅ Fully implemented in `src/lexer/lexer.rs`
@@ -118,8 +141,11 @@ This document provides a detailed status report of the CURSED programming langua
 * **Garbage Collection**: 🟡 Partially implemented
   * `memory` module exists with basic structures
   * Memory reference tracking through `memory_reference.rs`
-  * No comprehensive garbage collection algorithm visible
-  * Likely relying on Rust's memory management for bootstrap compiler
+  * Basic mark-and-sweep collector with `Traceable` trait implementation
+  * Object tracking with tag system implemented
+  * Missing comprehensive cycle detection and optimization
+  * Testing shows basic functionality but needs expansion
+  * Documentation available in `.sourcegraph/gc_implementation.md`
 
 ## Code Generation Status
 
@@ -141,6 +167,7 @@ This document provides a detailed status report of the CURSED programming langua
   * `vibez` package with formatted I/O functions (fmt equivalent)
     * Basic printing with `spill`, `spillf`, and `spillstr` functions
     * Format specifier support for strings (%s), integers (%d), and floats (%f)
+    * Input scanning with `scan`, `scanln`, `scan_string`, and `scanln_string` functions
   * `stringz` package with string manipulation functions (strings equivalent)
     * String operations: Contains, Count, HasPrefix, HasSuffix
     * String transformations: ToUpper, ToLower, Trim
@@ -159,6 +186,7 @@ This document provides a detailed status report of the CURSED programming langua
     * Directory operations: Mkdir, Rmdir, Getwd, Chdir
   * `dropz` package with basic I/O primitives (io equivalent)
     * File I/O: ReadFile, WriteFile, Read, Write
+    * File management: Exists, IsReadable, IsWritable, FileInfo, RemoveFile, AppendFile
     * Buffer handling: Seek, Flush
     * Stream operations: Copy
   * `concurrenz` package with synchronization primitives (sync equivalent)
@@ -216,7 +244,7 @@ This document provides a detailed status report of the CURSED programming langua
   * Basic type system working with proper type checking
   * Control structures fully operational
   * Module system basics working with imports
-  * Basic I/O capabilities through standard library
+  * Basic I/O capabilities through standard library (including input scanning)
   * Missing some advanced language features
 
 * **Stage 2: Full Compiler in CURSED**: 🔴 Not implemented
@@ -257,3 +285,13 @@ The CURSED language implementation is solidly in Stage 1 (Minimal Bootstrap Comp
 Advanced features like concurrency have been fully implemented with robust channel support and goroutines, while comprehensive garbage collection and a complete standard library are still in progress. There is no evidence of progress toward Stage 2 (self-hosting) yet.
 
 The implementation follows the specifications closely for syntax and language features, with appropriate AST nodes and parsing logic for all described language elements. The bootstrap compiler is functional for most CURSED programs and is currently being upgraded to support LLVM 17.
+
+## Next Development Priorities
+
+1. Complete the garbage collection implementation with cycle detection and optimization
+2. Finish remaining standard library packages implementation
+3. Address known parser limitations with complex expressions
+4. Improve type system robustness, particularly for interfaces and generics
+5. Complete all codegen features (break/continue, defer, switch/case statements)
+6. Build benchmarking infrastructure and optimize compiler performance
+7. Begin planning for Stage 2 (self-hosting) implementation

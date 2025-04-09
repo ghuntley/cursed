@@ -250,3 +250,124 @@ pub fn test_web_vibez() -> Result<(), Error> {
     
     Ok(())
 }
+
+pub fn test_dropz_file_test() -> Result<(), Error> {
+    println!("Testing dropz file operations");
+    
+    // Test file paths
+    let test_file_path = "test_dropz_file.txt";
+    let non_existent_file = "does_not_exist.txt";
+    
+    // Test file_exists
+    println!("Testing file_exists");
+    let content = "Test content for file exists check";
+    crate::stdlib::dropz::write_file(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+        Rc::new(Object::String(content.to_string())),
+    ])?;
+    
+    let exists_result = crate::stdlib::dropz::file_exists(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    let non_exists_result = crate::stdlib::dropz::file_exists(&[
+        Rc::new(Object::String(non_existent_file.to_string())),
+    ])?;
+    
+    match (&*exists_result, &*non_exists_result) {
+        (Object::Boolean(true), Object::Boolean(false)) => {
+            println!("file_exists test passed");
+        },
+        _ => {
+            return Err(Error::Runtime("file_exists test failed".to_string()));
+        }
+    }
+    
+    // Test is_readable
+    println!("Testing is_readable");
+    let readable_result = crate::stdlib::dropz::is_readable(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    match &*readable_result {
+        Object::Boolean(true) => {
+            println!("is_readable test passed");
+        },
+        _ => {
+            return Err(Error::Runtime("is_readable test failed".to_string()));
+        }
+    }
+    
+    // Test is_writable
+    println!("Testing is_writable");
+    let writable_result = crate::stdlib::dropz::is_writable(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    match &*writable_result {
+        Object::Boolean(true) => {
+            println!("is_writable test passed");
+        },
+        _ => {
+            return Err(Error::Runtime("is_writable test failed".to_string()));
+        }
+    }
+    
+    // Test file_info
+    println!("Testing file_info");
+    let info_result = crate::stdlib::dropz::file_info(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    match &*info_result {
+        Object::HashTable(info) if !info.is_empty() => {
+            println!("file_info test passed");
+        },
+        _ => {
+            return Err(Error::Runtime("file_info test failed".to_string()));
+        }
+    }
+    
+    // Test append_file
+    println!("Testing append_file");
+    let append_content = "Appended content";
+    crate::stdlib::dropz::append_file(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+        Rc::new(Object::String(append_content.to_string())),
+    ])?;
+    
+    let content_result = crate::stdlib::dropz::read_file_string(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    match &*content_result {
+        Object::String(s) if s.contains(content) && s.contains(append_content) => {
+            println!("append_file test passed");
+        },
+        _ => {
+            return Err(Error::Runtime("append_file test failed".to_string()));
+        }
+    }
+    
+    // Test remove_file
+    println!("Testing remove_file");
+    crate::stdlib::dropz::remove_file(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    let after_remove_result = crate::stdlib::dropz::file_exists(&[
+        Rc::new(Object::String(test_file_path.to_string())),
+    ])?;
+    
+    match &*after_remove_result {
+        Object::Boolean(false) => {
+            println!("remove_file test passed");
+        },
+        _ => {
+            return Err(Error::Runtime("remove_file test failed".to_string()));
+        }
+    }
+    
+    println!("All dropz file operations tests completed successfully");
+    Ok(())
+}

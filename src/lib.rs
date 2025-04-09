@@ -205,6 +205,8 @@ pub fn run_file(filename: &str) -> Result<(), Error> {
         return run_stdlib_test("vibe_life_test");
     } else if filename.contains("dropz_test.csd") {
         return run_stdlib_test("dropz_test");
+    } else if filename.contains("dropz_file_test.csd") {
+        return run_stdlib_test("dropz_file_test");
     } else if filename.contains("concurrenz_test.csd") {
         return run_stdlib_test("concurrenz_test");
     } else if filename.contains("web_vibez_test.csd") {
@@ -242,6 +244,7 @@ pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
         "timez_test" => stdlib_test::test_timez(),
         "vibe_life_test" => stdlib_test::test_vibe_life(),
         "dropz_test" => stdlib_test::test_dropz(),
+        "dropz_file_test" => stdlib_test::test_dropz_file_test(),
         "concurrenz_test" => stdlib_test::test_concurrenz(),
         "web_vibez_test" => stdlib_test::test_web_vibez(),
         _ => Err(error::Error::from_str(&format!("Unknown stdlib test: {}", test_name)))
