@@ -365,8 +365,8 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::control_flow::conditionals::IfStatement {
             token: token.token_literal(),
             condition,
-            consequence,
-            alternative,
+            consequence: Box::new(consequence),
+            alternative: alternative.map(Box::new),
         }))
     }
     
@@ -421,7 +421,7 @@ impl<'a> Parser<'a> {
             init,
             condition,
             post: None, // The post field might have a different type in the actual AST
-            body,
+            body: Box::new(body),
         }))
     }
     
@@ -457,7 +457,7 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::control_flow::loops::WhileStatement {
             token: token.token_literal(),
             condition,
-            body,
+            body: Box::new(body),
         }))
     }
     

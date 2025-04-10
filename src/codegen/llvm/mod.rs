@@ -11,10 +11,19 @@ pub use generator::LlvmCodeGenerator;
 pub mod types;
 
 // Expression and statement code generation
-pub mod expressions;
-pub mod statements;
+pub mod basic_expressions;
+pub mod statement;
+pub mod control_flow;
+pub mod break_continue;
+pub mod expression;
+//pub mod expressions;
+//pub mod statements;
+
+// User-defined types
+//pub mod user_types;
 
 // Concurrency support
+//pub mod concurrency;
 pub mod goroutines;
 pub mod channels;
 

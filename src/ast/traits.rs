@@ -16,6 +16,14 @@ pub trait Statement: Node {
 /// Expression represents an expression node in the AST
 pub trait Expression: Node {
     fn expression_node(&self);
+    
+    /// Returns the node type as a string for compiler dispatch
+    fn node_type(&self) -> &str {
+        // Default implementation just returns a generic type name
+        // Each expression type should override this
+        "UnknownExpression"
+    }
+    
     fn as_any(&self) -> &dyn Any;
 
     /// Returns true if this expression is a prefix expression

@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorReporter, SourceLocation};
+use crate::lexer::TokenType;
 
 /// Token type for the CURSED language
 #[derive(Debug, PartialEq, Clone)]
@@ -117,6 +118,134 @@ pub enum Token {
 }
 
 impl Token {
+    /// Create a new token from a token type and literal value
+    pub fn new(token_type: crate::lexer::TokenType, literal: &str) -> Self {
+        match token_type {
+            crate::lexer::TokenType::Illegal => Token::Illegal(literal.to_string()),
+            TokenType::Eof => Token::Eof,
+            TokenType::Identifier => Token::Identifier(literal.to_string()),
+            TokenType::String => Token::String(literal.to_string()),
+            TokenType::Int => {
+                if let Ok(value) = literal.parse::<i64>() {
+                    Token::Int(value)
+                } else {
+                    Token::Illegal(format!("Invalid integer: {}", literal))
+                }
+            },
+            TokenType::Float => {
+                if let Ok(value) = literal.parse::<f64>() {
+                    Token::Float(value)
+                } else {
+                    Token::Illegal(format!("Invalid float: {}", literal))
+                }
+            },
+            TokenType::Byte => {
+                if literal.len() == 1 {
+                    Token::Byte(literal.as_bytes()[0])
+                } else {
+                    Token::Illegal(format!("Invalid byte: {}", literal))
+                }
+            },
+            TokenType::Rune => {
+                if let Some(ch) = literal.chars().next() {
+                    Token::Rune(ch)
+                } else {
+                    Token::Illegal(format!("Invalid rune: {}", literal))
+                }
+            },
+            TokenType::Assign => Token::Assign,
+            TokenType::Plus => Token::Plus,
+            TokenType::Minus => Token::Minus,
+            TokenType::Bang => Token::Bang,
+            TokenType::Asterisk => Token::Asterisk,
+            TokenType::Slash => Token::Slash,
+            TokenType::Percent => Token::Percent,
+            TokenType::Lt => Token::Lt,
+            TokenType::Gt => Token::Gt,
+            TokenType::Eq => Token::Eq,
+            TokenType::NotEq => Token::NotEq,
+            TokenType::LtEq => Token::LtEq,
+            TokenType::GtEq => Token::GtEq,
+            TokenType::And => Token::And,
+            TokenType::Or => Token::Or,
+            TokenType::Arrow => Token::Arrow,
+            TokenType::At => Token::At,
+            TokenType::PlusAssign => Token::PlusAssign,
+            TokenType::MinusAssign => Token::MinusAssign,
+            TokenType::AsteriskAssign => Token::AsteriskAssign,
+            TokenType::SlashAssign => Token::SlashAssign,
+            TokenType::PercentAssign => Token::PercentAssign,
+            TokenType::BitAndAssign => Token::BitAndAssign,
+            TokenType::BitOrAssign => Token::BitOrAssign,
+            TokenType::BitXorAssign => Token::BitXorAssign,
+            TokenType::Inc => Token::Inc,
+            TokenType::Dec => Token::Dec,
+            TokenType::BitAnd => Token::BitAnd,
+            TokenType::BitOr => Token::BitOr,
+            TokenType::BitXor => Token::BitXor,
+            TokenType::BitCompl => Token::BitCompl,
+            TokenType::ShiftLeft => Token::ShiftLeft,
+            TokenType::ShiftRight => Token::ShiftRight,
+            TokenType::DeclAssign => Token::DeclAssign,
+            TokenType::Ellipsis => Token::Ellipsis,
+            TokenType::Comma => Token::Comma,
+            TokenType::Semicolon => Token::Semicolon,
+            TokenType::Colon => Token::Colon,
+            TokenType::LParen => Token::LParen,
+            TokenType::RParen => Token::RParen,
+            TokenType::LBrace => Token::LBrace,
+            TokenType::RBrace => Token::RBrace,
+            TokenType::LBracket => Token::LBracket,
+            TokenType::RBracket => Token::RBracket,
+            TokenType::Dot => Token::Dot,
+            TokenType::Vibe => Token::Vibe,
+            TokenType::Yeet => Token::Yeet,
+            TokenType::Slay => Token::Slay,
+            TokenType::Sus => Token::Sus,
+            TokenType::Facts => Token::Facts,
+            TokenType::Lowkey => Token::Lowkey,
+            TokenType::Highkey => Token::Highkey,
+            TokenType::Bestie => Token::Bestie,
+            TokenType::Periodt => Token::Periodt,
+            TokenType::VibeCheck => Token::VibeCheck,
+            TokenType::Mood => Token::Mood,
+            TokenType::Basic => Token::Basic,
+            TokenType::Ghosted => Token::Ghosted,
+            TokenType::Simp => Token::Simp,
+            TokenType::BeLike => Token::BeLike,
+            TokenType::Squad => Token::Squad,
+            TokenType::Collab => Token::Collab,
+            TokenType::Tea => Token::Tea,
+            TokenType::Dm => Token::Dm,
+            TokenType::Stan => Token::Stan,
+            TokenType::Flex => Token::Flex,
+            TokenType::Later => Token::Later,
+            TokenType::Yolo => Token::Yolo,
+            TokenType::Based => Token::Based,
+            TokenType::Cap => Token::Cap,
+            TokenType::Crew => Token::Crew,
+            TokenType::Smol => Token::Smol,
+            TokenType::Mid => Token::Mid,
+            TokenType::Normie => Token::Normie,
+            TokenType::Thicc => Token::Thicc,
+            TokenType::Snack => Token::Snack,
+            TokenType::Meal => Token::Meal,
+            TokenType::Lit => Token::Lit,
+            TokenType::Sip => Token::Sip,
+            TokenType::LineComment => Token::LineComment,
+            TokenType::BlockCommentStart => Token::BlockCommentStart,
+            TokenType::BlockCommentEnd => Token::BlockCommentEnd,
+            // For compatibility with tests
+            TokenType::True => Token::Based,
+            TokenType::Return => Token::Yolo,
+            TokenType::If => Token::Lowkey,
+            TokenType::While => Token::Periodt,
+            TokenType::Break => Token::Ghosted,
+            TokenType::Continue => Token::Simp,
+            TokenType::For => Token::Bestie,
+        }
+    }
+    
     /// Get the literal representation of the token
     pub fn token_literal(&self) -> String {
         match self {

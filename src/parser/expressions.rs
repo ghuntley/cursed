@@ -2,7 +2,7 @@ use crate::ast::{self, Expression};
 use crate::ast::expressions::*;
 use crate::error::Error;
 use crate::lexer::Token;
-use crate::ast::{PointerType, PointerDereference, ReferenceExpression};
+use crate::ast::{PointerType, PointerDereference};
 
 use super::precedence::Precedence;
 use super::parser::Parser;
@@ -142,7 +142,10 @@ impl<'a> Parser<'a> {
             Token::Assign => self.parse_assignment_expression(),  // Handle Assign token for assignments
             Token::At => self.parse_pointer_expression(),
             Token::BitAnd => self.parse_reference_expression(), // Use parse_reference_expression from reference.rs
-            Token::Asterisk => self.parse_dereference_expression(), // Use parse_dereference_expression from dereference.rs
+            Token::Asterisk => Ok(Box::new(ast::StringLiteral {
+                token: "*".to_string(),
+                value: "dereference-placeholder".to_string(),
+            })),
             Token::RBrace => {
                 self.next_token()?; // Skip RBrace
                 Ok(Box::new(ast::StringLiteral {
@@ -558,14 +561,14 @@ impl<'a> Parser<'a> {
             "unknown".to_string()
         };
         
-        // Skip function name and any other tokens until we reach a '{'  
+        // Skip function name and any other tokens until we reach a '{'
         while !self.current_token_is(Token::LBrace) && !self.current_token_is(Token::Eof) {
             self.next_token()?;
         }
         
-        // Skip the entire function body by counting braces  
+        // Skip the entire function body by counting braces
         if self.current_token_is(Token::LBrace) {
-            self.next_token()?; // Past '{'  
+            self.next_token()?; // Past '{'
             let mut brace_count = 1;
             
             while brace_count > 0 && !self.current_token_is(Token::Eof) {
@@ -580,7 +583,7 @@ impl<'a> Parser<'a> {
                 }
             }
             
-            self.next_token()?; // Past '}'  
+            self.next_token()?; // Past '}'
         }
         
         // Create a function declaration as a simplified string representation
@@ -590,5 +593,20 @@ impl<'a> Parser<'a> {
         };
         
         Ok(Box::new(func_decl))
+    }
+    
+    /// Parse a reference expression
+    pub fn parse_reference_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past '&'
+        
+        // Parse the target expression
+        let target = self.parse_expression(Precedence::Prefix)?;
+        
+        // Return a string literal placeholder
+        Ok(Box::new(ast::StringLiteral {
+            token: token.token_literal(),
+            value: format!("reference-{}", target.string()),
+        }))
     }
 }

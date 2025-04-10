@@ -6,8 +6,8 @@ use crate::ast::statements::block::BlockStatement;
 pub struct IfStatement {
     pub token: String, // Token::If
     pub condition: Box<dyn Expression>,
-    pub consequence: BlockStatement,
-    pub alternative: Option<BlockStatement>,
+    pub consequence: Box<BlockStatement>,
+    pub alternative: Option<Box<BlockStatement>>,
 }
 
 impl Node for IfStatement {
