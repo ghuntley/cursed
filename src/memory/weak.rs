@@ -1,38 +1,43 @@
+//! Weak references implementation
+
 use std::marker::PhantomData;
 use std::ptr::NonNull;
-use std::sync::{Arc, RwLock};
-use crate::memory::Traceable;
+use std::sync::Arc;
+
+use crate::memory::{Gc, Traceable};
 use crate::memory::gc::GarbageCollector;
 
 /// Weak reference to a garbage-collected object
 #[derive(Debug)]
 pub struct Weak<T: Traceable + Clone + 'static> {
-    ptr: Option<NonNull<T>>,
+    ptr: NonNull<T>,
     gc: Arc<GarbageCollector>,
     _marker: PhantomData<T>,
 }
 
-// Just create placeholders for now
 impl<T: Traceable + Clone + 'static> Weak<T> {
-    // Create a new weak reference from a pointer
+    /// Create a new weak reference from a pointer
     pub fn new(ptr: NonNull<T>, gc: Arc<GarbageCollector>) -> Self {
         Self {
-            ptr: Some(ptr),
+            ptr,
             gc,
             _marker: PhantomData,
         }
     }
     
-    // Check if the referenced object still exists
+    /// Check if the referenced object still exists
     pub fn is_alive(&self) -> bool {
-        // Simplified implementation that always returns false
-        false
+        let addr = self.ptr.as_ptr() as usize;
+        self.gc.is_alive(addr)
     }
     
-    // Try to upgrade to a strong reference
-    pub fn upgrade(&self) -> Option<crate::memory::Gc<T>> {
-        // Simplified implementation that always returns None
-        None
+    /// Try to upgrade to a strong reference
+    pub fn upgrade(&self) -> Option<Gc<T>> {
+        if self.is_alive() {
+            Some(Gc::new(self.ptr, self.gc.as_ref().clone()))
+        } else {
+            None
+        }
     }
 }
 
