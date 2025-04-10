@@ -4,6 +4,9 @@ pub mod thread_safe_goroutine;
 pub mod type_checker;
 pub mod symbol_table;
 pub mod channel;
+pub mod generic_instantiation;
+pub mod goroutine;
+pub mod char;
 
 /// Compiled function representation
 #[derive(Debug, Clone, PartialEq)]

@@ -91,21 +91,51 @@ impl GenericInstantiator {
         }
     }
     
+    // Original monomorphization functions are commented out for now as they have various issues
+    // We'll implement them properly in a future update
+    
+    /*
+    /// Generate a monomorphized version of a generic function
+    pub fn monomorphize_function(
+        &self,
+        generic_function: &ast::FunctionStatement,
+        type_args: &[Type]
+    ) -> Result<ast::FunctionStatement, Error> {
+        // This has been temporarily removed due to compile errors
+        Err(Error::from_str("Function monomorphization not yet implemented"))
+    }
+    
+    /// Generate a specialized version of a generic struct
+    pub fn monomorphize_struct(
+        &self,
+        generic_struct: &ast::SquadStatement,
+        type_args: &[Type]
+    ) -> Result<ast::SquadStatement, Error> {
+        // This has been temporarily removed due to compile errors
+        Err(Error::from_str("Struct monomorphization not yet implemented"))
+    }
+    
+    /// Generate a specialized version of a generic interface
+    pub fn monomorphize_interface(
+        &self,
+        generic_interface: &ast::CollabStatement,
+        type_args: &[Type]
+    ) -> Result<ast::CollabStatement, Error> {
+        // This has been temporarily removed due to compile errors
+        Err(Error::from_str("Interface monomorphization not yet implemented"))
+    }
+    
     /// Generate LLVM code for a generic type instantiation
-    pub fn generate_instantiation(&self, generic_ast: &crate::ast::base::Program, type_map: &HashMap<String, Type>) -> Result<crate::ast::base::Program, Error> {
-        // This is where we would implement monomorphization:
-        // 1. Create a new program by cloning the generic one
-        // 2. Replace all generic type parameters with concrete types
-        // 3. Return the specialized program for code generation
-        
-        // For this implementation, we'll just return a skeleton
+    pub fn generate_instantiation(
+        &self, 
+        generic_ast: &crate::ast::base::Program, 
+        type_map: &HashMap<String, Type>
+    ) -> Result<crate::ast::base::Program, Error> {
+        // This has been temporarily removed due to compile errors
         let program = crate::ast::base::Program::default();
-        
-        // TODO: Implement full monomorphization by traversing the AST
-        // and replacing all type parameters with concrete types
-        
         Ok(program)
     }
+    */
 }
 
 /// Type checking functions for generics
