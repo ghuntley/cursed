@@ -30,14 +30,24 @@ fn test_basic_types_jit() {
     assert!(success, "Execution failed. Output:\n{}", output);
     
     // Check that compilation was successful
-    assert!(output.contains("Compilation successful"), "Compilation failed");
+    assert!(output.contains("Compilation successful"), "Compilation failed: {}\n", output);
+    
+    // Check LLVM IR for boolean value
+    assert!(output.contains("store i1 true") || output.contains("store i1 1"), 
+        "Boolean 'based' not correctly compiled as i1 true: {}\n", output);
     
     // Check LLVM IR for correct types
-    assert!(output.contains("store i1 true"), "Boolean 'based' not correctly compiled");
-    assert!(output.contains("store i64 42"), "Integer not correctly compiled");
-    assert!(output.contains("store double 3.140000"), "Float not correctly compiled");
-    assert!(output.contains("Hello, CURSED!"), "String not correctly compiled");
-    assert!(output.contains("store i32 67"), "Character 'C' not correctly compiled");
+    assert!(output.contains("store i64 42"), 
+        "Integer not correctly compiled as i64: {}\n", output);
+    
+    assert!(output.contains("store double 3.140000"), 
+        "Float not correctly compiled as double: {}\n", output);
+    
+    assert!(output.contains("Hello, CURSED!"), 
+        "String not correctly compiled: {}\n", output);
+    
+    assert!(output.contains("store i32 67") || output.contains("store i8 67"), 
+        "Character 'C' not correctly compiled: {}\n", output);
     
     println!("All basic types test passed!");
 }

@@ -32,7 +32,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         if let Some(lit) = expression.as_any().downcast_ref::<crate::ast::expressions::IntegerLiteral>() {
             Ok(self.context.i64_type().const_int(lit.value as u64, false).into())
         } else if let Some(lit) = expression.as_any().downcast_ref::<crate::ast::expressions::BooleanLiteral>() {
-            Ok(self.context.bool_type().const_int(lit.value as u64, false).into())
+            // Boolean literals are represented as 1-bit integers (i1) in LLVM
+            let bool_type = self.context.bool_type(); // This is i1 in LLVM
+            let bool_value = bool_type.const_int(if lit.value { 1 } else { 0 }, false);
+            Ok(bool_value.into())
         } else if let Some(lit) = expression.as_any().downcast_ref::<crate::ast::expressions::FloatLiteral>() {
             Ok(self.context.f64_type().const_float(lit.value).into())
         } else if let Some(lit) = expression.as_any().downcast_ref::<crate::ast::expressions::ByteLiteral>() {
