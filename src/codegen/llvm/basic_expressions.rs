@@ -49,6 +49,103 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             }
         }
         
+        // Import operator types
+        use crate::ast::expressions::operators::{PrefixExpression, InfixExpression};
+        
+        // Prefix expressions
+        if let Some(prefix) = any.downcast_ref::<PrefixExpression>() {
+            let right = self.compile_expression(prefix.right.as_ref())?;
+            
+            match prefix.operator.as_str() {
+                "-" => {
+                    if right.is_int_value() {
+                        let right_val = right.into_int_value();
+                        let result = self.builder().build_int_neg(right_val, "neg");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build negation: {}", e)))?.into());
+                    } else if right.is_float_value() {
+                        let right_val = right.into_float_value();
+                        let result = self.builder().build_float_neg(right_val, "fneg");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build float negation: {}", e)))?.into());
+                    } else {
+                        return Err(Error::codegen(format!("Cannot negate non-numeric value: {:?}", right)));
+                    }
+                },
+                "!" => {
+                    if right.is_int_value() {
+                        let right_val = right.into_int_value();
+                        let bool_type = self.context().bool_type();
+                        // Compare to 0 to get a boolean value, then invert
+                        let zero = bool_type.const_int(0, false);
+                        let is_zero = self.builder().build_int_compare(inkwell::IntPredicate::EQ, right_val, zero, "is_zero");
+                        let result = is_zero.map_err(|e| Error::codegen(format!("Failed to build comparison: {}", e)))?;
+                        return Ok(result.into());
+                    } else {
+                        return Err(Error::codegen(format!("Cannot apply ! to non-boolean value: {:?}", right)));
+                    }
+                },
+                _ => return Err(Error::codegen(format!("Unsupported prefix operator: {}", prefix.operator))),
+            }
+        }
+        
+        // Infix expressions
+        if let Some(infix) = any.downcast_ref::<InfixExpression>() {
+            let left = self.compile_expression(infix.left.as_ref())?;
+            let right = self.compile_expression(infix.right.as_ref())?;
+            
+            // Arithmetic operations
+            if left.is_int_value() && right.is_int_value() {
+                let left_val = left.into_int_value();
+                let right_val = right.into_int_value();
+                
+                match infix.operator.as_str() {
+                    "+" => {
+                        let result = self.builder().build_int_add(left_val, right_val, "add");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build addition: {}", e)))?.into());
+                    },
+                    "-" => {
+                        let result = self.builder().build_int_sub(left_val, right_val, "sub");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build subtraction: {}", e)))?.into());
+                    },
+                    "*" => {
+                        let result = self.builder().build_int_mul(left_val, right_val, "mul");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build multiplication: {}", e)))?.into());
+                    },
+                    "/" => {
+                        let result = self.builder().build_int_signed_div(left_val, right_val, "div");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build division: {}", e)))?.into());
+                    },
+                    _ => return Err(Error::codegen(format!("Unsupported infix operator: {}", infix.operator))),
+                }
+            }
+            // Float operations (we should handle mixed types in a real compiler)
+            else if left.is_float_value() && right.is_float_value() {
+                let left_val = left.into_float_value();
+                let right_val = right.into_float_value();
+                
+                match infix.operator.as_str() {
+                    "+" => {
+                        let result = self.builder().build_float_add(left_val, right_val, "fadd");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build float addition: {}", e)))?.into());
+                    },
+                    "-" => {
+                        let result = self.builder().build_float_sub(left_val, right_val, "fsub");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build float subtraction: {}", e)))?.into());
+                    },
+                    "*" => {
+                        let result = self.builder().build_float_mul(left_val, right_val, "fmul");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build float multiplication: {}", e)))?.into());
+                    },
+                    "/" => {
+                        let result = self.builder().build_float_div(left_val, right_val, "fdiv");
+                        return Ok(result.map_err(|e| Error::codegen(format!("Failed to build float division: {}", e)))?.into());
+                    },
+                    _ => return Err(Error::codegen(format!("Unsupported float infix operator: {}", infix.operator))),
+                }
+            } else {
+                return Err(Error::codegen(format!("Incompatible types for operator {}: {:?} and {:?}", infix.operator, left, right)));
+            }
+        }
+        
         // If we reach here, we don't know how to compile this expression
         Err(Error::codegen(
             format!("Unsupported expression type: {}", expr.string())

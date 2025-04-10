@@ -22,6 +22,10 @@ impl Node for PrefixExpression {
 impl Expression for PrefixExpression {
     fn expression_node(&self) {}
 
+    fn node_type(&self) -> &str {
+        "PrefixExpression"
+    }
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -55,6 +59,10 @@ impl Node for InfixExpression {
 
 impl Expression for InfixExpression {
     fn expression_node(&self) {}
+
+    fn node_type(&self) -> &str {
+        "InfixExpression"
+    }
 
     fn as_any(&self) -> &dyn Any {
         self

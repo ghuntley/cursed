@@ -44,6 +44,10 @@ impl Node for IntegerLiteral {
 impl Expression for IntegerLiteral {
     fn expression_node(&self) {}
     
+    fn node_type(&self) -> &str {
+        "IntegerLiteral"
+    }
+    
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -91,6 +95,10 @@ impl Node for BooleanLiteral {
 
 impl Expression for BooleanLiteral {
     fn expression_node(&self) {}
+    
+    fn node_type(&self) -> &str {
+        "BooleanLiteral"
+    }
     
     fn as_any(&self) -> &dyn Any {
         self

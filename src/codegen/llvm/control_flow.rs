@@ -71,6 +71,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Continue in the merge block
         self.builder().position_at_end(merge_block);
         
+        // Add a terminator to the merge block based on function return type
+        let fn_ret_type = current_fn.get_type().get_return_type();
+        if fn_ret_type.is_none() {
+            // Void return type
+            self.builder().build_return(None)
+                .map_err(|e| Error::codegen(format!("Failed to build void return: {}", e)))?;
+        } else {
+            // Non-void return type - use appropriate type
+            let i32_type = self.context().i32_type();
+            self.builder().build_return(Some(&i32_type.const_int(0, false)))
+                .map_err(|e| Error::codegen(format!("Failed to build return: {}", e)))?;
+        }
+        
         Ok(())
     }
     
@@ -87,20 +100,15 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let body_block = self.context().append_basic_block(current_fn, "while.body");
         let after_block = self.context().append_basic_block(current_fn, "while.end");
         
-        // Create continue and break blocks for loop context
-        let continue_block = self.context().append_basic_block(current_fn, "while.continue");
-        let break_block = self.context().append_basic_block(current_fn, "while.break");
-        
-        // Push loop context for break/continue statements
-        self.loop_contexts.push(LoopContext {
-            name: "while".to_string(),
-            continue_block,
-            break_block,
-        });
-        
         // Branch to the condition block
         self.builder().build_unconditional_branch(cond_block)
             .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+        
+        // Push loop context for break/continue statements
+        self.push_loop_context("while")?;
+        let loop_context = self.current_loop_context().unwrap().clone();
+        let break_block = loop_context.break_block;
+        let continue_block = loop_context.continue_block;
         
         // Emit the condition code
         self.builder().position_at_end(cond_block);
@@ -113,18 +121,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Create the conditional branch
         self.builder().build_conditional_branch(condition, body_block, after_block)
             .map_err(|e| Error::codegen(format!("Failed to build conditional branch: {}", e)))?;
-        
-        // Get loop context blocks
-        let break_block;
-        let continue_block;
-        
-        if let Some(loop_context) = self.current_loop_context() {
-            break_block = loop_context.break_block;
-            continue_block = loop_context.continue_block;
-        } else {
-            // This shouldn't happen if we properly pushed the context
-            return Err(Error::codegen("No loop context found for while statement".to_string()));
-        }
         
         // Emit the body code
         self.builder().position_at_end(body_block);
@@ -152,6 +148,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Continue in the after block
         self.builder().position_at_end(after_block);
         
+        // Add a terminator to the after block based on function return type
+        let fn_ret_type = current_fn.get_type().get_return_type();
+        if fn_ret_type.is_none() {
+            // Void return type
+            self.builder().build_return(None)
+                .map_err(|e| Error::codegen(format!("Failed to build void return: {}", e)))?;
+        } else {
+            // Non-void return type - use appropriate type
+            let i32_type = self.context().i32_type();
+            self.builder().build_return(Some(&i32_type.const_int(0, false)))
+                .map_err(|e| Error::codegen(format!("Failed to build return: {}", e)))?;
+        }
+        
         // Pop the loop context
         self.pop_loop_context();
         
@@ -173,20 +182,15 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let body_block = self.context().append_basic_block(current_fn, "for.body");
         let after_block = self.context().append_basic_block(current_fn, "for.end");
         
-        // Create continue and break blocks for loop context
-        let continue_block = self.context().append_basic_block(current_fn, "for.continue");
-        let break_block = self.context().append_basic_block(current_fn, "for.break");
-        
-        // Push loop context for break/continue statements
-        self.loop_contexts.push(LoopContext {
-            name: "for".to_string(),
-            continue_block,
-            break_block,
-        });
-        
         // Branch to the initialization block
         self.builder().build_unconditional_branch(init_block)
             .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+        
+        // Push loop context for break/continue statements
+        self.push_loop_context("for")?;
+        let loop_context = self.current_loop_context().unwrap().clone();
+        let break_block = loop_context.break_block;
+        let continue_block = loop_context.continue_block;
         
         // Emit the initialization code
         self.builder().position_at_end(init_block);
@@ -212,18 +216,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Create the conditional branch
         self.builder().build_conditional_branch(condition, body_block, after_block)
             .map_err(|e| Error::codegen(format!("Failed to build conditional branch: {}", e)))?;
-        
-        // Get loop context blocks
-        let break_block;
-        let continue_block;
-        
-        if let Some(loop_context) = self.current_loop_context() {
-            break_block = loop_context.break_block;
-            continue_block = loop_context.continue_block;
-        } else {
-            // This shouldn't happen if we properly pushed the context
-            return Err(Error::codegen("No loop context found for for statement".to_string()));
-        }
         
         // Emit the body code
         self.builder().position_at_end(body_block);
@@ -258,6 +250,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Continue in the after block
         self.builder().position_at_end(after_block);
+        
+        // Add a terminator to the after block based on function return type
+        let fn_ret_type = current_fn.get_type().get_return_type();
+        if fn_ret_type.is_none() {
+            // Void return type
+            self.builder().build_return(None)
+                .map_err(|e| Error::codegen(format!("Failed to build void return: {}", e)))?;
+        } else {
+            // Non-void return type - use appropriate type
+            let i32_type = self.context().i32_type();
+            self.builder().build_return(Some(&i32_type.const_int(0, false)))
+                .map_err(|e| Error::codegen(format!("Failed to build return: {}", e)))?;
+        }
         
         // Pop the loop context
         self.pop_loop_context();

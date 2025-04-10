@@ -6,7 +6,7 @@ use crate::ast::statements::block::BlockStatement;
 pub struct WhileStatement {
     pub token: String, // Token::Periodt
     pub condition: Box<dyn Expression>,
-    pub body: BlockStatement,
+    pub body: Box<BlockStatement>,
 }
 
 impl Node for WhileStatement {
@@ -37,7 +37,7 @@ pub struct ForStatement {
     pub init: Option<Box<dyn Statement>>,
     pub condition: Option<Box<dyn Expression>>,
     pub post: Option<Box<dyn Statement>>,
-    pub body: BlockStatement,
+    pub body: Box<BlockStatement>,
 }
 
 impl Node for ForStatement {
