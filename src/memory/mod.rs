@@ -1,7 +1,8 @@
-//! Memory management for the CURSED language
+//! Memory management and garbage collection for CURSED
 
 pub mod gc;
 pub mod weak;
+pub mod container;
 pub mod strategy;
 pub mod tagged;
 pub mod bump;
@@ -9,6 +10,9 @@ pub mod block;
 pub mod allocator;
 pub mod memory_visitor;
 pub mod channel;
+
+// Re-export important types
+pub use container::{SpecializedVector, Specializable, ContainerType};
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
