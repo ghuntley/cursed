@@ -12,6 +12,7 @@ pub use identifiers::*;
 pub use operators::*;
 pub use calls::*;
 pub use collections::*;
-pub use concurrency::*;
+// Re-export specific items instead of using glob imports to avoid collisions
+pub use concurrency::{SendExpression, ReceiveExpression, StanExpression};
 pub use special::*;
-pub use channel::*;
+pub use channel::ChannelExpression;
