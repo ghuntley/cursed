@@ -4,6 +4,7 @@ use std::cell::Cell;
 use crate::memory::allocator::{Allocator, AllocatorBase};
 
 /// A bump allocator that allocates memory linearly and only frees all at once
+#[derive(Debug)]
 pub struct BumpAllocator {
     memory: NonNull<u8>,
     capacity: usize,
@@ -106,4 +107,4 @@ impl AllocatorBase for BumpAllocator {
     }
 }
 
-impl Allocator for BumpAllocator {} 
+impl Allocator for BumpAllocator {}
