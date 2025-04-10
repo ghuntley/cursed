@@ -2,7 +2,7 @@ use crate::ast::{self, Expression};
 use crate::ast::expressions::*;
 use crate::error::Error;
 use crate::lexer::Token;
-use crate::ast::{PointerType, PointerDereference};
+use crate::ast::{PointerType, PointerDereference, ReferenceExpression};
 
 use super::precedence::Precedence;
 use super::parser::Parser;
@@ -129,8 +129,10 @@ impl<'a> Parser<'a> {
             Token::Basic => self.parse_default_case(),
             Token::Vibe => self.parse_package_stmt(),
             Token::Slay => self.parse_function_declaration(),
-            Token::Dm => self.parse_channel_expression(),
-            Token::Crew => self.parse_array_literal(),
+            // Handle special tokens with methods from current implementation
+            Token::Dm => self.parse_channel_type(),
+            Token::Crew => self.parse_simple_expression("array"),
+            Token::LBracket => self.parse_array_index_or_literal(),
             Token::Normie => self.parse_type_expression("normie"),
             Token::Tea => self.parse_type_expression("tea"),
             Token::Thicc => self.parse_type_expression("thicc"),
@@ -139,6 +141,8 @@ impl<'a> Parser<'a> {
             Token::Sus => self.parse_variable_declaration(),  // Handle Sus token for variable declarations
             Token::Assign => self.parse_assignment_expression(),  // Handle Assign token for assignments
             Token::At => self.parse_pointer_expression(),
+            Token::BitAnd => self.parse_reference_expression(), // Use parse_reference_expression from reference.rs
+            Token::Asterisk => self.parse_dereference_expression(), // Use parse_dereference_expression from dereference.rs
             Token::RBrace => {
                 self.next_token()?; // Skip RBrace
                 Ok(Box::new(ast::StringLiteral {
@@ -157,7 +161,6 @@ impl<'a> Parser<'a> {
             Token::LParen => self.parse_grouped_expression(),
             Token::Bang | Token::Minus => self.parse_prefix_operator(),
             Token::Based | Token::Cap => self.parse_boolean_literal(),
-            Token::LBracket => self.parse_array_literal(),
             Token::LBrace => self.parse_hash_literal(),
             _ => Err(self.error(&format!("No prefix parse function for {:?}", self.current_token)))
         }
@@ -168,115 +171,22 @@ impl<'a> Parser<'a> {
         match self.current_token {
             Token::Plus | Token::Minus | Token::Slash | Token::Asterisk | Token::Percent |
             Token::Eq | Token::NotEq | Token::Lt | Token::Gt | Token::LtEq | Token::GtEq |
-            Token::And | Token::Or => Some(Self::parse_infix_expression),
-            Token::LParen => Some(Self::parse_call_expression),
-            Token::LBracket => Some(Self::parse_index_expression),
-            Token::Dot => Some(Self::parse_dot_expression),
+            Token::And | Token::Or | Token::BitAnd | Token::BitOr | Token::BitXor => Some(Parser::parse_infix_expression),
+            Token::LParen => Some(Parser::parse_call_expression),
+            Token::LBracket => Some(Parser::parse_index_expression),
+            Token::Dot => Some(Parser::parse_dot_expression),
             _ => None,
         }
     }
-    
 
-    
-    /// Parse an identifier expression
-    fn parse_identifier(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        let value = match &token {
-            Token::Identifier(ident) => ident.clone(),
-            _ => unreachable!()
-        };
-        
-        let ident = Identifier {
-            token: token.token_literal(),
-            value,
-        };
-        
-        self.next_token()?; // Advance past identifier
-        
-        Ok(Box::new(ident))
-    }
-    
-    /// Parse an integer literal
-    fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        let value = match &token {
-            Token::Int(val) => *val,
-            _ => unreachable!()
-        };
-        
-        let int_lit = IntegerLiteral {
-            token: token.token_literal(),
-            value,
-        };
-        
-        self.next_token()?; // Advance past integer
-        
-        Ok(Box::new(int_lit))
-    }
-    
-    /// Parse a float literal
-    fn parse_float_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        let value = match &token {
-            Token::Float(val) => *val,
-            _ => unreachable!()
-        };
-        
-        let float_lit = ast::FloatLiteral {
-            token: token.token_literal(),
-            value,
-        };
-        
-        self.next_token()?; // Advance past float
-        
-        Ok(Box::new(float_lit))
-    }
-    
-    /// Parse a string literal
-    fn parse_string_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        let value = match &token {
-            Token::String(val) => val.clone(),
-            _ => unreachable!()
-        };
-        
-        let str_lit = ast::StringLiteral {
-            token: token.token_literal(),
-            value,
-        };
-        
-        self.next_token()?; // Advance past string
-        
-        Ok(Box::new(str_lit))
-    }
-    
-    /// Parse a boolean literal
-    fn parse_boolean_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        let value = self.current_token_is(Token::Based); // true if Token::Based, false if Token::Cap
-        
-        let bool_lit = ast::BooleanLiteral {
-            token: token.token_literal(),
-            value,
-        };
-        
-        self.next_token()?; // Advance past boolean
-        
-        Ok(Box::new(bool_lit))
-    }
-    
-    /// Parse a grouped expression (parenthesized expression)
+    /// Parse a grouped expression (expression in parentheses)
     fn parse_grouped_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
-        self.next_token()?; // Advance past '('
+        self.next_token()?; // Skip past the opening '('
         
         let expr = self.parse_expression(Precedence::Lowest)?;
         
         if !self.peek_token_is(Token::RParen) {
-            return Err(self.error(&format!("Expected ')' after expression, got {:?}", self.peek_token)));
+            return Err(self.error("Expected ')' after expression"));
         }
         
         self.next_token()?; // Advance to ')'
@@ -285,319 +195,376 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
     
-    /// Parse a list of expressions
-    pub(super) fn parse_expression_list(&mut self, end_token: Token) -> Result<Vec<Box<dyn Expression>>, Error> {
-        let mut elements = Vec::new();
+    /// Parse an expression with a prefix operator (like !x or -x)
+    fn parse_prefix_operator(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let operator = token.token_literal();
         
-        self.next_token()?; // Advance past opening token
+        self.next_token()?;
+        let right = self.parse_expression(Precedence::Prefix)?;
         
-        if self.current_token_is(end_token.clone()) {
-            self.next_token()?; // Advance past closing token
-            return Ok(elements); // Empty list
-        }
-        
-        // Parse first element
-        elements.push(self.parse_expression(Precedence::Lowest)?); 
-        
-        // Parse additional elements
-        while self.peek_token_is(Token::Comma) {
-            self.next_token()?; // Advance to ','
-            self.next_token()?; // Advance past ','
-            
-            elements.push(self.parse_expression(Precedence::Lowest)?);
-        }
-        
-        if !self.peek_token_is(end_token.clone()) {
-            return Err(self.error(&format!("Expected {:?}, got {:?}", end_token, self.peek_token)));
-        }
-        
-        self.next_token()?; // Advance to closing token
-        self.next_token()?; // Advance past closing token
-        
-        Ok(elements)
+        Ok(Box::new(ast::PrefixExpression {
+            token,
+            operator,
+            right,
+        }))
     }
     
-    /// Parse a hash/map literal
+    /// Parse an expression with an infix operator (like x + y)
+    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let operator = token.token_literal();
+        
+        let precedence = self.current_precedence();
+        self.next_token()?;
+        let right = self.parse_expression(precedence)?;
+        
+        Ok(Box::new(ast::InfixExpression {
+            token,
+            left,
+            operator,
+            right,
+        }))
+    }
+    
+    /// Parse a function call expression (like fn(x, y))
+    fn parse_call_expression(&mut self, function: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let arguments = self.parse_call_arguments()?;
+        
+        Ok(Box::new(ast::CallExpression {
+            token,
+            function,
+            arguments,
+        }))
+    }
+    
+    /// Parse the arguments to a function call
+    fn parse_call_arguments(&mut self) -> Result<Vec<Box<dyn Expression>>, Error> {
+        let mut args = Vec::new();
+        
+        // Handle empty argument list
+        if self.peek_token_is(Token::RParen) {
+            self.next_token()?;
+            return Ok(args);
+        }
+        
+        self.next_token()?; // Skip past the '('
+        args.push(self.parse_expression(Precedence::Lowest)?);
+        
+        while self.peek_token_is(Token::Comma) {
+            self.next_token()?; // Skip past the ','
+            self.next_token()?; // Skip to the next argument
+            args.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        
+        if !self.peek_token_is(Token::RParen) {
+            return Err(self.error("Expected ')' after function arguments"));
+        }
+        
+        self.next_token()?;
+        
+        Ok(args)
+    }
+    
+    /// Parse an index expression (like array[index])
+    fn parse_index_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        self.next_token()?; // Skip past the '['
+        let index = self.parse_expression(Precedence::Lowest)?;
+        
+        if !self.peek_token_is(Token::RBracket) {
+            return Err(self.error("Expected ']' after index"));
+        }
+        self.next_token()?;
+        
+        Ok(Box::new(ast::IndexExpression {
+            token,
+            left,
+            index,
+        }))
+    }
+    
+    /// Parse a dot expression (like obj.prop)
+    fn parse_dot_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        self.next_token()?; // Skip past the '.'
+        
+        if !self.current_token_is(Token::Identifier(String::new())) {
+            return Err(self.error("Expected identifier after '.'"));
+        }
+        
+        let property = if let Token::Identifier(name) = &self.current_token {
+            name.clone()
+        } else {
+            String::new() // Unreachable due to check above
+        };
+        
+        self.next_token()?; // Skip past the identifier
+        
+        // Create a simple string literal for dot access
+        Ok(Box::new(ast::StringLiteral {
+            token: token.token_literal(),
+            value: format!("dot_access.{}", property),
+        }))
+    }
+    
+    /// Parse an identifier
+    fn parse_identifier(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let value = if let Token::Identifier(name) = &token {
+            name.clone()
+        } else {
+            String::new() // Unreachable
+        };
+        
+        self.next_token()?; // Skip past the identifier
+        
+        Ok(Box::new(ast::Identifier {
+            token: token.token_literal(),
+            value,
+        }))
+    }
+    
+    /// Parse an integer literal
+    fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let value = if let Token::Int(i) = token {
+            i
+        } else {
+            0 // Unreachable
+        };
+        
+        self.next_token()?; // Skip past the integer
+        
+        Ok(Box::new(ast::IntegerLiteral {
+            token: token.token_literal(),
+            value,
+        }))
+    }
+    
+    /// Parse a float literal
+    fn parse_float_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let value = if let Token::Float(f) = token {
+            f
+        } else {
+            0.0 // Unreachable
+        };
+        
+        self.next_token()?; // Skip past the float
+        
+        Ok(Box::new(ast::FloatLiteral {
+            token: token.token_literal(),
+            value,
+        }))
+    }
+    
+    /// Parse a string literal
+    fn parse_string_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let value = if let Token::String(s) = &token {
+            s.clone()
+        } else {
+            String::new() // Unreachable
+        };
+        
+        self.next_token()?; // Skip past the string
+        
+        Ok(Box::new(ast::StringLiteral {
+            token: token.token_literal(),
+            value,
+        }))
+    }
+    
+    /// Parse a rune (character) literal
+    fn parse_rune_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let value = if let Token::Rune(c) = token {
+            c
+        } else {
+            '\0' // Unreachable
+        };
+        
+        self.next_token()?; // Skip past the rune
+        
+        Ok(Box::new(ast::RuneLiteral {
+            token: token.token_literal(),
+            value,
+        }))
+    }
+    
+    /// Parse a boolean literal (based/sus)
+    fn parse_boolean_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        let value = token == Token::Based; // true if Based, false if Sus
+        
+        self.next_token()?; // Skip past the boolean
+        
+        Ok(Box::new(ast::BooleanLiteral {
+            token: token.token_literal(),
+            value,
+        }))
+    }
+    
+    /// Parse a hash literal {key1: value1, key2: value2}
     fn parse_hash_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
         let token = self.current_token.clone();
+        
         let mut pairs = Vec::new();
         
-        self.next_token()?; // Advance past '{'
-        
-        if self.current_token_is(Token::RBrace) {
-            self.next_token()?; // Advance past '}'
-            // Return empty hash
-            return Ok(Box::new(ast::StringLiteral {
-                token: token.token_literal(),
-                value: "{}".to_string(),
+        // Handle empty hash
+        if self.peek_token_is(Token::RBrace) {
+            self.next_token()?; // Skip to '}'
+            self.next_token()?; // Skip past '}'
+            return Ok(Box::new(HashLiteral {
+                token: token.clone(),
+                pairs,
             }));
         }
         
-        // Parse first key-value pair
+        self.next_token()?; // Skip past '{'
+        
+        // Parse first pair
         let key = self.parse_expression(Precedence::Lowest)?;
         
         if !self.peek_token_is(Token::Colon) {
-            return Err(self.error(&format!("Expected ':', got {:?}", self.peek_token)));
+            return Err(self.error("Expected ':' after hash key"));
         }
+        self.next_token()?;
         
-        self.next_token()?; // Advance to ':'
-        self.next_token()?; // Advance past ':'
-        
+        self.next_token()?; // Skip past ':'
         let value = self.parse_expression(Precedence::Lowest)?;
         
         pairs.push((key, value));
         
-        // Parse additional key-value pairs
+        // Parse remaining pairs
         while self.peek_token_is(Token::Comma) {
-            self.next_token()?; // Advance to ','
-            self.next_token()?; // Advance past ','
+            self.next_token()?; // Skip past ','
+            self.next_token()?; // Skip to next key
             
             let key = self.parse_expression(Precedence::Lowest)?;
             
             if !self.peek_token_is(Token::Colon) {
-                return Err(self.error(&format!("Expected ':', got {:?}", self.peek_token)));
+                return Err(self.error("Expected ':' after hash key"));
             }
+            self.next_token()?;
             
-            self.next_token()?; // Advance to ':'
-            self.next_token()?; // Advance past ':'
-            
+            self.next_token()?; // Skip past ':'
             let value = self.parse_expression(Precedence::Lowest)?;
             
             pairs.push((key, value));
         }
         
         if !self.peek_token_is(Token::RBrace) {
-            return Err(self.error(&format!("Expected '}}', got {:?}", self.peek_token)));
+            return Err(self.error("Expected '}' after hash pairs"));
         }
+        self.next_token()?;
         
-        self.next_token()?; // Advance to '}'
-        self.next_token()?; // Advance past '}'
-        
-        // Create a string representation of the hash
-        let pairs_count = pairs.len();
-        Ok(Box::new(ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("{{{}}}", pairs_count),
+        Ok(Box::new(HashLiteral {
+            token: token.clone(),
+            pairs,
         }))
-    }
-    
-    /// Parse a prefix operator expression (! or -)
-    fn parse_prefix_operator(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        let operator = token.token_literal();
-        
-        self.next_token()?; // Advance past operator
-        
-        let right = self.parse_expression(Precedence::Prefix)?;
-        
-        // Create a string literal with the prefix operation
-        Ok(Box::new(ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("{}expression", operator),
-        }))
-    }
-    
-    /// Parse an infix operator expression
-    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        let operator = token.token_literal();
-        
-        let precedence = self.current_precedence();
-        self.next_token()?; // Advance past operator
-        
-        let right = self.parse_expression(precedence)?;
-        
-        // Create a string literal with the infix operation
-        Ok(Box::new(ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("infix_expression_{}", operator),
-        }))
-    }
-    
-    /// Parse a function call expression
-    fn parse_call_expression(&mut self, function: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        let arguments = self.parse_expression_list(Token::RParen)?;
-        
-        // Create a string literal for the function call
-        Ok(Box::new(ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("function_call({})", arguments.len()),
-        }))
-    }
-    
-    /// Parse an array index expression
-    fn parse_index_expression(&mut self, array: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        self.next_token()?; // Advance past '['
-        
-        let index = self.parse_expression(Precedence::Lowest)?;
-        
-        if !self.peek_token_is(Token::RBracket) {
-            return Err(self.error(&format!("Expected ']', got {:?}", self.peek_token)));
-        }
-        
-        self.next_token()?; // Advance to ']'
-        
-        // Create a string literal for the array indexing
-        Ok(Box::new(ast::StringLiteral {
-            token: token.token_literal(),
-            value: "array[index]".to_string(),
-        }))
-    }
-    
-    /// Parse a dot expression (object.property)
-    fn parse_dot_expression(&mut self, object: Box<dyn Expression>) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        self.next_token()?; // Advance past '.'
-        
-        if !matches!(self.current_token, Token::Identifier(_)) {
-            return Err(self.error(&format!("Expected identifier after '.', got {:?}", self.current_token)));
-        }
-        
-        let property = match &self.current_token {
-            Token::Identifier(name) => name.clone(),
-            _ => unreachable!(),
-        };
-        
-        // Create a simple string representation
-        let expr = ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("dot_access.{}", property),
-        };
-        
-        self.next_token()?; // Advance past property identifier
-        
-        // If this is followed by a function call, parse that as well
-        if self.current_token_is(Token::LParen) {
-            // Treat the dot expression as the function to call
-            return self.parse_call_expression(Box::new(expr));
-        }
-        
-        // Otherwise, return the dot expression as is
-        Ok(Box::new(expr))
     }
 
-    /// Parse a rune (character) literal
-    fn parse_rune_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        let value = match &token {
-            Token::Rune(val) => *val,
-            _ => unreachable!()
-        };
-        
-        // Create a rune literal (character)
-        let rune_lit = ast::RuneLiteral {
-            token: token.token_literal(),
-            value,
-        };
-        
-        self.next_token()?; // Advance past rune
-        
-        Ok(Box::new(rune_lit))
-    }
-
-    /// Parse a default case in a switch statement
-    fn parse_default_case(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        
-        // Create a default case expression
-        let default_case = ast::DefaultCase {
-            token: token.token_literal(),
-        };
-        
-        self.next_token()?; // Advance past 'basic'
-        
-        Ok(Box::new(default_case))
-    }
-    
-    /// Parse a package statement
-    fn parse_package_stmt(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        self.next_token()?; // Advance past 'vibe'
-        
-        // Get the package name identifier
-        if !matches!(self.current_token, Token::Identifier(_)) {
-            return Err(self.error(&format!("Expected package name after 'vibe', got {:?}", self.current_token)));
-        }
-        
-        let pkg_name = match &self.current_token {
-            Token::Identifier(name) => name.clone(),
-            _ => unreachable!(),
-        };
-        
-        // Create a package declaration expression as a string literal (simplified for now)
-        let pkg_decl = ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("vibe {}", pkg_name),
-        };
-        
-        self.next_token()?; // Advance past package name
-        
-        Ok(Box::new(pkg_decl))
-    }
-    
-    /// Parse a type expression
+    /// Parse a type expression (e.g., "normie")
     fn parse_type_expression(&mut self, type_name: &str) -> Result<Box<dyn Expression>, Error> {
         let token = self.current_token.clone();
+        self.next_token()?; // Skip past the type keyword
         
-        // Create a type expression as a string literal (simplified for now)
-        let type_expr = ast::StringLiteral {
+        // Return a simple identifier for the type
+        Ok(Box::new(ast::Identifier {
             token: token.token_literal(),
             value: type_name.to_string(),
-        };
-        
-        self.next_token()?; // Advance past type token
-        
-        Ok(Box::new(type_expr))
+        }))
     }
     
-    /// Parse a function declaration
-    fn parse_function_declaration(&mut self) -> Result<Box<dyn Expression>, Error> {
+    /// Parse a channel type expression
+    fn parse_channel_type(&mut self) -> Result<Box<dyn Expression>, Error> {
         let token = self.current_token.clone();
-        self.next_token()?; // Advance past 'slay'
+        self.next_token()?; // Skip past 'dm'
         
-        // Get the function name identifier
-        if !matches!(self.current_token, Token::Identifier(_)) {
-            return Err(self.error(&format!("Expected function name after 'slay', got {:?}", self.current_token)));
-        }
+        // Return a simple identifier for the channel type
+        Ok(Box::new(ast::Identifier {
+            token: token.token_literal(),
+            value: "channel".to_string(),
+        }))
+    }
+    
+    /// Parse a simple expression with a given name
+    fn parse_simple_expression(&mut self, name: &str) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past the token
         
-        let func_name = match &self.current_token {
-            Token::Identifier(name) => name.clone(),
-            _ => unreachable!(),
+        // Return a simple identifier
+        Ok(Box::new(ast::Identifier {
+            token: token.token_literal(),
+            value: name.to_string(),
+        }))
+    }
+    
+    /// Parse an array index or array literal expression
+    fn parse_array_index_or_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past '['
+        
+        // Return a simple placeholder expression
+        Ok(Box::new(ast::Identifier {
+            token: token.token_literal(),
+            value: "array".to_string(),
+        }))
+    }
+    
+    /// Parse a default case statement (basic:)
+    fn parse_default_case(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past 'basic'
+        
+        Ok(Box::new(ast::StringLiteral {
+            token: token.token_literal(),
+            value: "default".to_string(),
+        }))
+    }
+    
+    /// Parse a package statement (vibe main)
+    fn parse_package_stmt(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past 'vibe'
+        
+        let package_name = if let Token::Identifier(name) = &self.current_token {
+            name.clone()
+        } else {
+            "unknown".to_string()
         };
         
-        self.next_token()?; // Advance past function name
+        self.next_token()?; // Skip past package name
         
-        // Parse parameter list
-        if !self.current_token_is(Token::LParen) {
-            return Err(self.error(&format!("Expected '(' after function name, got {:?}", self.current_token)));
-        }
+        Ok(Box::new(ast::StringLiteral {
+            token: token.token_literal(),
+            value: format!("package {}", package_name),
+        }))
+    }
+    
+    /// Parse a function declaration (slay functionName() { ... })
+    fn parse_function_declaration(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past 'slay'
         
-        // Skip opening parenthesis
-        self.next_token()?; // Advance to first parameter or ')'  
+        let func_name = if let Token::Identifier(name) = &self.current_token {
+            name.clone()
+        } else {
+            "unknown".to_string()
+        };
         
-        // Parse parameters (simplified for now)
-        while !self.current_token_is(Token::RParen) {
-            // Skip parameter
+        // Skip function name and any other tokens until we reach a '{'  
+        while !self.current_token_is(Token::LBrace) && !self.current_token_is(Token::Eof) {
             self.next_token()?;
         }
         
-        self.next_token()?; // Advance past ')'  
-        
-        // Parse return type (if any)
-        if matches!(self.current_token, Token::Normie | Token::Tea | Token::Thicc | Token::Smol | Token::Mid) {
-            // Skip return type
-            self.next_token()?;
-        }
-        
-        // Parse function body (if any)
+        // Skip the entire function body by counting braces  
         if self.current_token_is(Token::LBrace) {
-            // Skip until matching RBrace for body
             self.next_token()?; // Past '{'  
             let mut brace_count = 1;
             
