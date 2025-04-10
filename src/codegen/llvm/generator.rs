@@ -18,6 +18,19 @@ pub struct LlvmCodeGenerator<'ctx> {
     module: Module<'ctx>,
     builder: Builder<'ctx>,
     file_path: PathBuf,
+    /// Loop contexts for handling break and continue statements
+    pub loop_contexts: Vec<LoopContext<'ctx>>,
+}
+
+/// Represents a loop context for handling break and continue statements
+#[derive(Clone)]
+pub struct LoopContext<'ctx> {
+    /// The name of the loop (for debugging)
+    pub name: String,
+    /// The continuation block (where to jump for continue statements)
+    pub continue_block: inkwell::basic_block::BasicBlock<'ctx>,
+    /// The exit block (where to jump for break statements)
+    pub break_block: inkwell::basic_block::BasicBlock<'ctx>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -31,6 +44,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             module,
             builder,
             file_path,
+            loop_contexts: Vec::new(),
         }
     }
     
@@ -85,6 +99,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         self.module()
     }
     
+    /// Get a reference to the context.
+    pub fn context(&self) -> &'ctx Context {
+        self.context
+    }
+    
+
+    
     /// Create a function in the module.
     pub fn create_function(
         &self,
@@ -95,5 +116,40 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> inkwell::values::FunctionValue<'ctx> {
         let fn_type = return_type.fn_type(param_types, variadic);
         self.module.add_function(name, fn_type, None)
+    }
+    
+    /// Push a new loop context onto the stack.
+    /// This is used to handle break and continue statements within loops.
+    pub fn push_loop_context(
+        &mut self,
+        name: &str,
+    ) -> Result<(), Error> {
+        // Create blocks for continue and break
+        let current_fn = self.builder().get_insert_block()
+            .ok_or_else(|| Error::codegen("No current block".to_string()))?
+            .get_parent()
+            .ok_or_else(|| Error::codegen("No parent function".to_string()))?;
+        
+        let continue_block = self.context().append_basic_block(current_fn, &format!("{}.continue", name));
+        let break_block = self.context().append_basic_block(current_fn, &format!("{}.break", name));
+        
+        // Push the new context
+        self.loop_contexts.push(LoopContext {
+            name: name.to_string(),
+            continue_block,
+            break_block,
+        });
+        
+        Ok(())
+    }
+    
+    /// Pop the current loop context from the stack.
+    pub fn pop_loop_context(&mut self) -> Option<LoopContext<'ctx>> {
+        self.loop_contexts.pop()
+    }
+    
+    /// Get the current loop context, if any.
+    pub fn current_loop_context(&self) -> Option<&LoopContext<'ctx>> {
+        self.loop_contexts.last()
     }
 }
