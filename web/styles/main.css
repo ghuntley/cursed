@@ -1,5 +1,24 @@
 /* CURSED Programming Language Website - GenZ Style */
 
+.neon-text {
+  color: var(--color-neon);
+  text-shadow: 0 0 5px var(--color-neon);
+  font-weight: 700;
+}
+
+.big-word {
+  font-size: 120%;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-primary);
+  vertical-align: middle;
+  display: inline-block;
+  transform: rotate(-3deg);
+  padding: 0 3px;
+  text-shadow: 0 0 5px rgba(255, 51, 102, 0.5);
+}
+
 .dark-heading {
   color: white;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
@@ -582,13 +601,14 @@ nav a:hover {
 .code-block {
   background-color: #1a1a1a;
   border-radius: var(--border-radius-md);
-  padding: 1.5rem;
+  padding: 2.5rem 1.5rem 1.5rem;
   overflow-x: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   border: 1px solid #444;
   position: relative;
   backdrop-filter: var(--blur-effect);
   animation: borderGlow 4s infinite alternate;
+  margin-top: 15px;
 }
 
 @keyframes borderGlow {
@@ -605,16 +625,21 @@ nav a:hover {
 
 .code-title {
   position: absolute;
-  top: -12px;
+  top: -15px;
   left: 20px;
   background-color: var(--color-primary);
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
   font-size: 0.85rem;
   font-weight: 700;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: visible;
+  line-height: 1.2;
 }
 
 .code-block pre {
@@ -769,9 +794,22 @@ nav a:hover {
 
 /* Footer */
 footer {
-  background-color: var(--color-dark);
+  background: linear-gradient(to right, #111, #330033);
   color: white;
   padding: 4rem 0 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, var(--color-primary), var(--color-accent), var(--color-neon));
+  z-index: 2;
 }
 
 .footer-container {
@@ -781,9 +819,11 @@ footer {
 }
 
 .footer-logo {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  position: relative;
 }
 
 .footer-logo span {
@@ -791,12 +831,29 @@ footer {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  filter: drop-shadow(0 0 15px rgba(255, 51, 102, 0.5));
+  letter-spacing: 1px;
 }
 
 .footer-column h3 {
   font-size: 1.2rem;
   margin-bottom: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+}
+
+.footer-column h3::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 30px;
+  height: 3px;
+  background-color: var(--color-primary);
 }
 
 .footer-column ul {
@@ -809,11 +866,29 @@ footer {
 
 .footer-column a {
   color: #ccc;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-block;
+  font-weight: 500;
 }
 
 .footer-column a:hover {
-  color: white;
+  color: var(--color-accent);
+  transform: translateX(3px);
+}
+
+.footer-column li {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.footer-column li:hover::before {
+  content: '>';
+  position: absolute;
+  left: -12px;
+  color: var(--color-accent);
+  font-weight: bold;
+  opacity: 0.8;
 }
 
 .copyright {
@@ -822,7 +897,17 @@ footer {
   padding-top: 2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 0.9rem;
-  color: #888;
+  color: white;
+  position: relative;
+}
+
+.copyright p {
+  background: rgba(0, 0, 0, 0.2);
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 50px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .social-icons {
@@ -836,19 +921,24 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--gradient-main);
+  width: 50px;
+  height: 50px;
+  background: var(--color-primary);
   border-radius: 50%;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   transition: all 0.3s ease;
   text-decoration: none;
+  box-shadow: 0 4px 10px rgba(255, 51, 102, 0.4);
+  border: 2px solid transparent;
+  margin: 0 5px;
 }
 
 .social-icon:hover {
-  transform: translateY(-3px) rotate(10deg);
-  filter: brightness(1.2);
+  transform: translateY(-5px) rotate(10deg) scale(1.1);
+  background: var(--color-secondary);
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 6px 15px rgba(102, 0, 255, 0.5);
   text-decoration: none;
 }
 
@@ -862,31 +952,36 @@ footer {
 
 .trendy-badge {
   display: inline-block;
-  background: var(--gradient-neon);
-  color: var(--color-dark);
-  padding: 0.3rem 0.8rem;
+  background: var(--color-secondary);
+  color: white;
+  padding: 0.5rem 1rem;
   border-radius: 30px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
   transform: rotate(-1deg);
-  box-shadow: var(--glow-effect-neon);
+  box-shadow: 0 3px 10px rgba(102, 0, 255, 0.5);
   animation: badge-float 4s ease-in-out infinite;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
 }
 
 .trendy-badge:nth-child(2) {
-  background: var(--gradient-fire);
+  background: var(--color-primary);
   color: white;
   transform: rotate(1deg);
   animation-delay: 1s;
-  box-shadow: var(--glow-effect);
+  box-shadow: 0 3px 10px rgba(255, 51, 102, 0.5);
 }
 
 .trendy-badge:nth-child(3) {
-  background: var(--gradient-y2k);
-  color: white;
+  background: var(--color-accent);
+  color: var(--color-dark);
   transform: rotate(-2deg);
   animation-delay: 2s;
-  box-shadow: var(--glow-effect-blue);
+  box-shadow: 0 3px 10px rgba(51, 204, 255, 0.5);
+  border: 1px solid rgba(51, 204, 255, 0.6);
+  font-weight: 800;
 }
 
 @keyframes badge-float {
