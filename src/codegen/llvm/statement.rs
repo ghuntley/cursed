@@ -4,9 +4,11 @@ use crate::ast::traits::Statement;
 use crate::ast::statements::ExpressionStatement;
 use crate::ast::statements::ReturnStatement;
 use crate::ast::statements::BlockStatement;
-use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement};
+use crate::ast::statements::declarations::LetStatement;
+use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::error::Error;
 use super::generator::LlvmCodeGenerator;
+use super::variables::VariableScope;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Compile a statement to LLVM IR
@@ -16,6 +18,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> Result<(), Error> {
         // Handle different statement types
         let any = stmt.as_any();
+        
+        // Variable declaration (let statement)
+        if let Some(let_stmt) = any.downcast_ref::<LetStatement>() {
+            // Handle variable declaration using the variables module
+            return self.compile_let_statement(let_stmt);
+        }
         
         // Expression statement
         if let Some(expr_stmt) = any.downcast_ref::<ExpressionStatement>() {
@@ -44,9 +52,17 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Block statement
         if let Some(block_stmt) = any.downcast_ref::<BlockStatement>() {
+            // Create a new variable scope for the block
+            let scope = VariableScope::new();
+            self.push_scope(scope);
+            
+            // Compile each statement in the block
             for stmt in &block_stmt.statements {
                 self.compile_statement(&**stmt)?;
             }
+            
+            // Pop the variable scope when done with the block
+            self.pop_scope();
             return Ok(());
         }
         
@@ -63,6 +79,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // For statement
         if let Some(for_stmt) = any.downcast_ref::<ForStatement>() {
             return self.compile_for_statement(for_stmt);
+        }
+        
+        // Switch (vibe_check) statement
+        if let Some(switch_stmt) = any.downcast_ref::<SwitchStatement>() {
+            return self.compile_switch_statement(switch_stmt);
         }
         
         // Break statement

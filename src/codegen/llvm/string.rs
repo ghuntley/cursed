@@ -1,10 +1,38 @@
-//! LLVM code generation for string operations
+//! LLVM code generation for string operations in the CURSED language.
+//!
+//! This module provides functionality for translating CURSED string operations
+//! into LLVM IR. It handles string manipulation operations such as concatenation,
+//! comparison, length calculation, and substring extraction.
+//!
+//! Since LLVM doesn't have native string types, the implementation relies on external
+//! runtime functions that handle string operations. These functions are declared in
+//! the LLVM module but would be provided by a runtime library linked with the
+//! compiled program.
+//!
+//! String operations supported include:
+//! - Concatenation (string + string)
+//! - Equality and comparison (string == string, string < string, etc.)
+//! - Length calculation
+//! - Substring extraction
 
 use inkwell::values::BasicValueEnum;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Initialize string helper functions in the module 
+    /// Initializes the string helper functions in the LLVM module.
+    ///
+    /// This method declares the external functions that implement string operations.
+    /// These functions would typically be provided by a runtime library that's linked
+    /// with the compiled CURSED program. The declared functions include:
+    ///
+    /// - `string_concat`: Concatenates two strings
+    /// - `string_equals`: Checks if two strings are equal
+    /// - `string_compare`: Compares two strings lexicographically
+    /// - `string_length`: Gets the length of a string
+    /// - `string_substring`: Extracts a substring
+    ///
+    /// The method is idempotent - it only initializes the functions if they haven't
+    /// been initialized already.
     pub fn init_string_helpers(&mut self) {
         // Skip initialization if we've already done it
         if self.module.get_function("string_concat").is_some() {
@@ -37,7 +65,20 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         self.module.add_function("string_substring", substring_type, Some(inkwell::module::Linkage::External));
     }
     
-    /// Compile string concatenation
+    /// Compiles a string concatenation operation to LLVM IR.
+    ///
+    /// This method translates a CURSED string concatenation operation (e.g., `str1 + str2`)
+    /// into a call to the runtime's string_concat function. String concatenation creates
+    /// a new string by joining the contents of two existing strings.
+    ///
+    /// # Arguments
+    ///
+    /// * `left` - The LLVM value representing the left operand (first string)
+    /// * `right` - The LLVM value representing the right operand (second string)
+    ///
+    /// # Returns
+    ///
+    /// * `Result<BasicValueEnum, String>` - The result of the concatenation as a string pointer, or an error message
     pub fn compile_string_concat(
         &mut self, 
         left: BasicValueEnum<'ctx>, 
@@ -62,7 +103,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(result.try_as_basic_value().left().unwrap())
     }
     
-    /// Compile string comparison
+    /// Compiles a string comparison operation to LLVM IR.
+    ///
+    /// This method translates a CURSED string comparison operation (e.g., `str1 == str2`
+    /// or `str1 < str2`) into a call to the appropriate runtime comparison function.
+    /// It can handle both equality checks and lexicographical comparisons.
+    ///
+    /// # Arguments
+    ///
+    /// * `left` - The LLVM value representing the left operand (first string)
+    /// * `right` - The LLVM value representing the right operand (second string)
+    /// * `is_equals` - If true, performs equality comparison (==, !=); if false, performs lexicographical comparison (<, >, etc.)
+    ///
+    /// # Returns
+    ///
+    /// * `Result<BasicValueEnum, String>` - The result of the comparison as an integer value, or an error message
     pub fn compile_string_comparison(
         &mut self, 
         left: BasicValueEnum<'ctx>, 

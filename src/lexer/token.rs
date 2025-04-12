@@ -1,7 +1,19 @@
+//! Token representation for the CURSED language lexical analysis
+//!
+//! This module defines the `Token` enum that represents all possible tokens
+//! in the CURSED programming language. It includes identifiers, literals,
+//! operators, keywords, and special tokens.
+
 use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::lexer::TokenType;
 
-/// Token type for the CURSED language
+/// Represents a lexical token in the CURSED language
+///
+/// A token is the smallest unit of meaning in the language, such as
+/// keywords, identifiers, literals, operators, and delimiters.
+/// 
+/// Tokens are created by the lexer during the lexical analysis phase
+/// and consumed by the parser to build the abstract syntax tree.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     // Special tokens
@@ -118,7 +130,21 @@ pub enum Token {
 }
 
 impl Token {
-    /// Create a new token from a token type and literal value
+    /// Creates a new token from a token type and literal value
+    ///
+    /// This method converts a TokenType and a string literal into the appropriate
+    /// Token variant. For tokens that contain values (like identifiers, strings,
+    /// and numbers), it parses the literal string to create the appropriate
+    /// typed value.
+    ///
+    /// # Arguments
+    ///
+    /// * `token_type` - The type of token to create
+    /// * `literal` - The string literal representing the token's value
+    ///
+    /// # Returns
+    ///
+    /// A new Token instance. For invalid literals, returns Token::Illegal.
     pub fn new(token_type: crate::lexer::TokenType, literal: &str) -> Self {
         match token_type {
             crate::lexer::TokenType::Illegal => Token::Illegal(literal.to_string()),
@@ -246,7 +272,14 @@ impl Token {
         }
     }
     
-    /// Get the literal representation of the token
+    /// Gets the string literal representation of the token
+    ///
+    /// This method converts the token back to its string representation,
+    /// which is useful for debugging, error reporting, and testing.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the token's value or text.
     pub fn token_literal(&self) -> String {
         match self {
             Token::Illegal(s) => s.clone(),

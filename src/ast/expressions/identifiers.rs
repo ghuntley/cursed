@@ -1,7 +1,27 @@
+//! AST node for identifiers in the CURSED language.
+//!
+//! This module defines the AST representation for identifiers, which are names that
+//! refer to variables, functions, types, or other named entities in the program.
+//! Identifiers are among the most fundamental elements in the AST.
+
 use std::any::Any;
 use crate::ast::{Node, Expression};
 
-/// Identifier represents an identifier
+/// Represents an identifier node in the AST.
+///
+/// An identifier is a name that refers to a value, function, type, or other
+/// named entity in the program. Identifiers are used in variable references,
+/// function calls, type references, and many other contexts.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// x := 5
+/// print(x)
+/// ```
+///
+/// Both `x` and `print` would be represented as `Identifier` nodes in the AST.
 #[derive(Clone)]
 pub struct Identifier {
     pub token: String,

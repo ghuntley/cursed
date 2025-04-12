@@ -1,8 +1,40 @@
+//! AST nodes for operator expressions in the CURSED language.
+//!
+//! This module defines the AST representations for operator expressions:
+//! - Prefix operators: unary operators that appear before their operand (e.g., `-x`, `!y`)
+//! - Infix operators: binary operators that appear between two operands (e.g., `x + y`, `a == b`)
+//!
+//! These expressions form the basis for arithmetic, logical, and comparison operations
+//! in the language.
+
 use std::any::Any;
 use crate::ast::{Node, Expression};
 use crate::lexer::token::Token;
 
-/// PrefixExpression represents a prefix expression
+/// Represents a prefix (unary) operator expression in the AST.
+///
+/// A prefix expression consists of an operator followed by an expression.
+/// The operator is applied to the result of evaluating the expression.
+///
+/// # Supported operators
+///
+/// - `-`: Numeric negation
+/// - `!`: Logical negation (boolean NOT)
+/// - `*`: Dereference operator (for pointers)
+/// - `&`: Address-of operator (creates references)
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// -5
+/// !isValid
+/// *pointer
+/// ```
+///
+/// The AST would have a `PrefixExpression` with:
+/// - operator: "-", "!", or "*"
+/// - right: the operand expression
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
@@ -39,7 +71,45 @@ impl Expression for PrefixExpression {
     }
 }
 
-/// InfixExpression represents an infix expression
+/// Represents an infix (binary) operator expression in the AST.
+///
+/// An infix expression consists of a left expression, an operator, and a right expression.
+/// The operator is applied to the results of evaluating both expressions.
+///
+/// # Supported operators
+///
+/// Arithmetic operators:
+/// - `+`: Addition
+/// - `-`: Subtraction
+/// - `*`: Multiplication
+/// - `/`: Division
+/// - `%`: Modulo
+///
+/// Comparison operators:
+/// - `==`: Equal to
+/// - `!=`: Not equal to
+/// - `<`: Less than
+/// - `>`: Greater than
+/// - `<=`: Less than or equal to
+/// - `>=`: Greater than or equal to
+///
+/// Logical operators:
+/// - `&&`: Logical AND
+/// - `||`: Logical OR
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// x + y
+/// age >= 18
+/// isAdmin && hasPermission
+/// ```
+///
+/// The AST would have an `InfixExpression` with:
+/// - left: the left operand expression
+/// - operator: "+", ">=", or "&&"
+/// - right: the right operand expression
 pub struct InfixExpression {
     pub token: Token,
     pub left: Box<dyn Expression>,

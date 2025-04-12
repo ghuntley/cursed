@@ -1,7 +1,17 @@
+//! Core AST structures for CURSED programs
+//!
+//! This module defines the base structures of the Abstract Syntax Tree,
+//! particularly the Program struct that serves as the root of the AST.
+
 use std::fmt;
 use crate::ast::{Node, Statement};
 
-/// Program represents a CURSED program
+/// Represents a complete CURSED program
+///
+/// A Program is the root node of the Abstract Syntax Tree and contains
+/// a sequence of statements that make up the program. This is the
+/// top-level structure produced by the parser and consumed by later
+/// compilation stages.
 #[derive(Default)]
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,

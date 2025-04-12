@@ -1,5 +1,14 @@
-//! The dropz package provides basic I/O primitives.
-//! This is equivalent to the io package in Go.
+//! File and I/O operations for CURSED programs
+//!
+//! The dropz package provides file system and I/O operations for CURSED programs,
+//! similar to Go's io and ioutil packages. It includes functions for reading from
+//! and writing to files, checking file properties, and manipulating the file system.
+//!
+//! Key functions include:
+//!
+//! - File operations: `read_file`, `write_file`, `append_file`, `remove_file`
+//! - File information: `file_exists`, `is_readable`, `is_writable`, `file_info`
+//! - I/O utilities: `copy` for copying data between readers and writers
 
 use std::rc::Rc;
 use std::fs;
@@ -9,7 +18,19 @@ use std::io::{Read, Write, Seek, SeekFrom};
 use crate::object::Object;
 use crate::error::Error;
 
-/// Read a file into a byte array
+/// Reads an entire file into a byte array
+///
+/// This function reads the entire contents of the file at the specified path
+/// and returns it as an array of byte values (integers in the range 0-255).
+///
+/// # Arguments
+///
+/// * `args[0]` - The file path as a string
+///
+/// # Returns
+///
+/// An array of integers representing the file bytes, or an error if the file
+/// cannot be read
 pub fn read_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("read_file requires 1 argument: path".to_string()));
@@ -171,7 +192,25 @@ pub fn is_writable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     }
 }
 
-/// Get file information
+/// Gets detailed information about a file
+///
+/// This function retrieves metadata about the file at the specified path,
+/// including size, type (directory or file), and timestamps (creation,
+/// modification, access).
+///
+/// # Arguments
+///
+/// * `args[0]` - The file path as a string
+///
+/// # Returns
+///
+/// A hash table containing file metadata with keys:
+/// - "size": file size in bytes
+/// - "is_dir": whether the path is a directory
+/// - "is_file": whether the path is a regular file
+/// - "modified": modification timestamp (if available)
+/// - "created": creation timestamp (if available)
+/// - "accessed": last access timestamp (if available)
 pub fn file_info(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("file_info requires 1 argument: path".to_string()));

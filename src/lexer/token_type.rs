@@ -1,4 +1,17 @@
-/// TokenType enum representing the types of tokens in the CURSED language
+//! Token type classification for the CURSED language
+//!
+//! This module defines the `TokenType` enum which classifies all possible token types
+//! without their associated values. It's used by the lexer to identify the category
+//! of each token before creating the actual Token instance.
+
+/// Represents the category or type of a token in the CURSED language
+///
+/// TokenType is used to classify tokens without their associated values.
+/// This is different from the `Token` enum which includes the actual values
+/// for tokens like identifiers, strings, and numbers.
+///
+/// TokenType is used primarily during lexical analysis to identify the type
+/// of a token before creating the actual Token instance with its value.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenType {
     // Special tokens

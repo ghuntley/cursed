@@ -1,4 +1,21 @@
-// Re-exports
+//! Abstract Syntax Tree (AST) for the CURSED programming language
+//!
+//! This module defines the AST structures and interfaces used to represent
+//! CURSED programs after parsing. The AST is a structured representation of
+//! the source code that can be processed by later stages of compilation,
+//! such as type checking and code generation.
+//!
+//! ## Key Components
+//!
+//! * `base`: Core AST structures like Program
+//! * `expressions`: Expression types (literals, operations, function calls, etc.)
+//! * `statements`: Statement types (assignments, declarations, etc.)
+//! * `control_flow`: Control structures (if/else, loops, switches)
+//! * `declarations`: Declarations (functions, types, variables, constants)
+//! * `pointer`: Pointer-related operations and types
+//! * `traits`: Common interfaces for AST nodes
+
+// Module declarations
 pub mod base;
 pub mod expressions;
 pub mod statements;

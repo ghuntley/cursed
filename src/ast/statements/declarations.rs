@@ -1,10 +1,38 @@
+//! Declaration statements for the CURSED AST
+//!
+//! This module defines statement types that declare various program elements,
+//! including constants, variables, packages, and imports. Declarations introduce
+//! new named entities into the program's scope.
+//!
+//! CURSED uses Gen Z slang for these declarations:
+//! - `facts` for constants (equivalent to Go's `const`)
+//! - `sus` for variables (equivalent to Go's `var`)
+//! - `vibe` for packages (equivalent to Go's `package`)
+//! - `yeet` for imports (equivalent to Go's `import`)
+
 use std::any::Any;
 use crate::lexer::token::Token;
 use crate::ast::{Node, Statement, Expression};
 use crate::ast::expressions::Identifier;
 use crate::ast::expressions::StringLiteral;
 
-/// FactsStatement represents a constant declaration
+/// Represents a constant declaration in CURSED
+///
+/// A constant declaration introduces a new named constant with an immutable value.
+/// In CURSED, constants are declared using the `facts` keyword, which is equivalent
+/// to Go's `const` keyword.
+///
+/// # Example in CURSED
+///
+/// ```cursed
+/// facts PI = 3.14159;  // Declares a constant named PI
+/// ```
+///
+/// # Fields
+///
+/// * `token` - The token representing the `facts` keyword
+/// * `name` - The identifier for the constant
+/// * `value` - The expression that provides the constant's value
 pub struct FactsStatement {
     pub token: String,
     pub name: Box<dyn Expression>,

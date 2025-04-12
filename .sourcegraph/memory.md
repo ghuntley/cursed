@@ -23,9 +23,6 @@
 - Detailed documentation in `.sourcegraph/gc_implementation.md`
 - Example usage in `examples/concurrency_example.csd` and `examples/web_server_example.csd`
 
-## Bug Fixes
-- In `parse_break_statement` don't advance tokens after seeing a semicolon, as that's handled by the calling function
-- Fixed the parse_while_statement method to properly handle parentheses around conditions
 
 ## Code Style Guidelines
 - Follow TDD (Test-Driven Development) for all new features

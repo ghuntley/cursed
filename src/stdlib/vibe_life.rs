@@ -1,5 +1,16 @@
-//! The vibe_life package provides OS functionality.
-//! This is equivalent to the os package in Go.
+//! Operating system and environment functionality for CURSED
+//!
+//! The vibe_life package provides operating system functionality for CURSED
+//! programs, similar to Go's os package. It includes functions for working with
+//! environment variables, command-line arguments, the file system, and other
+//! OS-related operations.
+//!
+//! Key features:
+//!
+//! - Environment variables: `getenv`, `setenv`
+//! - Command-line arguments: `args`
+//! - Program control: `exit`
+//! - File system information: `exists`, `getwd`
 
 use std::rc::Rc;
 use std::env;
@@ -8,7 +19,15 @@ use std::path::Path;
 use crate::object::Object;
 use crate::error::Error;
 
-/// Get command-line arguments
+/// Gets the command-line arguments passed to the CURSED program
+///
+/// This function returns all arguments including the program name (as the
+/// first element). It provides access to the raw command line arguments
+/// that were used to invoke the CURSED program.
+///
+/// # Returns
+///
+/// An array of strings representing the command-line arguments
 pub fn args(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let cmd_args: Vec<Object> = env::args()
         .map(|arg| Object::String(arg))
@@ -54,7 +73,19 @@ pub fn setenv(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     Ok(Rc::new(Object::Null))
 }
 
-/// Exit with the given status code
+/// Terminates the CURSED program with the specified exit code
+///
+/// This function immediately exits the program with the given status code.
+/// A status code of 0 typically indicates success, while non-zero values
+/// indicate various error conditions.
+///
+/// # Arguments
+///
+/// * `args[0]` - Optional integer exit code (defaults to 0 if not provided)
+///
+/// # Note
+///
+/// This function never returns as it terminates the program.
 pub fn exit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let code = if args.is_empty() {
         0

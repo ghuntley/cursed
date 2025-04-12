@@ -1,0 +1,90 @@
+# `vibe_check` (switch/case) Statement Implementation Plan
+
+This document outlines the completed implementation of the `vibe_check` (switch/case) statement generation in LLVM codegen for the CURSED language.
+
+## Implementation Summary
+
+The implementation involved the following steps:
+
+1. Identified existing AST representation for switch statements:
+   - `SwitchStatement` in `src/ast/control_flow/conditionals.rs` for the vibe_check statement
+   - `CaseStatement` for individual mood (case) branches
+
+2. Added a `compile_switch_statement` method to `src/codegen/llvm/control_flow.rs` that:
+   - Creates basic blocks for the switch header, case blocks, and merge point
+   - Compiles the switch value expression
+   - Creates an LLVM switch instruction connected to case blocks
+   - Processes each case block, setting up fallthrough between consecutive cases
+   - Handles the default case
+
+3. Added tests in `tests/vibe_check_test.csd` for:
+   - Basic switch/case functionality
+   - Multiple values in a single case
+   - Fallthrough behavior
+
+4. Added tests in `tests/llvm_vibe_check_test.rs` to verify that the generated LLVM IR includes:
+   - The switch instruction
+   - Branch instructions for fallthrough behavior
+   - No syntax errors in the generated LLVM IR
+
+## Important Implementation Details
+
+1. **Case Values**: All case values must be integer expressions. String switch statements would require more complex implementation with explicit comparisons.
+
+2. **Fallthrough Behavior**: Following the behavior in CURSED, cases automatically fall through to the next case unless explicitly terminated with `ghosted` (break).
+
+3. **Default Case**: The `basic` case acts as the default when no cases match the switch value.
+
+4. **Multiple Values Per Case**: The implementation supports multiple values associated with a single case body using a shared basic block for all values within the same case.
+
+## Code Example
+
+```cursed
+// CURSED switch/case example
+slay test_simple_switch(x normie) tea {
+    sus result tea = "unknown";
+    
+    vibe_check x {
+        mood 1:
+            result = "one";
+        mood 2:
+            result = "two";
+        mood 3:
+            result = "three";
+        basic:
+            result = "other";
+    }
+    
+    yolo result;
+}
+```
+
+## Generated LLVM IR Structure
+
+The generated LLVM IR for vibe_check statements includes:
+
+1. A switch header block where the switch value is evaluated
+2. Case blocks for each mood clause 
+3. A default block for the basic case
+4. A merge block for the end of the switch statement
+5. Branch instructions to implement fallthrough behavior
+
+## Success Criteria
+
+- ✅ Switch/case statements with single values in cases work correctly
+- ✅ Switch/case statements with multiple values in cases work correctly
+- ✅ Default case handling (basic) works correctly
+- ✅ Fallthrough behavior between cases works correctly unless ghosted is used
+- ✅ All compiler checks pass after implementation
+
+## Resources Used
+
+- LLVM C++ API documentation for SwitchInst
+- LLVM BasicBlock and branching instructions documentation 
+- CURSED language specification for vibe_check statement semantics
+
+## Challenges and Considerations
+
+1. **String Cases**: Not yet supported - would require string comparison code generation
+2. **Nested switch statements**: Require careful scope management to avoid branch confusion
+3. **Efficient code generation**: The implementation tries to minimize basic blocks when possible

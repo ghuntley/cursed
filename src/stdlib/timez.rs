@@ -1,5 +1,18 @@
-//! The timez package provides time-related functionality.
-//! This is equivalent to the time package in Go.
+//! Time-related functions and utilities for CURSED programs
+//!
+//! The timez package provides functionality for measuring time, scheduling
+//! delays, and working with time values, similar to Go's time package.
+//! It includes functions for getting the current time, working with time
+//! durations, and sleeping.
+//!
+//! Time constants:
+//! - `NANOSECOND`, `MICROSECOND`, `MILLISECOND` - Time unit constants
+//! - `SECOND`, `MINUTE`, `HOUR` - Larger time unit constants
+//!
+//! Key functions:
+//! - `now` - Get the current time
+//! - `sleep` - Pause execution for a specified duration
+//! - `unix_timestamp` - Get the current Unix timestamp
 
 use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -15,7 +28,14 @@ pub const SECOND: i64 = 1000 * MILLISECOND;
 pub const MINUTE: i64 = 60 * SECOND;
 pub const HOUR: i64 = 60 * MINUTE;
 
-/// Get the current time
+/// Gets the current system time
+///
+/// Returns the current time as a Unix timestamp (seconds since January 1, 1970 UTC).
+/// This is similar to time.Now() in Go but returns the raw timestamp instead of a Time object.
+///
+/// # Returns
+///
+/// An integer representing the Unix timestamp in seconds
 pub fn now(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let now = SystemTime::now();
     let unix_time = now.duration_since(UNIX_EPOCH)
@@ -24,7 +44,19 @@ pub fn now(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     Ok(Rc::new(Object::Integer(unix_time.as_secs() as i64)))
 }
 
-/// Sleep for the given duration in milliseconds
+/// Pauses the current goroutine for the specified duration
+///
+/// This function suspends execution of the current goroutine for at least the
+/// specified amount of time. The actual sleep duration may be slightly longer due
+/// to OS scheduling and timer resolution.
+///
+/// # Arguments
+///
+/// * `args[0]` - The sleep duration in milliseconds (integer or float)
+///
+/// # Returns
+///
+/// Null after the sleep completes
 pub fn sleep(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("sleep requires 1 argument: duration in milliseconds".to_string()));

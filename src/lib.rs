@@ -1,15 +1,42 @@
 #![allow(clippy::all)]
-#![allow(missing_docs)]
 #![deny(clippy::correctness)]
+//#![deny(missing_docs)]
 #![recursion_limit = "512"]
+
+//! # CURSED Programming Language
+//!
+//! CURSED is an esoteric programming language that follows Go-like grammar
+//! but uses Gen Z slang for keywords and tokens. The language is designed
+//! to be self-hosting via a bootstrapping compiler written in Rust.
+//!
+//! ## Core Features
+//!
+//! * Go-like semantics with Gen Z slang syntax
+//! * Static typing with type inference
+//! * Garbage collected memory management
+//! * Concurrency support via goroutines and channels
+//! * LLVM-based code generation with JIT compilation
+//!
+//! ## Language Components
+//!
+//! * **Lexer**: Converts source code to tokens
+//! * **Parser**: Generates Abstract Syntax Tree (AST)
+//! * **Type Checker**: Verifies type correctness
+//! * **Code Generator**: Produces LLVM IR
+//! * **JIT Compiler**: Executes code via LLVM JIT
+//!
+//! ## Example
+//!
+//! ```cursed
+//! vibe main
+//!
+//! slay main() {
+//!     vibez.spill("Hello, World!")  fr fr Equivalent to fmt.Println
+//! }
+//! ```
 
 use std::fs;
 use std::io::{self, Read}; // Keep io import for run_stdin
-
-/// The CURSED programming language implementation
-/// 
-/// This crate provides the main API for the CURSED language,
-/// including lexer, parser, compiler, and LLVM code generation.
 
 pub mod ast;
 pub mod code;

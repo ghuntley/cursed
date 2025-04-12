@@ -1,11 +1,44 @@
-//! LLVM code generation for hash map operations
+//! LLVM code generation for hash map operations in the CURSED language.
+//!
+//! This module provides functionality for translating CURSED hash map (dictionary)
+//! operations into LLVM IR. It handles hash map literals (creating maps with initial
+//! key-value pairs) and defines the interface for hash map runtime operations.
+//!
+//! The implementation provides:
+//! - Creation of hash maps with key-value pairs
+//! - Declaration of runtime functions for hash map operations
+//! - Conversion between CURSED values and their hash map representation
+//!
+//! Hash maps in CURSED are similar to maps in Go, providing an unordered collection
+//! of key-value pairs where keys must be hashable types. They are implemented as
+//! runtime data structures with a C-style API for operations.
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::HashLiteral;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Compile a hash literal expression
+    /// Compiles a hash map literal expression to LLVM IR.
+    ///
+    /// This method translates a CURSED hash literal (like `{"key": value, 42: "answer"}`) 
+    /// into LLVM IR instructions that create and initialize a hash map. It performs
+    /// the following steps:
+    ///
+    /// 1. Initializes the hash map runtime functions if not already done
+    /// 2. Calls the runtime function to create an empty hash map
+    /// 3. For each key-value pair in the literal:
+    ///    a. Compiles the key and value expressions
+    ///    b. Converts them to a format suitable for the hash map (void pointers)
+    ///    c. Calls the insert function to add the pair to the hash map
+    /// 4. Returns a pointer to the created hash map
+    ///
+    /// # Arguments
+    ///
+    /// * `hash_lit` - The AST node representing the hash literal
+    ///
+    /// # Returns
+    ///
+    /// * `Result<BasicValueEnum, String>` - A pointer to the created hash map, or an error message
     pub fn compile_hash_literal(&mut self, hash_lit: &HashLiteral) -> Result<BasicValueEnum<'ctx>, String> {
         // First, we need to initialize the hash map runtime
         self.init_hash_functions();
@@ -73,7 +106,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(hashmap_ptr)
     }
     
-    /// Initialize hash map runtime functions
+    /// Initializes the runtime functions needed for hash map operations.
+    ///
+    /// This method declares the external functions that implement hash map operations.
+    /// These functions would typically be provided by a runtime library that's linked
+    /// with the compiled CURSED program. The functions include:
+    ///
+    /// - `create_hashmap`: Creates a new empty hash map
+    /// - `hashmap_insert`: Inserts a key-value pair into a hash map
+    /// - `hashmap_get`: Retrieves a value for a key from a hash map
+    /// - `hashmap_remove`: Removes a key-value pair from a hash map
+    /// - `hashmap_has_key`: Checks if a key exists in a hash map
+    /// - `hashmap_size`: Returns the number of key-value pairs in a hash map
+    ///
+    /// The method is idempotent - it only initializes the functions if they haven't
+    /// been initialized already.
     fn init_hash_functions(&mut self) {
         // Skip initialization if we've already done it
         if self.module.get_function("create_hashmap").is_some() {

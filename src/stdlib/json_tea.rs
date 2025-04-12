@@ -1,12 +1,68 @@
-//! The json_tea package provides JSON encoding and decoding.
-//! This is equivalent to the encoding/json package in Go.
+//! The json_tea package provides JSON encoding and decoding functionality.
+//!
+//! This module is equivalent to the encoding/json package in Go, providing functions
+//! for converting between CURSED objects and JSON strings. It supports serialization 
+//! and deserialization of the basic data types including null, booleans, numbers, 
+//! strings, arrays, and hash tables (objects in JSON).
+//!
+//! # Features
+//!
+//! - JSON serialization via `marshal`
+//! - JSON deserialization via `unmarshal`
+//! - Support for all basic CURSED data types
+//!
+//! # Examples
+//!
+//! ```cursed
+//! import "json_tea"
+//!
+//! // Creating a data structure
+//! user := map[string]interface{}{
+//!     "name": "Zoomer",
+//!     "age": 21,
+//!     "vibes": true,
+//!     "skills": ["coding", "TikTok"],
+//! }
+//!
+//! // Marshaling to JSON
+//! jsonStr := json_tea.marshal(user)
+//! vibez.println(jsonStr)
+//!
+//! // Unmarshaling from JSON
+//! var newUser map[string]interface{}
+//! json_tea.unmarshal(jsonStr, &newUser)
+//! ```
 
 use std::rc::Rc;
 use std::collections::HashMap;
 use crate::object::Object;
 use crate::error::Error;
 
-/// Marshal serializes a CURSED object into a JSON string
+/// Serializes a CURSED object into a JSON string.
+///
+/// This function converts CURSED data structures into their JSON representation.
+/// It supports the following object types:
+/// - Null → null
+/// - Integer → number
+/// - Float → number
+/// - Boolean → boolean
+/// - String → string
+/// - Array → array
+/// - HashTable → object
+///
+/// # Arguments
+///
+/// * `args[0]` - The CURSED object to serialize
+///
+/// # Returns
+///
+/// A String Object containing the JSON representation
+///
+/// # Errors
+///
+/// Returns a Runtime error if:
+/// - No argument is provided
+/// - The object contains unsupported types for JSON serialization
 pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("marshal requires 1 argument".to_string()));
@@ -63,7 +119,31 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     Ok(Rc::new(Object::String(json)))
 }
 
-/// Unmarshal parses JSON into a CURSED object
+/// Parses a JSON string into a CURSED object.
+///
+/// This function converts JSON data into CURSED data structures.
+/// It supports parsing all valid JSON constructs into their CURSED equivalents:
+/// - null u2192 Null
+/// - numbers u2192 Integer or Float
+/// - booleans u2192 Boolean
+/// - strings u2192 String
+/// - arrays u2192 Array
+/// - objects u2192 HashTable
+///
+/// Note: The current implementation is simplified and returns a placeholder object.
+///
+/// # Arguments
+///
+/// * `args[0]` - The JSON string to parse as a String Object
+/// * `args[1]` - A reference to a CURSED object to store the parsed result
+///
+/// # Returns
+///
+/// Null to indicate successful unmarshaling
+///
+/// # Errors
+///
+/// Returns a Runtime error if fewer than 2 arguments are provided
 pub fn unmarshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("unmarshal requires 2 arguments: JSON string and target object".to_string()));

@@ -79,7 +79,15 @@ impl ErrorLocation {
     }
 }
 
-/// Object represents a runtime value
+/// Represents a runtime value in the CURSED language
+///
+/// The Object enum is the core data structure used to represent all possible
+/// values that can exist at runtime in a CURSED program. It includes primitive
+/// types like integers and strings, as well as complex types like arrays,
+/// functions, and user-defined structs.
+///
+/// This type is used throughout the runtime system, standard library, and
+/// garbage collector to represent and manipulate program values.
 #[derive(Debug, PartialEq)]
 pub enum Object {
     Integer(i64),

@@ -1,6 +1,17 @@
+//! # CURSED Language CLI
+//!
+//! Command-line interface for the CURSED programming language.
+//! Provides REPL, file execution, and debugging capabilities.
+
 use std::env;
 use std::process;
 
+/// Main entry point for the CURSED compiler and runtime
+///
+/// Processes command-line arguments and dispatches to appropriate handlers:
+/// - No arguments: Starts the REPL
+/// - File path: Executes the file
+/// - Special options: Handles debug, help, version, etc.
 fn main() {
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
@@ -101,6 +112,11 @@ fn main() {
     }
 }
 
+/// Prints usage information for the CURSED CLI
+///
+/// # Arguments
+///
+/// * `program_name` - The name of the program as invoked by the user
 fn print_usage(program_name: &str) {
     println!("Usage: {} [OPTIONS] [FILE]", program_name);
     println!("Options:");

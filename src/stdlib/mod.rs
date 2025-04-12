@@ -1,6 +1,24 @@
-//! CURSED Standard Library Implementation
+//! Standard Library for the CURSED programming language
 //! 
-//! This module provides essential functions and types for the CURSED language.
+//! This module implements the standard library for CURSED, providing essential
+//! functions, types, and utilities that form the core functionality available
+//! to all CURSED programs. The standard library is organized into packages
+//! similar to Go's standard library, but using Gen Z slang naming conventions.
+//!
+//! Each package provides a specific category of functionality:
+//!
+//! - `vibez`: Formatted I/O (like Go's fmt)
+//! - `stringz`: String manipulation (like Go's strings)
+//! - `mathz`: Mathematical functions (like Go's math)
+//! - `timez`: Time-related utilities (like Go's time)
+//! - `vibe_life`: OS interaction (like Go's os)
+//! - `dropz`: I/O primitives (like Go's io)
+//! - `concurrenz`: Synchronization primitives (like Go's sync)
+//! - `web_vibez`: HTTP client and server (like Go's net/http)
+//! - `json_tea`: JSON parsing and generation (like Go's encoding/json)
+//! - `regex_vibez`: Regular expressions (like Go's regexp)
+//! - `cryptz`: Cryptographic operations (like Go's crypto)
+//! - `reflectz`: Runtime reflection (like Go's reflect)
 
 // Export modules as they are implemented
 pub mod vibez;     // Printf-style functions (fmt equivalent)
