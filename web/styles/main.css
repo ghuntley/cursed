@@ -154,11 +154,9 @@ nav a:hover {
 }
 
 .highlight-text {
-  background: var(--gradient-fire);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-primary);
   font-weight: 700;
+  text-shadow: 0 0 3px rgba(255, 51, 102, 0.3);
 }
 
 .blink-text {
@@ -174,19 +172,20 @@ nav a:hover {
 
 .y2k-tag {
   display: inline-block;
-  background: var(--gradient-y2k);
+  background: #aa0088;
   color: white;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 700;
   margin-left: 10px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
   transform: rotate(-3deg);
   animation: y2kFloat 3s ease-in-out infinite;
   vertical-align: middle;
   letter-spacing: 0.5px;
-  box-shadow: var(--glow-effect-blue);
+  box-shadow: 0 2px 8px rgba(170, 0, 136, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 @keyframes y2kFloat {
@@ -392,7 +391,7 @@ nav a:hover {
 }
 
 .section-pop {
-  background: var(--gradient-fire);
+  background: var(--color-primary);
   color: white;
   position: absolute;
   top: -25px;
@@ -402,11 +401,13 @@ nav a:hover {
   border-radius: 30px;
   font-weight: 800;
   font-size: 1.1rem;
-  box-shadow: var(--glow-effect);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   letter-spacing: 1px;
   text-transform: uppercase;
   z-index: 10;
   animation: pop-float 2s ease-in-out infinite;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes pop-float {
@@ -427,10 +428,8 @@ nav a:hover {
 
 .section-title::first-letter {
   font-size: 140%;
-  background: var(--gradient-neon);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-neon);
+  text-shadow: 0 0 5px rgba(57, 255, 20, 0.4);
 }
 
 .section-title:after {
@@ -541,20 +540,26 @@ nav a:hover {
 }
 
 .section-pop.dark {
-  background: var(--gradient-neon);
-  color: var(--color-dark);
-  box-shadow: var(--glow-effect-neon);
+  background: #007733;
+  color: white;
+  box-shadow: 0 0 15px rgba(0, 119, 51, 0.8);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .light-text {
   color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: 800;
 }
 
 .light-text::first-letter {
-  background: var(--gradient-vibe);
+  background: var(--color-neon);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 0 15px var(--color-neon);
 }
 
 .code-container {
@@ -564,15 +569,14 @@ nav a:hover {
 }
 
 .code-block {
-  background-color: #1e1e1e;
+  background-color: #1a1a1a;
   border-radius: var(--border-radius-md);
   padding: 1.5rem;
   overflow-x: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  border: 1px solid #333;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border: 1px solid #444;
   position: relative;
   backdrop-filter: var(--blur-effect);
-  border: 1px solid rgba(102, 0, 255, 0.2);
   animation: borderGlow 4s infinite alternate;
 }
 
@@ -593,10 +597,13 @@ nav a:hover {
   top: -12px;
   left: 20px;
   background-color: var(--color-primary);
-  padding: 0.2rem 0.8rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 20px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .code-block pre {
@@ -610,19 +617,20 @@ nav a:hover {
 }
 
 .highlight {
-  color: var(--color-accent);
+  color: #33ccff;
 }
 
 .keyword {
-  color: var(--color-primary);
+  color: #ff5588;
+  font-weight: bold;
 }
 
 .string {
-  color: #a5e844;
+  color: #b7f259;
 }
 
 .comment {
-  color: #6272a4;
+  color: #7a88c4;
   font-style: italic;
 }
 
