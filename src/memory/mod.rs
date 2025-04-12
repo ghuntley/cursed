@@ -1,4 +1,17 @@
-//! Memory management and garbage collection for CURSED
+//! Memory management and garbage collection for the CURSED language
+//!
+//! This module implements the memory management system and garbage collector
+//! for CURSED. It provides safe memory allocation, automatic reclamation of
+//! unreachable objects, and utilities for handling complex data structures.
+//!
+//! ## Components
+//!
+//! * `gc`: Core garbage collection implementation using a mark-and-sweep algorithm
+//! * `weak`: Weak references to avoid reference cycles
+//! * `container`: Specialized container implementations for better performance
+//! * `strategy`: Different memory management strategies
+//! * `allocator`: Memory allocation utilities
+//! * `channel`: Thread-safe communication channels
 
 pub mod gc;
 pub mod weak;
@@ -20,7 +33,11 @@ use std::sync::Arc;
 
 use crate::memory::gc::GarbageCollector;
 
-/// Tag for different types of objects
+/// Type tag for different memory-managed object types
+///
+/// These tags are used by the garbage collector to identify object types
+/// during marking and sweeping. Each tag corresponds to a specific
+/// type of object that can be managed by the garbage collector.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tag {
     Int,
@@ -35,6 +52,11 @@ pub enum Tag {
 }
 
 /// Trait for objects that can be traced by the garbage collector
+///
+/// Objects implementing this trait can participate in garbage collection.
+/// The `trace` method allows the GC to traverse object references during
+/// the mark phase, while `size` and `tag` provide metadata needed for
+/// memory management operations.
 pub trait Traceable: 'static {
     /// Trace all references in this object
     fn trace(&self, visitor: &mut dyn Visitor);
@@ -47,6 +69,10 @@ pub trait Traceable: 'static {
 }
 
 /// Visitor for traversing object graphs during garbage collection
+///
+/// This trait defines the interface for objects that traverse the object graph
+/// during garbage collection's mark phase. Implementations of this trait
+/// visit each reachable object, marking it and its references as live.
 pub trait Visitor {
     /// Visit a traceable object
     fn visit(&mut self, ptr: NonNull<dyn Traceable>);
@@ -58,7 +84,11 @@ pub trait Visitor {
     fn visit_ptr(&mut self, ptr: usize, tag: Tag);
 }
 
-/// Garbage-collected reference to an object
+/// Smart pointer for garbage-collected objects
+///
+/// `Gc<T>` is a reference-counted smart pointer that provides safe access
+/// to heap-allocated objects managed by the garbage collector. It automatically
+/// registers and unregisters objects as roots when created and destroyed.
 #[derive(Debug)]
 pub struct Gc<T: Traceable + Clone + 'static> {
     ptr: NonNull<T>,

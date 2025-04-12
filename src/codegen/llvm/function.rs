@@ -1,5 +1,16 @@
-//! LLVM code generation for functions
-//! This module handles function declarations and calls
+//! LLVM code generation for functions in the CURSED language.
+//!
+//! This module handles the translation of CURSED functions to LLVM IR, including
+//! function definitions, parameter handling, function bodies, and function calls.
+//! It manages the scope of variables within functions and ensures proper control
+//! flow for function entry and exit.
+//!
+//! Key responsibilities include:
+//! - Creating LLVM function declarations with appropriate signatures
+//! - Setting up parameter passing and local variable storage
+//! - Compiling function bodies while maintaining proper variable scoping
+//! - Generating function call instructions with argument passing
+//! - Handling return values and ensuring proper function termination
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::declarations::FunctionStatement;
@@ -7,7 +18,27 @@ use crate::ast::expressions::CallExpression;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Compile a function literal (function definition)
+    /// Compiles a function definition to LLVM IR.
+    ///
+    /// This method translates a CURSED function declaration into an LLVM function with the
+    /// appropriate signature, parameter handling, and body. It creates a new function context
+    /// with its own variable scope for parameters and local variables.
+    ///
+    /// The process includes:
+    /// 1. Creating an LLVM function with the appropriate signature
+    /// 2. Creating an entry basic block for the function body
+    /// 3. Setting up parameter allocations and initializations
+    /// 4. Compiling the function body statements
+    /// 5. Ensuring the function has a proper terminator (return instruction)
+    /// 6. Validating the generated function
+    ///
+    /// # Arguments
+    ///
+    /// * `fn_lit` - The AST function declaration node to compile
+    ///
+    /// # Returns
+    ///
+    /// * `Result<BasicValueEnum, String>` - A pointer to the compiled function
     pub fn compile_function_literal(&mut self, fn_lit: &crate::ast::declarations::FunctionStatement) -> Result<BasicValueEnum<'ctx>, String> {
         // Function name - using a generic anonymous function name if none is provided
         let fn_name = "anonymous_fn";
@@ -74,7 +105,24 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(function.as_global_value().as_pointer_value().into())
     }
     
-    /// Compile a function call expression
+    /// Compiles a function call expression to LLVM IR.
+    ///
+    /// This method translates a CURSED function call into LLVM IR call instructions.
+    /// It handles resolving the function being called (either by name or pointer),
+    /// compiling the arguments, and creating the actual call instruction.
+    ///
+    /// The method performs validation to ensure:
+    /// - The called entity is actually a function
+    /// - The correct number of arguments is provided
+    /// - Each argument is properly compiled and converted to the expected type
+    ///
+    /// # Arguments
+    ///
+    /// * `call_expr` - The AST function call expression node to compile
+    ///
+    /// # Returns
+    ///
+    /// * `Result<BasicValueEnum, String>` - The function call's return value
     pub fn compile_call_expression(&mut self, call_expr: &crate::ast::expressions::CallExpression) -> Result<BasicValueEnum<'ctx>, String> {
         // Get the function to call
         let callee = self.compile_expression(call_expr.function.as_ref())?;

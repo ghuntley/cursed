@@ -1,5 +1,18 @@
-//! The concurrenz package provides synchronization primitives.
-//! This is equivalent to the sync package in Go.
+//! Synchronization primitives for concurrent CURSED programs
+//!
+//! The concurrenz package provides synchronization tools for safely coordinating
+//! concurrent goroutines in CURSED programs, similar to Go's sync package.
+//! It includes mutexes for exclusive access to shared resources and wait groups
+//! for coordinating multiple goroutines.
+//!
+//! Key components:
+//!
+//! - `Mutex`: Mutual exclusion lock for protecting shared data
+//! - `WaitGroup`: Synchronization primitive for waiting for multiple goroutines
+//!
+//! Functions:
+//! - `new_mutex`, `mutex_lock`, `mutex_unlock`: Mutex operations
+//! - `new_waitgroup`, `waitgroup_add`, `waitgroup_done`, `waitgroup_wait`: WaitGroup operations
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -7,13 +20,21 @@ use std::sync::{Mutex as StdMutex, RwLock as StdRwLock};
 use crate::object::Object;
 use crate::error::Error;
 
-/// Mutex type for CURSED
+/// Mutual exclusion lock for protecting shared data in CURSED programs
+///
+/// A Mutex provides synchronization by ensuring that only one goroutine can
+/// access protected data at any given time. It's used to protect shared 
+/// resources from concurrent access conflicts.
 #[derive(Clone)]
 pub struct Mutex {
     inner: Rc<RefCell<()>>,
 }
 
-/// WaitGroup for CURSED
+/// Synchronization primitive for coordinating groups of goroutines
+///
+/// A WaitGroup blocks execution until all goroutines in the group have
+/// finished execution. It's used when a goroutine needs to wait for multiple
+/// other goroutines to complete their work.
 #[derive(Clone)]
 pub struct WaitGroup {
     count: Rc<RefCell<i64>>,

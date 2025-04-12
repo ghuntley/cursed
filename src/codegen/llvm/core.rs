@@ -1,12 +1,41 @@
-//! Core functionality for LLVM code generation
-//! This module contains the essential utilities and helper functions
+//! Core functionality for LLVM code generation in the CURSED language.
+//!
+//! This module contains essential utilities and helper functions for generating
+//! LLVM IR from CURSED language constructs. It implements core operations such as
+//! type conversions, which allow programs to explicitly cast between different
+//! numeric types.
+//!
+//! The core functionality bridges between the CURSED language's unique type system
+//! (with names like "smol", "thicc", "snack", and "meal") and LLVM's more
+//! traditional types (i8, i64, f32, f64, etc.).
 
 use crate::ast::*;
 use inkwell::values::BasicValueEnum;
 use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Compile a type conversion expression
+    /// Compiles a type conversion expression to LLVM IR.
+    ///
+    /// This method handles explicit type conversions in CURSED code using the 'as' keyword.
+    /// It supports conversions between the language's numeric types:
+    ///
+    /// Integer types:
+    /// - "smol": 8-bit integer (i8)
+    /// - "mid": 16-bit integer (i16)
+    /// - "normie": 32-bit integer (i32)
+    /// - "thicc": 64-bit integer (i64)
+    ///
+    /// Floating-point types:
+    /// - "snack": 32-bit float (f32)
+    /// - "meal": 64-bit float (f64)
+    ///
+    /// # Arguments
+    ///
+    /// * `type_conv` - The AST node representing the type conversion expression
+    ///
+    /// # Returns
+    ///
+    /// * `Result<BasicValueEnum, String>` - The LLVM value resulting from the conversion, or an error message
     pub fn compile_type_conversion(&mut self, type_conv: &TypeConversionExpression) -> Result<BasicValueEnum<'ctx>, String> {
         // Get the value to convert
         let value = self.compile_expression(type_conv.expression.as_ref())?;

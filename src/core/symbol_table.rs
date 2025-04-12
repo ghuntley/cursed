@@ -1,4 +1,13 @@
-//! Symbol table for tracking variables and types
+//! Symbol table for name resolution and scope management
+//!
+//! This module implements the symbol table system for the CURSED language,
+//! providing scope-aware name resolution and tracking of variables, functions,
+//! and types. The symbol table helps the compiler manage nested scopes,
+//! variable declarations, and resolve identifiers during parsing and code
+//! generation.
+//!
+//! Symbol tables are organized hierarchically to reflect lexical scoping
+//! rules, with each table potentially having an outer (parent) scope.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -31,7 +40,12 @@ pub struct Symbol {
     pub type_name: Option<String>,
 }
 
-/// Symbol table for tracking variables and their scopes
+/// Symbol table for tracking variables, functions, and their scopes
+///
+/// A SymbolTable represents a single scope in CURSED code (global, function, block, etc.)
+/// and maintains mappings from names to their Symbol definitions. Tables are linked
+/// in a hierarchical structure where each inner scope can access symbols from its
+/// outer (enclosing) scopes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SymbolTable {
     /// The outer (parent) symbol table, if any

@@ -1,7 +1,21 @@
+//! Error handling for the CURSED programming language
+//!
+//! This module provides error types and utilities for reporting and handling errors
+//! that occur during lexical analysis, parsing, type checking, code generation,
+//! and execution of CURSED programs.
+//!
+//! The main types are:
+//! - `Error`: The primary error type for all stages of compilation and execution
+//! - `SourceLocation`: Represents a location in source code for error reporting
+//! - `ErrorReporter`: Utility for creating properly formatted errors
+
 use std::fmt;
 use std::io;
 
-/// Represents a location in the source code
+/// Represents a location in the source code for error reporting
+///
+/// Contains information about the line and column numbers,
+/// as well as optional file name and source line context.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceLocation {
     /// Line number (0-based)
@@ -59,7 +73,12 @@ impl fmt::Display for SourceLocation {
     }
 }
 
-/// Error type for the CURSED language
+/// Comprehensive error type for the CURSED language
+///
+/// This enum represents all possible errors that can occur during
+/// lexical analysis, parsing, type checking, code generation, and
+/// execution of CURSED programs. Each variant contains information
+/// appropriate for that type of error.
 #[derive(Debug)]
 pub enum Error {
     /// I/O errors
@@ -137,7 +156,11 @@ pub enum Error {
     CodeGenError(String),
 }
 
-/// Error reporting for CURSED
+/// Utility for creating properly formatted error instances
+///
+/// The ErrorReporter provides a collection of methods for creating
+/// various types of errors with consistent formatting and structure.
+/// It serves as a factory for Error instances across different compiler stages.
 pub struct ErrorReporter;
 
 impl ErrorReporter {

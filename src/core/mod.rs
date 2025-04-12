@@ -1,4 +1,15 @@
-//! Core runtime components for CURSED
+//! Core runtime and language services for CURSED
+//!
+//! This module contains the central components of the CURSED language runtime
+//! and compiler services. It includes the type system, symbol management,
+//! concurrency primitives, and runtime type representations.
+//!
+//! Key components:
+//! - Type checking and type system services
+//! - Symbol table for name resolution and scope management
+//! - Channel and goroutine implementations for concurrency
+//! - Generic code instantiation services
+//! - Runtime type information
 
 pub mod thread_safe_goroutine;
 pub mod type_checker;
@@ -8,7 +19,11 @@ pub mod generic_instantiation;
 pub mod goroutine;
 pub mod char;
 
-/// Compiled function representation
+/// Runtime representation of a compiled CURSED function
+///
+/// This structure holds the compiled bytecode, metadata, and runtime information
+/// for a CURSED function. It serves as the interface between the compiler and
+/// the runtime system, providing all the information needed to execute the function.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompiledFunction {
     /// Name of the function

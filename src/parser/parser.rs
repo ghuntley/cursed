@@ -1,3 +1,9 @@
+//! Core parser implementation for the CURSED language
+//!
+//! This module contains the main Parser struct and its implementation,
+//! responsible for transforming token streams into Abstract Syntax Trees.
+//! It implements a recursive descent parser with Pratt parsing for expressions.
+
 use crate::ast::{self, Statement, Expression};
 use crate::ast::base::Program;
 use crate::error::{Error, SourceLocation, ErrorReporter};
@@ -6,15 +12,35 @@ use crate::lexer::{Lexer, Token};
 use super::precedence::Precedence;
 
 /// Parser for the CURSED language
+///
+/// The Parser takes a token stream from the lexer and builds an Abstract
+/// Syntax Tree (AST) representation of the program. It uses recursive descent
+/// parsing for statements and Pratt parsing for expressions to handle
+/// operator precedence correctly.
 pub struct Parser<'a> {
+    /// Reference to the lexer that provides tokens
     pub(super) lexer: &'a mut Lexer<'a>,
+    /// Current token being processed
     pub(super) current_token: Token,
+    /// Next token in the stream (lookahead)
     pub(super) peek_token: Token,
+    /// Collection of errors encountered during parsing
     pub(super) errors: Vec<Error>,
 }
 
 impl<'a> Parser<'a> {
-    /// Create a new parser with the given lexer
+    /// Creates a new parser with the given lexer
+    ///
+    /// Initializes the parser and reads the first two tokens to set up
+    /// the current_token and peek_token fields.
+    ///
+    /// # Arguments
+    ///
+    /// * `lexer` - A mutable reference to a Lexer that will provide tokens
+    ///
+    /// # Returns
+    ///
+    /// A Result containing the new Parser instance or an Error if token reading fails
     pub fn new(lexer: &'a mut Lexer<'a>) -> Result<Self, Error> {
         let mut parser = Parser {
             lexer,
@@ -30,7 +56,12 @@ impl<'a> Parser<'a> {
         Ok(parser)
     }
 
-    /// Helper method to provide debug information about current parser state
+    /// Provides debug information about current parser state
+    ///
+    /// # Returns
+    ///
+    /// A string containing information about the current parser state,
+    /// including position and tokens
     pub(super) fn parser_state_debug(&self) -> String {
         let mut info = String::new();
         info.push_str(&format!("Parser state:\n"));
@@ -41,14 +72,28 @@ impl<'a> Parser<'a> {
         info
     }
 
-    /// Move to the next token
+    /// Advances to the next token in the stream
+    ///
+    /// Shifts the peek_token to current_token and reads a new token
+    /// from the lexer into peek_token.
+    ///
+    /// # Returns
+    ///
+    /// Result<(), Error> - Ok if successful, Error if lexer fails
     pub(super) fn next_token(&mut self) -> Result<(), Error> {
         self.current_token = self.peek_token.clone();
         self.peek_token = self.lexer.next_token()?;
         Ok(())
     }
 
-    /// Parse the program
+    /// Parses a complete program from the token stream
+    ///
+    /// Processes the entire token stream and builds an AST representation
+    /// of the program, handling any parsing errors encountered.
+    ///
+    /// # Returns
+    ///
+    /// Result<Program, Error> - The parsed program AST or an error
     pub fn parse_program(&mut self) -> Result<Program, Error> {
         let mut program = Program {
             statements: Vec::new(),
@@ -67,17 +112,41 @@ impl<'a> Parser<'a> {
         Ok(program)
     }
 
-    /// Check if the current token is of the expected type
+    /// Checks if the current token matches the expected type
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The token type to check against
+    ///
+    /// # Returns
+    ///
+    /// `true` if the current token is of the expected type, `false` otherwise
     pub(super) fn current_token_is(&self, token: Token) -> bool {
         matches!(&self.current_token, t if std::mem::discriminant(t) == std::mem::discriminant(&token))
     }
 
-    /// Check if the peek token is of the expected type
+    /// Checks if the peek token matches the expected type
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The token type to check against
+    ///
+    /// # Returns
+    ///
+    /// `true` if the peek token is of the expected type, `false` otherwise
     pub(super) fn peek_token_is(&self, token: Token) -> bool {
         matches!(&self.peek_token, t if std::mem::discriminant(t) == std::mem::discriminant(&token))
     }
 
-    /// Expect the peek token to be of the expected type
+    /// Ensures the peek token is of the expected type and advances if it is
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The expected token type
+    ///
+    /// # Returns
+    ///
+    /// Result<(), Error> - Ok if the token matches and advances, Error otherwise
     pub(super) fn expect_peek(&mut self, token: Token) -> Result<(), Error> {
         if self.peek_token_is(token.clone()) {
             self.next_token()?;
@@ -97,7 +166,13 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Get the precedence of the peek token
+    /// Gets the precedence level of the peek token
+    ///
+    /// Used in expression parsing to determine operator precedence.
+    ///
+    /// # Returns
+    ///
+    /// The precedence level of the peek token
     pub(super) fn peek_precedence(&self) -> Precedence {
         match &self.peek_token {
             Token::Eq => Precedence::Equals,
@@ -116,7 +191,13 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Get the precedence of the current token
+    /// Gets the precedence level of the current token
+    ///
+    /// Used in expression parsing to determine operator precedence.
+    ///
+    /// # Returns
+    ///
+    /// The precedence level of the current token
     pub(super) fn current_precedence(&self) -> Precedence {
         match &self.current_token {
             Token::Eq => Precedence::Equals,
@@ -135,13 +216,34 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Get the errors that occurred during parsing
+    /// Returns a slice containing all parsing errors
+    ///
+    /// # Returns
+    ///
+    /// A slice of Error objects representing parsing errors
     pub fn errors(&self) -> &[Error] {
         &self.errors
     }
 
-    // Helper to create an error with current location
+    /// Creates an error with the current source location
+    ///
+    /// # Arguments
+    ///
+    /// * `message` - The error message
+    ///
+    /// # Returns
+    ///
+    /// A new Error instance with the current parser location
     pub(super) fn error(&self, message: &str) -> Error {
         Error::new("Parser", message, Some(self.lexer.location()))
+    }
+    
+    /// Gets a reference to the peek token without advancing
+    ///
+    /// # Returns
+    ///
+    /// A reference to the peek token
+    pub(super) fn peek_token(&self) -> &Token {
+        &self.peek_token
     }
 }

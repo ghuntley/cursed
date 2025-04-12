@@ -1,4 +1,14 @@
-//! Garbage collector implementation
+//! Garbage collector implementation for the CURSED language
+//!
+//! This module implements a mark-and-sweep garbage collector that automatically
+//! manages memory for CURSED programs. It includes support for incremental
+//! collection, detailed memory statistics, and debugging tools.
+//!
+//! The garbage collector works by:
+//! 1. Tracking all allocated objects
+//! 2. Maintaining a set of root objects (directly accessible references)
+//! 3. Periodically marking all objects reachable from roots
+//! 4. Sweeping (freeing) any objects that aren't marked
 
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -78,7 +88,12 @@ enum MarkState {
     Black, // Fully processed
 }
 
-/// Garbage collector implementation
+/// The main garbage collector implementation
+///
+/// This struct provides the public API for memory allocation and garbage collection.
+/// It maintains internal state through a thread-safe reference-counted lock,
+/// allowing it to be shared between different parts of the program and potentially
+/// across thread boundaries.
 #[derive(Debug, Clone)]
 pub struct GarbageCollector {
     pub(crate) inner: Arc<RwLock<GcStateInner>>,
@@ -132,7 +147,19 @@ impl GarbageCollector {
         })
     }
     
-    /// Allocate a new garbage-collected object
+    /// Allocates a new garbage-collected object
+    ///
+    /// This method allocates memory for the given value, adds it to the set of
+    /// tracked objects, and returns a garbage-collected reference (Gc<T>) to it.
+    /// It may trigger garbage collection if the allocation threshold is reached.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The value to allocate memory for
+    ///
+    /// # Returns
+    ///
+    /// A garbage-collected smart pointer (Gc<T>) to the allocated object
     pub fn allocate<T: Traceable + Clone + 'static>(&self, value: T) -> Gc<T> {
         let mut state = self.inner.write().unwrap();
         
@@ -200,7 +227,12 @@ impl GarbageCollector {
         state.objects.contains_key(&ptr)
     }
     
-    /// Explicitly trigger garbage collection
+    /// Explicitly triggers a garbage collection cycle
+    ///
+    /// This method forces the garbage collector to run a complete mark-and-sweep
+    /// cycle, identifying unreachable objects and reclaiming their memory.
+    /// It's typically used when the program expects a large number of objects
+    /// to become unreachable, or for testing and benchmarking purposes.
     pub fn collect_garbage(&self) {
         self.collect_garbage_internal(CollectionTrigger::Manual);
     }

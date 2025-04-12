@@ -1,5 +1,18 @@
-//! The mathz package provides mathematical functions.
-//! This is equivalent to the math package in Go.
+//! Mathematical functions and constants for CURSED programs
+//!
+//! The mathz package provides mathematical operations, functions, and constants
+//! similar to Go's math package. It includes common operations like absolute value,
+//! rounding, exponentiation, trigonometric functions, and mathematical constants.
+//!
+//! Key functions include:
+//!
+//! - Basic operations: `abs`, `max`, `min`
+//! - Rounding: `ceil`, `floor`, `round`
+//! - Powers: `pow`, `sqrt`
+//!
+//! Constants:
+//! - `PI`: The mathematical constant π (3.141592...)
+//! - `E`: The mathematical constant e (2.718281...)
 
 use std::rc::Rc;
 use crate::object::Object;
@@ -9,7 +22,18 @@ use crate::error::Error;
 pub const PI: f64 = std::f64::consts::PI;
 pub const E: f64 = std::f64::consts::E;
 
-/// Absolute value of x
+/// Returns the absolute value of a number
+///
+/// This function computes the absolute value of the input number,
+/// returning the magnitude regardless of sign.
+///
+/// # Arguments
+///
+/// * `args` - A slice with one Object reference (Integer or Float)
+///
+/// # Returns
+///
+/// Result<Rc<Object>, Error> - The absolute value result or an error
 pub fn abs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("abs requires 1 argument".to_string()));
@@ -105,7 +129,19 @@ pub fn pow(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     }
 }
 
-/// Square root of x
+/// Computes the square root of a non-negative number
+///
+/// This function calculates the square root of the input number. The input
+/// must be non-negative, or an error will be returned. The result will be
+/// an integer if the square root is an exact integer, otherwise a float.
+///
+/// # Arguments
+///
+/// * `args` - A slice with one Object reference (non-negative Integer or Float)
+///
+/// # Returns
+///
+/// Result<Rc<Object>, Error> - The square root result or an error
 pub fn sqrt(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("sqrt requires 1 argument".to_string()));

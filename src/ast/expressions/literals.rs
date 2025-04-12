@@ -1,7 +1,24 @@
+//! Literal expression types for the CURSED AST
+//!
+//! This module defines the AST nodes for all literal expressions in the CURSED
+//! language. Literals represent constant values that appear directly in the source
+//! code, such as numbers, strings, booleans, and character values.
+//!
+//! Each literal type implements both the `Node` and `Expression` traits,
+//! allowing them to be used in the AST as expressions.
+
 use std::any::Any;
 use crate::ast::{Node, Expression};
 
-/// StringLiteral represents a string literal
+/// Represents a string literal in the source code
+///
+/// A string literal is a sequence of characters enclosed in double quotes,
+/// such as "hello world". In CURSED, these are represented by the `tea` type.
+///
+/// # Fields
+///
+/// * `token` - The original token from the lexer
+/// * `value` - The actual string value (without surrounding quotes)
 pub struct StringLiteral {
     pub token: String,
     pub value: String,
@@ -25,7 +42,16 @@ impl Expression for StringLiteral {
     }
 }
 
-/// IntegerLiteral represents an integer literal
+/// Represents an integer literal in the source code
+///
+/// An integer literal is a sequence of digits that represents a whole number,
+/// such as 42 or -123. In CURSED, these are represented by types like `normie`
+/// (32-bit integer) or `thicc` (64-bit integer).
+///
+/// # Fields
+///
+/// * `token` - The original token from the lexer
+/// * `value` - The parsed integer value
 pub struct IntegerLiteral {
     pub token: String,
     pub value: i64,

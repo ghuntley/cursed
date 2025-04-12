@@ -1,0 +1,276 @@
+//! Test for generic function call code generation
+
+use inkwell::context::Context;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::MonomorphizationManager;
+use cursed::core::type_checker::Type;
+use cursed::ast::base::Program;
+use cursed::ast::expressions::{Identifier, IntegerLiteral, CallExpression};
+use cursed::ast::FunctionStatement;
+use cursed::ast::ParameterStatement;
+use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::statements::{ReturnStatement, ExpressionStatement};
+use std::path::PathBuf;
+
+/// Test the compilation of generic function calls
+#[test]
+fn test_generic_function_call_compilation() {
+    // Create a context and code generator
+    let context = Context::create();
+    let file_path = PathBuf::from("test_generic_call.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_generic_call_module", file_path);
+    
+    // Create a generic identity function: function identity<T>(x: T) -> T { return x; }
+    let identity_function = create_generic_identity_function();
+    
+    // Register the function in the module
+    code_gen.add_function(&identity_function).expect("Failed to add generic function");
+    
+    // Create a function call: identity<Normie>(42)
+    let call_expression = create_generic_function_call("identity", vec![Type::Normie], vec![42]);
+    
+    // Create a function context for testing
+    let i32_type = context.i32_type();
+    let fn_type = i32_type.fn_type(&[], false);
+    let function = code_gen.module().add_function("test_caller", fn_type, None);
+    let entry_block = context.append_basic_block(function, "entry");
+    code_gen.builder().position_at_end(entry_block);
+    
+    // Compile the function call
+    let result = code_gen.compile_expression(&call_expression);
+    assert!(result.is_ok(), "Failed to compile generic function call: {:?}", result.err());
+    
+    // Verify the function has been specialized
+    assert!(code_gen.mono_manager.is_function_instantiated("identity", &[Type::Normie]));
+    
+    // Verify the specialized function exists in the module
+    let specialized_name = code_gen.mono_manager.generate_specialized_name("identity", &[Type::Normie]);
+    let function = code_gen.module().get_function(&specialized_name);
+    assert!(function.is_some(), "Specialized function should exist in module");
+}
+
+#[test]
+fn test_multiple_generic_function_calls() {
+    // Create a context and code generator
+    let context = Context::create();
+    let file_path = PathBuf::from("test_multi_generic_call.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_multi_generic_call_module", file_path);
+    
+    // Create a generic swap function: function swap<T>(a: T, b: T) -> T { return a; }
+    let swap_function = create_generic_swap_function();
+    
+    // Register the function in the module
+    code_gen.add_function(&swap_function).expect("Failed to add generic function");
+    
+    // Create function context for testing
+    let i32_type = context.i32_type();
+    let fn_type = i32_type.fn_type(&[], false);
+    let function = code_gen.module().add_function("test_multi_caller", fn_type, None);
+    let entry_block = context.append_basic_block(function, "entry");
+    code_gen.builder().position_at_end(entry_block);
+    
+    // Create first call: swap<Normie>(10, 20)
+    let call1 = create_generic_swap_call("swap", Type::Normie, 10, 20);
+    let result1 = code_gen.compile_expression(&call1);
+    assert!(result1.is_ok(), "Failed to compile first generic function call");
+    
+    // Create second call with different type: swap<Thicc>(30, 40)
+    let call2 = create_generic_swap_call("swap", Type::Thicc, 30, 40);
+    let result2 = code_gen.compile_expression(&call2);
+    assert!(result2.is_ok(), "Failed to compile second generic function call");
+    
+    // Verify both specializations exist
+    assert!(code_gen.mono_manager.is_function_instantiated("swap", &[Type::Normie]));
+    assert!(code_gen.mono_manager.is_function_instantiated("swap", &[Type::Thicc]));
+    
+    // Verify specialized functions exist in the module
+    let name1 = code_gen.mono_manager.generate_specialized_name("swap", &[Type::Normie]);
+    let name2 = code_gen.mono_manager.generate_specialized_name("swap", &[Type::Thicc]);
+    
+    assert!(code_gen.module().get_function(&name1).is_some());
+    assert!(code_gen.module().get_function(&name2).is_some());
+}
+
+/// Helper to create a generic function call
+fn create_generic_function_call(function_name: &str, type_args: Vec<Type>, args: Vec<i32>) -> CallExpression {
+    // Create the function identifier
+    let function = Identifier {
+        token: "IDENT".to_string(),
+        value: function_name.to_string(),
+    };
+    
+    // Create arguments
+    let arguments: Vec<Box<dyn cursed::ast::traits::Expression>> = args.into_iter()
+        .map(|value| {
+            let int_lit = IntegerLiteral {
+                token: format!("{}", value),
+                value,
+            };
+            Box::new(int_lit) as Box<dyn cursed::ast::traits::Expression>
+        })
+        .collect();
+    
+    // Create the call expression
+    CallExpression {
+        token: "(".to_string(),
+        function: Box::new(function),
+        arguments,
+        type_arguments: type_args,
+    }
+}
+
+/// Helper to create a swap function call with two arguments
+fn create_generic_swap_call(function_name: &str, type_arg: Type, arg1: i32, arg2: i32) -> CallExpression {
+    // Create the function identifier
+    let function = Identifier {
+        token: "IDENT".to_string(),
+        value: function_name.to_string(),
+    };
+    
+    // Create arguments
+    let int_lit1 = IntegerLiteral {
+        token: format!("{}", arg1),
+        value: arg1,
+    };
+    
+    let int_lit2 = IntegerLiteral {
+        token: format!("{}", arg2),
+        value: arg2,
+    };
+    
+    let arguments: Vec<Box<dyn cursed::ast::traits::Expression>> = vec![
+        Box::new(int_lit1) as Box<dyn cursed::ast::traits::Expression>,
+        Box::new(int_lit2) as Box<dyn cursed::ast::traits::Expression>,
+    ];
+    
+    // Create the call expression
+    CallExpression {
+        token: "(".to_string(),
+        function: Box::new(function),
+        arguments,
+        type_arguments: vec![type_arg],
+    }
+}
+
+/// Helper function to create a generic identity function
+fn create_generic_identity_function() -> FunctionStatement {
+    // Create type parameter T
+    let type_parameters = vec![Identifier {
+        token: "IDENT".to_string(),
+        value: "T".to_string(),
+    }];
+    
+    // Create parameter x: T
+    let parameters = vec![ParameterStatement {
+        token: "IDENT".to_string(),
+        name: Identifier {
+            token: "IDENT".to_string(),
+            value: "x".to_string(),
+        },
+        type_name: Box::new(Identifier {
+            token: "IDENT".to_string(),
+            value: "T".to_string(),
+        }),
+    }];
+    
+    // Create return type T
+    let return_type = Some(Box::new(Identifier {
+        token: "IDENT".to_string(),
+        value: "T".to_string(),
+    }));
+    
+    // Create body: { return x; }
+    let return_statement = ReturnStatement {
+        token: "return".to_string(),
+        return_value: Some(Box::new(Identifier {
+            token: "IDENT".to_string(),
+            value: "x".to_string(),
+        })),
+    };
+    
+    let body = BlockStatement {
+        token: "{".to_string(),
+        statements: vec![Box::new(return_statement)],
+    };
+    
+    // Create the function statement
+    FunctionStatement {
+        token: "function".to_string(),
+        name: Identifier {
+            token: "IDENT".to_string(),
+            value: "identity".to_string(),
+        },
+        parameters,
+        body: Box::new(body),
+        return_type,
+        type_parameters,
+    }
+}
+
+/// Helper function to create a generic swap function
+fn create_generic_swap_function() -> FunctionStatement {
+    // Create type parameter T
+    let type_parameters = vec![Identifier {
+        token: "IDENT".to_string(),
+        value: "T".to_string(),
+    }];
+    
+    // Create parameters a: T, b: T
+    let parameters = vec![
+        ParameterStatement {
+            token: "IDENT".to_string(),
+            name: Identifier {
+                token: "IDENT".to_string(),
+                value: "a".to_string(),
+            },
+            type_name: Box::new(Identifier {
+                token: "IDENT".to_string(),
+                value: "T".to_string(),
+            }),
+        },
+        ParameterStatement {
+            token: "IDENT".to_string(),
+            name: Identifier {
+                token: "IDENT".to_string(),
+                value: "b".to_string(),
+            },
+            type_name: Box::new(Identifier {
+                token: "IDENT".to_string(),
+                value: "T".to_string(),
+            }),
+        },
+    ];
+    
+    // Create return type T
+    let return_type = Some(Box::new(Identifier {
+        token: "IDENT".to_string(),
+        value: "T".to_string(),
+    }));
+    
+    // Create body: { return a; }
+    let return_statement = ReturnStatement {
+        token: "return".to_string(),
+        return_value: Some(Box::new(Identifier {
+            token: "IDENT".to_string(),
+            value: "a".to_string(),
+        })),
+    };
+    
+    let body = BlockStatement {
+        token: "{".to_string(),
+        statements: vec![Box::new(return_statement)],
+    };
+    
+    // Create the function statement
+    FunctionStatement {
+        token: "function".to_string(),
+        name: Identifier {
+            token: "IDENT".to_string(),
+            value: "swap".to_string(),
+        },
+        parameters,
+        body: Box::new(body),
+        return_type,
+        type_parameters,
+    }
+}

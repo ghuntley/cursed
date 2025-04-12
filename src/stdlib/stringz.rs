@@ -1,11 +1,32 @@
-//! The stringz package provides string manipulation functions.
-//! This is equivalent to the strings package in Go.
+//! String manipulation functions for CURSED programs
+//!
+//! The stringz package provides utilities for working with strings,
+//! similar to Go's strings package. It includes functions for
+//! searching, modifying, splitting, joining, and transforming strings.
+//!
+//! Key functions include:
+//!
+//! - String searching: `contains`, `has_prefix`, `has_suffix`, `count`
+//! - String splitting/joining: `split`, `join` 
+//! - String transformations: `to_lower`, `to_upper`, `trim`
 
 use std::rc::Rc;
 use crate::object::Object;
 use crate::error::Error;
 
-/// Check if s contains substr
+/// Checks if a string contains a substring
+///
+/// Determines whether the first string argument contains the second string argument
+/// as a substring anywhere within it.
+///
+/// # Arguments
+///
+/// * `args[0]` - The string to search in
+/// * `args[1]` - The substring to search for
+///
+/// # Returns
+///
+/// A boolean value: true if the substring is found, false otherwise
 pub fn contains(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("contains requires 2 arguments".to_string()));
@@ -105,7 +126,19 @@ pub fn join(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     Ok(Rc::new(Object::String(elements.join(&sep))))
 }
 
-/// Split s by separator
+/// Splits a string into substrings based on a separator
+///
+/// This function divides a string into substrings at each occurrence of the specified
+/// separator string, returning an array of the resulting substrings.
+///
+/// # Arguments
+///
+/// * `args[0]` - The string to split
+/// * `args[1]` - The separator string
+///
+/// # Returns
+///
+/// An array of substring strings from the original string
 pub fn split(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("split requires 2 arguments".to_string()));

@@ -1,12 +1,36 @@
-//! The vibez package provides formatted I/O functions.
-//! This is equivalent to the fmt package in Go.
+//! Formatted I/O functions for CURSED programs
+//!
+//! The vibez package provides functionality for formatted input and output
+//! operations, similar to Go's fmt package. It supports printing to standard
+//! output with formatting options, string formatting, and scanning input from
+//! standard input or strings.
+//!
+//! Key functions include:
+//!
+//! - `spill`: Print arguments followed by a newline (like fmt.Println)
+//! - `spillf`: Formatted printing (like fmt.Printf)
+//! - `spillstr`: Returns a formatted string (like fmt.Sprintf)
+//! - `scan`: Read from standard input into variables (like fmt.Scan)
+//! - `scanln`: Read a line from standard input (like fmt.Scanln)
 
 use std::rc::Rc;
 use std::fmt::Write;
 use crate::object::Object;
 use crate::error::Error;
 
-/// Print arguments followed by a newline
+/// Prints arguments to standard output followed by a newline
+///
+/// This function is the equivalent of fmt.Println in Go. It takes any number 
+/// of arguments, converts them to strings, and prints them separated by spaces
+/// and followed by a newline character.
+///
+/// # Arguments
+///
+/// * `args` - A slice of Object references to print
+///
+/// # Returns
+///
+/// Result<Rc<Object>, Error> - Ok with null object if successful, Error otherwise
 pub fn spill(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {

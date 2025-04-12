@@ -1,19 +1,39 @@
+//! Trait definitions for AST nodes
+//!
+//! This module defines the core traits that all AST nodes must implement.
+//! These traits establish the interface for the various types of nodes
+//! in the Abstract Syntax Tree, allowing for polymorphic operations on them.
+
 use std::any::Any;
 use crate::ast::expressions::Identifier;
 
-/// Node represents a node in the abstract syntax tree
+/// Base trait for all nodes in the abstract syntax tree
+///
+/// Provides common functionality for all AST nodes, including string
+/// representation and token information. This is implemented by all
+/// statement and expression types.
 pub trait Node {
     fn token_literal(&self) -> String;
     fn string(&self) -> String;
 }
 
-/// Statement represents a statement node in the AST
+/// Represents a statement node in the Abstract Syntax Tree
+///
+/// Statements are top-level language constructs that don't produce values
+/// but instead perform actions, such as variable declarations, assignments,
+/// control flow structures, etc. Each statement implementation includes its
+/// specific properties and behaviors.
 pub trait Statement: Node {
     fn statement_node(&self);
     fn as_any(&self) -> &dyn Any;
 }
 
-/// Expression represents an expression node in the AST
+/// Represents an expression node in the Abstract Syntax Tree
+///
+/// Expressions are language constructs that produce values when evaluated.
+/// This includes literals, variables, arithmetic operations, function calls,
+/// and more complex expressions. The Expression trait provides methods for
+/// inspecting the structure of expressions for code generation and analysis.
 pub trait Expression: Node {
     fn expression_node(&self);
     

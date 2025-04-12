@@ -3,6 +3,7 @@
 use inkwell::values::BasicValueEnum;
 use crate::ast::traits::Expression;
 use crate::ast::expressions::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral};
+use crate::ast::expressions::{CallExpression, GenericCallExpression, Identifier};
 use crate::error::Error;
 use super::generator::LlvmCodeGenerator;
 
@@ -20,19 +21,23 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Integer literal
         if let Some(int_lit) = any.downcast_ref::<IntegerLiteral>() {
-            let i32_type = context.i32_type();
-            return Ok(i32_type.const_int(int_lit.value as u64, false).into());
+            // Use i64 (thicc) for integers to handle larger values
+            let i64_type = context.i64_type();
+            return Ok(i64_type.const_int(int_lit.value as u64, false).into());
         }
         
         // Float literal
         if let Some(float_lit) = any.downcast_ref::<FloatLiteral>() {
+            // Use f64 (meal) for floating point values
             let f64_type = context.f64_type();
             return Ok(f64_type.const_float(float_lit.value).into());
         }
         
         // Boolean literal
         if let Some(bool_lit) = any.downcast_ref::<BooleanLiteral>() {
+            // Use i1 for booleans
             let i1_type = context.bool_type();
+            // Store 'based' as true (1) and 'sus' as false (0)
             return Ok(i1_type.const_int(if bool_lit.value { 1 } else { 0 }, false).into());
         }
         
@@ -49,8 +54,22 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             }
         }
         
+        // Identifier (variable reference)
+        if let Some(ident) = any.downcast_ref::<Identifier>() {
+            // Use the variables module to handle identifiers
+            return self.compile_identifier(ident);
+        }
+        
         // Import operator types
         use crate::ast::expressions::operators::{PrefixExpression, InfixExpression};
+        
+        // Handle regular function calls
+        if let Some(call) = any.downcast_ref::<CallExpression>() {
+            return self.compile_regular_call_expression(call);
+        }
+        
+        // TODO: Handle generic function calls when they are implemented
+        // For now, generic function calls are not supported
         
         // Prefix expressions
         if let Some(prefix) = any.downcast_ref::<PrefixExpression>() {

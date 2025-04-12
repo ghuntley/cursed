@@ -1,8 +1,36 @@
+//! AST nodes for loop-based control flow in the CURSED language.
+//!
+//! This module defines the AST representations for loop statements and related control flow:
+//! - While loops: condition-controlled loops (called "periodt" in CURSED)
+//! - For loops: general-purpose loops with init, condition, and post expressions (called "bestie" in CURSED)
+//! - Break statements: exit a loop early
+//! - Continue statements: skip to the next iteration of a loop
+//!
+//! These control flow constructs allow CURSED programs to execute code repeatedly
+//! and control the execution flow within loops.
+
 use std::any::Any;
 use crate::ast::{Node, Statement, Expression};
 use crate::ast::statements::block::BlockStatement;
 
-/// WhileStatement represents a while loop (periodt in CURSED)
+/// Represents a while loop in the AST (called "periodt" in CURSED).
+///
+/// A while loop repeatedly executes a block of code as long as the specified
+/// condition evaluates to true. The condition is checked before each iteration.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// periodt x < 10 {
+///     vibez.println(x)
+///     x = x + 1
+/// }
+/// ```
+///
+/// The AST would have a `WhileStatement` with:
+/// - condition: InfixExpression for `x < 10`
+/// - body: BlockStatement containing the print and assignment statements
 pub struct WhileStatement {
     pub token: String, // Token::Periodt
     pub condition: Box<dyn Expression>,
@@ -27,11 +55,42 @@ impl Statement for WhileStatement {
     }
 }
 
-/// ForStatement represents a for loop (bestie in CURSED)
-/// A for loop can have three different forms:
-/// 1. C-style: bestie init; condition; post { body }
-/// 2. Condition-only: bestie condition { body }
-/// 3. Infinite loop: bestie { body }
+/// Represents a for loop in the AST (called "bestie" in CURSED).
+///
+/// A for loop is a flexible looping construct that can appear in several forms:
+///
+/// 1. C-style: `bestie init; condition; post { body }`
+///    - Initializes a variable, checks a condition, updates the variable after each iteration
+///
+/// 2. Condition-only: `bestie condition { body }`
+///    - Similar to a while loop, executes while the condition is true
+///
+/// 3. Infinite loop: `bestie { body }`
+///    - Executes indefinitely until a break statement is encountered
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// // C-style for loop
+/// bestie i := 0; i < 10; i = i + 1 {
+///     vibez.println(i)
+/// }
+/// 
+/// // Condition-only loop
+/// bestie hasMoreData() {
+///     processData()
+/// }
+/// 
+/// // Infinite loop
+/// bestie {
+///     handleEvents()
+///     if shouldExit() { break }
+/// }
+/// ```
+///
+/// The AST would contain a `ForStatement` with different combinations of
+/// init, condition, post, and body components depending on the form used.
 pub struct ForStatement {
     pub token: String, // Token::Bestie
     pub init: Option<Box<dyn Statement>>,
@@ -78,7 +137,25 @@ impl Statement for ForStatement {
     }
 }
 
-/// BreakStatement represents a break statement
+/// Represents a break statement in the AST.
+///
+/// A break statement causes an immediate exit from the innermost enclosing loop
+/// or switch statement. It transfers control to the statement following the
+/// terminated loop or switch.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// bestie {
+///     if done {
+///         break
+///     }
+///     doWork()
+/// }
+/// ```
+///
+/// The AST would include a `BreakStatement` within the if statement's body.
 pub struct BreakStatement {
     pub token: String, // Token::Break
 }
@@ -101,7 +178,25 @@ impl Statement for BreakStatement {
     }
 }
 
-/// ContinueStatement represents a continue statement
+/// Represents a continue statement in the AST.
+///
+/// A continue statement causes the program to skip the remainder of the current
+/// loop iteration and proceed with the next iteration. In a for loop, the post-iteration
+/// expression (if any) is still executed before the next check of the condition.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// bestie i := 0; i < 10; i = i + 1 {
+///     if i % 2 == 0 {
+///         continue
+///     }
+///     vibez.println("Odd number:", i)
+/// }
+/// ```
+///
+/// The AST would include a `ContinueStatement` within the if statement's body.
 pub struct ContinueStatement {
     pub token: String, // Token::Continue
 }

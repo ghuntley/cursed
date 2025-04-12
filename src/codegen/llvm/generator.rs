@@ -10,6 +10,8 @@ use std::path::PathBuf;
 use crate::error::Error;
 use crate::ast::base::Program;
 use crate::ast::{Node, Statement, Expression};
+use crate::codegen::MonomorphizationManager;
+use crate::codegen::llvm::variables::VariableScope;
 
 /// The LLVM code generator is responsible for generating LLVM IR from the AST
 /// and providing JIT compilation capabilities.
@@ -20,6 +22,10 @@ pub struct LlvmCodeGenerator<'ctx> {
     file_path: PathBuf,
     /// Loop contexts for handling break and continue statements
     pub loop_contexts: Vec<LoopContext<'ctx>>,
+    /// Manager for generic code specialization
+    pub mono_manager: MonomorphizationManager,
+    /// Variable scopes for managing variable declarations
+    pub var_scopes: Vec<VariableScope<'ctx>>,
 }
 
 /// Represents a loop context for handling break and continue statements
@@ -45,6 +51,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             builder,
             file_path,
             loop_contexts: Vec::new(),
+            mono_manager: MonomorphizationManager::new(),
+            var_scopes: Vec::new(),
         }
     }
     
@@ -56,8 +64,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Compile the program AST to LLVM IR.
     pub fn compile_program(&mut self, program: &Program) -> Result<(), String> {
-        // Initialize string helpers
-        // Define any required global string helpers here if needed
+        // Initialize global scope
+        if self.var_scopes.is_empty() {
+            self.push_scope(super::variables::VariableScope::new());
+        }
         
         // Create main function
         let i32_type = self.context.i32_type();
@@ -68,6 +78,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Position the builder at the end of the entry block
         self.builder.position_at_end(entry_block);
         
+        // Iterate through all statements in the program and compile them
+        for statement in &program.statements {
+            match self.compile_statement(&**statement) {
+                Ok(_) => {},
+                Err(e) => return Err(format!("Compilation error: {}", e)),
+            }
+        }
+        
         // Add a default return 0 for main
         self.builder.build_return(Some(&i32_type.const_int(0, false))).unwrap();
         
@@ -77,6 +95,43 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get a reference to the LLVM module.
     pub fn module(&self) -> &Module<'ctx> {
         &self.module
+    }
+    
+    /// Generate LLVM IR for a function statement
+    pub fn generate_function(&mut self, function: &crate::ast::FunctionStatement) -> Result<inkwell::values::FunctionValue<'ctx>, Error> {
+        // For now, we'll create a basic stub function with the correct name
+        let name = &function.name.value;
+        let return_type = self.context.i32_type();
+        let param_types = vec![self.context.i32_type().into(); function.parameters.len()];
+        
+        let fn_type = self.context.i32_type().fn_type(&param_types, false);
+        let function_value = self.module.add_function(name, fn_type, None);
+        
+        // Create entry basic block
+        let entry = self.context.append_basic_block(function_value, "entry");
+        self.builder.position_at_end(entry);
+        
+        // Add a simple return statement (to be replaced with actual compiled code)
+        let return_value = self.context.i32_type().const_int(0, false);
+        self.builder.build_return(Some(&return_value));
+        
+        Ok(function_value)
+    }
+    
+    /// Generate LLVM IR for a struct statement
+    pub fn generate_struct(&mut self, squad_stmt: &crate::ast::SquadStatement) -> Result<(), Error> {
+        // Create a basic struct type
+        let struct_name = &squad_stmt.name.value;
+        let field_types = squad_stmt.fields.iter()
+            .map(|_| self.context.i32_type().into())
+            .collect::<Vec<_>>();
+        
+        let struct_type = self.context.struct_type(&field_types, false);
+        
+        // Since we're in generator.rs, don't have direct access to register_struct_type
+        // In a real implementation, we'd register this type properly
+        
+        Ok(())
     }
     
     /// Get a mutable reference to the LLVM module.
@@ -152,4 +207,35 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     pub fn current_loop_context(&self) -> Option<&LoopContext<'ctx>> {
         self.loop_contexts.last()
     }
+    
+    /// Look up a generic function by name
+    /// 
+    /// This function should be implemented to look up the AST for a generic function
+    /// in the compiler's symbol table or other storage mechanism.
+    pub fn lookup_generic_function(&self, name: &str) -> Option<crate::ast::FunctionStatement> {
+        // In a real implementation, this would look up the function in a symbol table
+        // For testing purposes, we'll return None to simulate the function not being found
+        None
+    }
+    
+    /// Get the size of a type in bytes as an LLVM value
+    /// 
+    /// Note: This is a stub implementation for testing purposes only.
+    /// The actual implementation depends on the specific inkwell API.
+    pub fn get_type_size(&self, ty: &inkwell::types::BasicTypeEnum<'ctx>) -> inkwell::values::IntValue<'ctx> {
+        // Since we can't directly get the size from DataLayout in the current inkwell version,
+        // we'll return a hardcoded size based on the type kind for testing
+        let size_bytes = match *ty {
+            inkwell::types::BasicTypeEnum::ArrayType(_) => 16,
+            inkwell::types::BasicTypeEnum::FloatType(_) => 4,
+            inkwell::types::BasicTypeEnum::IntType(_) => 4,
+            inkwell::types::BasicTypeEnum::PointerType(_) => 8,
+            inkwell::types::BasicTypeEnum::StructType(_) => 32,
+            inkwell::types::BasicTypeEnum::VectorType(_) => 16,
+        };
+        
+        // Return the size as an LLVM i64 value
+        self.context.i64_type().const_int(size_bytes, false)
+    }
 }
+

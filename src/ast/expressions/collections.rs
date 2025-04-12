@@ -1,8 +1,32 @@
+//! AST nodes for collection expressions in the CURSED language.
+//!
+//! This module defines the AST representations for collection-related expressions:
+//! - Array literals: expressions that create array values directly
+//! - Hash/map literals: expressions that create map/dictionary values directly
+//! - Index expressions: expressions that access elements of collections by index or key
+//!
+//! These expressions provide the foundation for working with compound data structures
+//! in the language.
+
 use std::any::Any;
 use crate::ast::{Node, Expression};
 use crate::lexer::token::Token;
 
-/// ArrayLiteral represents an array literal expression
+/// Represents an array literal expression in the AST.
+///
+/// An array literal creates an array value directly in code by listing its elements
+/// between square brackets. The elements can be any expressions that produce values.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// [1, 2 + 3, "hello"]
+/// []
+/// ```
+///
+/// The AST would have an `ArrayLiteral` with elements corresponding to each item inside
+/// the brackets, or an empty vector for an empty array.
 pub struct ArrayLiteral {
     pub token: Token,
     pub elements: Vec<Box<dyn Expression>>,
@@ -29,7 +53,22 @@ impl Expression for ArrayLiteral {
     fn as_any(&self) -> &dyn Any { self }
 }
 
-/// HashLiteral represents a hash literal expression
+/// Represents a hash/map literal expression in the AST.
+///
+/// A hash literal creates a map/dictionary value directly in code by listing
+/// key-value pairs inside curly braces. Both keys and values can be any expressions
+/// that produce values.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// {"name": "viber", "age": 21, "skills": ["coding", "TikTok"]}
+/// {}
+/// ```
+///
+/// The AST would have a `HashLiteral` with pairs corresponding to each key-value pair
+/// inside the braces, or an empty vector for an empty map.
 pub struct HashLiteral {
     pub token: Token,
     pub pairs: Vec<(Box<dyn Expression>, Box<dyn Expression>)>,
@@ -56,7 +95,24 @@ impl Expression for HashLiteral {
     fn as_any(&self) -> &dyn Any { self }
 }
 
-/// IndexExpression represents an index expression
+/// Represents an index access expression in the AST.
+///
+/// An index expression accesses an element of a collection (array or hash/map)
+/// using an index or key enclosed in square brackets. This can be used for
+/// both reading and writing elements.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// arr[0]       // Array access by index
+/// map["key"]   // Map access by key
+/// matrix[i][j] // Multi-dimensional access (nested IndexExpressions)
+/// ```
+///
+/// The AST would have an `IndexExpression` with:
+/// - left: the array or map expression being accessed
+/// - index: the index or key expression used for access
 pub struct IndexExpression {
     pub token: Token,
     pub left: Box<dyn Expression>,

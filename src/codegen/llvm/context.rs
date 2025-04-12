@@ -34,6 +34,10 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) loop_exit_blocks: Vec<BasicBlock<'ctx>>,
     // Track declared constants for immutability checks
     pub(crate) constants: HashSet<String>,
+    // Monomorphization manager for handling generic code specialization
+    pub(crate) mono_manager: crate::codegen::monomorphization::MonomorphizationManager,
+    // GC metadata for struct types: Maps struct names to their traceable field indices
+    pub(crate) gc_metadata: HashMap<String, Vec<(usize, String)>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -56,6 +60,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             struct_types: HashMap::new(),
             loop_exit_blocks: Vec::new(),
             constants: HashSet::new(),
+            mono_manager: crate::codegen::monomorphization::MonomorphizationManager::new(),
+            gc_metadata: HashMap::new(),
         }
     }
     
@@ -156,6 +162,25 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get a reference to the LLVM context
     pub fn context(&self) -> &'ctx Context {
         self.context
+    }
+    
+    /// Register metadata for garbage collection of specialized types
+    /// This metadata is used to track which fields in a struct need to be traced by the GC
+    pub fn register_gc_metadata(&mut self, struct_name: &str, traceable_fields: Vec<(usize, String)>) -> Result<(), crate::error::Error> {
+        self.gc_metadata.insert(struct_name.to_string(), traceable_fields);
+        Ok(())
+    }
+    
+    /// Get the GC metadata for a struct type
+    pub fn get_gc_metadata(&self, struct_name: &str) -> Option<&Vec<(usize, String)>> {
+        self.gc_metadata.get(struct_name)
+    }
+    
+    /// Get a function declaration by name
+    pub fn get_function_declaration(&self, name: &str) -> Option<crate::ast::FunctionStatement> {
+        // In a real implementation, this would look up the function in the symbol table or AST
+        // For now, we'll return None to indicate we couldn't find it
+        None
     }
     
     /// Get a reference to the LLVM builder
