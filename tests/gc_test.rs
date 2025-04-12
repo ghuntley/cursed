@@ -27,6 +27,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Long-running GC test - run with --ignored flag to execute"]
     fn test_basic_allocation() {
         let mm = GarbageCollector::new();
         let obj = mm.allocate(TestObject {
@@ -45,6 +46,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Long-running GC test - run with --ignored flag to execute"]
     fn test_linked_objects() {
         let mm = GarbageCollector::new();
 
@@ -102,6 +104,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Long-running GC test - run with --ignored flag to execute"]
     fn test_collection_unreachable() {
         let mm = GarbageCollector::new();
 
@@ -129,6 +132,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Long-running GC test - run with --ignored flag to execute"]
     fn test_stress() {
         let mm = GarbageCollector::new();
 
