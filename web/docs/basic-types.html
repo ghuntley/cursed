@@ -1,0 +1,182 @@
+<!-- Basic Types Section in GenZ Style -->
+<section id="basic-types" class="docs-section animate-on-scroll">
+  <div class="section-pop">type assignment</div>
+  <h2>Basic Types</h2>
+  <p>CURSED comes with all the basic types you need to slay your coding projects. Let's get into these core types that are giving main character energy!</p>
+
+  <div class="feature-box">
+    <h3>Boolean Type</h3>
+    <pre><code><span class="comment">fr fr Boolean type: lit</span>
+<span class="keyword">sus</span> isValid lit = <span class="keyword">based</span>  <span class="comment">fr fr true</span>
+<span class="keyword">sus</span> isEmpty lit = <span class="keyword">sus</span>  <span class="comment">fr fr false</span>
+
+<span class="comment">fr fr Boolean operations</span>
+<span class="keyword">sus</span> result lit = isValid && !isEmpty  <span class="comment">fr fr AND with NOT</span>
+<span class="keyword">sus</span> anyTrue lit = isValid || isEmpty  <span class="comment">fr fr OR</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Numeric Types</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Range</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>smol</code></td>
+          <td>8-bit signed integer</td>
+          <td>-128 to 127</td>
+          <td><code><span class="keyword">sus</span> tinyNum smol = 100</code></td>
+        </tr>
+        <tr>
+          <td><code>mid</code></td>
+          <td>16-bit signed integer</td>
+          <td>-32,768 to 32,767</td>
+          <td><code><span class="keyword">sus</span> smallNum mid = 30000</code></td>
+        </tr>
+        <tr>
+          <td><code>normie</code></td>
+          <td>32-bit signed integer</td>
+          <td>-2^31 to 2^31-1</td>
+          <td><code><span class="keyword">sus</span> regularNum normie = 2000000</code></td>
+        </tr>
+        <tr>
+          <td><code>thicc</code></td>
+          <td>64-bit signed integer</td>
+          <td>-2^63 to 2^63-1</td>
+          <td><code><span class="keyword">sus</span> bigNum thicc = 9223372036854775807</code></td>
+        </tr>
+        <tr>
+          <td><code>snack</code></td>
+          <td>32-bit floating point</td>
+          <td>IEEE-754</td>
+          <td><code><span class="keyword">sus</span> percent snack = 75.5</code></td>
+        </tr>
+        <tr>
+          <td><code>meal</code></td>
+          <td>64-bit floating point</td>
+          <td>IEEE-754</td>
+          <td><code><span class="keyword">sus</span> precise meal = 3.14159265359</code></td>
+        </tr>
+        <tr>
+          <td><code>byte</code></td>
+          <td>Alias for uint8</td>
+          <td>0 to 255</td>
+          <td><code><span class="keyword">sus</span> b byte = 255</code></td>
+        </tr>
+        <tr>
+          <td><code>rune</code></td>
+          <td>Alias for int32, Unicode code point</td>
+          <td>0 to 0x10FFFF</td>
+          <td><code><span class="keyword">sus</span> r rune = 'A'</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Numeric Operations</div>
+    <pre><code><span class="comment">fr fr Basic arithmetic</span>
+<span class="keyword">sus</span> sum normie = 5 + 3  <span class="comment">fr fr Addition: 8</span>
+<span class="keyword">sus</span> diff normie = 5 - 3  <span class="comment">fr fr Subtraction: 2</span>
+<span class="keyword">sus</span> product normie = 5 * 3  <span class="comment">fr fr Multiplication: 15</span>
+<span class="keyword">sus</span> quotient normie = 5 / 3  <span class="comment">fr fr Integer division: 1</span>
+<span class="keyword">sus</span> remainder normie = 5 % 3  <span class="comment">fr fr Modulus: 2</span>
+
+<span class="comment">fr fr Floating point division</span>
+<span class="keyword">sus</span> preciseQuotient snack = 5.0 / 3.0  <span class="comment">fr fr 1.6666666</span>
+
+<span class="comment">fr fr Bitwise operations</span>
+<span class="keyword">sus</span> bitwiseAnd normie = 5 & 3  <span class="comment">fr fr AND: 1</span>
+<span class="keyword">sus</span> bitwiseOr normie = 5 | 3  <span class="comment">fr fr OR: 7</span>
+<span class="keyword">sus</span> bitwiseXor normie = 5 ^ 3  <span class="comment">fr fr XOR: 6</span>
+<span class="keyword">sus</span> leftShift normie = 5 << 1  <span class="comment">fr fr Left shift: 10</span>
+<span class="keyword">sus</span> rightShift normie = 5 >> 1  <span class="comment">fr fr Right shift: 2</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>String Type (tea)</h3>
+    <pre><code><span class="comment">fr fr String literals</span>
+<span class="keyword">sus</span> greeting tea = "Hello, bestie!"  <span class="comment">fr fr Double quotes</span>
+<span class="keyword">sus</span> multiLine tea = `This string can
+span multiple lines
+and keep all formatting!`  <span class="comment">fr fr Backticks</span>
+
+<span class="comment">fr fr String operations</span>
+<span class="keyword">sus</span> name tea = "world"
+<span class="keyword">sus</span> message tea = greeting + " " + name  <span class="comment">fr fr Concatenation</span>
+<span class="keyword">sus</span> length normie = len(message)  <span class="comment">fr fr String length</span>
+<span class="keyword">sus</span> char sip = message[0]  <span class="comment">fr fr Access individual byte (not rune!)</span>
+<span class="keyword">sus</span> slice tea = message[7:12]  <span class="comment">fr fr String slicing: "bestie"</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Character Type (sip)</div>
+    <pre><code><span class="comment">fr fr Character literals</span>
+<span class="keyword">sus</span> letter sip = 'A'  <span class="comment">fr fr Single quotes for characters</span>
+<span class="keyword">sus</span> emoji sip = '👋'  <span class="comment">fr fr Unicode support</span>
+
+<span class="comment">fr fr Character operations</span>
+<span class="keyword">sus</span> isUpper lit = letter.is_uppercase()  <span class="comment">fr fr Check if uppercase</span>
+<span class="keyword">sus</span> lower sip = letter.to_lowercase()  <span class="comment">fr fr Convert to lowercase</span>
+<span class="keyword">sus</span> letterCode normie = normie(letter)  <span class="comment">fr fr Convert to integer (65 for 'A')</span></code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Complex Numbers? We got those too!</h4>
+    <pre><code><span class="comment">fr fr Complex type: extra</span>
+<span class="keyword">sus</span> z extra = 3 + 4i  <span class="comment">fr fr Complex number</span>
+<span class="keyword">sus</span> conjugate extra = mathz.Conj(z)  <span class="comment">fr fr Complex conjugate</span>
+<span class="keyword">sus</span> magnitude meal = mathz.Abs(z)  <span class="comment">fr fr Magnitude (5.0)</span></code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Type Conversions That Pass the Vibe Check</h4>
+    <p>CURSED requires explicit type conversions to keep things safe and clear:</p>
+    <pre><code><span class="keyword">sus</span> intValue normie = 42
+<span class="keyword">sus</span> floatValue snack = snack(intValue)  <span class="comment">fr fr int to float conversion</span>
+<span class="keyword">sus</span> biggerInt thicc = thicc(intValue)  <span class="comment">fr fr int32 to int64 conversion</span>
+<span class="keyword">sus</span> stringValue tea = tea(intValue)  <span class="comment">fr fr int to string conversion</span>
+<span class="keyword">sus</span> charValue sip = sip(65)  <span class="comment">fr fr int to char conversion (becomes 'A')</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Zero Values</h3>
+    <p>When variables are declared without initialization, they get these default zero values:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Zero Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>lit (boolean)</td>
+          <td><code>sus</code> (false)</td>
+        </tr>
+        <tr>
+          <td>Numeric types</td>
+          <td><code>0</code></td>
+        </tr>
+        <tr>
+          <td>tea (string)</td>
+          <td><code>""</code> (empty string)</td>
+        </tr>
+        <tr>
+          <td>sip (character)</td>
+          <td><code>'\0'</code> (null character)</td>
+        </tr>
+        <tr>
+          <td>Reference types</td>
+          <td><code>cap</code> (nil)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
