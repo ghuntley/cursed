@@ -1,5 +1,16 @@
 /* CURSED Programming Language Website - GenZ Style */
 
+.dark-heading {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  font-weight: 800;
+}
+
+.dark-heading::first-letter {
+  color: var(--color-primary);
+  text-shadow: 0 0 5px rgba(255, 51, 102, 0.5);
+}
+
 :root {
   --color-primary: #ff3366;
   --color-secondary: #6600ff;
@@ -653,14 +664,15 @@ nav a:hover {
 /* Community Section */
 .community {
   padding: 8rem 0 4rem;
-  background-color: #f9f9f9;
+  background-color: #111;
   position: relative;
   margin-top: -4rem;
+  color: white;
 }
 
 .skew-section-community {
   height: 150px;
-  background-color: #f9f9f9;
+  background-color: #111;
   transform: skewY(-5deg);
   margin-top: -75px;
   z-index: 1;
@@ -676,13 +688,14 @@ nav a:hover {
 .community-card {
   padding: 2rem;
   border-radius: var(--border-radius-md);
-  background-color: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background-color: #222;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
   transition: all 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 1;
+  color: white;
 }
 
 .community-card::after {
@@ -692,8 +705,8 @@ nav a:hover {
   left: 0;
   width: 100%;
   height: 0;
-  background: var(--gradient-vibe);
-  opacity: 0.05;
+  background: var(--color-primary);
+  opacity: 0.2;
   transition: height 0.3s ease;
   z-index: -1;
   border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
@@ -711,8 +724,14 @@ nav a:hover {
 .community-icon {
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: var(--color-secondary);
-  filter: drop-shadow(0 0 10px rgba(102, 0, 255, 0.5));
+  color: white;
+  background: var(--color-primary);
+  width: 70px;
+  height: 70px;
+  line-height: 70px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 5px 15px rgba(255, 51, 102, 0.4);
   animation: icon-float 3s ease-in-out infinite;
 }
 
