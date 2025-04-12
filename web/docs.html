@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CURSED Documentation - Learn the Language</title>
+  <meta name="description" content="Complete documentation for the CURSED programming language. Learn syntax, features, and best practices.">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/responsive.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="images/cursed-logo.svg">
+  <style>
+    .docs-container {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 2rem;
+      position: relative;
+    }
+    
+    .docs-sidebar {
+      position: sticky;
+      top: 100px;
+      height: calc(100vh - 120px);
+      overflow-y: auto;
+      padding-right: 1rem;
+      scrollbar-width: thin;
+    }
+    
+    .docs-content {
+      max-width: 800px;
+    }
+    
+    .docs-section {
+      margin-bottom: 3rem;
+    }
+    
+    .docs-section h2 {
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark-mode .docs-section h2 {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .docs-nav {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .docs-nav-item {
+      margin-bottom: 0.5rem;
+    }
+    
+    .docs-nav-item a {
+      display: block;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .docs-nav-item a:hover,
+    .docs-nav-item a.active {
+      background-color: rgba(102, 0, 255, 0.1);
+      text-decoration: none;
+    }
+    
+    .docs-subnav {
+      list-style: none;
+      padding-left: 1.5rem;
+      margin: 0.5rem 0;
+    }
+    
+    .code-example {
+      margin: 1.5rem 0;
+    }
+    
+    .docs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    
+    .docs-table th,
+    .docs-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .dark-mode .docs-table th,
+    .dark-mode .docs-table td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .docs-table th {
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      .docs-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .docs-sidebar {
+        position: relative;
+        top: 0;
+        height: auto;
+        margin-bottom: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container container">
+      <a href="index.html" class="logo">
+        <img src="images/cursed-logo.svg" alt="CURSED Logo">
+        <span>CURSED</span>
+      </a>
+      
+      <nav>
+        <button id="menu-toggle" class="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <ul>
+          <li><a href="index.html#features">Features</a></li>
+          <li><a href="index.html#code">Examples</a></li>
+          <li><a href="docs.html" class="active">Docs</a></li>
+          <li><a href="index.html#community">Community</a></li>
+          <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
+          <li><button id="theme-toggle" class="theme-toggle">ud83cudf19</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 4rem 2rem;">
+    <div class="docs-container">
+      <aside class="docs-sidebar">
+        <nav>
+          <ul class="docs-nav">
+            <li class="docs-nav-item"><a href="#getting-started" class="active">Getting Started</a></li>
+            <li class="docs-nav-item"><a href="#language-basics">Language Basics</a>
+              <ul class="docs-subnav">
+                <li><a href="#keywords">Keywords</a></li>
+                <li><a href="#types">Types</a></li>
+                <li><a href="#variables">Variables</a></li>
+                <li><a href="#functions">Functions</a></li>
+              </ul>
+            </li>
+            <li class="docs-nav-item"><a href="#control-flow">Control Flow</a></li>
+            <li class="docs-nav-item"><a href="#data-structures">Data Structures</a></li>
+            <li class="docs-nav-item"><a href="#concurrency">Concurrency</a></li>
+            <li class="docs-nav-item"><a href="#error-handling">Error Handling</a></li>
+            <li class="docs-nav-item"><a href="#standard-library">Standard Library</a></li>
+            <li class="docs-nav-item"><a href="#tooling">Tooling</a></li>
+          </ul>
+        </nav>
+      </aside>
+      
+      <div class="docs-content">
+        <section id="getting-started" class="docs-section">
+          <h2>Getting Started</h2>
+          <p>Welcome to CURSED! This guide will help you install the CURSED compiler, set up your environment, and write your first program.</p>
+          
+          <h3>Installation</h3>
+          <p>You can install CURSED using the following commands:</p>
+          
+          <div class="code-block code-example">
+            <pre><code>$ git clone https://github.com/ghuntley/cursed.git
+$ cd cursed
+$ make install</code></pre>
+          </div>
+          
+          <h3>Your First CURSED Program</h3>
+          <p>Create a file named <code>hello.csd</code> with the following content:</p>
+          
+          <div class="code-block code-example">
+            <pre><code><span class="keyword">vibe</span> main
+
+<span class="keyword">slay</span> main() {
+    print(<span class="string">"no cap, hello world!"</span>)
+}</code></pre>
+          </div>
+          
+          <p>Run your program with:</p>
+          
+          <div class="code-block code-example">
+            <pre><code>$ cursed run hello.csd</code></pre>
+          </div>
+          
+          <p>You should see the following output:</p>
+          
+          <div class="code-block code-example">
+            <pre><code>no cap, hello world!</code></pre>
+          </div>
+        </section>
+        
+        <section id="language-basics" class="docs-section">
+          <h2>Language Basics</h2>
+          <p>CURSED is a compiled, statically typed language with a syntax inspired by Go but using Gen Z slang as keywords.</p>
+          
+          <h3 id="keywords">Keywords</h3>
+          <p>Here's a mapping between traditional programming keywords and CURSED keywords:</p>
+          
+          <table class="docs-table">
+            <thead>
+              <tr>
+                <th>Traditional</th>
+                <th>CURSED</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>package</td>
+                <td>vibe</td>
+                <td>Declares the package name</td>
+              </tr>
+              <tr>
+                <td>import</td>
+                <td>yeet</td>
+                <td>Imports other packages</td>
+              </tr>
+              <tr>
+                <td>func</td>
+                <td>slay</td>
+                <td>Defines a function</td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>yolo</td>
+                <td>Returns a value from a function</td>
+              </tr>
+              <tr>
+                <td>var</td>
+                <td>sus</td>
+                <td>Declares a variable</td>
+              </tr>
+              <tr>
+                <td>const</td>
+                <td>facts</td>
+                <td>Declares a constant</td>
+              </tr>
+              <tr>
+                <td>if</td>
+                <td>lowkey</td>
+                <td>Conditional statement</td>
+              </tr>
+              <tr>
+                <td>else</td>
+                <td>highkey</td>
+                <td>Alternative branch</td>
+              </tr>
+              <tr>
+                <td>for</td>
+                <td>bestie</td>
+                <td>Loop statement</td>
+              </tr>
+              <tr>
+                <td>while</td>
+                <td>periodt</td>
+                <td>While loop</td>
+              </tr>
+              <tr>
+                <td>switch</td>
+                <td>vibe_check</td>
+                <td>Switch statement</td>
+              </tr>
+              <tr>
+                <td>case</td>
+                <td>mood</td>
+                <td>Case in a switch statement</td>
+              </tr>
+              <tr>
+                <td>default</td>
+                <td>basic</td>
+                <td>Default case</td>
+              </tr>
+              <tr>
+                <td>break</td>
+                <td>ghosted</td>
+                <td>Breaks out of a loop</td>
+              </tr>
+              <tr>
+                <td>continue</td>
+                <td>simp</td>
+                <td>Continues to next iteration</td>
+              </tr>
+              <tr>
+                <td>type</td>
+                <td>be_like</td>
+                <td>Defines a type</td>
+              </tr>
+              <tr>
+                <td>struct</td>
+                <td>squad</td>
+                <td>Composite data type</td>
+              </tr>
+              <tr>
+                <td>interface</td>
+                <td>collab</td>
+                <td>Interface type</td>
+              </tr>
+              <tr>
+                <td>map</td>
+                <td>tea</td>
+                <td>Map type</td>
+              </tr>
+              <tr>
+                <td>chan</td>
+                <td>dm</td>
+                <td>Channel type</td>
+              </tr>
+              <tr>
+                <td>go</td>
+                <td>stan</td>
+                <td>Starts a goroutine</td>
+              </tr>
+              <tr>
+                <td>range</td>
+                <td>flex</td>
+                <td>Iterates over elements</td>
+              </tr>
+              <tr>
+                <td>defer</td>
+                <td>later</td>
+                <td>Defers execution</td>
+              </tr>
+              <tr>
+                <td>true</td>
+                <td>based</td>
+                <td>Boolean true value</td>
+              </tr>
+              <tr>
+                <td>false</td>
+                <td>sus</td>
+                <td>Boolean false value</td>
+              </tr>
+              <tr>
+                <td>nil</td>
+                <td>cap</td>
+                <td>Zero value for pointers, etc.</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <h3 id="types">Types</h3>
+          <p>CURSED has several built-in types:</p>
+          
+          <table class="docs-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>lit</td>
+                <td>Boolean</td>
+                <td>based, sus</td>
+              </tr>
+              <tr>
+                <td>smol</td>
+                <td>8-bit integer</td>
+                <td>127, -128</td>
+              </tr>
+              <tr>
+                <td>mid</td>
+                <td>16-bit integer</td>
+                <td>32767, -32768</td>
+              </tr>
+              <tr>
+                <td>normie</td>
+                <td>32-bit integer</td>
+                <td>2147483647, -2147483648</td>
+              </tr>
+              <tr>
+                <td>thicc</td>
+                <td>64-bit integer</td>
+                <td>9223372036854775807, -9223372036854775808</td>
+              </tr>
+              <tr>
+                <td>snack</td>
+                <td>32-bit float</td>
+                <td>3.14, -2.5</td>
+              </tr>
+              <tr>
+                <td>meal</td>
+                <td>64-bit float</td>
+                <td>3.141592653589793, -2.5</td>
+              </tr>
+              <tr>
+                <td>tea</td>
+                <td>String</td>
+                <td>"hello", "world"</td>
+              </tr>
+              <tr>
+                <td>sip</td>
+                <td>Character</td>
+                <td>'a', '世', '\n'</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <h3 id="variables">Variables</h3>
+          <p>You can declare variables using the <code>sus</code> keyword or with short declaration syntax:</p>
+          
+          <div class="code-block code-example">
+            <pre><code><span class="keyword">sus</span> name tea = <span class="string">"CURSED"</span>
+<span class="keyword">sus</span> age normie = 25
+
+fr fr Short declaration syntax
+vibe := <span class="string">"check"</span>    fr fr Type inferred as tea
+count := 42       fr fr Type inferred as normie</code></pre>
+          </div>
+          
+          <h3 id="functions">Functions</h3>
+          <p>Functions are declared using the <code>slay</code> keyword:</p>
+          
+          <div class="code-block code-example">
+            <pre><code><span class="keyword">slay</span> add(x, y normie) normie {
+    <span class="keyword">yolo</span> x + y
+}
+
+<span class="keyword">slay</span> greet(name tea) {
+    print(<span class="string">"Hey, "</span> + name + <span class="string">"!"</span>)
+}
+
+<span class="keyword">slay</span> divide(x, y snack) (snack, tea) {
+    <span class="keyword">lowkey</span> y == 0 {
+        <span class="keyword">yolo</span> 0, <span class="string">"can't divide by zero"</span>
+    }
+    <span class="keyword">yolo</span> x / y, <span class="string">""</span>
+}</code></pre>
+          </div>
+        </section>
+        
+        <!-- Additional sections would be included here -->
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-container">
+        <div class="footer-column">
+          <div class="footer-logo">
+            <span>CURSED</span>
+          </div>
+          <p>A programming language that combines Go-like syntax with GenZ slang. Created for education, fun, and the culture.</p>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="#">Tutorials</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">Examples</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Community</h3>
+          <ul>
+            <li><a href="https://github.com/ghuntley/cursed">GitHub</a></li>
+            <li><a href="#">Discord</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>More</h3>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Roadmap</a></li>
+            <li><a href="#">Contributing</a></li>
+            <li><a href="#">License</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
