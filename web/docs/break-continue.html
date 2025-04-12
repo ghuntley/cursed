@@ -1,0 +1,236 @@
+<!-- Break & Continue Section in GenZ Style -->
+<section id="break-continue" class="docs-section animate-on-scroll">
+  <div class="section-pop">loop control</div>
+  <h2>Break & Continue</h2>
+  <p>When you need to control your loops with boss energy, the <code>ghosted</code> and <code>simp</code> keywords in CURSED let you exit or skip iterations. Let's see how they work!</p>
+
+  <div class="code-block">
+    <div class="code-title">Break Statement (ghosted)</div>
+    <pre><code><span class="comment">fr fr Break out of a loop completely</span>
+<span class="keyword">bestie</span> i := 1; i <= 10; i++ {
+    <span class="keyword">lowkey</span> i == 5 {
+        vibez.spill("Found 5, leaving the loop!")
+        <span class="keyword">ghosted</span>  <span class="comment">fr fr Exit the loop immediately</span>
+    }
+    vibez.spill("Processing:", i)
+}
+vibez.spill("After the loop")
+
+<span class="comment">fr fr Output:</span>
+<span class="comment">fr fr Processing: 1</span>
+<span class="comment">fr fr Processing: 2</span>
+<span class="comment">fr fr Processing: 3</span>
+<span class="comment">fr fr Processing: 4</span>
+<span class="comment">fr fr Found 5, leaving the loop!</span>
+<span class="comment">fr fr After the loop</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Continue Statement (simp)</h3>
+    <pre><code><span class="comment">fr fr Skip the current iteration and continue with the next one</span>
+<span class="keyword">bestie</span> i := 1; i <= 5; i++ {
+    <span class="keyword">lowkey</span> i % 2 == 0 {
+        vibez.spill("Skipping even number:", i)
+        <span class="keyword">simp</span>  <span class="comment">fr fr Skip to the next iteration</span>
+    }
+    vibez.spill("Processing odd number:", i)
+}
+
+<span class="comment">fr fr Output:</span>
+<span class="comment">fr fr Processing odd number: 1</span>
+<span class="comment">fr fr Skipping even number: 2</span>
+<span class="comment">fr fr Processing odd number: 3</span>
+<span class="comment">fr fr Skipping even number: 4</span>
+<span class="comment">fr fr Processing odd number: 5</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Break in Nested Loops</div>
+    <pre><code><span class="comment">fr fr Break only exits the innermost loop by default</span>
+<span class="keyword">bestie</span> i := 1; i <= 3; i++ {
+    vibez.spillf("Outer loop: %d\n", i)
+    
+    <span class="keyword">bestie</span> j := 1; j <= 3; j++ {
+        vibez.spillf("  Inner loop: %d\n", j)
+        
+        <span class="keyword">lowkey</span> i == 2 && j == 2 {
+            vibez.spill("  Found target, breaking inner loop")
+            <span class="keyword">ghosted</span>  <span class="comment">fr fr This only breaks out of the inner loop</span>
+        }
+    }
+}
+
+<span class="comment">fr fr Output:</span>
+<span class="comment">fr fr Outer loop: 1</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Inner loop: 3</span>
+<span class="comment">fr fr Outer loop: 2</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Found target, breaking inner loop</span>
+<span class="comment">fr fr Outer loop: 3</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Inner loop: 3</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Labeled Break and Continue</h3>
+    <p>For when you need to control which loop you're breaking from or continuing:</p>
+    <pre><code><span class="comment">fr fr Label the outer loop</span>
+OuterLoop:
+<span class="keyword">bestie</span> i := 1; i <= 3; i++ {
+    vibez.spillf("Outer loop: %d\n", i)
+    
+    <span class="keyword">bestie</span> j := 1; j <= 3; j++ {
+        vibez.spillf("  Inner loop: %d\n", j)
+        
+        <span class="keyword">lowkey</span> i == 2 && j == 2 {
+            vibez.spill("  Found target, breaking to outer loop")
+            <span class="keyword">ghosted</span> OuterLoop  <span class="comment">fr fr Break out of the outer loop</span>
+        }
+    }
+}
+vibez.spill("After all loops")
+
+<span class="comment">fr fr Output:</span>
+<span class="comment">fr fr Outer loop: 1</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Inner loop: 3</span>
+<span class="comment">fr fr Outer loop: 2</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Found target, breaking to outer loop</span>
+<span class="comment">fr fr After all loops</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Labeled Continue</div>
+    <pre><code><span class="comment">fr fr Label the outer loop</span>
+OuterLoop:
+<span class="keyword">bestie</span> i := 1; i <= 3; i++ {
+    vibez.spillf("Outer loop: %d\n", i)
+    
+    <span class="keyword">bestie</span> j := 1; j <= 3; j++ {
+        <span class="keyword">lowkey</span> i == 2 && j == 2 {
+            vibez.spill("  Skipping to next iteration of outer loop")
+            <span class="keyword">simp</span> OuterLoop  <span class="comment">fr fr Skip to next iteration of outer loop</span>
+        }
+        
+        vibez.spillf("  Inner loop: %d\n", j)
+    }
+}
+
+<span class="comment">fr fr Output:</span>
+<span class="comment">fr fr Outer loop: 1</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Inner loop: 3</span>
+<span class="comment">fr fr Outer loop: 2</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Skipping to next iteration of outer loop</span>
+<span class="comment">fr fr Outer loop: 3</span>
+<span class="comment">fr fr   Inner loop: 1</span>
+<span class="comment">fr fr   Inner loop: 2</span>
+<span class="comment">fr fr   Inner loop: 3</span></code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Break in Switch Statements</h4>
+    <p>Unlike some languages, you don't need <code>ghosted</code> in <code>vibe_check</code> statements. Each case automatically breaks after execution:</p>
+    <pre><code><span class="keyword">vibe_check</span> day {
+<span class="keyword">mood</span> "Monday":
+    vibez.spill("Start of work week")
+    <span class="comment">fr fr No ghosted needed - won't fall through to Tuesday</span>
+<span class="keyword">mood</span> "Tuesday":
+    vibez.spill("Tuesday vibes")
+<span class="keyword">basic</span>:
+    vibez.spill("Some other day")
+}</code></pre>
+    <p>If you want fall-through behavior, use the <code>fallthrough</code> statement:</p>
+    <pre><code><span class="keyword">vibe_check</span> day {
+<span class="keyword">mood</span> "Monday":
+    vibez.spill("Start of work week")
+    fallthrough  <span class="comment">fr fr Will execute Tuesday case too</span>
+<span class="keyword">mood</span> "Tuesday":
+    vibez.spill("Second day vibes")
+<span class="keyword">basic</span>:
+    vibez.spill("Some other day")
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Common Use Cases</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Early Return</td>
+          <td>Exit a loop when condition is met</td>
+          <td><code>ghosted when finding a match</code></td>
+        </tr>
+        <tr>
+          <td>Filtering</td>
+          <td>Skip unwanted items</td>
+          <td><code>simp for invalid values</code></td>
+        </tr>
+        <tr>
+          <td>Multi-level Control</td>
+          <td>Control nested loops</td>
+          <td><code>ghosted OuterLoop</code></td>
+        </tr>
+        <tr>
+          <td>Error Handling</td>
+          <td>Skip iterations with errors</td>
+          <td><code>simp on error cases</code></td>
+        </tr>
+        <tr>
+          <td>Resource Efficiency</td>
+          <td>Exit early when goal achieved</td>
+          <td><code>ghosted after finding first match</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="feature-box">
+    <h3>Practical Examples</h3>
+    <pre><code><span class="comment">fr fr Finding an element in a nested array</span>
+<span class="keyword">slay</span> findElement(grid [][]normie, target normie) (normie, normie, lit) {
+    <span class="keyword">bestie</span> i := 0; i < len(grid); i++ {
+        <span class="keyword">bestie</span> j := 0; j < len(grid[i]); j++ {
+            <span class="keyword">lowkey</span> grid[i][j] == target {
+                <span class="keyword">yolo</span> i, j, <span class="keyword">based</span>  <span class="comment">fr fr Return row, column, and true</span>
+            }
+        }
+    }
+    <span class="keyword">yolo</span> -1, -1, <span class="keyword">sus</span>  <span class="comment">fr fr Not found</span>
+}
+
+<span class="comment">fr fr Processing a list with validation</span>
+<span class="keyword">slay</span> processItems(items []tea) []tea {
+    results := []tea{}
+    
+    <span class="keyword">bestie</span> _, item := <span class="keyword">flex</span> items {
+        <span class="comment">fr fr Skip empty items</span>
+        <span class="keyword">lowkey</span> item == "" {
+            <span class="keyword">simp</span>
+        }
+        
+        <span class="comment">fr fr Process valid item</span>
+        result := processItem(item)
+        results = append(results, result)
+    }
+    
+    <span class="keyword">yolo</span> results
+}</code></pre>
+  </div>
+</section>
