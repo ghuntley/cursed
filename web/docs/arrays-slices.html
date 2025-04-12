@@ -1,0 +1,190 @@
+<!-- Arrays & Slices Section in GenZ Style -->
+<section id="arrays-slices" class="docs-section animate-on-scroll">
+  <div class="section-pop">collection vibes</div>
+  <h2>Arrays & Slices</h2>
+  <p>Let's talk about storing collections of data that are giving list energy. CURSED offers both fixed-size arrays and dynamic slices to keep your data organized and accessible.</p>
+
+  <div class="code-block">
+    <div class="code-title">Arrays</div>
+    <pre><code><span class="comment">fr fr Declare and initialize an array</span>
+<span class="keyword">sus</span> scores [5]normie = [5]normie{90, 85, 75, 95, 88}
+
+<span class="comment">fr fr Shorter initialization syntax</span>
+<span class="keyword">sus</span> names [3]tea = [3]tea{"Alex", "Bailey", "Casey"}
+
+<span class="comment">fr fr Let the compiler count the elements</span>
+<span class="keyword">sus</span> colors [...]tea = [...]tea{"red", "green", "blue", "yellow"}
+
+<span class="comment">fr fr Access array elements (zero-based indexing)</span>
+firstScore := scores[0]  <span class="comment">fr fr 90</span>
+lastColor := colors[3]  <span class="comment">fr fr "yellow"</span>
+
+<span class="comment">fr fr Modify an element</span>
+scores[2] = 82  <span class="comment">fr fr Change 75 to 82</span>
+
+<span class="comment">fr fr Get array length</span>
+numColors := len(colors)  <span class="comment">fr fr 4</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Slices</h3>
+    <pre><code><span class="comment">fr fr Create a slice with initial values</span>
+<span class="keyword">sus</span> fruits []tea = []tea{"apple", "banana", "cherry"}
+
+<span class="comment">fr fr Create an empty slice</span>
+<span class="keyword">sus</span> numbers []normie = []normie{}
+
+<span class="comment">fr fr Create a slice with make (length 5, capacity 10)</span>
+<span class="keyword">sus</span> buffer = make([]byte, 5, 10)
+
+<span class="comment">fr fr Create a slice with just length (capacity = length)</span>
+<span class="keyword">sus</span> scores = make([]normie, 3)  <span class="comment">fr fr [0, 0, 0]</span>
+
+<span class="comment">fr fr Add elements to a slice</span>
+fruits = append(fruits, "date")
+fruits = append(fruits, "elderberry", "fig")  <span class="comment">fr fr Add multiple elements</span>
+
+<span class="comment">fr fr Get slice length and capacity</span>
+length := len(fruits)  <span class="comment">fr fr Number of elements</span>
+capacity := cap(fruits)  <span class="comment">fr fr Internal array size</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Slice Operations</div>
+    <pre><code><span class="comment">fr fr Slicing syntax: slice[low:high]</span>
+<span class="keyword">sus</span> numbers = []normie{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+<span class="comment">fr fr Extract elements from index 2 to 5 (exclusive)</span>
+sub1 := numbers[2:5]  <span class="comment">fr fr [2, 3, 4]</span>
+
+<span class="comment">fr fr Omit low index to start from beginning</span>
+sub2 := numbers[:3]  <span class="comment">fr fr [0, 1, 2]</span>
+
+<span class="comment">fr fr Omit high index to go to the end</span>
+sub3 := numbers[7:]  <span class="comment">fr fr [7, 8, 9]</span>
+
+<span class="comment">fr fr Full slice expression with capacity limit</span>
+sub4 := numbers[2:5:7]  <span class="comment">fr fr [2, 3, 4] with capacity 5</span>
+
+<span class="comment">fr fr Copy one slice to another</span>
+dest := make([]normie, len(sub1))
+copied := copy(dest, sub1)  <span class="comment">fr fr Returns number of elements copied</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Slice Internals</h3>
+    <p>Understanding how slices work under the hood is giving big brain energy:</p>
+    <div class="mermaid-diagram">
+      <img src="../images/slice-structure.svg" alt="Slice structure diagram">
+    </div>
+    <p>A slice is a reference to an underlying array with three components:</p>
+    <ul>
+      <li><strong>Pointer:</strong> Reference to the underlying array</li>
+      <li><strong>Length:</strong> Number of elements in the slice</li>
+      <li><strong>Capacity:</strong> Maximum size the slice can grow to without reallocation</li>
+    </ul>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Modifying Slices</div>
+    <pre><code><span class="comment">fr fr Remember: slices share underlying arrays!</span>
+<span class="keyword">sus</span> original = []normie{1, 2, 3, 4, 5}
+sub := original[1:3]  <span class="comment">fr fr [2, 3]</span>
+
+<span class="comment">fr fr Modifying the slice affects the original array</span>
+sub[0] = 42  <span class="comment">fr fr Changes original[1] to 42</span>
+vibez.spill(original)  <span class="comment">fr fr [1, 42, 3, 4, 5]</span>
+
+<span class="comment">fr fr Append may or may not affect the original</span>
+sub = append(sub, 99)  <span class="comment">fr fr If there's capacity, affects original</span>
+<span class="comment">fr fr original might be [1, 42, 3, 99, 5] if there was room</span>
+
+<span class="comment">fr fr To avoid side effects, use copy</span>
+safeCopy := make([]normie, len(sub))
+copy(safeCopy, sub)
+safeCopy[0] = 100  <span class="comment">fr fr Doesn't affect original or sub</span></code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Watch Out For These Slice Gotchas</h4>
+    <p>Slice behavior that can be lowkey tricky:</p>
+    <pre><code><span class="comment">fr fr Growing beyond capacity causes reallocation</span>
+smallSlice := make([]normie, 3, 5)  <span class="comment">fr fr len=3, cap=5</span>
+<span class="keyword">bestie</span> i := 0; i < 10; i++ {
+    <span class="comment">fr fr After 2 appends, a new backing array is allocated</span>
+    smallSlice = append(smallSlice, i)
+    vibez.spillf("len=%d cap=%d ptr=%p\n", 
+                  len(smallSlice), cap(smallSlice), &smallSlice[0])
+    <span class="comment">fr fr You'll see the pointer change when capacity is reached</span>
+}
+
+<span class="comment">fr fr Slices in functions are passed by reference</span>
+<span class="keyword">slay</span> modifySlice(s []normie) {
+    s[0] = 999  <span class="comment">fr fr This modifies the original slice</span>
+    <span class="comment">fr fr But this doesn't modify the original variable</span>
+    s = append(s, 1, 2, 3)  <span class="comment">fr fr Just changes local copy of slice header</span>
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Arrays vs Slices: When to Use Each</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Arrays</th>
+          <th>Slices</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fixed size</td>
+          <td>Dynamic size</td>
+        </tr>
+        <tr>
+          <td>Value types (copied when assigned)</td>
+          <td>Reference types (share underlying array)</td>
+        </tr>
+        <tr>
+          <td>Size is part of the type [5]normie ≠ [10]normie</td>
+          <td>All slices of same element type are same type []normie</td>
+        </tr>
+        <tr>
+          <td>Good for small fixed-size data</td>
+          <td>Good for collections that might grow or shrink</td>
+        </tr>
+        <tr>
+          <td>Pass by value in functions</td>
+          <td>Pass by reference in functions</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="feature-box">
+    <h3>Common Slice Patterns</h3>
+    <pre><code><span class="comment">fr fr Filter elements</span>
+<span class="keyword">slay</span> filter(nums []normie, keepFn <span class="keyword">slay</span>(normie) lit) []normie {
+    result := make([]normie, 0)
+    <span class="keyword">bestie</span> _, n := <span class="keyword">flex</span> nums {
+        <span class="keyword">lowkey</span> keepFn(n) {
+            result = append(result, n)
+        }
+    }
+    <span class="keyword">yolo</span> result
+}
+
+<span class="comment">fr fr Stack operations</span>
+<span class="keyword">slay</span> push(stack []normie, item normie) []normie {
+    <span class="keyword">yolo</span> append(stack, item)
+}
+
+<span class="keyword">slay</span> pop(stack []normie) ([]normie, normie, lit) {
+    <span class="keyword">lowkey</span> len(stack) == 0 {
+        <span class="keyword">yolo</span> stack, 0, <span class="keyword">sus</span>
+    }
+    n := len(stack) - 1
+    item := stack[n]
+    <span class="keyword">yolo</span> stack[:n], item, <span class="keyword">based</span>
+}</code></pre>
+  </div>
+</section>
