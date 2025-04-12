@@ -11,8 +11,8 @@
 //! Channels are represented by the `dm` keyword in CURSED code.
 
 use crate::object::Object;
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 /// Creates a new channel for communication between goroutines
 ///
@@ -43,8 +43,11 @@ pub fn send_to_channel(channel: Object, value: Object) -> Result<Object, String>
                 Ok(_) => Ok(Object::Null),
                 Err(e) => Err(e.to_string()),
             }
-        },
-        _ => Err(format!("Cannot send to non-channel type: {}", channel.type_name()))
+        }
+        _ => Err(format!(
+            "Cannot send to non-channel type: {}",
+            channel.type_name()
+        )),
     }
 }
 
@@ -57,8 +60,11 @@ pub fn receive_from_channel(channel: Object) -> Result<Object, String> {
                 Ok(value) => Ok(value),
                 Err(e) => Err(e.to_string()),
             }
-        },
-        _ => Err(format!("Cannot receive from non-channel type: {}", channel.type_name()))
+        }
+        _ => Err(format!(
+            "Cannot receive from non-channel type: {}",
+            channel.type_name()
+        )),
     }
 }
 
@@ -68,12 +74,15 @@ pub fn try_send_to_channel(channel: Object, value: Object) -> Result<Object, Str
         Object::Channel(channel_ref) => {
             let mut channel = channel_ref.borrow_mut();
             match channel.try_send(value) {
-                Ok(true) => Ok(Object::Boolean(true)),  // Successfully sent
+                Ok(true) => Ok(Object::Boolean(true)),   // Successfully sent
                 Ok(false) => Ok(Object::Boolean(false)), // Would block
                 Err(e) => Err(e.to_string()),
             }
-        },
-        _ => Err(format!("Cannot send to non-channel type: {}", channel.type_name()))
+        }
+        _ => Err(format!(
+            "Cannot send to non-channel type: {}",
+            channel.type_name()
+        )),
     }
 }
 
@@ -83,12 +92,15 @@ pub fn try_receive_from_channel(channel: Object) -> Result<Object, String> {
         Object::Channel(channel_ref) => {
             let mut channel = channel_ref.borrow_mut();
             match channel.try_receive() {
-                Ok(Some(value)) => Ok(value),  // Successfully received
-                Ok(None) => Ok(Object::Null),  // Would block
+                Ok(Some(value)) => Ok(value), // Successfully received
+                Ok(None) => Ok(Object::Null), // Would block
                 Err(e) => Err(e.to_string()),
             }
-        },
-        _ => Err(format!("Cannot receive from non-channel type: {}", channel.type_name()))
+        }
+        _ => Err(format!(
+            "Cannot receive from non-channel type: {}",
+            channel.type_name()
+        )),
     }
 }
 
@@ -99,7 +111,10 @@ pub fn close_channel(channel: Object) -> Result<Object, String> {
             let mut channel = channel_ref.borrow_mut();
             channel.close();
             Ok(Object::Null)
-        },
-        _ => Err(format!("Cannot close non-channel type: {}", channel.type_name()))
+        }
+        _ => Err(format!(
+            "Cannot close non-channel type: {}",
+            channel.type_name()
+        )),
     }
 }

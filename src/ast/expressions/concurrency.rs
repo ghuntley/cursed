@@ -1,6 +1,6 @@
-use std::any::Any;
-use crate::ast::{Node, Expression};
+use crate::ast::{Expression, Node};
 use crate::lexer::token::Token;
+use std::any::Any;
 
 /// ChannelExpression represents a channel creation expression
 pub struct ChannelExpression {
@@ -13,7 +13,7 @@ impl Node for ChannelExpression {
     fn token_literal(&self) -> String {
         self.token.token_literal()
     }
-    
+
     fn string(&self) -> String {
         format!("chan {}", self.element_type.string())
     }
@@ -21,7 +21,9 @@ impl Node for ChannelExpression {
 
 impl Expression for ChannelExpression {
     fn expression_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// SendExpression represents sending a value to a channel
@@ -35,7 +37,7 @@ impl Node for SendExpression {
     fn token_literal(&self) -> String {
         self.token.token_literal()
     }
-    
+
     fn string(&self) -> String {
         format!("{} <- {}", self.channel.string(), self.value.string())
     }
@@ -43,7 +45,9 @@ impl Node for SendExpression {
 
 impl Expression for SendExpression {
     fn expression_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// ReceiveExpression represents receiving a value from a channel
@@ -56,7 +60,7 @@ impl Node for ReceiveExpression {
     fn token_literal(&self) -> String {
         self.token.token_literal()
     }
-    
+
     fn string(&self) -> String {
         format!("<-{}", self.channel.string())
     }
@@ -64,7 +68,9 @@ impl Node for ReceiveExpression {
 
 impl Expression for ReceiveExpression {
     fn expression_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// StanExpression represents a goroutine creation expression
@@ -77,7 +83,7 @@ impl Node for StanExpression {
     fn token_literal(&self) -> String {
         self.token.token_literal()
     }
-    
+
     fn string(&self) -> String {
         format!("stan {}", self.expression.string())
     }
@@ -85,5 +91,7 @@ impl Node for StanExpression {
 
 impl Expression for StanExpression {
     fn expression_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }

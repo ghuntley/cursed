@@ -29,9 +29,9 @@
 //! // Result: "that movie was fire"
 //! ```
 
-use std::rc::Rc;
-use crate::object::Object;
 use crate::error::Error;
+use crate::object::Object;
+use std::rc::Rc;
 
 /// Checks if a string contains a pattern (simplified regex matching).
 ///
@@ -54,20 +54,30 @@ use crate::error::Error;
 /// - Arguments are not String Objects
 pub fn matches(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("matches requires 2 arguments: pattern and string".to_string()));
+        return Err(Error::Runtime(
+            "matches requires 2 arguments: pattern and string".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just check if the string contains the pattern
     let pattern = match &*args[0] {
         Object::String(p) => p,
-        _ => return Err(Error::Runtime("First argument to matches must be a string".to_string())),
+        _ => {
+            return Err(Error::Runtime(
+                "First argument to matches must be a string".to_string(),
+            ))
+        }
     };
-    
+
     let s = match &*args[1] {
         Object::String(s) => s,
-        _ => return Err(Error::Runtime("Second argument to matches must be a string".to_string())),
+        _ => {
+            return Err(Error::Runtime(
+                "Second argument to matches must be a string".to_string(),
+            ))
+        }
     };
-    
+
     Ok(Rc::new(Object::Boolean(s.contains(pattern))))
 }
 
@@ -90,9 +100,11 @@ pub fn matches(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if fewer than 2 arguments are provided
 pub fn find_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("find_all requires 2 arguments: pattern and string".to_string()));
+        return Err(Error::Runtime(
+            "find_all requires 2 arguments: pattern and string".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - return empty array
     let results: Vec<Object> = Vec::new();
     Ok(Rc::new(Object::Array(results)))
@@ -120,25 +132,39 @@ pub fn find_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - Arguments are not String Objects
 pub fn replace_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 3 {
-        return Err(Error::Runtime("replace_all requires 3 arguments: pattern, string, and replacement".to_string()));
+        return Err(Error::Runtime(
+            "replace_all requires 3 arguments: pattern, string, and replacement".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - basic string replacement
     let pattern = match &*args[0] {
         Object::String(p) => p,
-        _ => return Err(Error::Runtime("First argument to replace_all must be a string".to_string())),
+        _ => {
+            return Err(Error::Runtime(
+                "First argument to replace_all must be a string".to_string(),
+            ))
+        }
     };
-    
+
     let s = match &*args[1] {
         Object::String(s) => s,
-        _ => return Err(Error::Runtime("Second argument to replace_all must be a string".to_string())),
+        _ => {
+            return Err(Error::Runtime(
+                "Second argument to replace_all must be a string".to_string(),
+            ))
+        }
     };
-    
+
     let replacement = match &*args[2] {
         Object::String(r) => r,
-        _ => return Err(Error::Runtime("Third argument to replace_all must be a string".to_string())),
+        _ => {
+            return Err(Error::Runtime(
+                "Third argument to replace_all must be a string".to_string(),
+            ))
+        }
     };
-    
+
     let result = s.replace(pattern, replacement);
     Ok(Rc::new(Object::String(result)))
 }

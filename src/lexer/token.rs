@@ -11,7 +11,7 @@ use crate::lexer::TokenType;
 ///
 /// A token is the smallest unit of meaning in the language, such as
 /// keywords, identifiers, literals, operators, and delimiters.
-/// 
+///
 /// Tokens are created by the lexer during the lexical analysis phase
 /// and consumed by the parser to build the abstract syntax tree.
 #[derive(Debug, PartialEq, Clone)]
@@ -19,112 +19,112 @@ pub enum Token {
     // Special tokens
     Illegal(String),
     Eof,
-    
+
     // Identifiers and literals
     Identifier(String),
     String(String),
     Int(i64),
     Float(f64),
-    Byte(u8),    // byte literal (single byte value)
-    Rune(char),  // rune literal (Unicode code point)
-    
+    Byte(u8),   // byte literal (single byte value)
+    Rune(char), // rune literal (Unicode code point)
+
     // Operators
-    Assign,      // =
-    Plus,        // +
-    Minus,       // -
-    Bang,        // !
-    Asterisk,    // *
-    Slash,       // /
-    Percent,     // %
-    Lt,          // <
-    Gt,          // >
-    Eq,          // ==
-    NotEq,       // !=
-    LtEq,        // <=
-    GtEq,        // >=
-    And,         // &&
-    Or,          // ||
-    Arrow,       // <-
-    At,          // @ (for pointers)
-    
+    Assign,   // =
+    Plus,     // +
+    Minus,    // -
+    Bang,     // !
+    Asterisk, // *
+    Slash,    // /
+    Percent,  // %
+    Lt,       // <
+    Gt,       // >
+    Eq,       // ==
+    NotEq,    // !=
+    LtEq,     // <=
+    GtEq,     // >=
+    And,      // &&
+    Or,       // ||
+    Arrow,    // <-
+    At,       // @ (for pointers)
+
     // Compound assignment operators
-    PlusAssign,   // +=
-    MinusAssign,  // -=
+    PlusAssign,     // +=
+    MinusAssign,    // -=
     AsteriskAssign, // *=
-    SlashAssign,  // /=
-    PercentAssign, // %=
-    BitAndAssign, // &=
-    BitOrAssign,  // |=
-    BitXorAssign, // ^=
-    
+    SlashAssign,    // /=
+    PercentAssign,  // %=
+    BitAndAssign,   // &=
+    BitOrAssign,    // |=
+    BitXorAssign,   // ^=
+
     // Increment/decrement operators
-    Inc,          // ++
-    Dec,          // --
-    
+    Inc, // ++
+    Dec, // --
+
     // Bitwise operators
-    BitAnd,       // &
-    BitOr,        // |
-    BitXor,       // ^
-    BitCompl,     // ~
-    ShiftLeft,    // <<
-    ShiftRight,   // >>
-    
+    BitAnd,     // &
+    BitOr,      // |
+    BitXor,     // ^
+    BitCompl,   // ~
+    ShiftLeft,  // <<
+    ShiftRight, // >>
+
     // Special tokens
-    DeclAssign,   // :=
-    Ellipsis,     // ...
-    
+    DeclAssign, // :=
+    Ellipsis,   // ...
+
     // Delimiters
-    Comma,       // ,
-    Semicolon,   // ;
-    Colon,       // :
-    LParen,      // (
-    RParen,      // )
-    LBrace,      // {
-    RBrace,      // }
-    LBracket,    // [
-    RBracket,    // ]
-    Dot,         // .
-    
+    Comma,     // ,
+    Semicolon, // ;
+    Colon,     // :
+    LParen,    // (
+    RParen,    // )
+    LBrace,    // {
+    RBrace,    // }
+    LBracket,  // [
+    RBracket,  // ]
+    Dot,       // .
+
     // Keywords - CURSED uses Gen Z slang for keywords
-    Vibe,        // package (vibe)
-    Yeet,        // import (yeet)
-    Slay,        // func (slay)
-    Sus,         // var (sus)
-    Facts,       // const (facts)
-    Lowkey,      // if (lowkey)
-    Highkey,     // else (highkey)
-    Bestie,      // for (bestie)
-    Periodt,     // while (periodt)
-    VibeCheck,   // switch (vibe_check)
-    Mood,        // case (mood)
-    Basic,       // default (basic)
-    Ghosted,     // break (ghosted)
-    Simp,        // continue (simp)
-    BeLike,      // type (be_like)
-    Squad,       // struct (squad)
-    Collab,      // interface (collab)
-    Tea,         // map (tea)
-    Dm,          // chan (dm)
-    Stan,        // go (stan)
-    Flex,        // range (flex)
-    Later,       // defer (later)
-    Yolo,        // return (yolo)
-    Based,       // true (based)
-    Cap,         // nil (cap)
-    Crew,        // array literal
-    
+    Vibe,      // package (vibe)
+    Yeet,      // import (yeet)
+    Slay,      // func (slay)
+    Sus,       // var (sus)
+    Facts,     // const (facts)
+    Lowkey,    // if (lowkey)
+    Highkey,   // else (highkey)
+    Bestie,    // for (bestie)
+    Periodt,   // while (periodt)
+    VibeCheck, // switch (vibe_check)
+    Mood,      // case (mood)
+    Basic,     // default (basic)
+    Ghosted,   // break (ghosted)
+    Simp,      // continue (simp)
+    BeLike,    // type (be_like)
+    Squad,     // struct (squad)
+    Collab,    // interface (collab)
+    Tea,       // map (tea)
+    Dm,        // chan (dm)
+    Stan,      // go (stan)
+    Flex,      // range (flex)
+    Later,     // defer (later)
+    Yolo,      // return (yolo)
+    Based,     // true (based)
+    Cap,       // nil (cap)
+    Crew,      // array literal
+
     // Type tokens
-    Smol,        // int8 (smol)
-    Mid,         // int16 (mid)
-    Normie,      // int32 (normie)
-    Thicc,       // int64 (thicc)
-    Snack,       // float32 (snack)
-    Meal,        // float64 (meal)
-    Lit,         // bool (lit)
-    Sip,         // char (sip)
-    
+    Smol,   // int8 (smol)
+    Mid,    // int16 (mid)
+    Normie, // int32 (normie)
+    Thicc,  // int64 (thicc)
+    Snack,  // float32 (snack)
+    Meal,   // float64 (meal)
+    Lit,    // bool (lit)
+    Sip,    // char (sip)
+
     // Comment tokens
-    LineComment, // fr fr
+    LineComment,       // fr fr
     BlockCommentStart, // no cap
     BlockCommentEnd,   // on god
 }
@@ -157,28 +157,28 @@ impl Token {
                 } else {
                     Token::Illegal(format!("Invalid integer: {}", literal))
                 }
-            },
+            }
             TokenType::Float => {
                 if let Ok(value) = literal.parse::<f64>() {
                     Token::Float(value)
                 } else {
                     Token::Illegal(format!("Invalid float: {}", literal))
                 }
-            },
+            }
             TokenType::Byte => {
                 if literal.len() == 1 {
                     Token::Byte(literal.as_bytes()[0])
                 } else {
                     Token::Illegal(format!("Invalid byte: {}", literal))
                 }
-            },
+            }
             TokenType::Rune => {
                 if let Some(ch) = literal.chars().next() {
                     Token::Rune(ch)
                 } else {
                     Token::Illegal(format!("Invalid rune: {}", literal))
                 }
-            },
+            }
             TokenType::Assign => Token::Assign,
             TokenType::Plus => Token::Plus,
             TokenType::Minus => Token::Minus,
@@ -271,7 +271,7 @@ impl Token {
             TokenType::For => Token::Bestie,
         }
     }
-    
+
     /// Gets the string literal representation of the token
     ///
     /// This method converts the token back to its string representation,
@@ -290,7 +290,7 @@ impl Token {
             Token::Float(f) => f.to_string(),
             Token::Byte(b) => format!("b'{}'", *b as char),
             Token::Rune(r) => format!("'{}'", r),
-            
+
             // Operators
             Token::Assign => String::from("="),
             Token::Plus => String::from("+"),
@@ -309,7 +309,7 @@ impl Token {
             Token::Or => String::from("||"),
             Token::Arrow => String::from("<-"),
             Token::At => String::from("@"),
-            
+
             // Compound assignment operators
             Token::PlusAssign => String::from("+="),
             Token::MinusAssign => String::from("-="),
@@ -319,11 +319,11 @@ impl Token {
             Token::BitAndAssign => String::from("&="),
             Token::BitOrAssign => String::from("|="),
             Token::BitXorAssign => String::from("^="),
-            
+
             // Increment/decrement operators
             Token::Inc => String::from("++"),
             Token::Dec => String::from("--"),
-            
+
             // Bitwise operators
             Token::BitAnd => String::from("&"),
             Token::BitOr => String::from("|"),
@@ -331,11 +331,11 @@ impl Token {
             Token::BitCompl => String::from("~"),
             Token::ShiftLeft => String::from("<<"),
             Token::ShiftRight => String::from(">>"),
-            
+
             // Special tokens
             Token::DeclAssign => String::from(":="),
             Token::Ellipsis => String::from("..."),
-            
+
             // Delimiters
             Token::Comma => String::from(","),
             Token::Semicolon => String::from(";"),
@@ -347,7 +347,7 @@ impl Token {
             Token::LBracket => String::from("["),
             Token::RBracket => String::from("]"),
             Token::Dot => String::from("."),
-            
+
             // Keywords
             Token::Vibe => String::from("vibe"),
             Token::Yeet => String::from("yeet"),
@@ -375,7 +375,7 @@ impl Token {
             Token::Based => String::from("based"),
             Token::Cap => String::from("cap"),
             Token::Crew => String::from("crew"),
-            
+
             // Type tokens
             Token::Smol => String::from("smol"),
             Token::Mid => String::from("mid"),
@@ -385,7 +385,7 @@ impl Token {
             Token::Meal => String::from("meal"),
             Token::Lit => String::from("lit"),
             Token::Sip => String::from("sip"),
-            
+
             // Comment tokens
             Token::LineComment => String::from("LineComment"),
             Token::BlockCommentStart => String::from("BlockCommentStart"),

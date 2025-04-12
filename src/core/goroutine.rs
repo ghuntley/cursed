@@ -9,13 +9,13 @@
 //! is handled internally by the functions in this module. Communication
 //! between goroutines is managed through channels.
 
-use crate::object::{Object, Callable};
 use crate::error::Error;
+use crate::object::{Callable, Object};
 // Commented out temporarily due to missing functions
 // use crate::core::thread_safe_goroutine;
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
-use std::sync::Arc;
 
 /// Launches a new goroutine that executes the given function with arguments
 ///
@@ -38,7 +38,7 @@ pub fn launch_goroutine(callable: &Object, args: Vec<Object>) -> Result<Object, 
         // Just create a goroutine that does nothing for now
         println!("Launched goroutine (placeholder)");
     });
-    
+
     Ok(Object::Null)
 }
 

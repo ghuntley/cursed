@@ -4,12 +4,13 @@
 //! responsible for transforming token streams into Abstract Syntax Trees.
 //! It implements a recursive descent parser with Pratt parsing for expressions.
 
-use crate::ast::{self, Statement, Expression};
 use crate::ast::base::Program;
-use crate::error::{Error, SourceLocation, ErrorReporter};
+use crate::ast::{self, Expression, Statement};
+use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::lexer::{Lexer, Token};
 
 use super::precedence::Precedence;
+use super::context::{ContextAwareParsing, ParsingContext};
 
 /// Parser for the CURSED language
 ///
@@ -26,6 +27,8 @@ pub struct Parser<'a> {
     pub(super) peek_token: Token,
     /// Collection of errors encountered during parsing
     pub(super) errors: Vec<Error>,
+    /// Stack of parsing contexts
+    pub(super) context_stack: Vec<ParsingContext>,
 }
 
 impl<'a> Parser<'a> {
@@ -47,6 +50,7 @@ impl<'a> Parser<'a> {
             current_token: Token::Eof,
             peek_token: Token::Eof,
             errors: Vec::new(),
+            context_stack: vec![ParsingContext::Statement], // Start in statement context by default
         };
 
         // Read two tokens, so current_token and peek_token are both set
@@ -65,10 +69,13 @@ impl<'a> Parser<'a> {
     pub(super) fn parser_state_debug(&self) -> String {
         let mut info = String::new();
         info.push_str(&format!("Parser state:\n"));
-        info.push_str(&format!("  Position: line {}, column {}\n", self.lexer.line, self.lexer.column));
+        info.push_str(&format!(
+            "  Position: line {}, column {}\n",
+            self.lexer.line, self.lexer.column
+        ));
         info.push_str(&format!("  Current token: {:?}\n", self.current_token));
         info.push_str(&format!("  Next token: {:?}\n", self.peek_token));
-        
+
         info
     }
 
@@ -104,7 +111,7 @@ impl<'a> Parser<'a> {
                 Ok(stmt) => program.statements.push(stmt),
                 Err(e) => self.errors.push(e),
             }
-            
+
             // Advance to the next statement
             self.next_token()?;
         }
@@ -152,8 +159,10 @@ impl<'a> Parser<'a> {
             self.next_token()?;
             Ok(())
         } else {
-            let msg = format!("expected next token to be {:?}, got {:?} instead",
-                           token, self.peek_token);
+            let msg = format!(
+                "expected next token to be {:?}, got {:?} instead",
+                token, self.peek_token
+            );
             let location = SourceLocation {
                 line: self.lexer.line,
                 column: self.lexer.column,
@@ -237,7 +246,7 @@ impl<'a> Parser<'a> {
     pub(super) fn error(&self, message: &str) -> Error {
         Error::new("Parser", message, Some(self.lexer.location()))
     }
-    
+
     /// Gets a reference to the peek token without advancing
     ///
     /// # Returns
@@ -245,5 +254,43 @@ impl<'a> Parser<'a> {
     /// A reference to the peek token
     pub(super) fn peek_token(&self) -> &Token {
         &self.peek_token
+    }
+}
+
+// Implement the ContextAwareParsing trait for Parser
+impl<'a> ContextAwareParsing for Parser<'a> {
+    /// Push a new context onto the context stack
+    fn push_context(&mut self, context: ParsingContext) {
+        self.context_stack.push(context);
+    }
+    
+    /// Pop the most recent context from the context stack
+    fn pop_context(&mut self) -> Option<ParsingContext> {
+        self.context_stack.pop()
+    }
+    
+    /// Get the current parsing context
+    fn current_context(&self) -> Option<&ParsingContext> {
+        self.context_stack.last()
+    }
+    
+    /// Check if we're currently in a specific context
+    fn in_context(&self, context: ParsingContext) -> bool {
+        self.context_stack.contains(&context)
+    }
+    
+    /// Check if we're in any of the specified contexts
+    fn in_any_context(&self, contexts: &[ParsingContext]) -> bool {
+        for ctx in self.context_stack.iter() {
+            if contexts.contains(ctx) {
+                return true;
+            }
+        }
+        false
+    }
+    
+    /// Check if the current token is in a particular context
+    fn current_token_is_in_context(&self, token_predicate: fn(&Self) -> bool, context: ParsingContext) -> bool {
+        self.in_context(context) && token_predicate(self)
     }
 }

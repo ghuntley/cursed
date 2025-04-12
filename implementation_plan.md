@@ -100,6 +100,10 @@ This document outlines the next development steps for the CURSED programming lan
 ### 2. Documentation and Ecosystem
 
 #### Improve Documentation
+
+- Added stub implementation for string switch cases
+- Documented current limitations in string_switch.rs
+- Prepare for incremental development of the feature
 - **Priority**: Medium
 - **Description**: Enhance documentation for library users and language specification
 - **Tasks**:

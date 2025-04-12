@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reflectz - CURSED Programming Language</title>
+    <link rel="stylesheet" href="../styles/docs.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><span class="gradient-text">ud83euddff Reflectz ud83euddff</span></h1>
+            <p class="subtitle">Look at your code in the mirror, bestie!</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="doc-grid">
+            <aside class="sidebar">
+                <nav>
+                    <ul>
+                        <li><a href="interfaces.html">Interfaces</a></li>
+                        <li><a href="generics.html">Generics</a></li>
+                        <li><a href="#" class="active">Reflectz</a></li>
+                        <li><a href="type-assertions.html">Type Assertions</a></li>
+                        <li><a href="structs.html">Squads (Structs)</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <article class="content">
+                <section class="intro">
+                    <div class="tag-container">
+                        <span class="tag">Advanced</span>
+                        <span class="tag">Meta Programming</span>
+                        <span class="tag">Runtime Introspection</span>
+                    </div>
+                    <p class="lead">The <code>reflectz</code> package is for when your code needs to look in the mirror and understand itself at runtime. It's like your code just became self-aware! ud83eudd14</p>
+                </section>
+
+                <section>
+                    <h2>u2728 Reflection Basics u2728</h2>
+                    <p>Reflection lets you examine types, fields, and methods during runtime:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">reflection_basics.csd</div>
+                        <pre><code>yeet "vibez";
+yeet "reflectz";
+
+slay main() {
+    // Get the type of a value
+    sus x normie = 42;
+    sus xType = reflectz.TypeOf(x);
+    vibez.spill("Type of x is", xType.Name());  // "normie" or "int32"
+    
+    // Get the runtime value representation
+    sus xValue = reflectz.ValueOf(x);
+    vibez.spill("Value of x is", xValue.Int());  // 42
+    
+    // Check if it's a basic type
+    vibez.spill("Is x a basic type?", xType.IsBasic());  // true
+    
+    // Get a string representation
+    sus str = "hello";
+    vibez.spill("Type of str is", reflectz.TypeOf(str).Name());  // "tea" or "string"
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83cude32 Working With Structs ud83cude32</h2>
+                    <p>Reflection is giving main character energy when working with structs:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">struct_reflection.csd</div>
+                        <pre><code>be_like Person squad {
+    Name tea
+    Age normie
+    IsAdmin lit
+}
+
+slay main() {
+    sus p = Person{Name: "Taylor", Age: 22, IsAdmin: based};
+    
+    // Get type information for the struct
+    sus pType = reflectz.TypeOf(p);
+    vibez.spill("Type:", pType.Name());  // "Person"
+    vibez.spill("Is struct?", pType.IsStruct());  // true
+    
+    // Get all fields of the struct
+    sus fields = pType.Fields();
+    vibez.spill("Number of fields:", len(fields));
+    
+    // Examine each field
+    bestie _, field := range fields {
+        vibez.spill("Field:", field.Name, "of type", field.Type.Name());
+    }
+    
+    // Get a specific field by name
+    sus pValue = reflectz.ValueOf(p);
+    sus nameField = pValue.FieldByName("Name");
+    vibez.spill("Name field value:", nameField.String());  // "Taylor"
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudcf2 Modifying Values ud83dudcf2</h2>
+                    <p>To modify values through reflection, you need to work with pointers:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">modify_values.csd</div>
+                        <pre><code>slay main() {
+    sus p = Person{Name: "Alex", Age: 25, IsAdmin: cap};
+    
+    // Create a reflection Value pointing to p
+    sus ptrValue = reflectz.ValueOf(&p);  // Note the &
+    
+    // Get the value that the pointer points to
+    sus elemValue = ptrValue.Elem();
+    
+    // Now we can modify fields
+    sus nameField = elemValue.FieldByName("Name");
+    lowkey nameField.CanSet() {  // Always check if it's settable
+        nameField.SetString("Alex (Modified)");
+    }
+    
+    sus ageField = elemValue.FieldByName("Age");
+    lowkey ageField.CanSet() {
+        ageField.SetInt(26);  // Happy birthday!
+    }
+    
+    vibez.spill("Modified struct:", p);
+}</code></pre>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>The Tea on Settability ud83cudf75</h3>
+                        <p>A reflection Value is only settable if:</p>
+                        <ul>
+                            <li>It was created from a pointer and dereferenced with <code>Elem()</code></li>
+                            <li>The field is exported (starts with uppercase)</li>
+                            <li>It's not coming from an unexported struct field</li>
+                        </ul>
+                        <p>Always check <code>CanSet()</code> before trying to modify a value!</p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudc89 Method Reflection ud83dudc89</h2>
+                    <p>Reflection lets you discover and call methods dynamically:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">method_reflection.csd</div>
+                        <pre><code>be_like Rectangle squad {
+    Width meal
+    Height meal
+}
+
+slay (r Rectangle) Area() meal {
+    yolo r.Width * r.Height;
+}
+
+slay (r Rectangle) Perimeter() meal {
+    yolo 2 * (r.Width + r.Height);
+}
+
+slay main() {
+    sus rect = Rectangle{Width: 5.0, Height: 3.0};
+    
+    // Get type information
+    sus rectType = reflectz.TypeOf(rect);
+    
+    // Get all methods
+    sus methods = rectType.Methods();
+    vibez.spill("Rectangle has", len(methods), "methods");
+    
+    bestie _, method := range methods {
+        vibez.spill("Method:", method.Name);
+        
+        // Get return type of the method
+        lowkey method.Type.NumOut() > 0 {
+            sus returnType = method.Type.Out(0);
+            vibez.spill("  Returns:", returnType.Name());
+        }
+    }
+    
+    // Call a method by name
+    sus rectValue = reflectz.ValueOf(rect);
+    sus areaMethod = rectValue.MethodByName("Area");
+    
+    lowkey areaMethod.IsValid() {
+        // Call the method with no arguments
+        sus results = areaMethod.Call([]collab{});
+        vibez.spill("Area result:", results[0].Float());  // Should be 15.0
+    }
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudca1 Interface Examination ud83dudca1</h2>
+                    <p>Check if types implement interfaces and examine interface methods:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">interface_reflection.csd</div>
+                        <pre><code>be_like Shape collab {
+    Area() meal
+    Perimeter() meal
+}
+
+slay main() {
+    // Get the type of the Shape interface
+    sus shapeType = reflectz.TypeOf((*Shape)(cap));
+    
+    // Get the Rectangle type
+    sus rectType = reflectz.TypeOf(Rectangle{});
+    
+    // Check if Rectangle implements Shape
+    sus implements = reflectz.Implements(rectType, shapeType);
+    vibez.spill("Rectangle implements Shape:", implements);  // true
+    
+    // Get interface methods
+    sus methods = shapeType.Methods();
+    vibez.spill("Shape interface has", len(methods), "methods");
+    
+    bestie _, method := range methods {
+        vibez.spill("Required method:", method.Name);
+    }
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudc8e Advanced Examples ud83dudc8e</h2>
+                    <p>Here are some practical use cases for reflection:</p>
+                    
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">Generic JSON Serializer</div>
+                            <div class="accordion-content">
+                                <div class="code-block">
+                                    <div class="code-title">json_serializer.csd</div>
+                                    <pre><code>slay ToJSON(obj collab{}) tea {
+    sus val = reflectz.ValueOf(obj);
+    sus typ = reflectz.TypeOf(obj);
+    
+    lowkey typ.Kind() != reflectz.Struct {
+        yolo "{}";
+    }
+    
+    sus result = "{";
+    sus numFields = val.NumField();
+    
+    bestie i := 0; i < numFields; i++ {
+        lowkey i > 0 {
+            result += ",";
+        }
+        
+        sus field = typ.Field(i);
+        sus value = val.Field(i);
+        
+        // Add field name as key
+        result += "\"" + field.Name + "\":";
+        
+        // Add value based on its type
+        lowkey value.Kind() == reflectz.String {
+            result += "\"" + value.String() + "\"";
+        } highkey value.Kind() == reflectz.Int || value.Kind() == reflectz.Int32 {
+            result += tea(value.Int());
+        } highkey value.Kind() == reflectz.Float64 {
+            result += tea(value.Float());
+        } highkey value.Kind() == reflectz.Bool {
+            result += tea(value.Bool());
+        } highkey {
+            // Recurse for nested structs
+            result += ToJSON(value.Interface());
+        }
+    }
+    
+    result += "}";
+    yolo result;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <div class="accordion-header">Automated Testing Framework</div>
+                            <div class="accordion-content">
+                                <div class="code-block">
+                                    <div class="code-title">test_runner.csd</div>
+                                    <pre><code>slay RunTests(testStruct collab{}) {
+    sus val = reflectz.ValueOf(testStruct);
+    sus typ = reflectz.TypeOf(testStruct);
+    
+    // Find all methods that start with "Test"
+    bestie i := 0; i < val.NumMethod(); i++ {
+        sus method = typ.Method(i);
+        sus methodName = method.Name;
+        
+        lowkey stringz.HasPrefix(methodName, "Test") {
+            vibez.spill("Running test:", methodName);
+            
+            // Call the test method
+            val.Method(i).Call([]collab{});
+            vibez.spill("Test completed");
+        }
+    }
+}
+
+// Usage:
+be_like MyTests squad {}
+
+slay (t MyTests) TestAddition() {
+    vibez.spill("Checking that 2+2=4...");
+    // test assertions here
+}
+
+slay (t MyTests) TestSubtraction() {
+    vibez.spill("Checking that 5-3=2...");
+    // test assertions here
+}
+
+slay main() {
+    RunTests(MyTests{});
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <div class="accordion-header">Dependency Injection</div>
+                            <div class="accordion-content">
+                                <div class="code-block">
+                                    <div class="code-title">dependency_injection.csd</div>
+                                    <pre><code>be_like Injector squad {
+    services tea[tea]collab{}
+}
+
+slay NewInjector() Injector {
+    yolo Injector{services: make(tea[tea]collab{})};
+}
+
+slay (i Injector) Register(name tea, service collab{}) {
+    i.services[name] = service;
+}
+
+slay (i Injector) Inject(target collab{}) {
+    sus val = reflectz.ValueOf(target).Elem();
+    sus typ = reflectz.TypeOf(target).Elem();
+    
+    bestie j := 0; j < val.NumField(); j++ {
+        sus field = typ.Field(j);
+        sus tag = field.Tag.Get("inject");
+        
+        lowkey tag != "" {
+            sus service = i.services[tag];
+            lowkey service != cap {
+                val.Field(j).Set(reflectz.ValueOf(service));
+            }
+        }
+    }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tips">
+                    <h2>Bestie Advice ud83dudc85</h2>
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83cudf89</div>
+                            <h3>Use With Caution</h3>
+                            <p>Reflection is slower than direct code and bypasses type safety. Only use it when you really need runtime type information.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83dudd0d</div>
+                            <h3>Check All Errors</h3>
+                            <p>Always check <code>IsValid()</code> and <code>CanSet()</code> before using reflection values to avoid panics.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83dudc7b</div>
+                            <h3>Mind The Performance</h3>
+                            <p>Reflection operations are much slower than direct code. Cache results when possible.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83dudc68u200dud83dudd2c</div>
+                            <h3>Consider Alternatives</h3>
+                            <p>Often interfaces, generics, or code generation can provide type-safe alternatives to reflection.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="faq">
+                    <h2>FAQ - Tea Time u2615</h2>
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">When should I use reflection?</div>
+                            <div class="accordion-content">
+                                <p>Reflection is mostly useful for:</p>
+                                <ul>
+                                    <li>Generic serialization/deserialization (JSON, XML, etc.)</li>
+                                    <li>Dynamic method dispatch or plugin systems</li>
+                                    <li>Dependency injection frameworks</li>
+                                    <li>Testing utilities that need to analyze code</li>
+                                    <li>ORM implementations</li>
+                                </ul>
+                                <p>But if you can solve your problem with interfaces or generics, that's usually better!</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <div class="accordion-header">Can I create new types at runtime?</div>
+                            <div class="accordion-content">
+                                <p>No, CURSED doesn't allow creating new types at runtime. Reflection allows examining existing types and manipulating values, but you can't define brand new types dynamically.</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <div class="accordion-header">Why is my field not settable?</div>
+                            <div class="accordion-content">
+                                <p>Fields might not be settable for several reasons:</p>
+                                <ul>
+                                    <li>You're working with a value, not a pointer (use <code>&obj</code> and <code>Elem()</code>)</li>
+                                    <li>The field starts with lowercase (unexported fields can't be set)</li>
+                                    <li>The field is inside an unexported embedded struct</li>
+                                    <li>You're working with a map or array element (use specialized Set methods)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>Keep The Vibe Going</h2>
+                    <div class="next-links">
+                        <a href="interfaces.html" class="next-link">
+                            <span class="next-link-text">Interface Collabs</span>
+                            <span class="next-link-arrow">u2192</span>
+                        </a>
+                        <a href="generics.html" class="next-link">
+                            <span class="next-link-text">Generic Types</span>
+                            <span class="next-link-arrow">u2192</span>
+                        </a>
+                    </div>
+                </section>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>u00a9 2025 CURSED Programming Language. Reflection never looked so good.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">GitHub</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../scripts.js"></script>
+</body>
+</html>

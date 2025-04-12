@@ -21,4 +21,4 @@ impl Code {
 pub enum Opcode {
     Nop = 0,
     // Actual opcodes will be added in future versions
-} 
+}

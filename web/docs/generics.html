@@ -1,67 +1,457 @@
-<!-- Generics Section in GenZ Style -->
-<section id="generics" class="docs-section animate-on-scroll">
-  <div class="section-pop">type wizard</div>
-  <h2>Generics</h2>
-  <p>Generics are so fetch right now! They let you write code that's giving main character energy with any data type. It's like having one function template that works with the whole squad.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CURSED - Generics | Type Parameters That Understand The Assignment</title>
+  <meta name="description" content="Learn how to use generics in CURSED for maximum code reusability. Same code, different types? We got you, bestie.">
+  <link rel="stylesheet" href="../styles/main.css">
+  <link rel="stylesheet" href="../styles/responsive.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="../images/cursed-logo.svg">
+</head>
+<body>
+  <header>
+    <div class="header-container container">
+      <a href="../index.html" class="logo">
+        <img src="../images/cursed-logo.svg" alt="CURSED Logo">
+        <span>CURSED</span>
+      </a>
+      
+      <nav>
+        <button id="menu-toggle" class="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <ul>
+          <li><a href="../index.html#features">Features</a></li>
+          <li><a href="../index.html#code">Examples</a></li>
+          <li><a href="../docs.html" class="active">Docs</a></li>
+          <li><a href="../index.html#community">Community</a></li>
+          <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
+          <li><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
-  <div class="code-block">
-    <div class="code-title">Generic Stack Implementation</div>
-    <pre><code><span class="comment">fr fr Define a generic Stack type</span>
+  <main>
+    <section class="docs-hero">
+      <div class="container">
+        <div class="docs-hero-content">
+          <h1>Generics <span class="glow-text">Understood The Assignment</span> 🤌</h1>
+          <p>Write once, <span class="highlight-text">flex everywhere</span> with type parameters that just hit different</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="docs-content-single">
+        <div class="section-pop">template rizz</div>
+        <h2>Generics in CURSED</h2>
+        <p>Generics let you write code that works with any type. It's like having a bestie who gets along with everyone in your friend group.</p>
+
+        <div class="feature-box">
+          <h3>Why Generics Are The Main Character</h3>
+          <ul>
+            <li><span class="emoji-tag">♻️</span> <strong>Code Reusability:</strong> Write a function or data structure once, use it with any type</li>
+            <li><span class="emoji-tag">🛡️</span> <strong>Type Safety:</strong> Get compile-time checks instead of runtime surprises</li>
+            <li><span class="emoji-tag">🔥</span> <strong>Performance:</strong> No need for type conversions or runtime reflection</li>
+            <li><span class="emoji-tag">💅</span> <strong>Abstraction:</strong> Focus on algorithms and logic without type distractions</li>
+            <li><span class="emoji-tag">✨</span> <strong>Library Design:</strong> Create flexible APIs that work with user-defined types</li>
+          </ul>
+        </div>
+
+        <h3>The Basics</h3>
+        <p>Creating generic code in CURSED is a whole vibe:</p>
+
+        <div class="code-block">
+          <div class="code-title">Generic Function Syntax</div>
+          <pre><code><span class="comment">fr fr A generic function to swap two values</span>
+<span class="keyword">slay</span> swap[T](a, b @T) {
+    <span class="keyword">sus</span> temp = *a
+    *a = *b
+    *b = temp
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-title">Using Generic Functions</div>
+          <pre><code><span class="comment">fr fr Using our generic swap</span>
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr With integers</span>
+    <span class="keyword">sus</span> x, y normie = 10, 20
+    swap(&x, &y)  <span class="comment">fr fr Type parameter T is inferred as normie</span>
+    vibez.spill(x, y)  <span class="comment">fr fr Outputs: 20 10</span>
+    
+    <span class="comment">fr fr With strings</span>
+    <span class="keyword">sus</span> a, b tea = "hello", "world"
+    swap(&a, &b)  <span class="comment">fr fr Type parameter T is inferred as tea</span>
+    vibez.spill(a, b)  <span class="comment">fr fr Outputs: world hello</span>
+}</code></pre>
+        </div>
+
+        <div class="info-callout">
+          <h3>🫖 The Tea on Type Inference</h3>
+          <p>In most cases, CURSED can infer the type parameter from the arguments you pass. But you can also specify it explicitly if you want to flex:</p>
+          <div class="code-block mini">
+            <pre><code>swap[normie](&x, &y)  <span class="comment">fr fr Explicitly specifying normie type</span></code></pre>
+          </div>
+        </div>
+
+        <h3>Generic Data Structures</h3>
+        <p>Creating reusable data structures with generics has never been more iconic:</p>
+
+        <div class="code-block">
+          <div class="code-title">Generic Stack</div>
+          <pre><code><span class="comment">fr fr A generic stack that can hold any type</span>
 <span class="keyword">be_like</span> Stack[T] <span class="keyword">squad</span> {
     items []T
     size normie
 }
 
-<span class="comment">fr fr Push method for any type T</span>
-<span class="keyword">slay</span> push[T](s @Stack[T], item T) {
+<span class="comment">fr fr Push an item onto the stack</span>
+<span class="keyword">slay</span> (s @Stack[T]) push(item T) {
+    <span class="keyword">lowkey</span> s.items == <span class="keyword">cap</span> {
+        s.items = make([]T, 0, 10)
+    }
     s.items = append(s.items, item)
     s.size++
 }
 
-<span class="comment">fr fr Pop method for any type T</span>
-<span class="keyword">slay</span> pop[T](s @Stack[T]) T {
+<span class="comment">fr fr Pop an item from the stack</span>
+<span class="keyword">slay</span> (s @Stack[T]) pop() T {
     <span class="keyword">lowkey</span> s.size <= 0 {
-        panic("stack is empty, that's not it chief")
+        vibez.spill("Stack underflow")
+        <span class="comment">fr fr This is not ideal error handling but for demo purposes</span>
+        <span class="keyword">sus</span> zero T
+        <span class="keyword">yolo</span> zero
     }
     s.size--
     <span class="keyword">yolo</span> s.items[s.size]
-}</code></pre>
-  </div>
-
-  <div class="feature-box">
-    <h3>Using Generic Types</h3>
-    <pre><code><span class="comment">fr fr Create stacks for different types</span>
-<span class="keyword">slay</span> main() {
-    <span class="comment">fr fr Integer stack</span>
-    numStack := Stack[normie]{items: make([]normie, 0), size: 0}
-    push(&numStack, 42)
-    push(&numStack, 69)
-    push(&numStack, 420)
-    vibez.spill(pop(&numStack))  <span class="comment">fr fr Outputs: 420</span>
-    
-    <span class="comment">fr fr String stack</span>
-    wordStack := Stack[tea]{items: make([]tea, 0), size: 0}
-    push(&wordStack, "sheesh")
-    push(&wordStack, "yeet")
-    push(&wordStack, "slay")
-    vibez.spill(pop(&wordStack))  <span class="comment">fr fr Outputs: slay</span>
-}</code></pre>
-  </div>
-
-  <div class="alert-box">
-    <h4>Living for these type constraints fr fr</h4>
-    <p>CURSED also supports type constraints, letting you restrict what types can be used with your generic functions. It's like having a VIP-only area for your types.</p>
-    <pre><code><span class="keyword">be_like</span> Numeric <span class="keyword">collab</span> {
-    add(other Numeric) Numeric
 }
 
-<span class="keyword">slay</span> sum[T Numeric](a, b T) T {
-    <span class="keyword">yolo</span> a.add(b)
+<span class="comment">fr fr Peek at the top item without removing it</span>
+<span class="keyword">slay</span> (s @Stack[T]) peek() T {
+    <span class="keyword">lowkey</span> s.size <= 0 {
+        vibez.spill("Stack is empty")
+        <span class="keyword">sus</span> zero T
+        <span class="keyword">yolo</span> zero
+    }
+    <span class="keyword">yolo</span> s.items[s.size-1]
 }</code></pre>
-  </div>
+        </div>
 
-  <div class="tip-box">
-    <h4>Pro tip that ate and left no crumbs</h4>
-    <p>When naming type parameters, use single uppercase letters (like T, U, V) for simple cases, or more descriptive names like Element or Key for complex scenarios.</p>
-  </div>
-</section>
+        <div class="code-block">
+          <div class="code-title">Using Our Generic Stack</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create a stack of integers</span>
+    <span class="keyword">sus</span> numStack Stack[normie]
+    numStack.push(42)
+    numStack.push(73)
+    numStack.push(101)
+    vibez.spill(numStack.pop())  <span class="comment">fr fr Outputs: 101</span>
+    vibez.spill(numStack.peek())  <span class="comment">fr fr Outputs: 73</span>
+    
+    <span class="comment">fr fr Create a stack of strings</span>
+    <span class="keyword">sus</span> stringStack Stack[tea]
+    stringStack.push("YOLO")
+    stringStack.push("FOMO")
+    stringStack.push("IYKYK")
+    vibez.spill(stringStack.pop())  <span class="comment">fr fr Outputs: IYKYK</span>
+}</code></pre>
+        </div>
+
+        <h3>Multiple Type Parameters</h3>
+        <p>Your generic code isn't limited to just one type parameter - stack those generics like your favorite TikTok filters:</p>
+
+        <div class="code-block">
+          <div class="code-title">Multi-Type Parameters</div>
+          <pre><code><span class="comment">fr fr A simple key-value pair</span>
+<span class="keyword">be_like</span> Pair[K, V] <span class="keyword">squad</span> {
+    key K
+    value V
+}
+
+<span class="comment">fr fr Function with multiple type parameters</span>
+<span class="keyword">slay</span> createMap[K, V](pairs []Pair[K, V]) tea[K]V {
+    <span class="keyword">sus</span> result = make(tea[K]V)
+    <span class="keyword">bestie</span> _, pair := <span class="keyword">flex</span> pairs {
+        result[pair.key] = pair.value
+    }
+    <span class="keyword">yolo</span> result
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-title">Using Multiple Type Parameters</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> pairs = []Pair[tea, normie]{
+        {key: "age", value: 25},
+        {key: "score", value: 95},
+        {key: "level", value: 7},
+    }
+    
+    <span class="keyword">sus</span> statsMap = createMap(pairs)
+    vibez.spill(statsMap["score"])  <span class="comment">fr fr Outputs: 95</span>
+}</code></pre>
+        </div>
+
+        <h3>Type Constraints (Coming Soon)</h3>
+        <p>In a future update, CURSED will add support for type constraints, allowing you to create generics that only work with specific types:</p>
+
+        <div class="code-block">
+          <div class="code-title">Type Constraints Preview</div>
+          <pre><code><span class="comment">fr fr Define a constraint for comparable types</span>
+<span class="keyword">be_like</span> Comparable <span class="keyword">collab</span> {
+    compare(other Any) normie
+}
+
+<span class="comment">fr fr Generic function that only works with Comparable types</span>
+<span class="keyword">slay</span> max[T Comparable](a, b T) T {
+    <span class="keyword">lowkey</span> a.compare(b) > 0 {
+        <span class="keyword">yolo</span> a
+    }
+    <span class="keyword">yolo</span> b
+}</code></pre>
+        </div>
+
+        <div class="warning-box">
+          <h4>⚠️ Current Limitations</h4>
+          <p>The current implementation of generics in CURSED has some limitations to be aware of:</p>
+          <ul>
+            <li><strong>No Full Type Constraints:</strong> Constraints will come in a future update</li>
+            <li><strong>No Specialization:</strong> You can't provide special implementations for specific types</li>
+            <li><strong>No Variadic Type Parameters:</strong> Fixed number of type parameters required</li>
+            <li><strong>No Higher-Kinded Types:</strong> Type parameters must be concrete types</li>
+          </ul>
+        </div>
+
+        <h3>Under The Hood: Monomorphization</h3>
+        <p>CURSED uses monomorphization to implement generics, which means the compiler generates separate code for each concrete type used. This approach:</p>
+
+        <div class="feature-box">
+          <ul>
+            <li><span class="emoji-tag">🚀</span> <strong>Fast Runtime:</strong> No type checking or boxing at runtime</li>
+            <li><span class="emoji-tag">📈</span> <strong>Type Safety:</strong> Every instantiation is type-checked</li>
+            <li><span class="emoji-tag">📉</span> <strong>Larger Binary Size:</strong> Code is duplicated for each type used</li>
+            <li><span class="emoji-tag">⏱️</span> <strong>Longer Compile Time:</strong> More code generation means more work for the compiler</li>
+          </ul>
+        </div>
+
+        <div class="code-block">
+          <div class="code-title">How Monomorphization Works</div>
+          <pre><code><span class="comment">fr fr Original generic code</span>
+<span class="keyword">slay</span> identity[T](x T) T {
+    <span class="keyword">yolo</span> x
+}
+
+<span class="comment">fr fr When used with different types:</span>
+identity(42)        <span class="comment">fr fr normie version</span>
+identity("hello")   <span class="comment">fr fr tea version</span>
+
+<span class="comment">fr fr The compiler generates (conceptually):</span>
+<span class="keyword">slay</span> identity_normie(x normie) normie {
+    <span class="keyword">yolo</span> x
+}
+
+<span class="keyword">slay</span> identity_tea(x tea) tea {
+    <span class="keyword">yolo</span> x
+}</code></pre>
+        </div>
+
+        <div class="pro-tip-box">
+          <h4>✨ Pro Tips</h4>
+          <p>Level up your generic code with these elite strats:</p>
+          <ul>
+            <li>Use meaningful type parameter names (T for general types, K/V for key-value pairs)</li>
+            <li>Avoid excessive generic nesting which can make code hard to read</li>
+            <li>Provide clear documentation about expected type behavior</li>
+            <li>Test your generic code with a variety of concrete types</li>
+            <li>When specialized behavior is needed, consider using interfaces instead</li>
+          </ul>
+        </div>
+
+        <h3>Example: Generic Binary Tree</h3>
+        <p>Let's put it all together with a more complex example:</p>
+
+        <div class="code-block">
+          <div class="code-title">Generic Binary Tree</div>
+          <pre><code><span class="keyword">be_like</span> TreeNode[T] <span class="keyword">squad</span> {
+    value T
+    left @TreeNode[T]
+    right @TreeNode[T]
+}
+
+<span class="keyword">be_like</span> BinaryTree[T] <span class="keyword">squad</span> {
+    root @TreeNode[T]
+}
+
+<span class="comment">fr fr Insert a value into the tree</span>
+<span class="keyword">slay</span> (tree @BinaryTree[T]) insert(value T, compare <span class="keyword">slay</span>(a, b T) normie) {
+    <span class="keyword">sus</span> newNode = @TreeNode[T]{value: value}
+    
+    <span class="keyword">lowkey</span> tree.root == <span class="keyword">cap</span> {
+        tree.root = newNode
+        <span class="keyword">yolo</span>
+    }
+    
+    <span class="keyword">sus</span> current = tree.root
+    <span class="keyword">periodt</span> <span class="keyword">based</span> {
+        <span class="keyword">sus</span> compResult = compare(value, current.value)
+        
+        <span class="keyword">lowkey</span> compResult < 0 {
+            <span class="comment">fr fr Go left</span>
+            <span class="keyword">lowkey</span> current.left == <span class="keyword">cap</span> {
+                current.left = newNode
+                <span class="keyword">ghosted</span>
+            }
+            current = current.left
+        } <span class="keyword">highkey</span> {
+            <span class="comment">fr fr Go right</span>
+            <span class="keyword">lowkey</span> current.right == <span class="keyword">cap</span> {
+                current.right = newNode
+                <span class="keyword">ghosted</span>
+            }
+            current = current.right
+        }
+    }
+}
+
+<span class="comment">fr fr Traverse the tree in-order</span>
+<span class="keyword">slay</span> (tree @BinaryTree[T]) inOrderTraversal(visit <span class="keyword">slay</span>(T)) {
+    inOrderTraversal_helper(tree.root, visit)
+}
+
+<span class="keyword">slay</span> inOrderTraversal_helper[T](node @TreeNode[T], visit <span class="keyword">slay</span>(T)) {
+    <span class="keyword">lowkey</span> node == <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span>
+    }
+    
+    inOrderTraversal_helper(node.left, visit)
+    visit(node.value)
+    inOrderTraversal_helper(node.right, visit)
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-title">Using Our Generic Binary Tree</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Integer comparison function</span>
+    <span class="keyword">sus</span> compareInt = <span class="keyword">slay</span>(a, b normie) normie {
+        <span class="keyword">yolo</span> a - b
+    }
+    
+    <span class="comment">fr fr Create and populate a tree of integers</span>
+    <span class="keyword">sus</span> intTree BinaryTree[normie]
+    intTree.insert(5, compareInt)
+    intTree.insert(3, compareInt)
+    intTree.insert(7, compareInt)
+    intTree.insert(1, compareInt)
+    intTree.insert(9, compareInt)
+    
+    <span class="comment">fr fr Print all values in order</span>
+    intTree.inOrderTraversal(<span class="keyword">slay</span>(value normie) {
+        vibez.spill(value)
+    })  <span class="comment">fr fr Outputs: 1 3 5 7 9</span>
+    
+    <span class="comment">fr fr String comparison function</span>
+    <span class="keyword">sus</span> compareString = <span class="keyword">slay</span>(a, b tea) normie {
+        <span class="keyword">yolo</span> stringz.compare(a, b)
+    }
+    
+    <span class="comment">fr fr Create and populate a tree of strings</span>
+    <span class="keyword">sus</span> stringTree BinaryTree[tea]
+    stringTree.insert("mid", compareString)
+    stringTree.insert("based", compareString)
+    stringTree.insert("yikes", compareString)
+    stringTree.insert("ate", compareString)
+    stringTree.insert("slay", compareString)
+    
+    <span class="comment">fr fr Print all values in order</span>
+    stringTree.inOrderTraversal(<span class="keyword">slay</span>(value tea) {
+        vibez.spill(value)
+    })  <span class="comment">fr fr Outputs: ate based mid slay yikes</span>
+}</code></pre>
+        </div>
+
+        <div class="next-steps">
+          <h3>Where To Next?</h3>
+          <p>Now that you're fluent in generics, check out these related topics:</p>
+          <ul>
+            <li><a href="#" class="gradient-link">Interfaces & Type Assertions</a></li>
+            <li><a href="#" class="gradient-link">Building Reusable Data Structures</a></li>
+            <li><a href="#" class="gradient-link">Performance Optimization Techniques</a></li>
+            <li><a href="#" class="gradient-link">Advanced Type System Features</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-container">
+        <div class="footer-column">
+          <div class="footer-logo">
+            <span>CURSED</span>
+          </div>
+          <p>A programming language that combines Go-like syntax with GenZ slang. <span class="neon-text">Created for education</span>, fun, and <span class="highlight-text">the culture</span>. <span class="big-word">Period.</span></p>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="../docs.html">Documentation</a></li>
+            <li><a href="#">Tutorials</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">Examples</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Community</h3>
+          <ul>
+            <li><a href="https://github.com/ghuntley/cursed">GitHub</a></li>
+            <li><a href="#">Discord</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>More</h3>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Roadmap</a></li>
+            <li><a href="#">Contributing</a></li>
+            <li><a href="#">License</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+        <div class="social-icons">
+          <a href="#" class="social-icon">👾</a>
+          <a href="#" class="social-icon">📸</a>
+          <a href="#" class="social-icon">💬</a>
+          <a href="#" class="social-icon">🐾</a>
+        </div>
+        <div class="trendy-badges">
+          <span class="trendy-badge">#Aesthetic</span>
+          <span class="trendy-badge">#CodeCore</span>
+          <span class="trendy-badge">#BuiltDifferent</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../scripts.js"></script>
+</body>
+</html>

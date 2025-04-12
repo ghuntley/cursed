@@ -8,9 +8,9 @@
 //! These control flow constructs allow CURSED programs to execute different code paths
 //! based on runtime conditions.
 
-use std::any::Any;
-use crate::ast::{Node, Statement, Expression};
 use crate::ast::statements::block::BlockStatement;
+use crate::ast::{Expression, Node, Statement};
+use std::any::Any;
 
 /// Represents an if statement in the AST.
 ///
@@ -46,7 +46,11 @@ impl Node for IfStatement {
     }
 
     fn string(&self) -> String {
-        let mut out = format!("if {} {}", self.condition.string(), self.consequence.string());
+        let mut out = format!(
+            "if {} {}",
+            self.condition.string(),
+            self.consequence.string()
+        );
         if let Some(alt) = &self.alternative {
             out.push_str(&format!(" else {}", alt.string()));
         }
@@ -56,7 +60,7 @@ impl Node for IfStatement {
 
 impl Statement for IfStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -103,15 +107,15 @@ impl Node for SwitchStatement {
 
     fn string(&self) -> String {
         let mut out = format!("vibe_check {} {{\n", self.value.string());
-        
+
         for case in &self.cases {
             out.push_str(&format!("    {}\n", case.string()));
         }
-        
+
         if let Some(default) = &self.default {
             out.push_str(&format!("    basic: {}\n", default.string()));
         }
-        
+
         out.push_str("}");
         out
     }
@@ -119,7 +123,7 @@ impl Node for SwitchStatement {
 
 impl Statement for SwitchStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -154,16 +158,14 @@ impl Node for CaseStatement {
     }
 
     fn string(&self) -> String {
-        let exprs: Vec<String> = self.expressions.iter()
-            .map(|expr| expr.string())
-            .collect();
+        let exprs: Vec<String> = self.expressions.iter().map(|expr| expr.string()).collect();
         format!("mood {}: {}", exprs.join(", "), self.body.string())
     }
 }
 
 impl Statement for CaseStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

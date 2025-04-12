@@ -1,8 +1,8 @@
 //! Thread-safe version of the Object type
 
-use std::sync::{Arc, Mutex};
-use crate::object::Object;
 use crate::error::Error;
+use crate::object::Object;
+use std::sync::{Arc, Mutex};
 
 /// Thread-safe wrapper around Object
 pub struct ThreadSafeObject {

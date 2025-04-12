@@ -8,8 +8,8 @@
 //! Deferred statements are typically used for cleanup operations, like closing files
 //! or releasing resources, ensuring they happen even if errors occur.
 
-use std::any::Any;
 use crate::ast::{Node, Statement};
+use std::any::Any;
 
 /// Represents a deferred execution statement in the AST (called "later" in CURSED).
 ///
@@ -42,7 +42,7 @@ impl Node for LaterStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
     }
-    
+
     fn string(&self) -> String {
         format!("later {}", self.body.string())
     }
@@ -50,5 +50,7 @@ impl Node for LaterStatement {
 
 impl Statement for LaterStatement {
     fn statement_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }

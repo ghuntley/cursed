@@ -4,8 +4,8 @@
 //! refer to variables, functions, types, or other named entities in the program.
 //! Identifiers are among the most fundamental elements in the AST.
 
+use crate::ast::{Expression, Node};
 use std::any::Any;
-use crate::ast::{Node, Expression};
 
 /// Represents an identifier node in the AST.
 ///
@@ -40,7 +40,7 @@ impl Node for Identifier {
 
 impl Expression for Identifier {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

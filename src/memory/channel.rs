@@ -1,9 +1,9 @@
 //! Channel implementation for CURSED language
 //! Provides basic send and receive operations for concurrent programming
 
-use std::sync::{Mutex, Condvar};
 use std::collections::VecDeque;
 use std::sync::Arc;
+use std::sync::{Condvar, Mutex};
 
 /// A Channel represents a typed communication channel
 /// using a thread-safe queue with blocking operations
@@ -17,9 +17,9 @@ struct ChannelInternal<T> {
     condvar: Condvar,
 }
 
-impl<T> Channel<T> 
-where 
-    T: Clone + Send + 'static
+impl<T> Channel<T>
+where
+    T: Clone + Send + 'static,
 {
     /// Create a new channel
     pub fn new() -> Self {
@@ -41,15 +41,15 @@ where
     /// Receive a value from the channel (blocking)
     pub fn receive(&self) -> T {
         let mut queue = self.internal.queue.lock().unwrap();
-        
+
         // Wait until a value is available
         while queue.is_empty() {
             queue = self.internal.condvar.wait(queue).unwrap();
         }
-        
+
         queue.pop_front().unwrap()
     }
-    
+
     /// Try to receive a value without blocking
     /// Returns None if no value is available
     pub fn try_receive(&self) -> Option<T> {

@@ -4,8 +4,8 @@
 //! These traits establish the interface for the various types of nodes
 //! in the Abstract Syntax Tree, allowing for polymorphic operations on them.
 
-use std::any::Any;
 use crate::ast::expressions::Identifier;
+use std::any::Any;
 
 /// Base trait for all nodes in the abstract syntax tree
 ///
@@ -36,14 +36,14 @@ pub trait Statement: Node {
 /// inspecting the structure of expressions for code generation and analysis.
 pub trait Expression: Node {
     fn expression_node(&self);
-    
+
     /// Returns the node type as a string for compiler dispatch
     fn node_type(&self) -> &str {
         // Default implementation just returns a generic type name
         // Each expression type should override this
         "UnknownExpression"
     }
-    
+
     fn as_any(&self) -> &dyn Any;
 
     /// Returns true if this expression is a prefix expression
@@ -85,12 +85,12 @@ pub trait Expression: Node {
     fn as_index_expression(&self) -> Option<(&dyn Expression, &dyn Expression)> {
         None
     }
-    
+
     /// Returns true if this expression is a property access expression
     fn is_property_expression(&self) -> bool {
         false
     }
-    
+
     /// Returns the object and property if this is a property access expression
     fn as_property_expression(&self) -> Option<(&dyn Expression, &Identifier)> {
         None

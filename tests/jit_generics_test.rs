@@ -1,15 +1,17 @@
 //! Test generic function specialization with JIT execution
 
-use inkwell::context::Context;
+use cursed::ast::base::Program;
+use cursed::ast::expressions::{
+    CallExpression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
+};
+use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
+use cursed::ast::FunctionStatement;
+use cursed::ast::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::type_checker::Type;
-use cursed::ast::base::Program;
-use cursed::ast::expressions::{Identifier, IntegerLiteral, PrefixExpression, CallExpression, InfixExpression};
-use cursed::ast::FunctionStatement;
-use cursed::ast::ParameterStatement;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::{ReturnStatement, ExpressionStatement};
+use inkwell::context::Context;
 use std::path::PathBuf;
 
 #[test]
@@ -18,57 +20,53 @@ fn test_monomorphization_jit_execution() {
     let context = Context::create();
     let file_path = PathBuf::from("test_generics.csd");
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_generics_module", file_path);
-    
+
     // Create a generic identity function: function identity<T>(x: T) -> T { return x; }
     let identity_function = create_generic_identity_function();
-    
+
     // Get a reference to the mono_manager to avoid borrow conflicts
     let mut mono_manager = std::mem::take(&mut code_gen.mono_manager);
-    
+
     // Specialize the function for type Normie (i32)
-    let specialized_name_i32 = mono_manager.specialize_function(
-        &code_gen,
-        &identity_function,
-        &[Type::Normie],
-    ).expect("Should succeed");
-    
+    let specialized_name_i32 = mono_manager
+        .specialize_function(&mut code_gen, &identity_function, &[Type::Normie])
+        .expect("Should succeed");
+
     // Verify the specialized function name
     assert_eq!(specialized_name_i32, "identity__Normie");
-    
+
     // Verify the function is in the instantiated map
     assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
-    
+
     // Verify the LLVM module contains the specialized function
     let module = code_gen.module();
     let function = module.get_function(&specialized_name_i32);
     // In a real implementation, this might exist, but since we're not actually creating functions:
     // assert!(function.is_some(), "Specialized function should exist in module");
-    
+
     // Specialize the same function for a different type: Tea (string)
-    let specialized_name_tea = mono_manager.specialize_function(
-        &code_gen,
-        &identity_function,
-        &[Type::Tea],
-    ).expect("Should succeed");
-    
+    let specialized_name_tea = mono_manager
+        .specialize_function(&mut code_gen, &identity_function, &[Type::Tea])
+        .expect("Should succeed");
+
     // Verify the specialized function name
     assert_eq!(specialized_name_tea, "identity__Tea");
-    
+
     // Verify both specialized versions exist
     assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
     assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]));
-    
+
     // Make sure they are different specializations
     assert_ne!(specialized_name_i32, specialized_name_tea);
-    
+
     // Return the mono_manager back to code_gen
     code_gen.mono_manager = mono_manager;
-    
+
     // Verify both functions exist in the module
     let module = code_gen.module();
     let function_i32 = module.get_function(&specialized_name_i32);
     let function_tea = module.get_function(&specialized_name_tea);
-    
+
     // In a real implementation, these might exist, but since we're not actually creating functions:
     // assert!(function_i32.is_some(), "i32 specialized function should exist");
     // assert!(function_tea.is_some(), "Tea specialized function should exist");
@@ -80,42 +78,42 @@ fn test_complex_generic_function() {
     let context = Context::create();
     let file_path = PathBuf::from("test_complex_generics.csd");
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_complex_generics_module", file_path);
-    
+
     // Create a generic swap function that takes two parameters
     // function swap<T>(a: T, b: T) -> T { return a; }
     let swap_function = create_generic_swap_function();
-    
+
     // Get a reference to the mono_manager to avoid borrow conflicts
     let mut mono_manager = std::mem::take(&mut code_gen.mono_manager);
-    
+
     // Specialize for Normie (i32)
-    let specialized_name = mono_manager.specialize_function(
-        &code_gen,
-        &swap_function,
-        &[Type::Normie],
-    ).expect("Should succeed");
-    
+    let specialized_name = mono_manager
+        .specialize_function(&mut code_gen, &swap_function, &[Type::Normie])
+        .expect("Should succeed");
+
     // Verify the function is properly specialized
     assert_eq!(specialized_name, "swap__Normie");
     assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]));
-    
+
     // Specialize for a different type
-    let specialized_name2 = mono_manager.specialize_function(
-        &code_gen,
-        &swap_function,
-        &[Type::Thicc],  // i64
-    ).expect("Should succeed");
-    
+    let specialized_name2 = mono_manager
+        .specialize_function(
+            &mut code_gen,
+            &swap_function,
+            &[Type::Thicc], // i64
+        )
+        .expect("Should succeed");
+
     // Verify the second specialization
     assert_eq!(specialized_name2, "swap__Thicc");
     assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]));
-    
+
     // Return the mono_manager back to code_gen
     code_gen.mono_manager = mono_manager;
-    
+
     // Verify both functions exist in the module
     let module = code_gen.module();
-    
+
     // In a real implementation, these might exist, but since we're not actually creating functions:
     // assert!(module.get_function(&specialized_name).is_some());
     // assert!(module.get_function(&specialized_name2).is_some());
@@ -128,7 +126,7 @@ fn create_generic_swap_function() -> FunctionStatement {
         token: "IDENT".to_string(),
         value: "T".to_string(),
     }];
-    
+
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
@@ -154,13 +152,13 @@ fn create_generic_swap_function() -> FunctionStatement {
             }),
         },
     ];
-    
+
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
         token: "IDENT".to_string(),
         value: "T".to_string(),
     }));
-    
+
     // Create body: { return a; }
     let return_statement = ReturnStatement {
         token: "return".to_string(),
@@ -169,12 +167,12 @@ fn create_generic_swap_function() -> FunctionStatement {
             value: "a".to_string(),
         })),
     };
-    
+
     let body = BlockStatement {
         token: "{".to_string(),
         statements: vec![Box::new(return_statement)],
     };
-    
+
     // Create the function statement
     FunctionStatement {
         token: "function".to_string(),
@@ -196,7 +194,7 @@ fn create_generic_identity_function() -> FunctionStatement {
         token: "IDENT".to_string(),
         value: "T".to_string(),
     }];
-    
+
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
         token: "IDENT".to_string(),
@@ -209,13 +207,13 @@ fn create_generic_identity_function() -> FunctionStatement {
             value: "T".to_string(),
         }),
     }];
-    
+
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
         token: "IDENT".to_string(),
         value: "T".to_string(),
     }));
-    
+
     // Create body: { return x; }
     let return_statement = ReturnStatement {
         token: "return".to_string(),
@@ -224,12 +222,12 @@ fn create_generic_identity_function() -> FunctionStatement {
             value: "x".to_string(),
         })),
     };
-    
+
     let body = BlockStatement {
         token: "{".to_string(),
         statements: vec![Box::new(return_statement)],
     };
-    
+
     // Create the function statement
     FunctionStatement {
         token: "function".to_string(),

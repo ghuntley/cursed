@@ -28,9 +28,9 @@
 //! authCode := cryptz.hmac("message", "secretKey", "sha256")
 //! ```
 
-use std::rc::Rc;
-use crate::object::Object;
 use crate::error::Error;
+use crate::object::Object;
+use std::rc::Rc;
 
 /// Creates an MD5 hash of the input data.
 ///
@@ -52,7 +52,7 @@ pub fn md5sum(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("md5sum requires 1 argument".to_string()));
     }
-    
+
     // Simplified implementation: just return a placeholder string
     Ok(Rc::new(Object::String("md5_hash_placeholder".to_string())))
 }
@@ -77,7 +77,7 @@ pub fn sha1sum(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("sha1sum requires 1 argument".to_string()));
     }
-    
+
     // Simplified implementation: just return a placeholder string
     Ok(Rc::new(Object::String("sha1_hash_placeholder".to_string())))
 }
@@ -102,9 +102,11 @@ pub fn sha256sum(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("sha256sum requires 1 argument".to_string()));
     }
-    
+
     // Simplified implementation: just return a placeholder string
-    Ok(Rc::new(Object::String("sha256_hash_placeholder".to_string())))
+    Ok(Rc::new(Object::String(
+        "sha256_hash_placeholder".to_string(),
+    )))
 }
 
 /// Creates an HMAC (Hash-based Message Authentication Code) for the provided data and key.
@@ -127,9 +129,11 @@ pub fn sha256sum(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if fewer than 3 arguments are provided
 pub fn hmac(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 3 {
-        return Err(Error::Runtime("hmac requires 3 arguments: data, key, and algorithm".to_string()));
+        return Err(Error::Runtime(
+            "hmac requires 3 arguments: data, key, and algorithm".to_string(),
+        ));
     }
-    
+
     // Simplified implementation: just return a placeholder string
     Ok(Rc::new(Object::String("hmac_placeholder".to_string())))
 }

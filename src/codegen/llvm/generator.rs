@@ -26,6 +26,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub mono_manager: MonomorphizationManager,
     /// Variable scopes for managing variable declarations
     pub var_scopes: Vec<VariableScope<'ctx>>,
+    /// Counter for generating unique string literal identifiers
+    pub string_literal_count: usize,
 }
 
 /// Represents a loop context for handling break and continue statements
@@ -53,6 +55,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             loop_contexts: Vec::new(),
             mono_manager: MonomorphizationManager::new(),
             var_scopes: Vec::new(),
+            string_literal_count: 0,
         }
     }
     
@@ -64,31 +67,49 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Compile the program AST to LLVM IR.
     pub fn compile_program(&mut self, program: &Program) -> Result<(), String> {
+        println!("DEBUG - compile_program: Starting compilation");
+        
         // Initialize global scope
         if self.var_scopes.is_empty() {
             self.push_scope(super::variables::VariableScope::new());
         }
         
+        // Register standard library functions (including puts)
+        super::intrinsics::register_stdlib_functions(self.context, &self.module)?;
+        
         // Create main function
         let i32_type = self.context.i32_type();
         let main_fn_type = i32_type.fn_type(&[], false);
+        println!("DEBUG - compile_program: Creating main function");
         let main_function = self.module.add_function("main", main_fn_type, None);
         let entry_block = self.context.append_basic_block(main_function, "entry");
         
         // Position the builder at the end of the entry block
         self.builder.position_at_end(entry_block);
+        println!("DEBUG - compile_program: Main function created, entry block positioned");
         
         // Iterate through all statements in the program and compile them
-        for statement in &program.statements {
+        println!("DEBUG - compile_program: Starting to compile {} statements", program.statements.len());
+        for (i, statement) in program.statements.iter().enumerate() {
+            println!("DEBUG - compile_program: Compiling statement {}/{}", i + 1, program.statements.len());
             match self.compile_statement(&**statement) {
-                Ok(_) => {},
+                Ok(_) => println!("DEBUG - compile_program: Statement {} compiled successfully", i + 1),
                 Err(e) => return Err(format!("Compilation error: {}", e)),
             }
         }
         
         // Add a default return 0 for main
+        println!("DEBUG - compile_program: Adding default return 0 for main");
         self.builder.build_return(Some(&i32_type.const_int(0, false))).unwrap();
         
+        // Verify that the main function exists
+        if let Some(main_fn) = self.module.get_function("main") {
+            println!("DEBUG - compile_program: Main function found: {}", main_fn.get_name().to_string_lossy());
+        } else {
+            println!("DEBUG - compile_program: WARNING - Main function NOT found after compilation!");
+        }
+        
+        println!("DEBUG - compile_program: Compilation completed successfully");
         Ok(())
     }
     

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garbage Collection - CURSED Programming Language</title>
+    <link rel="stylesheet" href="../styles/docs.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><span class="gradient-text">💀 Memory Management Vibes 💀</span></h1>
+            <p class="subtitle">Never worry about memory again, bestie!</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="doc-grid">
+            <aside class="sidebar">
+                <nav>
+                    <ul>
+                        <li><a href="installation.html">Getting Started</a></li>
+                        <li><a href="basic-types.html">Basic Types</a></li>
+                        <li><a href="functions.html">Functions</a></li>
+                        <li><a href="#" class="active">Garbage Collection</a></li>
+                        <li><a href="generics.html">Generics</a></li>
+                        <li><a href="concurrency.html">Concurrency</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <article class="content">
+                <section class="intro">
+                    <div class="tag-container">
+                        <span class="tag">Core Feature</span>
+                        <span class="tag">Memory Vibes</span>
+                        <span class="tag">No Cap</span>
+                    </div>
+                    <p class="lead">CURSED comes with a fire 🔥 garbage collector so you can focus on the sigma grindset and not waste time on deleting stuff.</p>
+                </section>
+
+                <section>
+                    <h2>The Tea on Garbage Collection</h2>
+                    <p>Garbage collection in CURSED is giving main character energy with these features:</p>
+                    <ul class="vibe-list">
+                        <li><span class="emoji">🧠</span> <strong>Mark-and-Sweep Algorithm</strong> - Tracks and cleans up memory when you're not looking</li>
+                        <li><span class="emoji">⏱️</span> <strong>Incremental Collection</strong> - No more freezing your app, we're doing this in micro-pauses</li>
+                        <li><span class="emoji">👻</span> <strong>Weak References</strong> - For when you want that "situationship" with your objects</li>
+                        <li><span class="emoji">📊</span> <strong>Generational Collection</strong> - Young objects die fast, old objects stay winning</li>
+                    </ul>
+                </section>
+
+                <section class="code-example">
+                    <h2>No Memory Leaks, No Problems</h2>
+                    <div class="code-block">
+                        <div class="code-title">memory_example.csd</div>
+                        <pre><code>// You don't need to explicitly free memory
+// Just vibe and let the GC handle it
+
+slay createManyObjects(count int) {
+    for (sus i = 0; i < count; i++) {
+        sus obj = new BigObject();
+        // Look ma, no delete!
+    }
+    // When objects go out of scope, they become candidates for collection
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Memory Management API</h2>
+                    <p>While CURSED handles memory automatically, you can still interact with the garbage collector if you're feeling extra:</p>
+                    <div class="code-block">
+                        <div class="code-title">gc_api.csd</div>
+                        <pre><code>yeet "memory/gc";
+
+// Force garbage collection when you're feeling chaotic
+slay cleanupBeforeImportantOperation() {
+    gc.collectGarbage();
+    
+    // Get the tea on memory usage
+    sus stats = gc.stats();
+    console.print("Total allocated: " + stats.totalAllocated);
+    
+    // Get detailed debug info when things are sus
+    sus debug = gc.debugInfo();
+}</code></pre>
+                    </div>
+                </section>
+
+                <section class="tips">
+                    <h2>Bestie Advice 💅</h2>
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <div class="tip-icon">💯</div>
+                            <h3>Avoid Circular References</h3>
+                            <p>Use weak references when objects reference each other in a cycle, or the GC will have to work harder.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">⚡</div>
+                            <h3>Pool Large Objects</h3>
+                            <p>For objects you create and destroy frequently, consider object pooling to reduce GC pressure.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">🧩</div>
+                            <h3>Implement Traceable</h3>
+                            <p>Custom types should implement the Traceable trait so the GC knows how to follow references.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">📱</div>
+                            <h3>Profile Memory Usage</h3>
+                            <p>Use gc.stats() to monitor memory usage and identify potential memory issues.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="faq">
+                    <h2>GC FAQ - Spill the Tea ☕</h2>
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">Will GC make my app slow?</div>
+                            <div class="accordion-content">
+                                <p>Not unless you're creating millions of objects per second! CURSED's incremental GC is designed to minimize pauses. Most operations are so fast you won't even notice, fr fr.</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <div class="accordion-header">Can I disable garbage collection?</div>
+                            <div class="accordion-content">
+                                <p>No cap, that would be chaotic energy. The GC is a core part of CURSED's memory management. You can tune it, but not disable it entirely.</p>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <div class="accordion-header">How do I handle resources like files?</div>
+                            <div class="accordion-content">
+                                <p>Use the <code>dropz</code> pattern to ensure resources are properly closed. Check the dropz documentation for the tea on resource management.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>Keep The Vibe Going</h2>
+                    <div class="next-links">
+                        <a href="generics.html" class="next-link">
+                            <span class="next-link-text">Learn About Generics</span>
+                            <span class="next-link-arrow">→</span>
+                        </a>
+                        <a href="concurrency.html" class="next-link">
+                            <span class="next-link-text">Explore Concurrency</span>
+                            <span class="next-link-arrow">→</span>
+                        </a>
+                    </div>
+                </section>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">GitHub</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../scripts.js"></script>
+</body>
+</html>

@@ -4,8 +4,8 @@ use std::marker::PhantomData;
 use std::ptr::NonNull;
 use std::sync::Arc;
 
-use crate::memory::{Gc, Traceable};
 use crate::memory::gc::GarbageCollector;
+use crate::memory::{Gc, Traceable};
 
 /// Weak reference to a garbage-collected object
 #[derive(Debug)]
@@ -24,13 +24,13 @@ impl<T: Traceable + Clone + 'static> Weak<T> {
             _marker: PhantomData,
         }
     }
-    
+
     /// Check if the referenced object still exists
     pub fn is_alive(&self) -> bool {
         let addr = self.ptr.as_ptr() as usize;
         self.gc.is_alive(addr)
     }
-    
+
     /// Try to upgrade to a strong reference
     pub fn upgrade(&self) -> Option<Gc<T>> {
         if self.is_alive() {

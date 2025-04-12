@@ -1,15 +1,15 @@
 //! AST node for pointer type expressions in the CURSED language.
 //!
 //! This module defines the AST representation for pointer types, which allow
-//! references to memory addresses. Pointer types are denoted with the @ symbol 
+//! references to memory addresses. Pointer types are denoted with the @ symbol
 //! followed by the target type, like @int or @Person.
 //!
 //! Pointers enable more efficient handling of large data structures and allow for
 //! creating more complex data structures like linked lists and trees.
 
-use std::any::Any;
-use crate::ast::{Node, Expression};
+use crate::ast::{Expression, Node};
 use crate::lexer::token::Token;
+use std::any::Any;
 
 /// Represents a pointer type expression in the AST.
 ///
@@ -44,7 +44,7 @@ impl Node for PointerType {
 
 impl Expression for PointerType {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

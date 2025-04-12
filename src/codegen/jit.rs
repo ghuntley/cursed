@@ -17,17 +17,17 @@
 //! - Testing and debugging during development
 //! - Performance testing of small code snippets
 
+use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::Error;
 use inkwell::context::Context;
 use inkwell::execution_engine::ExecutionEngine;
 use inkwell::module::Module;
 use inkwell::values::FunctionValue;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
-use std::cell::RefCell;
-use crate::codegen::llvm::LlvmCodeGenerator;
 
 // Goroutine management
 static ACTIVE_GOROUTINES: AtomicUsize = AtomicUsize::new(0);
@@ -88,7 +88,7 @@ pub fn wait_for_goroutines(timeout_ms: u64) -> usize {
     // Simple implementation with timeout
     let start = std::time::Instant::now();
     let timeout = std::time::Duration::from_millis(timeout_ms);
-    
+
     loop {
         let count = ACTIVE_GOROUTINES.load(Ordering::SeqCst);
         if count == 0 || start.elapsed() > timeout {
@@ -98,31 +98,41 @@ pub fn wait_for_goroutines(timeout_ms: u64) -> usize {
     }
 }
 
-/// Registers external runtime functions with the LLVM execution engine.
+/// Maps external functions to their implementations in the execution engine.
 ///
-/// This function sets up the bindings between functions declared in LLVM IR and
-/// their actual implementations in the runtime library. It establishes the connection
-/// between compiled CURSED code and the native functions that provide runtime services.
-///
-/// External functions typically include:
-/// - Memory management functions (allocation, collection)
-/// - Channel and goroutine operations
-/// - I/O operations
-/// - String manipulation
+/// This function sets up mappings between functions declared in the LLVM IR
+/// and their actual implementations. It's essential for providing functionality
+/// like I/O and memory management to CURSED programs.
 ///
 /// # Arguments
 ///
-/// * `_context` - The LLVM context
-/// * `_module` - The LLVM module containing the function declarations
+/// * `execution_engine` - The LLVM execution engine to add mappings to
+/// * `module` - The LLVM module containing the function declarations
 ///
 /// # Returns
 ///
-/// Result<(), Error> - Success or an error if registration fails
-pub fn register_external_functions(
-    _context: &Context,
-    _module: &Module,
+/// Result<(), Error> - Success or an error if mapping fails
+pub fn map_external_functions(
+    execution_engine: &ExecutionEngine,
+    module: &Module,
 ) -> Result<(), Error> {
-    // For now, we'll just return success
+    // Define the 'puts' implementation
+    extern "C" fn puts_impl(val: i32) -> i32 {
+        println!("{}", val);
+        0 // Return 0 for success
+    }
+
+    // Map the 'puts' function if it exists in the module
+    if let Some(puts_fn) = module.get_function("puts") {
+        unsafe {
+            // Convert function pointer to usize as required by the API
+            let addr = puts_impl as usize;
+            execution_engine.add_global_mapping(&puts_fn, addr);
+        }
+    }
+
+    // TODO: Add more external function mappings as needed
+    
     Ok(())
 }
 
@@ -138,6 +148,8 @@ pub struct JitCompiler<'ctx> {
     module_name: String,
     file_path: PathBuf,
     code_generator: Option<LlvmCodeGenerator<'ctx>>,
+    // Track if we've mapped external functions
+    functions_mapped: bool,
 }
 
 impl<'ctx> JitCompiler<'ctx> {
@@ -169,9 +181,10 @@ impl<'ctx> JitCompiler<'ctx> {
             module_name: module_name.to_string(),
             file_path,
             code_generator: None,
+            functions_mapped: false,
         }
     }
-    
+
     /// Gets a mutable reference to the LLVM code generator.
     ///
     /// This method provides access to the code generator instance that translates
@@ -184,7 +197,30 @@ impl<'ctx> JitCompiler<'ctx> {
     pub fn code_generator_mut(&mut self) -> &mut Option<LlvmCodeGenerator<'ctx>> {
         &mut self.code_generator
     }
-    
+
+    /// Maps external functions to their implementations in the execution engine.
+    ///
+    /// This method ensures that functions like `puts` are properly mapped to their
+    /// native implementations before execution begins.
+    ///
+    /// # Returns
+    ///
+    /// Result<(), Error> - Success or an error if mapping fails
+    pub fn map_functions(&mut self) -> Result<(), Error> {
+        if self.functions_mapped {
+            return Ok(());
+        }
+        
+        if let Some(ref code_gen) = self.code_generator {
+            map_external_functions(&self.execution_engine, code_gen.module())?;
+            self.functions_mapped = true;
+        } else {
+            return Err(Error::from_str("No code generator available for mapping functions"));
+        }
+        
+        Ok(())
+    }
+
     /// Executes the JIT-compiled program
     ///
     /// This method finds the 'main' function in the compiled LLVM module
@@ -193,18 +229,21 @@ impl<'ctx> JitCompiler<'ctx> {
     ///
     /// # Returns
     ///
-    /// Result<(), String> - Ok if execution succeeds, Err with error message otherwise
-    pub fn execute(&mut self) -> Result<(), String> {
+    /// Result<i32, Error> - The return value from main or an error
+    pub fn execute(&mut self) -> Result<i32, Error> {
+        // Map external functions first
+        self.map_functions()?;
+        
         // Find and execute the main function
-        match self.execution_engine.get_function_value("main") {
-            Ok(main_fn) => {
-                unsafe {
-                    self.execution_engine.run_function(main_fn, &[]);
+        unsafe {
+            match self.execution_engine.get_function::<unsafe extern "C" fn() -> i32>("main") {
+                Ok(main_fn) => {
+                    let result = main_fn.call();
+                    Ok(result)
                 }
-                Ok(())
-            },
-            Err(_) => {
-                Err("Main function not found".to_string())
+                Err(e) => Err(Error::from_str(&format!(
+                    "Failed to get main function: {}", e
+                ))),
             }
         }
     }

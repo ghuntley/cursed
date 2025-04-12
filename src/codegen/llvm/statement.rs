@@ -5,6 +5,7 @@ use crate::ast::statements::ExpressionStatement;
 use crate::ast::statements::ReturnStatement;
 use crate::ast::statements::BlockStatement;
 use crate::ast::statements::declarations::LetStatement;
+use crate::ast::declarations::FunctionStatement;
 use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::error::Error;
 use super::generator::LlvmCodeGenerator;
@@ -18,6 +19,51 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> Result<(), Error> {
         // Handle different statement types
         let any = stmt.as_any();
+        
+        // Function declaration
+        if let Some(func_stmt) = any.downcast_ref::<FunctionStatement>() {
+            // Handle function declaration
+            let name = &func_stmt.name.value;
+            
+            // Create parameter types - for simplicity, we'll use i32 for all parameters
+            let i32_type = self.context().i32_type();
+            let param_types: Vec<_> = (0..func_stmt.parameters.len())
+                .map(|_| i32_type.into())
+                .collect();
+            
+            // Use i32 as the return type for now
+            let function_type = i32_type.fn_type(&param_types, false);
+            let function = self.module().add_function(&name, function_type, None);
+            
+            // Create entry block
+            let entry_block = self.context().append_basic_block(function, "entry");
+            
+            // Save current function and position
+            let prev_block = self.builder().get_insert_block();
+            
+            // Position at the entry block of the new function
+            self.builder().position_at_end(entry_block);
+            
+            // Compile the function body
+            for statement in &func_stmt.body.statements {
+                self.compile_statement(&**statement)?;
+            }
+            
+            // Add a default return value if there isn't one
+            let current_block = self.builder().get_insert_block().unwrap();
+            if current_block.get_terminator().is_none() {
+                // Return 0 by default
+                self.builder().build_return(Some(&i32_type.const_int(0, false)))
+                    .map_err(|e| Error::codegen(format!("Failed to add default return: {}", e)))?;
+            }
+            
+            // Restore previous position if any
+            if let Some(prev_blk) = prev_block {
+                self.builder().position_at_end(prev_blk);
+            }
+            
+            return Ok(());
+        }
         
         // Variable declaration (let statement)
         if let Some(let_stmt) = any.downcast_ref::<LetStatement>() {
