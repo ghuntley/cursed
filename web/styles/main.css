@@ -601,14 +601,16 @@ nav a:hover {
 .code-block {
   background-color: #1a1a1a;
   border-radius: var(--border-radius-md);
-  padding: 2rem 1.5rem 1.5rem;
-  overflow-x: auto;
+  padding: 0 0 1rem 0;
+  overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   border: 1px solid #444;
   position: relative;
   backdrop-filter: var(--blur-effect);
   animation: borderGlow 4s infinite alternate;
-  margin-top: 20px;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes borderGlow {
@@ -624,28 +626,26 @@ nav a:hover {
 }
 
 .code-title {
-  position: absolute;
-  top: -24px;
-  left: 20px;
-  background-color: var(--color-primary);
-  padding: 0.4rem 1rem;
-  border-radius: 30px;
-  font-size: 0.85rem;
+  width: 100%;
+  background-color: #ff1744;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-  z-index: 10;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
   white-space: nowrap;
   overflow: visible;
-  line-height: 1.5;
-  transform: translateY(0);
 }
 
 .code-block pre {
   font-family: var(--font-code);
   font-size: 1rem;
   line-height: 1.5;
+  margin: 0;
+  padding: 1.5rem;
+  overflow-x: auto;
 }
 
 .code-block code {
