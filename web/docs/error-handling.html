@@ -1,0 +1,88 @@
+<!-- Error Handling Section in GenZ Style -->
+<section id="error-handling" class="docs-section animate-on-scroll">
+  <div class="section-pop">rizz recovery</div>
+  <h2>Error Handling</h2>
+  <p>Even the most fire code can flop sometimes. Let's talk about handling errors in CURSED - because we're not about to let a runtime error ruin our vibe check.</p>
+
+  <div class="code-block">
+    <div class="code-title">Basic Error Handling</div>
+    <pre><code><span class="keyword">slay</span> readFile(path tea) (tea, tea) {
+    <span class="comment">fr fr Try to read a file, might throw an error</span>
+    data, err := vibe_life.ReadFile(path)
+    
+    <span class="comment">fr fr Check if there was an error</span>
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span> "", "Error reading file: " + err.Error()
+    }
+    
+    <span class="comment">fr fr No error, return the content</span>
+    <span class="keyword">yolo</span> tea(data), ""
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Using the Error Results</div>
+    <pre><code><span class="keyword">slay</span> main() {
+    content, err := readFile("secrets.txt")
+    
+    <span class="keyword">lowkey</span> err != "" {
+        <span class="comment">fr fr Handle the error</span>
+        vibez.spill("Failed the vibe check:", err)
+        <span class="keyword">yolo</span>
+    }
+    
+    <span class="comment">fr fr We got the content, slay!</span>
+    vibez.spill("File content:", content)
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Creating Custom Errors</h3>
+    <pre><code><span class="comment">fr fr Define a custom error type</span>
+<span class="keyword">be_like</span> NotFoundError <span class="keyword">squad</span> {
+    item tea
+    reason tea
+}
+
+<span class="comment">fr fr Implement the Error interface</span>
+<span class="keyword">slay</span> (e NotFoundError) Error() tea {
+    <span class="keyword">yolo</span> "couldn't find " + e.item + ": " + e.reason
+}
+
+<span class="comment">fr fr Function that returns custom error</span>
+<span class="keyword">slay</span> findItem(name tea) (tea, collab{}) {
+    <span class="keyword">lowkey</span> name == "" {
+        <span class="keyword">yolo</span> "", NotFoundError{item: "item", reason: "empty name is not giving"}
+    }
+    
+    <span class="comment">fr fr Success case</span>
+    <span class="keyword">yolo</span> "found it", <span class="keyword">cap</span>
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Panic and Recover - For the Drastic Vibes Only</h4>
+    <p>When normal error handling isn't it, chief, you can use panic and recover for that dramatic exit (and possible comeback):</p>
+    <pre><code><span class="keyword">slay</span> riskyFunction() {
+    <span class="keyword">later</span> <span class="keyword">slay</span>() {
+        <span class="keyword">lowkey</span> r := recover(); r != <span class="keyword">cap</span> {
+            vibez.spill("Recovered from:", r)
+        }
+    }()
+    
+    <span class="comment">fr fr This will cause a panic</span>
+    panic("I can't even with this function right now")
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Error handling best practices that slap</h4>
+    <ul>
+      <li>Always check error returns from functions that can fail</li>
+      <li>Return errors rather than using panic in most cases</li>
+      <li>Provide context in error messages so they're not giving cryptic energy</li>
+      <li>Use custom error types when you need to include extra info</li>
+      <li>Wrap errors with additional context as they bubble up</li>
+    </ul>
+  </div>
+</section>

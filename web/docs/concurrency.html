@@ -1,0 +1,81 @@
+<!-- Concurrency Section in GenZ Style -->
+<section id="concurrency" class="docs-section animate-on-scroll">
+  <div class="section-pop">multi-tasking queen</div>
+  <h2>Concurrency</h2>
+  <p>CURSED lets you do all the things at once because being serial is so cheugy. The girlboss way is to stan concurrency with goroutines and channels!</p>
+
+  <div class="code-block">
+    <div class="code-title">Goroutines</div>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Start a goroutine by using 'stan'</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        bestie i := 0; i < 5; i++ {
+            vibez.spillf("Goroutine: %d", i)
+            timez.Sleep(timez.Millisecond * 100)
+        }
+    }()
+    
+    <span class="comment">fr fr Main goroutine continues execution</span>
+    bestie i := 0; i < 3; i++ {
+        vibez.spillf("Main: %d", i)
+        timez.Sleep(timez.Millisecond * 150)
+    }
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Channels for Communication</h3>
+    <p>Channels are like the group chat between your goroutines - perfect for passing the tea safely between concurrent code.</p>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create an unbuffered channel</span>
+    messages := make(dm<tea>)
+    
+    <span class="comment">fr fr Start goroutine to send messages</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        messages <- "omg hiiii"  <span class="comment">fr fr Send to channel</span>
+        messages <- "spill the tea"  
+        messages <- "slay all day"  
+    }()
+    
+    <span class="comment">fr fr Receive messages from channel</span>
+    msg1 := <-messages
+    msg2 := <-messages
+    msg3 := <-messages
+    
+    vibez.spill(msg1, msg2, msg3)
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Channel buffering? We stan ud83dudc4c</h4>
+    <p>Create a buffered channel when you need that async energy:</p>
+    <pre><code><span class="comment">fr fr Buffered channel with capacity 3</span>
+bufferedCh := make(dm<normie>, 3)
+
+<span class="comment">fr fr Won't block until buffer is full</span>
+bufferedCh <- 1
+bufferedCh <- 2
+bufferedCh <- 3
+
+<span class="comment">fr fr Now it would block until someone receives</span></code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Select Statement - Main character behavior</h4>
+    <p>Use select to wait on multiple channel operations - it's giving non-blocking energy:</p>
+    <pre><code><span class="keyword">slay</span> main() {
+    ch1 := make(dm<tea>)
+    ch2 := make(dm<tea>)
+    
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() { ch1 <- "period" }()
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() { ch2 <- "purr" }()
+    
+    <span class="keyword">select</span> {
+    mood msg := <-ch1:
+        vibez.spill("Received from ch1:", msg)
+    mood msg := <-ch2:
+        vibez.spill("Received from ch2:", msg)
+    }
+}</code></pre>
+  </div>
+</section>
