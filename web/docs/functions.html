@@ -1,0 +1,132 @@
+<!-- Functions Section in GenZ Style -->
+<section id="functions" class="docs-section animate-on-scroll">
+  <div class="section-pop">code queen behavior</div>
+  <h2>Functions</h2>
+  <p>Functions in CURSED literally slay! They're the main character of your code, doing all the hard work while looking absolutely fab. Let's spill the tea on how to use them.</p>
+
+  <div class="code-block">
+    <div class="code-title">Basic Function</div>
+    <pre><code><span class="comment">fr fr Function with parameters and return type</span>
+<span class="keyword">slay</span> add(x normie, y normie) normie {
+    <span class="keyword">yolo</span> x + y  <span class="comment">fr fr Return the sum</span>
+}
+
+<span class="comment">fr fr Function with no parameters or return value</span>
+<span class="keyword">slay</span> sayHi() {
+    vibez.spill("Hiiii bestie!")
+}
+
+<span class="comment">fr fr Function with multiple return values</span>
+<span class="keyword">slay</span> divideAndRemainder(a normie, b normie) (normie, normie) {
+    <span class="keyword">yolo</span> a / b, a % b
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Named Return Values</h3>
+    <p>When you want your return values to have their own moment:</p>
+    <pre><code><span class="keyword">slay</span> calculateStats(scores []normie) (min normie, max normie, avg snack) {
+    <span class="comment">fr fr Named returns are initialized to zero values</span>
+    <span class="keyword">lowkey</span> len(scores) == 0 {
+        <span class="keyword">yolo</span>  <span class="comment">fr fr Returns (0, 0, 0.0)</span>
+    }
+    
+    min = scores[0]
+    max = scores[0]
+    total := 0
+    
+    <span class="keyword">bestie</span> _, score := <span class="keyword">flex</span> scores {
+        <span class="keyword">lowkey</span> score < min {
+            min = score
+        }
+        <span class="keyword">lowkey</span> score > max {
+            max = score
+        }
+        total += score
+    }
+    
+    avg = snack(total) / snack(len(scores))
+    <span class="keyword">yolo</span>  <span class="comment">fr fr Returns named values (min, max, avg)</span>
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Variadic Functions</div>
+    <pre><code><span class="comment">fr fr Function that takes a variable number of arguments</span>
+<span class="keyword">slay</span> sum(numbers ...normie) normie {
+    result := 0
+    <span class="keyword">bestie</span> _, num := <span class="keyword">flex</span> numbers {
+        result += num
+    }
+    <span class="keyword">yolo</span> result
+}
+
+<span class="comment">fr fr Calling a variadic function</span>
+<span class="keyword">slay</span> main() {
+    total := sum(1, 2, 3, 4, 5)
+    vibez.spillf("The sum is %d", total)
+    
+    <span class="comment">fr fr Passing a slice to a variadic function</span>
+    numbers := []normie{10, 20, 30, 40, 50}
+    anotherTotal := sum(numbers...)  <span class="comment">fr fr Note the ... after the slice</span>
+    vibez.spillf("Another sum is %d", anotherTotal)
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>First-Class Functions</h3>
+    <p>Functions are giving first-class citizen vibes in CURSED:</p>
+    <pre><code><span class="comment">fr fr Function type</span>
+<span class="keyword">be_like</span> MathFunc <span class="keyword">slay</span>(normie, normie) normie
+
+<span class="comment">fr fr Higher-order function that returns a function</span>
+<span class="keyword">slay</span> getOperation(op tea) MathFunc {
+    <span class="keyword">vibe_check</span> op {
+    <span class="keyword">mood</span> "+":
+        <span class="keyword">yolo</span> <span class="keyword">slay</span>(a normie, b normie) normie { <span class="keyword">yolo</span> a + b }
+    <span class="keyword">mood</span> "-":
+        <span class="keyword">yolo</span> <span class="keyword">slay</span>(a normie, b normie) normie { <span class="keyword">yolo</span> a - b }
+    <span class="keyword">basic</span>:
+        <span class="keyword">yolo</span> <span class="keyword">slay</span>(a normie, b normie) normie { <span class="keyword">yolo</span> a }
+    }
+}
+
+<span class="comment">fr fr Using function as a value</span>
+<span class="keyword">slay</span> main() {
+    addFunc := getOperation("+")
+    subFunc := getOperation("-")
+    
+    vibez.spillf("10 + 5 = %d", addFunc(10, 5))
+    vibez.spillf("10 - 5 = %d", subFunc(10, 5))
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Anonymous Functions & Closures</h4>
+    <p>When you need a function but don't want to give it the full name recognition:</p>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Anonymous function assigned to a variable</span>
+    greeter := <span class="keyword">slay</span>(name tea) {
+        vibez.spillf("Hey %s, what's good?", name)
+    }
+    
+    greeter("bestie")
+    
+    <span class="comment">fr fr Immediately invoked function expression (IIFE)</span>
+    <span class="keyword">slay</span>() {
+        vibez.spill("This runs immediately and then it's over")
+    }()
+    
+    <span class="comment">fr fr Closure that captures outer variables</span>
+    counter := 0
+    incrementCounter := <span class="keyword">slay</span>() normie {
+        counter++
+        <span class="keyword">yolo</span> counter
+    }
+    
+    vibez.spill(incrementCounter())  <span class="comment">fr fr 1</span>
+    vibez.spill(incrementCounter())  <span class="comment">fr fr 2</span>
+    vibez.spill(incrementCounter())  <span class="comment">fr fr 3</span>
+}</code></pre>
+  </div>
+</section>
