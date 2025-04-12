@@ -1,6 +1,6 @@
-use std::any::Any;
-use crate::ast::{Node, Statement};
 use crate::ast::expressions::Identifier;
+use crate::ast::{Node, Statement};
+use std::any::Any;
 
 /// FieldStatement represents a field definition in a struct
 pub struct FieldStatement {
@@ -21,7 +21,7 @@ impl Node for FieldStatement {
 
 impl Statement for FieldStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

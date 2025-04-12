@@ -7,9 +7,9 @@
 //! These expressions form the basis for arithmetic, logical, and comparison operations
 //! in the language.
 
-use std::any::Any;
-use crate::ast::{Node, Expression};
+use crate::ast::{Expression, Node};
 use crate::lexer::token::Token;
+use std::any::Any;
 
 /// Represents a prefix (unary) operator expression in the AST.
 ///
@@ -123,7 +123,12 @@ impl Node for InfixExpression {
     }
 
     fn string(&self) -> String {
-        format!("{} {} {}", self.left.string(), self.operator, self.right.string())
+        format!(
+            "{} {} {}",
+            self.left.string(),
+            self.operator,
+            self.right.string()
+        )
     }
 }
 
@@ -143,6 +148,10 @@ impl Expression for InfixExpression {
     }
 
     fn as_infix_expression(&self) -> Option<(&dyn Expression, String, &dyn Expression)> {
-        Some((self.left.as_ref(), self.operator.clone(), self.right.as_ref()))
+        Some((
+            self.left.as_ref(),
+            self.operator.clone(),
+            self.right.as_ref(),
+        ))
     }
 }

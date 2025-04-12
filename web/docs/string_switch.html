@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CURSED - String Switch | The Ultimate Vibe Check For Strings</title>
+  <meta name="description" content="Master the CURSED string switch statement - the most aesthetic way to compare strings. Big facts only.">
+  <link rel="stylesheet" href="../styles/main.css">
+  <link rel="stylesheet" href="../styles/responsive.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="../images/cursed-logo.svg">
+</head>
+<body>
+  <header>
+    <div class="header-container container">
+      <a href="../index.html" class="logo">
+        <img src="../images/cursed-logo.svg" alt="CURSED Logo">
+        <span>CURSED</span>
+      </a>
+      
+      <nav>
+        <button id="menu-toggle" class="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <ul>
+          <li><a href="../index.html#features">Features</a></li>
+          <li><a href="../index.html#code">Examples</a></li>
+          <li><a href="../docs.html" class="active">Docs</a></li>
+          <li><a href="../index.html#community">Community</a></li>
+          <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
+          <li><button id="theme-toggle" class="theme-toggle">ud83cudf19</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="docs-hero">
+      <div class="container">
+        <div class="docs-hero-content">
+          <h1>String Switch <span class="glow-text">Ate & Left No Crumbs</span> ud83dudd0e</h1>
+          <p>Why write 57 <code>if/else</code> statements when you can <span class="highlight-text">serve with a switch?</span></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="docs-content-single">
+        <div class="section-pop">vibe check</div>
+        <h2>String Switch Statements</h2>
+        <p>The <code>vibe_check</code> for strings in CURSED is like that friend who knows exactly which TikTok sound matches your personality. It's the elite way to handle multiple string comparisons without all that <code>if</code> statement drama.</p>
+
+        <div class="code-block">
+          <div class="code-title">Basic String Switch</div>
+          <pre><code><span class="keyword">vibe_check</span> username {  <span class="comment">fr fr check the username's vibe</span>
+    <span class="keyword">mood</span> "admin":
+        vibez.spill("You have all privileges")
+    <span class="keyword">mood</span> "moderator":
+        vibez.spill("You can manage content")
+    <span class="keyword">mood</span> "user":
+        vibez.spill("Welcome back!")
+    <span class="keyword">basic</span>:
+        vibez.spill("Unknown user type")
+}</code></pre>
+        </div>
+
+        <h3>ud83dudd25 Why It's Giving</h3>
+        <p>String switch statements are a core feature that make string processing in CURSED absolutely bussin':</p>
+
+        <div class="feature-box">
+          <ul>
+            <li><span class="emoji-tag">ud83dudcbb</span> <strong>Clean AF:</strong> Way more readable than nested <code>if/else</code> statements</li>
+            <li><span class="emoji-tag">u26a1ufe0f</span> <strong>High Performance:</strong> Optimized string comparisons under the hood</li>
+            <li><span class="emoji-tag">ud83euddd0</span> <strong>Flexible Moods:</strong> Multiple string values per case</li>
+            <li><span class="emoji-tag">ud83dude0e</span> <strong>Fall Through:</strong> Cases can fall through without explicit breaks</li>
+            <li><span class="emoji-tag">ud83dudd27</span> <strong>Full Control:</strong> Break out of cases when needed with <code>ghosted</code></li>
+          </ul>
+        </div>
+
+        <h3>Advanced Features</h3>
+        <p>Let's level up your <code>vibe_check</code> game with these pro strats:</p>
+
+        <div class="code-block">
+          <div class="code-title">Multiple Values Per Case</div>
+          <pre><code><span class="keyword">vibe_check</span> dayOfWeek {  <span class="comment">fr fr group similar vibes together</span>
+    <span class="keyword">mood</span> "Monday", "Tuesday", "Wednesday", "Thursday", "Friday":
+        vibez.spill("Weekday grind")
+    <span class="keyword">mood</span> "Saturday", "Sunday":
+        vibez.spill("Weekend mode activated")
+    <span class="keyword">basic</span>:
+        vibez.spill("Time isn't real anyway")
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-title">Fallthrough Between Cases</div>
+          <pre><code><span class="keyword">vibe_check</span> errorCode {  <span class="comment">fr fr letting cases fall through</span>
+    <span class="keyword">mood</span> "404":
+        vibez.spill("Page not found")
+        <span class="comment">fr fr falls through to next case - no ghosted statement</span>
+    <span class="keyword">mood</span> "500":
+        vibez.spill("Server error")
+        <span class="keyword">ghosted</span>  <span class="comment">fr fr stops here, won't go to next case</span>
+    <span class="keyword">mood</span> "403":
+        vibez.spill("Forbidden access")
+    <span class="keyword">basic</span>:
+        vibez.spill("Unknown error")
+}</code></pre>
+        </div>
+
+        <div class="info-callout">
+          <h3>ud83euddd0 The Tea on String Comparison</h3>
+          <p>Under the hood, CURSED uses the C standard library's <code>strcmp</code> function to compare strings. This means the comparisons are:</p>
+          <ul>
+            <li><strong>Case-sensitive:</strong> "Hello" u2260 "hello"</li>
+            <li><strong>Lexicographical:</strong> Character-by-character comparison</li>
+            <li><strong>Null-terminated:</strong> Strings end with a null byte</li>
+          </ul>
+          <p>So make sure your vibes match exactly, bestie!</p>
+        </div>
+
+        <h3>Use Cases That Eat</h3>
+        <p>String switches are perfect for when you're dealing with text inputs like:</p>
+
+        <div class="steps-container">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Command Processing</h4>
+              <p>Parsing user commands in a CLI or chat application</p>
+              <div class="code-block mini">
+                <pre><code><span class="keyword">vibe_check</span> command {
+    <span class="keyword">mood</span> "help": showHelp()
+    <span class="keyword">mood</span> "exit": exitApp()
+    <span class="keyword">mood</span> "clear": clearScreen()
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>HTTP Request Handling</h4>
+              <p>Routing API endpoints based on paths</p>
+              <div class="code-block mini">
+                <pre><code><span class="keyword">vibe_check</span> endpoint {
+    <span class="keyword">mood</span> "/users": handleUsers()
+    <span class="keyword">mood</span> "/products": handleProducts()
+    <span class="keyword">mood</span> "/auth": handleAuth()
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Configuration Processing</h4>
+              <p>Handling different config settings by name</p>
+              <div class="code-block mini">
+                <pre><code><span class="keyword">vibe_check</span> setting {
+    <span class="keyword">mood</span> "theme": setTheme(value)
+    <span class="keyword">mood</span> "language": setLanguage(value)
+    <span class="keyword">mood</span> "volume": setVolume(parseFloat(value))
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <h4>u26a0ufe0f Avoid These Bad Vibes</h4>
+          <p>Even though string switches are elite, there are some situations where they're just not it:</p>
+          <ul>
+            <li><strong>Performance-critical loops:</strong> If you're comparing the same strings thousands of times in a hot loop, consider caching the result or using enums</li>
+            <li><strong>Case-insensitive matching:</strong> String switch is case-sensitive by default, so you'd need to manually convert strings</li>
+            <li><strong>Pattern matching:</strong> If you need regex or partial matching, string switch isn't built for that (yet ud83dude09)</li>
+            <li><strong>Empty string edge cases:</strong> Be careful with empty strings as they can behave unexpectedly</li>
+          </ul>
+        </div>
+
+        <h3>Under The Hood</h3>
+        <p>For the real ones who want to know how it works:</p>
+
+        <div class="code-block">
+          <div class="code-title">The Compiler Magic</div>
+          <pre><code><span class="comment">fr fr What the compiler generates (simplified)</span>
+
+<span class="comment">fr fr For a switch like:</span>
+<span class="keyword">vibe_check</span> str {
+    <span class="keyword">mood</span> "A": actionA()
+    <span class="keyword">mood</span> "B": actionB()
+}
+
+<span class="comment">fr fr Gets transformed into something like:</span>
+<span class="keyword">lowkey</span> strcmp(str, "A") == 0 {
+    actionA()
+} <span class="keyword">highkey</span> <span class="keyword">lowkey</span> strcmp(str, "B") == 0 {
+    actionB()
+}</code></pre>
+        </div>
+
+        <p>The actual implementation is more optimized and uses LLVM's basic blocks for efficient control flow, but you get the idea!</p>
+
+        <div class="pro-tip-box">
+          <h4>u2728 Pro Tips</h4>
+          <p>Level up your string switch game with these elite strats:</p>
+          <ul>
+            <li>Group related cases to simplify your code (like error types, days of the week, etc.)</li>
+            <li>For frequently used strings, consider creating constants to avoid typos</li>
+            <li>Use fallthrough intentionally to create "stepped" processing of commands</li>
+            <li>For case-insensitive matching, convert strings to lowercase before the switch</li>
+            <li>When dealing with user input, always validate it before passing to a string switch</li>
+          </ul>
+        </div>
+
+        <h3>Future Enhancements</h3>
+        <p>The CURSED team is working on these fire updates for string switch:</p>
+
+        <div class="feature-box">
+          <ul>
+            <li><span class="emoji-tag">ud83dudd25</span> <strong>Pattern Matching:</strong> Support for regex-based case values</li>
+            <li><span class="emoji-tag">ud83dudca1</span> <strong>Smart Optimization:</strong> Auto hash-based comparison for large switch statements</li>
+            <li><span class="emoji-tag">ud83dudcaa</span> <strong>String Interning:</strong> Performance boost for repeated switch values</li>
+            <li><span class="emoji-tag">ud83eudd13</span> <strong>Expression Cases:</strong> Support for dynamic case values (not just literals)</li>
+          </ul>
+        </div>
+
+        <div class="next-steps">
+          <h3>Vibe With These Next</h3>
+          <p>Ready to keep the momentum? These docs are the perfect follow-up:</p>
+          <ul>
+            <li><a href="#" class="gradient-link">String Manipulation with Stringz</a></li>
+            <li><a href="#" class="gradient-link">Control Flow Deep Dive</a></li>
+            <li><a href="#" class="gradient-link">String Formatting with Vibez</a></li>
+            <li><a href="#" class="gradient-link">Performance Optimization Techniques</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-container">
+        <div class="footer-column">
+          <div class="footer-logo">
+            <span>CURSED</span>
+          </div>
+          <p>A programming language that combines Go-like syntax with GenZ slang. <span class="neon-text">Created for education</span>, fun, and <span class="highlight-text">the culture</span>. <span class="big-word">Period.</span></p>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="../docs.html">Documentation</a></li>
+            <li><a href="#">Tutorials</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">Examples</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Community</h3>
+          <ul>
+            <li><a href="https://github.com/ghuntley/cursed">GitHub</a></li>
+            <li><a href="#">Discord</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>More</h3>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Roadmap</a></li>
+            <li><a href="#">Contributing</a></li>
+            <li><a href="#">License</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+        <div class="social-icons">
+          <a href="#" class="social-icon">ud83dudc7e</a>
+          <a href="#" class="social-icon">ud83dudcf8</a>
+          <a href="#" class="social-icon">ud83dudcac</a>
+          <a href="#" class="social-icon">ud83dudc3e</a>
+        </div>
+        <div class="trendy-badges">
+          <span class="trendy-badge">#Aesthetic</span>
+          <span class="trendy-badge">#CodeCore</span>
+          <span class="trendy-badge">#BuiltDifferent</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../scripts.js"></script>
+</body>
+</html>

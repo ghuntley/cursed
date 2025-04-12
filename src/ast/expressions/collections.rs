@@ -8,9 +8,9 @@
 //! These expressions provide the foundation for working with compound data structures
 //! in the language.
 
-use std::any::Any;
-use crate::ast::{Node, Expression};
+use crate::ast::{Expression, Node};
 use crate::lexer::token::Token;
+use std::any::Any;
 
 /// Represents an array literal expression in the AST.
 ///
@@ -36,21 +36,24 @@ impl Node for ArrayLiteral {
     fn token_literal(&self) -> String {
         self.token.token_literal()
     }
-    
+
     fn string(&self) -> String {
-        let elements = self.elements
+        let elements = self
+            .elements
             .iter()
             .map(|e| e.string())
             .collect::<Vec<String>>()
             .join(", ");
-        
+
         format!("[{}]", elements)
     }
 }
 
 impl Expression for ArrayLiteral {
     fn expression_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// Represents a hash/map literal expression in the AST.
@@ -78,21 +81,24 @@ impl Node for HashLiteral {
     fn token_literal(&self) -> String {
         self.token.token_literal()
     }
-    
+
     fn string(&self) -> String {
-        let pairs = self.pairs
+        let pairs = self
+            .pairs
             .iter()
             .map(|(k, v)| format!("{}: {}", k.string(), v.string()))
             .collect::<Vec<String>>()
             .join(", ");
-        
+
         format!("{{{}}}", pairs)
     }
 }
 
 impl Expression for HashLiteral {
     fn expression_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// Represents an index access expression in the AST.
@@ -125,7 +131,12 @@ impl Node for IndexExpression {
     }
 
     fn string(&self) -> String {
-        format!("{} {} {}", self.left.string(), self.token_literal(), self.index.string())
+        format!(
+            "{} {} {}",
+            self.left.string(),
+            self.token_literal(),
+            self.index.string()
+        )
     }
 }
 

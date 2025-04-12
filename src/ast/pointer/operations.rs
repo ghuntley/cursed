@@ -6,9 +6,9 @@
 //!
 //! Dereferencing allows reading from or writing to the memory location pointed to by a pointer.
 
-use std::any::Any;
-use crate::ast::{Node, Expression};
+use crate::ast::{Expression, Node};
 use crate::lexer::token::Token;
+use std::any::Any;
 
 /// Represents a pointer dereference expression in the AST.
 ///
@@ -44,7 +44,7 @@ impl Node for PointerDereference {
 
 impl Expression for PointerDereference {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

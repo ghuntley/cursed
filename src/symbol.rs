@@ -1,7 +1,7 @@
 // Symbol table implementation
 use std::collections::HashMap;
 
-/// Represents a symbol in the CURSED language 
+/// Represents a symbol in the CURSED language
 pub struct Symbol {
     pub name: String,
     pub scope: SymbolScope,
@@ -48,23 +48,24 @@ impl SymbolTable {
     pub fn define(&mut self, name: &str) -> Symbol {
         let symbol = Symbol {
             name: name.to_string(),
-            scope: SymbolScope::Global,  // For simplicity, default to Global
+            scope: SymbolScope::Global, // For simplicity, default to Global
             index: self.num_definitions,
         };
-        
+
         self.store.insert(name.to_string(), symbol.clone());
         self.num_definitions += 1;
-        
+
         symbol
     }
 
     /// Look up a symbol by name
     pub fn resolve(&self, name: &str) -> Option<Symbol> {
-        self.store.get(name).cloned().or_else(|| {
-            self.outer.as_ref().and_then(|outer| outer.resolve(name))
-        })
+        self.store
+            .get(name)
+            .cloned()
+            .or_else(|| self.outer.as_ref().and_then(|outer| outer.resolve(name)))
     }
-    
+
     /// Define a built-in function symbol
     pub fn define_builtin(&mut self, index: usize, name: &str) -> Symbol {
         let symbol = Symbol {
@@ -72,11 +73,11 @@ impl SymbolTable {
             scope: SymbolScope::Builtin,
             index,
         };
-        
+
         self.store.insert(name.to_string(), symbol.clone());
         symbol
     }
-    
+
     /// Get the number of definitions in this symbol table
     pub fn get_definition_count(&self) -> usize {
         self.num_definitions
@@ -91,4 +92,4 @@ impl Clone for Symbol {
             index: self.index,
         }
     }
-} 
+}

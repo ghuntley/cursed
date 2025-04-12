@@ -15,15 +15,18 @@
 //! * `channel`: Channel-specific parsing
 //! * `reference`: Reference and pointer parsing
 //! * `expression_list`: Parsing of expression lists
+//! * `switch`: Parsing logic for switch/vibe_check statements
 
-mod parser;
-mod expressions;
-mod statements;
-mod types;
-mod precedence;
 mod channel;
-mod reference;
+mod context;
 mod expression_list;
+mod expressions;
+mod parser;
+mod precedence;
+mod reference;
+mod statements;
+mod switch;
+mod types;
 
 #[cfg(test)]
 mod tests;

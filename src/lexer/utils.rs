@@ -78,17 +78,18 @@ pub fn is_octal_digit(ch: char) -> bool {
 ///
 /// `true` if the sequence exists at the specified position, `false` otherwise
 pub fn peek_sequence(input: &str, current_pos: usize, read_pos: usize, sequence: &str) -> bool {
-    if current_pos == 0 || read_pos < sequence.len() || input.len() < read_pos + sequence.len() - 1 {
+    if current_pos == 0 || read_pos < sequence.len() || input.len() < read_pos + sequence.len() - 1
+    {
         return false;
     }
-    
+
     let start = read_pos - 1; // Include the current character
     let end = start + sequence.len();
-    
+
     if end > input.len() {
         return false;
     }
-    
+
     let slice = &input[start..end];
     slice == sequence
 }

@@ -10,11 +10,11 @@
 //! - `vibe` for packages (equivalent to Go's `package`)
 //! - `yeet` for imports (equivalent to Go's `import`)
 
-use std::any::Any;
-use crate::lexer::token::Token;
-use crate::ast::{Node, Statement, Expression};
 use crate::ast::expressions::Identifier;
 use crate::ast::expressions::StringLiteral;
+use crate::ast::{Expression, Node, Statement};
+use crate::lexer::token::Token;
+use std::any::Any;
 
 /// Represents a constant declaration in CURSED
 ///
@@ -43,7 +43,7 @@ impl Node for FactsStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
     }
-    
+
     fn string(&self) -> String {
         format!("facts {} = {}", self.name.string(), self.value.string())
     }
@@ -51,7 +51,9 @@ impl Node for FactsStatement {
 
 impl Statement for FactsStatement {
     fn statement_node(&self) {}
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 /// LetStatement represents a let statement
@@ -69,12 +71,12 @@ impl Node for LetStatement {
 
     fn string(&self) -> String {
         let mut out = format!("{} {}", self.token_literal(), self.name.string());
-        
+
         // Include type annotation if present
         if let Some(type_token) = &self.type_annotation {
             out.push_str(&format!(" {}", type_token.token_literal()));
         }
-        
+
         out.push_str(" = ");
         if let Some(value) = &self.value {
             out.push_str(&value.string());
@@ -86,7 +88,7 @@ impl Node for LetStatement {
 
 impl Statement for LetStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -115,7 +117,7 @@ impl Node for ReturnStatement {
 
 impl Statement for ReturnStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -139,7 +141,7 @@ impl Node for PackageStatement {
 
 impl Statement for PackageStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -159,7 +161,12 @@ impl Node for ImportStatement {
 
     fn string(&self) -> String {
         if let Some(alias) = &self.alias {
-            format!("{} {} {};", self.token_literal(), alias.string(), self.path.string())
+            format!(
+                "{} {} {};",
+                self.token_literal(),
+                alias.string(),
+                self.path.string()
+            )
         } else {
             format!("{} {};", self.token_literal(), self.path.string())
         }
@@ -168,7 +175,7 @@ impl Node for ImportStatement {
 
 impl Statement for ImportStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

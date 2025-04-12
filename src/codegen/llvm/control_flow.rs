@@ -370,6 +370,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Compile the switch value expression
         let switch_value = self.compile_expression(&*switch_stmt.value)?;
         
+        // We'll need the current function for string switch in the future
+        
         // Handle switch statement based on the type of the value
         if switch_value.is_int_value() {
             // Integer switch case - use LLVM's native switch instruction
@@ -396,7 +398,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             return Ok(());
         } else if switch_value.is_pointer_value() {
-            // Handle string switch case using our string comparison logic
+            // For string switch cases, we need to use our string_switch implementation
+            // Pass the switch statement and string value to the string switch handler
             return self.compile_string_switch_statement(switch_stmt, switch_value.into_pointer_value());
         } else {
             return Err(Error::codegen("Switch value must be an integer or string".to_string()));
@@ -517,139 +520,5 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(())
     }
 
-    /// Compiles a switch statement (vibe_check in CURSED) to LLVM IR.
-    ///
-    /// This method translates a CURSED vibe_check statement into LLVM's switch instruction
-    /// and associated basic blocks. It creates a block for each case and handles the control
-    /// flow between them, including fallthrough behavior when no explicit break is present.
-    ///
-    /// # Arguments
-    ///
-    /// * `switch_stmt` - The AST switch statement node to compile
-    ///
-    /// # Returns
-    ///
-    /// * `Result<(), Error>` - Success or a compilation error
-    pub fn compile_switch_statement(
-        &mut self, 
-        switch_stmt: &SwitchStatement
-    ) -> Result<(), Error> {
-        // Get the current function
-        let current_fn = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-        
-        // Create a block for the switch header and the switch end (merge point)
-        let switch_header = self.context.append_basic_block(current_fn, "switch.header");
-        let switch_end = self.context.append_basic_block(current_fn, "switch.end");
-        
-        // Branch to the switch header
-        self.builder.build_unconditional_branch(switch_header)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-        
-        // Position at the switch header block
-        self.builder.position_at_end(switch_header);
-        
-        // Compile the switch value expression
-        let switch_value = self.compile_expression(&*switch_stmt.value)?;
-        
-        // Create an LLVM switch instruction
-        let switch_instr = if switch_value.is_int_value() {
-            // Integer switch value
-            let default_case = match &switch_stmt.default {
-                Some(_) => {
-                    // Create a block for the default case
-                    self.context.append_basic_block(current_fn, "switch.default")
-                },
-                None => switch_end
-            };
-            
-            // Build the switch instruction with the default case
-            self.builder.build_switch(
-                switch_value.into_int_value(), 
-                default_case,
-                switch_stmt.cases.len() as u32
-            ).map_err(|e| Error::codegen(format!("Failed to build switch instruction: {}", e)))?
-        } else if switch_value.is_pointer_value() {
-            // For string comparisons, we'll need to compare explicitly
-            // This is more complex and would require creating blocks with explicit comparisons
-            return Err(Error::codegen("String switch values not yet supported".to_string()));
-        } else {
-            return Err(Error::codegen("Switch value must be an integer or string".to_string()));
-        };
-        
-        // Create a mapping from cases to their basic blocks for fallthrough handling
-        let mut case_blocks: Vec<(&CaseStatement, BasicBlock)> = Vec::new();
-        
-        // Create blocks for each case
-        for case in &switch_stmt.cases {
-            let case_block = self.context.append_basic_block(current_fn, "switch.case");
-            case_blocks.push((case, case_block));
-            
-            // For each value in this case, add to the switch instruction
-            for expr in &case.expressions {
-                let case_value = self.compile_expression(&**expr)?;
-                
-                if case_value.is_int_value() {
-                    // Add this case value to the switch instruction
-                    switch_instr.add_case(
-                        case_value.into_int_value(), 
-                        case_block
-                    );
-                } else {
-                    return Err(Error::codegen("Case value must be an integer".to_string()));
-                }
-            }
-        }
-        
-        // Process the default case if present
-        if let Some(default_block) = &switch_stmt.default {
-            let default_bb = switch_instr.get_default_dest();
-            
-            // Position at the default block
-            self.builder.position_at_end(default_bb);
-            
-            // Compile the default block statements
-            for stmt in &default_block.statements {
-                self.compile_statement(&**stmt)?;
-            }
-            
-            // Add branch to switch end if there's no terminator (like return)
-            let current_block = self.builder.get_insert_block().unwrap();
-            if current_block.get_terminator().is_none() {
-                self.builder.build_unconditional_branch(switch_end)
-                    .map_err(|e| Error::codegen(format!("Failed to build default case branch: {}", e)))?;
-            }
-        }
-        
-        // Process each case block
-        for (i, (case, block)) in case_blocks.iter().enumerate() {
-            // Position at this case's block
-            self.builder.position_at_end(*block);
-            
-            // Compile the statements for this case
-            for stmt in &case.body.statements {
-                self.compile_statement(&**stmt)?;
-            }
-            
-            // If there's no terminator (like return or break/ghosted)
-            let current_block = self.builder.get_insert_block().unwrap();
-            if current_block.get_terminator().is_none() {
-                // Fallthrough to the next case if there is one, otherwise to the end
-                if i + 1 < case_blocks.len() {
-                    // Fallthrough to the next case
-                    let next_case_block = case_blocks[i + 1].1;
-                    self.builder.build_unconditional_branch(next_case_block)
-                        .map_err(|e| Error::codegen(format!("Failed to build fallthrough branch: {}", e)))?;
-                } else {
-                    // No more cases, go to the end
-                    self.builder.build_unconditional_branch(switch_end)
-                        .map_err(|e| Error::codegen(format!("Failed to build branch to switch end: {}", e)))?;
-                }
-            }
-        }
-        
-        // Continue in the merge block
-        self.builder.position_at_end(switch_end);
-        
-        Ok(())
-    }
+
 }

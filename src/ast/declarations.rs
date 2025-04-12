@@ -1,7 +1,7 @@
-use std::any::Any;
-use crate::ast::{Node, Statement, Expression};
 use super::expressions::Identifier;
 use super::statements::fields::FieldStatement;
+use crate::ast::{Expression, Node, Statement};
+use std::any::Any;
 
 /// SquadStatement represents a struct definition
 pub struct SquadStatement {
@@ -18,23 +18,29 @@ impl Node for SquadStatement {
 
     fn string(&self) -> String {
         let mut out = String::new();
-        
+
         // Format the struct name with optional type parameters
         let type_params_str = if !self.type_parameters.is_empty() {
-            let params: Vec<String> = self.type_parameters.iter()
+            let params: Vec<String> = self
+                .type_parameters
+                .iter()
                 .map(|param| param.string())
                 .collect();
             format!("[{}]", params.join(", "))
         } else {
             String::new()
         };
-        
-        out.push_str(&format!("be_like {}{} squad {{\n", self.name.string(), type_params_str));
-        
+
+        out.push_str(&format!(
+            "be_like {}{} squad {{\n",
+            self.name.string(),
+            type_params_str
+        ));
+
         for field in &self.fields {
             out.push_str(&format!("    {}\n", field.string()));
         }
-        
+
         out.push_str("}\n");
         out
     }
@@ -42,7 +48,7 @@ impl Node for SquadStatement {
 
 impl Statement for SquadStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -63,23 +69,29 @@ impl Node for CollabStatement {
 
     fn string(&self) -> String {
         let mut out = String::new();
-        
+
         // Format the type name with optional type parameters
         let type_params_str = if !self.type_parameters.is_empty() {
-            let params: Vec<String> = self.type_parameters.iter()
+            let params: Vec<String> = self
+                .type_parameters
+                .iter()
                 .map(|param| param.string())
                 .collect();
             format!("[{}]", params.join(", "))
         } else {
             String::new()
         };
-        
-        out.push_str(&format!("be_like {}{} collab {{\n", self.name.string(), type_params_str));
-        
+
+        out.push_str(&format!(
+            "be_like {}{} collab {{\n",
+            self.name.string(),
+            type_params_str
+        ));
+
         for method in &self.methods {
             out.push_str(&format!("    {}\n", method.string()));
         }
-        
+
         out.push_str("}\n");
         out
     }
@@ -87,7 +99,7 @@ impl Node for CollabStatement {
 
 impl Statement for CollabStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -109,39 +121,39 @@ impl Node for MethodSignature {
 
     fn string(&self) -> String {
         let mut out = String::new();
-        
+
         // Format the method name with optional type parameters
         let type_params_str = if !self.type_parameters.is_empty() {
-            let params: Vec<String> = self.type_parameters.iter()
+            let params: Vec<String> = self
+                .type_parameters
+                .iter()
                 .map(|param| param.string())
                 .collect();
             format!("[{}] ", params.join(", "))
         } else {
             String::new()
         };
-        
+
         out.push_str(&format!("{}{}", self.name.string(), type_params_str));
-        
+
         // Format parameters
         out.push_str("(");
-        let params: Vec<String> = self.parameters.iter()
-            .map(|param| param.string())
-            .collect();
+        let params: Vec<String> = self.parameters.iter().map(|param| param.string()).collect();
         out.push_str(&params.join(", "));
         out.push_str(")");
-        
+
         // Format return type if any
         if let Some(ret_type) = &self.return_type {
             out.push_str(&format!(": {}", ret_type.string()));
         }
-        
+
         out
     }
 }
 
 impl Statement for MethodSignature {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -164,43 +176,48 @@ impl Node for FunctionStatement {
 
     fn string(&self) -> String {
         let mut out = String::new();
-        
+
         // Format the function name with optional type parameters
         let type_params_str = if !self.type_parameters.is_empty() {
-            let params: Vec<String> = self.type_parameters.iter()
+            let params: Vec<String> = self
+                .type_parameters
+                .iter()
                 .map(|param| param.string())
                 .collect();
             format!("[{}] ", params.join(", "))
         } else {
             String::new()
         };
-        
-        out.push_str(&format!("{} {}{}", self.token_literal(), self.name.string(), type_params_str));
-        
+
+        out.push_str(&format!(
+            "{} {}{}",
+            self.token_literal(),
+            self.name.string(),
+            type_params_str
+        ));
+
         // Format parameters
         out.push_str("(");
-        let params: Vec<String> = self.parameters.iter()
-            .map(|param| param.string())
-            .collect();
+        let params: Vec<String> = self.parameters.iter().map(|param| param.string()).collect();
         out.push_str(&params.join(", "));
         out.push_str(")");
-        
+
         // Format return type if any
         if let Some(ret_type) = &self.return_type {
             out.push_str(&format!(": {}", ret_type.string()));
         }
-        
+
         // Format body
         out.push_str(" ");
         out.push_str(&self.body.string());
-        
+
         out
     }
 }
 
 impl Statement for FunctionStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -225,7 +242,7 @@ impl Node for ParameterStatement {
 
 impl Statement for ParameterStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

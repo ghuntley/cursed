@@ -1,23 +1,15 @@
-extern crate cursed;
 use cursed::lexer::Lexer;
+use cursed::parser::Parser;
 
 fn main() {
-    let input = r#"vibe test
-
-slay identity[T](x) {
-    yolo x
-}
-"#;
-    
-    let mut lexer = Lexer::new(input);
-    
-    // Print all tokens
-    loop {
-        let token = lexer.next_token().unwrap();
-        println!("{:?}", token);
-        
-        if token.token_literal() == "EOF" {
-            break;
+    let input = "
+    vibe_check day {
+        mood \"Monday\": {
+            result = \"Start of week\";
         }
-    }
+    ";
+
+    let lexer = Lexer::new(input);
+    let tokens: Vec<_> = lexer.collect();
+    println!("Tokens: {:?}", tokens);
 }

@@ -1,7 +1,7 @@
 //! Utility functions for working with statements
 
-use crate::ast::{Statement, Expression};
 use crate::ast::statements::ExpressionStatement;
+use crate::ast::{Expression, Statement};
 
 pub trait StatementExtensions {
     /// Get the expression from a statement if it's an expression statement

@@ -8,8 +8,8 @@
 //! Common examples include function calls, assignments, and increment/decrement
 //! operations when used as standalone lines of code.
 
+use crate::ast::{Expression, Node, Statement};
 use std::any::Any;
-use crate::ast::{Node, Statement, Expression};
 
 /// Represents an expression used as a statement in the AST.
 ///
@@ -48,7 +48,7 @@ impl Node for ExpressionStatement {
 
 impl Statement for ExpressionStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

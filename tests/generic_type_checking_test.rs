@@ -1,11 +1,11 @@
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
 use cursed::ast;
 use cursed::core::type_checker::TypeChecker;
 use cursed::error::Error;
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
 
 #[test]
-#[ignore="Generic type checking tests need further work"]
+#[ignore = "Generic type checking tests need further work"]
 fn test_basic_generic_type_checking() {
     let input = r#"vibe test
 
@@ -23,31 +23,43 @@ slay main() {
     sus should_be_tea = identity[tea]("hello")
 }
 "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program().unwrap();
-    
+
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
-    
+
     assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
-    
+
     // Verify that the type of box_int is Box[normie]
     let box_int_type = type_checker.get_type("box_int").unwrap();
-    assert_eq!(box_int_type.to_string(), "Box[normie]", "box_int should have type Box[normie]");
-    
+    assert_eq!(
+        box_int_type.to_string(),
+        "Box[normie]",
+        "box_int should have type Box[normie]"
+    );
+
     // Verify that the type of result is normie
     let result_type = type_checker.get_type("result").unwrap();
-    assert_eq!(result_type.to_string(), "normie", "result should have type normie");
-    
+    assert_eq!(
+        result_type.to_string(),
+        "normie",
+        "result should have type normie"
+    );
+
     // Verify that the type of should_be_tea is tea
     let tea_type = type_checker.get_type("should_be_tea").unwrap();
-    assert_eq!(tea_type.to_string(), "tea", "should_be_tea should have type tea");
+    assert_eq!(
+        tea_type.to_string(),
+        "tea",
+        "should_be_tea should have type tea"
+    );
 }
 
 #[test]
-#[ignore="Generic type checking tests need further work"]
+#[ignore = "Generic type checking tests need further work"]
 fn test_invalid_generic_type_usage() {
     let input = r#"vibe test
 
@@ -59,22 +71,28 @@ slay main() {
     sus box_int = Box[normie]{value: "hello"}
 }
 "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program().unwrap();
-    
+
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
-    
-    assert!(result.is_err(), "Type checking should fail with type mismatch");
+
+    assert!(
+        result.is_err(),
+        "Type checking should fail with type mismatch"
+    );
     if let Err(err) = result {
-        assert!(err.to_string().contains("type mismatch"), "Error should mention type mismatch");
+        assert!(
+            err.to_string().contains("type mismatch"),
+            "Error should mention type mismatch"
+        );
     }
 }
 
 #[test]
-#[ignore="Generic type checking tests need further work"]
+#[ignore = "Generic type checking tests need further work"]
 fn test_multiple_generic_parameters() {
     let input = r#"vibe test
 
@@ -89,31 +107,43 @@ slay main() {
     sus second_value = pair.second
 }
 "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program().unwrap();
-    
+
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
-    
+
     assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
-    
+
     // Verify that the type of pair is Pair[tea, normie]
     let pair_type = type_checker.get_type("pair").unwrap();
-    assert_eq!(pair_type.to_string(), "Pair[tea, normie]", "pair should have type Pair[tea, normie]");
-    
+    assert_eq!(
+        pair_type.to_string(),
+        "Pair[tea, normie]",
+        "pair should have type Pair[tea, normie]"
+    );
+
     // Verify that first_value has type tea
     let first_value_type = type_checker.get_type("first_value").unwrap();
-    assert_eq!(first_value_type.to_string(), "tea", "first_value should have type tea");
-    
+    assert_eq!(
+        first_value_type.to_string(),
+        "tea",
+        "first_value should have type tea"
+    );
+
     // Verify that second_value has type normie
     let second_value_type = type_checker.get_type("second_value").unwrap();
-    assert_eq!(second_value_type.to_string(), "normie", "second_value should have type normie");
+    assert_eq!(
+        second_value_type.to_string(),
+        "normie",
+        "second_value should have type normie"
+    );
 }
 
 #[test]
-#[ignore="Generic type checking tests need further work"]
+#[ignore = "Generic type checking tests need further work"]
 fn test_nested_generic_types() {
     let input = r#"vibe test
 
@@ -134,24 +164,32 @@ slay main() {
     sus text = pair.first
 }
 "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program().unwrap();
-    
+
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
-    
+
     assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
-    
+
     // Verify that the type of nested is Box[Pair[tea, normie]]
     let nested_type = type_checker.get_type("nested").unwrap();
-    assert_eq!(nested_type.to_string(), "Box[Pair[tea, normie]]", "nested should have type Box[Pair[tea, normie]]");
-    
+    assert_eq!(
+        nested_type.to_string(),
+        "Box[Pair[tea, normie]]",
+        "nested should have type Box[Pair[tea, normie]]"
+    );
+
     // Verify that the type of pair is Pair[tea, normie]
     let pair_type = type_checker.get_type("pair").unwrap();
-    assert_eq!(pair_type.to_string(), "Pair[tea, normie]", "pair should have type Pair[tea, normie]");
-    
+    assert_eq!(
+        pair_type.to_string(),
+        "Pair[tea, normie]",
+        "pair should have type Pair[tea, normie]"
+    );
+
     // Verify that the type of text is tea
     let text_type = type_checker.get_type("text").unwrap();
     assert_eq!(text_type.to_string(), "tea", "text should have type tea");

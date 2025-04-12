@@ -13,19 +13,19 @@
 //! * `allocator`: Memory allocation utilities
 //! * `channel`: Thread-safe communication channels
 
-pub mod gc;
-pub mod weak;
+pub mod allocator;
+pub mod block;
+pub mod bump;
+pub mod channel;
 pub mod container;
+pub mod gc;
+pub mod memory_visitor;
 pub mod strategy;
 pub mod tagged;
-pub mod bump;
-pub mod block;
-pub mod allocator;
-pub mod memory_visitor;
-pub mod channel;
+pub mod weak;
 
 // Re-export important types
-pub use container::{SpecializedVector, Specializable, ContainerType};
+pub use container::{ContainerType, Specializable, SpecializedVector};
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
@@ -60,10 +60,10 @@ pub enum Tag {
 pub trait Traceable: 'static {
     /// Trace all references in this object
     fn trace(&self, visitor: &mut dyn Visitor);
-    
+
     /// Get the size of this object in bytes
     fn size(&self) -> usize;
-    
+
     /// Get the type tag for this object
     fn tag(&self) -> Tag;
 }
@@ -76,10 +76,10 @@ pub trait Traceable: 'static {
 pub trait Visitor {
     /// Visit a traceable object
     fn visit(&mut self, ptr: NonNull<dyn Traceable>);
-    
+
     /// Visit with context information (for debugging)
     fn visit_with_context(&mut self, ptr: NonNull<dyn Traceable>, context: &str);
-    
+
     /// Visit a pointer by its raw address
     fn visit_ptr(&mut self, ptr: usize, tag: Tag);
 }
@@ -101,29 +101,29 @@ impl<T: Traceable + Clone + 'static> Gc<T> {
     pub fn new(ptr: NonNull<T>, gc: GarbageCollector) -> Self {
         let addr = ptr.as_ptr() as usize;
         gc.add_root(addr);
-        
+
         Self {
             ptr,
             gc: Arc::new(gc),
             _marker: PhantomData,
         }
     }
-    
+
     /// Get a reference to the inner value
     pub fn inner(&self) -> Option<&T> {
         unsafe { Some(&*self.ptr.as_ptr()) }
     }
-    
+
     /// Get a mutable reference to the inner value
     pub fn inner_mut(&mut self) -> Option<&mut T> {
         unsafe { Some(&mut *self.ptr.as_ptr()) }
     }
-    
+
     /// Get the raw pointer
     pub fn as_ptr(&self) -> *mut T {
         self.ptr.as_ptr()
     }
-    
+
     /// Create a weak reference to this object
     pub fn downgrade(&self) -> weak::Weak<T> {
         weak::Weak::new(self.ptr, self.gc.clone())
@@ -135,7 +135,7 @@ impl<T: Traceable + Clone + 'static> Clone for Gc<T> {
         // Register as a new root when cloned
         let addr = self.ptr.as_ptr() as usize;
         self.gc.add_root(addr);
-        
+
         Self {
             ptr: self.ptr,
             gc: self.gc.clone(),

@@ -7,9 +7,9 @@
 //! These expressions represent the invocation of functions with arguments and
 //! optional generic type parameters.
 
-use std::any::Any;
-use crate::ast::{Node, Expression};
+use crate::ast::{Expression, Node};
 use crate::lexer::token::Token;
+use std::any::Any;
 
 /// Represents a function call expression in the AST.
 ///
@@ -38,10 +38,13 @@ impl Node for CallExpression {
     }
 
     fn string(&self) -> String {
-        let args: Vec<String> = self.arguments.iter()
-            .map(|arg| arg.string())
-            .collect();
-        format!("{} {} {}", self.function.string(), self.token_literal(), args.join(", "))
+        let args: Vec<String> = self.arguments.iter().map(|arg| arg.string()).collect();
+        format!(
+            "{} {} {}",
+            self.function.string(),
+            self.token_literal(),
+            args.join(", ")
+        )
     }
 }
 
@@ -57,7 +60,9 @@ impl Expression for CallExpression {
     }
 
     fn as_call_expression(&self) -> Option<(&dyn Expression, Vec<&dyn Expression>)> {
-        let args: Vec<&dyn Expression> = self.arguments.iter()
+        let args: Vec<&dyn Expression> = self
+            .arguments
+            .iter()
             .map(|arg| arg.as_ref() as &dyn Expression)
             .collect();
         Some((self.function.as_ref(), args))
@@ -93,17 +98,15 @@ impl Node for GenericCallExpression {
     }
 
     fn string(&self) -> String {
-        let type_args: Vec<String> = self.type_arguments.iter()
-            .map(|arg| arg.string())
-            .collect();
-        let args: Vec<String> = self.arguments.iter()
-            .map(|arg| arg.string())
-            .collect();
-        format!("{} {} [{}] {}", 
-                self.function.string(), 
-                self.token_literal(),
-                type_args.join(", "),
-                args.join(", "))
+        let type_args: Vec<String> = self.type_arguments.iter().map(|arg| arg.string()).collect();
+        let args: Vec<String> = self.arguments.iter().map(|arg| arg.string()).collect();
+        format!(
+            "{} {} [{}] {}",
+            self.function.string(),
+            self.token_literal(),
+            type_args.join(", "),
+            args.join(", ")
+        )
     }
 }
 
@@ -119,7 +122,9 @@ impl Expression for GenericCallExpression {
     }
 
     fn as_call_expression(&self) -> Option<(&dyn Expression, Vec<&dyn Expression>)> {
-        let args: Vec<&dyn Expression> = self.arguments.iter()
+        let args: Vec<&dyn Expression> = self
+            .arguments
+            .iter()
             .map(|arg| arg.as_ref() as &dyn Expression)
             .collect();
         Some((self.function.as_ref(), args))

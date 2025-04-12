@@ -14,16 +14,16 @@
 //! - `new_mutex`, `mutex_lock`, `mutex_unlock`: Mutex operations
 //! - `new_waitgroup`, `waitgroup_add`, `waitgroup_done`, `waitgroup_wait`: WaitGroup operations
 
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::sync::{Mutex as StdMutex, RwLock as StdRwLock};
-use crate::object::Object;
 use crate::error::Error;
+use crate::object::Object;
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::{Mutex as StdMutex, RwLock as StdRwLock};
 
 /// Mutual exclusion lock for protecting shared data in CURSED programs
 ///
 /// A Mutex provides synchronization by ensuring that only one goroutine can
-/// access protected data at any given time. It's used to protect shared 
+/// access protected data at any given time. It's used to protect shared
 /// resources from concurrent access conflicts.
 #[derive(Clone)]
 pub struct Mutex {
@@ -49,9 +49,11 @@ pub fn new_mutex(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Lock a mutex
 pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime("mutex_lock requires 1 argument: mutex".to_string()));
+        return Err(Error::Runtime(
+            "mutex_lock requires 1 argument: mutex".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just pretend it worked
     Ok(Rc::new(Object::Null))
 }
@@ -59,9 +61,11 @@ pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Unlock a mutex
 pub fn mutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime("mutex_unlock requires 1 argument: mutex".to_string()));
+        return Err(Error::Runtime(
+            "mutex_unlock requires 1 argument: mutex".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just pretend it worked
     Ok(Rc::new(Object::Null))
 }
@@ -75,9 +79,11 @@ pub fn new_waitgroup(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Add delta to WaitGroup counter
 pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("waitgroup_add requires 2 arguments: waitgroup and delta".to_string()));
+        return Err(Error::Runtime(
+            "waitgroup_add requires 2 arguments: waitgroup and delta".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just pretend it worked
     Ok(Rc::new(Object::Null))
 }
@@ -85,9 +91,11 @@ pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Decrement WaitGroup counter by one
 pub fn waitgroup_done(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime("waitgroup_done requires 1 argument: waitgroup".to_string()));
+        return Err(Error::Runtime(
+            "waitgroup_done requires 1 argument: waitgroup".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just pretend it worked
     Ok(Rc::new(Object::Null))
 }
@@ -95,9 +103,11 @@ pub fn waitgroup_done(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Block until WaitGroup counter is zero
 pub fn waitgroup_wait(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime("waitgroup_wait requires 1 argument: waitgroup".to_string()));
+        return Err(Error::Runtime(
+            "waitgroup_wait requires 1 argument: waitgroup".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just pretend it worked
     Ok(Rc::new(Object::Null))
 }

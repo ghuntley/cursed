@@ -11,13 +11,13 @@
 //! - Generic code instantiation services
 //! - Runtime type information
 
-pub mod thread_safe_goroutine;
-pub mod type_checker;
-pub mod symbol_table;
 pub mod channel;
+pub mod char;
 pub mod generic_instantiation;
 pub mod goroutine;
-pub mod char;
+pub mod symbol_table;
+pub mod thread_safe_goroutine;
+pub mod type_checker;
 
 /// Runtime representation of a compiled CURSED function
 ///

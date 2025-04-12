@@ -39,8 +39,8 @@ impl SourceLocation {
 
     /// Create a new source location with file information
     pub fn with_file(line: usize, column: usize, file: String) -> Self {
-        Self { 
-            line, 
+        Self {
+            line,
             column,
             file: Some(file),
             source_line: String::new(),
@@ -110,7 +110,7 @@ pub enum Error {
 
     /// Runtime errors
     Runtime(String),
-    
+
     /// Memory management errors
     Memory(String),
 
@@ -148,9 +148,7 @@ pub enum Error {
     SystemError(String),
 
     /// Not implemented errors
-    NotImplemented {
-        message: String,
-    },
+    NotImplemented { message: String },
 
     /// Code generation errors
     CodeGenError(String),
@@ -207,7 +205,7 @@ impl ErrorReporter {
     pub fn runtime_error(message: &str) -> Error {
         Error::Runtime(message.to_string())
     }
-    
+
     /// Report a memory error
     pub fn memory_error(message: &str) -> Error {
         Error::Memory(message.to_string())
@@ -297,7 +295,11 @@ impl Clone for Error {
 
 impl Error {
     /// Create a new runtime error
-    pub fn new<T: Into<String>>(error_type: &str, message: T, location: Option<SourceLocation>) -> Self {
+    pub fn new<T: Into<String>>(
+        error_type: &str,
+        message: T,
+        location: Option<SourceLocation>,
+    ) -> Self {
         match error_type {
             "Lexer" => {
                 if let Some(loc) = location {
@@ -308,7 +310,7 @@ impl Error {
                 } else {
                     Error::SemanticError(message.into())
                 }
-            },
+            }
             "Parser" => {
                 if let Some(loc) = location {
                     Error::Parser {
@@ -318,7 +320,7 @@ impl Error {
                 } else {
                     Error::SemanticError(message.into())
                 }
-            },
+            }
             "Type" => {
                 if let Some(loc) = location {
                     Error::Type {
@@ -328,7 +330,7 @@ impl Error {
                 } else {
                     Error::SemanticError(message.into())
                 }
-            },
+            }
             "Semantic" => Error::SemanticError(message.into()),
             "Compilation" => Error::Compilation(message.into()),
             "Runtime" => Error::Runtime(message.into()),
@@ -344,25 +346,25 @@ impl Error {
             _ => Error::Unknown(message.into()),
         }
     }
-    
+
     /// Create a runtime error from a string
     pub fn from_str(message: &str) -> Self {
         Error::Runtime(message.to_string())
     }
-    
+
     /// Create a memory error
     pub fn memory<T: Into<String>>(message: T) -> Self {
         Error::Memory(message.into())
     }
-    
+
     /// Create a syntax error
     pub fn syntax<T: Into<String>>(message: T, location: SourceLocation) -> Self {
-        Error::Syntax { 
+        Error::Syntax {
             message: message.into(),
             location,
         }
     }
-    
+
     /// Create a lexer error
     pub fn lexer<T: Into<String>>(message: T, location: SourceLocation) -> Self {
         Error::Lexer {
@@ -370,7 +372,7 @@ impl Error {
             location,
         }
     }
-    
+
     /// Create a parser error
     pub fn parser<T: Into<String>>(message: T, location: SourceLocation) -> Self {
         Error::Parser {
@@ -378,7 +380,7 @@ impl Error {
             location,
         }
     }
-    
+
     /// Create a type error
     pub fn type_error<T: Into<String>>(message: T, location: SourceLocation) -> Self {
         Error::Type {
@@ -386,12 +388,12 @@ impl Error {
             location,
         }
     }
-    
+
     /// Create a VM error
     pub fn vm<T: Into<String>>(message: T) -> Self {
         Error::VMError(message.into())
     }
-    
+
     /// Create a code generation error
     pub fn codegen<T: Into<String>>(message: T) -> Self {
         Error::CodeGenError(message.into())
@@ -471,7 +473,9 @@ impl Error {
 
     /// Creates a new `NotImplemented` error.
     pub fn not_implemented<T: Into<String>>(message: T, _location: SourceLocation) -> Self {
-        Error::NotImplemented { message: message.into() }
+        Error::NotImplemented {
+            message: message.into(),
+        }
     }
 }
 
@@ -508,4 +512,11 @@ impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Error::IoError(err)
     }
-} 
+}
+
+/// Implement Default trait for Error
+impl Default for Error {
+    fn default() -> Self {
+        Error::Unknown("Unknown error".to_string())
+    }
+}

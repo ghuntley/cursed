@@ -1,9 +1,9 @@
 //! Tests for memory layout of specialized generic types
 
+use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;
 use inkwell::types::BasicMetadataTypeEnum;
 use std::path::PathBuf;
-use cursed::codegen::llvm::LlvmCodeGenerator;
 
 #[test]
 #[ignore = "Integration test waiting for LLVM implementation to be fully integrated"]
@@ -26,33 +26,46 @@ fn test_memory_layout() {
     let normal_size = generator.get_type_size(&normal_type.into());
     let specialized_size = generator.get_type_size(&specialized_type.into());
 
-    // Verify sizes are constant values
-    assert!(normal_size.is_constant_int(), "Normal struct size is not a constant");
-    assert!(specialized_size.is_constant_int(), "Specialized struct size is not a constant");
-
-    // Get the size as a u64 value
-    let normal_size_val = normal_size.get_zero_extended_constant().unwrap_or(0);
-    let specialized_size_val = specialized_size.get_zero_extended_constant().unwrap_or(0);
+    // With our current stub implementation, sizes are just u64 values
+    let normal_size_val = normal_size;
+    let specialized_size_val = specialized_size;
 
     // Verify the sizes make sense
-    assert!(normal_size_val > 0, "Normal struct size should be greater than 0");
-    assert!(specialized_size_val > 0, "Specialized struct size should be greater than 0");
+    assert!(
+        normal_size_val > 0,
+        "Normal struct size should be greater than 0"
+    );
+    assert!(
+        specialized_size_val > 0,
+        "Specialized struct size should be greater than 0"
+    );
 
     // Build a simple function that returns the size difference
     let fn_type = context.i64_type().fn_type(&[], false);
-    let function = generator.module().add_function("get_size_diff", fn_type, None);
+    let function = generator
+        .module()
+        .add_function("get_size_diff", fn_type, None);
     let basic_block = context.append_basic_block(function, "entry");
 
-    generator.builder().position_at_end(basic_block);
+    generator.builder_mut().position_at_end(basic_block);
 
+    // Convert our u64 sizes to LLVM int values for calculations
+    let normal_size_int = context.i64_type().const_int(normal_size, false);
+    let specialized_size_int = context.i64_type().const_int(specialized_size, false);
+    
     // Calculate the difference between sizes
-    let size_diff = generator.builder().build_int_sub(normal_size, specialized_size, "size_diff")
+    let size_diff = generator
+        .builder_mut()
+        .build_int_sub(normal_size_int, specialized_size_int, "size_diff")
         .expect("Failed to build int subtraction");
 
     // Return the size difference
-    let _ = generator.builder().build_return(Some(&size_diff));
+    let _ = generator.builder_mut().build_return(Some(&size_diff));
 
     println!("Normal struct size: {}", normal_size_val);
     println!("Specialized struct size: {}", specialized_size_val);
-    println!("Size difference: {}", normal_size_val as i64 - specialized_size_val as i64);
+    println!(
+        "Size difference: {}",
+        normal_size_val as i64 - specialized_size_val as i64
+    );
 }

@@ -1,7 +1,7 @@
 // Bump allocator implementation
-use std::ptr::NonNull;
-use std::cell::Cell;
 use crate::memory::allocator::{Allocator, AllocatorBase};
+use std::cell::Cell;
+use std::ptr::NonNull;
 
 /// A bump allocator that allocates memory linearly and only frees all at once
 #[derive(Debug)]
@@ -16,7 +16,7 @@ impl BumpAllocator {
     pub fn new(capacity: usize) -> Self {
         let layout = std::alloc::Layout::from_size_align(capacity, 8)
             .expect("Invalid layout for bump allocator");
-        
+
         let memory = unsafe {
             let ptr = std::alloc::alloc(layout);
             if ptr.is_null() {
@@ -24,24 +24,24 @@ impl BumpAllocator {
             }
             NonNull::new_unchecked(ptr)
         };
-        
+
         BumpAllocator {
             memory,
             capacity,
             current: Cell::new(0),
         }
     }
-    
+
     /// Reset the allocator, effectively freeing all allocations
     pub fn reset(&mut self) {
         self.current.set(0);
     }
-    
+
     /// Get the current offset into the memory block
     pub fn offset(&self) -> usize {
         self.current.get()
     }
-    
+
     /// Get the remaining capacity
     pub fn remaining(&self) -> usize {
         self.capacity - self.current.get()
@@ -64,24 +64,26 @@ impl AllocatorBase for BumpAllocator {
         // Calculate the aligned offset
         let offset = self.current.get();
         let aligned_offset = (offset + align - 1) & !(align - 1);
-        
+
         // Check if we have enough space
         if aligned_offset + size > self.capacity {
             return None;
         }
-        
+
         // Update the current offset
         self.current.set(aligned_offset + size);
-        
+
         // Return the pointer to the allocated memory
-        Some(NonNull::new_unchecked(self.memory.as_ptr().add(aligned_offset)))
+        Some(NonNull::new_unchecked(
+            self.memory.as_ptr().add(aligned_offset),
+        ))
     }
-    
+
     unsafe fn deallocate(&mut self, _ptr: NonNull<u8>, _size: usize, _align: usize) {
         // Bump allocator doesn't support individual deallocation
         // Memory is only freed when reset() is called or the allocator is dropped
     }
-    
+
     unsafe fn reallocate(
         &mut self,
         ptr: NonNull<u8>,
@@ -99,7 +101,7 @@ impl AllocatorBase for BumpAllocator {
                 return Some(ptr);
             }
         }
-        
+
         // Otherwise, we need to allocate a new block and copy the data
         let new_ptr = self.allocate(new_size, align)?;
         std::ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), old_size);

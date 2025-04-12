@@ -1,8 +1,8 @@
 //! The json_tea package provides JSON encoding and decoding functionality.
 //!
 //! This module is equivalent to the encoding/json package in Go, providing functions
-//! for converting between CURSED objects and JSON strings. It supports serialization 
-//! and deserialization of the basic data types including null, booleans, numbers, 
+//! for converting between CURSED objects and JSON strings. It supports serialization
+//! and deserialization of the basic data types including null, booleans, numbers,
 //! strings, arrays, and hash tables (objects in JSON).
 //!
 //! # Features
@@ -33,10 +33,10 @@
 //! json_tea.unmarshal(jsonStr, &newUser)
 //! ```
 
-use std::rc::Rc;
-use std::collections::HashMap;
-use crate::object::Object;
 use crate::error::Error;
+use crate::object::Object;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 /// Serializes a CURSED object into a JSON string.
 ///
@@ -67,7 +67,7 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("marshal requires 1 argument".to_string()));
     }
-    
+
     // Convert object to JSON string
     let json = match &*args[0] {
         Object::Null => "null".to_string(),
@@ -89,33 +89,38 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             }
             json.push_str("]");
             json
-        },
+        }
         Object::HashTable(map) => {
             let mut json = String::from("{");
             let mut first = true;
-            
+
             for (key, value) in map {
                 if !first {
                     json.push_str(",");
                 }
                 first = false;
-                
+
                 // Add key
                 json.push_str(&format!("\"{}\": ", key));
-                
+
                 // Recursive marshal for value
                 let value_json = marshal(&[Rc::new(value.clone())])?;
                 if let Object::String(s) = &*value_json {
                     json.push_str(s);
                 }
             }
-            
+
             json.push_str("}");
             json
-        },
-        _ => return Err(Error::Runtime(format!("Cannot marshal type {} to JSON", args[0].type_name()))),
+        }
+        _ => {
+            return Err(Error::Runtime(format!(
+                "Cannot marshal type {} to JSON",
+                args[0].type_name()
+            )))
+        }
     };
-    
+
     Ok(Rc::new(Object::String(json)))
 }
 
@@ -146,9 +151,11 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if fewer than 2 arguments are provided
 pub fn unmarshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("unmarshal requires 2 arguments: JSON string and target object".to_string()));
+        return Err(Error::Runtime(
+            "unmarshal requires 2 arguments: JSON string and target object".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just return a placeholder object
     Ok(Rc::new(Object::Null))
 }

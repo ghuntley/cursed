@@ -3,8 +3,8 @@
 //! This module defines the base structures of the Abstract Syntax Tree,
 //! particularly the Program struct that serves as the root of the AST.
 
-use std::fmt;
 use crate::ast::{Node, Statement};
+use std::fmt;
 
 /// Represents a complete CURSED program
 ///

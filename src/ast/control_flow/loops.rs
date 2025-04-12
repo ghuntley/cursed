@@ -9,9 +9,9 @@
 //! These control flow constructs allow CURSED programs to execute code repeatedly
 //! and control the execution flow within loops.
 
-use std::any::Any;
-use crate::ast::{Node, Statement, Expression};
 use crate::ast::statements::block::BlockStatement;
+use crate::ast::{Expression, Node, Statement};
+use std::any::Any;
 
 /// Represents a while loop in the AST (called "periodt" in CURSED).
 ///
@@ -49,7 +49,7 @@ impl Node for WhileStatement {
 
 impl Statement for WhileStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -76,12 +76,12 @@ impl Statement for WhileStatement {
 /// bestie i := 0; i < 10; i = i + 1 {
 ///     vibez.println(i)
 /// }
-/// 
+///
 /// // Condition-only loop
 /// bestie hasMoreData() {
 ///     processData()
 /// }
-/// 
+///
 /// // Infinite loop
 /// bestie {
 ///     handleEvents()
@@ -107,31 +107,31 @@ impl Node for ForStatement {
     fn string(&self) -> String {
         let mut out = String::new();
         out.push_str("bestie ");
-        
+
         if let Some(init) = &self.init {
             out.push_str(&init.string());
             out.push_str("; ");
         }
-        
+
         if let Some(cond) = &self.condition {
             out.push_str(&cond.string());
         }
-        
+
         if let Some(post) = &self.post {
             out.push_str("; ");
             out.push_str(&post.string());
         }
-        
+
         out.push_str(" ");
         out.push_str(&self.body.string());
-        
+
         out
     }
 }
 
 impl Statement for ForStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -172,7 +172,7 @@ impl Node for BreakStatement {
 
 impl Statement for BreakStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -213,7 +213,7 @@ impl Node for ContinueStatement {
 
 impl Statement for ContinueStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

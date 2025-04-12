@@ -1,8 +1,8 @@
 // Utility functions for CURSED language
+use crate::object::Object;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::RefCell;
-use crate::object::Object;
 
 /// Check if a value is truthy
 pub fn is_truthy(obj: &Object) -> bool {
@@ -30,7 +30,7 @@ pub fn new_string(value: &str) -> Rc<Object> {
     thread_local! {
         static STRING_CACHE: RefCell<HashMap<String, Rc<Object>>> = RefCell::new(HashMap::new());
     }
-    
+
     STRING_CACHE.with(|cache| {
         let mut cache = cache.borrow_mut();
         if let Some(cached) = cache.get(value) {
@@ -52,11 +52,9 @@ pub fn format_object(obj: &Object) -> String {
         Object::String(s) => s.clone(),
         Object::Null => "null".to_string(),
         Object::Array(arr) => {
-            let elements: Vec<String> = arr.iter()
-                .map(|obj| format_object(obj))
-                .collect();
+            let elements: Vec<String> = arr.iter().map(|obj| format_object(obj)).collect();
             format!("[{}]", elements.join(", "))
         }
         _ => format!("{:?}", obj),
     }
-} 
+}

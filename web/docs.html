@@ -3,117 +3,208 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CURSED Documentation - Learn the Language</title>
-  <meta name="description" content="Complete documentation for the CURSED programming language. Learn syntax, features, and best practices.">
+  <title>CURSED - Documentation | Learn How To Slay With Code</title>
+  <meta name="description" content="Official documentation for the CURSED programming language. Learn the syntax, types, and libraries that make CURSED totally bussin'. It's giving comprehensive knowledge.">
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/responsive.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="images/cursed-logo.svg">
   <style>
+    /* Documentation sidebar improvements */
     .docs-container {
-      display: grid;
-      grid-template-columns: 250px 1fr;
+      display: flex;
       gap: 2rem;
       position: relative;
     }
     
     .docs-sidebar {
       position: sticky;
-      top: 100px;
-      height: calc(100vh - 120px);
+      top: 2rem;
+      height: calc(100vh - 4rem);
       overflow-y: auto;
-      padding-right: 1rem;
-      scrollbar-width: thin;
+      width: 300px;
+      padding: 1.5rem;
+      background: rgba(18, 18, 18, 0.03);
+      border-radius: var(--border-radius-md);
+      border: 1px solid rgba(102, 102, 102, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .docs-sidebar.collapsed {
+      width: 60px;
+      overflow: hidden;
     }
     
     .docs-content {
-      max-width: 800px;
+      flex: 1;
+      transition: all 0.3s ease;
     }
     
-    .docs-section {
-      margin-bottom: 3rem;
+    .docs-content.expanded {
+      margin-left: -240px;
     }
     
-    .docs-section h2 {
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-    
-    .dark-mode .docs-section h2 {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .docs-nav {
-      list-style: none;
-      padding: 0;
-    }
-    
-    .docs-nav-item {
-      margin-bottom: 0.5rem;
-    }
-    
-    .docs-nav-item a {
-      display: block;
-      padding: 0.5rem;
-      border-radius: 6px;
+    .sidebar-toggle-btn {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      width: 36px;
+      height: 36px;
+      background: var(--color-primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
       transition: all 0.2s ease;
     }
     
-    .docs-nav-item a:hover,
-    .docs-nav-item a.active {
-      background-color: rgba(102, 0, 255, 0.1);
+    .sidebar-toggle-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+    }
+    
+    /* Nav sections and collapsible elements */
+    .nav-section {
+      margin-bottom: 1rem;
+    }
+    
+    .section-toggle {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      margin: 0;
+      border-radius: var(--border-radius-sm);
+      transition: all 0.2s ease;
+      font-size: 1.1rem;
+      color: var(--color-primary);
+      background: linear-gradient(90deg, rgba(255, 51, 102, 0.05), transparent);
+    }
+    
+    .section-toggle:hover {
+      background: linear-gradient(90deg, rgba(255, 51, 102, 0.1), transparent);
+      transform: translateX(3px);
+    }
+    
+    .toggle-icon {
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+    
+    .collapsible {
+      max-height: 1000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      margin: 0.3rem 0 0.5rem 1.5rem;
+    }
+    
+    .collapsible.collapsed {
+      max-height: 0;
+    }
+    
+    .collapsible li {
+      padding: 0.3rem 0;
+      transition: all 0.2s ease;
+    }
+    
+    .collapsible li:hover {
+      transform: translateX(3px);
+    }
+    
+    .collapsible a {
+      color: #666;
       text-decoration: none;
+      transition: all 0.2s ease;
+      display: block;
+      font-size: 0.95rem;
     }
     
-    .docs-subnav {
-      list-style: none;
-      padding-left: 1.5rem;
-      margin: 0.5rem 0;
+    .collapsible a:hover, .collapsible a.active {
+      color: var(--color-primary);
     }
     
-    .code-example {
-      margin: 1.5rem 0;
+    /* Quick navigation components */
+    .quick-nav {
+      margin-bottom: 1.5rem;
     }
     
-    .docs-table {
+    .search-container {
+      margin-bottom: 0.75rem;
+    }
+    
+    #doc-search {
       width: 100%;
-      border-collapse: collapse;
-      margin: 1.5rem 0;
+      padding: 0.6rem 1rem;
+      border-radius: 30px;
+      border: 1px solid rgba(102, 102, 102, 0.2);
+      background: rgba(255, 255, 255, 0.8);
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.2s ease;
     }
     
-    .docs-table th,
-    .docs-table td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    #doc-search:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.2);
     }
     
-    .dark-mode .docs-table th,
-    .dark-mode .docs-table td {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    .jump-menu select {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border-radius: 30px;
+      border: 1px solid rgba(102, 102, 102, 0.2);
+      background: rgba(255, 255, 255, 0.8);
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
     
-    .docs-table th {
-      font-weight: 600;
+    .jump-menu select:focus {
+      outline: none;
+      border-color: var(--color-primary);
     }
     
+    /* Mobile adjustments */
     @media (max-width: 768px) {
       .docs-container {
-        grid-template-columns: 1fr;
+        flex-direction: column;
       }
       
       .docs-sidebar {
-        position: relative;
+        position: fixed;
         top: 0;
-        height: auto;
-        margin-bottom: 2rem;
+        left: 0;
+        height: 100vh;
+        width: 80%;
+        max-width: 300px;
+        z-index: 100;
+        transform: translateX(0);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+      
+      .docs-sidebar.collapsed {
+        transform: translateX(-100%);
+        width: 80%;
+      }
+      
+      .sidebar-toggle-btn {
+        position: fixed;
+        left: 10px;
+        top: 70px;
+      }
+      
+      .docs-content.expanded {
+        margin-left: 0;
       }
     }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="images/cursed-logo.svg">
 </head>
 <body>
   <header>
@@ -136,317 +227,585 @@
           <li><a href="docs.html" class="active">Docs</a></li>
           <li><a href="index.html#community">Community</a></li>
           <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
-          <li><button id="theme-toggle" class="theme-toggle">ud83cudf19</button></li>
+          <li><button id="theme-toggle" class="theme-toggle">🌙</button></li>
         </ul>
       </nav>
     </div>
   </header>
 
-  <main class="container" style="padding: 4rem 2rem;">
-    <div class="docs-container">
+  <main>
+    <section class="docs-hero">
+      <div class="container">
+        <div class="docs-hero-content">
+          <h1>Documentation That <span class="glow-text">Slays</span> 📚</h1>
+          <p>Learn everything about CURSED from the basics to advanced concepts. <span class="highlight-text">No cap, full tea.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="docs-container container">
       <aside class="docs-sidebar">
-        <nav>
-          <ul class="docs-nav">
-            <li class="docs-nav-item"><a href="#getting-started" class="active">Getting Started</a></li>
-            <li class="docs-nav-item"><a href="#language-basics">Language Basics</a>
-              <ul class="docs-subnav">
-                <li><a href="#keywords">Keywords</a></li>
-                <li><a href="#types">Types</a></li>
-                <li><a href="#variables">Variables</a></li>
-                <li><a href="#functions">Functions</a></li>
-              </ul>
-            </li>
-            <li class="docs-nav-item"><a href="#control-flow">Control Flow</a></li>
-            <li class="docs-nav-item"><a href="#data-structures">Data Structures</a></li>
-            <li class="docs-nav-item"><a href="#concurrency">Concurrency</a></li>
-            <li class="docs-nav-item"><a href="#error-handling">Error Handling</a></li>
-            <li class="docs-nav-item"><a href="#standard-library">Standard Library</a></li>
-            <li class="docs-nav-item"><a href="#tooling">Tooling</a></li>
-          </ul>
-        </nav>
-      </aside>
-      
-      <div class="docs-content">
-        <section id="getting-started" class="docs-section">
-          <h2>Getting Started</h2>
-          <p>Welcome to CURSED! This guide will help you install the CURSED compiler, set up your environment, and write your first program.</p>
-          
-          <h3>Installation</h3>
-          <p>You can install CURSED using the following commands:</p>
-          
-          <div class="code-block code-example">
-            <pre><code>$ git clone https://github.com/ghuntley/cursed.git
-$ cd cursed
-$ make install</code></pre>
+        <div class="sidebar-toggle-btn">
+          <span>☰</span>
+        </div>
+        
+        <div class="quick-nav">
+          <div class="search-container">
+            <input type="text" placeholder="Search docs..." id="doc-search">
           </div>
+          <div class="jump-menu">
+            <select id="section-jump">
+              <option value="">Jump to section...</option>
+              <option value="#overview">Language Overview</option>
+              <option value="#syntax">Syntax Basics</option>
+              <option value="#basic-types">Types</option>
+              <option value="#control-flow">Control Flow</option>
+              <option value="#concurrency">Concurrency</option>
+              <option value="#vibez">Standard Library</option>
+              <option value="#toolchain">Tools</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="docs-nav">
+          <div class="nav-section">
+            <h3 class="section-toggle">📘 Getting Started <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible">
+              <li><a href="#overview" class="active">Language Overview</a></li>
+              <li><a href="#installation">Installation</a></li>
+              <li><a href="#hello-world">Your First Program</a></li>
+              <li><a href="#philosophy">Design Philosophy</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">🔤 Language Basics <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#syntax">Syntax Basics</a></li>
+              <li><a href="#comments">Comments</a></li>
+              <li><a href="#keywords">Keywords & Slang</a></li>
+              <li><a href="#operators">Operators</a></li>
+              <li><a href="#literals">Literals</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">🧩 Core Types <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#basic-types">Basic Types</a></li>
+              <li><a href="#composite-types">Composite Types</a></li>
+              <li><a href="#zero-values">Zero Values</a></li>
+              <li><a href="#type-inference">Type Inference</a></li>
+              <li><a href="#type-conversion">Type Conversion</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">🏗️ Program Structure <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#declarations">Declarations</a></li>
+              <li><a href="#variables">Variables & Constants</a></li>
+              <li><a href="#functions">Functions</a></li>
+              <li><a href="#structs">Structs & Methods</a></li>
+              <li><a href="#interfaces">Interfaces</a></li>
+              <li><a href="#packages">Packages & Imports</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">🔄 Control Flow <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#if-else">If-Else Statements</a></li>
+              <li><a href="#switch">Switch Statements</a></li>
+              <li><a href="#loops">Loops & Iteration</a></li>
+              <li><a href="#break-continue">Break & Continue</a></li>
+              <li><a href="#defer">Defer Statements</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">✨ Advanced Features <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#generics">Generics</a></li>
+              <li><a href="#concurrency">Concurrency</a></li>
+              <li><a href="#goroutines">Goroutines</a></li>
+              <li><a href="#channels">Channels</a></li>
+              <li><a href="#error-handling">Error Handling</a></li>
+              <li><a href="#type-assertions">Type Assertions</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">📚 Standard Library <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#vibez">Vibez (fmt)</a></li>
+              <li><a href="#dropz">Dropz (io)</a></li>
+              <li><a href="#vibe-life">Vibe Life (os)</a></li>
+              <li><a href="#stringz">Stringz (strings)</a></li>
+              <li><a href="#mathz">Mathz (math)</a></li>
+              <li><a href="#timez">Timez (time)</a></li>
+              <li><a href="#concurrenz">Concurrenz (sync)</a></li>
+              <li><a href="#web-vibez">Web Vibez (net/http)</a></li>
+              <li><a href="#json-tea">JSON Tea (encoding/json)</a></li>
+            </ul>
+          </div>
+
+          <div class="nav-section">
+            <h3 class="section-toggle">🔧 Tools & Ecosystem <span class="toggle-icon">+</span></h3>
+            <ul class="collapsible collapsed">
+              <li><a href="#toolchain">Toolchain</a></li>
+              <li><a href="#build">Build System</a></li>
+              <li><a href="#testing">Testing</a></li>
+              <li><a href="#package-management">Package Management</a></li>
+              <li><a href="#editor-support">Editor Support</a></li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <div class="docs-content">
+        <section id="overview" class="docs-section animate-on-scroll">
+          <div class="section-pop">big facts</div>
+          <h2>Language Overview</h2>
+          <p>CURSED is an esoteric programming language designed to combine the simplicity and efficiency of Go with the contemporary linguistic flair of Generation Z slang. It's statically typed, garbage collected, and features built-in concurrency support.</p>
           
-          <h3>Your First CURSED Program</h3>
-          <p>Create a file named <code>hello.csd</code> with the following content:</p>
-          
-          <div class="code-block code-example">
+          <div class="feature-box">
+            <h3>Core Design Principles</h3>
+            <ul>
+              <li><span class="highlight-text">Syntactic Familiarity with a Twist:</span> Go-like grammar with Gen Z slang keywords</li>
+              <li><span class="highlight-text">Self-Hosting:</span> Designed to compile itself through bootstrapping</li>
+              <li><span class="highlight-text">Pragmatic Absurdity:</span> Esoteric by design yet fully functional</li>
+              <li><span class="highlight-text">Compilation Efficiency:</span> Produces efficient code without sacrificing readability</li>
+            </ul>
+          </div>
+
+          <div class="feature-box">
+            <h3>Language Characteristics</h3>
+            <ul>
+              <li><span class="emoji-tag">✨</span> Static typing with type inference</li>
+              <li><span class="emoji-tag">🗑️</span> Automatic garbage collection</li>
+              <li><span class="emoji-tag">⚡</span> Built-in concurrency primitives</li>
+              <li><span class="emoji-tag">📦</span> Package-based code organization</li>
+              <li><span class="emoji-tag">💬</span> Expression-based constructs</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="syntax" class="docs-section animate-on-scroll">
+          <div class="section-pop">straight fire</div>
+          <h2>Syntax Basics</h2>
+          <p>CURSED syntax replaces traditional programming keywords with Gen Z slang while maintaining a familiar structure.</p>
+
+          <div class="code-block">
+            <div class="code-title">Comments</div>
+            <pre><code><span class="comment">fr fr This is a line comment</span>
+
+<span class="comment">no cap
+This is a block comment
+that spans multiple lines
+on god</span></code></pre>
+          </div>
+
+          <div class="keyword-table">
+            <h3>Keyword Translation Table</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Traditional</th>
+                  <th>CURSED</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>package</td>
+                  <td><span class="keyword">vibe</span></td>
+                  <td>Package declaration</td>
+                </tr>
+                <tr>
+                  <td>import</td>
+                  <td><span class="keyword">yeet</span></td>
+                  <td>Import dependencies</td>
+                </tr>
+                <tr>
+                  <td>func</td>
+                  <td><span class="keyword">slay</span></td>
+                  <td>Function definition</td>
+                </tr>
+                <tr>
+                  <td>return</td>
+                  <td><span class="keyword">yolo</span></td>
+                  <td>Return value from function</td>
+                </tr>
+                <tr>
+                  <td>var</td>
+                  <td><span class="keyword">sus</span></td>
+                  <td>Variable declaration</td>
+                </tr>
+                <tr>
+                  <td>const</td>
+                  <td><span class="keyword">facts</span></td>
+                  <td>Constant declaration</td>
+                </tr>
+                <tr>
+                  <td>if</td>
+                  <td><span class="keyword">lowkey</span></td>
+                  <td>Conditional statement</td>
+                </tr>
+                <tr>
+                  <td>else</td>
+                  <td><span class="keyword">highkey</span></td>
+                  <td>Alternative conditional</td>
+                </tr>
+                <tr>
+                  <td>for</td>
+                  <td><span class="keyword">bestie</span></td>
+                  <td>Loop statement</td>
+                </tr>
+                <tr>
+                  <td>while</td>
+                  <td><span class="keyword">periodt</span></td>
+                  <td>While loop</td>
+                </tr>
+                <tr>
+                  <td>switch</td>
+                  <td><span class="keyword">vibe_check</span></td>
+                  <td>Switch statement</td>
+                </tr>
+                <tr>
+                  <td>case</td>
+                  <td><span class="keyword">mood</span></td>
+                  <td>Case in switch</td>
+                </tr>
+                <tr>
+                  <td>default</td>
+                  <td><span class="keyword">basic</span></td>
+                  <td>Default case</td>
+                </tr>
+                <tr>
+                  <td>break</td>
+                  <td><span class="keyword">ghosted</span></td>
+                  <td>Break from loop</td>
+                </tr>
+                <tr>
+                  <td>continue</td>
+                  <td><span class="keyword">simp</span></td>
+                  <td>Continue to next iteration</td>
+                </tr>
+                <tr>
+                  <td>true</td>
+                  <td><span class="keyword">based</span></td>
+                  <td>Boolean true</td>
+                </tr>
+                <tr>
+                  <td>false</td>
+                  <td><span class="keyword">sus</span></td>
+                  <td>Boolean false</td>
+                </tr>
+                <tr>
+                  <td>nil</td>
+                  <td><span class="keyword">cap</span></td>
+                  <td>Null value</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="types" class="docs-section animate-on-scroll">
+          <div class="section-pop">it's giving</div>
+          <h2>Data Types</h2>
+          <p>CURSED has a rich type system with basic and composite types. All with a vibe that just hits different.</p>
+
+          <div class="feature-box">
+            <h3>Basic Types</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>lit</code></td>
+                  <td>Boolean</td>
+                  <td><code>based</code> (true), <code>sus</code> (false)</td>
+                </tr>
+                <tr>
+                  <td><code>smol</code></td>
+                  <td>8-bit integer</td>
+                  <td><code>sus age smol = 25</code></td>
+                </tr>
+                <tr>
+                  <td><code>mid</code></td>
+                  <td>16-bit integer</td>
+                  <td><code>sus count mid = 1000</code></td>
+                </tr>
+                <tr>
+                  <td><code>normie</code></td>
+                  <td>32-bit integer</td>
+                  <td><code>sus population normie = 8000000</code></td>
+                </tr>
+                <tr>
+                  <td><code>thicc</code></td>
+                  <td>64-bit integer</td>
+                  <td><code>sus bigNum thicc = 9223372036854775807</code></td>
+                </tr>
+                <tr>
+                  <td><code>snack</code></td>
+                  <td>32-bit float</td>
+                  <td><code>sus price snack = 9.99</code></td>
+                </tr>
+                <tr>
+                  <td><code>meal</code></td>
+                  <td>64-bit float</td>
+                  <td><code>sus pi meal = 3.14159265359</code></td>
+                </tr>
+                <tr>
+                  <td><code>tea</code></td>
+                  <td>String</td>
+                  <td><code>sus message tea = "spill the tea"</code></td>
+                </tr>
+                <tr>
+                  <td><code>sip</code></td>
+                  <td>Character</td>
+                  <td><code>sus letter sip = 'A'</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="feature-box">
+            <h3>Composite Types</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Syntax</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Array</td>
+                  <td><code>[n]T</code></td>
+                  <td>Fixed-size array of type T</td>
+                </tr>
+                <tr>
+                  <td>Slice</td>
+                  <td><code>[]T</code></td>
+                  <td>Dynamic array of type T</td>
+                </tr>
+                <tr>
+                  <td>Map</td>
+                  <td><code>tea[K]V</code></td>
+                  <td>Hashmap with keys of type K and values of type V</td>
+                </tr>
+                <tr>
+                  <td>Struct</td>
+                  <td><code>squad</code></td>
+                  <td>Collection of fields</td>
+                </tr>
+                <tr>
+                  <td>Interface</td>
+                  <td><code>collab</code></td>
+                  <td>Set of method signatures</td>
+                </tr>
+                <tr>
+                  <td>Pointer</td>
+                  <td><code>@T</code></td>
+                  <td>Pointer to value of type T</td>
+                </tr>
+                <tr>
+                  <td>Channel</td>
+                  <td><code>dm<T></code></td>
+                  <td>Channel for communicating values of type T</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-title">Type Declaration Examples</div>
+            <pre><code><span class="comment">fr fr Define a struct type</span>
+<span class="keyword">be_like</span> Person <span class="keyword">squad</span> {
+    name tea
+    age normie
+    vibes []tea
+}
+
+<span class="comment">fr fr Define an interface type</span>
+<span class="keyword">be_like</span> Speaker <span class="keyword">collab</span> {
+    speak() tea
+    getVolume() normie
+}</code></pre>
+          </div>
+        </section>
+
+        <section id="control-flow" class="docs-section animate-on-scroll">
+          <div class="section-pop">vibe check</div>
+          <h2>Control Flow</h2>
+          <p>Control the flow of your program with these statements that pass the vibe check.</p>
+
+          <div class="code-block">
+            <div class="code-title">If Statement</div>
+            <pre><code><span class="keyword">lowkey</span> score > 90 {
+    grade = "A"
+} <span class="keyword">highkey</span> <span class="keyword">lowkey</span> score > 80 {
+    grade = "B"
+} <span class="keyword">highkey</span> <span class="keyword">lowkey</span> score > 70 {
+    grade = "C"
+} <span class="keyword">highkey</span> {
+    grade = "F"
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-title">Switch Statement</div>
+            <pre><code><span class="keyword">vibe_check</span> day {
+    <span class="keyword">mood</span> "Monday", "Tuesday":
+        vibe = "starting the week"
+    <span class="keyword">mood</span> "Wednesday":
+        vibe = "halfway there"
+    <span class="keyword">mood</span> "Friday":
+        vibe = "weekend energy"
+    <span class="keyword">basic</span>:
+        vibe = "just vibing"
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-title">Loops</div>
+            <pre><code><span class="comment">fr fr Traditional for loop</span>
+<span class="keyword">bestie</span> i := 0; i < 10; i++ {
+    <span class="comment">fr fr Loop body</span>
+}
+
+<span class="comment">fr fr While loop</span>
+<span class="keyword">periodt</span> isVibing {
+    <span class="comment">fr fr Do something repeatedly</span>
+}
+
+<span class="comment">fr fr For-range loop</span>
+<span class="keyword">bestie</span> index, value := <span class="keyword">flex</span> items {
+    <span class="comment">fr fr Process each item</span>
+}
+
+<span class="comment">fr fr Infinite loop with break</span>
+<span class="keyword">bestie</span> {
+    <span class="keyword">lowkey</span> shouldStop() {
+        <span class="keyword">ghosted</span>
+    }
+}</code></pre>
+          </div>
+        </section>
+
+        <section id="stdlib" class="docs-section animate-on-scroll">
+          <div class="section-pop">full tea</div>
+          <h2>Standard Library</h2>
+          <p>CURSED comes with a standard library that's totally bussin', providing core functionality for common programming tasks.</p>
+
+          <div class="feature-box">
+            <h3>Core Packages</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>CURSED Package</th>
+                  <th>Traditional Equivalent</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>vibez</code></td>
+                  <td>fmt</td>
+                  <td>Formatted I/O operations</td>
+                </tr>
+                <tr>
+                  <td><code>dropz</code></td>
+                  <td>io</td>
+                  <td>Basic I/O primitives</td>
+                </tr>
+                <tr>
+                  <td><code>vibe_life</code></td>
+                  <td>os</td>
+                  <td>Operating system functionality</td>
+                </tr>
+                <tr>
+                  <td><code>stringz</code></td>
+                  <td>strings</td>
+                  <td>String manipulation</td>
+                </tr>
+                <tr>
+                  <td><code>mathz</code></td>
+                  <td>math</td>
+                  <td>Mathematical functions</td>
+                </tr>
+                <tr>
+                  <td><code>timez</code></td>
+                  <td>time</td>
+                  <td>Time-related functionality</td>
+                </tr>
+                <tr>
+                  <td><code>concurrenz</code></td>
+                  <td>sync</td>
+                  <td>Synchronization primitives</td>
+                </tr>
+                <tr>
+                  <td><code>web_vibez</code></td>
+                  <td>net/http</td>
+                  <td>HTTP client and server</td>
+                </tr>
+                <tr>
+                  <td><code>json_tea</code></td>
+                  <td>encoding/json</td>
+                  <td>JSON encoding and decoding</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-title">Using the vibez package</div>
             <pre><code><span class="keyword">vibe</span> main
 
+<span class="keyword">yeet</span> "vibez"
+
 <span class="keyword">slay</span> main() {
-    print(<span class="string">"no cap, hello world!"</span>)
+    <span class="comment">fr fr Print to console</span>
+    vibez.spill("Hello, World!")  <span class="comment">fr fr Equivalent to fmt.Println</span>
+    
+    name := "bestie"
+    vibez.spillf("Hey %s, what's good?", name)  <span class="comment">fr fr Equivalent to fmt.Printf</span>
+    
+    output := vibez.spillstr("Value: %d", 42)  <span class="comment">fr fr Equivalent to fmt.Sprintf</span>
 }</code></pre>
           </div>
-          
-          <p>Run your program with:</p>
-          
-          <div class="code-block code-example">
-            <pre><code>$ cursed run hello.csd</code></pre>
-          </div>
-          
-          <p>You should see the following output:</p>
-          
-          <div class="code-block code-example">
-            <pre><code>no cap, hello world!</code></pre>
-          </div>
-        </section>
-        
-        <section id="language-basics" class="docs-section">
-          <h2>Language Basics</h2>
-          <p>CURSED is a compiled, statically typed language with a syntax inspired by Go but using Gen Z slang as keywords.</p>
-          
-          <h3 id="keywords">Keywords</h3>
-          <p>Here's a mapping between traditional programming keywords and CURSED keywords:</p>
-          
-          <table class="docs-table">
-            <thead>
-              <tr>
-                <th>Traditional</th>
-                <th>CURSED</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>package</td>
-                <td>vibe</td>
-                <td>Declares the package name</td>
-              </tr>
-              <tr>
-                <td>import</td>
-                <td>yeet</td>
-                <td>Imports other packages</td>
-              </tr>
-              <tr>
-                <td>func</td>
-                <td>slay</td>
-                <td>Defines a function</td>
-              </tr>
-              <tr>
-                <td>return</td>
-                <td>yolo</td>
-                <td>Returns a value from a function</td>
-              </tr>
-              <tr>
-                <td>var</td>
-                <td>sus</td>
-                <td>Declares a variable</td>
-              </tr>
-              <tr>
-                <td>const</td>
-                <td>facts</td>
-                <td>Declares a constant</td>
-              </tr>
-              <tr>
-                <td>if</td>
-                <td>lowkey</td>
-                <td>Conditional statement</td>
-              </tr>
-              <tr>
-                <td>else</td>
-                <td>highkey</td>
-                <td>Alternative branch</td>
-              </tr>
-              <tr>
-                <td>for</td>
-                <td>bestie</td>
-                <td>Loop statement</td>
-              </tr>
-              <tr>
-                <td>while</td>
-                <td>periodt</td>
-                <td>While loop</td>
-              </tr>
-              <tr>
-                <td>switch</td>
-                <td>vibe_check</td>
-                <td>Switch statement</td>
-              </tr>
-              <tr>
-                <td>case</td>
-                <td>mood</td>
-                <td>Case in a switch statement</td>
-              </tr>
-              <tr>
-                <td>default</td>
-                <td>basic</td>
-                <td>Default case</td>
-              </tr>
-              <tr>
-                <td>break</td>
-                <td>ghosted</td>
-                <td>Breaks out of a loop</td>
-              </tr>
-              <tr>
-                <td>continue</td>
-                <td>simp</td>
-                <td>Continues to next iteration</td>
-              </tr>
-              <tr>
-                <td>type</td>
-                <td>be_like</td>
-                <td>Defines a type</td>
-              </tr>
-              <tr>
-                <td>struct</td>
-                <td>squad</td>
-                <td>Composite data type</td>
-              </tr>
-              <tr>
-                <td>interface</td>
-                <td>collab</td>
-                <td>Interface type</td>
-              </tr>
-              <tr>
-                <td>map</td>
-                <td>tea</td>
-                <td>Map type</td>
-              </tr>
-              <tr>
-                <td>chan</td>
-                <td>dm</td>
-                <td>Channel type</td>
-              </tr>
-              <tr>
-                <td>go</td>
-                <td>stan</td>
-                <td>Starts a goroutine</td>
-              </tr>
-              <tr>
-                <td>range</td>
-                <td>flex</td>
-                <td>Iterates over elements</td>
-              </tr>
-              <tr>
-                <td>defer</td>
-                <td>later</td>
-                <td>Defers execution</td>
-              </tr>
-              <tr>
-                <td>true</td>
-                <td>based</td>
-                <td>Boolean true value</td>
-              </tr>
-              <tr>
-                <td>false</td>
-                <td>sus</td>
-                <td>Boolean false value</td>
-              </tr>
-              <tr>
-                <td>nil</td>
-                <td>cap</td>
-                <td>Zero value for pointers, etc.</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <h3 id="types">Types</h3>
-          <p>CURSED has several built-in types:</p>
-          
-          <table class="docs-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Description</th>
-                <th>Example</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>lit</td>
-                <td>Boolean</td>
-                <td>based, sus</td>
-              </tr>
-              <tr>
-                <td>smol</td>
-                <td>8-bit integer</td>
-                <td>127, -128</td>
-              </tr>
-              <tr>
-                <td>mid</td>
-                <td>16-bit integer</td>
-                <td>32767, -32768</td>
-              </tr>
-              <tr>
-                <td>normie</td>
-                <td>32-bit integer</td>
-                <td>2147483647, -2147483648</td>
-              </tr>
-              <tr>
-                <td>thicc</td>
-                <td>64-bit integer</td>
-                <td>9223372036854775807, -9223372036854775808</td>
-              </tr>
-              <tr>
-                <td>snack</td>
-                <td>32-bit float</td>
-                <td>3.14, -2.5</td>
-              </tr>
-              <tr>
-                <td>meal</td>
-                <td>64-bit float</td>
-                <td>3.141592653589793, -2.5</td>
-              </tr>
-              <tr>
-                <td>tea</td>
-                <td>String</td>
-                <td>"hello", "world"</td>
-              </tr>
-              <tr>
-                <td>sip</td>
-                <td>Character</td>
-                <td>'a', '世', '\n'</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <h3 id="variables">Variables</h3>
-          <p>You can declare variables using the <code>sus</code> keyword or with short declaration syntax:</p>
-          
-          <div class="code-block code-example">
-            <pre><code><span class="keyword">sus</span> name tea = <span class="string">"CURSED"</span>
-<span class="keyword">sus</span> age normie = 25
 
-fr fr Short declaration syntax
-vibe := <span class="string">"check"</span>    fr fr Type inferred as tea
-count := 42       fr fr Type inferred as normie</code></pre>
-          </div>
-          
-          <h3 id="functions">Functions</h3>
-          <p>Functions are declared using the <code>slay</code> keyword:</p>
-          
-          <div class="code-block code-example">
-            <pre><code><span class="keyword">slay</span> add(x, y normie) normie {
-    <span class="keyword">yolo</span> x + y
-}
+          <div class="code-block">
+            <div class="code-title">File operations with dropz and vibe_life</div>
+            <pre><code><span class="keyword">yeet</span> "dropz"
+<span class="keyword">yeet</span> "vibe_life"
+<span class="keyword">yeet</span> "vibez"
 
-<span class="keyword">slay</span> greet(name tea) {
-    print(<span class="string">"Hey, "</span> + name + <span class="string">"!"</span>)
-}
-
-<span class="keyword">slay</span> divide(x, y snack) (snack, tea) {
-    <span class="keyword">lowkey</span> y == 0 {
-        <span class="keyword">yolo</span> 0, <span class="string">"can't divide by zero"</span>
+<span class="keyword">slay</span> writeToFile(filename tea, data tea) tea {
+    file, err := vibe_life.Create(filename)
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span> err.Error()
     }
-    <span class="keyword">yolo</span> x / y, <span class="string">""</span>
+    <span class="keyword">later</span> file.Close()
+    
+    _, err = file.WriteString(data)
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span> err.Error()
+    }
+    
+    <span class="keyword">yolo</span> "Successfully wrote to " + filename
 }</code></pre>
           </div>
         </section>
-        
-        <!-- Additional sections would be included here -->
       </div>
     </div>
   </main>
@@ -458,13 +817,13 @@ count := 42       fr fr Type inferred as normie</code></pre>
           <div class="footer-logo">
             <span>CURSED</span>
           </div>
-          <p>A programming language that combines Go-like syntax with GenZ slang. Created for education, fun, and the culture.</p>
+          <p>A programming language that combines Go-like syntax with GenZ slang. <span class="neon-text">Created for education</span>, fun, and <span class="highlight-text">the culture</span>. <span class="big-word">Period.</span></p>
         </div>
         
         <div class="footer-column">
           <h3>Resources</h3>
           <ul>
-            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="#">Documentation</a></li>
             <li><a href="#">Tutorials</a></li>
             <li><a href="#">API Reference</a></li>
             <li><a href="#">Examples</a></li>
@@ -474,7 +833,7 @@ count := 42       fr fr Type inferred as normie</code></pre>
         <div class="footer-column">
           <h3>Community</h3>
           <ul>
-            <li><a href="https://github.com/ghuntley/cursed">GitHub</a></li>
+            <li><a href="#">GitHub</a></li>
             <li><a href="#">Discord</a></li>
             <li><a href="#">Twitter</a></li>
             <li><a href="#">Blog</a></li>
@@ -494,10 +853,87 @@ count := 42       fr fr Type inferred as normie</code></pre>
       
       <div class="copyright">
         <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+        <div class="social-icons">
+          <a href="#" class="social-icon">👾</a>
+          <a href="#" class="social-icon">📸</a>
+          <a href="#" class="social-icon">💬</a>
+          <a href="#" class="social-icon">🐾</a>
+        </div>
+        <div class="trendy-badges">
+          <span class="trendy-badge">#Aesthetic</span>
+          <span class="trendy-badge">#CodeCore</span>
+          <span class="trendy-badge">#BuiltDifferent</span>
+        </div>
       </div>
     </div>
   </footer>
 
   <script src="scripts.js"></script>
+<script>
+  // Sidebar toggle functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle sidebar visibility
+    const sidebarToggle = document.querySelector('.sidebar-toggle-btn');
+    const sidebar = document.querySelector('.docs-sidebar');
+    const docContent = document.querySelector('.docs-content');
+    
+    sidebarToggle.addEventListener('click', function() {
+      sidebar.classList.toggle('collapsed');
+      docContent.classList.toggle('expanded');
+    });
+    
+    // Collapsible sections
+    const sectionToggles = document.querySelectorAll('.section-toggle');
+    
+    sectionToggles.forEach(toggle => {
+      toggle.addEventListener('click', function() {
+        const section = this.closest('.nav-section');
+        const content = section.querySelector('.collapsible');
+        const toggleIcon = this.querySelector('.toggle-icon');
+        
+        content.classList.toggle('collapsed');
+        toggleIcon.textContent = content.classList.contains('collapsed') ? '+' : '-';
+      });
+    });
+    
+    // Jump menu
+    const jumpMenu = document.getElementById('section-jump');
+    
+    jumpMenu.addEventListener('change', function() {
+      if (this.value) {
+        document.querySelector(this.value).scrollIntoView({ behavior: 'smooth' });
+        this.value = ""; // Reset after jump
+      }
+    });
+    
+    // Search functionality
+    const searchInput = document.getElementById('doc-search');
+    const allLinks = document.querySelectorAll('.docs-nav a');
+    
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      
+      allLinks.forEach(link => {
+        const linkText = link.textContent.toLowerCase();
+        const listItem = link.parentElement;
+        
+        if (searchTerm === '' || linkText.includes(searchTerm)) {
+          listItem.style.display = '';
+          // Expand parent section if match found
+          if (searchTerm !== '' && linkText.includes(searchTerm)) {
+            const parentSection = link.closest('.nav-section');
+            const collapsible = parentSection.querySelector('.collapsible');
+            const toggleIcon = parentSection.querySelector('.toggle-icon');
+            
+            collapsible.classList.remove('collapsed');
+            toggleIcon.textContent = '-';
+          }
+        } else {
+          listItem.style.display = 'none';
+        }
+      });
+    });
+  });
+</script>
 </body>
 </html>

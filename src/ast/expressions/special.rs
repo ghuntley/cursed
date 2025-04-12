@@ -8,10 +8,10 @@
 //!
 //! These expressions provide important functionality beyond typical operators and literals.
 
-use std::any::Any;
-use crate::ast::{Node, Expression};
-use crate::lexer::token::Token;
 use super::identifiers::Identifier;
+use crate::ast::{Expression, Node};
+use crate::lexer::token::Token;
+use std::any::Any;
 
 // The TypeConversionExpression is actually defined in types.rs, so we should remove this duplicate
 
@@ -44,7 +44,12 @@ impl Node for AssignmentExpression {
     }
 
     fn string(&self) -> String {
-        format!("{} {} {}", self.name.string(), self.token_literal(), self.value.string())
+        format!(
+            "{} {} {}",
+            self.name.string(),
+            self.token_literal(),
+            self.value.string()
+        )
     }
 }
 
@@ -93,34 +98,35 @@ impl Node for BeLikeExpression {
     fn token_literal(&self) -> String {
         self.token.clone()
     }
-    
+
     fn string(&self) -> String {
         let mut out = format!("be_like {}", self.struct_name.string());
-        
+
         // Format type arguments if present
         if !self.type_arguments.is_empty() {
-            let type_args: Vec<String> = self.type_arguments.iter()
-                .map(|arg| arg.string())
-                .collect();
+            let type_args: Vec<String> =
+                self.type_arguments.iter().map(|arg| arg.string()).collect();
             out.push_str(&format!("[{}]", type_args.join(", ")));
         }
-        
+
         if !self.fields.is_empty() {
             out.push_str(" {");
-            let fields_str: Vec<String> = self.fields.iter()
+            let fields_str: Vec<String> = self
+                .fields
+                .iter()
                 .map(|(name, expr)| format!("{}: {}", name, expr.string()))
                 .collect();
             out.push_str(&fields_str.join(", "));
             out.push_str("}");
         }
-        
+
         out
     }
 }
 
 impl Expression for BeLikeExpression {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -155,7 +161,7 @@ impl Node for DefaultCase {
     fn token_literal(&self) -> String {
         self.token.clone()
     }
-    
+
     fn string(&self) -> String {
         "basic".to_string()
     }
@@ -163,7 +169,7 @@ impl Node for DefaultCase {
 
 impl Expression for DefaultCase {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }

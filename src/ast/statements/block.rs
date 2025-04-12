@@ -7,8 +7,8 @@
 //! Blocks create new scopes for variables and enforce execution ordering of
 //! their contained statements.
 
-use std::any::Any;
 use crate::ast::{Node, Statement};
+use std::any::Any;
 
 /// Represents a block of statements in the AST.
 ///
@@ -53,7 +53,7 @@ impl Node for BlockStatement {
 
 impl Statement for BlockStatement {
     fn statement_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

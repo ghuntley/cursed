@@ -7,8 +7,8 @@
 //! Each literal type implements both the `Node` and `Expression` traits,
 //! allowing them to be used in the AST as expressions.
 
+use crate::ast::{Expression, Node};
 use std::any::Any;
-use crate::ast::{Node, Expression};
 
 /// Represents a string literal in the source code
 ///
@@ -30,13 +30,13 @@ impl Node for StringLiteral {
     }
 
     fn string(&self) -> String {
-        format!("\"{}\"" , self.value)
+        format!("\"{}\"", self.value)
     }
 }
 
 impl Expression for StringLiteral {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -69,11 +69,11 @@ impl Node for IntegerLiteral {
 
 impl Expression for IntegerLiteral {
     fn expression_node(&self) {}
-    
+
     fn node_type(&self) -> &str {
         "IntegerLiteral"
     }
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -97,7 +97,7 @@ impl Node for FloatLiteral {
 
 impl Expression for FloatLiteral {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -121,11 +121,11 @@ impl Node for BooleanLiteral {
 
 impl Expression for BooleanLiteral {
     fn expression_node(&self) {}
-    
+
     fn node_type(&self) -> &str {
         "BooleanLiteral"
     }
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -149,7 +149,7 @@ impl Node for ByteLiteral {
 
 impl Expression for ByteLiteral {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -173,7 +173,7 @@ impl Node for RuneLiteral {
 
 impl Expression for RuneLiteral {
     fn expression_node(&self) {}
-    
+
     fn as_any(&self) -> &dyn Any {
         self
     }

@@ -89,14 +89,14 @@ slay main() {
     vibez.spill(test_day_of_week(day3));
     vibez.spill(test_day_of_week(day9));
     
-    vibez.spill("\n=== Grade Test ===");
+    vibez.spill("=== Grade Test ===");
     vibez.spill(test_grade(95));
     vibez.spill(test_grade(85));
     vibez.spill(test_grade(75));
     vibez.spill(test_grade(65));
     vibez.spill(test_grade(30));
     
-    vibez.spill("\n=== Fallthrough Test ===");
+    vibez.spill("=== Fallthrough Test ===");
     vibez.spill(test_fallthrough(1));
     vibez.spill(test_fallthrough(2));
     vibez.spill(test_fallthrough(3));

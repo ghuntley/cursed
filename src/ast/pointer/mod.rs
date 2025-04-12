@@ -7,11 +7,11 @@
 //!
 //! In CURSED, pointers are denoted with the @ symbol, similar to how Go uses * for pointers.
 
-mod types;
 mod operations;
+mod types;
 
-pub use types::PointerType;
 pub use operations::PointerDereference;
+pub use types::PointerType;
 
 #[cfg(test)]
 mod tests;

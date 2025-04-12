@@ -1,7 +1,7 @@
+use cursed::ast::Program;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
-use cursed::ast::Program;
 use cursed::prelude::*;
 
 // Test pointer types and operations in the parser
@@ -25,18 +25,22 @@ fn test_pointer_parsing() -> Result<(), Error> {
         yolo 0;
     }
     "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
-    
+
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
         panic!("Parser errors: {:?}", parser.errors());
     }
-    
-    assert_eq!(program.statements.len(), 1, "Program should have one statement");
-    
+
+    assert_eq!(
+        program.statements.len(),
+        1,
+        "Program should have one statement"
+    );
+
     // Test functionality will be implemented in the JIT integration tests
     Ok(())
 }
@@ -62,18 +66,22 @@ fn test_pointer_dereference() -> Result<(), Error> {
         yolo 0;
     }
     "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
-    
+
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
         panic!("Parser errors: {:?}", parser.errors());
     }
-    
-    assert_eq!(program.statements.len(), 1, "Program should have one statement");
-    
+
+    assert_eq!(
+        program.statements.len(),
+        1,
+        "Program should have one statement"
+    );
+
     // Test functionality will be implemented in the JIT integration tests
     Ok(())
 }
@@ -104,18 +112,22 @@ fn test_pointer_struct() -> Result<(), Error> {
         yolo 0;
     }
     "#;
-    
+
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
-    
+
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
         panic!("Parser errors: {:?}", parser.errors());
     }
-    
-    assert_eq!(program.statements.len(), 2, "Program should have two statements");
-    
+
+    assert_eq!(
+        program.statements.len(),
+        2,
+        "Program should have two statements"
+    );
+
     // Test functionality will be implemented in the JIT integration tests
     Ok(())
 }

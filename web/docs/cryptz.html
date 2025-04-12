@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptz - CURSED Programming Language</title>
+    <link rel="stylesheet" href="../styles/docs.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><span class="gradient-text">u26d3ufe0f Cryptz u26d3ufe0f</span></h1>
+            <p class="subtitle">Secure your secrets, bestie!</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="doc-grid">
+            <aside class="sidebar">
+                <nav>
+                    <ul>
+                        <li><a href="stringz.html">Stringz</a></li>
+                        <li><a href="json-tea.html">JSON Tea</a></li>
+                        <li><a href="#" class="active">Cryptz</a></li>
+                        <li><a href="web-vibez.html">Web Vibez</a></li>
+                        <li><a href="regex-vibez.html">Regex Vibez</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <article class="content">
+                <section class="intro">
+                    <div class="tag-container">
+                        <span class="tag">Security</span>
+                        <span class="tag">Encryption</span>
+                        <span class="tag">Hashing</span>
+                    </div>
+                    <p class="lead">The <code>cryptz</code> package brings the secure vibes to your app with hashing, encryption, and all the security essentials. Keep those secrets ACTUALLY secret!</p>
+                </section>
+
+                <section>
+                    <h2>u2728 Getting Started u2728</h2>
+                    <p>First things first, import the package and you're ready to secure all the things:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">crypto_basics.csd</div>
+                        <pre><code>yeet "vibez";
+yeet "cryptz";
+
+slay main() {
+    // Hash a string
+    sus hash = cryptz.SHA256("password123");
+    vibez.spill("SHA-256 hash:", hash);
+    
+    // Encrypt some sensitive data
+    sus key = "32-character-key-for-AES-256-000";
+    sus ciphertext, err = cryptz.Encrypt("Top secret info", key);
+    
+    lowkey err != cap {
+        vibez.spill("Encryption failed:", err);
+    } highkey {
+        vibez.spill("Encrypted data:", ciphertext);
+    }
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudd11 Hashing Functions ud83dudd11</h2>
+                    <p>Hash functions are one-way transformations that map data of any size to fixed-size values:</p>
+                    
+                    <div class="hash-grid">
+                        <div class="hash-card">
+                            <h3>MD5</h3>
+                            <p><em>128 bits / 32 hex chars</em></p>
+                            <p class="hash-warning">Not secure for cryptographic use!</p>
+                            <div class="code-snippet">
+                                <code>cryptz.MD5("hello");</code>
+                            </div>
+                        </div>
+                        
+                        <div class="hash-card">
+                            <h3>SHA-1</h3>
+                            <p><em>160 bits / 40 hex chars</em></p>
+                            <p class="hash-warning">Not recommended for new apps</p>
+                            <div class="code-snippet">
+                                <code>cryptz.SHA1("hello");</code>
+                            </div>
+                        </div>
+                        
+                        <div class="hash-card secure">
+                            <h3>SHA-256</h3>
+                            <p><em>256 bits / 64 hex chars</em></p>
+                            <p class="hash-safe">Industry standard</p>
+                            <div class="code-snippet">
+                                <code>cryptz.SHA256("hello");</code>
+                            </div>
+                        </div>
+                        
+                        <div class="hash-card secure">
+                            <h3>SHA-512</h3>
+                            <p><em>512 bits / 128 hex chars</em></p>
+                            <p class="hash-safe">Extra secure</p>
+                            <div class="code-snippet">
+                                <code>cryptz.SHA512("hello");</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>Hash Function Properties</h3>
+                        <ul>
+                            <li><strong>Deterministic:</strong> Same input = same output, always</li>
+                            <li><strong>Fast to compute:</strong> Quick to generate</li>
+                            <li><strong>One-way:</strong> Can't reverse to get original data</li>
+                            <li><strong>Avalanche effect:</strong> Small changes cause completely different hashes</li>
+                            <li><strong>Collision resistant:</strong> Hard to find two inputs with same hash</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudcdc HMAC Functions ud83dudcdc</h2>
+                    <p>HMAC (Hash-based Message Authentication Code) combines a hash function with a secret key to verify both the data integrity and authenticity:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">hmac_example.csd</div>
+                        <pre><code>// Creating an HMAC
+sus message = "API request data";
+sus secretKey = "shared-secret-key";
+
+// HMAC with different hash functions
+sus hmacMD5 = cryptz.HmacMD5(secretKey, message);
+sus hmacSHA1 = cryptz.HmacSHA1(secretKey, message);
+sus hmacSHA256 = cryptz.HmacSHA256(secretKey, message);  // Recommended
+
+vibez.spill("HMAC-SHA256:", hmacSHA256);
+
+// Verifying an HMAC
+sus receivedMessage = "API request data";
+sus receivedHMAC = "received-hmac-from-client";
+sus calculatedHMAC = cryptz.HmacSHA256(secretKey, receivedMessage);
+
+lowkey calculatedHMAC == receivedHMAC {
+    vibez.spill("Message is authentic");
+} highkey {
+    vibez.spill("Message may have been tampered with");
+}</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dudc65 Password Hashing ud83dudc65</h2>
+                    <p>Never store passwords in plain text! Use these functions to securely hash and verify passwords:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">password_hashing.csd</div>
+                        <pre><code>// Hash a password for storage
+slay registerUser(username tea, password tea) {
+    // Automatically salts and hashes the password
+    sus passwordHash, err = cryptz.HashPassword(password);
+    lowkey err != cap {
+        yolo err;
+    }
+    
+    // Store username and hash in database
+    database.saveUser(username, passwordHash);
+    yolo cap;
+}
+
+// Verify a password during login
+slay loginUser(username tea, password tea) lit {
+    // Get stored hash from database
+    sus storedHash = database.getUserPasswordHash(username);
+    lowkey storedHash == "" {
+        yolo cap;  // User not found
+    }
+    
+    // Check if password matches the stored hash
+    sus valid = cryptz.CheckPassword(password, storedHash);
+    yolo valid;
+}</code></pre>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h3>Password Hashing FAQ</h3>
+                        <ul>
+                            <li><strong>What's a salt?</strong> A random value added to each password before hashing to prevent rainbow table attacks</li>
+                            <li><strong>How are passwords stored?</strong> Using bcrypt with salts, automatically managed by the library</li>
+                            <li><strong>Can I retrieve the original password?</strong> No! That's the point - it's a one-way process</li>
+                            <li><strong>What if I need to change hashing algorithms?</strong> Store the new hash when users log in successfully</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>ud83dude31 Encryption ud83dude31</h2>
+                    <p>When you need to store sensitive data that you'll need to retrieve later, use encryption:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">encryption_example.csd</div>
+                        <pre><code>// Encrypt data
+slay storeSecretData(userId tea, secretData tea) tea {
+    // Key should be 32 bytes for AES-256
+    sus encryptionKey = getEncryptionKey();  // Get from secure storage
+    
+    // Encrypt the data - this adds IV and authentication automatically
+    sus encrypted, err = cryptz.Encrypt(secretData, encryptionKey);
+    lowkey err != cap {
+        yolo "Error: " + err;
+    }
+    
+    // Store the encrypted data
+    database.saveEncryptedData(userId, encrypted);
+    yolo "Data encrypted and stored";
+}
+
+// Decrypt data
+slay retrieveSecretData(userId tea) tea {
+    // Get the encrypted data from storage
+    sus encryptedData = database.getEncryptedData(userId);
+    
+    // Get the encryption key
+    sus encryptionKey = getEncryptionKey();
+    
+    // Decrypt the data
+    sus decrypted, err = cryptz.Decrypt(encryptedData, encryptionKey);
+    lowkey err != cap {
+        yolo "Error: " + err;
+    }
+    
+    yolo decrypted;
+}</code></pre>
+                    </div>
+                    
+                    <div class="alert-box">
+                        <h3>ud83dudea8 Encryption Key Management ud83dudea8</h3>
+                        <p>The security of your encryption depends entirely on how well you protect your keys!</p>
+                        <ul>
+                            <li><strong>DO NOT:</strong> Hardcode keys in your source code</li>
+                            <li><strong>DO NOT:</strong> Store keys in plain text config files</li>
+                            <li><strong>DO:</strong> Use environment variables or a secure key management system</li>
+                            <li><strong>DO:</strong> Rotate keys periodically</li>
+                            <li><strong>DO:</strong> Use different keys for different data</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="examples">
+                    <h2>ud83dudc8e Real-World Examples ud83dudc8e</h2>
+                    
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">Secure API Token</div>
+                            <div class="accordion-content">
+                                <div class="code-block">
+                                    <div class="code-title">api_token.csd</div>
+                                    <pre><code>slay generateApiToken(userId tea, expiryTimeSeconds normie) tea {
+    // Create token payload
+    sus now = timez.Now().Unix();
+    sus payload = userId + "!" + tea(now) + "!" + tea(now + thicc(expiryTimeSeconds));
+    
+    // Sign the token with HMAC
+    sus signature = cryptz.HmacSHA256(getApiSecret(), payload);
+    
+    // Combine payload and signature
+    yolo payload + "." + signature;
+}
+
+slay validateApiToken(token tea) (tea, lit) {
+    // Split token into payload and signature
+    sus parts = stringz.Split(token, ".");
+    lowkey len(parts) != 2 {
+        yolo "", cap;  // Invalid format
+    }
+    
+    sus payload = parts[0];
+    sus receivedSignature = parts[1];
+    
+    // Verify signature
+    sus calculatedSignature = cryptz.HmacSHA256(getApiSecret(), payload);
+    lowkey calculatedSignature != receivedSignature {
+        yolo "", cap;  // Invalid signature
+    }
+    
+    // Extract data from payload
+    sus components = stringz.Split(payload, "!");
+    lowkey len(components) != 3 {
+        yolo "", cap;  // Invalid payload
+    }
+    
+    sus userId = components[0];
+    sus expiryTime = thicc(components[2]);
+    
+    // Check if token has expired
+    lowkey timez.Now().Unix() > expiryTime {
+        yolo "", cap;  // Token expired
+    }
+    
+    yolo userId, based;  // Valid token, return the user ID
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <div class="accordion-header">Secure Cookie Data</div>
+                            <div class="accordion-content">
+                                <div class="code-block">
+                                    <div class="code-title">secure_cookies.csd</div>
+                                    <pre><code>slay setSecureCookie(w web_vibez.ResponseWriter, name tea, value tea) {
+    // Encrypt the cookie value
+    sus encryptionKey = getEncryptionKey();
+    sus encrypted, err = cryptz.Encrypt(value, encryptionKey);
+    
+    lowkey err != cap {
+        vibez.spill("Failed to encrypt cookie:", err);
+        yolo;
+    }
+    
+    // Set cookie with the encrypted value
+    sus cookie = web_vibez.Cookie{
+        Name: name,
+        Value: encrypted,
+        Path: "/",
+        HttpOnly: based,  // Can't be read by JavaScript
+        Secure: based,    // Only sent over HTTPS
+        SameSite: web_vibez.SameSiteStrictMode
+    };
+    
+    w.SetCookie(&cookie);
+}
+
+slay getSecureCookie(r @web_vibez.Request, name tea) (tea, lit) {
+    // Get the cookie
+    sus cookie, err = r.Cookie(name);
+    lowkey err != cap {
+        yolo "", cap;  // Cookie not found
+    }
+    
+    // Decrypt the cookie value
+    sus encryptionKey = getEncryptionKey();
+    sus decrypted, err = cryptz.Decrypt(cookie.Value, encryptionKey);
+    
+    lowkey err != cap {
+        vibez.spill("Failed to decrypt cookie:", err);
+        yolo "", cap;  // Invalid cookie
+    }
+    
+    yolo decrypted, based;
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tips">
+                    <h2>Bestie Advice ud83dudc85</h2>
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83dudccc</div>
+                            <h3>Use SHA-256+ for Hashing</h3>
+                            <p>MD5 and SHA-1 are considered broken for security purposes. Always use SHA-256 or SHA-512 for new applications.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83dudd12</div>
+                            <h3>Store Keys Securely</h3>
+                            <p>Your encryption is only as secure as your key storage. Use environment variables or a secure key manager.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83cudfa7</div>
+                            <h3>Never Roll Your Own Crypto</h3>
+                            <p>Use the built-in functions rather than implementing your own cryptographic algorithms.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">ud83dudd50</div>
+                            <h3>Rotate Keys Regularly</h3>
+                            <p>Change your encryption keys periodically, especially after staff changes or potential breaches.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="security-checklist">
+                    <h2>ud83dudd18 Security Checklist ud83dudd18</h2>
+                    <p>Keep these in mind when implementing security features:</p>
+                    
+                    <div class="checklist">
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check1" checked disabled>
+                            <label for="check1">Use <code>cryptz.HashPassword</code> for storing passwords, never plain text</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check2" checked disabled>
+                            <label for="check2">Use HTTPS for all communications (web_vibez.ListenAndServeTLS)</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check3" checked disabled>
+                            <label for="check3">Implement rate limiting for login attempts</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check4" checked disabled>
+                            <label for="check4">Set secure flags on cookies (HttpOnly, Secure, SameSite)</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check5" checked disabled>
+                            <label for="check5">Validate and sanitize all user input</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check6" checked disabled>
+                            <label for="check6">Use prepared statements for database queries</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check7" checked disabled>
+                            <label for="check7">Implement proper authentication and authorization</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check8" checked disabled>
+                            <label for="check8">Keep dependencies and libraries updated</label>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="next-steps">
+                    <h2>Keep The Vibe Going</h2>
+                    <div class="next-links">
+                        <a href="web-vibez.html" class="next-link">
+                            <span class="next-link-text">Secure Web Apps</span>
+                            <span class="next-link-arrow">u2192</span>
+                        </a>
+                        <a href="json-tea.html" class="next-link">
+                            <span class="next-link-text">JSON Handling</span>
+                            <span class="next-link-arrow">u2192</span>
+                        </a>
+                    </div>
+                </section>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>u00a9 2025 CURSED Programming Language. Security's not optional, bestie.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">GitHub</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../scripts.js"></script>
+</body>
+</html>

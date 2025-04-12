@@ -33,9 +33,9 @@
 //! result := reflectz.call_method(user, "greet", "Hello")
 //! ```
 
-use std::rc::Rc;
-use crate::object::Object;
 use crate::error::Error;
+use crate::object::Object;
+use std::rc::Rc;
 
 /// Returns the type name of any CURSED object as a string.
 ///
@@ -56,9 +56,11 @@ use crate::error::Error;
 /// Returns a Runtime error if no argument is provided
 pub fn type_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime("type_of requires 1 argument: object".to_string()));
+        return Err(Error::Runtime(
+            "type_of requires 1 argument: object".to_string(),
+        ));
     }
-    
+
     let type_name = args[0].type_name().to_string();
     Ok(Rc::new(Object::String(type_name)))
 }
@@ -85,14 +87,20 @@ pub fn type_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - The second argument is not a String Object
 pub fn is_type(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("is_type requires 2 arguments: object and type name".to_string()));
+        return Err(Error::Runtime(
+            "is_type requires 2 arguments: object and type name".to_string(),
+        ));
     }
-    
+
     let type_name = match &*args[1] {
         Object::String(name) => name,
-        _ => return Err(Error::Runtime("Second argument to is_type must be a string".to_string())),
+        _ => {
+            return Err(Error::Runtime(
+                "Second argument to is_type must be a string".to_string(),
+            ))
+        }
     };
-    
+
     let result = args[0].is_type(type_name);
     Ok(Rc::new(Object::Boolean(result)))
 }
@@ -100,7 +108,7 @@ pub fn is_type(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Gets the value of a named field from a struct object.
 ///
 /// This function accesses a field in a struct by its name, providing a way
-/// to dynamically examine struct contents at runtime. 
+/// to dynamically examine struct contents at runtime.
 ///
 /// Note: The current implementation is simplified and returns null.
 /// A full implementation would use the object's type information to
@@ -120,9 +128,11 @@ pub fn is_type(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if fewer than 2 arguments are provided
 pub fn get_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("get_field requires 2 arguments: struct and field name".to_string()));
+        return Err(Error::Runtime(
+            "get_field requires 2 arguments: struct and field name".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just return null
     Ok(Rc::new(Object::Null))
 }
@@ -151,9 +161,11 @@ pub fn get_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if fewer than 3 arguments are provided
 pub fn set_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 3 {
-        return Err(Error::Runtime("set_field requires 3 arguments: struct, field name, and value".to_string()));
+        return Err(Error::Runtime(
+            "set_field requires 3 arguments: struct, field name, and value".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just return null
     Ok(Rc::new(Object::Null))
 }
@@ -182,9 +194,11 @@ pub fn set_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if fewer than 2 arguments are provided
 pub fn call_method(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime("call_method requires at least 2 arguments: object and method name".to_string()));
+        return Err(Error::Runtime(
+            "call_method requires at least 2 arguments: object and method name".to_string(),
+        ));
     }
-    
+
     // Simplified implementation - just return null
     Ok(Rc::new(Object::Null))
 }
