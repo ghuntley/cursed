@@ -1,0 +1,225 @@
+<!-- Channels Section in GenZ Style -->
+<section id="channels" class="docs-section animate-on-scroll">
+  <div class="section-pop">communication vibes</div>
+  <h2>Channels</h2>
+  <p>Channels in CURSED are the way goroutines slide into each other's DMs! They let concurrent parts of your program pass messages with zero drama. It's giving synchronized communication energy.</p>
+
+  <div class="code-block">
+    <div class="code-title">Creating Channels</div>
+    <pre><code><span class="comment">fr fr Create an unbuffered channel for integers</span>
+<span class="keyword">sus</span> ch dm<normie>
+
+<span class="comment">fr fr Initialize it with make</span>
+ch = make(dm<normie>)  <span class="comment">fr fr Unbuffered by default</span>
+
+<span class="comment">fr fr Create a buffered channel that can hold 5 strings</span>
+messageCh := make(dm<tea>, 5)  <span class="comment">fr fr Can store 5 messages without blocking</span></code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Sending and Receiving</h3>
+    <pre><code><span class="comment">fr fr Send a value into a channel</span>
+ch <- 42  <span class="comment">fr fr Send 42 to the channel</span>
+
+<span class="comment">fr fr Receive a value from a channel</span>
+value := <-ch  <span class="comment">fr fr Read from the channel and store in value</span>
+
+<span class="comment">fr fr Receive with an ok check for closed channels</span>
+value, ok := <-ch  <span class="comment">fr fr ok will be false if channel is closed</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Unbuffered Channels</div>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create an unbuffered channel</span>
+    ch := make(dm<tea>)
+    
+    <span class="comment">fr fr Start a goroutine that sends to the channel</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        vibez.spill("Goroutine: about to send message")
+        ch <- "hey bestie"  <span class="comment">fr fr This blocks until someone receives</span>
+        vibez.spill("Goroutine: message sent")
+    }()
+    
+    <span class="comment">fr fr Give goroutine time to try to send</span>
+    timez.Sleep(1 * timez.Second)
+    
+    <span class="comment">fr fr Receive the message (this unblocks the sender)</span>
+    vibez.spill("Main: about to receive")
+    msg := <-ch
+    vibez.spill("Main: received message:", msg)
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Buffered Channels</h3>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create a buffered channel with capacity 3</span>
+    ch := make(dm<normie>, 3)
+    
+    <span class="comment">fr fr Send values without blocking</span>
+    ch <- 1
+    ch <- 2
+    ch <- 3
+    <span class="comment">fr fr Channel is now full</span>
+    
+    <span class="comment">fr fr This would block until someone receives</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        vibez.spill("Trying to send 4...")
+        ch <- 4  <span class="comment">fr fr This blocks until there's room</span>
+        vibez.spill("Sent 4!")
+    }()
+    
+    <span class="comment">fr fr Receive a value to make room</span>
+    timez.Sleep(1 * timez.Second)
+    value := <-ch
+    vibez.spill("Received:", value)  <span class="comment">fr fr Should be 1</span>
+    
+    <span class="comment">fr fr Now the goroutine should be able to send</span>
+    timez.Sleep(1 * timez.Second)
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Closing Channels</div>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create a channel</span>
+    jobs := make(dm<normie>, 5)
+    done := make(dm<lit>)
+    
+    <span class="comment">fr fr Start a worker goroutine</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        <span class="comment">fr fr Process jobs until channel is closed</span>
+        <span class="keyword">bestie</span> {
+            job, more := <-jobs
+            <span class="keyword">lowkey</span> more {
+                vibez.spill("Received job", job)
+            } <span class="keyword">highkey</span> {
+                vibez.spill("Channel closed, stopping worker")
+                done <- <span class="keyword">based</span>
+                <span class="keyword">yolo</span>
+            }
+        }
+    }()
+    
+    <span class="comment">fr fr Send jobs</span>
+    <span class="keyword">bestie</span> j := 1; j <= 3; j++ {
+        jobs <- j
+    }
+    
+    <span class="comment">fr fr Close the channel to signal no more jobs</span>
+    close(jobs)
+    
+    <span class="comment">fr fr Wait for worker to finish</span>
+    <-done
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Range Over Channels</h4>
+    <p>The <code>flex</code> keyword makes iterating over channel values a whole vibe:</p>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create a channel</span>
+    ch := make(dm<tea>)
+    
+    <span class="comment">fr fr Start a sender goroutine</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        <span class="comment">fr fr Send some messages</span>
+        words := []tea{"purr", "slay", "bestie", "no cap"}
+        <span class="keyword">bestie</span> _, word := <span class="keyword">flex</span> words {
+            ch <- word
+        }
+        
+        <span class="comment">fr fr Close channel when done sending</span>
+        close(ch)
+    }()
+    
+    <span class="comment">fr fr Range over the channel until it's closed</span>
+    <span class="keyword">bestie</span> word := <span class="keyword">flex</span> ch {
+        vibez.spill("Received:", word)
+    }
+    
+    vibez.spill("Channel closed, loop exited")
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Select Statement</h3>
+    <p>The <code>select</code> statement is the ultimate multitasker, letting you work with multiple channels at once:</p>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create channels</span>
+    ch1 := make(dm<tea>)
+    ch2 := make(dm<tea>)
+    quit := make(dm<normie>)
+    
+    <span class="comment">fr fr Start goroutines that send messages</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        timez.Sleep(1 * timez.Second)
+        ch1 <- "message from channel 1"
+    }()
+    
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        timez.Sleep(2 * timez.Second)
+        ch2 <- "message from channel 2"
+    }()
+    
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        timez.Sleep(3 * timez.Second)
+        quit <- 0
+    }()
+    
+    <span class="comment">fr fr Process messages using select</span>
+    <span class="keyword">bestie</span> {
+        <span class="keyword">select</span> {
+        <span class="keyword">mood</span> msg := <-ch1:
+            vibez.spill("Received from ch1:", msg)
+        <span class="keyword">mood</span> msg := <-ch2:
+            vibez.spill("Received from ch2:", msg)
+        <span class="keyword">mood</span> <-quit:
+            vibez.spill("Quit signal received, exiting...")
+            <span class="keyword">ghosted</span>
+        <span class="keyword">mood</span> <-timez.After(500 * timez.Millisecond):
+            vibez.spill("Timeout, no message received in 500ms")
+        }
+    }
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Channel Best Practices</h4>
+    <ul>
+      <li>Use buffered channels when you know the exact number of messages</li>
+      <li>Use unbuffered channels when you need guaranteed delivery</li>
+      <li>Close channels from the sender side, never from the receiver</li>
+      <li>Check if a channel is closed when receiving with <code>val, ok := <-ch</code></li>
+      <li>Use <code>select</code> with a default case for non-blocking operations</li>
+      <li>Use <code>select</code> with <code>timez.After</code> for timeouts</li>
+    </ul>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Channel Direction</div>
+    <pre><code><span class="comment">fr fr Send-only channel parameter</span>
+<span class="keyword">slay</span> send(ch dm<- tea, msg tea) {
+    ch <- msg
+}
+
+<span class="comment">fr fr Receive-only channel parameter</span>
+<span class="keyword">slay</span> receive(ch <-dm tea) tea {
+    <span class="keyword">yolo</span> <-ch
+}
+
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Bidirectional channel</span>
+    ch := make(dm<tea>)
+    
+    <span class="comment">fr fr Use the channel with direction-specific functions</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        send(ch, "hey bestie")
+    }()
+    
+    msg := receive(ch)
+    vibez.spill("Got message:", msg)
+}</code></pre>
+  </div>
+</section>
