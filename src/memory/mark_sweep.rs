@@ -794,101 +794,99 @@ impl GarbageCollector {
     
     /// Sweep phase: collect all unreachable (white) objects
     fn sweep_phase(&self, start_time: Instant, timeout: Duration) -> Result<(), String> {
-    let verbose = self.inner.read().unwrap().options.verbose;
-    if verbose {
-    println!("GC: Starting sweep phase");
-    }
-    
-    // Get the list of white objects to collect
-    let white_objects: Vec<usize> = {
-    let lock_context = "sweep_phase (get white objects)";
-    let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
-    &self.inner,
-    std::time::Duration::from_secs(5),
-    &lock_context
-    );
-    
-    if state_opt.is_none() {
-    if verbose {
-    println!("WARNING: Failed to acquire read lock when finding white objects");
-    }
-    return Err("Failed to acquire lock for white objects".to_string());
-    }
-    
-    let state = state_opt.unwrap();
-    state.objects.iter()
-    .filter(|(_, obj)| obj.mark_state == MarkState::White)
-    .map(|(addr, _)| *addr)
-    .collect()
-    };
-    
-    if verbose {
-    println!("GC: Found {} white objects to collect", white_objects.len());
-    }
-    
-    // First, finalize all white objects
-    // We do this in a separate step to handle cases where finalization might resurrect objects
-    for addr in &white_objects {
-        // Check timeout periodically
-        if start_time.elapsed() >= timeout {
+        let verbose = self.inner.read().unwrap().options.verbose;
         if verbose {
-            println!("GC: Sweep phase (finalization) timed out after {:?}", timeout);
-    }
-    return Err("Sweep phase finalization timed out".to_string());
-    }
-    
-    self.finalize_object(*addr, verbose);
-    }
-    
-    // Now, remove all white objects that are still marked white
-    // (finalization might have resurrected some)
-    let mut bytes_freed = 0;
-    let mut objects_freed = 0;
-    
-    for addr in white_objects {
-    // Check timeout periodically
-    if start_time.elapsed() >= timeout {
-    if verbose {
-    println!("GC: Sweep phase (removal) timed out after {:?}", timeout);
-    }
-    return Err("Sweep phase removal timed out".to_string());
-    }
-    
-    // Check if the object is still white (it might have been resurrected)
-    let is_still_white = {
-    let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
-    &self.inner,
-        std::time::Duration::from_secs(1),
-            "sweep_phase (check if still white)"
-        );
+            println!("GC: Starting sweep phase");
+        }
         
-        if let Some(state) = state_opt {
-        state.objects.get(&addr)
-            .map(|obj| obj.mark_state == MarkState::White)
-        .unwrap_or(false)
-    } else {
-    false // If we can't check, skip it to be safe
-    }
-    };
-    
-    if !is_still_white {
-    if verbose {
-    println!("GC: Object at 0x{:x} was resurrected during finalization, skipping", addr);
-    }
-    continue;
-    }
-    
-    // Now remove the object from managed memory
-    let obj_size = self.remove_object(addr, verbose);
-    if obj_size > 0 {
-    bytes_freed += obj_size;
-    objects_freed += 1;
-    }
-    }
-    
-    if verbose {
-    println!("GC: Collected {} objects, freed {} bytes", objects_freed, bytes_freed);
-    }
+        // Get the list of white objects to collect
+        let white_objects: Vec<usize> = {
+            let lock_context = "sweep_phase (get white objects)";
+            let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
+                &self.inner,
+                std::time::Duration::from_secs(5),
+                &lock_context
+            );
+            
+            if state_opt.is_none() {
+                if verbose {
+                    println!("WARNING: Failed to acquire read lock when finding white objects");
+                }
+                return Err("Failed to acquire lock for white objects".to_string());
+            }
+            
+            let state = state_opt.unwrap();
+            state.objects.iter()
+                .filter(|(_, obj)| obj.mark_state == MarkState::White)
+                .map(|(addr, _)| *addr)
+                .collect()
+        };
+        
+        if verbose {
+            println!("GC: Found {} white objects to collect", white_objects.len());
+        }
+        
+        // Use finalization ordering to handle dependencies between objects
+        // This ensures objects are finalized in the correct order
+        let finalized_objects = crate::memory::finalization_order::finalize_objects_ordered(&white_objects);
+        
+        if verbose {
+            println!("GC: Finalized {} objects in dependency order", finalized_objects.len());
+        }
+        
+        // Process remaining white objects that weren't handled by ordered finalization
+        let mut bytes_freed = 0;
+        let mut objects_freed = finalized_objects.len();
+        
+        for addr in white_objects {
+            // Skip objects that were already finalized
+            if finalized_objects.contains(&addr) {
+                continue;
+            }
+            
+            // Check timeout periodically
+            if start_time.elapsed() >= timeout {
+                if verbose {
+                    println!("GC: Sweep phase (removal) timed out after {:?}", timeout);
+                }
+                return Err("Sweep phase removal timed out".to_string());
+            }
+            
+            // Check if the object is still white (it might have been resurrected)
+            let is_still_white = {
+                let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
+                    &self.inner,
+                    std::time::Duration::from_secs(1),
+                    "sweep_phase (check if still white)"
+                );
+                
+                if let Some(state) = state_opt {
+                    state.objects.get(&addr)
+                        .map(|obj| obj.mark_state == MarkState::White)
+                        .unwrap_or(false)
+                } else {
+                    false // If we can't check, skip it to be safe
+                }
+            };
+            
+            if !is_still_white {
+                if verbose {
+                    println!("GC: Object at 0x{:x} was resurrected during finalization, skipping", addr);
+                }
+                continue;
+            }
+            
+            // Now remove the object from managed memory
+            let obj_size = self.remove_object(addr, verbose);
+            if obj_size > 0 {
+                bytes_freed += obj_size;
+                objects_freed += 1;
+            }
+        }
+        
+        if verbose {
+            println!("GC: Collected {} objects, freed {} bytes", objects_freed, bytes_freed);
+        }
         
         // Update statistics
         {

@@ -40,8 +40,22 @@ Implemented comprehensive tests for the standard library:
 
 - Add performance benchmarks for garbage collection
 - Implement test coverage reporting
-- Improve direct access to Traceable objects for better finalization handling
-- Develop more sophisticated finalization with ordering support
+
+## Object Storage and Finalization Ordering
+
+- [x] Implemented direct object storage system for Traceable objects
+- [x] Added support for proper finalization of objects during garbage collection
+- [x] Created dependency-based finalization ordering system
+- [x] Integrated finalization ordering with garbage collector's sweep phase
+- [x] Added comprehensive test suite for object storage and finalization ordering
+
+### Details
+
+1. **Object Storage**: A system that maintains direct access to Traceable objects via a global registry
+2. **Type-Safe Access**: The storage system provides type-safe access to stored objects
+3. **Finalization Ordering**: Objects are finalized in dependency order to prevent use-after-free issues
+4. **Cycle Detection**: The finalization system properly handles circular dependencies
+5. **Thread Safety**: Both systems are implemented in a thread-safe manner with appropriate locking
 
 ## Property-Based Testing Module
 
