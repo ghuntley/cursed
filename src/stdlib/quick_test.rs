@@ -1117,6 +1117,95 @@ pub fn rune() -> Box<dyn Generator> {
     Box::new(RuneGenerator)
 }
 
+/// Complex number generator (real + imaginary parts)
+pub struct Complex128Generator;
+
+impl Generator for Complex128Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        // Generate two float values for real and imaginary parts
+        let real = rand.int_range(-size, size) as f64;
+        let imag = rand.int_range(-size, size) as f64;
+        
+        // Create a hash map to represent the complex number
+        let mut map = std::collections::HashMap::new();
+        map.insert("real".to_string(), Object::Float(real));
+        map.insert("imag".to_string(), Object::Float(imag));
+        Object::HashTable(map)
+    }
+}
+
+/// Generate complex number values
+pub fn complex128() -> Box<dyn Generator> {
+    Box::new(Complex128Generator)
+}
+
+/// Generate strings of a given character generator
+pub fn string_of(char_gen: Box<dyn Generator>) -> Box<dyn Generator> {
+    string_of_n_from(1, 10, char_gen)
+}
+
+/// Generate strings of given length from a character generator
+pub struct StringFromGenerator {
+    char_gen: Box<dyn Generator>,
+    min_len: i64,
+    max_len: i64,
+}
+
+impl StringFromGenerator {
+    pub fn new(min_len: i64, max_len: i64, char_gen: Box<dyn Generator>) -> Self {
+        StringFromGenerator { char_gen, min_len, max_len }
+    }
+}
+
+impl Generator for StringFromGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max_len = if size < self.max_len { size } else { self.max_len };
+        let len = rand.int_range(self.min_len, max_len) as usize;
+        let mut s = String::with_capacity(len);
+        
+        for _ in 0..len {
+            if let Object::String(ch) = self.char_gen.generate(rand, size / len as i64) {
+                s.push_str(&ch);
+            }
+        }
+        
+        Object::String(s)
+    }
+}
+
+/// Generate strings of given length from a character generator
+pub fn string_of_n_from(min_len: i64, max_len: i64, char_gen: Box<dyn Generator>) -> Box<dyn Generator> {
+    Box::new(StringFromGenerator::new(min_len, max_len, char_gen))
+}
+
+/// Generate a struct from field generators
+pub struct StructGenerator {
+    fields: HashMap<String, Box<dyn Generator>>,
+}
+
+impl StructGenerator {
+    pub fn new(fields: HashMap<String, Box<dyn Generator>>) -> Self {
+        StructGenerator { fields }
+    }
+}
+
+impl Generator for StructGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let mut result = HashMap::new();
+        
+        for (field_name, generator) in &self.fields {
+            result.insert(field_name.clone(), generator.generate(rand, size));
+        }
+        
+        Object::HashTable(result)
+    }
+}
+
+/// Generate a struct from field generators
+pub fn struct_of(fields: HashMap<String, Box<dyn Generator>>) -> Box<dyn Generator> {
+    Box::new(StructGenerator::new(fields))
+}
+
 /// Test that a property holds for all generated inputs
 pub fn for_all(gen_func: Object, test_func: Object, config: &Config) -> TestResult {
     // Call the check_property function with the generator and property
@@ -1140,4 +1229,165 @@ pub fn check_property_with_args(property: Object, args: Vec<Object>) -> Object {
     
     // Convert the TestResult to a boolean Object
     Object::Boolean(result.passed)
+}
+
+/// Combines multiple generators to create a complex data structure
+pub struct CombineGenerator {
+    generators: Vec<Box<dyn Generator>>,
+    combiner: Box<dyn Fn(Vec<Object>) -> Object>,
+}
+
+impl CombineGenerator {
+    pub fn new(generators: Vec<Box<dyn Generator>>, combiner: Box<dyn Fn(Vec<Object>) -> Object>) -> Self {
+        CombineGenerator { generators, combiner }
+    }
+}
+
+impl Generator for CombineGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let mut values = Vec::with_capacity(self.generators.len());
+        
+        for generator in &self.generators {
+            values.push(generator.generate(rand, size));
+        }
+        
+        (self.combiner)(values)
+    }
+}
+
+/// Create a generator that combines multiple generators into a complex type
+pub fn combine(generators: Vec<Box<dyn Generator>>, combiner: Box<dyn Fn(Vec<Object>) -> Object>) -> Box<dyn Generator> {
+    Box::new(CombineGenerator::new(generators, combiner))
+}
+
+/// Generator with weighted probabilities
+pub struct WeightedGenerator {
+    choices: Vec<(i64, Box<dyn Generator>)>,
+    total_weight: i64,
+}
+
+impl WeightedGenerator {
+    pub fn new(choices: Vec<(i64, Box<dyn Generator>)>) -> Self {
+        let total_weight = choices.iter().map(|(w, _)| w).sum();
+        WeightedGenerator { choices, total_weight }
+    }
+}
+
+impl Generator for WeightedGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        if self.choices.is_empty() {
+            return Object::Null;
+        }
+        
+        // Choose a random weight between 0 and total_weight
+        let chosen_weight = rand.intn(self.total_weight);
+        let mut current_weight = 0;
+        
+        // Find the generator that corresponds to the chosen weight
+        for (weight, generator) in &self.choices {
+            current_weight += weight;
+            if chosen_weight < current_weight {
+                return generator.generate(rand, size);
+            }
+        }
+        
+        // Fallback - should not happen unless total_weight calculation is wrong
+        self.choices[0].1.generate(rand, size)
+    }
+}
+
+/// Create a generator that selects generators with different probabilities
+pub fn weighted(choices: Vec<(i64, Box<dyn Generator>)>) -> Box<dyn Generator> {
+    Box::new(WeightedGenerator::new(choices))
+}
+
+/// State machine for testing stateful systems
+pub struct StateMachine<S> {
+    state: Rc<RefCell<S>>,
+    actions: RefCell<HashMap<String, (Box<dyn Fn(&Rc<RefCell<S>>) -> bool>, Box<dyn Fn(&Rc<RefCell<S>>) -> bool>)>>,
+}
+
+impl<S: 'static> StateMachine<S> {
+    pub fn new(state: Rc<RefCell<S>>) -> Self {
+        StateMachine {
+            state,
+            actions: RefCell::new(HashMap::new()),
+        }
+    }
+    
+    /// Add an action to the state machine
+    /// - name: Name of the action
+    /// - action: Function that performs the action
+    /// - precondition: Function that checks if the action can be applied
+    pub fn add_action(
+        &self,
+        name: &str,
+        action: Box<dyn Fn(&Rc<RefCell<S>>) -> bool>,
+        precondition: Box<dyn Fn(&Rc<RefCell<S>>) -> bool>,
+    ) {
+        self.actions.borrow_mut().insert(name.to_string(), (action, precondition));
+    }
+    
+    /// Run the state machine with the given configuration
+    pub fn run(&self, config: &Config) -> TestResult {
+        let start_time = Instant::now();
+        let mut result = TestResult::default();
+        result.seed = if config.seed != 0 { config.seed } else { 
+            // Generate random seed if not provided
+            use std::time::{SystemTime, UNIX_EPOCH};
+            let since_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+            since_epoch.as_secs() as i64 ^ since_epoch.subsec_nanos() as i64
+        };
+        
+        // Create a random generator
+        let mut rand = Rand::new(result.seed as u64);
+        
+        // Store the sequence of actions for reproduction
+        let mut action_sequence = Vec::new();
+        
+        // Run the test for config.max_count iterations
+        for i in 0..config.max_count {
+            result.count += 1;
+            
+            // Get all available actions
+            let actions = self.actions.borrow();
+            let applicable_actions: Vec<_> = actions.iter()
+                .filter(|(_, (_, precondition))| (precondition)(&self.state))
+                .collect();
+            
+            if applicable_actions.is_empty() {
+                // No actions can be applied, test passed
+                break;
+            }
+            
+            // Choose a random action
+            let action_idx = rand.intn(applicable_actions.len() as i64) as usize;
+            let (action_name, (action, _)) = applicable_actions[action_idx];
+            
+            // Apply the action
+            action_sequence.push(action_name.clone());
+            let action_success = (action)(&self.state);
+            
+            if !action_success {
+                // Action failed, test failed
+                result.passed = false;
+                result.failed_after = i + 1;
+                break;
+            }
+        }
+        
+        result.runtime = start_time.elapsed();
+        if !config.quiet {
+            if result.passed {
+                println!("State machine test completed in {:.2?} with {} actions", 
+                        result.runtime, result.count);
+            } else {
+                println!("State machine test failed after {} actions in {:.2?}", 
+                        result.failed_after, result.runtime);
+                println!("Action sequence: {:?}", action_sequence);
+            }
+        }
+        
+        result
+    }
 }
