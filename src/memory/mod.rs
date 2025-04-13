@@ -19,6 +19,7 @@ pub mod bump;
 pub mod channel;
 pub mod container;
 pub mod deadlock_detector;
+pub mod finalization_order;
 pub mod gc;
 // We've improved mark_sweep.rs directly instead of creating a separate module
 pub mod mark_sweep;
@@ -33,6 +34,7 @@ pub mod weak;
 
 // Re-export important types
 pub use container::{ContainerType, Specializable, SpecializedVector};
+pub use finalization_order::{finalization_graph, register_dependency, finalize_objects_ordered};
 pub use root::{RootScope, RootScopeGuard, ROOT_MANAGER};
 pub use gc::MarkState;
 pub use object_storage::{global_object_storage, ObjectStorage, StorageWrapper};

@@ -178,7 +178,7 @@ pub fn global_object_storage() -> &'static ObjectStorage {
 }
 
 /// A wrapper for accessing objects in storage
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StorageWrapper<T: Traceable + Clone + Send + Sync + 'static> {
     // Address of the object in storage
     addr: usize,

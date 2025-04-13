@@ -1,0 +1,104 @@
+//! Simplified test for finalization ordering functionality
+
+use cursed::memory::{Traceable, Tag, Visitor, register_dependency};
+use cursed::memory::finalization_order::{FinalizationGraph, finalize_objects_ordered};
+use std::collections::HashSet;
+
+// Very simple test that doesn't rely on the GC
+#[test]
+fn test_finalization_graph() {
+    // Create a dependency graph with 4 objects
+    let mut graph = FinalizationGraph::new();
+    
+    // Set up dependencies: 0 -> 1 -> 2 -> 3
+    graph.add_dependency(0, 1); // 0 depends on 1
+    graph.add_dependency(1, 2); // 1 depends on 2
+    graph.add_dependency(2, 3); // 2 depends on 3
+    
+    // Get the finalization order
+    let order = graph.finalization_order();
+    
+    // Order should have all objects
+    assert_eq!(order.len(), 4, "All objects should be in the finalization order");
+    
+    // Order should be the reverse of what you might expect, since
+    // we're sorting topologically for finalization (reverse dependency order)
+    let expected_order = vec![0, 1, 2, 3];
+    assert_eq!(order, expected_order, "Finalization order should be correct");
+    
+    // Remove object 2
+    graph.remove_object(2);
+    
+    // Get the new finalization order
+    let order = graph.finalization_order();
+    
+    // Order should have the remaining objects
+    assert_eq!(order.len(), 3, "Should have 3 objects after removal");
+    
+    // Order should not contain 2
+    assert!(!order.contains(&2), "Removed object should not be in order");
+}
+
+#[test]
+fn test_complex_dependencies() {
+    // Create a more complex dependency graph
+    let mut graph = FinalizationGraph::new();
+    
+    // 0 depends on 1 and 2
+    graph.add_dependency(0, 1);
+    graph.add_dependency(0, 2);
+    
+    // 1 depends on 3
+    graph.add_dependency(1, 3);
+    
+    // 2 depends on 3 and 4
+    graph.add_dependency(2, 3);
+    graph.add_dependency(2, 4);
+    
+    // Get the finalization order
+    let order = graph.finalization_order();
+    
+    // Order should have all 5 objects
+    assert_eq!(order.len(), 5, "All 5 objects should be in the finalization order");
+    
+    // This is ordered backwards from what you might expect - objects are finalized
+    // in reverse dependency order (dependents before their dependencies)
+    
+    // 0 must come before 1 and 2 in the finalization order
+    let pos_0 = order.iter().position(|&x| x == 0).unwrap();
+    let pos_1 = order.iter().position(|&x| x == 1).unwrap();
+    let pos_2 = order.iter().position(|&x| x == 2).unwrap();
+    assert!(pos_0 < pos_1, "Object 0 should come before object 1");
+    assert!(pos_0 < pos_2, "Object 0 should come before object 2");
+    
+    // 1 and 2 must come before 3 in the finalization order
+    let pos_3 = order.iter().position(|&x| x == 3).unwrap();
+    assert!(pos_1 < pos_3, "Object 1 should come before object 3");
+    assert!(pos_2 < pos_3, "Object 2 should come before object 3");
+    
+    // 2 must come before 4 in the finalization order
+    let pos_4 = order.iter().position(|&x| x == 4).unwrap();
+    assert!(pos_2 < pos_4, "Object 2 should come before object 4");
+}
+
+#[test]
+fn test_cycle_handling() {
+    // Create a graph with a cycle
+    let mut graph = FinalizationGraph::new();
+    
+    // 0 -> 1 -> 2 -> 0 (cycle)
+    graph.add_dependency(0, 1);
+    graph.add_dependency(1, 2);
+    graph.add_dependency(2, 0);
+    
+    // Get the finalization order - should work despite the cycle
+    let order = graph.finalization_order();
+    
+    // Order should have all 3 objects
+    assert_eq!(order.len(), 3, "All 3 objects should be in the finalization order");
+    
+    // All objects should be present
+    let mut set = HashSet::<usize>::new();
+    set.extend(order.iter().cloned());
+    assert_eq!(set.len(), 3, "All objects should be unique in the order");
+}
