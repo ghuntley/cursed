@@ -1,218 +1,82 @@
-# Garbage Collector Implementation for CURSED
+# Garbage Collector Implementation Documentation
 
 ## Overview
 
-The CURSED language uses a mark-and-sweep garbage collector for automatic memory management. This document describes the implementation of the garbage collector and how it integrates with the rest of the CURSED language.
+The garbage collector in the CURSED language is based on a mark-and-sweep algorithm with incremental collection support. It uses a combination of reference counting and tracing to manage memory efficiently.
 
-## Key Components
+## Core Components
 
-### Memory Manager
+1. **GarbageCollector** (`src/memory/gc.rs`): The main GC implementation that tracks objects, performs collection cycles, and provides memory statistics.
 
-The `MemoryManager` is the main entry point for memory management operations. It uses the garbage collector internally and provides a simplified API for allocation and garbage collection.
+2. **Gc<T>** (`src/memory/mod.rs`): A smart pointer for garbage-collected objects, similar to Rust's `Arc<T>` but integrated with the GC system.
 
-```rust
-pub struct MemoryManager {
-    gc: Arc<GarbageCollector>,
-}
-```
+3. **Weak<T>** (`src/memory/weak.rs`): A weak reference to break reference cycles, similar to Rust's `Weak<T>`.
 
-### Garbage Collector
+4. **Traceable** trait: Interface for objects that can be traversed by the GC during mark phase.
 
-The `GarbageCollector` implements a mark-and-sweep garbage collection algorithm. It tracks all allocated objects and periodically collects objects that are no longer reachable.
+5. **Visitor** trait: Interface for objects that perform the traversal during mark phase.
 
-```rust
-pub struct GarbageCollector {
-    inner: Arc<RwLock<GcState>>,
-    allocation_threshold: usize,
-}
-```
+## Circular Reference Fix
 
-### Garbage Collector State
+The GC implementation was redesigned to fix circular reference issues that could cause deadlocks. The key changes:
 
-The `GcState` holds the internal state of the garbage collector, including a map of all allocated objects, set of root objects, and statistics about memory usage.
+1. **Weak References to GC**: `Gc<T>` now stores a `Weak<GarbageCollector>` (Rust's standard weak reference) instead of an `Arc<GarbageCollector>`, breaking potential reference cycles between the GC and the objects it manages.
 
-```rust
-struct GcState {
-    allocator: BumpAllocator,
-    objects: HashMap<usize, GcObject>,
-    roots: HashSet<usize>,
-    total_size: usize,
-    collection_count: usize,
-}
-```
+2. **Root Management**: The GC maintains strong references to root objects, while allowing those objects to have weak references back to the GC.
 
-### Traceable Objects
+3. **Reference Lifecycle**: When `Gc<T>` objects are created or cloned, they register with the GC root set. When dropped, they unregister.
 
-Objects that can be managed by the garbage collector must implement the `Traceable` trait, which allows the GC to trace references between objects.
+4. **Self-Reference Handling**: The GarbageCollector maintains an optional weak reference to itself to facilitate operations that need to create new objects.
 
-```rust
-pub trait Traceable: 'static {
-    fn trace(&self, visitor: &mut dyn Visitor);
-    fn size(&self) -> usize;
-    fn tag(&self) -> Tag;
-}
-```
+## Memory Management Process
 
-### Garbage Collected References
+1. **Allocation**: Objects are allocated through the GC, which tracks them and returns a `Gc<T>` smart pointer.
 
-The `Gc<T>` type represents a garbage-collected reference to an object. It wraps a raw pointer to the object and provides safe access to the object.
+2. **Root Tracking**: `Gc<T>` instances register themselves as roots when created or cloned.
 
-```rust
-pub struct Gc<T: Traceable + Clone> {
-    ptr: NonNull<T>,
-    collector: Arc<GarbageCollector>,
-    _marker: PhantomData<T>,
-}
-```
+3. **Mark Phase**: When collection runs, the GC marks all objects reachable from roots.
 
-## Garbage Collection Algorithm
-
-The garbage collector uses a mark-and-sweep algorithm:
-
-1. **Mark Phase**: Starting from root objects, the GC traverses the object graph and marks all reachable objects. This is done in multiple steps:
-   - First, all objects are marked as "White" (unreachable)
-   - Root objects are marked as "Gray" (reachable but not yet processed)
-   - Gray objects are processed one by one, marking their references as Gray, and then marking themselves as "Black" (fully processed)
-   - This process continues until no Gray objects remain
-
-2. **Sweep Phase**: After the mark phase, any objects still marked as White are unreachable and can be safely deallocated. The GC scans the object map and removes these objects.
-
-## Usage
-
-To allocate an object with garbage collection:
-
-```rust
-let mm = MemoryManager::new();
-let obj = mm.allocate(MyObject { ... });
-```
-
-To force garbage collection:
-
-```rust
-mm.collect_garbage();
-```
-
-To get statistics about memory usage:
-
-```rust
-let stats = mm.stats();
-println!("Objects: {}, Total size: {} bytes", stats.object_count, stats.total_size);
-```
-
-## Implementing Traceable for Custom Types
-
-To make a custom type garbage collectable, implement the `Traceable` and `Trace` traits:
-
-```rust
-#[derive(Clone)]
-struct MyObject {
-    value: i64,
-    next: Option<Gc<MyObject>>,
-}
-
-impl Traceable for MyObject {
-    fn trace(&self, visitor: &mut dyn Visitor) {
-        if let Some(next) = &self.next {
-            visitor.visit_ptr(next.ptr.as_ptr() as usize, Tag::Object);
-        }
-    }
-    
-    fn size(&self) -> usize {
-        std::mem::size_of::<MyObject>()
-    }
-    
-    fn tag(&self) -> Tag {
-        Tag::Object
-    }
-}
-
-impl Trace for MyObject {}
-```
-
-## Limitations
-
-- This implementation does not handle cyclic references optimally - cycles will be collected only if all objects in the cycle become unreachable
-- The GC is non-generational and non-incremental, which may cause longer pause times
-- The current implementation uses unsafe Rust code for memory management, which requires careful handling
+4. **Sweep Phase**: Unmarked objects are reclaimed, and their memory is freed.
 
 ## Advanced Features
 
-### Incremental Garbage Collection
+- **Incremental Collection**: To reduce pause times, the GC can perform collection in small steps.
+- **Statistics and Debugging**: The GC provides detailed memory usage statistics and debugging information.
+- **Type-based Memory Analysis**: Track memory usage by object type.
+- **Custom Collection Triggers**: Collection can be triggered manually, on allocation, or based on memory pressure.
 
-The garbage collector supports incremental collection to reduce pause times:
-
-```rust
-// Create a memory manager with incremental GC
-let mm = MemoryManager::with_incremental_gc(
-    1024 * 1024 * 10, // 10MB threshold
-    100,              // Process 100 objects per step
-    10                // Spend up to 10% of time in GC
-);
-```
-
-Incremental collection works by dividing the mark and sweep phases into smaller steps that can be executed incrementally, reducing the maximum pause time at the cost of slightly higher total GC overhead.
-
-### Weak References
-
-Weak references allow referencing objects without preventing them from being collected:
+## Usage Examples
 
 ```rust
-// Create a normal (strong) reference
-let obj = mm.allocate(MyObject { ... });
+// Create a garbage collector
+let gc = Arc::new(GarbageCollector::new());
+
+// Allocate an object
+let obj = gc.allocate(MyObject::new());
+
+// Use the object
+if let Some(inner) = obj.inner() {
+    inner.do_something();
+}
 
 // Create a weak reference
-let weak_ref = mm.downgrade(&obj);
+let weak_ref = obj.downgrade();
 
-// Later, try to upgrade back to a strong reference
+// Try to upgrade weak reference
 if let Some(strong_ref) = weak_ref.upgrade() {
-    // Object still exists, use strong_ref
-} else {
-    // Object has been collected
+    // Use the object again
 }
+
+// Force garbage collection
+gc.collect_garbage();
+
+// Get memory statistics
+let stats = gc.stats();
+println!("Objects in memory: {}", stats.object_count);
 ```
 
-Weak references are particularly useful for breaking reference cycles that would otherwise prevent objects from being collected.
+## Implementation Notes
 
-### Memory Layout Optimizations
-
-The garbage collector includes several optimizations for memory layout:
-
-1. **Object Regions**: Objects allocated close in time are grouped into regions for better cache locality
-2. **Generational Collection**: Objects that survive collections are promoted to higher generations, allowing the GC to focus on younger objects that are more likely to be garbage
-3. **Cache-Friendly Object Metadata**: The GC object metadata is laid out in memory to optimize cache access patterns
-
-### Detailed Memory Statistics and Debugging
-
-The garbage collector provides detailed statistics and debugging information:
-
-```rust
-// Get basic statistics
-let stats = mm.stats();
-println!("Objects: {}, Total size: {} bytes", stats.object_count, stats.total_size);
-
-// Get detailed debugging information
-let debug_info = mm.debug_info();
-
-// Display memory usage by type
-for type_usage in &debug_info.type_usage {
-    println!("Type: {}, Bytes: {}, Objects: {}", 
-        type_usage.type_name, type_usage.bytes, type_usage.object_count);
-}
-
-// Display objects by generation
-for (i, &count) in debug_info.generations.iter().enumerate() {
-    println!("Generation {}: {} objects", i, count);
-}
-
-// Display debug logs
-for log in &debug_info.debug_logs {
-    println!("Log: {}", log);
-}
-```
-
-## Future Improvements
-
-- Further optimize incremental collection to reduce pause times even more
-- Implement concurrent garbage collection using background threads
-- Add specialized handling for large objects
-- Develop tools for visualizing memory usage patterns
+- Safety is enforced through careful management of raw pointers and thread-safe reference counting.
+- The GC is designed to work with CURSED's concurrency model, including goroutines and channels.
+- Proper support for user-defined types is provided through the `Traceable` trait.

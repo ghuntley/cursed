@@ -14,7 +14,7 @@ use std::any::TypeId;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::marker::PhantomData;
 use std::ptr::NonNull;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak as StdWeak};
 use std::time::{Duration, Instant};
 
 use crate::memory::{Gc, Tag, Traceable, Visitor};
@@ -96,7 +96,10 @@ enum MarkState {
 /// across thread boundaries.
 #[derive(Debug, Clone)]
 pub struct GarbageCollector {
+    // Inner state protected by a read-write lock
     pub(crate) inner: Arc<RwLock<GcStateInner>>,
+    // Reference to self to ensure GarbageCollector lives as long as needed
+    self_ref: Option<StdWeak<GarbageCollector>>,
 }
 
 /// Internal state of the garbage collector
@@ -125,12 +128,12 @@ pub(crate) struct GcObject {
 
 impl GarbageCollector {
     /// Create a new garbage collector with default options
-    pub fn new() -> Arc<Self> {
+    pub fn new() -> Self {
         Self::with_options(GcOptions::default())
     }
 
     /// Create a new garbage collector with custom options
-    pub fn with_options(options: GcOptions) -> Arc<Self> {
+    pub fn with_options(options: GcOptions) -> Self {
         let state = GcStateInner {
             objects: HashMap::new(),
             roots: HashSet::new(),
@@ -142,9 +145,22 @@ impl GarbageCollector {
             debug_logs: Vec::new(),
         };
 
-        Arc::new(Self {
+        let gc = Self {
             inner: Arc::new(RwLock::new(state)),
-        })
+            self_ref: None,
+        };
+        
+        // After creation, set up a weak reference to self
+        gc.initialize_self_ref();
+        gc
+    }
+    
+    // Initialize the weak self-reference after construction
+    fn initialize_self_ref(&self) {
+        let mut self_mut = self.clone();
+        let arc_self = Arc::new(self_mut.clone());
+        self_mut.self_ref = Some(Arc::downgrade(&arc_self));
+        // No need to update the original instance as the self_ref is only used internally
     }
 
     /// Allocates a new garbage-collected object
@@ -161,23 +177,34 @@ impl GarbageCollector {
     ///
     /// A garbage-collected smart pointer (Gc<T>) to the allocated object
     pub fn allocate<T: Traceable + Clone + 'static>(&self, value: T) -> Gc<T> {
+        println!("GC: Starting allocation of {}", std::any::type_name::<T>());
+        
+        println!("GC: Acquiring write lock on GC state");
         let mut state = self.inner.write().unwrap();
+        println!("GC: Acquired write lock successfully");
 
         // Check if we need to collect garbage
         if state.stats.allocated_since_last_gc >= state.options.allocation_threshold {
+            println!("GC: Threshold reached, collecting garbage");
             // Drop the write lock before collecting
             drop(state);
             self.collect_garbage_internal(CollectionTrigger::Threshold);
+            println!("GC: Re-acquiring write lock after collection");
             state = self.inner.write().unwrap();
+            println!("GC: Re-acquired write lock successfully");
         }
+        println!("GC: Proceeding with allocation");
 
         // For simplicity, we're using Box<T> and raw pointers
+        println!("GC: Boxing value");
         let boxed = Box::new(value);
         let ptr = Box::into_raw(boxed);
         let type_id = TypeId::of::<T>();
         let size = std::mem::size_of::<T>();
+        println!("GC: Allocated at address 0x{:x}, size: {}", ptr as usize, size);
 
         // Record type name for debugging
+        println!("GC: Recording type information");
         if !state.type_map.contains_key(&type_id) {
             state
                 .type_map
@@ -185,6 +212,7 @@ impl GarbageCollector {
         }
 
         // Create GC object
+        println!("GC: Creating GC tracking object");
         let obj = GcObject {
             ptr: ptr as usize,
             size,
@@ -195,26 +223,40 @@ impl GarbageCollector {
         };
 
         // Add to objects map
+        println!("GC: Adding to objects map");
         state.objects.insert(ptr as usize, obj);
 
         // Add to roots initially
+        println!("GC: Adding to roots set");
         state.roots.insert(ptr as usize);
 
         // Update stats
+        println!("GC: Updating stats");
         state.stats.object_count += 1;
         state.stats.total_size += size;
         state.stats.allocated_since_last_gc += size;
         state.stats.live_objects += 1;
 
         // Create and return the Gc
+        println!("GC: Creating NonNull pointer");
         let nn_ptr = unsafe { NonNull::new_unchecked(ptr) };
-        Gc::new(nn_ptr, self.clone())
+        
+        // Create the Gc with an Arc to self
+        println!("GC: Creating Gc smart pointer");
+        // Use self to create the Gc - the Gc will hold a weak reference
+        let gc_ptr = Gc::new(nn_ptr, Arc::new(self.clone()));
+        println!("GC: Allocation complete");
+        gc_ptr
     }
 
     /// Add an object as a GC root
     pub fn add_root(&self, ptr: usize) {
+        println!("GC::add_root called for ptr 0x{:x}", ptr);
+        println!("GC::add_root acquiring write lock");
         let mut state = self.inner.write().unwrap();
+        println!("GC::add_root acquired write lock");
         state.roots.insert(ptr);
+        println!("GC::add_root inserted into roots set");
     }
 
     /// Remove an object from GC roots

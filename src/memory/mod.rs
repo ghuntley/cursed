@@ -29,7 +29,7 @@ pub use container::{ContainerType, Specializable, SpecializedVector};
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
-use std::sync::Arc;
+use std::sync::{Arc, Weak as StdWeak};
 
 use crate::memory::gc::GarbageCollector;
 
@@ -89,22 +89,28 @@ pub trait Visitor {
 /// `Gc<T>` is a reference-counted smart pointer that provides safe access
 /// to heap-allocated objects managed by the garbage collector. It automatically
 /// registers and unregisters objects as roots when created and destroyed.
+/// 
+/// This implementation uses a Weak reference to the GarbageCollector to avoid
+/// circular references and potential deadlocks during cleanup.
 #[derive(Debug)]
 pub struct Gc<T: Traceable + Clone + 'static> {
     ptr: NonNull<T>,
-    gc: Arc<GarbageCollector>,
+    gc: StdWeak<GarbageCollector>,
     _marker: PhantomData<T>,
 }
 
 impl<T: Traceable + Clone + 'static> Gc<T> {
     /// Create a new Gc reference
-    pub fn new(ptr: NonNull<T>, gc: GarbageCollector) -> Self {
+    pub fn new(ptr: NonNull<T>, gc: Arc<GarbageCollector>) -> Self {
+        println!("Gc::new called for {}", std::any::type_name::<T>());
         let addr = ptr.as_ptr() as usize;
+        println!("Adding root at address 0x{:x}", addr);
         gc.add_root(addr);
+        println!("Root added successfully");
 
         Self {
             ptr,
-            gc: Arc::new(gc),
+            gc: Arc::downgrade(&gc), // Use weak reference to avoid circular reference
             _marker: PhantomData,
         }
     }
@@ -126,28 +132,60 @@ impl<T: Traceable + Clone + 'static> Gc<T> {
 
     /// Create a weak reference to this object
     pub fn downgrade(&self) -> weak::Weak<T> {
-        weak::Weak::new(self.ptr, self.gc.clone())
+        // Try to upgrade the weak reference to get a temporary strong reference
+        if let Some(gc) = self.gc.upgrade() {
+            weak::Weak::new(self.ptr, gc)
+        } else {
+            // This should never happen in practice, but just in case 
+            // create a default GarbageCollector
+            let gc = Arc::new(GarbageCollector::new());
+            weak::Weak::new(self.ptr, gc)
+        }
+    }
+    
+    /// Get the GarbageCollector for this object
+    fn gc(&self) -> Option<Arc<GarbageCollector>> {
+        self.gc.upgrade()
     }
 }
 
 impl<T: Traceable + Clone + 'static> Clone for Gc<T> {
     fn clone(&self) -> Self {
-        // Register as a new root when cloned
-        let addr = self.ptr.as_ptr() as usize;
-        self.gc.add_root(addr);
+        // Try to upgrade the weak reference to get a temporary strong reference
+        if let Some(gc) = self.gc.upgrade() {
+            // Register as a new root when cloned
+            let addr = self.ptr.as_ptr() as usize;
+            gc.add_root(addr);
 
-        Self {
-            ptr: self.ptr,
-            gc: self.gc.clone(),
-            _marker: PhantomData,
+            Self {
+                ptr: self.ptr,
+                gc: Arc::downgrade(&gc),
+                _marker: PhantomData,
+            }
+        } else {
+            // This should never happen in practice, but just in case
+            // create a default GarbageCollector
+            let gc = Arc::new(GarbageCollector::new());
+            let addr = self.ptr.as_ptr() as usize;
+            gc.add_root(addr);
+            
+            Self {
+                ptr: self.ptr,
+                gc: Arc::downgrade(&gc),
+                _marker: PhantomData,
+            }
         }
     }
 }
 
 impl<T: Traceable + Clone + 'static> Drop for Gc<T> {
     fn drop(&mut self) {
-        // Remove from roots when dropped
-        let addr = self.ptr.as_ptr() as usize;
-        self.gc.remove_root(addr);
+        // Try to upgrade the weak reference to get a temporary strong reference
+        if let Some(gc) = self.gc.upgrade() {
+            // Remove from roots when dropped
+            let addr = self.ptr.as_ptr() as usize;
+            gc.remove_root(addr);
+        }
+        // If upgrade fails, the GC is already gone, so no need to remove root
     }
 }
