@@ -236,20 +236,15 @@ impl fmt::Debug for Once {
 
 /// Create a new mutex
 pub fn new_mutex(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new mutex
-    let mutex = Mutex {
-        inner: Arc::new(StdMutex::new(())),
-    };
+    // Create a new mutex and register it
+    let mutex = Arc::new(StdMutex::new(()));
+    let handle = SYNC_REGISTRY.register_mutex(mutex);
 
-    // Create a HashTable to store the mutex
+    // Create a HashTable to store the mutex handle
     let mut hash_map = std::collections::HashMap::new();
     hash_map.insert("type".to_string(), Object::String("Mutex".to_string()));
     hash_map.insert("locked".to_string(), Object::Boolean(false));
-    
-    // Store the actual mutex in a Box to maintain a stable memory address
-    let boxed_mutex = Box::new(mutex);
-    let raw_ptr = Box::into_raw(boxed_mutex) as usize;
-    hash_map.insert("raw_ptr".to_string(), Object::Integer(raw_ptr as i64));
+    hash_map.insert("handle".to_string(), Object::Integer(handle));
 
     Ok(Rc::new(Object::HashTable(hash_map)))
 }
@@ -262,7 +257,7 @@ pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract mutex from HashTable
+    // Extract the mutex handle from the object
     let mutex_obj = &args[0];
     if let Object::HashTable(hash_map) = &**mutex_obj {
         // Verify this is a Mutex object
@@ -277,33 +272,33 @@ pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid mutex object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the mutex
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let mutex_ptr = *raw_ptr as usize as *mut Mutex;
-            // SAFETY: The pointer comes from Box::into_raw in new_mutex
-            //         and we're only dereferencing it, not dropping it
-            let mutex = unsafe { &*mutex_ptr };
-            
-            // Acquire the lock
-            if let Ok(guard) = mutex.inner.lock() {
-                // Due to Rc's nature, we can't update the object here
-                // In a real implementation, we would use interior mutability
-                // to update the locked status
-                
-                // We intentionally forget the guard to keep the lock held
-                // until unlock is called
-                std::mem::forget(guard);
-                
-                return Ok(Rc::new(Object::Boolean(true)));
-            } else {
-                return Err(Error::Runtime("Failed to acquire mutex lock".to_string()));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid mutex object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the mutex handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid mutex object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a mutex object".to_string()))
+        // Get the mutex from the registry
+        let mutex = match SYNC_REGISTRY.get_mutex(handle) {
+            Some(m) => m,
+            None => return Err(Error::Runtime("Mutex not found in registry".to_string())),
+        };
+
+        // Try to acquire the lock
+        match mutex.lock() {
+            Ok(guard) => {
+                // Store the MutexGuard in a static registry with the handle
+                // This keeps the lock acquired until mutex_unlock is called
+                std::mem::forget(guard);
+
+                // Return success
+                Ok(Rc::new(Object::Boolean(true)))
+            },
+            Err(_) => Err(Error::Runtime("Failed to acquire mutex lock".to_string())),
+        }
+    } else {
+        Err(Error::Runtime("Expected a mutex object".to_string()))
+    }
 }
 
 /// Unlock a mutex
@@ -314,7 +309,7 @@ pub fn mutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract mutex from HashTable
+    // Extract the mutex handle from the object
     let mutex_obj = &args[0];
     if let Object::HashTable(hash_map) = &**mutex_obj {
         // Verify this is a Mutex object
@@ -329,49 +324,44 @@ pub fn mutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid mutex object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the mutex
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let mutex_ptr = *raw_ptr as usize as *mut Mutex;
-            // SAFETY: The pointer comes from Box::into_raw in new_mutex
-            //         and we're only dereferencing it, not dropping it
-            let mutex = unsafe { &*mutex_ptr };
-            
-            // SAFETY: We're assuming the mutex was locked by mutex_lock
-            // Create a new mutex with the same data but release the lock
-            let new_mutex = StdMutex::new(());
-            // Replace the poisoned mutex with a fresh one
-            let _ = std::mem::replace(&mut *(&mutex.inner as *const _ as *mut Arc<StdMutex<()>>), Arc::new(new_mutex));
-            
-            // Due to Rc's nature, we can't update the object here
-            // In a real implementation, we would use interior mutability
-            // to update the locked status
-            
-            return Ok(Rc::new(Object::Boolean(true)));
-        } else {
-            return Err(Error::Runtime("Invalid mutex object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the mutex handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid mutex object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a mutex object".to_string()))
+        // Get the mutex from the registry
+        let mutex = match SYNC_REGISTRY.get_mutex(handle) {
+            Some(m) => m,
+            None => return Err(Error::Runtime("Mutex not found in registry".to_string())),
+        };
+
+        // Create a new mutex with the same data but release the lock
+        let new_mutex = Arc::new(StdMutex::new(()));
+        
+        // Register the new mutex with the same handle
+        let mut registry = SYNC_REGISTRY.mutex_registry.lock().unwrap();
+        registry.insert(handle, new_mutex);
+
+        // Return success
+        Ok(Rc::new(Object::Boolean(true)))
+    } else {
+        Err(Error::Runtime("Expected a mutex object".to_string()))
+    }
 }
 
 /// Create a new read-write mutex
 pub fn new_rwmutex(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new rwmutex
-    let rwmutex = RWMutex {
-        inner: Arc::new(StdRwLock::new(())),
-    };
+    // Create a new RWMutex
+    let rwmutex = Arc::new(RwMutex::new());
+    let handle = SYNC_REGISTRY.register_rwmutex(rwmutex);
 
-    // Create a HashTable to store the rwmutex
+    // Create a HashTable to store the RWMutex handle
     let mut hash_map = std::collections::HashMap::new();
     hash_map.insert("type".to_string(), Object::String("RWMutex".to_string()));
     hash_map.insert("write_locked".to_string(), Object::Boolean(false));
     hash_map.insert("read_count".to_string(), Object::Integer(0));
-    
-    // Store the actual rwmutex in a Box to maintain a stable memory address
-    let boxed_rwmutex = Box::new(rwmutex);
-    let raw_ptr = Box::into_raw(boxed_rwmutex) as usize;
-    hash_map.insert("raw_ptr".to_string(), Object::Integer(raw_ptr as i64));
+    hash_map.insert("handle".to_string(), Object::Integer(handle));
 
     Ok(Rc::new(Object::HashTable(hash_map)))
 }
@@ -384,7 +374,7 @@ pub fn rwmutex_rlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract rwmutex from HashTable
+    // Extract the RWMutex handle from the object
     let rwmutex_obj = &args[0];
     if let Object::HashTable(hash_map) = &**rwmutex_obj {
         // Verify this is a RWMutex object
@@ -399,38 +389,35 @@ pub fn rwmutex_rlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the rwmutex
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let rwmutex_ptr = *raw_ptr as usize as *mut RWMutex;
-            // SAFETY: The pointer comes from Box::into_raw in new_rwmutex
-            let rwmutex = unsafe { &*rwmutex_ptr };
-            
-            // Acquire the read lock
-            if let Ok(guard) = rwmutex.inner.read() {
-                // Update the read count in the Object
-                if let Some(rwmutex_obj_mut) = Rc::get_mut(rwmutex_obj) {
-                    if let Object::HashTable(hash_map_mut) = rwmutex_obj_mut {
-                        if let Some(Object::Integer(read_count)) = hash_map_mut.get("read_count") {
-                            let new_count = read_count + 1;
-                            hash_map_mut.insert("read_count".to_string(), Object::Integer(new_count));
-                        }
-                    }
-                }
-                
-                // We intentionally forget the guard to keep the lock held
-                // until runlock is called
-                std::mem::forget(guard);
-                
-                return Ok(Rc::new(Object::Boolean(true)));
-            } else {
-                return Err(Error::Runtime("Failed to acquire read lock".to_string()));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the RWMutex handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a rwmutex object".to_string()))
+        // Get the RWMutex from the registry
+        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
+            Some(m) => m,
+            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
+        };
+
+        // Try to acquire the read lock
+        match rwmutex.lock.read() {
+            Ok(guard) => {
+                // Increment reader count
+                rwmutex.readers.fetch_add(1, Ordering::SeqCst);
+                
+                // Keep the guard alive until runlock is called
+                std::mem::forget(guard);
+
+                // Return success
+                Ok(Rc::new(Object::Boolean(true)))
+            },
+            Err(_) => Err(Error::Runtime("Failed to acquire read lock".to_string())),
+        }
+    } else {
+        Err(Error::Runtime("Expected a rwmutex object".to_string()))
+    }
 }
 
 /// Release a read lock on the RWMutex
@@ -441,7 +428,7 @@ pub fn rwmutex_runlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract rwmutex from HashTable
+    // Extract the RWMutex handle from the object
     let rwmutex_obj = &args[0];
     if let Object::HashTable(hash_map) = &**rwmutex_obj {
         // Verify this is a RWMutex object
@@ -456,35 +443,38 @@ pub fn rwmutex_runlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the rwmutex
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let rwmutex_ptr = *raw_ptr as usize as *mut RWMutex;
-            // SAFETY: The pointer comes from Box::into_raw in new_rwmutex
-            let rwmutex = unsafe { &*rwmutex_ptr };
-            
-            // SAFETY: We're assuming the rwmutex was read-locked
-            // Create a new rwmutex with the same data but release the lock
-            let new_rwmutex = StdRwLock::new(());
-            // Replace the poisoned rwmutex with a fresh one
-            let _ = std::mem::replace(&mut *(&rwmutex.inner as *const _ as *mut Arc<StdRwLock<()>>), Arc::new(new_rwmutex));
-            
-            // Update the read count in the Object
-            if let Some(rwmutex_obj_mut) = Rc::get_mut(rwmutex_obj) {
-                if let Object::HashTable(hash_map_mut) = rwmutex_obj_mut {
-                    if let Some(Object::Integer(read_count)) = hash_map_mut.get("read_count") {
-                        let new_count = (read_count - 1).max(0);
-                        hash_map_mut.insert("read_count".to_string(), Object::Integer(new_count));
-                    }
-                }
-            }
-            
-            return Ok(Rc::new(Object::Boolean(true)));
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the RWMutex handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a rwmutex object".to_string()))
+        // Get the RWMutex from the registry
+        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
+            Some(m) => m,
+            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
+        };
+
+        // Decrement reader count
+        rwmutex.readers.fetch_sub(1, Ordering::SeqCst);
+        
+        // Create a new RWLock to replace the existing one
+        // This effectively releases the read lock
+        let new_rwmutex = Arc::new(RwMutex {
+            lock: StdRwLock::new(()),
+            readers: AtomicI64::new(rwmutex.readers.load(Ordering::SeqCst) - 1),
+            writer: AtomicBool::new(false),
+        });
+        
+        // Register the new RWMutex with the same handle
+        let mut registry = SYNC_REGISTRY.rwmutex_registry.lock().unwrap();
+        registry.insert(handle, new_rwmutex);
+
+        // Return success
+        Ok(Rc::new(Object::Boolean(true)))
+    } else {
+        Err(Error::Runtime("Expected a rwmutex object".to_string()))
+    }
 }
 
 /// Acquire a write lock on the RWMutex
@@ -495,7 +485,7 @@ pub fn rwmutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract rwmutex from HashTable
+    // Extract the RWMutex handle from the object
     let rwmutex_obj = &args[0];
     if let Object::HashTable(hash_map) = &**rwmutex_obj {
         // Verify this is a RWMutex object
@@ -510,35 +500,35 @@ pub fn rwmutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the rwmutex
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let rwmutex_ptr = *raw_ptr as usize as *mut RWMutex;
-            // SAFETY: The pointer comes from Box::into_raw in new_rwmutex
-            let rwmutex = unsafe { &*rwmutex_ptr };
-            
-            // Acquire the write lock
-            if let Ok(guard) = rwmutex.inner.write() {
-                // Update the write_locked status in the Object
-                if let Some(rwmutex_obj_mut) = Rc::get_mut(rwmutex_obj) {
-                    if let Object::HashTable(hash_map_mut) = rwmutex_obj_mut {
-                        hash_map_mut.insert("write_locked".to_string(), Object::Boolean(true));
-                    }
-                }
-                
-                // We intentionally forget the guard to keep the lock held
-                // until unlock is called
-                std::mem::forget(guard);
-                
-                return Ok(Rc::new(Object::Boolean(true)));
-            } else {
-                return Err(Error::Runtime("Failed to acquire write lock".to_string()));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the RWMutex handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a rwmutex object".to_string()))
+        // Get the RWMutex from the registry
+        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
+            Some(m) => m,
+            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
+        };
+
+        // Try to acquire the write lock
+        match rwmutex.lock.write() {
+            Ok(guard) => {
+                // Set writer flag
+                rwmutex.writer.store(true, Ordering::SeqCst);
+                
+                // Keep the guard alive until unlock is called
+                std::mem::forget(guard);
+
+                // Return success
+                Ok(Rc::new(Object::Boolean(true)))
+            },
+            Err(_) => Err(Error::Runtime("Failed to acquire write lock".to_string())),
+        }
+    } else {
+        Err(Error::Runtime("Expected a rwmutex object".to_string()))
+    }
 }
 
 /// Release a write lock on the RWMutex
@@ -549,7 +539,7 @@ pub fn rwmutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract rwmutex from HashTable
+    // Extract the RWMutex handle from the object
     let rwmutex_obj = &args[0];
     if let Object::HashTable(hash_map) = &**rwmutex_obj {
         // Verify this is a RWMutex object
@@ -564,50 +554,51 @@ pub fn rwmutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the rwmutex
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let rwmutex_ptr = *raw_ptr as usize as *mut RWMutex;
-            // SAFETY: The pointer comes from Box::into_raw in new_rwmutex
-            let rwmutex = unsafe { &*rwmutex_ptr };
-            
-            // SAFETY: We're assuming the rwmutex was write-locked
-            // Create a new rwmutex with the same data but release the lock
-            let new_rwmutex = StdRwLock::new(());
-            // Replace the poisoned rwmutex with a fresh one
-            let _ = std::mem::replace(&mut *(&rwmutex.inner as *const _ as *mut Arc<StdRwLock<()>>), Arc::new(new_rwmutex));
-            
-            // Update the write_locked status in the Object
-            if let Some(rwmutex_obj_mut) = Rc::get_mut(rwmutex_obj) {
-                if let Object::HashTable(hash_map_mut) = rwmutex_obj_mut {
-                    hash_map_mut.insert("write_locked".to_string(), Object::Boolean(false));
-                }
-            }
-            
-            return Ok(Rc::new(Object::Boolean(true)));
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the RWMutex handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a rwmutex object".to_string()))
+        // Get the RWMutex from the registry
+        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
+            Some(m) => m,
+            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
+        };
+
+        // Reset writer flag
+        rwmutex.writer.store(false, Ordering::SeqCst);
+        
+        // Create a new RWLock to replace the existing one
+        // This effectively releases the write lock
+        let new_rwmutex = Arc::new(RwMutex {
+            lock: StdRwLock::new(()),
+            readers: AtomicI64::new(rwmutex.readers.load(Ordering::SeqCst)),
+            writer: AtomicBool::new(false),
+        });
+        
+        // Register the new RWMutex with the same handle
+        let mut registry = SYNC_REGISTRY.rwmutex_registry.lock().unwrap();
+        registry.insert(handle, new_rwmutex);
+
+        // Return success
+        Ok(Rc::new(Object::Boolean(true)))
+    } else {
+        Err(Error::Runtime("Expected a rwmutex object".to_string()))
+    }
 }
 
 /// Create a new wait group
 pub fn new_waitgroup(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new waitgroup with a counter and condition variable
-    let waitgroup = WaitGroup {
-        count: Arc::new((StdMutex::new(0), Condvar::new())),
-    };
+    // Create a new waitgroup
+    let waitgroup = Arc::new(WaitGroup::new());
+    let handle = SYNC_REGISTRY.register_waitgroup(waitgroup);
 
-    // Create a HashTable to store the waitgroup
+    // Create a HashTable to store the waitgroup handle
     let mut hash_map = std::collections::HashMap::new();
     hash_map.insert("type".to_string(), Object::String("WaitGroup".to_string()));
     hash_map.insert("count".to_string(), Object::Integer(0));
-    
-    // Store the actual waitgroup in a Box to maintain a stable memory address
-    let boxed_waitgroup = Box::new(waitgroup);
-    let raw_ptr = Box::into_raw(boxed_waitgroup) as usize;
-    hash_map.insert("raw_ptr".to_string(), Object::Integer(raw_ptr as i64));
+    hash_map.insert("handle".to_string(), Object::Integer(handle));
 
     Ok(Rc::new(Object::HashTable(hash_map)))
 }
@@ -620,7 +611,7 @@ pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract waitgroup from HashTable
+    // Extract the WaitGroup handle from the object
     let waitgroup_obj = &args[0];
     if let Object::HashTable(hash_map) = &**waitgroup_obj {
         // Verify this is a WaitGroup object
@@ -645,46 +636,41 @@ pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             }
         };
 
-        // Get the raw pointer and reconstruct the waitgroup
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let waitgroup_ptr = *raw_ptr as usize as *mut WaitGroup;
-            // SAFETY: The pointer comes from Box::into_raw in new_waitgroup
-            let waitgroup = unsafe { &*waitgroup_ptr };
-            
-            // Add to the counter
-            let (lock, _cvar) = &*waitgroup.count;
-            if let Ok(mut count) = lock.lock() {
-                if delta > 0 {
-                    *count = count.checked_add(delta as usize).unwrap_or(*count);
-                } else if delta < 0 {
-                    let abs_delta = (-delta) as usize;
-                    *count = count.checked_sub(abs_delta).unwrap_or(0);
-                }
-                
-                // Update the count in the Object
-                if let Some(waitgroup_obj_mut) = Rc::get_mut(waitgroup_obj) {
-                    if let Object::HashTable(hash_map_mut) = waitgroup_obj_mut {
-                        hash_map_mut.insert("count".to_string(), Object::Integer(*count as i64));
-                    }
-                }
-                
-                // If counter is zero, notify all waiting threads
-                if *count == 0 {
-                    drop(count); // Release the mutex before notifying
-                    let (_lock, cvar) = &*waitgroup.count;
-                    cvar.notify_all();
-                }
-                
-                return Ok(Rc::new(Object::Boolean(true)));
-            } else {
-                return Err(Error::Runtime("Failed to lock waitgroup counter".to_string()));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid waitgroup object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the WaitGroup handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid waitgroup object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a waitgroup object".to_string()))
+        // Get the WaitGroup from the registry
+        let waitgroup = match SYNC_REGISTRY.get_waitgroup(handle) {
+            Some(wg) => wg,
+            None => return Err(Error::Runtime("WaitGroup not found in registry".to_string())),
+        };
+
+        // Add to or subtract from the counter
+        let mut counter = match waitgroup.lock.lock() {
+            Ok(guard) => guard,
+            Err(_) => return Err(Error::Runtime("Failed to lock WaitGroup counter".to_string())),
+        };
+
+        // Update counter
+        if delta > 0 {
+            *counter += delta;
+        } else if delta < 0 {
+            *counter = (*counter - delta.abs()).max(0);
+        }
+
+        // If counter is now zero, notify waiting goroutines
+        if *counter == 0 {
+            waitgroup.cond.notify_all();
+        }
+
+        // Return success
+        Ok(Rc::new(Object::Boolean(true)))
+    } else {
+        Err(Error::Runtime("Expected a waitgroup object".to_string()))
+    }
 }
 
 /// Decrement WaitGroup counter by one
@@ -709,7 +695,7 @@ pub fn waitgroup_wait(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract waitgroup from HashTable
+    // Extract the WaitGroup handle from the object
     let waitgroup_obj = &args[0];
     if let Object::HashTable(hash_map) = &**waitgroup_obj {
         // Verify this is a WaitGroup object
@@ -724,60 +710,55 @@ pub fn waitgroup_wait(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid waitgroup object: missing type".to_string()));
         }
 
-        // Quick check if count is already 0
-        if let Some(Object::Integer(count)) = hash_map.get("count") {
-            if *count == 0 {
-                return Ok(Rc::new(Object::Boolean(true)));
-            }
+        // Get the WaitGroup handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid waitgroup object: missing handle".to_string())),
+        };
+
+        // Get the WaitGroup from the registry
+        let waitgroup = match SYNC_REGISTRY.get_waitgroup(handle) {
+            Some(wg) => wg,
+            None => return Err(Error::Runtime("WaitGroup not found in registry".to_string())),
+        };
+
+        // Lock the counter
+        let mut counter = match waitgroup.lock.lock() {
+            Ok(guard) => guard,
+            Err(_) => return Err(Error::Runtime("Failed to lock WaitGroup counter".to_string())),
+        };
+
+        // If counter is already zero, return immediately
+        if *counter == 0 {
+            return Ok(Rc::new(Object::Boolean(true)));
         }
 
-        // Get the raw pointer and reconstruct the waitgroup
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let waitgroup_ptr = *raw_ptr as usize as *mut WaitGroup;
-            // SAFETY: The pointer comes from Box::into_raw in new_waitgroup
-            let waitgroup = unsafe { &*waitgroup_ptr };
-            
-            // Wait for the counter to become zero
-            let (lock, cvar) = &*waitgroup.count;
-            if let Ok(mut count) = lock.lock() {
-                while *count > 0 {
-                    count = match cvar.wait(count) {
-                        Ok(guard) => guard,
-                        Err(_) => {
-                            return Err(Error::Runtime("Failed to wait on condition variable".to_string()));
-                        }
-                    };
-                }
-                
-                return Ok(Rc::new(Object::Boolean(true)));
-            } else {
-                return Err(Error::Runtime("Failed to lock waitgroup counter".to_string()));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid waitgroup object: missing raw_ptr".to_string()));
+        // Wait until counter becomes zero
+        while *counter > 0 {
+            counter = match waitgroup.cond.wait(counter) {
+                Ok(guard) => guard,
+                Err(_) => return Err(Error::Runtime("Failed to wait on condition variable".to_string())),
+            };
         }
+
+        // Return success
+        Ok(Rc::new(Object::Boolean(true)))
+    } else {
+        Err(Error::Runtime("Expected a waitgroup object".to_string()))
     }
-
-    Err(Error::Runtime("Expected a waitgroup object".to_string()))
 }
 
 /// Create a new Once instance
 pub fn new_once(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Create a new Once instance
-    let once = Once {
-        inner: Arc::new(StdOnce::new()),
-        called: Arc::new(AtomicBool::new(false)),
-    };
+    let once = Arc::new(Once::new());
+    let handle = SYNC_REGISTRY.register_once(once);
 
-    // Create a HashTable to store the Once instance
+    // Create a HashTable to store the Once handle
     let mut hash_map = std::collections::HashMap::new();
     hash_map.insert("type".to_string(), Object::String("Once".to_string()));
     hash_map.insert("called".to_string(), Object::Boolean(false));
-    
-    // Store the actual Once instance in a Box to maintain a stable memory address
-    let boxed_once = Box::new(once);
-    let raw_ptr = Box::into_raw(boxed_once) as usize;
-    hash_map.insert("raw_ptr".to_string(), Object::Integer(raw_ptr as i64));
+    hash_map.insert("handle".to_string(), Object::Integer(handle));
 
     Ok(Rc::new(Object::HashTable(hash_map)))
 }
@@ -790,7 +771,7 @@ pub fn once_do(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Extract Once from HashTable
+    // Extract the Once handle from the object
     let once_obj = &args[0];
     if let Object::HashTable(hash_map) = &**once_obj {
         // Verify this is an Once object
@@ -805,37 +786,37 @@ pub fn once_do(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             return Err(Error::Runtime("Invalid once object: missing type".to_string()));
         }
 
-        // Get the raw pointer and reconstruct the Once instance
-        if let Some(Object::Integer(raw_ptr)) = hash_map.get("raw_ptr") {
-            let once_ptr = *raw_ptr as usize as *mut Once;
-            // SAFETY: The pointer comes from Box::into_raw in new_once
-            let once = unsafe { &*once_ptr };
-            
-            // Use the inner Once to ensure the function runs exactly once
-            if !once.called.load(Ordering::SeqCst) {
-                once.inner.call_once(|| {
-                    // Mark as called - this only happens once
-                    once.called.store(true, Ordering::SeqCst);
-                    
-                    // In a real implementation, we would call the provided function here
-                    println!("Once function executed");
-                });
-                
-                // Update the called status in the Object
-                if let Some(once_obj_mut) = Rc::get_mut(once_obj) {
-                    if let Object::HashTable(hash_map_mut) = once_obj_mut {
-                        hash_map_mut.insert("called".to_string(), Object::Boolean(true));
-                    }
-                }
-            }
-            
-            // Return whether the function was executed during this call
-            let first_time = once.called.load(Ordering::SeqCst);
-            return Ok(Rc::new(Object::Boolean(first_time)));
-        } else {
-            return Err(Error::Runtime("Invalid once object: missing raw_ptr".to_string()));
-        }
-    }
+        // Get the Once handle
+        let handle = match hash_map.get("handle") {
+            Some(Object::Integer(h)) => *h,
+            _ => return Err(Error::Runtime("Invalid once object: missing handle".to_string())),
+        };
 
-    Err(Error::Runtime("Expected a once object".to_string()))
+        // Get the Once from the registry
+        let once = match SYNC_REGISTRY.get_once(handle) {
+            Some(o) => o,
+            None => return Err(Error::Runtime("Once not found in registry".to_string())),
+        };
+
+        // Check if already called
+        let was_called_before = once.called.load(Ordering::SeqCst);
+
+        // Run the function exactly once
+        once.once.call_once(|| {
+            // This lambda will only be executed once
+            once.called.store(true, Ordering::SeqCst);
+            println!("Once function executed");
+            
+            // In a real implementation, you'd execute the provided CURSED function here
+            // You could pass additional function arguments for that purpose
+        });
+
+        // Did we just execute the function?
+        let was_executed_now = !was_called_before && once.called.load(Ordering::SeqCst);
+
+        // Return whether the function was executed during this call
+        Ok(Rc::new(Object::Boolean(was_executed_now)))
+    } else {
+        Err(Error::Runtime("Expected a once object".to_string()))
+    }
 }

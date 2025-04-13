@@ -389,6 +389,7 @@ dependencies = [
  "hex",
  "hmac",
  "inkwell",
+ "lazy_static",
  "libc",
  "log",
  "md5",

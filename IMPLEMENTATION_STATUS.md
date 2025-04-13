@@ -75,6 +75,25 @@ The quick_test module provides property-based testing capabilities:
 4. **Test Case Shrinking**: Algorithms to reduce failing test cases to minimal examples
 5. **Reproducibility**: Supports specifying seeds for deterministic test runs
 
+## Concurrency Support Module
+
+- [x] Implemented concurrenz module for synchronization primitives
+- [x] Added Mutex implementation for exclusive access to shared resources
+- [x] Added RWMutex implementation for concurrent readers with exclusive writers
+- [x] Added WaitGroup implementation for coordinating multiple goroutines
+- [x] Added Once implementation for one-time initialization
+- [x] Created thread-safe registry for managing synchronization primitives
+
+### Details
+
+The concurrenz module provides synchronization tools for concurrent CURSED programs:
+
+1. **Thread-Safe Registry**: Central management of synchronization primitives with safe access
+2. **Mutex Implementation**: Mutual exclusion lock for protecting shared data
+3. **RWMutex Implementation**: Reader/writer lock allowing multiple readers or a single writer
+4. **WaitGroup Implementation**: Synchronization to wait for multiple goroutines to complete
+5. **Once Implementation**: Mechanism to ensure a function is executed exactly once
+
 ## Standard Library Documentation
 
 - [x] Updated all stdlib documentation to use CURSED lexical structure
