@@ -3,6 +3,13 @@ use super::statements::fields::FieldStatement;
 use crate::ast::{Expression, Node, Statement};
 use std::any::Any;
 
+/// GenericConstraint represents a constraint on a generic type parameter
+pub struct GenericConstraint {
+    pub token: String,
+    pub type_parameter: Identifier,
+    pub trait_name: Identifier,
+}
+
 /// SquadStatement represents a struct definition
 pub struct SquadStatement {
     pub token: String, // Token::Squad
@@ -167,6 +174,7 @@ pub struct FunctionStatement {
     pub body: super::statements::block::BlockStatement,
     pub return_type: Option<Box<dyn Expression>>,
     pub type_parameters: Vec<Identifier>, // Generic type parameters for function [T], [A, B], etc.
+    pub generic_constraints: Vec<GenericConstraint>, // Constraints on generic types
 }
 
 impl Node for FunctionStatement {

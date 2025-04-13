@@ -514,6 +514,12 @@ impl From<io::Error> for Error {
     }
 }
 
+impl From<inkwell::builder::BuilderError> for Error {
+    fn from(err: inkwell::builder::BuilderError) -> Self {
+        Error::CodeGenError(format!("LLVM Builder error: {}", err))
+    }
+}
+
 /// Implement Default trait for Error
 impl Default for Error {
     fn default() -> Self {

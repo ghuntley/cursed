@@ -18,11 +18,13 @@
 //! * `switch`: Parsing logic for switch/vibe_check statements
 
 mod channel;
+mod channel_helpers;
 mod context;
 mod expression_list;
 mod expressions;
 mod parser;
 mod precedence;
+pub mod preprocessor;
 mod reference;
 mod statements;
 mod switch;
@@ -32,3 +34,4 @@ mod types;
 mod tests;
 
 pub use parser::Parser;
+pub use preprocessor::{Preprocessor, TokenStream};

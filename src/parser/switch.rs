@@ -3,7 +3,10 @@
 //! This module provides functions to parse switch statements with proper handling
 //! for string literals in case values, as required for the string switch feature.
 
-use crate::ast::control_flow::{CaseStatement, SwitchStatement};
+use crate::ast;
+use crate::ast::control_flow::switch::{SwitchCase, SwitchStatement};
+use crate::ast::expressions::literals::StringLiteral;
+use crate::ast::expressions::Identifier;
 use crate::ast::statements::block::BlockStatement;
 use crate::ast::{Expression, Node, Statement};
 use crate::error::Error;
@@ -131,14 +134,31 @@ impl<'a> Parser<'a> {
                 }
                 
                 // Create the case statement
-                cases.push(CaseStatement {
-                    token: token.token_literal(),
-                    expressions,  // Use all parsed expressions
-                    body: BlockStatement {
-                        token: "{".to_string(),
+                if let Some(case_expr) = expressions.first() {
+                    // We need to clone the case expression properly
+                    let cloned_expr = if let Some(ident) = case_expr.as_any().downcast_ref::<Identifier>() {
+                        Box::new(Identifier {
+                            token: ident.token.clone(),
+                            value: ident.value.clone(),
+                        }) as Box<dyn Expression>
+                    } else if let Some(str_lit) = case_expr.as_any().downcast_ref::<StringLiteral>() {
+                        Box::new(StringLiteral {
+                            token: str_lit.token.clone(),
+                            value: str_lit.value.clone(),
+                        }) as Box<dyn Expression>
+                    } else {
+                        // For other types, create a string representation
+                        Box::new(StringLiteral {
+                            token: "case".to_string(),
+                            value: case_expr.string(),
+                        }) as Box<dyn Expression>
+                    };
+                    
+                    cases.push(SwitchCase {
+                        value: cloned_expr,
                         statements,
-                    },
-                });
+                    });
+                }
                 
                 // Pop case clause context
                 self.pop_context();
@@ -180,8 +200,11 @@ impl<'a> Parser<'a> {
                     self.next_token()?;
                 }
                 
-                default = Some(BlockStatement {
-                    token: token.token_literal(),
+                default = Some(SwitchCase {
+                    value: Box::new(StringLiteral {
+                        token: "basic".to_string(),
+                        value: "default".to_string(),
+                    }),
                     statements,
                 });
                 
@@ -238,7 +261,7 @@ impl<'a> Parser<'a> {
     /// # Returns
     ///
     /// A Result containing a CaseStatement if successful, or an Error if parsing fails.
-    fn parse_case_statement(&mut self) -> Result<CaseStatement, Error> {
+    fn parse_case_statement(&mut self) -> Result<(Vec<Box<dyn Expression>>, Vec<Box<dyn Statement>>), Error> {
         let token = self.current_token.clone();
         self.next_token()?; // Advance past 'mood'
 
@@ -279,14 +302,8 @@ impl<'a> Parser<'a> {
             self.next_token()?;
         }
 
-        Ok(CaseStatement {
-            token: token.token_literal(),
-            expressions,
-            body: BlockStatement {
-                token: "{".to_string(),
-                statements,
-            },
-        })
+        // Return the expressions and statements directly instead of creating a CaseStatement
+        Ok((expressions, statements))
     }
 
     /// Parse a default case (basic in CURSED) for switch statements

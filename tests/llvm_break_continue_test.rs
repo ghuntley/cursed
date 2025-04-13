@@ -18,6 +18,10 @@ fn test_break_statement() {
     let void_type = context.void_type();
     let fn_type = void_type.fn_type(&[], false);
     let function = generator.module().add_function("test_break", fn_type, None);
+    
+    // Set the current function in the generator
+    generator.set_current_function(function);
+    
     let entry_block = context.append_basic_block(function, "entry");
     generator.builder().position_at_end(entry_block);
 
@@ -56,6 +60,10 @@ fn test_break_statement() {
         result.err()
     );
 
+    // Add a return void instruction to terminate the function
+    let return_void = generator.builder().build_return(None);
+    assert!(return_void.is_ok(), "Failed to build return: {:?}", return_void.err());
+    
     // Verify the module
     let verify_result = generator.module().verify();
     assert!(
@@ -76,6 +84,10 @@ fn test_continue_statement() {
     let function = generator
         .module()
         .add_function("test_continue", fn_type, None);
+    
+    // Set the current function in the generator
+    generator.set_current_function(function);
+    
     let entry_block = context.append_basic_block(function, "entry");
     generator.builder().position_at_end(entry_block);
 
@@ -115,6 +127,10 @@ fn test_continue_statement() {
         "Failed to compile for statement with continue: {:?}",
         result.err()
     );
+    
+    // Add a return void instruction to terminate the function
+    let return_void = generator.builder().build_return(None);
+    assert!(return_void.is_ok(), "Failed to build return: {:?}", return_void.err());
 
     // Verify the module
     let verify_result = generator.module().verify();

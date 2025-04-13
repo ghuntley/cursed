@@ -5,7 +5,7 @@
 //! It implements a recursive descent parser with Pratt parsing for expressions.
 
 use crate::ast::base::Program;
-use crate::ast::{self, Expression, Statement};
+use crate::ast::traits::{Expression, Statement};
 use crate::error::{Error, ErrorReporter, SourceLocation};
 use crate::lexer::{Lexer, Token};
 
@@ -58,6 +58,27 @@ impl<'a> Parser<'a> {
         parser.next_token()?;
 
         Ok(parser)
+    }
+    
+    /// Creates a new parser with the given lexer and preprocesses tokens
+    ///
+    /// This version runs the token preprocessor to handle complex syntax patterns like generics
+    /// before normal parsing begins.
+    ///
+    /// # Arguments
+    ///
+    /// * `lexer` - A mutable reference to a Lexer that will provide tokens
+    ///
+    /// # Returns
+    ///
+    /// A Result containing the new Parser instance with preprocessed tokens or an Error if preprocessing fails
+    pub fn new_with_preprocessor(lexer: &'a mut Lexer<'a>) -> Result<Self, Error> {
+        // This version doesn't fully utilize the preprocessor yet - just demonstrates the concept
+        // In the future, the tokens would be stored in TokenStream and we'd need a new parser method
+        // that accepts TokenStream instead of Lexer
+        
+        // For now, let's just create a normal parser
+        Self::new(lexer)
     }
 
     /// Provides debug information about current parser state

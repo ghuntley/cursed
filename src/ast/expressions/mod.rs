@@ -19,17 +19,24 @@ pub mod calls;
 pub mod channel;
 pub mod collections;
 pub mod concurrency;
+pub mod generics;
 pub mod identifiers;
 pub mod literals;
 pub mod operators;
 pub mod special;
+pub mod types;
 
-pub use calls::*;
-pub use collections::*;
-pub use identifiers::*;
+pub use calls::{CallExpression, GenericCallExpression};
+pub use collections::{ArrayLiteral, HashLiteral, IndexExpression};
+pub use identifiers::Identifier;
 pub use literals::*;
 pub use operators::*;
 // Re-export specific items instead of using glob imports to avoid collisions
 pub use channel::ChannelExpression;
-pub use concurrency::{ReceiveExpression, SendExpression, StanExpression};
-pub use special::*;
+pub use concurrency::StanExpression;
+pub use channel::{ReceiveExpression, SendExpression};
+pub use special::{AssignmentExpression, BeLikeExpression, DefaultCase};
+
+// Specific imports from generics to avoid conflicts
+pub use generics::TypeReference;
+pub use types::TypeConversionExpression;

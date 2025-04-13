@@ -12,7 +12,7 @@ fn test_pointer_type() {
     }) as Box<dyn Expression>;
 
     let pointer_type = PointerType {
-        token: Token::At,
+        token: "@".to_string(),
         target_type,
     };
 
@@ -27,7 +27,7 @@ fn test_pointer_dereference() {
     }) as Box<dyn Expression>;
 
     let dereference = PointerDereference {
-        token: Token::At,
+        token: "@".to_string(),
         pointer,
     };
 

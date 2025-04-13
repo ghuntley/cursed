@@ -154,6 +154,7 @@ fn create_generic_function(
         body,
         return_type: Some(return_type_expr),
         type_parameters,
+        generic_constraints: vec![],  // No constraints in this test
     }
 }
 

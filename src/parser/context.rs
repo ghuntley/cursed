@@ -35,6 +35,16 @@ pub enum ParsingContext {
     IfStatement,
     /// Parsing an else clause
     ElseClause,
+    /// Parsing a struct declaration
+    StructDeclaration,
+    /// Parsing a struct field
+    StructField,
+    /// Parsing a type parameter list
+    TypeParameters,
+    /// Parsing a type instantiation
+    TypeInstantiation,
+    /// Parsing a generic function call
+    GenericFunctionCall,
 }
 
 /// Trait for providing context-aware parsing capabilities

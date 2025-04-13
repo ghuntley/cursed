@@ -37,12 +37,14 @@ impl<'a> Parser<'a> {
             None
         };
 
-        // Create a channel expression
-        let channel_expr = ChannelExpression {
-            token: token.token_literal(),
-            element_type,
+        // Use the helper function to create a channel expression
+        use crate::parser::channel_helpers::create_channel_expression;
+        
+        let channel_expr = create_channel_expression(
+            token.clone(), // Pass the token directly
+            element_type, // Pass the element type directly
             capacity,
-        };
+        );
 
         Ok(Box::new(channel_expr))
     }

@@ -16,6 +16,7 @@ pub mod block;
 pub mod declarations;
 pub mod expressions;
 pub mod fields;
+pub mod go_statement;
 
 // Re-export all types for easier imports
 pub use self::block::BlockStatement;
@@ -24,3 +25,4 @@ pub use self::declarations::{
 };
 pub use self::expressions::ExpressionStatement;
 pub use self::fields::FieldStatement;
+pub use self::go_statement::GoStatement;

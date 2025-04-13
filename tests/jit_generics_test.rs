@@ -6,8 +6,8 @@ use cursed::ast::expressions::{
 };
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
-use cursed::ast::FunctionStatement;
-use cursed::ast::ParameterStatement;
+use cursed::ast::declarations::FunctionStatement;
+use cursed::ast::declarations::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::type_checker::Type;
@@ -24,8 +24,8 @@ fn test_monomorphization_jit_execution() {
     // Create a generic identity function: function identity<T>(x: T) -> T { return x; }
     let identity_function = create_generic_identity_function();
 
-    // Get a reference to the mono_manager to avoid borrow conflicts
-    let mut mono_manager = std::mem::take(&mut code_gen.mono_manager);
+    // Create a new monomorphization manager for testing
+    let mut mono_manager = MonomorphizationManager::new();
 
     // Specialize the function for type Normie (i32)
     let specialized_name_i32 = mono_manager
@@ -59,8 +59,7 @@ fn test_monomorphization_jit_execution() {
     // Make sure they are different specializations
     assert_ne!(specialized_name_i32, specialized_name_tea);
 
-    // Return the mono_manager back to code_gen
-    code_gen.mono_manager = mono_manager;
+    // We're using our own mono_manager for testing
 
     // Verify both functions exist in the module
     let module = code_gen.module();
@@ -83,8 +82,8 @@ fn test_complex_generic_function() {
     // function swap<T>(a: T, b: T) -> T { return a; }
     let swap_function = create_generic_swap_function();
 
-    // Get a reference to the mono_manager to avoid borrow conflicts
-    let mut mono_manager = std::mem::take(&mut code_gen.mono_manager);
+    // Create a new monomorphization manager for testing
+    let mut mono_manager = MonomorphizationManager::new();
 
     // Specialize for Normie (i32)
     let specialized_name = mono_manager
@@ -108,8 +107,7 @@ fn test_complex_generic_function() {
     assert_eq!(specialized_name2, "swap__Thicc");
     assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]));
 
-    // Return the mono_manager back to code_gen
-    code_gen.mono_manager = mono_manager;
+    // We're using our own mono_manager for testing
 
     // Verify both functions exist in the module
     let module = code_gen.module();
@@ -154,7 +152,7 @@ fn create_generic_swap_function() -> FunctionStatement {
     ];
 
     // Create return type T
-    let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
+    let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
         token: "IDENT".to_string(),
         value: "T".to_string(),
     }));
@@ -184,6 +182,7 @@ fn create_generic_swap_function() -> FunctionStatement {
         body: body,
         return_type,
         type_parameters,
+        generic_constraints: vec![],  // No constraints in this generic function
     }
 }
 
@@ -209,7 +208,7 @@ fn create_generic_identity_function() -> FunctionStatement {
     }];
 
     // Create return type T
-    let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
+    let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
         token: "IDENT".to_string(),
         value: "T".to_string(),
     }));
@@ -239,5 +238,6 @@ fn create_generic_identity_function() -> FunctionStatement {
         body: body,
         return_type,
         type_parameters,
+        generic_constraints: vec![],  // No constraints in this generic function
     }
 }

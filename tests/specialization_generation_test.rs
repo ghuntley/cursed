@@ -184,6 +184,7 @@ fn create_generic_add_function() -> FunctionStatement {
         body,
         return_type,
         type_parameters,
+        generic_constraints: vec![],  // No constraints in this example
     }
 }
 

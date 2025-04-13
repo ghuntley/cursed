@@ -3,7 +3,7 @@ use inkwell::types::BasicMetadataTypeEnum;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 
-use cursed::codegen::LlvmCodeGenerator;
+use cursed::codegen::llvm::LlvmCodeGenerator;
 
 #[test]
 fn test_simple_llvm_ir_generation() {
@@ -91,7 +91,7 @@ fn test_create_function() {
 
     // Create a function that returns i32
     let fn_name = "test_function";
-    let function = generator.create_function(fn_name, &params, i32_type.into(), false);
+    let function = generator.module().add_function(fn_name, i32_type.fn_type(&params, false), None);
 
     assert_eq!(
         function.count_params(),

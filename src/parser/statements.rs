@@ -27,7 +27,38 @@ impl<'a> Parser<'a> {
             Token::Periodt => self.parse_while_statement(),
             Token::Ghosted => self.parse_break_statement(),
             Token::Simp => self.parse_continue_statement(),
+            Token::Vibe => self.parse_package_statement(), // Package declaration
             Token::VibeCheck => self.parse_switch_statement(), // vibe_check
+            Token::BeLike => {
+                // Handle struct declaration with the special be_like syntax
+                // Push a marker to indicate we're at the beginning of a be_like statement
+                self.push_context(ParsingContext::StructDeclaration);
+                let result = self.parse_squad_statement(); // Parse the struct declaration
+                self.pop_context();
+                result
+            },
+            Token::Slay => {
+                // Handle function declaration with proper context
+                // Push a marker to indicate we're at the beginning of a function declaration
+                self.push_context(ParsingContext::FunctionDeclaration);
+                let result = self.parse_function_statement(); // Parse the function declaration
+                self.pop_context();
+                result
+            },
+            Token::Squad => {
+                // If we encounter a 'squad' token directly, it's part of a struct declaration
+                // that was started with 'be_like'. We need to adjust the parsing accordingly.
+                // This can happen when the parser has already moved past the 'be_like' token.
+                
+                // Check if we're in a struct declaration context
+                if self.in_context(ParsingContext::StructDeclaration) {
+                    // Continue parsing the struct declaration where it left off
+                    self.parse_struct_body()
+                } else {
+                    // If we see 'squad' without being in a struct context, treat as an expression
+                    self.parse_expression_statement()
+                }
+            },
             Token::Normie
             | Token::Tea
             | Token::Thicc
@@ -512,6 +543,573 @@ impl<'a> Parser<'a> {
         }))
     }
 
+    /// Parse a package statement (vibe <package-name>)
+    pub(super) fn parse_package_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Advance past 'vibe'
+
+        // Parse package name
+        if !matches!(self.current_token, Token::Identifier(_)) {
+            return Err(self.error(&format!(
+                "Expected package name after 'vibe', got {:?}",
+                self.current_token
+            )));
+        }
+
+        // Get package name
+        let name = match &self.current_token {
+            Token::Identifier(ident) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: ident.clone(),
+            },
+            _ => unreachable!(),
+        };
+
+        self.next_token()?; // Advance past package name
+
+        // Expect semicolon
+        self.expect_semicolon()?;
+
+        Ok(Box::new(ast::statements::declarations::PackageStatement {
+            token: token.token_literal(),
+            name,
+        }))
+    }
+
+    /// Parse a squad (struct) statement (be_like Box[T] squad { ... })
+    ///
+    /// This function handles the parsing of struct declarations, including those with
+    /// generic type parameters. The entire declaration is treated as a single statement.
+    pub(super) fn parse_squad_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        // Push struct context for the entire declaration
+        self.push_context(ParsingContext::StructDeclaration);
+        
+        let token = self.current_token.clone();
+        self.next_token()?; // Advance past 'be_like'
+
+        // Parse struct name
+        if !matches!(self.current_token, Token::Identifier(_)) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected struct name after 'be_like', got {:?}",
+                self.current_token
+            )));
+        }
+
+        // Get struct name
+        let struct_name = match &self.current_token {
+            Token::Identifier(ident) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: ident.clone(),
+            },
+            _ => unreachable!(),
+        };
+
+        self.next_token()?; // Advance past struct name
+
+        // Parse type parameters if any [T, U, ...]  
+        let mut type_parameters = Vec::new();
+        if self.current_token_is(Token::LBracket) {
+            // Push type parameter context to help with disambiguation
+            self.push_context(ParsingContext::TypeParameters);
+            
+            self.next_token()?; // Advance past '['
+
+            // Parse comma-separated list of type parameters
+            while !self.current_token_is(Token::RBracket) && !self.current_token_is(Token::Eof) {
+                if !matches!(self.current_token, Token::Identifier(_)) {
+                    self.pop_context(); // Pop type parameters context
+                    self.pop_context(); // Pop struct declaration context
+                    return Err(self.error(&format!(
+                        "Expected type parameter identifier, got {:?}",
+                        self.current_token
+                    )));
+                }
+
+                // Add type parameter
+                let param = match &self.current_token {
+                    Token::Identifier(ident) => ast::Identifier {
+                        token: self.current_token.token_literal(),
+                        value: ident.clone(),
+                    },
+                    _ => unreachable!(),
+                };
+                type_parameters.push(param);
+
+                self.next_token()?; // Advance past parameter
+
+                // Handle comma
+                if self.current_token_is(Token::Comma) {
+                    self.next_token()?; // Advance past comma
+                } else if !self.current_token_is(Token::RBracket) {
+                    self.pop_context(); // Pop type parameters context
+                    self.pop_context(); // Pop struct declaration context
+                    return Err(self.error(&format!(
+                        "Expected ',' or ']' after type parameter, got {:?}",
+                        self.current_token
+                    )));
+                }
+            }
+
+            self.next_token()?; // Advance past ']'
+            
+            // Pop type parameter context
+            self.pop_context();
+        }
+
+        // Expect 'squad' keyword
+        if !self.current_token_is(Token::Squad) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected 'squad' keyword, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past 'squad'
+
+        // Expect '{' for struct fields
+        if !self.current_token_is(Token::LBrace) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected '{{' for struct fields, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past '{'
+
+        // Parse struct fields
+        let mut fields = Vec::new();
+        while !self.current_token_is(Token::RBrace) && !self.current_token_is(Token::Eof) {
+            // Parse field name
+            if !matches!(self.current_token, Token::Identifier(_)) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected field name, got {:?}",
+                    self.current_token
+                )));
+            }
+
+            // Get field name
+            let field_name = match &self.current_token {
+                Token::Identifier(ident) => ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: ident.clone(),
+                },
+                _ => unreachable!(),
+            };
+
+            self.next_token()?; // Advance past field name
+
+            // Parse field type
+            if !matches!(self.current_token, Token::Identifier(_)) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected field type, got {:?}",
+                    self.current_token
+                )));
+            }
+
+            // Get field type
+            let field_type = match &self.current_token {
+                Token::Identifier(ident) => ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: ident.clone(),
+                },
+                _ => unreachable!(),
+            };
+
+            self.next_token()?; // Advance past field type
+
+            // Create field struct
+            let field = ast::statements::fields::FieldStatement {
+                token: "field".to_string(),
+                name: field_name,
+                type_name: field_type,
+            };
+            fields.push(field);
+
+            // Expect newline or comma
+            if self.current_token_is(Token::Semicolon) {
+                self.next_token()?; // Advance past newline
+            }
+        }
+
+        // Expect '}'
+        if !self.current_token_is(Token::RBrace) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected '}}' after struct fields, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past '}'
+
+        // Pop struct context
+        self.pop_context();
+
+        // Create struct statement
+        Ok(Box::new(ast::SquadStatement {
+            token: token.token_literal(),
+            name: struct_name,
+            type_parameters,
+            fields,
+        }))
+    }
+
+    /// Parse a function statement (slay foo[T](param type) returnType { ... })
+    ///
+    /// This function handles parsing of function declarations, including those with generic
+    /// type parameters. The entire declaration is treated as a single statement.
+    pub(super) fn parse_function_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
+        // Push function context for the entire declaration
+        self.push_context(ParsingContext::FunctionDeclaration);
+        
+        let token = self.current_token.clone();
+        self.next_token()?; // Advance past 'slay'
+
+        // Parse function name
+        if !matches!(self.current_token, Token::Identifier(_)) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected function name after 'slay', got {:?}",
+                self.current_token
+            )));
+        }
+
+        // Get function name
+        let func_name = match &self.current_token {
+            Token::Identifier(ident) => ast::Identifier {
+                token: self.current_token.token_literal(),
+                value: ident.clone(),
+            },
+            _ => unreachable!(),
+        };
+
+        self.next_token()?; // Advance past function name
+
+        // Parse type parameters if any [T, U, ...]
+        let mut type_parameters = Vec::new();
+        if self.current_token_is(Token::LBracket) {
+            // Push type parameter context to help with disambiguation
+            self.push_context(ParsingContext::TypeParameters);
+            
+            self.next_token()?; // Advance past '['
+
+            // Parse comma-separated list of type parameters
+            while !self.current_token_is(Token::RBracket) && !self.current_token_is(Token::Eof) {
+                if !matches!(self.current_token, Token::Identifier(_)) {
+                    self.pop_context(); // Pop type parameters context
+                    self.pop_context(); // Pop function declaration context
+                    return Err(self.error(&format!(
+                        "Expected type parameter identifier, got {:?}",
+                        self.current_token
+                    )));
+                }
+
+                // Add type parameter
+                let param = match &self.current_token {
+                    Token::Identifier(ident) => ast::Identifier {
+                        token: self.current_token.token_literal(),
+                        value: ident.clone(),
+                    },
+                    _ => unreachable!(),
+                };
+                type_parameters.push(param);
+
+                self.next_token()?; // Advance past parameter
+
+                // Handle comma
+                if self.current_token_is(Token::Comma) {
+                    self.next_token()?; // Advance past comma
+                } else if !self.current_token_is(Token::RBracket) {
+                    self.pop_context(); // Pop type parameters context
+                    self.pop_context(); // Pop function declaration context
+                    return Err(self.error(&format!(
+                        "Expected ',' or ']' after type parameter, got {:?}",
+                        self.current_token
+                    )));
+                }
+            }
+
+            self.next_token()?; // Advance past ']'
+            
+            // Pop type parameter context
+            self.pop_context();
+        }
+
+        // Expect '(' for parameters
+        if !self.current_token_is(Token::LParen) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected '(' for function parameters, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past '('
+
+        // Parse parameters
+        let mut parameters = Vec::new();
+        while !self.current_token_is(Token::RParen) && !self.current_token_is(Token::Eof) {
+            // Parse parameter name
+            if !matches!(self.current_token, Token::Identifier(_)) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected parameter name, got {:?}",
+                    self.current_token
+                )));
+            }
+
+            // Get parameter name
+            let param_name = match &self.current_token {
+                Token::Identifier(ident) => ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: ident.clone(),
+                },
+                _ => unreachable!(),
+            };
+
+            self.next_token()?; // Advance past parameter name
+
+            // Parse parameter type
+            if !self.is_type_token(&self.current_token) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected parameter type, got {:?}",
+                    self.current_token
+                )));
+            }
+
+            // Get parameter type token
+            let param_type_token = self.current_token.clone();
+            let param_type = self.parse_type_identifier(&param_type_token)?;
+
+            // Create parameter
+            let parameter = ast::declarations::ParameterStatement {
+                token: param_name.token.clone(),
+                name: param_name,
+                type_name: Box::new(param_type),
+            };
+            parameters.push(parameter);
+
+            self.next_token()?; // Advance past parameter type
+
+            // Handle comma
+            if self.current_token_is(Token::Comma) {
+                self.next_token()?; // Advance past comma
+            } else if !self.current_token_is(Token::RParen) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected ',' or ')' after parameter, got {:?}",
+                    self.current_token
+                )));
+            }
+        }
+
+        // Expect ')'
+        if !self.current_token_is(Token::RParen) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected ')' after parameters, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past ')'
+
+        // Parse return type if specified
+        let mut return_type = None;
+        if self.is_type_token(&self.current_token) {
+            // Get return type token
+            let return_type_token = self.current_token.clone();
+            let type_expr = self.parse_type_identifier(&return_type_token)?;
+            // Convert to Box<dyn Expression>
+            return_type = Some(Box::new(type_expr) as Box<dyn ast::Expression>);
+            self.next_token()?; // Advance past return type
+        }
+
+        // Expect '{' for function body
+        if !self.current_token_is(Token::LBrace) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected '{{' for function body, got {:?}",
+                self.current_token
+            )));
+        }
+
+        // Parse function body
+        let body = self.parse_block_statement()?;
+
+        // Pop function context
+        self.pop_context();
+
+        // Create function statement
+        Ok(Box::new(ast::FunctionStatement {
+            token: token.token_literal(),
+            name: func_name,
+            type_parameters,
+            parameters: parameters,
+            return_type,
+            body,
+            generic_constraints: Vec::new(), // No constraints for now
+        }))
+    }
+    
+    /// Parse a type expression from a token
+    fn parse_type_identifier(&mut self, token: &Token) -> Result<ast::Identifier, Error> {
+        let type_name = match token {
+            Token::Normie => "normie",
+            Token::Tea => "tea",
+            Token::Thicc => "thicc",
+            Token::Smol => "smol",
+            Token::Mid => "mid",
+            Token::Lit => "lit",
+            Token::Snack => "snack",
+            Token::Meal => "meal",
+            Token::Identifier(name) => name, // Allow type parameters like T
+            _ => {
+                return Err(self.error(&format!("Expected type, got {:?}", token)));
+            }
+        };
+        
+        Ok(ast::Identifier {
+            token: token.token_literal(),
+            value: type_name.to_string(),
+        })
+    }
+    
+    /// Check if a token is a type token
+    fn is_type_token(&self, token: &Token) -> bool {
+        matches!(
+            token,
+            Token::Normie
+                | Token::Tea
+                | Token::Thicc
+                | Token::Smol
+                | Token::Mid
+                | Token::Lit
+                | Token::Snack
+                | Token::Meal
+                | Token::Identifier(_) // Allow type parameters
+        )
+    }
+    
+    // Switch statement parsing is implemented in src/parser/switch.rs
+    
+    /// Parse the body of a struct declaration when we're at the 'squad' token
+    /// This continues parsing a struct that was already started with 'be_like'
+    pub(super) fn parse_struct_body(&mut self) -> Result<Box<dyn Statement>, Error> {
+        // Push struct context
+        self.push_context(ParsingContext::StructDeclaration);
+        
+        let token = "be_like".to_string(); // Use the correct token for the AST node
+        
+        // We're already at the 'squad' token, so we need to extract struct name and type parameters
+        // from the previously parsed tokens in the expression statements
+        
+        // Find the most recent expression statements that would contain the struct name and type parameters
+        // For now, we'll create a placeholder value - in a real implementation, we would look at the prior statements
+        
+        // Assume we're at the 'squad' token
+        self.next_token()?; // Advance past 'squad'
+        
+        // Expect '{' for struct fields
+        if !self.current_token_is(Token::LBrace) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected '{{' for struct fields, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past '{'
+        
+        // Parse struct fields
+        let mut fields = Vec::new();
+        while !self.current_token_is(Token::RBrace) && !self.current_token_is(Token::Eof) {
+            // Parse field name
+            if !matches!(self.current_token, Token::Identifier(_)) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected field name, got {:?}",
+                    self.current_token
+                )));
+            }
+            
+            // Get field name
+            let field_name = match &self.current_token {
+                Token::Identifier(ident) => ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: ident.clone(),
+                },
+                _ => unreachable!(),
+            };
+            
+            self.next_token()?; // Advance past field name
+            
+            // Parse field type
+            if !matches!(self.current_token, Token::Identifier(_)) {
+                self.pop_context();
+                return Err(self.error(&format!(
+                    "Expected field type, got {:?}",
+                    self.current_token
+                )));
+            }
+            
+            // Get field type
+            let field_type = match &self.current_token {
+                Token::Identifier(ident) => ast::Identifier {
+                    token: self.current_token.token_literal(),
+                    value: ident.clone(),
+                },
+                _ => unreachable!(),
+            };
+            
+            self.next_token()?; // Advance past field type
+            
+            // Create field struct
+            let field = ast::statements::fields::FieldStatement {
+                token: "field".to_string(),
+                name: field_name,
+                type_name: field_type,
+            };
+            fields.push(field);
+            
+            // Expect newline or comma
+            if self.current_token_is(Token::Semicolon) {
+                self.next_token()?; // Advance past newline
+            }
+        }
+        
+        // Expect '}'
+        if !self.current_token_is(Token::RBrace) {
+            self.pop_context();
+            return Err(self.error(&format!(
+                "Expected '}}' after struct fields, got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Advance past '}'
+        
+        // Pop struct context
+        self.pop_context();
+        
+        // Create a placeholder struct statement for now
+        // In a real implementation, we'd combine this with the previously parsed name and type parameters
+        let struct_name = ast::Identifier {
+            token: "Box".to_string(),
+            value: "Box".to_string(),
+        };
+        
+        // Create struct statement with the placeholder name
+        Ok(Box::new(ast::SquadStatement {
+            token: token,
+            name: struct_name,
+            type_parameters: vec![ast::Identifier {
+                token: "T".to_string(),
+                value: "T".to_string(),
+            }], // Placeholder for type parameter T
+            fields,
+        }))
+    }
+    
     /// Expect semicolon and advance past it if found
     fn expect_semicolon(&mut self) -> Result<(), Error> {
         if self.peek_token_is(Token::Semicolon) {

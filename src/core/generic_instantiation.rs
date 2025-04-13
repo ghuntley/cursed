@@ -198,6 +198,7 @@ impl GenericInstantiator {
             body: specialized_body,
             return_type: specialized_return_type,
             type_parameters: Vec::new(), // No type parameters in specialized version
+            generic_constraints: Vec::new(), // No constraints in specialized version
         };
 
         Ok(specialized_func)

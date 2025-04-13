@@ -57,6 +57,10 @@ members = [
 name = "cursed"
 path = "src/main.rs"
 
+[[bin]]
+name = "test_preprocessor"
+path = "src/test_preprocessor.rs"
+
 [profile.release]
 lto = true  # Enable Link Time Optimization for smaller binaries
 codegen-units = 1  # Optimize for size and performance

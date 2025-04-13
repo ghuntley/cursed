@@ -19,29 +19,35 @@
 //! - `regex_vibez`: Regular expressions (like Go's regexp)
 //! - `cryptz`: Cryptographic operations (like Go's crypto)
 //! - `reflectz`: Runtime reflection (like Go's reflect)
+//! - `htmlrizzler`: HTML templates (like Go's html/template)
+//! - `rizztemplate`: Text templates (like Go's text/template)
 
 // Export modules as they are implemented
 pub mod concurrenz; // Synchronization primitives (sync equivalent)
 pub mod cryptz; // Cryptography functions (crypto equivalent)
 pub mod dropz; // I/O primitives (io equivalent)
+pub mod htmlrizzler; // HTML templates (html/template equivalent)
 pub mod json_tea; // JSON encoding/decoding (encoding/json equivalent)
 pub mod mathz; // Math functions (math equivalent)
-pub mod reflectz;
+pub mod reflectz; // Runtime reflection (reflect equivalent)
 pub mod regex_vibez; // Regular expressions (regexp equivalent)
+pub mod rizztemplate; // Text templates (text/template equivalent)
 pub mod stringz; // String manipulation functions (strings equivalent)
 pub mod timez; // Time-related functionality (time equivalent)
 pub mod vibe_life; // OS functionality (os equivalent)
 pub mod vibez; // Printf-style functions (fmt equivalent)
-pub mod web_vibez; // HTTP client and server (net/http equivalent) // Runtime reflection (reflect equivalent)
+pub mod web_vibez; // HTTP client and server (net/http equivalent)
 
 // Re-export for convenient access
 pub use concurrenz::*;
 pub use cryptz::*;
 pub use dropz::*;
+pub use htmlrizzler::*;
 pub use json_tea::*;
 pub use mathz::*;
 pub use reflectz::*;
 pub use regex_vibez::*;
+pub use rizztemplate::*;
 pub use stringz::*;
 pub use timez::*;
 pub use vibe_life::*;

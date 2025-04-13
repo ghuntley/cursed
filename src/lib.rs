@@ -38,6 +38,7 @@
 use std::fs;
 use std::io::{self, Read}; // Keep io import for run_stdin
 
+// Re-export the AST module with the new structure
 pub mod ast;
 pub mod code;
 pub mod codegen;
@@ -60,6 +61,10 @@ pub use core::symbol_table::Symbol;
 pub use core::symbol_table::SymbolScope;
 pub use core::symbol_table::SymbolTable;
 pub use core::CompiledFunction;
+
+// Re-export specific AST types for convenience
+pub use ast::base::Program;
+pub use ast::traits::{Expression, Node, Statement};
 
 // Foreign function interface for JIT execution
 use crate::object::Object;
@@ -211,8 +216,6 @@ pub extern "C" fn close_channel(channel_ptr: *const c_char) -> c_int {
 pub use prelude::*;
 
 // Convenience re-exports at the crate level
-pub use ast::base::Program;
-pub use ast::{Expression, Node, Statement};
 pub use error::{Error, ErrorReporter, SourceLocation};
 pub use lexer::Lexer;
 pub use parser::Parser;
@@ -322,10 +325,37 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     println!("✅ Successfully parsed program");
     println!("📊 Program structure:\n{}", program.string());
 
+    // Extract package name from the program
+    let package_name = {
+        let mut pkg_name = String::from("main"); // Default package name
+        for stmt in &program.statements {
+            // Check for package declaration in the string representation
+            let stmt_str = stmt.string();
+            if stmt_str.starts_with("vibe ") {
+                if let Some(package_decl) = stmt_str.strip_prefix("vibe ") {
+                    if let Some(clean_name) = package_decl.strip_suffix(";") {
+                        pkg_name = clean_name.trim().to_string();
+                        break;
+                    }
+                }
+            } else if stmt_str.contains("package ") {
+                if let Some(idx) = stmt_str.find("package ") {
+                    let remaining = &stmt_str[idx + 8..]; // 8 = length of "package "
+                    if let Some(end_idx) = remaining.find('"') {
+                        pkg_name = remaining[..end_idx].to_string();
+                        break;
+                    }
+                }
+            }
+        }
+        pkg_name
+    };
+    println!("📦 Package name: {}", package_name);
+
     // Create LLVM context and code generator
     println!("🏗️ Setting up LLVM code generation...");
     let context = inkwell::context::Context::create();
-    let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, "main", file_path.clone());
+    let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, &package_name, file_path.clone());
 
     // Compile the program
     println!("🔧 Compiling to LLVM IR...");
@@ -363,6 +393,22 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
             )))
         }
     };
+
+    // Check if main function exists in the module
+    println!("DEBUG: Checking for main function in module:");
+    if let Some(main_fn) = code_gen.module().get_function("main") {
+        println!("DEBUG: Main function found in module: {}", main_fn.get_name().to_string_lossy());
+    } else {
+        println!("DEBUG: Main function NOT found in module!");
+    }
+    
+    // Check for mangled main
+    let mangled_name = format!("_{}_main", package_name);
+    if let Some(mangled_main) = code_gen.module().get_function(&mangled_name) {
+        println!("DEBUG: Mangled main function found in module: {}", mangled_main.get_name().to_string_lossy());
+    } else {
+        println!("DEBUG: Mangled main function '{}' NOT found in module!", mangled_name);
+    }
 
     // Create JIT compiler
     let mut jit_compiler =
