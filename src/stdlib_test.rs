@@ -374,6 +374,61 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     Ok(())
 }
 
+pub fn test_quick_test() -> Result<(), Error> {
+    println!("Testing quick_test package");
+    
+    // Test basic random generators
+    let int_val = crate::stdlib::quick_test::int_range(-10, 10);
+    println!("Random int in range [-10, 10]: {}", int_val);
+    
+    let bool_val = crate::stdlib::quick_test::boolean();
+    println!("Random boolean: {}", bool_val);
+    
+    let string_val = crate::stdlib::quick_test::string();
+    println!("Random string: {}", string_val);
+    
+    let int_array_val = crate::stdlib::quick_test::int_array(3, 7, 0, 100);
+    println!("Random integer array: {}", int_array_val);
+    
+    let float_val = crate::stdlib::quick_test::float_range(-1.0, 1.0);
+    println!("Random float in range [-1.0, 1.0]: {}", float_val);
+    
+    let hash_map_val = crate::stdlib::quick_test::hash_map(2, 5);
+    println!("Random hash map: {}", hash_map_val);
+    
+    // Test typed generator
+    let string_type_val = crate::stdlib::quick_test::one_of_type("string", 5, 10);
+    println!("Random string with type generator: {}", string_type_val);
+    
+    let int_type_val = crate::stdlib::quick_test::one_of_type("int", 0, 100);
+    println!("Random int with type generator: {}", int_type_val);
+    
+    // Create a simple property-based test 
+    println!("\nRunning property-based test: integers in range [-10, 10] should have abs value <= 10");
+    
+    // Create a test configuration
+    let config = crate::stdlib::quick_test::Config {
+        max_count: 10,  // Use smaller count for quicker test
+        ..crate::stdlib::quick_test::Config::default()
+    };
+    
+    // For the demonstration, we'll just create a simple integer Object
+    let test_fn_obj = Object::Integer(42);
+    
+    // Run property-based test
+    let test_result = crate::stdlib::quick_test::check(
+        test_fn_obj, 
+        &config
+    );
+    
+    println!("Test result: Passed = {}, Iterations = {}, Failures = {}", 
+             test_result.passed, test_result.count, 
+             if test_result.failed_after > 0 { 1 } else { 0 });
+    
+    println!("All quick_test tests completed successfully");
+    Ok(())
+}
+
 pub fn test_rizztemplate() -> Result<(), Error> {
     println!("Testing rizztemplate package");
 

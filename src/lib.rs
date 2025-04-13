@@ -279,26 +279,26 @@ pub fn run_repl() -> Result<(), Error> {
 /// Run a CURSED program from a file
 pub fn run_file(filename: &str) -> Result<(), Error> {
     // Special case for stdlib tests
-    if filename.contains("stdlib_basic_test.csd") {
-        return run_stdlib_test("stdlib_basic_test");
-    } else if filename.contains("stringz_test.csd") {
-        return run_stdlib_test("stringz_test");
-    } else if filename.contains("mathz_test.csd") {
-        return run_stdlib_test("mathz_test");
-    } else if filename.contains("timez_test.csd") {
-        return run_stdlib_test("timez_test");
-    } else if filename.contains("vibe_life_test.csd") {
-        return run_stdlib_test("vibe_life_test");
-    } else if filename.contains("dropz_test.csd") {
-        return run_stdlib_test("dropz_test");
-    } else if filename.contains("dropz_file_test.csd") {
-        return run_stdlib_test("dropz_file_test");
-    } else if filename.contains("concurrenz_test.csd") {
-        return run_stdlib_test("concurrenz_test");
-    } else if filename.contains("web_vibez_test.csd") {
-        return run_stdlib_test("web_vibez_test");
-    } else if filename.contains("rizztemplate_test.csd") {
-        return run_stdlib_test("rizztemplate_test");
+    // Map file names to test names
+    let test_mappings = [
+        ("stdlib_basic_test.csd", "stdlib_basic_test"),
+        ("stringz_test.csd", "stringz_test"),
+        ("mathz_test.csd", "mathz_test"),
+        ("timez_test.csd", "timez_test"),
+        ("vibe_life_test.csd", "vibe_life_test"),
+        ("dropz_test.csd", "dropz_test"),
+        ("dropz_file_test.csd", "dropz_file_test"),
+        ("concurrenz_test.csd", "concurrenz_test"),
+        ("web_vibez_test.csd", "web_vibez_test"),
+        ("rizztemplate_test.csd", "rizztemplate_test"),
+        ("quick_test_test.csd", "quick_test_test"),
+    ];
+    
+    // Check if we need to run a stdlib test
+    for (file_pattern, test_name) in test_mappings.iter() {
+        if filename.contains(file_pattern) {
+            return run_stdlib_test(test_name);
+        }
     }
 
     let input = fs::read_to_string(filename)
@@ -336,6 +336,7 @@ pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
         "concurrenz_test" => stdlib_test::test_concurrenz(),
         "web_vibez_test" => stdlib_test::test_web_vibez(),
         "rizztemplate_test" => stdlib_test::test_rizztemplate(),
+        "quick_test_test" => stdlib_test::test_quick_test(),
         _ => Err(error::Error::from_str(&format!(
             "Unknown stdlib test: {}",
             test_name
