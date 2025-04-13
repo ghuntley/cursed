@@ -40,6 +40,7 @@ pub mod timez; // Time-related functionality (time equivalent)
 pub mod vibe_life; // OS functionality (os equivalent)
 pub mod vibez; // Printf-style functions (fmt equivalent)
 pub mod web_vibez; // HTTP client and server (net/http equivalent)
+pub mod syslog_era; // Syslog client functionality (log/syslog equivalent)
 
 // Re-export for convenient access
 pub use concurrenz::*;
@@ -58,3 +59,4 @@ pub use timez::*;
 pub use vibe_life::*;
 pub use vibez::*;
 pub use web_vibez::*;
+pub use syslog_era::*;

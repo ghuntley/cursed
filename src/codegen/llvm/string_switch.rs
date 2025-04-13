@@ -9,6 +9,7 @@
 
 use super::LlvmCodeGenerator;
 use crate::ast::Expression;
+use crate::codegen::llvm::statement::StatementCompilation;
 use crate::error::Error;
 use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
 
@@ -59,10 +60,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Ok(val) => val,
             Err(e) => {
                 return Err(Error::codegen(format!(
-                    "Failed to build strcmp call: {}",
-                    e
+                "Failed to build strcmp call: {}",
+                e
                 )))
-            }
+                }
         };
 
         let strcmp_result = call_site_value
@@ -180,19 +181,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // 2. Chain them together with conditional branches
         // 3. Handle fallthrough and break statements
         
-        // Return an error with a helpful message about the implementation status
-        return Err(Error::codegen(
-            "String switch values not yet fully supported. String comparison code is ready but needs to be connected to the AST parser. See .sourcegraph/string_switch_update.md for implementation status."
-            .to_string()
-        ));
-        
-        // The following implementation is commented out until we fully implement string switches
-        /*
         // Get the current function
-        let function = match self.builder_mut().get_insert_block() {
-            Some(block) => block.get_parent(),
-            None => return Err(Error::codegen("No current block for string switch".to_string())),
-        }.ok_or_else(|| Error::codegen("No parent function for string switch".to_string()))?;
+        let function = self.builder_mut().get_insert_block()
+            .and_then(|block| block.get_parent())
+            .ok_or_else(|| Error::codegen("No parent function for string switch".to_string()))?;
         
         // Create basic blocks for the end of the switch statement
         let end_block = self.context.append_basic_block(function, "switch.end");
@@ -227,16 +219,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Branch from current block to first comparison block
         if !comp_blocks.is_empty() {
-            match self.builder_mut().build_unconditional_branch(comp_blocks[0]) {
-                Ok(_) => {},
-                Err(e) => return Err(Error::codegen(format!("Failed to branch to first comparison: {}", e))),
-            };
+            self.builder_mut().build_unconditional_branch(comp_blocks[0])
+                .map_err(|e| Error::codegen(format!("Failed to branch to first comparison: {}", e)))?;
         } else {
             // No cases, just branch to default
-            match self.builder_mut().build_unconditional_branch(default_block) {
-                Ok(_) => {},
-                Err(e) => return Err(Error::codegen(format!("Failed to branch to default: {}", e))),
-            };
+            self.builder_mut().build_unconditional_branch(default_block)
+                .map_err(|e| Error::codegen(format!("Failed to branch to default: {}", e)))?;
         }
         
         // Build the comparison chain
@@ -244,46 +232,36 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Position at this comparison block
             self.builder_mut().position_at_end(comp_blocks[i]);
             
-            // Get the case value (string literal)
-            if let Some(expr) = case.expressions.first() {
-                // Check if this is a string literal
-                let case_str = self.evaluate_string_expr(&**expr)?;
-                let equal = self.generate_string_comparison(switch_value, case_str)?;
-                
-                // If equal to this string, branch to case, otherwise continue to next comparison
-                let next_block = if i < comp_blocks.len() - 1 {
-                    comp_blocks[i + 1]
-                } else {
-                    default_block
-                };
-                
-                match self.builder_mut().build_conditional_branch(equal, case_blocks[i], next_block) {
-                    Ok(_) => {},
-                    Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
-                };
-            } else {
-                // Empty case, branch to the next one
-                let next_block = if i < comp_blocks.len() - 1 {
-                    comp_blocks[i + 1]
-                } else {
-                    default_block
-                };
-                
-                match self.builder_mut().build_unconditional_branch(next_block) {
-                    Ok(_) => {},
-                    Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
-                };
-            }
+            // We need to check equality with the case value
+            let mut equals = None;
             
+            // Evaluate the case value
+            let case_expr = &*case.value;
+            // Evaluate the string expression
+            let case_str = self.evaluate_string_expr(case_expr)?;
+            let equal = self.generate_string_comparison(switch_value, case_str)?;
+            equals = Some(equal);
+            
+            // We should always have a case expression by this point
+            
+            // If equal to any of this case's strings, branch to case block, otherwise continue
+            let next_block = if i < comp_blocks.len() - 1 {
+                comp_blocks[i + 1]
+            } else {
+                default_block
+            };
+            
+            self.builder_mut().build_conditional_branch(equals.unwrap(), case_blocks[i], next_block)
+                .map_err(|e| Error::codegen(format!("Failed to build branch: {}", e)))?;
+        }
+        // Now build the case blocks - this is where the actual statements are executed
+        for (i, case) in switch_stmt.cases.iter().enumerate() {
             // Build the case block
             self.builder_mut().position_at_end(case_blocks[i]);
             
             // Compile all statements in this case
-            for stmt in &case.body.statements {
-                match self.compile_statement_custom(&**stmt) {
-                    Ok(_) => {},
-                    Err(e) => return Err(e),
-                }
+            for stmt in &case.statements {
+                self.compile_statement(&**stmt)?;
             }
             
             // If no terminator (no break), fall through to next case or end
@@ -294,10 +272,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     end_block
                 };
                 
-                match self.builder_mut().build_unconditional_branch(target) {
-                    Ok(_) => {},
-                    Err(e) => return Err(Error::codegen(format!("Failed to build fallthrough: {}", e))),
-                };
+                self.builder_mut().build_unconditional_branch(target)
+                    .map_err(|e| Error::codegen(format!("Failed to build fallthrough: {}", e)))?;
             }
         }
         
@@ -307,19 +283,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Compile default case statements if they exist
         if let Some(default_case) = &switch_stmt.default {
             for stmt in &default_case.statements {
-                match self.compile_statement_custom(&**stmt) {
-                    Ok(_) => {},
-                    Err(e) => return Err(e),
-                }
+                self.compile_statement(&**stmt)?;
             }
         }
         
         // Branch from default to end if not already terminated
         if self.builder_mut().get_insert_block().unwrap().get_terminator().is_none() {
-            match self.builder_mut().build_unconditional_branch(end_block) {
-                Ok(_) => {},
-                Err(e) => return Err(Error::codegen(format!("Failed to build default branch: {}", e))),
-            };
+            self.builder_mut().build_unconditional_branch(end_block)
+                .map_err(|e| Error::codegen(format!("Failed to build default branch: {}", e)))?;
         }
         
         // Position at the end block for continued code generation
@@ -327,20 +298,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Pop the loop context
         self.pop_loop_context();
-        */
         
-        // Return error to indicate string switch is not supported yet
-        // This will be removed when the implementation is completed
-        // Err(Error::codegen("String switch values not yet supported".to_string()))
-    }
-    
-    /// Simplified statement compiler for use within the string switch implementation
-    /// 
-    /// This is a stub implementation for testing. In a full implementation,
-    /// this would handle all standard statement types including break statements.
-    fn compile_statement_custom(&mut self, _stmt: &dyn crate::ast::Statement) -> Result<(), Error> {
-        // In the full implementation, this would delegate to the main statement compiler
-        // or handle special cases like break statements
         Ok(())
     }
+    
+    // No need for the stub helper anymore since we now call compile_statement directly
 }
