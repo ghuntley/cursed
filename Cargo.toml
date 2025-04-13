@@ -43,6 +43,7 @@ rand = "0.8"    # Random number generation
 # Regex support
 regex = "1.10"  # Regular expression support
 once_cell = "1.17"  # Lazy static initialization
+lazy_static = "1.4"  # Lazy static initialization support
 serde_json = "1.0"  # JSON serialization/deserialization
 thread_local = "1.1"  # Thread-local storage
 parking_lot = "0.12"  # Better RwLock implementation with timeout support
