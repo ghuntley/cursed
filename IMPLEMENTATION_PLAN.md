@@ -267,9 +267,9 @@ The CURSED language project is currently in development with a bootstrap compile
    - ✅ Update documentation
 
 2. **Fix Control Flow Issues**
-   - Address break/continue in nested loops
-   - Fix scope handling in control structures
-   - Test edge cases thoroughly
+   - ✅ Address break/continue in nested loops
+   - ✅ Fix scope handling in control structures
+   - ✅ Test edge cases thoroughly
 
 3. **Enhance Interface Implementation**
    - Implement dynamic dispatch

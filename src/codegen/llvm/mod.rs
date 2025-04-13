@@ -1,5 +1,9 @@
 //! LLVM code generation for CURSED programs
 //!
+//! This module handles the translation of CURSED AST to LLVM IR,
+//! including type generation, expression evaluation, control flow,
+//! and dynamic dispatch for interfaces.
+//!
 //! This module translates the CURSED Abstract Syntax Tree (AST) into LLVM
 //! Intermediate Representation (IR), enabling optimization and native code
 //! generation. It handles type translation, control flow, function calls,
@@ -37,6 +41,8 @@
 
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
+// Disable dynamic dispatch until it's fully implemented
+// pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 
 // Re-export traits for module functionality
 pub use self::container_layout::{ContainerLayout, ContainerLayoutExtension, ContainerLayoutManager};
@@ -75,6 +81,8 @@ mod intrinsics;      // Standard library intrinsics
 mod break_continue;  // Break and continue statement handling
 mod control_flow;    // Control flow statements
 mod concurrency;     // Goroutine and channel operations
+// Disable dynamic dispatch until it's fully implemented
+// mod dynamic_dispatch; // Dynamic dispatch for interfaces
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
 /// 
