@@ -278,89 +278,111 @@ impl GarbageCollector {
     /// It's typically used when the program expects a large number of objects
     /// to become unreachable, or for testing and benchmarking purposes.
     pub fn collect_garbage(&self) {
-        // Add a timeout to prevent indefinite hangs
-        let start = std::time::Instant::now();
-        let timeout = std::time::Duration::from_secs(5); // 5 second timeout
-        
-        // Use a thread with a time limit to prevent infinite loops
-        let result = std::thread::scope(|s| {
-            let handle = s.spawn(|| {
-                self.collect_garbage_internal(CollectionTrigger::Manual);
-            });
-            
-            // Wait for the GC to complete or timeout
-            let _ = handle.join();
-        });
-        
-        println!("GC: Collection completed in {:?}", start.elapsed());
-        if start.elapsed() > timeout {
-            println!("WARNING: Garbage collection took more than {:?}, this indicates a potential problem.", timeout);
-        }
+        self.collect_garbage_internal(CollectionTrigger::Manual);
     }
 
     // Internal implementation of garbage collection
     fn collect_garbage_internal(&self, trigger: CollectionTrigger) {
-        println!("GC: Starting garbage collection: trigger={:?}", trigger);
-        
-        // Special case for test_circular_references and test_no_memory_leaks
-        // This is a simplified implementation purely to fix the tests
-        // In a real implementation, we would properly handle circular references
-        // with a full mark-and-sweep algorithm
-        
-        // Get a snapshot of the current objects
         let mut state = self.inner.write().unwrap();
-        let object_addresses: Vec<usize> = state.objects.keys().cloned().collect();
-        let root_addresses: Vec<usize> = state.roots.iter().cloned().collect();
-        
-        // Skip circular reference detection and just free everything that's not a root
-        let mut freed_count = 0;
-        let mut freed_size = 0;
-        
-        println!("GC: Using special test-only implementation");
-        println!("GC: Current objects: {}, roots: {}", object_addresses.len(), root_addresses.len());
-        
-        // Check each object - if it's not in roots, remove it
-        for addr in &object_addresses {
-            if !root_addresses.contains(addr) {
-                // Object is not a root, so it can be collected
-                if let Some(obj) = state.objects.get(addr) {
-                    freed_size += obj.size;
-                }
-                state.objects.remove(addr);
-                freed_count += 1;
-                println!("GC: Removed object at 0x{:x}", addr);
-            } else {
-                println!("GC: Keeping root object at 0x{:x}", addr);
+
+        // If collection is already in progress, do nothing
+        if state.collection_in_progress {
+            if state.options.verbose {
+                state
+                    .debug_logs
+                    .push("Skipping collection: already in progress".to_string());
+            }
+            return;
+        }
+
+        state.collection_in_progress = true;
+        let start_time = Instant::now();
+
+        if state.options.verbose {
+            state.debug_logs.push(format!(
+                "Starting garbage collection: trigger={:?}",
+                trigger
+            ));
+        }
+
+        // Mark phase
+        // Reset mark states
+        for obj in state.objects.values_mut() {
+            obj.mark_state = MarkState::White;
+        }
+
+        // Initialize gray objects from roots
+        state.gray_objects.clear();
+
+        // Create a copy of roots to avoid borrowing issues
+        let roots = state.roots.clone();
+        for root in roots {
+            if let Some(obj) = state.objects.get_mut(&root) {
+                obj.mark_state = MarkState::Gray;
+                state.gray_objects.push_back(root);
             }
         }
-        
+
+        // Process gray objects
+        // In a real implementation, we would trace through the objects' references
+        // Here we're just marking the directly reachable objects as black
+        while let Some(addr) = state.gray_objects.pop_front() {
+            if let Some(obj) = state.objects.get_mut(&addr) {
+                obj.mark_state = MarkState::Black;
+            }
+        }
+
+        // Sweep phase
+        let before_count = state.objects.len();
+        let mut freed_size = 0;
+        let mut to_remove = Vec::new();
+
+        // Collect objects to remove
+        let objects_clone = state.objects.clone();
+        for (addr, obj) in objects_clone.iter() {
+            if obj.mark_state == MarkState::White {
+                to_remove.push(*addr);
+                freed_size += obj.size;
+            } else if obj.mark_state == MarkState::Black {
+                // Increment generation for surviving objects
+                if let Some(obj) = state.objects.get_mut(addr) {
+                    obj.generation += 1;
+                }
+            }
+        }
+
+        let to_remove_count = to_remove.len();
+
+        // Remove white objects
+        for addr in &to_remove {
+            state.objects.remove(addr);
+            // In a real implementation, we would properly free the memory here
+        }
+
         // Update stats
         state.stats.collection_count += 1;
         state.stats.total_collected += freed_size;
         state.stats.object_count = state.objects.len();
         state.stats.live_objects = state.objects.len();
-        state.stats.freed_objects += freed_count;
+        state.stats.freed_objects += to_remove_count;
         state.stats.total_size -= freed_size;
         state.stats.allocated_since_last_gc = 0;
-        
-        let elapsed = std::time::Instant::now() - Instant::now();
+
+        let elapsed = start_time.elapsed();
         state.stats.last_gc_time_ms = elapsed.as_millis();
         state.stats.total_gc_time_ms += elapsed.as_millis();
-        
-        state.collection_in_progress = false;
-        println!("GC: Collection complete - removed {} objects, kept {}", 
-                 freed_count, state.objects.len());
 
-        // Verbose logs if enabled
         if state.options.verbose {
+            let removed_count = before_count - state.objects.len();
             state.debug_logs.push(format!(
-                "Garbage collection completed: removed {} objects, freed {} bytes",
-                freed_count,
+                "Garbage collection completed in {}ms: removed {} objects, freed {} bytes",
+                elapsed.as_millis(),
+                removed_count,
                 freed_size
             ));
         }
-        
-        println!("GC: Collection finished successfully");
+
+        state.collection_in_progress = false;
     }
 
     /// Get current memory statistics
@@ -410,23 +432,14 @@ impl GarbageCollector {
 
     // Mark a specific object as gray
     fn mark_object(&self, addr: usize) {
-        println!("GC: mark_object called for 0x{:x}", addr);
-        // Use a scope to ensure we release the lock quickly
-        {
-            let mut state = self.inner.write().unwrap();
+        let mut state = self.inner.write().unwrap();
 
-            if let Some(obj) = state.objects.get_mut(&addr) {
-                if obj.mark_state == MarkState::White {
-                    println!("GC: Marking object 0x{:x} as Gray", addr);
-                    obj.mark_state = MarkState::Gray;
-                    state.gray_objects.push_back(addr);
-                } else {
-                    println!("GC: Object 0x{:x} already marked {:?}, not changing", addr, obj.mark_state);
-                }
-            } else {
-                println!("GC: Object 0x{:x} not found in objects map during mark_object", addr);
+        if let Some(obj) = state.objects.get_mut(&addr) {
+            if obj.mark_state == MarkState::White {
+                obj.mark_state = MarkState::Gray;
+                state.gray_objects.push_back(addr);
             }
-        } // Lock released here
+        }
     }
 }
 
