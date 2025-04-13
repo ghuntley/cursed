@@ -1,12 +1,12 @@
-# CURSED Programming Language
+# ✨ CURSED Programming Language 🔥
 
-CURSED is an esoteric programming language that combines Go-like grammar with Generation Z slang for keywords and tokens. It is implemented as a self-compiling compiler written in Rust.
+OMG! CURSED is like, THE MOST iconic programming language that's giving major Go grammar vibes but with Gen Z slang for the keywords?! 💅 It's literally a self-compiling compiler written in Rust and I'm obsessed! 😍
 
-## About CURSED
+## The Tea on CURSED ☕
 
-CURSED follows Go's practical design philosophy but replaces traditional programming keywords with contemporary Gen Z slang, creating a unique and entertaining programming experience while maintaining practical usability.
+CURSED is lowkey based on Go's practical design but like, replaces all those boring programming keywords with Gen Z slang that slaps so hard! It's such a vibe while still being fully functional, no cap! 🙌
 
-Example CURSED code:
+Example CURSED code (it ATE and left no crumbs):
 
 ```
 vibe main
@@ -27,62 +27,62 @@ slay main() {
 }
 ```
 
-## Self-Compiling Compiler
+## Self-Compiling Compiler (so extra!) 💯
 
-CURSED is implemented following the bootstrapping compiler approach:
+CURSED is literally built different with this bootstrapping compiler approach:
 
-1. **Stage 0**: Bootstrap environment setup using Rust
-2. **Stage 1**: Minimal bootstrap compiler in Rust
-3. **Stage 2**: Full compiler written in CURSED
-4. **Stage 3**: Self-compiled full compiler
+1. **Stage 0**: Bootstrap environment setup using Rust (so basic but necessary) 🙄
+2. **Stage 1**: Minimal bootstrap compiler in Rust (starting to serve) 👀
+3. **Stage 2**: Full compiler written in CURSED (the main character energy) ⭐
+4. **Stage 3**: Self-compiled full compiler (iconic behavior) 💁‍♀️
 
-## Project Structure
+## Project Structure (we stay organized, periodt!) 📁
 
-- `/src`: Compiler source code
-- `/specs`: Language specifications and documentation
-- `/examples`: Example CURSED programs
-- `/tests`: Test suite for the compiler
+- `/src`: Compiler source code (core behavior, pretty much carrying) 💅
+- `/specs`: Language specifications and docs (the rulebook, very that) 📝
+- `/examples`: Example CURSED programs (slay examples) ✨
+- `/tests`: Test suite for the compiler (we don't flop, we test) ✅
 
-## Getting Started
+## Getting Started (no gatekeeping here!) 🚀
 
-### Prerequisites
+### Prerequisites (the fit check before coding) 👗
 
-- Rust toolchain (1.54.0 or later)
-- Cargo
+- Rust toolchain (1.54.0 or later) ⚙️
+- Cargo 📦
 
-### Building
+### Building (so you can build *that*) 🔨
 
 ```
 make build
 ```
 
-### Running Tests
+### Running Tests (gotta check the vibes) 🧪
 
 ```
 make test
 ```
 
-### Running the Compiler
+### Running the Compiler (it's giving main character energy) 💻
 
 ```
 make run ARGS="path/to/your/file.csd"
 ```
 
-## Language Documentation
+## Language Documentation (real ones read the docs) 📚
 
-The complete language specifications are available in the `/specs` directory:
+The complete language specifications are available in the `/specs` directory (we ate with these specs):
 
-- [Overview](specs/overview.md)
-- [Lexical Structure](specs/lexical.md)
-- [Types](specs/types.md)
-- [Grammar](specs/grammar.md)
-- [Compiler Stages](specs/compiler_stages.md)
-- [Standard Library](specs/stdlib.md)
+- [Overview](specs/overview.md) 👁️
+- [Lexical Structure](specs/lexical.md) 🔤
+- [Types](specs/types.md) 🏷️
+- [Grammar](specs/grammar.md) 📐
+- [Compiler Stages](specs/compiler_stages.md) 🪜
+- [Standard Library](specs/stdlib.md) 📚
 
-## Contributing
+## Contributing (join the CURSED group chat) 👯‍♀️
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome, bestie! Your pull requests can absolutely slay! Fork and go off! 💅
 
-## License
+## License 📜
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for the deets. It's giving open source! 🤩
