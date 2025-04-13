@@ -23,8 +23,8 @@
 //! - `rizztemplate`: Text templates (like Go's text/template)
 
 // Export modules as they are implemented
-// Temporarily disabled due to compilation issues
-// pub mod concurrenz; // Synchronization primitives (sync equivalent)
+pub mod concurrenz; // Synchronization primitives (sync equivalent)
+// Keep disabled version for backward compatibility
 pub mod concurrenz_disabled;
 pub mod cryptz; // Cryptography functions (crypto equivalent)
 pub mod dot_registry; // Dot expression registry for package.function calls
@@ -44,10 +44,12 @@ pub mod vibez; // Printf-style functions (fmt equivalent)
 pub mod web_vibez; // HTTP client and server (net/http equivalent)
 pub mod syslog_era; // Syslog client functionality (log/syslog equivalent)
 pub mod quick_test; // Property-based testing module
+pub mod chadlogging; // Structured logging (log/slog equivalent)
+pub mod is_uppercase; // Character classification functions
 
 // Re-export for convenient access
-// Temporarily disabled due to compilation issues
-// pub use concurrenz::*;
+pub use concurrenz::*;
+// Keep disabled version for backward compatibility
 pub use concurrenz_disabled::*;
 pub use cryptz::*;
 pub use dot_registry::{DOT_REGISTRY, is_supported, execute_dot, get_packages, get_functions};
@@ -66,6 +68,13 @@ pub use vibez::*;
 pub use web_vibez::*;
 pub use syslog_era::*;
 // Quick test module exports
-pub use quick_test::{Config, TestResult, Rand, check, int_range, boolean, string, int_array,
-                    float_range, hash_map, one_of_type, for_all, string_with_length,
-                    NO_SHRINK, DEFAULT_SHRINK, FULL_SHRINK, SMART_SHRINK};
+pub use quick_test::{Config, TestResult, Rand, StateMachine, check, int_range, boolean, string, int_array,
+float_range, hash_map, one_of_type, for_all, string_with_length, combine, weighted,
+string_of, string_of_n_from, complex128, struct_of, alpha_numeric, slice_of, slice_of_n,
+NO_SHRINK, DEFAULT_SHRINK, FULL_SHRINK, SMART_SHRINK};
+// Chadlogging module exports
+pub use chadlogging::{Logger, Handler, Record, Attr, TextHandler, JSONHandler,
+                    LEVEL_DEBUG, LEVEL_INFO, LEVEL_WARN, LEVEL_ERROR,
+                    debug, info, warn, error, group, new, default};
+// Character classification exports
+pub use is_uppercase::{is_uppercase, is_lowercase, is_digit, is_alpha, to_uppercase, to_lowercase};
