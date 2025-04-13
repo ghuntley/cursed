@@ -1,5 +1,45 @@
 # CURSED Implementation Status
 
+## Test Coverage Improvements
+
+- [x] Added improved garbage collector tests, especially for circular references
+- [x] Created standard library package function tests
+- [x] Implemented integration tests for end-to-end compilation
+- [x] Added more debug logging to garbage collector tests
+- [x] Fixed test infrastructure for test discovery and execution
+
+### Garbage Collector Testing
+
+The garbage collector testing now includes:
+
+1. **Circular Reference Testing**: Tests for proper collection of objects with circular references
+2. **Multiple Reference Patterns**: Tests various reference patterns including chains and complex graphs
+3. **Incremental Collection**: Tests for incremental garbage collection over multiple passes
+4. **Weak Reference Handling**: Verifies weak references behave correctly after collection
+5. **Debug Logging**: Enhanced logging to diagnose test failures and hanging issues
+
+### Standard Library Testing
+
+Implemented comprehensive tests for the standard library:
+
+- **String Functions**: Testing for string operations, transformations, and utility functions
+- **HTML Escaping**: Verifying proper HTML and JavaScript escaping functionality
+- **Math Functions**: Testing math operations including basic arithmetic and advanced functions
+- **Dot Expression Registry**: Testing the registry for dot expressions (package.function calls)
+
+### Integration Testing
+
+- **End-to-End Tests**: Full pipeline tests from source to execution
+- **String Switch Testing**: Verification of string-based switch statement compilation
+- **Dot Expression Testing**: End-to-end testing of package function calls
+
+### Future Work
+
+- Resolve remaining hanging issues in garbage collector tests
+- Expand test coverage for generics and monomorphization
+- Add performance benchmarks for garbage collection
+- Implement test coverage reporting
+
 ## Interface Implementation
 
 - [x] Implemented interface type checking and validation

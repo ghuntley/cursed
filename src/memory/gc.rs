@@ -255,20 +255,67 @@ impl GarbageCollector {
         println!("GC::add_root acquiring write lock");
         let mut state = self.inner.write().unwrap();
         println!("GC::add_root acquired write lock");
-        state.roots.insert(ptr);
-        println!("GC::add_root inserted into roots set");
+        
+        let inserted = state.roots.insert(ptr);
+        if inserted {
+            println!("GC::add_root successfully added 0x{:x} to root set", ptr);
+        } else {
+            println!("GC::add_root - root 0x{:x} was already in the root set", ptr);
+        }
+        
+        // Log current root set for debugging
+        println!("GC::add_root - current root set now contains {} objects:", state.roots.len());
+        for root in state.roots.iter().take(5) { // Only print first 5 to avoid overwhelming log
+            println!("  Root: 0x{:x}", root);
+        }
+        if state.roots.len() > 5 {
+            println!("  ... and {} more roots", state.roots.len() - 5);
+        }
+        
+        println!("GC::add_root completed");
     }
 
     /// Remove an object from GC roots
     pub fn remove_root(&self, ptr: usize) {
+        println!("GC::remove_root called for ptr 0x{:x}", ptr);
+        println!("GC::remove_root acquiring write lock");
         let mut state = self.inner.write().unwrap();
-        state.roots.remove(&ptr);
+        println!("GC::remove_root acquired write lock");
+        
+        let removed = state.roots.remove(&ptr);
+        if removed {
+            println!("GC::remove_root successfully removed 0x{:x} from root set", ptr);
+        } else {
+            println!("GC::remove_root - root 0x{:x} was not in the root set", ptr);
+        }
+        
+        println!("GC::remove_root - root set now contains {} objects", state.roots.len());
+        println!("GC::remove_root completed");
     }
 
     /// Check if an object is still alive (used by Weak references)
     pub fn is_alive(&self, ptr: usize) -> bool {
+        println!("GC::is_alive called for ptr 0x{:x}", ptr);
+        println!("GC::is_alive acquiring read lock on state");
         let state = self.inner.read().unwrap();
-        state.objects.contains_key(&ptr)
+        println!("GC::is_alive acquired read lock");
+        
+        let alive = state.objects.contains_key(&ptr);
+        println!("GC::is_alive - object at 0x{:x} is {}", ptr, if alive { "alive" } else { "dead" });
+        
+        // If it's alive, log some details about it
+        if alive {
+            if let Some(obj) = state.objects.get(&ptr) {
+                println!("GC::is_alive - object details: size={}, tag={:?}, mark={:?}", 
+                         obj.size, obj.tag, obj.mark_state);
+            }
+        }
+        
+        // Check if it's in the root set
+        let is_root = state.roots.contains(&ptr);
+        println!("GC::is_alive - object is {} in root set", if is_root { "present" } else { "not present" });
+        
+        alive
     }
 
     /// Explicitly triggers a garbage collection cycle
@@ -301,6 +348,7 @@ impl GarbageCollector {
     // Internal implementation of garbage collection
     fn collect_garbage_internal(&self, trigger: CollectionTrigger) {
         println!("GC: Starting garbage collection: trigger={:?}", trigger);
+        println!("GC: Current state: {:?}", self.stats());
         
         // Special case for test_circular_references and test_no_memory_leaks
         // This is a simplified implementation purely to fix the tests
@@ -308,9 +356,15 @@ impl GarbageCollector {
         // with a full mark-and-sweep algorithm
         
         // Get a snapshot of the current objects
+        println!("GC: Acquiring write lock on state");
         let mut state = self.inner.write().unwrap();
+        println!("GC: Acquired write lock on state");
+        
         let object_addresses: Vec<usize> = state.objects.keys().cloned().collect();
+        println!("GC: Found {} objects to examine", object_addresses.len());
+        
         let root_addresses: Vec<usize> = state.roots.iter().cloned().collect();
+        println!("GC: Found {} root objects to preserve", root_addresses.len());
         
         // Skip circular reference detection and just free everything that's not a root
         let mut freed_count = 0;
@@ -320,21 +374,33 @@ impl GarbageCollector {
         println!("GC: Current objects: {}, roots: {}", object_addresses.len(), root_addresses.len());
         
         // Check each object - if it's not in roots, remove it
+        println!("GC: Sweeping non-root objects");
         for addr in &object_addresses {
+            println!("GC: Examining object at 0x{:x}", addr);
             if !root_addresses.contains(addr) {
                 // Object is not a root, so it can be collected
+                println!("GC: Object 0x{:x} is not a root - collecting it", addr);
                 if let Some(obj) = state.objects.get(addr) {
                     freed_size += obj.size;
+                    println!("GC: Object size: {} bytes, tag: {:?}", obj.size, obj.tag);
+                } else {
+                    println!("GC: Warning - object not found in map despite being in keys");
                 }
-                state.objects.remove(addr);
-                freed_count += 1;
-                println!("GC: Removed object at 0x{:x}", addr);
+                
+                let removed = state.objects.remove(addr);
+                if removed.is_some() {
+                    freed_count += 1;
+                    println!("GC: Successfully removed object at 0x{:x}", addr);
+                } else {
+                    println!("GC: Failed to remove object at 0x{:x} - not found", addr);
+                }
             } else {
                 println!("GC: Keeping root object at 0x{:x}", addr);
             }
         }
         
         // Update stats
+        println!("GC: Updating collection statistics");
         state.stats.collection_count += 1;
         state.stats.total_collected += freed_size;
         state.stats.object_count = state.objects.len();
@@ -343,9 +409,18 @@ impl GarbageCollector {
         state.stats.total_size -= freed_size;
         state.stats.allocated_since_last_gc = 0;
         
-        let elapsed = std::time::Instant::now() - Instant::now();
+        let start_time = Instant::now();
+        let elapsed = start_time.elapsed();
+        println!("GC: Collection took {} ms", elapsed.as_millis());
         state.stats.last_gc_time_ms = elapsed.as_millis();
         state.stats.total_gc_time_ms += elapsed.as_millis();
+        
+        // Log all remaining objects after collection
+        println!("GC: Remaining objects after collection:");
+        for (addr, obj) in state.objects.iter() {
+            println!("GC:   0x{:x} - Type: {:?}, Size: {}, Generation: {}", 
+                    addr, obj.tag, obj.size, obj.generation);
+        }
         
         state.collection_in_progress = false;
         println!("GC: Collection complete - removed {} objects, kept {}", 
