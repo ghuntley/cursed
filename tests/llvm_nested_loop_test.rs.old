@@ -1,0 +1,169 @@
+use cursed::ast::control_flow::{BreakStatement, ContinueStatement, ForStatement, WhileStatement};
+use cursed::ast::expressions::literals::{BooleanLiteral, IntegerLiteral};
+use cursed::ast::expressions::operators::InfixExpression;
+use cursed::ast::statements::{BlockStatement, ExpressionStatement};
+use cursed::ast::traits::{Expression, Statement};
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::error::Error;
+use cursed::lexer::token::Token;
+use cursed::lexer::TokenType;
+use inkwell::context::Context;
+use std::path::PathBuf;
+
+#[test]
+fn test_nested_loop_break() {
+    let context = Context::create();
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+
+    // Create a function to add the loops to
+    let void_type = context.void_type();
+    let fn_type = void_type.fn_type(&[], false);
+    let function = generator.module().add_function("test_nested_loops", fn_type, None);
+    
+    // Set the current function in the generator
+    generator.set_current_function(function);
+    
+    let entry_block = context.append_basic_block(function, "entry");
+    generator.builder().position_at_end(entry_block);
+
+    // Create a true condition for simplicity
+    let condition = BooleanLiteral {
+        token: Token::new(TokenType::True, "based").token_literal(),
+        value: true,
+    };
+
+    // Create inner loop with break statement
+    let inner_break_stmt = BreakStatement {
+        token: Token::new(TokenType::Break, "ghosted").token_literal(),
+    };
+
+    // Inner loop body
+    let inner_body = BlockStatement {
+        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        statements: vec![Box::new(inner_break_stmt)],
+    };
+
+    // Inner for loop
+    let inner_loop = ForStatement {
+        token: Token::new(TokenType::For, "bestie").token_literal(),
+        init: None,
+        condition: Some(Box::new(condition.clone())),
+        post: None,
+        body: Box::new(inner_body),
+    };
+
+    // Outer loop body contains inner loop
+    let outer_body = BlockStatement {
+        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        statements: vec![Box::new(inner_loop)],
+    };
+
+    // Outer for loop
+    let outer_loop = ForStatement {
+        token: Token::new(TokenType::For, "bestie").token_literal(),
+        init: None,
+        condition: Some(Box::new(condition)),
+        post: None,
+        body: Box::new(outer_body),
+    };
+
+    // Generate code for the outer loop
+    let result = generator.compile_for_statement(&outer_loop);
+
+    assert!(
+        result.is_ok(),
+        "Failed to compile nested loops with break: {:?}",
+        result.err()
+    );
+
+    // Add a return void instruction to terminate the function
+    let return_void = generator.builder().build_return(None);
+    assert!(return_void.is_ok(), "Failed to build return: {:?}", return_void.err());
+    
+    // Verify the module
+    let verify_result = generator.module().verify();
+    assert!(
+        verify_result.is_ok(),
+        "Module verification failed: {:?}",
+        verify_result.err()
+    );
+}
+
+#[test]
+fn test_nested_loop_continue() {
+    let context = Context::create();
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+
+    // Create a function to add the loops to
+    let void_type = context.void_type();
+    let fn_type = void_type.fn_type(&[], false);
+    let function = generator.module().add_function("test_nested_loops_continue", fn_type, None);
+    
+    // Set the current function in the generator
+    generator.set_current_function(function);
+    
+    let entry_block = context.append_basic_block(function, "entry");
+    generator.builder().position_at_end(entry_block);
+
+    // Create a true condition for simplicity
+    let condition = BooleanLiteral {
+        token: Token::new(TokenType::True, "based").token_literal(),
+        value: true,
+    };
+
+    // Create inner loop with continue statement
+    let inner_continue_stmt = ContinueStatement {
+        token: Token::new(TokenType::Continue, "simp").token_literal(),
+    };
+
+    // Inner loop body
+    let inner_body = BlockStatement {
+        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        statements: vec![Box::new(inner_continue_stmt)],
+    };
+
+    // Inner for loop
+    let inner_loop = ForStatement {
+        token: Token::new(TokenType::For, "bestie").token_literal(),
+        init: None,
+        condition: Some(Box::new(condition.clone())),
+        post: None,
+        body: Box::new(inner_body),
+    };
+
+    // Outer loop body contains inner loop
+    let outer_body = BlockStatement {
+        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        statements: vec![Box::new(inner_loop)],
+    };
+
+    // Outer for loop
+    let outer_loop = ForStatement {
+        token: Token::new(TokenType::For, "bestie").token_literal(),
+        init: None,
+        condition: Some(Box::new(condition)),
+        post: None,
+        body: Box::new(outer_body),
+    };
+
+    // Generate code for the outer loop
+    let result = generator.compile_for_statement(&outer_loop);
+
+    assert!(
+        result.is_ok(),
+        "Failed to compile nested loops with continue: {:?}",
+        result.err()
+    );
+
+    // Add a return void instruction to terminate the function
+    let return_void = generator.builder().build_return(None);
+    assert!(return_void.is_ok(), "Failed to build return: {:?}", return_void.err());
+    
+    // Verify the module
+    let verify_result = generator.module().verify();
+    assert!(
+        verify_result.is_ok(),
+        "Module verification failed: {:?}",
+        verify_result.err()
+    );
+}

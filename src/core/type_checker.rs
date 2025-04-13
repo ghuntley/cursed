@@ -245,6 +245,8 @@ pub struct TypeChecker {
     interface_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
     /// Maps type names to their generic parameters
     type_params_map: HashMap<String, Vec<String>>,
+    /// Maps struct names to their method signatures
+    pub struct_methods_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
 }
 
 impl TypeChecker {
@@ -255,8 +257,12 @@ impl TypeChecker {
             struct_map: HashMap::new(),
             interface_map: HashMap::new(),
             type_params_map: HashMap::new(),
+            struct_methods_map: HashMap::new(),
         }
     }
+    
+    // Register methods for a struct will be implemented in the future
+    // For now, directly access the struct_methods_map field
 
     /// Check the types in a program
     pub fn check_program(&mut self, program: &Program) -> Result<(), Error> {
@@ -485,8 +491,12 @@ impl TypeChecker {
         &self,
         struct_name: &str,
     ) -> Option<Vec<(String, Vec<Type>, Option<Type>)>> {
-        // In a real implementation, this would look up methods in a symbol table
-        // For testing purposes, we'll return some hardcoded methods
+        // First check our method registry map
+        if let Some(methods) = self.struct_methods_map.get(struct_name) {
+            return Some(methods.clone());
+        }
+        
+        // Fallback to hardcoded methods for backwards compatibility
         match struct_name {
             "StringStack" => {
                 // Implement methods for a StringStack
@@ -508,6 +518,25 @@ impl TypeChecker {
         }
     }
 
+
+    
+    /// Check if a value can be assigned to an interface variable (dynamic dispatch)
+    pub fn can_assign_to_interface(&self, value_type: &Type, interface_type: &Type) -> Result<bool, Error> {
+        // First check if value_type implements the interface
+        if self.check_interface_implementation(value_type, interface_type)? {
+            return Ok(true);
+        }
+        
+        // For pointers, check if the pointed type implements the interface
+        if let Type::Pointer(inner_type) = value_type {
+            if let Type::Interface(_, _) = interface_type {
+                return self.check_interface_implementation(inner_type, interface_type);
+            }
+        }
+        
+        Ok(false)
+    }
+    
     /// Get the type of a variable
     pub fn get_type(&self, name: &str) -> Option<Type> {
         if let Some(type_) = self.type_map.get(name) {
