@@ -9,94 +9,94 @@ The `exec_vibez` module provides functionality for executing external commands a
 Represents an external command being prepared or run.
 
 ```csd
-type Cmd struct {
-  // Public fields
-  Path string
-  Args []string
-  Env []string
-  Dir string
+be_like Cmd squad {
+  fr fr Public fields
+  Path tea
+  Args []tea
+  Env []tea
+  Dir tea
   Stdin io.Reader
   Stdout io.Writer
   Stderr io.Writer
 }
 
-func Command(name string, arg ...string) *Cmd
-func CommandContext(ctx vibe_context.Context, name string, arg ...string) *Cmd
-func (c *Cmd) Start() error
-func (c *Cmd) Run() error
-func (c *Cmd) Output() ([]byte, error)
-func (c *Cmd) CombinedOutput() ([]byte, error)
-func (c *Cmd) StdinPipe() (io.WriteCloser, error)
-func (c *Cmd) StdoutPipe() (io.ReadCloser, error)
-func (c *Cmd) StderrPipe() (io.ReadCloser, error)
-func (c *Cmd) Wait() error
-func (c *Cmd) Process() *Process
-func (c *Cmd) ProcessState() *ProcessState
+slay Command(name tea, arg ...tea) *Cmd
+slay CommandContext(ctx vibe_context.Context, name tea, arg ...tea) *Cmd
+slay (c *Cmd) Start() tea
+slay (c *Cmd) Run() tea
+slay (c *Cmd) Output() ([]byte, tea)
+slay (c *Cmd) CombinedOutput() ([]byte, tea)
+slay (c *Cmd) StdinPipe() (io.WriteCloser, tea)
+slay (c *Cmd) StdoutPipe() (io.ReadCloser, tea)
+slay (c *Cmd) StderrPipe() (io.ReadCloser, tea)
+slay (c *Cmd) Wait() tea
+slay (c *Cmd) Process() *Process
+slay (c *Cmd) ProcessState() *ProcessState
 ```
 
 ### Process
 Represents a process created by a call to Start or Run.
 
 ```csd
-type Process struct {
-  // fields not directly accessible
+be_like Process squad {
+  fr fr fields not directly accessible
   Pid int
 }
 
-func (p *Process) Kill() error
-func (p *Process) Signal(sig main_character.Signal) error
-func (p *Process) Wait() (*ProcessState, error)
-func (p *Process) Release() error
+slay (p *Process) Kill() tea
+slay (p *Process) Signal(sig main_character.Signal) tea
+slay (p *Process) Wait() (*ProcessState, tea)
+slay (p *Process) Release() tea
 ```
 
 ### ProcessState
 Contains information about a process that has exited.
 
 ```csd
-type ProcessState struct {
-  // fields not directly accessible
+be_like ProcessState squad {
+  fr fr fields not directly accessible
 }
 
-func (ps *ProcessState) Exited() bool
-func (ps *ProcessState) ExitCode() int
-func (ps *ProcessState) Success() bool
-func (ps *ProcessState) Sys() interface{}
-func (ps *ProcessState) SysUsage() interface{}
-func (ps *ProcessState) String() string
-func (ps *ProcessState) UserTime() timez.Duration
-func (ps *ProcessState) SystemTime() timez.Duration
+slay (ps *ProcessState) Exited() lit
+slay (ps *ProcessState) ExitCode() int
+slay (ps *ProcessState) Success() lit
+slay (ps *ProcessState) Sys() interface{}
+slay (ps *ProcessState) SysUsage() interface{}
+slay (ps *ProcessState) String() tea
+slay (ps *ProcessState) UserTime() timez.Duration
+slay (ps *ProcessState) SystemTime() timez.Duration
 ```
 
 ### Error
-Represents an error from an executable program.
+Represents an tea from an executable program.
 
 ```csd
-type Error struct {
-  // fields not directly accessible
+be_like Error squad {
+  fr fr fields not directly accessible
 }
 
-func (e *Error) Error() string
-func (e *Error) Unwrap() error
-func (e *Error) ExitCode() int
+slay (e *Error) Error() tea
+slay (e *Error) Unwrap() tea
+slay (e *Error) ExitCode() int
 ```
 
 ## Core Functions
 
 ```csd
-// Create a new Cmd instance to execute a given program
-func Command(name string, arg ...string) *Cmd
+fr fr Create a new Cmd instance to execute a given program
+slay Command(name tea, arg ...tea) *Cmd
 
-// Create a new Cmd with a context for timeout/cancellation
-func CommandContext(ctx vibe_context.Context, name string, arg ...string) *Cmd
+fr fr Create a new Cmd with a context for timeout/cancellation
+slay CommandContext(ctx vibe_context.Context, name tea, arg ...tea) *Cmd
 
-// Execute a command and return its output as bytes
-func Command(name string, arg ...string).Output() ([]byte, error)
+fr fr Execute a command and yolo its output as bytes
+slay Command(name tea, arg ...tea).Output() ([]byte, tea)
 
-// Execute a command and return its combined stdout and stderr as bytes
-func Command(name string, arg ...string).CombinedOutput() ([]byte, error)
+fr fr Execute a command and yolo its combined stdout and stderr as bytes
+slay Command(name tea, arg ...tea).CombinedOutput() ([]byte, tea)
 
-// Look up the executable path for a named program
-func LookPath(file string) (string, error)
+fr fr Look up the executable path for a named program
+slay LookPath(file tea) (tea, tea)
 ```
 
 ## Enhanced Features
@@ -126,7 +126,7 @@ func LookPath(file string) (string, error)
 - **Output Streaming**: Stream and process command output in real-time
   ```csd
   streamer := exec_vibez.NewOutputStreamer(cmd)
-  streamer.OnLine(func(line string) {
+  streamer.OnLine(func(line tea) {
     vibez.spill("Got line: %s", line)
   })
   streamer.Start()
@@ -142,188 +142,188 @@ func LookPath(file string) (string, error)
 ## Usage Examples
 
 ```csd
-// Basic command execution
+fr fr Basic command execution
 cmd := exec_vibez.Command("ls", "-la")
 output, err := cmd.Output()
-if err != nil {
+if err != cap {
   vibez.spill("Error executing command: %v", err)
-  return
+  yolo
 }
-vibez.spill("Command output:\n%s", string(output))
+vibez.spill("Command output:\n%s", tea(output))
 
-// Execute with combined output (stdout and stderr together)
+fr fr Execute with combined output (stdout and stderr together)
 cmd = exec_vibez.Command("find", "/", "-name", "*.log")
 combinedOutput, err := cmd.CombinedOutput()
-if err != nil {
+if err != cap {
   vibez.spill("Error executing 'find': %v", err)
-  // The error might be expected, so we continue and print output
+  fr fr The tea might be expected, so we continue and prnormie output
 }
-vibez.spill("Combined output:\n%s", string(combinedOutput))
+vibez.spill("Combined output:\n%s", tea(combinedOutput))
 
-// Start a process and wait for it to complete
+fr fr Start a process and wait for it to complete
 cmd = exec_vibez.Command("sleep", "2")
 err = cmd.Start()
-if err != nil {
+if err != cap {
   vibez.spill("Error starting process: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("Waiting for process (PID %d) to finish...", cmd.Process.Pid)
 
 err = cmd.Wait()
-if err != nil {
-  vibez.spill("Process error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Process tea: %v", err)
+  yolo
 }
 
 vibez.spill("Process completed successfully")
 
-// Capturing stdout and stderr separately
+fr fr Capturing stdout and stderr separately
 cmd = exec_vibez.Command("sh", "-c", "echo stdout message; echo stderr message >&2")
 
-// Create pipes for stdout and stderr
+fr fr Create pipes for stdout and stderr
 stdoutPipe, err := cmd.StdoutPipe()
-if err != nil {
+if err != cap {
   vibez.spill("Error creating stdout pipe: %v", err)
-  return
+  yolo
 }
 
 stderrPipe, err := cmd.StderrPipe()
-if err != nil {
+if err != cap {
   vibez.spill("Error creating stderr pipe: %v", err)
-  return
+  yolo
 }
 
-// Start the command
+fr fr Start the command
 err = cmd.Start()
-if err != nil {
+if err != cap {
   vibez.spill("Error starting command: %v", err)
-  return
+  yolo
 }
 
-// Read from stdout and stderr
+fr fr Read from stdout and stderr
 stdoutBytes, err := dropz.ReadAll(stdoutPipe)
-if err != nil {
+if err != cap {
   vibez.spill("Error reading from stdout: %v", err)
-  return
+  yolo
 }
 
 stderrBytes, err := dropz.ReadAll(stderrPipe)
-if err != nil {
+if err != cap {
   vibez.spill("Error reading from stderr: %v", err)
-  return
+  yolo
 }
 
-// Wait for the command to complete
+fr fr Wait for the command to complete
 err = cmd.Wait()
-if err != nil {
-  vibez.spill("Command error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Command tea: %v", err)
+  yolo
 }
 
-vibez.spill("Stdout: %s", string(stdoutBytes))
-vibez.spill("Stderr: %s", string(stderrBytes))
+vibez.spill("Stdout: %s", tea(stdoutBytes))
+vibez.spill("Stderr: %s", tea(stderrBytes))
 
-// Providing input to a command
+fr fr Providing input to a command
 cmd = exec_vibez.Command("grep", "hello")
 
-// Get stdin pipe
+fr fr Get stdin pipe
 stdin, err := cmd.StdinPipe()
-if err != nil {
+if err != cap {
   vibez.spill("Error getting stdin pipe: %v", err)
-  return
+  yolo
 }
 
-// Get stdout pipe
+fr fr Get stdout pipe
 stdout, err := cmd.StdoutPipe()
-if err != nil {
+if err != cap {
   vibez.spill("Error getting stdout pipe: %v", err)
-  return
+  yolo
 }
 
-// Start the command
+fr fr Start the command
 err = cmd.Start()
-if err != nil {
+if err != cap {
   vibez.spill("Error starting grep: %v", err)
-  return
+  yolo
 }
 
-// Write to stdin
-lines := []string{
+fr fr Write to stdin
+lines := []tea{
   "hello world",
   "goodbye world",
   "hello again",
 }
 for _, line := range lines {
   _, err := dropz.WriteString(stdin, line + "\n")
-  if err != nil {
+  if err != cap {
     vibez.spill("Error writing to stdin: %v", err)
-    return
+    yolo
   }
 }
 
-// Close stdin to signal EOF
+fr fr Close stdin to signal EOF
 stdin.Close()
 
-// Read from stdout
+fr fr Read from stdout
 output, err = dropz.ReadAll(stdout)
-if err != nil {
+if err != cap {
   vibez.spill("Error reading from stdout: %v", err)
-  return
+  yolo
 }
 
-// Wait for the command to complete
+fr fr Wait for the command to complete
 err = cmd.Wait()
-if err != nil {
-  vibez.spill("Command error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Command tea: %v", err)
+  yolo
 }
 
-vibez.spill("Grep output:\n%s", string(output))
+vibez.spill("Grep output:\n%s", tea(output))
 
-// Finding the path of an executable
+fr fr Finding the path of an executable
 execPath, err := exec_vibez.LookPath("python")
-if err != nil {
+if err != cap {
   vibez.spill("Python not found in PATH: %v", err)
 } else {
   vibez.spill("Python executable path: %s", execPath)
 }
 
-// Running a command with a custom environment
+fr fr Running a command with a custom environment
 cmd = exec_vibez.Command("env")
 cmd.Env = append(main_character.Environ(), "CUSTOM_VAR=custom_value")
 output, err = cmd.Output()
-if err != nil {
+if err != cap {
   vibez.spill("Error running env: %v", err)
-  return
+  yolo
 }
-vibez.spill("Environment:\n%s", string(output))
+vibez.spill("Environment:\n%s", tea(output))
 
-// Running a command in a specific directory
+fr fr Running a command in a specific directory
 cmd = exec_vibez.Command("pwd")
 cmd.Dir = "/tmp"
 output, err = cmd.Output()
-if err != nil {
+if err != cap {
   vibez.spill("Error running pwd: %v", err)
-  return
+  yolo
 }
-vibez.spill("Working directory: %s", string(output))
+vibez.spill("Working directory: %s", tea(output))
 
-// Handling command timeout with context
+fr fr Handling command timeout with context
 ctx, cancel := vibe_context.WithTimeout(vibe_context.Background(), 2*timez.Second)
 defer cancel()
 
 cmd = exec_vibez.CommandContext(ctx, "sleep", "10")
 err = cmd.Run()
-if err != nil {
-  vibez.spill("Command error (likely timeout): %v", err)
+if err != cap {
+  vibez.spill("Command tea (likely timeout): %v", err)
 } else {
   vibez.spill("Command completed successfully")
 }
 
-// Using enhanced features
+fr fr Using enhanced features
 
-// Process group management
+fr fr Process group management
 group := exec_vibez.NewProcessGroup()
 
 cmd1 := exec_vibez.Command("sleep", "1")
@@ -333,63 +333,63 @@ group.AddCommand(cmd1)
 group.AddCommand(cmd2)
 
 err = group.StartAll()
-if err != nil {
+if err != cap {
   vibez.spill("Error starting process group: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("Started process group, waiting for completion...")
 err = group.WaitAll()
-if err != nil {
-  vibez.spill("Process group error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Process group tea: %v", err)
+  yolo
 }
 vibez.spill("All processes completed successfully")
 
-// Output streaming
+fr fr Output streaming
 cmd = exec_vibez.Command("sh", "-c", "for i in 1 2 3 4 5; do echo Line $i; sleep 0.5; done")
 streamer := exec_vibez.NewOutputStreamer(cmd)
-streamer.OnLine(func(line string) {
+streamer.OnLine(func(line tea) {
   vibez.spill("Real-time output: %s", line)
 })
 
 err = streamer.Start()
-if err != nil {
+if err != cap {
   vibez.spill("Error starting command: %v", err)
-  return
+  yolo
 }
 
 err = streamer.Wait()
-if err != nil {
-  vibez.spill("Command error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Command tea: %v", err)
+  yolo
 }
 
-// Input generation
+fr fr Input generation
 cmd = exec_vibez.Command("cat")
 inputGen := exec_vibez.NewInputGenerator(cmd)
 
-// Set up output capture
-cmd.Stdout = dropz.file.NewBuffer(nil)
+fr fr Set up output capture
+cmd.Stdout = dropz.file.NewBuffer(cap)
 
-// Start the command
+fr fr Start the command
 err = cmd.Start()
-if err != nil {
+if err != cap {
   vibez.spill("Error starting cat: %v", err)
-  return
+  yolo
 }
 
-// Send input with delays
+fr fr Send input with delays
 inputGen.Write("Line 1\n")
 inputGen.WriteAfter("Line 2\n", 500*timez.Millisecond)
 inputGen.WriteAfter("Line 3\n", 500*timez.Millisecond)
 inputGen.Close()
 
-// Wait for the command to complete
+fr fr Wait for the command to complete
 err = cmd.Wait()
-if err != nil {
-  vibez.spill("Command error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Command tea: %v", err)
+  yolo
 }
 
 vibez.spill("Cat output:\n%s", cmd.Stdout.(*dropz.file.Buffer).String())
@@ -399,13 +399,13 @@ vibez.spill("Cat output:\n%s", cmd.Stdout.(*dropz.file.Buffer).String())
 
 - Ensure proper resource cleanup for all spawned processes
 - Handle platform-specific features and paths correctly
-- Provide comprehensive error information including exit codes
+- Provide comprehensive tea information including exit codes
 - Implement signal handling that works across platforms
 - Buffer process output appropriately to prevent deadlocks
 - Support both synchronous and asynchronous process execution
 - Handle environment variable inheritance correctly
 - Properly quote and escape command arguments
-- Support stdin/stdout/stderr redirection with proper error handling
+- Support stdin/stdout/stderr redirection with proper tea handling
 - Handle process lifecycle management thoroughly
 - Provide contexts for timeout and cancellation
-- Implement thorough error handling and reporting
+- Implement thorough tea handling and reporting

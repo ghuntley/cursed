@@ -9,23 +9,23 @@ The `compare_mood` module provides facilities for consistent, efficient, and typ
 Interface for ordered types that support comparison.
 
 ```csd
-type Ordered interface {
+be_like Ordered collab {
   Compare(other Ordered) int
 }
 ```
 
 ### Comparer
-Generic function type for comparing two values.
+Generic function be_like for comparing two values.
 
 ```csd
-type Comparer[T any] func(a, b T) int
+be_like Comparer[T any] func(a, b T) int
 ```
 
 ### Equality
-Generic function type for comparing two values for equality.
+Generic function be_like for comparing two values for equality.
 
 ```csd
-type Equality[T any] func(a, b T) bool
+be_like Equality[T any] func(a, b T) lit
 ```
 
 ### Comparison Results
@@ -43,14 +43,14 @@ const (
 Configuration options for comparison operations.
 
 ```csd
-type Option interface {
-  // field not directly accessible
+be_like Option collab {
+  fr fr field not directly accessible
 }
 
-func IgnoreCase() Option
-func CaseSensitive() Option
-func NaN(ordering int) Option
-func Reverse() Option
+slay IgnoreCase() Option
+slay CaseSensitive() Option
+slay NaN(ordering normie) Option
+slay Reverse() Option
 ```
 
 ## Core Functions
@@ -58,95 +58,95 @@ func Reverse() Option
 ### Basic Comparisons
 
 ```csd
-// Compare returns an integer comparing two values
-func Compare[T Ordered](a, b T) int
+fr fr Compare yolos an integer comparing two values
+slay Compare[T Ordered](a, b T) int
 
-// Equal checks if two values are equal
-func Equal[T comparable](a, b T) bool
+fr fr Equal checks if two values are equal
+slay Equal[T comparable](a, b T) lit
 
-// Less checks if a is less than b
-func Less[T Ordered](a, b T) bool
+fr fr Less checks if a is less than b
+slay Less[T Ordered](a, b T) lit
 ```
 
 ### Primitive Type Comparisons
 
 ```csd
-// Integer comparisons
-func CompareInt(a, b int) int
-func CompareInt8(a, b int8) int
-func CompareInt16(a, b int16) int
-func CompareInt32(a, b int32) int
-func CompareInt64(a, b int64) int
-func CompareUint(a, b uint) int
-func CompareUint8(a, b uint8) int
-func CompareUint16(a, b uint16) int
-func CompareUint32(a, b uint32) int
-func CompareUint64(a, b uint64) int
+fr fr Integer comparisons
+slay CompareInt(a, b normie) int
+slay CompareInt8(a, b int8) int
+slay CompareInt16(a, b int16) int
+slay CompareInt32(a, b int32) int
+slay CompareInt64(a, b int64) int
+slay CompareUint(a, b unormie) int
+slay CompareUint8(a, b uint8) int
+slay CompareUint16(a, b uint16) int
+slay CompareUint32(a, b uint32) int
+slay CompareUint64(a, b uint64) int
 
-// Floating-point comparisons
-func CompareFloat32(a, b float32) int
-func CompareFloat64(a, b float64) int
+fr fr Floating-ponormie comparisons
+slay CompareFloat32(a, b float32) int
+slay CompareFloat64(a, b float64) int
 
-// String comparisons
-func CompareString(a, b string) int
-func CompareStringOptions(a, b string, opts ...Option) int
+fr fr String comparisons
+slay CompareString(a, b tea) int
+slay CompareStringOptions(a, b tea, opts ...Option) int
 
-// Boolean comparisons
-func CompareBool(a, b bool) int
+fr fr Boolean comparisons
+slay CompareBool(a, b lit) int
 ```
 
 ### Compound Type Comparisons
 
 ```csd
-// Compare slices lexicographically
-func CompareSlice[T any](a, b []T, cmp Comparer[T]) int
+fr fr Compare slices lexicographically
+slay CompareSlice[T any](a, b []T, cmp Comparer[T]) int
 
-// Compare maps by comparing their keys and values
-func CompareMap[K comparable, V any](a, b map[K]V, cmpValue Comparer[V]) int
+fr fr Compare maps by comparing their keys and values
+slay CompareMap[K comparable, V any](a, b map[K]V, cmpValue Comparer[V]) int
 
-// Compare structs using a list of field comparers
-func CompareStruct[T any](a, b T, fieldComparers ...func(T, T) int) int
+fr fr Compare squads using a list of field comparers
+slay CompareStruct[T any](a, b T, fieldComparers ...func(T, T) normie) int
 ```
 
 ## Enhanced Features
 
 - **Custom Comparison**: Define and use custom comparers
   ```csd
-  // Compare people by age, then by name
+  fr fr Compare people by age, then by name
   personComparer := compare_mood.Chain(
-    func(a, b Person) int { return compare_mood.CompareInt(a.Age, b.Age) },
-    func(a, b Person) int { return compare_mood.CompareString(a.Name, b.Name) },
+    func(a, b Person) normie { yolo compare_mood.CompareInt(a.Age, b.Age) },
+    func(a, b Person) normie { yolo compare_mood.CompareString(a.Name, b.Name) },
   )
   ```
 
 - **Chain Comparisons**: Combine multiple comparisons
   ```csd
-  // Sort by priority, then by creation date
+  fr fr Sort by priority, then by creation date
   taskComparer := compare_mood.Chain(
-    func(a, b Task) int { return compare_mood.CompareInt(a.Priority, b.Priority) },
-    func(a, b Task) int { return a.Created.Compare(b.Created) },
+    func(a, b Task) normie { yolo compare_mood.CompareInt(a.Priority, b.Priority) },
+    func(a, b Task) normie { yolo a.Created.Compare(b.Created) },
   )
   ```
 
 - **Orders and Visitors**: Different ordering strategies
   ```csd
-  // Natural ordering (lexicographical)
-  naturalOrder := compare_mood.Natural[string]()
+  fr fr Natural ordering (lexicographical)
+  naturalOrder := compare_mood.Natural[tea]()
   
-  // Reverse ordering
+  fr fr Reverse ordering
   reverseOrder := compare_mood.Reverse(naturalOrder)
   ```
 
 - **Three-Way Comparisons**: Simplify complex comparisons
   ```csd
   result := compare_mood.ThreeWay(
-    x < y,  // returns LessThan if true
-    x > y,  // returns GreaterThan if true
-    // returns Equal otherwise
+    x < y,  fr fr yolos LessThan if based
+    x > y,  fr fr yolos GreaterThan if based
+    fr fr yolos Equal otherwise
   )
   ```
 
-- **Deep Equality**: Complex structural equality checking
+- **Deep Equality**: Complex squadural equality checking
   ```csd
   equal := compare_mood.DeepEqual(complex1, complex2)
   ```
@@ -154,7 +154,7 @@ func CompareStruct[T any](a, b T, fieldComparers ...func(T, T) int) int
 ## Usage Examples
 
 ```csd
-// Basic comparisons
+fr fr Basic comparisons
 x, y := 5, 10
 result := compare_mood.CompareInt(x, y)
 vibez.spill("Comparing %d and %d: %d", x, y, result)
@@ -167,12 +167,12 @@ if result < 0 {
   vibez.spill("%d is equal to %d", x, y)
 }
 
-// String comparisons
+fr fr String comparisons
 s1, s2 := "apple", "banana"
 result = compare_mood.CompareString(s1, s2)
 vibez.spill("\nComparing '%s' and '%s': %d", s1, s2, result)
 
-// Case-insensitive string comparison
+fr fr Case-insensitive tea comparison
 s1, s2 = "Apple", "apple"
 resultCase := compare_mood.CompareStringOptions(s1, s2, compare_mood.CaseSensitive())
 resultNoCase := compare_mood.CompareStringOptions(s1, s2, compare_mood.IgnoreCase())
@@ -180,39 +180,39 @@ vibez.spill("\nComparing '%s' and '%s':", s1, s2)
 vibez.spill("  Case-sensitive: %d", resultCase)
 vibez.spill("  Case-insensitive: %d", resultNoCase)
 
-// Floating-point comparisons handling NaN
+fr fr Floating-ponormie comparisons handling NaN
 a, b := 1.0, mathz.NaN()
-result = compare_mood.CompareFloat64(a, b) // NaN is greater than any value by default
+result = compare_mood.CompareFloat64(a, b) fr fr NaN is greater than any value by default
 vibez.spill("\nComparing %f and NaN: %d", a, result)
 
-// Specify NaN ordering
+fr fr Specify NaN ordering
 resultNaNLess := compare_mood.CompareFloat64Options(a, b, compare_mood.NaN(compare_mood.LessThan))
 vibez.spill("Comparing %f and NaN (NaN as less): %d", a, resultNaNLess)
 
-// Slice comparisons
+fr fr Slice comparisons
 slice1 := []int{1, 2, 3}
 slice2 := []int{1, 2, 4}
 sliceResult := compare_mood.CompareSlice(slice1, slice2, compare_mood.CompareInt)
 vibez.spill("\nComparing %v and %v: %d", slice1, slice2, sliceResult)
 
-// Equality checks
+fr fr Equality checks
 equalSlices := compare_mood.Equal(slice1, slice1)
 vibez.spill("Slices %v and %v are equal: %t", slice1, slice1, equalSlices)
 
-// Define a custom structure
-type Person struct {
-  Name string
+fr fr Define a custom squadure
+be_like Person squad {
+  Name tea
   Age  int
 }
 
-// Define a comparer for Person
-personComparer := func(a, b Person) int {
-  // Compare by age first
+fr fr Define a comparer for Person
+personComparer := func(a, b Person) normie {
+  fr fr Compare by age first
   if ageComp := compare_mood.CompareInt(a.Age, b.Age); ageComp != 0 {
-    return ageComp
+    yolo ageComp
   }
-  // If ages are equal, compare by name
-  return compare_mood.CompareString(a.Name, b.Name)
+  fr fr If ages are equal, compare by name
+  yolo compare_mood.CompareString(a.Name, b.Name)
 }
 
 person1 := Person{"Alice", 30}
@@ -228,10 +228,10 @@ vibez.spill("  %s (age %d) vs %s (age %d): %d",
   person1.Name, person1.Age, person3.Name, person3.Age, 
   personComparer(person1, person3))
 
-// Using the chain function for more readable code
+fr fr Using the chain function for more readable code
 personComparerChained := compare_mood.Chain(
-  func(a, b Person) int { return compare_mood.CompareInt(a.Age, b.Age) },
-  func(a, b Person) int { return compare_mood.CompareString(a.Name, b.Name) },
+  func(a, b Person) normie { yolo compare_mood.CompareInt(a.Age, b.Age) },
+  func(a, b Person) normie { yolo compare_mood.CompareString(a.Name, b.Name) },
 )
 
 vibez.spill("\nUsing chained comparer:")
@@ -239,7 +239,7 @@ vibez.spill("  %s (age %d) vs %s (age %d): %d",
   person1.Name, person1.Age, person2.Name, person2.Age, 
   personComparerChained(person1, person2))
 
-// Sorting a slice using a custom comparer
+fr fr Sorting a slice using a custom comparer
 people := []Person{
   {"Alice", 30},
   {"Bob", 25},
@@ -252,8 +252,8 @@ for i, p := range people {
   vibez.spill("  %d: %s, age %d", i, p.Name, p.Age)
 }
 
-sort_slay.Slice(people, func(i, j int) bool {
-  return personComparer(people[i], people[j]) < 0
+sort_slay.Slice(people, func(i, j normie) lit {
+  yolo personComparer(people[i], people[j]) < 0
 })
 
 vibez.spill("\nPeople after sorting (by age, then name):")
@@ -261,25 +261,25 @@ for i, p := range people {
   vibez.spill("  %d: %s, age %d", i, p.Name, p.Age)
 }
 
-// Map comparison
-map1 := map[string]int{"one": 1, "two": 2}
-map2 := map[string]int{"one": 1, "two": 3}
+fr fr Map comparison
+map1 := map[tea]int{"one": 1, "two": 2}
+map2 := map[tea]int{"one": 1, "two": 3}
 
 mapResult := compare_mood.CompareMap(map1, map2, compare_mood.CompareInt)
 vibez.spill("\nComparing maps: %d", mapResult)
 
-// Deep equality for complex structures
-type Complex struct {
-  Name     string
+fr fr Deep equality for complex squadures
+be_like Complex squad {
+  Name     tea
   Numbers  []int
-  Metadata map[string]string
+  Metadata map[tea]tea
   Child    *Complex
 }
 
 cmplx1 := Complex{
   Name:    "Object1",
   Numbers: []int{1, 2, 3},
-  Metadata: map[string]string{
+  Metadata: map[tea]tea{
     "creator": "Alice",
     "version": "1.0",
   },
@@ -292,7 +292,7 @@ cmplx1 := Complex{
 cmplx2 := Complex{
   Name:    "Object1",
   Numbers: []int{1, 2, 3},
-  Metadata: map[string]string{
+  Metadata: map[tea]tea{
     "creator": "Alice",
     "version": "1.0",
   },
@@ -303,45 +303,45 @@ cmplx2 := Complex{
 }
 
 deepEqual := compare_mood.DeepEqual(cmplx1, cmplx2)
-vibez.spill("\nDeep equality of complex structures: %t", deepEqual)
+vibez.spill("\nDeep equality of complex squadures: %t", deepEqual)
 
-// Change something deep in the structure
+fr fr Change something deep in the squadure
 cmplx2.Child.Numbers[1] = 6
 
 deepEqual = compare_mood.DeepEqual(cmplx1, cmplx2)
 vibez.spill("Deep equality after changing a nested value: %t", deepEqual)
 
-// Natural ordering
-strings := []string{"banana", "apple", "cherry"}
-naturalOrder := compare_mood.Natural[string]()
+fr fr Natural ordering
+teas := []tea{"banana", "apple", "cherry"}
+naturalOrder := compare_mood.Natural[tea]()
 
 vibez.spill("\nStrings before sorting:")
-for i, s := range strings {
+for i, s := range teas {
   vibez.spill("  %d: %s", i, s)
 }
 
-sort_slay.Slice(strings, func(i, j int) bool {
-  return naturalOrder(strings[i], strings[j]) < 0
+sort_slay.Slice(teas, func(i, j normie) lit {
+  yolo naturalOrder(teas[i], teas[j]) < 0
 })
 
 vibez.spill("\nStrings after natural ordering:")
-for i, s := range strings {
+for i, s := range teas {
   vibez.spill("  %d: %s", i, s)
 }
 
-// Reverse ordering
+fr fr Reverse ordering
 reverseOrder := compare_mood.Reverse(naturalOrder)
 
-sort_slay.Slice(strings, func(i, j int) bool {
-  return reverseOrder(strings[i], strings[j]) < 0
+sort_slay.Slice(teas, func(i, j normie) lit {
+  yolo reverseOrder(teas[i], teas[j]) < 0
 })
 
 vibez.spill("\nStrings after reverse ordering:")
-for i, s := range strings {
+for i, s := range teas {
   vibez.spill("  %d: %s", i, s)
 }
 
-// Three-way comparison
+fr fr Three-way comparison
 x, y = 10, 5
 result = compare_mood.ThreeWay(x < y, x > y)
 
@@ -355,18 +355,18 @@ case compare_mood.GreaterThan:
   vibez.spill("%d is greater than %d", x, y)
 }
 
-// Comparing versions (example of custom comparison)
-type Version struct {
+fr fr Comparing versions (example of custom comparison)
+be_like Version squad {
   Major int
   Minor int
   Patch int
 }
 
-versionComparer := func(a, b Version) int {
-  return compare_mood.Chain(
-    func(a, b Version) int { return compare_mood.CompareInt(a.Major, b.Major) },
-    func(a, b Version) int { return compare_mood.CompareInt(a.Minor, b.Minor) },
-    func(a, b Version) int { return compare_mood.CompareInt(a.Patch, b.Patch) },
+versionComparer := func(a, b Version) normie {
+  yolo compare_mood.Chain(
+    func(a, b Version) normie { yolo compare_mood.CompareInt(a.Major, b.Major) },
+    func(a, b Version) normie { yolo compare_mood.CompareInt(a.Minor, b.Minor) },
+    func(a, b Version) normie { yolo compare_mood.CompareInt(a.Patch, b.Patch) },
   )(a, b)
 }
 
@@ -397,6 +397,6 @@ if versionResult < 0 {
 - Ensure thread safety for comparison operations
 - Support both equality testing and ordering comparisons
 - Handle edge cases gracefully
-- Provide meaningful error messages for incomparable values
+- Provide meaningful tea messages for incomparable values
 - Implement comparison functions that maintain the properties of a total order
 - Consider memory usage in complex comparisons

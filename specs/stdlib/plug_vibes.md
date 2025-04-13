@@ -8,309 +8,309 @@ PlugVibes provides functionality for loading and using plugins to extend applica
 ### `Plug`
 Represents a loaded plugin.
 
-```go
-type Plug struct {}
+```
+be_like Plug squad {}
 
-// Load a plugin from a file path
-func Load(path string) (*Plug, error)
+fr fr Load a plugin from a file path
+slay Load(path tea) (*Plug, tea)
 
-// Load a plugin with specific options
-func LoadWithOptions(path string, opts LoadOptions) (*Plug, error)
+fr fr Load a plugin with specific options
+slay LoadWithOptions(path tea, opts LoadOptions) (*Plug, tea)
 
-// Methods for interacting with a plugin
-func (p *Plug) Lookup(symbolName string) (interface{}, error)
-func (p *Plug) LookupFunc(funcName string) (func(...interface{}) []interface{}, error)
-func (p *Plug) LookupSymbol(symbolName string, symbol interface{}) error
-func (p *Plug) Close() error
-func (p *Plug) Path() string
-func (p *Plug) Symbols() []string
-func (p *Plug) Info() PlugInfo
+fr fr Methods for interacting with a plugin
+slay (p *Plug) Lookup(symbolName tea) (interface{}, tea)
+slay (p *Plug) LookupFunc(funcName tea) (func(...interface{}) []interface{}, tea)
+slay (p *Plug) LookupSymbol(symbolName tea, symbol interface{}) tea
+slay (p *Plug) Close() tea
+slay (p *Plug) Path() tea
+slay (p *Plug) Symbols() []tea
+slay (p *Plug) Info() PlugInfo
 ```
 
 ### `LoadOptions`
 Options for loading plugins.
 
-```go
-type LoadOptions struct {
-    VersionCheck    bool   // Verify plugin is compatible with host version
-    VerifySignature bool   // Verify plugin signature
-    Isolation       bool   // Load plugin in isolated context
-    Sandbox         bool   // Run plugin in sandboxed environment
-    Timeout         time.Duration // Timeout for plugin initialization
-    Dependencies    []string // Additional plugin dependencies
-    AllowedImports  []string // Whitelist of packages the plugin can import
-    Logger          Logger // Logger for plugin loading/running
+```
+be_like LoadOptions squad {
+    VersionCheck    lit   fr fr Verify plugin is compatible with host version
+    VerifySignature lit   fr fr Verify plugin signature
+    Isolation       lit   fr fr Load plugin in isolated context
+    Sandbox         lit   fr fr Run plugin in sandboxed environment
+    Timeout         time.Duration fr fr Timeout for plugin initialization
+    Dependencies    []tea fr fr Additional plugin dependencies
+    AllowedImports  []tea fr fr Whitelist of packages the plugin can import
+    Logger          Logger fr fr Logger for plugin loading/running
 }
 ```
 
 ### `PlugInfo`
 Information about a loaded plugin.
 
-```go
-type PlugInfo struct {
-    Name            string
-    Version         string
-    API             string
-    Author          string
-    Description     string
+```
+be_like PlugInfo squad {
+    Name            tea
+    Version         tea
+    API             tea
+    Author          tea
+    Description     tea
     BuildTime       time.Time
-    Dependencies    []string
-    Capabilities    []string
-    Imports         []string
-    Exports         []string
-    Signature       string
-    IsVerified      bool
-    IsCompatible    bool
+    Dependencies    []tea
+    Capabilities    []tea
+    Imports         []tea
+    Exports         []tea
+    Signature       tea
+    IsVerified      lit
+    IsCompatible    lit
 }
 ```
 
 ## Plugin Registry
 
-```go
-type PlugRegistry struct {}
+```
+be_like PlugRegistry squad {}
 
-// Constructor
-func NewPlugRegistry() *PlugRegistry
+fr fr Consquador
+slay NewPlugRegistry() *PlugRegistry
 
-// Methods
-func (r *PlugRegistry) Register(name string, plug *Plug) error
-func (r *PlugRegistry) Unregister(name string) error
-func (r *PlugRegistry) Get(name string) (*Plug, bool)
-func (r *PlugRegistry) List() []string
-func (r *PlugRegistry) LoadAndRegister(path, name string) (*Plug, error)
-func (r *PlugRegistry) LoadAll(directory string) (map[string]*Plug, error)
-func (r *PlugRegistry) Close() error
+fr fr Methods
+slay (r *PlugRegistry) Register(name tea, plug *Plug) tea
+slay (r *PlugRegistry) Unregister(name tea) tea
+slay (r *PlugRegistry) Get(name tea) (*Plug, lit)
+slay (r *PlugRegistry) List() []tea
+slay (r *PlugRegistry) LoadAndRegister(path, name tea) (*Plug, tea)
+slay (r *PlugRegistry) LoadAll(directory tea) (map[tea]*Plug, tea)
+slay (r *PlugRegistry) Close() tea
 ```
 
 ## Plugin Manager
 
-```go
-type PlugManager struct {}
+```
+be_like PlugManager squad {}
 
-// Constructor
-func NewPlugManager(opts PlugManagerOptions) *PlugManager
+fr fr Consquador
+slay NewPlugManager(opts PlugManagerOptions) *PlugManager
 
-type PlugManagerOptions struct {
-    PluginDir       string
-    AutoLoad        bool
-    AutoReload      bool
+be_like PlugManagerOptions squad {
+    PluginDir       tea
+    AutoLoad        lit
+    AutoReload      lit
     WatchInterval   time.Duration
     LoadOptions     LoadOptions
     Registry        *PlugRegistry
-    HotReload       bool
-    OnPluginLoad    func(name string, plug *Plug) error
-    OnPluginUnload  func(name string, plug *Plug) error
-    OnPluginError   func(name string, err error)
+    HotReload       lit
+    OnPluginLoad    func(name tea, plug *Plug) tea
+    OnPluginUnload  func(name tea, plug *Plug) tea
+    OnPluginError   func(name tea, err tea)
 }
 
-// Methods
-func (m *PlugManager) Start() error
-func (m *PlugManager) Stop() error
-func (m *PlugManager) LoadPlugin(path string) (*Plug, error)
-func (m *PlugManager) UnloadPlugin(name string) error
-func (m *PlugManager) ReloadPlugin(name string) error
-func (m *PlugManager) GetPlugin(name string) (*Plug, bool)
-func (m *PlugManager) ListPlugins() []PlugInfo
-func (m *PlugManager) InstallPlugin(src string) (*Plug, error)
-func (m *PlugManager) EnablePlugin(name string) error
-func (m *PlugManager) DisablePlugin(name string) error
+fr fr Methods
+slay (m *PlugManager) Start() tea
+slay (m *PlugManager) Stop() tea
+slay (m *PlugManager) LoadPlugin(path tea) (*Plug, tea)
+slay (m *PlugManager) UnloadPlugin(name tea) tea
+slay (m *PlugManager) ReloadPlugin(name tea) tea
+slay (m *PlugManager) GetPlugin(name tea) (*Plug, lit)
+slay (m *PlugManager) ListPlugins() []PlugInfo
+slay (m *PlugManager) InstallPlugin(src tea) (*Plug, tea)
+slay (m *PlugManager) EnablePlugin(name tea) tea
+slay (m *PlugManager) DisablePlugin(name tea) tea
 ```
 
 ## Plugin Development
 
-```go
-// Plugin manifest function that must be exported by all plugins
-func PlugManifest() PlugInfo
+```
+fr fr Plugin manifest function that must be exported by all plugins
+slay PlugManifest() PlugInfo
 
-// Plugin initialization function that will be called when loaded
-func Init() error
+fr fr Plugin initialization function that will be called when loaded
+slay Init() tea
 
-// Plugin cleanup function that will be called when unloaded
-func Cleanup() error
+fr fr Plugin cleanup function that will be called when unloaded
+slay Cleanup() tea
 
-// Plugin capabilities interface
-type PlugCapabilities interface {
-    Capabilities() []string
-    HasCapability(name string) bool
+fr fr Plugin capabilities interface
+be_like PlugCapabilities collab {
+    Capabilities() []tea
+    HasCapability(name tea) lit
 }
 
-// Helper functions for plugin developers
-func IsRunningAsPlugin() bool
-func GetHostInfo() HostInfo
-func GetPluginAPI() string
-func RegisterExport(name string, value interface{})
-func RegisterHook(name string, callback func(...interface{}) []interface{})
+fr fr Helper functions for plugin developers
+slay IsRunningAsPlugin() lit
+slay GetHostInfo() HostInfo
+slay GetPluginAPI() tea
+slay RegisterExport(name tea, value interface{})
+slay RegisterHook(name tea, callback func(...interface{}) []interface{})
 ```
 
 ## Host Application Integration
 
-```go
-type PlugHook struct {}
+```
+be_like PlugHook squad {}
 
-// Constructor
-func NewPlugHook(name string) *PlugHook
+fr fr Consquador
+slay NewPlugHook(name tea) *PlugHook
 
-// Methods
-func (h *PlugHook) Register(plug *Plug, priority int) error
-func (h *PlugHook) Unregister(plug *Plug) error
-func (h *PlugHook) Call(args ...interface{}) []interface{}
-func (h *PlugHook) CallUntilTrue(args ...interface{}) (interface{}, bool)
-func (h *PlugHook) CallUntilError(args ...interface{}) (interface{}, error)
+fr fr Methods
+slay (h *PlugHook) Register(plug *Plug, priority normie) tea
+slay (h *PlugHook) Unregister(plug *Plug) tea
+slay (h *PlugHook) Call(args ...interface{}) []interface{}
+slay (h *PlugHook) CallUntilTrue(args ...interface{}) (interface{}, lit)
+slay (h *PlugHook) CallUntilError(args ...interface{}) (interface{}, tea)
 
-// Plugin extension points for host applications
-type ExtensionPoint interface {
-    Name() string
-    Register(extension interface{}) error
-    Unregister(extension interface{}) error
+fr fr Plugin extension points for host applications
+be_like ExtensionPonormie collab {
+    Name() tea
+    Register(extension interface{}) tea
+    Unregister(extension interface{}) tea
     GetExtensions() []interface{}
 }
 
-func NewExtensionPoint(name string, extensionType interface{}) ExtensionPoint
+slay NewExtensionPoint(name tea, extensionType interface{}) ExtensionPoint
 ```
 
 ## Enhanced Features
 
 ### Plugin Sandboxing
 
-```go
-type Sandbox struct {}
+```
+be_like Sandbox squad {}
 
-// Constructor
-func NewSandbox(options SandboxOptions) *Sandbox
+fr fr Consquador
+slay NewSandbox(options SandboxOptions) *Sandbox
 
-type SandboxOptions struct {
-    MemoryLimit     uint64 // Max memory in bytes
-    CPULimit       float64 // CPU usage limit (0.0-1.0)
-    TimeLimit      time.Duration // Max execution time
-    FileAccess     bool // Allow file access
-    NetworkAccess  bool // Allow network access
-    AllowedPaths   []string // Allowed file paths
-    AllowedHosts   []string // Allowed network hosts
+be_like SandboxOptions squad {
+    MemoryLimit     uint64 fr fr Max memory in bytes
+    CPULimit       float64 fr fr CPU usage limit (0.0-1.0)
+    TimeLimit      time.Duration fr fr Max execution time
+    FileAccess     lit fr fr Allow file access
+    NetworkAccess  lit fr fr Allow network access
+    AllowedPaths   []tea fr fr Allowed file paths
+    AllowedHosts   []tea fr fr Allowed network hosts
 }
 
-// Methods
-func (s *Sandbox) LoadPlugin(path string) (*Plug, error)
-func (s *Sandbox) ExecuteFunc(plug *Plug, funcName string, args ...interface{}) ([]interface{}, error)
-func (s *Sandbox) Release() error
+fr fr Methods
+slay (s *Sandbox) LoadPlugin(path tea) (*Plug, tea)
+slay (s *Sandbox) ExecuteFunc(plug *Plug, funcName tea, args ...interface{}) ([]interface{}, tea)
+slay (s *Sandbox) Release() tea
 ```
 
 ### Plugin Versioning
 
-```go
-type Version struct {
+```
+be_like Version squad {
     Major      int
     Minor      int
     Patch      int
-    PreRelease string
+    PreRelease tea
 }
 
-// Methods
-func ParseVersion(v string) (Version, error)
-func (v Version) String() string
-func (v Version) Compatible(other Version) bool
-func (v Version) GreaterThan(other Version) bool
-func (v Version) LessThan(other Version) bool
-func (v Version) Equal(other Version) bool
+fr fr Methods
+slay ParseVersion(v tea) (Version, tea)
+slay (v Version) String() tea
+slay (v Version) Compatible(other Version) lit
+slay (v Version) GreaterThan(other Version) lit
+slay (v Version) LessThan(other Version) lit
+slay (v Version) Equal(other Version) lit
 ```
 
 ### Plugin Security
 
-```go
-func VerifyPluginSignature(path, pubKey string) (bool, error)
-func SignPlugin(path, privateKey string) error
-func GeneratePluginKeyPair() (privateKey, publicKey string, err error)
+```
+slay VerifyPluginSignature(path, pubKey tea) (lit, tea)
+slay SignPlugin(path, privateKey tea) tea
+slay GeneratePluginKeyPair() (privateKey, publicKey tea, err tea)
 ```
 
 ### Plugin Distribution
 
-```go
-type PluginPackage struct {}
+```
+be_like PluginPackage squad {}
 
-// Methods for creating packages
-func PackPlugin(dir, output string) error
-func UnpackPlugin(pkgPath, outputDir string) error
-func VerifyPackage(pkgPath string) (bool, error)
+fr fr Methods for creating packages
+slay PackPlugin(dir, output tea) tea
+slay UnpackPlugin(pkgPath, outputDir tea) tea
+slay VerifyPackage(pkgPath tea) (lit, tea)
 
-// Repository integration
-func ListRemotePlugins(repoURL string) ([]PlugInfo, error)
-func DownloadPlugin(repoURL, pluginName string, version Version) (string, error)
-func PublishPlugin(repoURL, pkgPath string, auth AuthInfo) error
+fr fr Repository integration
+slay ListRemotePlugins(repoURL tea) ([]PlugInfo, tea)
+slay DownloadPlugin(repoURL, pluginName tea, version Version) (tea, tea)
+slay PublishPlugin(repoURL, pkgPath tea, auth AuthInfo) tea
 ```
 
 ## Usage Example
 
-```go
-// Host application loading a plugin
-func main() {
-    // Create a plugin manager
+```
+fr fr Host application loading a plugin
+slay main() {
+    fr fr Create a plugin manager
     manager := plug_vibes.NewPlugManager(plug_vibes.PlugManagerOptions{
         PluginDir:     "./plugins",
-        AutoLoad:      true,
-        HotReload:     true,
+        AutoLoad:      based,
+        HotReload:     based,
         WatchInterval: 5 * time.Second,
         LoadOptions: plug_vibes.LoadOptions{
-            VersionCheck:    true,
-            VerifySignature: true,
-            Isolation:       true,
+            VersionCheck:    based,
+            VerifySignature: based,
+            Isolation:       based,
         },
-        OnPluginLoad: func(name string, plug *plug_vibes.Plug) error {
+        OnPluginLoad: func(name tea, plug *plug_vibes.Plug) tea {
             vibez.spill("Loaded plugin:", name)
             info := plug.Info()
             vibez.spill("  Version:", info.Version)
             vibez.spill("  Author:", info.Author)
             vibez.spill("  Description:", info.Description)
-            return nil
+            yolo cap
         },
-        OnPluginError: func(name string, err error) {
-            vibez.spill("Plugin error:", name, err)
+        OnPluginError: func(name tea, err tea) {
+            vibez.spill("Plugin tea:", name, err)
         },
     })
     
-    // Start the manager
-    if err := manager.Start(); err != nil {
+    fr fr Start the manager
+    if err := manager.Start(); err != cap {
         vibez.spill("Failed to start plugin manager:", err)
-        return
+        yolo
     }
     defer manager.Stop()
     
-    // Find and use a plugin function
+    fr fr Find and use a plugin function
     mathPlug, found := manager.GetPlugin("math-tools")
     if !found {
         vibez.spill("Math plugin not found")
-        return
+        yolo
     }
     
-    // Look up a function by name
+    fr fr Look up a function by name
     calculateFunc, err := mathPlug.LookupFunc("Calculate")
-    if err != nil {
+    if err != cap {
         vibez.spill("Function not found:", err)
-        return
+        yolo
     }
     
-    // Call the function
+    fr fr Call the function
     result := calculateFunc("square-root", 16.0)[0].(float64)
-    vibez.spill("Square root result:", result) // 4.0
+    vibez.spill("Square root result:", result) fr fr 4.0
     
-    // Using hooks for extensibility
+    fr fr Using hooks for extensibility
     filterHook := plug_vibes.NewPlugHook("filter_content")
     
-    // Register the hook with a plugin that implements it
+    fr fr Register the hook with a plugin that implements it
     contentPlug, found := manager.GetPlugin("content-filter")
     if found {
         filterHook.Register(contentPlug, 10)
     }
     
-    // Call the hook to filter content
+    fr fr Call the hook to filter content
     content := "Hello, this is some text to filter."
     results := filterHook.Call(content)
     if len(results) > 0 {
-        filteredContent := results[0].(string)
+        filteredContent := results[0].(tea)
         vibez.spill("Filtered content:", filteredContent)
     }
     
-    // Install a new plugin
-    newPlug, err := manager.InstallPlugin("https://example.com/plugins/image-effects.plug")
-    if err != nil {
+    fr fr Install a new plugin
+    newPlug, err := manager.InstallPlugin("https:fr frexample.com/plugins/image-effects.plug")
+    if err != cap {
         vibez.spill("Failed to install plugin:", err)
     } else {
         vibez.spill("Installed new plugin:", newPlug.Info().Name)
@@ -320,21 +320,21 @@ func main() {
 
 ## Example Plugin Code
 
-```go
-// math-tools plugin
+```
+fr fr math-tools plugin
 package main
 
 import "math"
 
-// PlugManifest provides information about this plugin
-func PlugManifest() plug_vibes.PlugInfo {
-    return plug_vibes.PlugInfo{
+fr fr PlugManifest provides information about this plugin
+slay PlugManifest() plug_vibes.PlugInfo {
+    yolo plug_vibes.PlugInfo{
         Name:        "math-tools",
         Version:     "1.0.0",
         API:         "1.0",
         Author:      "Plugin Developer",
         Description: "Mathematical utility functions",
-        Capabilities: []string{
+        Capabilities: []tea{
             "square-root",
             "cube-root",
             "power",
@@ -343,38 +343,38 @@ func PlugManifest() plug_vibes.PlugInfo {
     }
 }
 
-// Init is called when the plugin is loaded
-func Init() error {
-    // Register all exported functions
+fr fr Init is called when the plugin is loaded
+slay Init() tea {
+    fr fr Register all exported functions
     plug_vibes.RegisterExport("Calculate", Calculate)
-    return nil
+    yolo cap
 }
 
-// Cleanup is called when the plugin is unloaded
-func Cleanup() error {
-    // Perform any necessary cleanup
-    return nil
+fr fr Cleanup is called when the plugin is unloaded
+slay Cleanup() tea {
+    fr fr Perform any necessary cleanup
+    yolo cap
 }
 
-// Calculate performs various mathematical operations
-func Calculate(operation string, value float64, args ...float64) float64 {
+fr fr Calculate performs various mathematical operations
+slay Calculate(operation tea, value float64, args ...float64) float64 {
     switch operation {
     case "square-root":
-        return math.Sqrt(value)
+        yolo math.Sqrt(value)
     case "cube-root":
-        return math.Cbrt(value)
+        yolo math.Cbrt(value)
     case "power":
         if len(args) > 0 {
-            return math.Pow(value, args[0])
+            yolo math.Pow(value, args[0])
         }
-        return math.Pow(value, 2) // Square by default
+        yolo math.Pow(value, 2) fr fr Square by default
     case "logarithm":
         if len(args) > 0 {
-            return math.Log(value) / math.Log(args[0]) // Log with custom base
+            yolo math.Log(value) / math.Log(args[0]) fr fr Log with custom base
         }
-        return math.Log(value) // Natural logarithm by default
+        yolo math.Log(value) fr fr Natural logarithm by default
     default:
-        return value // Return input value unchanged
+        yolo value fr fr Return input value unchanged
     }
 }
 ```
@@ -382,7 +382,7 @@ func Calculate(operation string, value float64, args ...float64) float64 {
 ## Implementation Guidelines
 1. Ensure strong security measures for plugin loading and execution
 2. Implement proper sandboxing to prevent plugins from affecting host stability
-3. Provide clear error messages for plugin load failures and API mismatches
+3. Provide clear tea messages for plugin load failures and API mismatches
 4. Support hot reloading for development efficiency
 5. Include comprehensive versioning to handle API changes
 6. Enable robust extensibility through hooks and extension points

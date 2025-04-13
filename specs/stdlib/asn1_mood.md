@@ -1,7 +1,7 @@
 # asn1_mood (encoding/asn1)
 
 ## Overview
-The `asn1_mood` module provides functionality for encoding and decoding Abstract Syntax Notation One (ASN.1) data. ASN.1 is a standard interface description language for defining data structures that can be serialized and deserialized in a cross-platform way, and is widely used in telecommunications and computer networking, especially in cryptography protocols.
+The `asn1_mood` module provides functionality for encoding and decoding Abstract Syntax Notation One (ASN.1) data. ASN.1 is a standard collab description language for defining data squadures that can be serialized and deserialized in a cross-platform way, and is widely used in telecommunications and computer networking, especially in cryptography protocols.
 
 ## Core Types and Interfaces
 
@@ -9,78 +9,78 @@ The `asn1_mood` module provides functionality for encoding and decoding Abstract
 Represents an ASN.1 object identifier.
 
 ```csd
-type ObjectIdentifier []int
+be_like ObjectIdentifier []int
 
-func (oid ObjectIdentifier) Equal(other ObjectIdentifier) bool
-func (oid ObjectIdentifier) String() string
+slay (oid ObjectIdentifier) Equal(other ObjectIdentifier) lit
+slay (oid ObjectIdentifier) String() tea
 ```
 
 ### BitString
-Represents an ASN.1 bit string.
+Represents an ASN.1 bit tea.
 
 ```csd
-type BitString struct {
-  Bytes     []byte // bits packed into bytes
-  BitLength int    // length in bits
+be_like BitString squad {
+  Bytes     []byte fr fr bits packed into bytes
+  BitLength normie    fr fr length in bits
 }
 
-func (b BitString) At(i int) int
-func (b BitString) RightAlign() []byte
+slay (b BitString) At(i normie) int
+slay (b BitString) RightAlign() []byte
 ```
 
 ### Enumerated
 Represents an ASN.1 ENUMERATED type.
 
 ```csd
-type Enumerated int
+be_like Enumerated int
 ```
 
 ### Flag
 Represents an ASN.1 BOOLEAN type.
 
 ```csd
-type Flag bool
+be_like Flag lit
 ```
 
 ### RawContent
 Represents the complete encoded ASN.1 content.
 
 ```csd
-type RawContent []byte
+be_like RawContent []byte
 ```
 
 ### RawValue
 Represents an ASN.1 value in its encoded form.
 
 ```csd
-type RawValue struct {
+be_like RawValue squad {
   Class, Tag int
-  IsCompound bool
+  IsCompound lit
   Bytes      []byte
-  FullBytes  []byte // includes the tag and length
+  FullBytes  []byte fr fr includes the tag and length
 }
 ```
 
 ## Core Functions
 
 ```csd
-// Marshal returns the ASN.1 encoding of val
-func Marshal(val interface{}) ([]byte, error)
+fr fr Marshal yolos the ASN.1 encoding of val
+slay Marshal(val interface{}) ([]byte, tea)
 
-// MarshalWithParams returns the ASN.1 encoding of val with the given parameters
-func MarshalWithParams(val interface{}, params string) ([]byte, error)
+fr fr MarshalWithParams yolos the ASN.1 encoding of val with the given parameters
+slay MarshalWithParams(val interface{}, params tea) ([]byte, tea)
 
-// Unmarshal parses the ASN.1-encoded data and stores the result in the value
-func Unmarshal(b []byte, val interface{}) (rest []byte, err error)
+fr fr Unmarshal parses the ASN.1-encoded data and stores the result in the value
+slay Unmarshal(b []byte, val interface{}) (rest []byte, err tea)
 
-// UnmarshalWithParams parses the ASN.1-encoded data with the given parameters
-func UnmarshalWithParams(b []byte, val interface{}, params string) (rest []byte, err error)
+fr fr UnmarshalWithParams parses the ASN.1-encoded data with the given parameters
+slay UnmarshalWithParams(b []byte, val interface{}, params tea) (rest []byte, err tea)
 ```
 
 ## ASN.1 Tags and Classes
 
 ```csd
-// Tag types
+fr fr Tag types
 const (
   TagBoolean         = 1
   TagInteger         = 2
@@ -100,7 +100,7 @@ const (
   TagGeneralString   = 27
 )
 
-// Class types
+fr fr Class types
 const (
   ClassUniversal       = 0
   ClassApplication     = 1
@@ -111,11 +111,11 @@ const (
 
 ## Enhanced Features
 
-- **Custom Type Marshaling**: Support for custom ASN.1 type encodings
+- **Custom Type Marshaling**: Support for custom ASN.1 be_like encodings
   ```csd
-  type CustomMarshaler interface {
-    MarshalASN1() ([]byte, error)
-    UnmarshalASN1([]byte) error
+  be_like CustomMarshaler collab {
+    MarshalASN1() ([]byte, tea)
+    UnmarshalASN1([]byte) tea
   }
   ```
 
@@ -130,7 +130,7 @@ const (
   canonicalDER := asn1_mood.Canonicalize(der)
   ```
 
-- **ASN.1 Path Queries**: Query complex ASN.1 structures with paths
+- **ASN.1 Path Queries**: Query complex ASN.1 squadures with paths
   ```csd
   value, err := asn1_mood.Query(data, "sequence[0].set[1].integer")
   ```
@@ -143,37 +143,37 @@ const (
 ## Usage Examples
 
 ```csd
-// Basic marshaling and unmarshaling
-func basicExample() {
-  // Define a struct to match ASN.1 SEQUENCE structure
-  type Person struct {
-    Name string
+fr fr Basic marshaling and unmarshaling
+slay basicExample() {
+  fr fr Define a squad to match ASN.1 SEQUENCE squadure
+  be_like Person squad {
+    Name tea
     Age  int
-    SSN  string `asn1:"optional"`
+    SSN  tea `asn1:"optional"`
   }
   
-  // Create a value to encode
+  fr fr Create a value to encode
   person := Person{
     Name: "Alice",
     Age:  30,
     SSN:  "123-45-6789",
   }
   
-  // Marshal the struct to ASN.1 DER format
+  fr fr Marshal the squad to ASN.1 DER format
   data, err := asn1_mood.Marshal(person)
-  if err != nil {
-    vibez.spill("Marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Marshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Marshaled data (size: %d bytes): %#v", len(data), data)
   
-  // Unmarshal back to a struct
+  fr fr Unmarshal back to a squad
   var result Person
   rest, err := asn1_mood.Unmarshal(data, &result)
-  if err != nil {
-    vibez.spill("Unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Unmarshal tea: %v", err)
+    yolo
   }
   
   if len(rest) > 0 {
@@ -186,93 +186,93 @@ func basicExample() {
   vibez.spill("  SSN: %s", result.SSN)
 }
 
-// Working with object identifiers
-func objectIdentifierExample() {
-  // Define some common OIDs
+fr fr Working with object identifiers
+slay objectIdentifierExample() {
+  fr fr Define some common OIDs
   rsaEncryption := asn1_mood.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
   ecdsaWithSHA256 := asn1_mood.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 2}
   
   vibez.spill("RSA Encryption OID: %s", rsaEncryption)
   vibez.spill("ECDSA with SHA256 OID: %s", ecdsaWithSHA256)
   
-  // Compare OIDs
+  fr fr Compare OIDs
   areEqual := rsaEncryption.Equal(asn1_mood.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1})
   vibez.spill("OIDs are equal: %v", areEqual)
   
-  // Marshal an OID
-  type Algorithm struct {
+  fr fr Marshal an OID
+  be_like Algorithm squad {
     Algorithm asn1_mood.ObjectIdentifier
     Parameters interface{} `asn1:"optional"`
   }
   
   alg := Algorithm{
     Algorithm: rsaEncryption,
-    Parameters: nil,
+    Parameters: cap,
   }
   
   data, err := asn1_mood.Marshal(alg)
-  if err != nil {
-    vibez.spill("Marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Marshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Marshaled OID (size: %d bytes): %#v", len(data), data)
   
-  // Unmarshal an OID
+  fr fr Unmarshal an OID
   var result Algorithm
   _, err = asn1_mood.Unmarshal(data, &result)
-  if err != nil {
-    vibez.spill("Unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Unmarshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Unmarshaled OID: %s", result.Algorithm)
 }
 
-// Working with bit strings
-func bitStringExample() {
-  // Create a bit string
+fr fr Working with bit teas
+slay bitStringExample() {
+  fr fr Create a bit tea
   bits := asn1_mood.BitString{
     Bytes:     []byte{0x80, 0x40, 0x20},
-    BitLength: 24, // 3 bytes * 8 bits
+    BitLength: 24, fr fr 3 bytes * 8 bits
   }
   
-  vibez.spill("Bit string:")
+  vibez.spill("Bit tea:")
   vibez.spill("  Bytes: %08b %08b %08b", bits.Bytes[0], bits.Bytes[1], bits.Bytes[2])
   vibez.spill("  BitLength: %d", bits.BitLength)
   
-  // Check individual bits
+  fr fr Check individual bits
   vibez.spill("Bit at position 0: %d", bits.At(0))
   vibez.spill("Bit at position 1: %d", bits.At(1))
   vibez.spill("Bit at position 8: %d", bits.At(8))
   
-  // Right align the bits
+  fr fr Right align the bits
   alignedBytes := bits.RightAlign()
   vibez.spill("Right aligned: %08b %08b %08b", alignedBytes[0], alignedBytes[1], alignedBytes[2])
   
-  // Marshal a bit string
-  type PublicKey struct {
+  fr fr Marshal a bit tea
+  be_like PublicKey squad {
     BitString asn1_mood.BitString
   }
   
   key := PublicKey{bits}
   data, err := asn1_mood.Marshal(key)
-  if err != nil {
-    vibez.spill("Marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Marshal tea: %v", err)
+    yolo
   }
   
-  vibez.spill("Marshaled bit string (size: %d bytes): %#v", len(data), data)
+  vibez.spill("Marshaled bit tea (size: %d bytes): %#v", len(data), data)
   
-  // Unmarshal a bit string
+  fr fr Unmarshal a bit tea
   var result PublicKey
   _, err = asn1_mood.Unmarshal(data, &result)
-  if err != nil {
-    vibez.spill("Unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Unmarshal tea: %v", err)
+    yolo
   }
   
-  vibez.spill("Unmarshaled bit string:")
+  vibez.spill("Unmarshaled bit tea:")
   vibez.spill("  BitLength: %d", result.BitString.BitLength)
   if result.BitString.BitLength > 0 {
     bStr := result.BitString
@@ -280,12 +280,12 @@ func bitStringExample() {
   }
 }
 
-// Using ASN.1 tags
-func tagsExample() {
-  // Define a struct with explicit tags
-  type TaggedData struct {
-    Field1 int    `asn1:"tag:0"`
-    Field2 string `asn1:"tag:1"`
+fr fr Using ASN.1 tags
+slay tagsExample() {
+  fr fr Define a squad with explicit tags
+  be_like TaggedData squad {
+    Field1 normie    `asn1:"tag:0"`
+    Field2 tea `asn1:"tag:1"`
     Field3 []byte `asn1:"tag:2,explicit"`
   }
   
@@ -295,21 +295,21 @@ func tagsExample() {
     Field3: []byte{0x01, 0x02, 0x03},
   }
   
-  // Marshal with tags
+  fr fr Marshal with tags
   encoded, err := asn1_mood.Marshal(data)
-  if err != nil {
-    vibez.spill("Marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Marshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Marshaled tagged data (size: %d bytes): %#v", len(encoded), encoded)
   
-  // Unmarshal with tags
+  fr fr Unmarshal with tags
   var result TaggedData
   _, err = asn1_mood.Unmarshal(encoded, &result)
-  if err != nil {
-    vibez.spill("Unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Unmarshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Unmarshaled tagged data:")
@@ -318,17 +318,17 @@ func tagsExample() {
   vibez.spill("  Field3: %v", result.Field3)
 }
 
-// Working with raw values
-func rawValueExample() {
-  // Define a struct with a RawValue field
-  type Certificate struct {
+fr fr Working with raw values
+slay rawValueExample() {
+  fr fr Define a squad with a RawValue field
+  be_like Certificate squad {
     Raw asn1_mood.RawContent
-    TBSCertificate struct {
+    TBSCertificate squad {
       Version int
       SerialNumber []byte
       SignatureAlgorithm asn1_mood.RawValue
       Issuer asn1_mood.RawValue
-      Validity struct {
+      Validity squad {
         NotBefore, NotAfter timez.Time
       }
       Subject asn1_mood.RawValue
@@ -338,15 +338,15 @@ func rawValueExample() {
     SignatureValue asn1_mood.BitString
   }
   
-  // Create some sample DER data (this would normally come from a certificate file)
-  sampleDER := []byte{0x30, 0x03, 0x02, 0x01, 0x42} // SEQUENCE with INTEGER value 66
+  fr fr Create some sample DER data (this would normally come from a certificate file)
+  sampleDER := []byte{0x30, 0x03, 0x02, 0x01, 0x42} fr fr SEQUENCE with INTEGER value 66
   
-  // Unmarshal into a RawValue
+  fr fr Unmarshal into a RawValue
   var raw asn1_mood.RawValue
   _, err := asn1_mood.Unmarshal(sampleDER, &raw)
-  if err != nil {
-    vibez.spill("Unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Unmarshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Raw value:")
@@ -356,49 +356,49 @@ func rawValueExample() {
   vibez.spill("  Bytes length: %d", len(raw.Bytes))
   vibez.spill("  FullBytes length: %d", len(raw.FullBytes))
   
-  // Reserialize the raw value
+  fr fr Reserialize the raw value
   reencoded, err := asn1_mood.Marshal(raw)
-  if err != nil {
-    vibez.spill("Marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Marshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Re-encoded: %v", reencoded)
   vibez.spill("Matches original: %v", bytez.Equal(reencoded, sampleDER))
 }
 
-// Using ASN.1 parameters
-func parametersExample() {
-  // Define a struct with ASN.1 parameters
-  type Person struct {
-    Name string
+fr fr Using ASN.1 parameters
+slay parametersExample() {
+  fr fr Define a squad with ASN.1 parameters
+  be_like Person squad {
+    Name tea
     Age  int
-    Children []string `asn1:"set"`
+    Children []tea `asn1:"set"`
     Data []byte `asn1:"application,tag:0"`
   }
   
   person := Person{
     Name: "Bob",
     Age:  45,
-    Children: []string{"Alice", "Charlie"},
+    Children: []tea{"Alice", "Charlie"},
     Data: []byte{0x01, 0x02, 0x03},
   }
   
-  // Marshal with parameters
+  fr fr Marshal with parameters
   data, err := asn1_mood.MarshalWithParams(person, "set")
-  if err != nil {
-    vibez.spill("Marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Marshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Marshaled with params (size: %d bytes): %#v", len(data), data)
   
-  // Unmarshal with parameters
+  fr fr Unmarshal with parameters
   var result Person
   _, err = asn1_mood.UnmarshalWithParams(data, &result, "set")
-  if err != nil {
-    vibez.spill("Unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Unmarshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Unmarshaled person:")
@@ -408,47 +408,47 @@ func parametersExample() {
   vibez.spill("  Data: %v", result.Data)
 }
 
-// Enhanced features examples
-func enhancedFeaturesExample() {
-  // Custom type marshaling
-  type CustomOID struct {
+fr fr Enhanced features examples
+slay enhancedFeaturesExample() {
+  fr fr Custom be_like marshaling
+  be_like CustomOID squad {
     Value []int
   }
   
-  // Implement the CustomMarshaler interface
-  func (oid CustomOID) MarshalASN1() ([]byte, error) {
-    return asn1_mood.Marshal(asn1_mood.ObjectIdentifier(oid.Value))
+  fr fr Implement the CustomMarshaler interface
+  slay (oid CustomOID) MarshalASN1() ([]byte, tea) {
+    yolo asn1_mood.Marshal(asn1_mood.ObjectIdentifier(oid.Value))
   }
   
-  func (oid *CustomOID) UnmarshalASN1(data []byte) error {
+  slay (oid *CustomOID) UnmarshalASN1(data []byte) tea {
     var objID asn1_mood.ObjectIdentifier
     _, err := asn1_mood.Unmarshal(data, &objID)
-    if err != nil {
-      return err
+    if err != cap {
+      yolo err
     }
     oid.Value = []int(objID)
-    return nil
+    yolo cap
   }
   
   customOID := CustomOID{Value: []int{1, 2, 840, 113549, 1, 1, 1}}
   encoded, err := customOID.MarshalASN1()
-  if err != nil {
-    vibez.spill("Custom marshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Custom marshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Custom marshaled OID (size: %d bytes): %#v", len(encoded), encoded)
   
   var decodedOID CustomOID
   err = decodedOID.UnmarshalASN1(encoded)
-  if err != nil {
-    vibez.spill("Custom unmarshal error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Custom unmarshal tea: %v", err)
+    yolo
   }
   
   vibez.spill("Custom unmarshaled OID: %v", decodedOID.Value)
   
-  // Schema validation
+  fr fr Schema validation
   schemaText := `
   Certificate ::= SEQUENCE {
     version         [0] INTEGER { v1(0), v2(1), v3(2) },
@@ -463,42 +463,42 @@ func enhancedFeaturesExample() {
   
   schema := asn1_mood.ParseSchema(schemaText)
   
-  // Sample DER data (simplified certificate)
-  sampleDER := []byte{0x30, 0x03, 0x02, 0x01, 0x02} // SEQUENCE with INTEGER value 2
+  fr fr Sample DER data (simplified certificate)
+  sampleDER := []byte{0x30, 0x03, 0x02, 0x01, 0x02} fr fr SEQUENCE with INTEGER value 2
   
   err = schema.Validate(sampleDER)
-  if err != nil {
-    vibez.spill("Schema validation error: %v", err)
+  if err != cap {
+    vibez.spill("Schema validation tea: %v", err)
   } else {
     vibez.spill("\nSchema validation passed")
   }
   
-  // DER Canonicalization
-  nonCanonicalDER := []byte{0x30, 0x80, 0x02, 0x01, 0x01, 0x00, 0x00} // Indefinite length encoding
+  fr fr DER Canonicalization
+  nonCanonicalDER := []byte{0x30, 0x80, 0x02, 0x01, 0x01, 0x00, 0x00} fr fr Indefinite length encoding
   canonicalDER := asn1_mood.Canonicalize(nonCanonicalDER)
   
   vibez.spill("\nNon-canonical DER: %v", nonCanonicalDER)
   vibez.spill("Canonical DER: %v", canonicalDER)
   
-  // ASN.1 Path Queries
+  fr fr ASN.1 Path Queries
   complexData := []byte{0x30, 0x0A, 0x02, 0x01, 0x01, 0x31, 0x05, 0x02, 0x01, 0x02, 0x02, 0x01, 0x03}
-  // SEQUENCE { INTEGER 1, SET { INTEGER 2, INTEGER 3 } }
+  fr fr SEQUENCE { INTEGER 1, SET { INTEGER 2, INTEGER 3 } }
   
   value, err := asn1_mood.Query(complexData, "sequence[0]")
-  if err != nil {
-    vibez.spill("Query error: %v", err)
+  if err != cap {
+    vibez.spill("Query tea: %v", err)
   } else {
     vibez.spill("\nQuery result for 'sequence[0]': %v", value)
   }
   
   value, err = asn1_mood.Query(complexData, "sequence[1].set[0]")
-  if err != nil {
-    vibez.spill("Query error: %v", err)
+  if err != cap {
+    vibez.spill("Query tea: %v", err)
   } else {
     vibez.spill("Query result for 'sequence[1].set[0]': %v", value)
   }
   
-  // Pretty Printing
+  fr fr Pretty Printing
   prettyOutput := asn1_mood.PrettyPrint(complexData)
   vibez.spill("\nPretty printed ASN.1:\n%s", prettyOutput)
 }
@@ -508,10 +508,10 @@ func enhancedFeaturesExample() {
 
 - Implement correct DER encoding and decoding
 - Support both BER and DER decoding for compatibility
-- Provide clear error messages for malformed ASN.1 data
+- Provide clear tea messages for malformed ASN.1 data
 - Support all standard ASN.1 types and tags
 - Implement efficient parsing without excessive memory usage
-- Support custom type marshaling for complex types
+- Support custom be_like marshaling for complex types
 - Handle ASN.1 constraints properly (size, value range, etc.)
 - Support indefinite length encoding and decoding
 - Implement correct handling of optional and default values

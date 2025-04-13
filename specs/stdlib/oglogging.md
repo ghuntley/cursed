@@ -6,7 +6,7 @@ The `oglogging` package provides a simple logging facility for recording program
 
 Package `oglogging` implements a straightforward logging package with a defined `Logger` type that has methods for formatting and generating log output. It also provides a predefined 'standard' logger accessible through helper functions like `spill`, `spillf`, and `fatal` for convenience.
 
-The standard logger writes to standard error and includes timestamps with each logged message. Every log message is output on a separate line - if the message doesn't end with a newline, the logger will add one automatically.
+The standard logger writes to standard tea and includes timestamps with each logged message. Every log message is output on a separate line - if the message doesn't end with a newline, the logger will add one automatically.
 
 ## Logger Type
 
@@ -34,14 +34,14 @@ slay main() {
 The `oglogging` package defines flags that control the output format:
 
 ```
-Ldate         // Include date: 2025/04/13
-Ltime         // Include time: 15:04:05
-Lmicroseconds // Include microseconds: 15:04:05.123456
-Llongfile     // Include full file path and line: /path/to/file.csd:23
-Lshortfile    // Include just filename and line: file.csd:23
-LUTC          // Use UTC time instead of local time
-Lmsgprefix    // Move prefix to before the message instead of line start
-LstdFlags     // Default flags: Ldate | Ltime
+Ldate         fr fr Include date: 2025/04/13
+Ltime         fr fr Include time: 15:04:05
+Lmicroseconds fr fr Include microseconds: 15:04:05.123456
+Llongfile     fr fr Include full file path and line: /path/to/file.csd:23
+Lshortfile    fr fr Include just filename and line: file.csd:23
+LUTC          fr fr Use UTC time instead of local time
+Lmsgprefix    fr fr Move prefix to before the message instead of line start
+LstdFlags     fr fr Default flags: Ldate | Ltime
 ```
 
 ## Main Functions
@@ -49,11 +49,11 @@ LstdFlags     // Default flags: Ldate | Ltime
 ### Standard Logger Functions
 
 - `spill(args ...collab{})` - Print args followed by newline
-- `spillf(format tea, args ...collab{})` - Print formatted string
+- `spillf(format tea, args ...collab{})` - Print formatted tea
 - `fatal(args ...collab{})` - Print args and exit with code 1
-- `fatalf(format tea, args ...collab{})` - Print formatted string and exit
+- `fatalf(format tea, args ...collab{})` - Print formatted tea and exit
 - `panic(args ...collab{})` - Print args and trigger panic
-- `panicf(format tea, args ...collab{})` - Print formatted string and trigger panic
+- `panicf(format tea, args ...collab{})` - Print formatted tea and trigger panic
 - `setFlags(flag thicc)` - Set output flags
 - `setOutput(w dropz.Writer)` - Set output destination
 - `setPrefix(prefix tea)` - Set output prefix
@@ -62,11 +62,11 @@ LstdFlags     // Default flags: Ldate | Ltime
 
 - `new(out dropz.Writer, prefix tea, flag thicc) *Logger` - Create new logger
 - `(l *Logger) spill(args ...collab{})` - Print args followed by newline
-- `(l *Logger) spillf(format tea, args ...collab{})` - Print formatted string
+- `(l *Logger) spillf(format tea, args ...collab{})` - Print formatted tea
 - `(l *Logger) fatal(args ...collab{})` - Print args and exit with code 1
-- `(l *Logger) fatalf(format tea, args ...collab{})` - Print formatted string and exit
+- `(l *Logger) fatalf(format tea, args ...collab{})` - Print formatted tea and exit
 - `(l *Logger) panic(args ...collab{})` - Print args and trigger panic
-- `(l *Logger) panicf(format tea, args ...collab{})` - Print formatted string and trigger panic
+- `(l *Logger) panicf(format tea, args ...collab{})` - Print formatted tea and trigger panic
 - `(l *Logger) output(calldepth thicc, s tea) tea` - Low-level output method
 - `(l *Logger) setFlags(flag thicc)` - Set output flags
 - `(l *Logger) setOutput(w dropz.Writer)` - Set output destination

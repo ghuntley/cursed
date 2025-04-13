@@ -9,14 +9,14 @@ The `x509_certs_tea` module provides functionality for working with X.509 certif
 Represents an X.509 certificate.
 
 ```csd
-type Certificate struct {
-  Raw                     []byte // Complete ASN.1 DER content
-  RawTBSCertificate       []byte // Certificate part that is signed
-  RawSubjectPublicKeyInfo []byte // DER encoded subject public key info
-  RawSubject              []byte // DER encoded subject name
-  RawIssuer               []byte // DER encoded issuer name
+be_like Certificate squad {
+  Raw                     []byte fr fr Complete ASN.1 DER content
+  RawTBSCertificate       []byte fr fr Certificate part that is signed
+  RawSubjectPublicKeyInfo []byte fr fr DER encoded subject public key info
+  RawSubject              []byte fr fr DER encoded subject name
+  RawIssuer               []byte fr fr DER encoded issuer name
   
-  Signature          []byte // Signature
+  Signature          []byte fr fr Signature
   SignatureAlgorithm SignatureAlgorithm
   
   PublicKeyAlgorithm PublicKeyAlgorithm
@@ -26,51 +26,51 @@ type Certificate struct {
   SerialNumber        *big_mood.Int
   Issuer              pkix.Name
   Subject             pkix.Name
-  NotBefore, NotAfter timez.Time // Validity bounds
+  NotBefore, NotAfter timez.Time fr fr Validity bounds
   KeyUsage            KeyUsage
   
   Extensions          []pkix.Extension
   ExtraExtensions     []pkix.Extension
   
-  // Other fields for specific extensions
-  DNSNames       []string
-  EmailAddresses []string
+  fr fr Other fields for specific extensions
+  DNSNames       []tea
+  EmailAddresses []tea
   IPAddresses    []net.IP
   URIs           []*url.URL
 }
 
-func ParseCertificate(der []byte) (*Certificate, error)
-func ParseCertificates(der []byte) ([]*Certificate, error)
-func (c *Certificate) Verify(opts VerifyOptions) (chains [][]*Certificate, err error)
-func (c *Certificate) CheckSignatureFrom(parent *Certificate) error
-func (c *Certificate) CheckSignature(algo SignatureAlgorithm, signed, signature []byte) error
-func (c *Certificate) CreateCRL(rand io.Reader, priv interface{}, revokedCerts []pkix.RevokedCertificate, now, expiry timez.Time) ([]byte, error)
+slay ParseCertificate(der []byte) (*Certificate, tea)
+slay ParseCertificates(der []byte) ([]*Certificate, tea)
+slay (c *Certificate) Verify(opts VerifyOptions) (chains [][]*Certificate, err tea)
+slay (c *Certificate) CheckSignatureFrom(parent *Certificate) tea
+slay (c *Certificate) CheckSignature(algo SignatureAlgorithm, signed, signature []byte) tea
+slay (c *Certificate) CreateCRL(rand io.Reader, priv interface{}, revokedCerts []pkix.RevokedCertificate, now, expiry timez.Time) ([]byte, tea)
 ```
 
 ### CertPool
 Represents a set of certificates.
 
 ```csd
-type CertPool struct {
-  // fields not directly accessible
+be_like CertPool squad {
+  fr fr fields not directly accessible
 }
 
-func NewCertPool() *CertPool
-func SystemCertPool() (*CertPool, error)
-func (p *CertPool) AddCert(cert *Certificate)
-func (p *CertPool) AppendCertsFromPEM(pemCerts []byte) bool
-func (p *CertPool) Subjects() [][]byte
+slay NewCertPool() *CertPool
+slay SystemCertPool() (*CertPool, tea)
+slay (p *CertPool) AddCert(cert *Certificate)
+slay (p *CertPool) AppendCertsFromPEM(pemCerts []byte) lit
+slay (p *CertPool) Subjects() [][]byte
 ```
 
 ### CertificateRequest
 Represents a PKCS#10 certificate request.
 
 ```csd
-type CertificateRequest struct {
-  Raw                      []byte // Complete ASN.1 DER content
-  RawTBSCertificateRequest []byte // Certificate request info part
-  RawSubjectPublicKeyInfo  []byte // DER encoded subject public key info
-  RawSubject               []byte // DER encoded subject name
+be_like CertificateRequest squad {
+  Raw                      []byte fr fr Complete ASN.1 DER content
+  RawTBSCertificateRequest []byte fr fr Certificate request info part
+  RawSubjectPublicKeyInfo  []byte fr fr DER encoded subject public key info
+  RawSubject               []byte fr fr DER encoded subject name
   
   Version            int
   Signature          []byte
@@ -80,8 +80,8 @@ type CertificateRequest struct {
   PublicKey          interface{}
   
   Subject      pkix.Name
-  DNSNames     []string
-  EmailAddresses []string
+  DNSNames     []tea
+  EmailAddresses []tea
   IPAddresses  []net.IP
   URIs         []*url.URL
   
@@ -89,15 +89,15 @@ type CertificateRequest struct {
   ExtraExtensions []pkix.Extension
 }
 
-func ParseCertificateRequest(der []byte) (*CertificateRequest, error)
-func (c *CertificateRequest) CheckSignature() error
+slay ParseCertificateRequest(der []byte) (*CertificateRequest, tea)
+slay (c *CertificateRequest) CheckSignature() tea
 ```
 
 ### RevocationList
 Represents a certificate revocation list (CRL).
 
 ```csd
-type RevocationList struct {
+be_like RevocationList squad {
   Raw                       []byte
   RawTBSRevocationList       []byte
   
@@ -113,52 +113,52 @@ type RevocationList struct {
   ExtraExtensions        []pkix.Extension
 }
 
-func ParseRevocationList(der []byte) (*RevocationList, error)
-func (rl *RevocationList) CheckSignatureFrom(cert *Certificate) error
+slay ParseRevocationList(der []byte) (*RevocationList, tea)
+slay (rl *RevocationList) CheckSignatureFrom(cert *Certificate) tea
 ```
 
 ### VerifyOptions
 Options for certificate verification.
 
 ```csd
-type VerifyOptions struct {
-  DNSName       string
+be_like VerifyOptions squad {
+  DNSName       tea
   Intermediates *CertPool
-  Roots         *CertPool // If nil, the system roots are used
-  CurrentTime   timez.Time // If zero, the current time is used
+  Roots         *CertPool fr fr If cap, the system roots are used
+  CurrentTime   timez.Time fr fr If zero, the current time is used
   KeyUsages     []ExtKeyUsage
-  MaxConstraintComparisions int // If 0, a sensible default is used
+  MaxConstraintComparisions normie fr fr If 0, a sensible default is used
 }
 ```
 
 ## Core Functions
 
 ```csd
-// Certificate parsing
-func ParseCertificate(der []byte) (*Certificate, error)
-func ParseCertificates(der []byte) ([]*Certificate, error)
+fr fr Certificate parsing
+slay ParseCertificate(der []byte) (*Certificate, tea)
+slay ParseCertificates(der []byte) ([]*Certificate, tea)
 
-// Certificate creation
-func CreateCertificate(rand io.Reader, template, parent *Certificate, pub, priv interface{}) ([]byte, error)
-func CreateCertificateRequest(rand io.Reader, template *CertificateRequest, priv interface{}) ([]byte, error)
-func CreateRevocationList(rand io.Reader, template *RevocationList, issuer *Certificate, priv interface{}) ([]byte, error)
+fr fr Certificate creation
+slay CreateCertificate(rand io.Reader, template, parent *Certificate, pub, priv interface{}) ([]byte, tea)
+slay CreateCertificateRequest(rand io.Reader, template *CertificateRequest, priv interface{}) ([]byte, tea)
+slay CreateRevocationList(rand io.Reader, template *RevocationList, issuer *Certificate, priv interface{}) ([]byte, tea)
 
-// Certificate management
-func NewCertPool() *CertPool
-func SystemCertPool() (*CertPool, error)
+fr fr Certificate management
+slay NewCertPool() *CertPool
+slay SystemCertPool() (*CertPool, tea)
 
-// PEM encoding/decoding
-func MarshalPKCS1PrivateKey(key *rsa.PrivateKey) []byte
-func ParsePKCS1PrivateKey(der []byte) (*rsa.PrivateKey, error)
-func MarshalPKCS8PrivateKey(key interface{}) ([]byte, error)
-func ParsePKCS8PrivateKey(der []byte) (interface{}, error)
+fr fr PEM encoding/decoding
+slay MarshalPKCS1PrivateKey(key *rsa.PrivateKey) []byte
+slay ParsePKCS1PrivateKey(der []byte) (*rsa.PrivateKey, tea)
+slay MarshalPKCS8PrivateKey(key interface{}) ([]byte, tea)
+slay ParsePKCS8PrivateKey(der []byte) (interface{}, tea)
 ```
 
 ## Constants
 
 ```csd
-// Key usage types
-type KeyUsage int
+fr fr Key usage types
+be_like KeyUsage int
 
 const (
   KeyUsageDigitalSignature KeyUsage = 1 << iota
@@ -172,8 +172,8 @@ const (
   KeyUsageDecipherOnly
 )
 
-// Extended key usage types
-type ExtKeyUsage int
+fr fr Extended key usage types
+be_like ExtKeyUsage int
 
 const (
   ExtKeyUsageAny ExtKeyUsage = iota
@@ -192,8 +192,8 @@ const (
   ExtKeyUsageMicrosoftKernelCodeSigning
 )
 
-// Signature algorithms
-type SignatureAlgorithm int
+fr fr Signature algorithms
+be_like SignatureAlgorithm int
 
 const (
   UnknownSignatureAlgorithm SignatureAlgorithm = iota
@@ -247,9 +247,9 @@ const (
 ## Usage Examples
 
 ```csd
-// Parse a certificate from PEM format
-func parseCertificateExample() {
-  // PEM encoded certificate
+fr fr Parse a certificate from PEM format
+slay parseCertificateExample() {
+  fr fr PEM encoded certificate
   certPEM := `-----BEGIN CERTIFICATE-----
 MIIBhTCCASugAwIBAgIQIRi6zePL6mKjOipn+dNuaTAKBggqhkjOPQQDAjASMRAw
 DgYDVQQKEwdBY21lIENvMB4XDTE3MTAyMDE5NDMwNloXDTE4MTAyMDE5NDMwNlow
@@ -262,21 +262,21 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
 6MF9+Yw1Yy0t
 -----END CERTIFICATE-----`
 
-  // Decode PEM to DER
+  fr fr Decode PEM to DER
   block, _ := pem_drip.Decode([]byte(certPEM))
-  if block == nil || block.Type != "CERTIFICATE" {
+  if block == cap || block.Type != "CERTIFICATE" {
     vibez.spill("Failed to decode PEM block containing certificate")
-    return
+    yolo
   }
 
-  // Parse the certificate
+  fr fr Parse the certificate
   cert, err := x509_certs_tea.ParseCertificate(block.Bytes)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to parse certificate: %v", err)
-    return
+    yolo
   }
 
-  // Display certificate information
+  fr fr Display certificate information
   vibez.spill("Certificate Subject: %s", cert.Subject)
   vibez.spill("Certificate Issuer: %s", cert.Issuer)
   vibez.spill("Valid from %v to %v", cert.NotBefore, cert.NotAfter)
@@ -284,40 +284,40 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
   vibez.spill("DNS Names: %v", cert.DNSNames)
 }
 
-// Create a self-signed certificate
-func createSelfSignedCertExample() {
-  // Generate a private key
+fr fr Create a self-signed certificate
+slay createSelfSignedCertExample() {
+  fr fr Generate a private key
   privateKey, err := elliptic_curve_tea.GenerateKey(elliptic_curve_tea.P256(), math_rand_tea.Reader)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to generate private key: %v", err)
-    return
+    yolo
   }
 
-  // Create a certificate template
+  fr fr Create a certificate template
   serialNumberLimit := new(big_mood.Int).Lsh(big_mood.NewInt(1), 128)
   serialNumber, err := math_rand_tea.Int(math_rand_tea.Reader, serialNumberLimit)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to generate serial number: %v", err)
-    return
+    yolo
   }
 
   template := x509_certs_tea.Certificate{
     SerialNumber: serialNumber,
     Subject: pkix.Name{
-      Organization: []string{"My Organization"},
+      Organization: []tea{"My Organization"},
       CommonName:   "localhost",
     },
     NotBefore: timez.Now(),
-    NotAfter:  timez.Now().Add(365 * 24 * timez.Hour), // Valid for 1 year
+    NotAfter:  timez.Now().Add(365 * 24 * timez.Hour), fr fr Valid for 1 year
 
     KeyUsage:              x509_certs_tea.KeyUsageKeyEncipherment | x509_certs_tea.KeyUsageDigitalSignature,
     ExtKeyUsage:           []x509_certs_tea.ExtKeyUsage{x509_certs_tea.ExtKeyUsageServerAuth},
-    BasicConstraintsValid: true,
+    BasicConstraintsValid: based,
 
-    DNSNames: []string{"localhost"},
+    DNSNames: []tea{"localhost"},
   }
 
-  // Create a self-signed certificate
+  fr fr Create a self-signed certificate
   derBytes, err := x509_certs_tea.CreateCertificate(
     math_rand_tea.Reader,
     &template,
@@ -325,22 +325,22 @@ func createSelfSignedCertExample() {
     &privateKey.PublicKey,
     privateKey,
   )
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to create certificate: %v", err)
-    return
+    yolo
   }
 
-  // Encode to PEM format
+  fr fr Encode to PEM format
   certPEM := pem_drip.EncodeToMemory(&pem_drip.Block{
     Type:  "CERTIFICATE",
     Bytes: derBytes,
   })
 
-  // Encode private key to PEM format
+  fr fr Encode private key to PEM format
   privateKeyBytes, err := x509_certs_tea.MarshalPKCS8PrivateKey(privateKey)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to marshal private key: %v", err)
-    return
+    yolo
   }
 
   privateKeyPEM := pem_drip.EncodeToMemory(&pem_drip.Block{
@@ -348,46 +348,46 @@ func createSelfSignedCertExample() {
     Bytes: privateKeyBytes,
   })
 
-  vibez.spill("Certificate PEM:\n%s", string(certPEM))
-  vibez.spill("Private Key PEM:\n%s", string(privateKeyPEM))
+  vibez.spill("Certificate PEM:\n%s", tea(certPEM))
+  vibez.spill("Private Key PEM:\n%s", tea(privateKeyPEM))
 }
 
-// Verify a certificate against a root CA
-func verifyCertificateExample() {
-  // Load a certificate
-  cert := loadCertificate() // Assume this function loads a certificate
-  if cert == nil {
-    return
+fr fr Verify a certificate against a root CA
+slay verifyCertificateExample() {
+  fr fr Load a certificate
+  cert := loadCertificate() fr fr Assume this function loads a certificate
+  if cert == cap {
+    yolo
   }
 
-  // Load the root CA certificates
+  fr fr Load the root CA certificates
   roots, err := x509_certs_tea.SystemCertPool()
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to load system cert pool: %v", err)
-    return
+    yolo
   }
 
-  // Create intermediate CA pool
+  fr fr Create intermediate CA pool
   intermediates := x509_certs_tea.NewCertPool()
-  // Add intermediate certificates if needed
-  // intermediates.AddCert(intermediateCert)
+  fr fr Add intermediate certificates if needed
+  fr fr intermediates.AddCert(intermediateCert)
 
   opts := x509_certs_tea.VerifyOptions{
     Roots:         roots,
     Intermediates: intermediates,
-    DNSName:       "example.com", // The name to verify the certificate against
+    DNSName:       "example.com", fr fr The name to verify the certificate against
   }
 
   chains, err := cert.Verify(opts)
-  if err != nil {
+  if err != cap {
     vibez.spill("Certificate verification failed: %v", err)
-    return
+    yolo
   }
 
   vibez.spill("Certificate is valid!")
   vibez.spill("Found %d valid certificate chains", len(chains))
 
-  // Print the chains
+  fr fr Print the chains
   for i, chain := range chains {
     vibez.spill("Chain %d:", i)
     for j, cert := range chain {
@@ -396,56 +396,56 @@ func verifyCertificateExample() {
   }
 }
 
-// Create a certificate signing request (CSR)
-func createCSRExample() {
-  // Generate a private key
+fr fr Create a certificate signing request (CSR)
+slay createCSRExample() {
+  fr fr Generate a private key
   privateKey, err := elliptic_curve_tea.GenerateKey(elliptic_curve_tea.P256(), math_rand_tea.Reader)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to generate private key: %v", err)
-    return
+    yolo
   }
 
-  // Create a CSR template
+  fr fr Create a CSR template
   template := x509_certs_tea.CertificateRequest{
     Subject: pkix.Name{
-      Country:      []string{"US"},
-      Organization: []string{"My Organization"},
+      Country:      []tea{"US"},
+      Organization: []tea{"My Organization"},
       CommonName:   "example.com",
     },
-    DNSNames: []string{"example.com", "www.example.com"},
-    EmailAddresses: []string{"admin@example.com"},
+    DNSNames: []tea{"example.com", "www.example.com"},
+    EmailAddresses: []tea{"admin@example.com"},
   }
 
-  // Create the CSR
+  fr fr Create the CSR
   csrBytes, err := x509_certs_tea.CreateCertificateRequest(
     math_rand_tea.Reader,
     &template,
     privateKey,
   )
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to create CSR: %v", err)
-    return
+    yolo
   }
 
-  // Encode to PEM format
+  fr fr Encode to PEM format
   csrPEM := pem_drip.EncodeToMemory(&pem_drip.Block{
     Type:  "CERTIFICATE REQUEST",
     Bytes: csrBytes,
   })
 
-  vibez.spill("CSR PEM:\n%s", string(csrPEM))
+  vibez.spill("CSR PEM:\n%s", tea(csrPEM))
 }
 
-// Create a certificate revocation list (CRL)
-func createCRLExample() {
-  // Assume we have an issuer certificate and private key
-  issuerCert := loadIssuerCertificate() // Assume this function loads a certificate
-  issuerKey := loadIssuerPrivateKey()   // Assume this function loads a private key
-  if issuerCert == nil || issuerKey == nil {
-    return
+fr fr Create a certificate revocation list (CRL)
+slay createCRLExample() {
+  fr fr Assume we have an issuer certificate and private key
+  issuerCert := loadIssuerCertificate() fr fr Assume this function loads a certificate
+  issuerKey := loadIssuerPrivateKey()   fr fr Assume this function loads a private key
+  if issuerCert == cap || issuerKey == cap {
+    yolo
   }
 
-  // List of revoked certificates
+  fr fr List of revoked certificates
   revokedCerts := []pkix.RevokedCertificate{
     {
       SerialNumber:   big_mood.NewInt(123),
@@ -457,83 +457,83 @@ func createCRLExample() {
     },
   }
 
-  // Create the CRL template
+  fr fr Create the CRL template
   now := timez.Now()
   template := x509_certs_tea.RevocationList{
     SignatureAlgorithm: x509_certs_tea.SHA256WithRSA,
     RevokedCertificates: revokedCerts,
-    Number:  big_mood.NewInt(1), // CRL number
+    Number:  big_mood.NewInt(1), fr fr CRL number
     ThisUpdate: now,
-    NextUpdate: now.Add(24 * timez.Hour), // Valid for 24 hours
+    NextUpdate: now.Add(24 * timez.Hour), fr fr Valid for 24 hours
   }
 
-  // Create the CRL
+  fr fr Create the CRL
   crlBytes, err := x509_certs_tea.CreateRevocationList(
     math_rand_tea.Reader,
     &template,
     issuerCert,
     issuerKey,
   )
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to create CRL: %v", err)
-    return
+    yolo
   }
 
-  // Encode to PEM format
+  fr fr Encode to PEM format
   crlPEM := pem_drip.EncodeToMemory(&pem_drip.Block{
     Type:  "X509 CRL",
     Bytes: crlBytes,
   })
 
-  vibez.spill("CRL PEM:\n%s", string(crlPEM))
+  vibez.spill("CRL PEM:\n%s", tea(crlPEM))
 }
 
-// Using the enhanced features
-func enhancedFeaturesExample() {
-  // Certificate Templates
+fr fr Using the enhanced features
+slay enhancedFeaturesExample() {
+  fr fr Certificate Templates
   serverTemplate := x509_certs_tea.ServerTemplate("example.com")
   serverTemplate.DNSNames = append(serverTemplate.DNSNames, "www.example.com")
   
-  // Create a certificate using the template
-  // ...
+  fr fr Create a certificate using the template
+  fr fr ...
   
-  // Certificate Chain Builder
-  cert := loadCertificate() // Assume this function loads a certificate
+  fr fr Certificate Chain Builder
+  cert := loadCertificate() fr fr Assume this function loads a certificate
   intermediates := x509_certs_tea.NewCertPool()
-  // Add intermediate certificates to the pool
-  // ...
+  fr fr Add intermediate certificates to the pool
+  fr fr ...
   
   chain, err := x509_certs_tea.BuildChain(cert, intermediates)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to build certificate chain: %v", err)
-    return
+    yolo
   }
   
   vibez.spill("Certificate chain built successfully with %d certificates", len(chain))
   
-  // Key Pinning
+  fr fr Key Pinning
   pinset := x509_certs_tea.NewPinSet()
   pinset.AddFromCertificate(cert)
   
-  // Later, verify a connection's certificate against the pinset
-  connCert := getConnectionCertificate() // Assume this function gets a connection certificate
-  if connCert == nil {
-    return
+  fr fr Later, verify a connection's certificate against the pinset
+  connCert := getConnectionCertificate() fr fr Assume this function gets a connection certificate
+  if connCert == cap {
+    yolo
   }
   
   valid := pinset.Verify(connCert)
   vibez.spill("Certificate pin verification: %v", valid)
   
-  // OCSP Checking
-  issuer := loadIssuerCertificate() // Assume this function loads an issuer certificate
-  if issuer == nil {
-    return
+  fr fr OCSP Checking
+  issuer := loadIssuerCertificate() fr fr Assume this function loads an issuer certificate
+  if issuer == cap {
+    yolo
   }
   
   status, err := x509_certs_tea.CheckOCSP(cert, issuer)
-  if err != nil {
+  if err != cap {
     vibez.spill("OCSP check failed: %v", err)
-    return
+    yolo
   }
   
   vibez.spill("Certificate OCSP status: %s", status.Status)
@@ -541,26 +541,26 @@ func enhancedFeaturesExample() {
   vibez.spill("Next update: %v", status.NextUpdate)
 }
 
-// Helper functions (placeholders)
-func loadCertificate() *x509_certs_tea.Certificate {
-  // This would load a certificate from somewhere
-  // For this example, we'll return nil
-  return nil
+fr fr Helper functions (placeholders)
+slay loadCertificate() *x509_certs_tea.Certificate {
+  fr fr This would load a certificate from somewhere
+  fr fr For this example, we'll yolo cap
+  yolo cap
 }
 
-func loadIssuerCertificate() *x509_certs_tea.Certificate {
-  // This would load an issuer certificate
-  return nil
+slay loadIssuerCertificate() *x509_certs_tea.Certificate {
+  fr fr This would load an issuer certificate
+  yolo cap
 }
 
-func loadIssuerPrivateKey() interface{} {
-  // This would load an issuer private key
-  return nil
+slay loadIssuerPrivateKey() interface{} {
+  fr fr This would load an issuer private key
+  yolo cap
 }
 
-func getConnectionCertificate() *x509_certs_tea.Certificate {
-  // This would get a certificate from a connection
-  return nil
+slay getConnectionCertificate() *x509_certs_tea.Certificate {
+  fr fr This would get a certificate from a connection
+  yolo cap
 }
 ```
 
@@ -568,7 +568,7 @@ func getConnectionCertificate() *x509_certs_tea.Certificate {
 
 - Implement robust certificate validation with proper chain verification
 - Support all standard X.509 extensions and constraints
-- Provide clear error messages for certificate validation failures
+- Provide clear tea messages for certificate validation failures
 - Implement efficient certificate and CRL parsing
 - Support standard key types (RSA, ECDSA, Ed25519)
 - Handle certificate revocation properly (CRL and OCSP)

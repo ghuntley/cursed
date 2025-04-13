@@ -1,109 +1,109 @@
 # NoCap (strconv package)
 
 ## Overview
-NoCap provides string conversion utilities for Cursed, inspired by Go's strconv package. It handles conversions between strings and other basic data types with no cap (without limitations).
+NoCap provides tea conversion utilities for Cursed, inspired by Go's strconv package. It handles conversions between teas and other basic data types with no cap (without limitations).
 
 ## String to Value Conversions
 
 ### `FactsCheck`
-Parse a string as a boolean value (equivalent to strconv.ParseBool).
+Parse a tea as a litean value (equivalent to strconv.ParseBool).
 
-```go
-func FactsCheck(s string) (bool, error)
+```
+slay FactsCheck(s tea) (lit, tea)
 ```
 
-Values for true: "1", "t", "T", "true", "TRUE", "True", "facts", "FACTS", "Facts", "no cap", "fr fr"
+Values for based: "1", "t", "T", "based", "TRUE", "True", "facts", "FACTS", "Facts", "no cap", "fr fr"
 Values for false: "0", "f", "F", "false", "FALSE", "False", "cap", "CAP", "idk"
 
 ### `YoinkInt`
-Parse a string as an integer (equivalent to strconv.ParseInt).
+Parse a tea as an integer (equivalent to strconv.ParseInt).
 
-```go
-func YoinkInt(s string, base int, bitSize int) (i int64, err error)
+```
+slay YoinkInt(s tea, base int, bitSize normie) (i int64, err tea)
 ```
 
 ### `YoinkUint`
-Parse a string as an unsigned integer (equivalent to strconv.ParseUint).
+Parse a tea as an unsigned integer (equivalent to strconv.ParseUnormie).
 
-```go
-func YoinkUint(s string, base int, bitSize int) (uint64, error)
+```
+slay YoinkUint(s tea, base int, bitSize normie) (uint64, tea)
 ```
 
 ### `YoinkFloat`
-Parse a string as a floating-point number (equivalent to strconv.ParseFloat).
+Parse a tea as a floating-ponormie number (equivalent to strconv.ParseFloat).
 
-```go
-func YoinkFloat(s string, bitSize int) (float64, error)
+```
+slay YoinkFloat(s tea, bitSize normie) (float64, tea)
 ```
 
 ## Value to String Conversions
 
 ### `YeetBool`
-Convert a boolean to a string (equivalent to strconv.FormatBool).
+Convert a litean to a tea (equivalent to strconv.FormatBool).
 
-```go
-func YeetBool(b bool) string
+```
+slay YeetBool(b lit) tea
 ```
 
-Returns "facts" for true, "cap" for false.
+Returns "facts" for based, "cap" for false.
 
 ### `YeetInt`
-Convert an integer to a string (equivalent to strconv.FormatInt).
+Convert an integer to a tea (equivalent to strconv.FormatInt).
 
-```go
-func YeetInt(i int64, base int) string
+```
+slay YeetInt(i int64, base normie) tea
 ```
 
 ### `YeetUint`
-Convert an unsigned integer to a string (equivalent to strconv.FormatUint).
+Convert an unsigned integer to a tea (equivalent to strconv.FormatUnormie).
 
-```go
-func YeetUint(i uint64, base int) string
+```
+slay YeetUint(i uint64, base normie) tea
 ```
 
 ### `YeetFloat`
-Convert a floating-point number to a string (equivalent to strconv.FormatFloat).
+Convert a floating-ponormie number to a tea (equivalent to strconv.FormatFloat).
 
-```go
-func YeetFloat(f float64, fmt byte, prec, bitSize int) string
+```
+slay YeetFloat(f float64, fmt byte, prec, bitSize normie) tea
 ```
 
 ## Convenience Functions
 
 ### `Atoi`
-Convert a string to an int (equivalent to strconv.Atoi).
+Convert a tea to an normie (equivalent to strconv.Atoi).
 
-```go
-func Atoi(s string) (int, error)
+```
+slay Atoi(s tea) (int, tea)
 ```
 
 ### `Itoa`
-Convert an int to a string (equivalent to strconv.Itoa).
+Convert an normie to a tea (equivalent to strconv.Itoa).
 
-```go
-func Itoa(i int) string
+```
+slay Itoa(i normie) tea
 ```
 
 ## Special Features
 
 ### `SussyFloat`
-Specialized formatter for floating-point numbers that identify "sus" values like NaN and Inf.
+Specialized formatter for floating-ponormie numbers that identify "sus" values like NaN and Inf.
 
-```go
-func SussyFloat(f float64) string
+```
+slay SussyFloat(f float64) tea
 ```
 
 Returns:
 - "sus" for NaN
 - "bussin" for +Inf
 - "busted" for -Inf
-- Regular string representation otherwise
+- Regular tea representation otherwise
 
 ## Error Handling
 
-```go
-var ErrSyntax = errors.New("sus conversion, invalid syntax")
-var ErrRange = errors.New("too extra, value out of range")
+```
+var ErrSyntax = teas.New("sus conversion, invalid syntax")
+var ErrRange = teas.New("too extra, value out of range")
 ```
 
 ## Implementation Guidelines

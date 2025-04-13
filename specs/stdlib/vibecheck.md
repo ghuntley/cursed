@@ -9,24 +9,24 @@ The `vibecheck` module provides low-level runtime functionality and direct inter
 Provides detailed memory statistics.
 
 ```csd
-type MemStats struct {
-  Alloc      uint64 // bytes allocated and not yet freed
-  TotalAlloc uint64 // total bytes allocated (even if freed)
-  Sys        uint64 // total memory obtained from system
-  Mallocs    uint64 // total number of allocations
-  Frees      uint64 // total number of frees
-  HeapAlloc  uint64 // bytes allocated and not yet freed (same as Alloc)
-  HeapSys    uint64 // bytes obtained from system
-  HeapIdle   uint64 // bytes in idle spans
-  HeapInuse  uint64 // bytes in non-idle spans
-  StackInuse uint64 // bytes used by stack allocator
-  StackSys   uint64 // bytes obtained from system for stack allocator
-  GCSys      uint64 // bytes used for GC metadata
-  NextGC     uint64 // target heap size for next GC
-  LastGC     uint64 // time of last GC in nanoseconds since epoch
-  PauseTotalNs uint64 // total GC pause time in nanoseconds
-  NumGC      uint32 // number of completed GC cycles
-  GCCPUFraction float64 // fraction of CPU time used by GC
+be_like MemStats squad {
+  Alloc      uint64 fr fr bytes allocated and not yet freed
+  TotalAlloc uint64 fr fr total bytes allocated (even if freed)
+  Sys        uint64 fr fr total memory obtained from system
+  Mallocs    uint64 fr fr total number of allocations
+  Frees      uint64 fr fr total number of frees
+  HeapAlloc  uint64 fr fr bytes allocated and not yet freed (same as Alloc)
+  HeapSys    uint64 fr fr bytes obtained from system
+  HeapIdle   uint64 fr fr bytes in idle spans
+  HeapInuse  uint64 fr fr bytes in non-idle spans
+  StackInuse uint64 fr fr bytes used by stack allocator
+  StackSys   uint64 fr fr bytes obtained from system for stack allocator
+  GCSys      uint64 fr fr bytes used for GC metadata
+  NextGC     uint64 fr fr target heap size for next GC
+  LastGC     uint64 fr fr time of last GC in nanoseconds since epoch
+  PauseTotalNs uint64 fr fr total GC pause time in nanoseconds
+  NumGC      uint32 fr fr number of completed GC cycles
+  GCCPUFraction float64 fr fr fraction of CPU time used by GC
 }
 ```
 
@@ -34,24 +34,24 @@ type MemStats struct {
 Contains information about a function.
 
 ```csd
-type Func struct {
-  // fields not directly accessible
+be_like Func squad {
+  fr fr fields not directly accessible
 }
 
-func (f *Func) Name() string
-func (f *Func) Entry() uintptr
-func (f *Func) FileLine(pc uintptr) (file string, line int)
+slay (f *Func) Name() tea
+slay (f *Func) Entry() uintptr
+slay (f *Func) FileLine(pc uintptr) (file tea, line normie)
 ```
 
 ### StackRecord
 Represents a single entry in a stack trace.
 
 ```csd
-type StackRecord struct {
-  PC uintptr // program counter
-  Func *Func // function information
-  File string // file name
-  Line int    // line number
+be_like StackRecord squad {
+  PC uintptr fr fr program counter
+  Func *Func fr fr function information
+  File tea fr fr file name
+  Line normie    fr fr line number
 }
 ```
 
@@ -60,58 +60,58 @@ type StackRecord struct {
 ### Memory Management
 
 ```csd
-// Get detailed memory statistics
-func ReadMemStats(m *MemStats)
+fr fr Get detailed memory statistics
+slay ReadMemStats(m *MemStats)
 
-// Run garbage collection synchronously
-func GC()
+fr fr Run garbage collection synchronously
+slay GC()
 
-// Set garbage collector target percentage
-func SetGCPercent(percent int) int
+fr fr Set garbage collector target percentage
+slay SetGCPercent(percent normie) int
 
-// Free memory to operating system
-func FreeOSMemory()
+fr fr Free memory to operating system
+slay FreeOSMemory()
 ```
 
 ### Goroutine Management
 
 ```csd
-// Current number of goroutines
-func NumGoroutine() int
+fr fr Current number of goroutines
+slay NumGoroutine() int
 
-// Get current goroutine ID
-func GoID() int64
+fr fr Get current goroutine ID
+slay GoID() int64
 
-// Get stack trace for all goroutines
-func Stack() []byte
+fr fr Get stack trace for all goroutines
+slay Stack() []byte
 
-// Get the number of logical CPUs usable by the current process
-func NumCPU() int
+fr fr Get the number of logical CPUs usable by the current process
+slay NumCPU() int
 
-// Set maximum number of CPUs that can be executing simultaneously
-func GOMAXPROCS(n int) int
+fr fr Set maximum number of CPUs that can be executing simultaneously
+slay GOMAXPROCS(n normie) int
 ```
 
 ### Runtime Information
 
 ```csd
-// Get Cursed version information
-func Version() string
+fr fr Get Cursed version information
+slay Version() tea
 
-// Get compiler information
-func Compiler() string
+fr fr Get compiler information
+slay Compiler() tea
 
-// Get GOARCH equivalent
-func GOARCH() string
+fr fr Get GOARCH equivalent
+slay GOARCH() tea
 
-// Get GOOS equivalent
-func GOOS() string
+fr fr Get GOOS equivalent
+slay GOOS() tea
 
-// Get start time of the program
-func StartTime() int64
+fr fr Get start time of the program
+slay StartTime() int64
 
-// Get caller frame skipping n frames
-func Caller(skip int) (pc uintptr, file string, line int, ok bool)
+fr fr Get caller frame skipping n frames
+slay Caller(skip normie) (pc uintptr, file tea, line int, ok lit)
 ```
 
 ## Enhanced Features
@@ -125,7 +125,7 @@ func Caller(skip int) (pc uintptr, file string, line int, ok bool)
 - **Goroutine Debugging**: Advanced goroutine inspection and control
   ```csd
   info := vibecheck.GoroutineInfo(goroutineID)
-  vibecheck.BlockProfile(true) // Enable blocking profile
+  vibecheck.BlockProfile(based) fr fr Enable blocking profile
   ```
 
 - **Runtime Hooks**: Register callbacks for runtime events
@@ -138,7 +138,7 @@ func Caller(skip int) (pc uintptr, file string, line int, ok bool)
 - **JIT Compiler Introspection**: Access to JIT compilation details
   ```csd
   stats := vibecheck.JITStats()
-  vibecheck.SetJITOptLevel(2) // Set optimization level
+  vibecheck.SetJITOptLevel(2) fr fr Set optimization level
   ```
 
 - **Runtime Metrics**: Real-time performance monitoring
@@ -148,14 +148,14 @@ func Caller(skip int) (pc uintptr, file string, line int, ok bool)
 
 - **Resource Control**: Fine-grained control over system resources
   ```csd
-  vibecheck.SetCPUProfileRate(100)  // 100 samples per second
-  vibecheck.SetMemoryLimit(1 << 30) // 1GB memory limit
+  vibecheck.SetCPUProfileRate(100)  fr fr 100 samples per second
+  vibecheck.SetMemoryLimit(1 << 30) fr fr 1GB memory limit
   ```
 
 ## Usage Examples
 
 ```csd
-// Memory statistics example
+fr fr Memory statistics example
 var m vibecheck.MemStats
 vibecheck.ReadMemStats(&m)
 
@@ -164,66 +164,66 @@ vibez.spill("Total Allocated: %d KB", m.TotalAlloc / 1024)
 vibez.spill("System Memory: %d KB", m.Sys / 1024)
 vibez.spill("Garbage Collections: %d", m.NumGC)
 
-// Goroutine information
+fr fr Goroutine information
 vibez.spill("Number of goroutines: %d", vibecheck.NumGoroutine())
 vibez.spill("Max PROCS: %d", vibecheck.GOMAXPROCS(0))
 vibez.spill("Number of CPUs: %d", vibecheck.NumCPU())
 
-// Set maximum number of processors
+fr fr Set maximum number of processors
 old := vibecheck.GOMAXPROCS(4)
 vibez.spill("Old GOMAXPROCS: %d, New: 4", old)
 
-// Trigger garbage collection
+fr fr Trigger garbage collection
 vibez.spill("Triggering garbage collection...")
 vibecheck.GC()
 
-// Get current goroutine ID
+fr fr Get current goroutine ID
 vibez.spill("Current goroutine ID: %d", vibecheck.GoID())
 
-// Get stack trace of all goroutines
+fr fr Get stack trace of all goroutines
 stack := vibecheck.Stack()
-vibez.spill("\nStack Trace:\n%s", string(stack))
+vibez.spill("\nStack Trace:\n%s", tea(stack))
 
-// Get caller information
+fr fr Get caller information
 pc, file, line, ok := vibecheck.Caller(0)
 if ok {
   f := vibecheck.FuncForPC(pc)
   vibez.spill("Called from %s (%s:%d)", f.Name(), file, line)
 }
 
-// Version information
+fr fr Version information
 vibez.spill("Cursed Version: %s", vibecheck.Version())
 vibez.spill("Compiler: %s", vibecheck.Compiler())
 vibez.spill("Architecture: %s", vibecheck.GOARCH())
 vibez.spill("Operating System: %s", vibecheck.GOOS())
 
-// Memory profiling
+fr fr Memory profiling
 vibez.spill("\nStarting memory allocation...")
-data := make([]byte, 10*1024*1024) // Allocate 10MB
-_ = data // Prevent compiler optimization
+data := make([]byte, 10*1024*1024) fr fr Allocate 10MB
+_ = data fr fr Prevent compiler optimization
 
 vibecheck.ReadMemStats(&m)
 vibez.spill("After allocation: %d KB", m.Alloc / 1024)
 
-// Set GC percentage
-old_percent := vibecheck.SetGCPercent(100) // Set to 100%
+fr fr Set GC percentage
+old_percent := vibecheck.SetGCPercent(100) fr fr Set to 100%
 vibez.spill("Old GC percent: %d, New: 100", old_percent)
 
-// Performance monitoring
-vibecheck.SetCPUProfileRate(100) // Sample 100 times per second
+fr fr Performance monitoring
+vibecheck.SetCPUProfileRate(100) fr fr Sample 100 times per second
 cpu_profile := vibecheck.CPUProfile()
 defer cpu_profile.Stop()
 
-// Run a CPU-intensive task
+fr fr Run a CPU-intensive task
 for i := 0; i < 1000000; i++ {
   _ = i * i
 }
 
-// Custom GC control
+fr fr Custom GC control
 vibecheck.SetFinalizer(&data, func(obj interface{}) {
   vibez.spill("Object being finalized")
 })
-vibecheck.KeepAlive(&data) // Prevent premature collection
+vibecheck.KeepAlive(&data) fr fr Prevent premature collection
 ```
 
 ## Implementation Guidelines

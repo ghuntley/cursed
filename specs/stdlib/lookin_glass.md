@@ -1,132 +1,132 @@
 # LookinGlass (reflect package)
 
 ## Overview
-LookinGlass provides runtime reflection capabilities that allow programs to examine and modify their own structure, essentially looking into themselves like through a looking glass. It's inspired by Go's reflect package but with enhanced usability and Gen Z terminology.
+LookinGlass provides runtime reflection capabilities that allow programs to examine and modify their own squadure, essentially looking into themselves like through a looking glass. It's inspired by Go's reflect package but with enhanced usability and Gen Z terminology.
 
 ## Core Types
 
 ### `Type`
-Represents the type of a value.
+Represents the be_like of a value.
 
-```go
-type Type interface {
+```
+be_like Type collab {
     Align() int
     FieldAlign() int
-    Method(int) Method
-    MethodByName(string) (Method, bool)
+    Method(normie) Method
+    MethodByName(tea) (Method, lit)
     NumMethod() int
-    Name() string
-    PkgPath() string
+    Name() tea
+    PkgPath() tea
     Size() uintptr
-    String() string
+    String() tea
     Kind() Kind
-    Implements(u Type) bool
-    AssignableTo(u Type) bool
-    ConvertibleTo(u Type) bool
-    Comparable() bool
-    // Additional Methods based on Kind
-    // For Array, Chan, Map, Pointer, or Slice
+    Implements(u Type) lit
+    AssignableTo(u Type) lit
+    ConvertibleTo(u Type) lit
+    Comparable() lit
+    fr fr Additional Methods based on Kind
+    fr fr For Array, Chan, Map, Pointer, or Slice
     Elem() Type
-    // For Array, Slice
+    fr fr For Array, Slice
     Len() int
-    // For Struct
-    Field(i int) StructField
-    FieldByIndex(index []int) StructField
-    FieldByName(name string) (StructField, bool)
-    FieldByNameFunc(match func(string) bool) (StructField, bool)
+    fr fr For Struct
+    Field(i normie) StructField
+    FieldByIndex(index []normie) StructField
+    FieldByName(name tea) (StructField, lit)
+    FieldByNameFunc(match func(tea) lit) (StructField, lit)
     NumField() int
-    // For Func
-    In(i int) Type
+    fr fr For Func
+    In(i normie) Type
     NumIn() int
-    Out(i int) Type
+    Out(i normie) Type
     NumOut() int
-    IsVariadic() bool
-    // For Map
+    IsVariadic() lit
+    fr fr For Map
     Key() Type
-    // For Interface
+    fr fr For Interface
     NumMethod() int
-    Method(int) Method
-    MethodByName(string) (Method, bool)
+    Method(normie) Method
+    MethodByName(tea) (Method, lit)
 }
 ```
 
 ### `Value`
 Represents a runtime value.
 
-```go
-type Value struct {}
+```
+be_like Value squad {}
 
-// Methods
-func (v Value) Addr() Value
-func (v Value) Bool() bool
-func (v Value) Bytes() []byte
-func (v Value) Call(in []Value) []Value
-func (v Value) CallSlice(in []Value) []Value
-func (v Value) CanAddr() bool
-func (v Value) CanComplex() bool
-func (v Value) CanFloat() bool
-func (v Value) CanInt() bool
-func (v Value) CanInterface() bool
-func (v Value) CanSet() bool
-func (v Value) CanUint() bool
-func (v Value) Cap() int
-func (v Value) Close()
-func (v Value) Complex() complex128
-func (v Value) Convert(t Type) Value
-func (v Value) Elem() Value
-func (v Value) Field(i int) Value
-func (v Value) FieldByIndex(index []int) Value
-func (v Value) FieldByName(name string) Value
-func (v Value) FieldByNameFunc(match func(string) bool) Value
-func (v Value) Float() float64
-func (v Value) Index(i int) Value
-func (v Value) Int() int64
-func (v Value) Interface() interface{}
-func (v Value) IsNil() bool
-func (v Value) IsValid() bool
-func (v Value) IsZero() bool
-func (v Value) Kind() Kind
-func (v Value) Len() int
-func (v Value) MapIndex(key Value) Value
-func (v Value) MapKeys() []Value
-func (v Value) MapRange() *MapIter
-func (v Value) Method(i int) Value
-func (v Value) MethodByName(name string) Value
-func (v Value) NumField() int
-func (v Value) NumMethod() int
-func (v Value) OverflowComplex(x complex128) bool
-func (v Value) OverflowFloat(x float64) bool
-func (v Value) OverflowInt(x int64) bool
-func (v Value) OverflowUint(x uint64) bool
-func (v Value) Pointer() uintptr
-func (v Value) Recv() (x Value, ok bool)
-func (v Value) Send(x Value)
-func (v Value) Set(x Value)
-func (v Value) SetBool(x bool)
-func (v Value) SetBytes(x []byte)
-func (v Value) SetComplex(x complex128)
-func (v Value) SetFloat(x float64)
-func (v Value) SetInt(x int64)
-func (v Value) SetLen(n int)
-func (v Value) SetMapIndex(key, elem Value)
-func (v Value) SetPointer(x unsafe.Pointer)
-func (v Value) SetString(x string)
-func (v Value) SetUint(x uint64)
-func (v Value) Slice(i, j int) Value
-func (v Value) Slice3(i, j, k int) Value
-func (v Value) String() string
-func (v Value) TryRecv() (x Value, ok bool)
-func (v Value) TrySend(x Value) bool
-func (v Value) Type() Type
-func (v Value) Uint() uint64
-func (v Value) UnsafeAddr() uintptr
+fr fr Methods
+slay (v Value) Addr() Value
+slay (v Value) Bool() lit
+slay (v Value) Bytes() []byte
+slay (v Value) Call(in []Value) []Value
+slay (v Value) CallSlice(in []Value) []Value
+slay (v Value) CanAddr() lit
+slay (v Value) CanComplex() lit
+slay (v Value) CanFloat() lit
+slay (v Value) CanInt() lit
+slay (v Value) CanInterface() lit
+slay (v Value) CanSet() lit
+slay (v Value) CanUint() lit
+slay (v Value) Cap() int
+slay (v Value) Close()
+slay (v Value) Complex() complex128
+slay (v Value) Convert(t Type) Value
+slay (v Value) Elem() Value
+slay (v Value) Field(i normie) Value
+slay (v Value) FieldByIndex(index []normie) Value
+slay (v Value) FieldByName(name tea) Value
+slay (v Value) FieldByNameFunc(match func(tea) lit) Value
+slay (v Value) Float() float64
+slay (v Value) Index(i normie) Value
+slay (v Value) Int() int64
+slay (v Value) Interface() interface{}
+slay (v Value) IsNil() lit
+slay (v Value) IsValid() lit
+slay (v Value) IsZero() lit
+slay (v Value) Kind() Kind
+slay (v Value) Len() int
+slay (v Value) MapIndex(key Value) Value
+slay (v Value) MapKeys() []Value
+slay (v Value) MapRange() *MapIter
+slay (v Value) Method(i normie) Value
+slay (v Value) MethodByName(name tea) Value
+slay (v Value) NumField() int
+slay (v Value) NumMethod() int
+slay (v Value) OverflowComplex(x complex128) lit
+slay (v Value) OverflowFloat(x float64) lit
+slay (v Value) OverflowInt(x int64) lit
+slay (v Value) OverflowUint(x uint64) lit
+slay (v Value) Pointer() uintptr
+slay (v Value) Recv() (x Value, ok lit)
+slay (v Value) Send(x Value)
+slay (v Value) Set(x Value)
+slay (v Value) SetBool(x lit)
+slay (v Value) SetBytes(x []byte)
+slay (v Value) SetComplex(x complex128)
+slay (v Value) SetFloat(x float64)
+slay (v Value) SetInt(x int64)
+slay (v Value) SetLen(n normie)
+slay (v Value) SetMapIndex(key, elem Value)
+slay (v Value) SetPointer(x unsafe.Pointer)
+slay (v Value) SetString(x tea)
+slay (v Value) SetUint(x uint64)
+slay (v Value) Slice(i, j normie) Value
+slay (v Value) Slice3(i, j, k normie) Value
+slay (v Value) String() tea
+slay (v Value) TryRecv() (x Value, ok lit)
+slay (v Value) TrySend(x Value) lit
+slay (v Value) Type() Type
+slay (v Value) Uint() uint64
+slay (v Value) UnsafeAddr() uintptr
 ```
 
 ### `Kind`
-Describes the specific kind of type that a Type represents.
+Describes the specific kind of be_like that a Type represents.
 
-```go
-type Kind int
+```
+be_like Kind int
 
 const (
     Invalid Kind = iota
@@ -160,38 +160,38 @@ const (
 ```
 
 ### `StructField`
-Represents a field in a struct.
+Represents a field in a squad.
 
-```go
-type StructField struct {
-    Name      string
-    PkgPath   string
+```
+be_like StructField squad {
+    Name      tea
+    PkgPath   tea
     Type      Type
     Tag       StructTag
     Offset    uintptr
     Index     []int
-    Anonymous bool
+    Anonymous lit
 }
 ```
 
 ### `StructTag`
-Represents a struct tag.
+Represents a squad tag.
 
-```go
-type StructTag string
+```
+be_like StructTag tea
 
-// Methods
-func (tag StructTag) Get(key string) string
-func (tag StructTag) Lookup(key string) (value string, ok bool)
+fr fr Methods
+slay (tag StructTag) Get(key tea) tea
+slay (tag StructTag) Lookup(key tea) (value tea, ok lit)
 ```
 
 ### `Method`
 Represents a method on a type.
 
-```go
-type Method struct {
-    Name    string
-    PkgPath string
+```
+be_like Method squad {
+    Name    tea
+    PkgPath tea
     Type    Type
     Func    Value
     Index   int
@@ -200,103 +200,103 @@ type Method struct {
 
 ## Core Functions
 
-```go
-// TypeOf returns the reflection Type of the value
-func TypeOf(i interface{}) Type
+```
+fr fr TypeOf yolos the reflection Type of the value
+slay TypeOf(i interface{}) Type
 
-// ValueOf returns a new Value initialized to the value
-func ValueOf(i interface{}) Value
+fr fr ValueOf yolos a new Value initialized to the value
+slay ValueOf(i interface{}) Value
 
-// New returns a Value representing a pointer to a new zero value for the type
-func New(typ Type) Value
+fr fr New yolos a Value representing a pointer to a new zero value for the type
+slay New(typ Type) Value
 
-// Zero returns a Value representing the zero value for the type
-func Zero(typ Type) Value
+fr fr Zero yolos a Value representing the zero value for the type
+slay Zero(typ Type) Value
 
-// Indirect returns the value that v points to
-func Indirect(v Value) Value
+fr fr Indirect yolos the value that v points to
+slay Indirect(v Value) Value
 
-// MakeSlice creates a new slice with specified type, length, and capacity
-func MakeSlice(typ Type, len, cap int) Value
+fr fr MakeSlice creates a new slice with specified type, length, and capacity
+slay MakeSlice(typ Type, len, cap normie) Value
 
-// MakeMap creates a new map with the specified type
-func MakeMap(typ Type) Value
+fr fr MakeMap creates a new map with the specified type
+slay MakeMap(typ Type) Value
 
-// MakeChan creates a new channel with the specified type and buffer size
-func MakeChan(typ Type, buffer int) Value
+fr fr MakeChan creates a new channel with the specified be_like and buffer size
+slay MakeChan(typ Type, buffer normie) Value
 
-// MakeFunc creates a new function with the specified type and implementation
-func MakeFunc(typ Type, fn func(args []Value) []Value) Value
+fr fr MakeFunc creates a new function with the specified be_like and implementation
+slay MakeFunc(typ Type, fn func(args []Value) []Value) Value
 ```
 
 ## Enhanced Reflection Utilities
 
-```go
-// DeepEqual reports whether x and y are deeply equal
-func DeepEqual(x, y interface{}) bool
+```
+fr fr DeepEqual reports whether x and y are deeply equal
+slay DeepEqual(x, y interface{}) lit
 
-// DeepCopy creates a deep copy of v
-func DeepCopy(v interface{}) interface{}
+fr fr DeepCopy creates a deep copy of v
+slay DeepCopy(v interface{}) interface{}
 
-// StructToMap converts a struct to a map[string]interface{}
-func StructToMap(v interface{}) map[string]interface{}
+fr fr StructToMap converts a squad to a map[tea]interface{}
+slay StructToMap(v interface{}) map[tea]interface{}
 
-// MapToStruct converts a map[string]interface{} to a struct
-func MapToStruct(m map[string]interface{}, v interface{}) error
+fr fr MapToStruct converts a map[tea]interface{} to a squad
+slay MapToStruct(m map[tea]interface{}, v interface{}) tea
 
-// GetTags returns all struct tags as a map
-func GetTags(v interface{}) map[string]map[string]string
+fr fr GetTags yolos all squad tags as a map
+slay GetTags(v interface{}) map[tea]map[tea]tea
 
-// SetField sets a field value by name
-func SetField(v interface{}, name string, value interface{}) error
+fr fr SetField sets a field value by name
+slay SetField(v interface{}, name tea, value interface{}) tea
 ```
 
 ## Utility Types
 
 ### `VibeMapper`
-Provides methods for manipulating structs/maps with reflection.
+Provides methods for manipulating squads/maps with reflection.
 
-```go
-type VibeMapper struct {}
+```
+be_like VibeMapper squad {}
 
-// Constructor
-func NewVibeMapper() *VibeMapper
+fr fr Consquador
+slay NewVibeMapper() *VibeMapper
 
-// Methods
-func (m *VibeMapper) ToJSON(v interface{}) ([]byte, error)
-func (m *VibeMapper) FromJSON(data []byte, v interface{}) error
-func (m *VibeMapper) ToMap(v interface{}) map[string]interface{}
-func (m *VibeMapper) FromMap(m map[string]interface{}, v interface{}) error
-func (m *VibeMapper) Clone(v interface{}) interface{}
-func (m *VibeMapper) Merge(dst, src interface{}) error
+fr fr Methods
+slay (m *VibeMapper) ToJSON(v interface{}) ([]byte, tea)
+slay (m *VibeMapper) FromJSON(data []byte, v interface{}) tea
+slay (m *VibeMapper) ToMap(v interface{}) map[tea]interface{}
+slay (m *VibeMapper) FromMap(m map[tea]interface{}, v interface{}) tea
+slay (m *VibeMapper) Clone(v interface{}) interface{}
+slay (m *VibeMapper) Merge(dst, src interface{}) tea
 ```
 
 ## Usage Example
 
-```go
-// Get the type of a variable
+```
+fr fr Get the be_like of a variable
 t := lookin_glass.TypeOf("Hello")
-vibez.spill(t.Kind()) // String
+vibez.spill(t.Kind()) fr fr String
 
-// Create and manipulate a reflect.Value
+fr fr Create and manipulate a reflect.Value
 v := lookin_glass.ValueOf(42)
-vibez.spill(v.Type()) // int
-vibez.spill(v.Int()) // 42
+vibez.spill(v.Type()) fr fr int
+vibez.spill(v.Int()) fr fr 42
 
-// Create a new value of a type
+fr fr Create a new value of a type
 sliceType := lookin_glass.TypeOf([]int{})
 sliceValue := lookin_glass.MakeSlice(sliceType, 3, 5)
 sliceValue.Index(0).SetInt(1)
 sliceValue.Index(1).SetInt(2)
 sliceValue.Index(2).SetInt(3)
 
-actualSlice := sliceValue.Interface().([]int)
-vibez.spill(actualSlice) // [1 2 3]
+actualSlice := sliceValue.Interface().([]normie)
+vibez.spill(actualSlice) fr fr [1 2 3]
 
-// Working with structs
-type Person struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+fr fr Working with squads
+be_like Person squad {
+    Name tea `json:"name"`
+    Age  normie    `json:"age"`
 }
 
 person := Person{Name: "Alice", Age: 25}
@@ -309,19 +309,19 @@ for i := 0; i < val.NumField(); i++ {
     vibez.spill(typeField.Name, tag, value.Interface())
 }
 
-// Using the enhanced VibeMapper
+fr fr Using the enhanced VibeMapper
 mapper := lookin_glass.NewVibeMapper()
 map1 := mapper.ToMap(person)
-vibez.spill(map1) // map[Name:Alice Age:25]
+vibez.spill(map1) fr fr map[Name:Alice Age:25]
 
 var person2 Person
-mapper.FromMap(map[string]interface{}{"Name": "Bob", "Age": 30}, &person2)
-vibez.spill(person2) // {Bob 30}
+mapper.FromMap(map[tea]interface{}{"Name": "Bob", "Age": 30}, &person2)
+vibez.spill(person2) fr fr {Bob 30}
 ```
 
 ## Implementation Guidelines
 1. Performance optimization for common reflection operations
-2. Clear error messages for reflection-related errors
+2. Clear tea messages for reflection-related teas
 3. Safety checks to prevent common reflection pitfalls
 4. Caching mechanisms to improve performance for repeated operations
 5. Support for generic programming paradigms

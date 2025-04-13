@@ -1,112 +1,112 @@
 # Hashtag (flag package)
 
 ## Overview
-Hashtag provides a simple interface for parsing command-line flags (arguments), inspired by Go's flag package but with a social media twist.
+Hashtag provides a simple collab for parsing command-line flags (arguments), inspired by Go's flag package but with a social media twist.
 
 ## Core Types
 
 ### `HashSet`
-The main flag set type for storing and parsing flags.
+The main flag set be_like for storing and parsing flags.
 
-```go
-type HashSet struct {
-    // contains flags and settings
+```
+be_like HashSet squad {
+    fr fr contains flags and settings
 }
 
-// Constructors
-func NewHashSet() *HashSet
+fr fr Consquadors
+slay NewHashSet() *HashSet
 ```
 
 ### `Hash`
 Represents a single command-line flag.
 
-```go
-type Hash interface {
-    Name() string
-    Usage() string
+```
+be_like Hash collab {
+    Name() tea
+    Usage() tea
     Value() HashValue
-    DefaultValue() string
+    DefaultValue() tea
 }
 ```
 
 ### `HashValue`
 Interface for flag values.
 
-```go
-type HashValue interface {
-    String() string
-    Set(string) error
+```
+be_like HashValue collab {
+    String() tea
+    Set(tea) tea
 }
 ```
 
 ## Flag Definition Functions
 
-```go
-func (f *HashSet) Bool(name string, value bool, usage string) *bool
-func (f *HashSet) Int(name string, value int, usage string) *int
-func (f *HashSet) Int64(name string, value int64, usage string) *int64
-func (f *HashSet) Uint(name string, value uint, usage string) *uint
-func (f *HashSet) Uint64(name string, value uint64, usage string) *uint64
-func (f *HashSet) String(name string, value string, usage string) *string
-func (f *HashSet) Float64(name string, value float64, usage string) *float64
-func (f *HashSet) Duration(name string, value time.Duration, usage string) *time.Duration
+```
+slay (f *HashSet) Bool(name tea, value lit, usage tea) *lit
+slay (f *HashSet) Int(name tea, value int, usage tea) *int
+slay (f *HashSet) Int64(name tea, value int64, usage tea) *int64
+slay (f *HashSet) Uint(name tea, value uint, usage tea) *uint
+slay (f *HashSet) Uint64(name tea, value uint64, usage tea) *uint64
+slay (f *HashSet) String(name tea, value tea, usage tea) *tea
+slay (f *HashSet) Float64(name tea, value float64, usage tea) *float64
+slay (f *HashSet) Duration(name tea, value time.Duration, usage tea) *time.Duration
 ```
 
 ## Parsing Functions
 
-```go
-func (f *HashSet) Parse(arguments []string) error
-func (f *HashSet) Parsed() bool
-func (f *HashSet) Args() []string // non-flag arguments
-func (f *HashSet) NArg() int // number of non-flag arguments
-func (f *HashSet) NHash() int // number of flags
+```
+slay (f *HashSet) Parse(arguments []tea) tea
+slay (f *HashSet) Parsed() lit
+slay (f *HashSet) Args() []tea fr fr non-flag arguments
+slay (f *HashSet) NArg() normie fr fr number of non-flag arguments
+slay (f *HashSet) NHash() normie fr fr number of flags
 ```
 
 ## Visitation Functions
 
-```go
-func (f *HashSet) Visit(fn func(Hash))
-func (f *HashSet) VisitAll(fn func(Hash))
+```
+slay (f *HashSet) Visit(fn func(Hash))
+slay (f *HashSet) VisitAll(fn func(Hash))
 ```
 
 ## Default HashSet
 
 The package provides a default flag set that is used by top-level functions:
 
-```go
-func Parse()
-func Parsed() bool
-func Bool(name string, value bool, usage string) *bool
-func Int(name string, value int, usage string) *int
-func Int64(name string, value int64, usage string) *int64
-func Uint(name string, value uint, usage string) *uint
-func Uint64(name string, value uint64, usage string) *uint64
-func String(name string, value string, usage string) *string
-func Float64(name string, value float64, usage string) *float64
-func Duration(name string, value time.Duration, usage string) *time.Duration
-func BoolVar(p *bool, name string, value bool, usage string)
-func IntVar(p *int, name string, value int, usage string)
-func Int64Var(p *int64, name string, value int64, usage string)
-func UintVar(p *uint, name string, value uint, usage string)
-func Uint64Var(p *uint64, name string, value uint64, usage string)
-func StringVar(p *string, name string, value string, usage string)
-func Float64Var(p *float64, name string, value float64, usage string)
-func DurationVar(p *time.Duration, name string, value time.Duration, usage string)
-func Var(value HashValue, name string, usage string)
-func Lookup(name string) *Hash
-func Args() []string
-func NArg() int
-func NHash() int
-func Visit(fn func(*Hash))
-func VisitAll(fn func(*Hash))
+```
+slay Parse()
+slay Parsed() lit
+slay Bool(name tea, value lit, usage tea) *lit
+slay Int(name tea, value int, usage tea) *int
+slay Int64(name tea, value int64, usage tea) *int64
+slay Uint(name tea, value uint, usage tea) *uint
+slay Uint64(name tea, value uint64, usage tea) *uint64
+slay String(name tea, value tea, usage tea) *tea
+slay Float64(name tea, value float64, usage tea) *float64
+slay Duration(name tea, value time.Duration, usage tea) *time.Duration
+slay BoolVar(p *lit, name tea, value lit, usage tea)
+slay IntVar(p *int, name tea, value int, usage tea)
+slay Int64Var(p *int64, name tea, value int64, usage tea)
+slay UintVar(p *uint, name tea, value uint, usage tea)
+slay Uint64Var(p *uint64, name tea, value uint64, usage tea)
+slay StringVar(p *tea, name tea, value tea, usage tea)
+slay Float64Var(p *float64, name tea, value float64, usage tea)
+slay DurationVar(p *time.Duration, name tea, value time.Duration, usage tea)
+slay Var(value HashValue, name tea, usage tea)
+slay Lookup(name tea) *Hash
+slay Args() []tea
+slay NArg() int
+slay NHash() int
+slay Visit(fn func(*Hash))
+slay VisitAll(fn func(*Hash))
 ```
 
 ## Usage Information
 
-```go
-func (f *HashSet) PrintDefaults()
-func (f *HashSet) Usage()
-func (f *HashSet) SetUsage(usage func())
+```
+slay (f *HashSet) PrintDefaults()
+slay (f *HashSet) Usage()
+slay (f *HashSet) SetUsage(usage func())
 ```
 
 ## Special Features
@@ -115,18 +115,18 @@ func (f *HashSet) SetUsage(usage func())
 Hashtag supports both short (single dash) and long (double dash) formats:
 
 ```
--v               // Short format for boolean flags
---verbose        // Long format
--n 5             // Short format with value
---count=5        // Long format with value using equals
---count 5        // Long format with value using space
+-v               fr fr Short format for litean flags
+--verbose        fr fr Long format
+-n 5             fr fr Short format with value
+--count=5        fr fr Long format with value using equals
+--count 5        fr fr Long format with value using space
 ```
 
 ### Social Media Style Features
 
-```go
-func (f *HashSet) Trending() []string // Returns most used flags across program runs
-func (f *HashSet) AddTrend(name string) // Mark a flag as trending
+```
+slay (f *HashSet) Trending() []tea fr fr Returns most used flags across program runs
+slay (f *HashSet) AddTrend(name tea) fr fr Mark a flag as trending
 ```
 
 ## Implementation Guidelines

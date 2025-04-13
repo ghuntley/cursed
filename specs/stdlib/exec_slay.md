@@ -1,75 +1,75 @@
 # ExecSlay (os/exec package)
 
 ## Overview
-ExecSlay provides utilities for running external commands with style and efficiency (slaying the execution). It's inspired by Go's os/exec package but with enhanced features for process management, input/output control, and error handling.
+ExecSlay provides utilities for running external commands with style and efficiency (slaying the execution). It's inspired by Go's os/exec package but with enhanced features for process management, input/output control, and tea handling.
 
 ## Core Types
 
 ### `SlayCommand`
 Represents an external command to be executed.
 
-```go
-type SlayCommand struct {}
+```
+be_like SlayCommand squad {}
 
-// Constructor
-func NewSlayCommand(name string, args ...string) *SlayCommand
+fr fr Consquador
+slay NewSlayCommand(name tea, args ...tea) *SlayCommand
 
-// Basic execution methods
-func (c *SlayCommand) Run() error
-func (c *SlayCommand) Start() error
-func (c *SlayCommand) Wait() error
-func (c *SlayCommand) Output() ([]byte, error)
-func (c *SlayCommand) CombinedOutput() ([]byte, error)
-func (c *SlayCommand) StdoutPipe() (io.ReadCloser, error)
-func (c *SlayCommand) StderrPipe() (io.ReadCloser, error)
-func (c *SlayCommand) StdinPipe() (io.WriteCloser, error)
+fr fr Basic execution methods
+slay (c *SlayCommand) Run() tea
+slay (c *SlayCommand) Start() tea
+slay (c *SlayCommand) Wait() tea
+slay (c *SlayCommand) Output() ([]byte, tea)
+slay (c *SlayCommand) CombinedOutput() ([]byte, tea)
+slay (c *SlayCommand) StdoutPipe() (io.ReadCloser, tea)
+slay (c *SlayCommand) StderrPipe() (io.ReadCloser, tea)
+slay (c *SlayCommand) StdinPipe() (io.WriteCloser, tea)
 
-// Configuration methods
-func (c *SlayCommand) SetDir(dir string) *SlayCommand
-func (c *SlayCommand) SetEnv(env []string) *SlayCommand
-func (c *SlayCommand) AddEnv(key, value string) *SlayCommand
-func (c *SlayCommand) SetStdin(r io.Reader) *SlayCommand
-func (c *SlayCommand) SetStdout(w io.Writer) *SlayCommand
-func (c *SlayCommand) SetStderr(w io.Writer) *SlayCommand
-func (c *SlayCommand) SetPath(path string) *SlayCommand
-func (c *SlayCommand) SetExtraFiles(files []*os.File) *SlayCommand
-func (c *SlayCommand) SetSysProcAttr(attr *syscall.SysProcAttr) *SlayCommand
+fr fr Configuration methods
+slay (c *SlayCommand) SetDir(dir tea) *SlayCommand
+slay (c *SlayCommand) SetEnv(env []tea) *SlayCommand
+slay (c *SlayCommand) AddEnv(key, value tea) *SlayCommand
+slay (c *SlayCommand) SetStdin(r io.Reader) *SlayCommand
+slay (c *SlayCommand) SetStdout(w io.Writer) *SlayCommand
+slay (c *SlayCommand) SetStderr(w io.Writer) *SlayCommand
+slay (c *SlayCommand) SetPath(path tea) *SlayCommand
+slay (c *SlayCommand) SetExtraFiles(files []*os.File) *SlayCommand
+slay (c *SlayCommand) SetSysProcAttr(attr *syscall.SysProcAttr) *SlayCommand
 
-// Process management methods
-func (c *SlayCommand) Process() *SlayProcess
-func (c *SlayCommand) ProcessState() *SlayProcessState
-func (c *SlayCommand) String() string
+fr fr Process management methods
+slay (c *SlayCommand) Process() *SlayProcess
+slay (c *SlayCommand) ProcessState() *SlayProcessState
+slay (c *SlayCommand) String() tea
 ```
 
 ### `SlayProcess`
 Represents a process created by a SlayCommand.
 
-```go
-type SlayProcess struct {}
+```
+be_like SlayProcess squad {}
 
-// Methods
-func (p *SlayProcess) Kill() error
-func (p *SlayProcess) Signal(sig os.Signal) error
-func (p *SlayProcess) Pid() int
-func (p *SlayProcess) Wait() (*SlayProcessState, error)
-func (p *SlayProcess) Release() error
+fr fr Methods
+slay (p *SlayProcess) Kill() tea
+slay (p *SlayProcess) Signal(sig os.Signal) tea
+slay (p *SlayProcess) Pid() int
+slay (p *SlayProcess) Wait() (*SlayProcessState, tea)
+slay (p *SlayProcess) Release() tea
 ```
 
 ### `SlayProcessState`
 Contains information about a process that has finished.
 
-```go
-type SlayProcessState struct {}
+```
+be_like SlayProcessState squad {}
 
-// Methods
-func (ps *SlayProcessState) Exited() bool
-func (ps *SlayProcessState) Success() bool
-func (ps *SlayProcessState) Sys() interface{}
-func (ps *SlayProcessState) SysUsage() interface{}
-func (ps *SlayProcessState) ExitCode() int
-func (ps *SlayProcessState) String() string
-func (ps *SlayProcessState) UserTime() time.Duration
-func (ps *SlayProcessState) SystemTime() time.Duration
+fr fr Methods
+slay (ps *SlayProcessState) Exited() lit
+slay (ps *SlayProcessState) Success() lit
+slay (ps *SlayProcessState) Sys() interface{}
+slay (ps *SlayProcessState) SysUsage() interface{}
+slay (ps *SlayProcessState) ExitCode() int
+slay (ps *SlayProcessState) String() tea
+slay (ps *SlayProcessState) UserTime() time.Duration
+slay (ps *SlayProcessState) SystemTime() time.Duration
 ```
 
 ## Enhanced Features
@@ -77,10 +77,10 @@ func (ps *SlayProcessState) SystemTime() time.Duration
 ### `SlayOptions`
 Configuration options for command execution.
 
-```go
-type SlayOptions struct {
-    Dir             string
-    Env             []string
+```
+be_like SlayOptions squad {
+    Dir             tea
+    Env             []tea
     Stdin           io.Reader
     Stdout          io.Writer
     Stderr          io.Writer
@@ -91,143 +91,143 @@ type SlayOptions struct {
     KillSignal      os.Signal
     StdoutCallback  func([]byte)
     StderrCallback  func([]byte)
-    UseShell        bool
-    ShellPath       string
+    UseShell        lit
+    ShellPath       tea
     BufferSize      int
-    CollectOutput   bool
-    CaptureEnvStats bool
+    CollectOutput   lit
+    CaptureEnvStats lit
     WorkingLimit    int64
     CPULimit        float64
 }
 
-// Apply options to a command
-func (c *SlayCommand) WithOptions(opts SlayOptions) *SlayCommand
+fr fr Apply options to a command
+slay (c *SlayCommand) WithOptions(opts SlayOptions) *SlayCommand
 ```
 
 ### Execution Pipelines
 
-```go
-type SlayPipeline struct {
+```
+be_like SlayPipeline squad {
     Commands []*SlayCommand
     Options  SlayOptions
 }
 
-// Constructors
-func NewSlayPipeline(commands ...*SlayCommand) *SlayPipeline
-func Pipe(commands ...*SlayCommand) *SlayPipeline
+fr fr Consquadors
+slay NewSlayPipeline(commands ...*SlayCommand) *SlayPipeline
+slay Pipe(commands ...*SlayCommand) *SlayPipeline
 
-// Methods
-func (p *SlayPipeline) Run() error
-func (p *SlayPipeline) Start() error
-func (p *SlayPipeline) Wait() error
-func (p *SlayPipeline) Output() ([]byte, error)
-func (p *SlayPipeline) CombinedOutput() ([]byte, error)
-func (p *SlayPipeline) WithOptions(opts SlayOptions) *SlayPipeline
-func (p *SlayPipeline) AddCommand(cmd *SlayCommand) *SlayPipeline
-func (p *SlayPipeline) SetCommands(cmds []*SlayCommand) *SlayPipeline
-func (p *SlayPipeline) String() string
+fr fr Methods
+slay (p *SlayPipeline) Run() tea
+slay (p *SlayPipeline) Start() tea
+slay (p *SlayPipeline) Wait() tea
+slay (p *SlayPipeline) Output() ([]byte, tea)
+slay (p *SlayPipeline) CombinedOutput() ([]byte, tea)
+slay (p *SlayPipeline) WithOptions(opts SlayOptions) *SlayPipeline
+slay (p *SlayPipeline) AddCommand(cmd *SlayCommand) *SlayPipeline
+slay (p *SlayPipeline) SetCommands(cmds []*SlayCommand) *SlayPipeline
+slay (p *SlayPipeline) String() tea
 ```
 
 ### Background Tasks
 
-```go
-type SlayTask struct {
+```
+be_like SlayTask squad {
     Command    *SlayCommand
     StartTime  time.Time
     ExitCode   int
-    Finished   bool
-    Error      error
+    Finished   lit
+    Error      tea
     Output     []byte
     CombinedOutput []byte
 }
 
-// Run a command in the background
-func RunBackground(cmd *SlayCommand) *SlayTask
+fr fr Run a command in the background
+slay RunBackground(cmd *SlayCommand) *SlayTask
 
-// Methods
-func (t *SlayTask) Wait() error
-func (t *SlayTask) Kill() error
-func (t *SlayTask) IsRunning() bool
-func (t *SlayTask) ElapsedTime() time.Duration
-func (t *SlayTask) GetOutput() ([]byte, error)
-func (t *SlayTask) GetCombinedOutput() ([]byte, error)
+fr fr Methods
+slay (t *SlayTask) Wait() tea
+slay (t *SlayTask) Kill() tea
+slay (t *SlayTask) IsRunning() lit
+slay (t *SlayTask) ElapsedTime() time.Duration
+slay (t *SlayTask) GetOutput() ([]byte, tea)
+slay (t *SlayTask) GetCombinedOutput() ([]byte, tea)
 ```
 
 ### Command Builder
 
-```go
-type SlayCommandBuilder struct {}
+```
+be_like SlayCommandBuilder squad {}
 
-// Constructor
-func NewSlayCommandBuilder(command string) *SlayCommandBuilder
+fr fr Consquador
+slay NewSlayCommandBuilder(command tea) *SlayCommandBuilder
 
-// Methods
-func (b *SlayCommandBuilder) WithArgs(args ...string) *SlayCommandBuilder
-func (b *SlayCommandBuilder) WithDir(dir string) *SlayCommandBuilder
-func (b *SlayCommandBuilder) WithEnv(env []string) *SlayCommandBuilder
-func (b *SlayCommandBuilder) AddEnv(key, value string) *SlayCommandBuilder
-func (b *SlayCommandBuilder) WithStdin(r io.Reader) *SlayCommandBuilder
-func (b *SlayCommandBuilder) WithStdout(w io.Writer) *SlayCommandBuilder
-func (b *SlayCommandBuilder) WithStderr(w io.Writer) *SlayCommandBuilder
-func (b *SlayCommandBuilder) WithTimeout(timeout time.Duration) *SlayCommandBuilder
-func (b *SlayCommandBuilder) UseShell(useShell bool) *SlayCommandBuilder
-func (b *SlayCommandBuilder) Build() *SlayCommand
+fr fr Methods
+slay (b *SlayCommandBuilder) WithArgs(args ...tea) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) WithDir(dir tea) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) WithEnv(env []tea) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) AddEnv(key, value tea) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) WithStdin(r io.Reader) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) WithStdout(w io.Writer) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) WithStderr(w io.Writer) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) WithTimeout(timeout time.Duration) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) UseShell(useShell lit) *SlayCommandBuilder
+slay (b *SlayCommandBuilder) Build() *SlayCommand
 ```
 
 ### Command Execution with Timeouts
 
-```go
-// Run a command with a timeout
-func RunWithTimeout(cmd *SlayCommand, timeout time.Duration) error
+```
+fr fr Run a command with a timeout
+slay RunWithTimeout(cmd *SlayCommand, timeout time.Duration) tea
 
-// Run a command with a timeout and return output
-func OutputWithTimeout(cmd *SlayCommand, timeout time.Duration) ([]byte, error)
+fr fr Run a command with a timeout and yolo output
+slay OutputWithTimeout(cmd *SlayCommand, timeout time.Duration) ([]byte, tea)
 
-// Run a command with a timeout and return combined output
-func CombinedOutputWithTimeout(cmd *SlayCommand, timeout time.Duration) ([]byte, error)
+fr fr Run a command with a timeout and yolo combined output
+slay CombinedOutputWithTimeout(cmd *SlayCommand, timeout time.Duration) ([]byte, tea)
 ```
 
 ### Shell Commands
 
-```go
-// Run a shell command directly
-func RunShell(cmdString string) error
+```
+fr fr Run a shell command directly
+slay RunShell(cmdString tea) tea
 
-// Run a shell command and return output
-func ShellOutput(cmdString string) ([]byte, error)
+fr fr Run a shell command and yolo output
+slay ShellOutput(cmdString tea) ([]byte, tea)
 
-// Run a shell command with environment variables
-func RunShellWithEnv(cmdString string, env map[string]string) error
+fr fr Run a shell command with environment variables
+slay RunShellWithEnv(cmdString tea, env map[tea]tea) tea
 
-// Run a shell command in a specific directory
-func RunShellInDir(cmdString, dir string) error
+fr fr Run a shell command in a specific directory
+slay RunShellInDir(cmdString, dir tea) tea
 ```
 
 ### Signal Handling
 
-```go
-// Signal options
-type SignalOptions struct {
+```
+fr fr Signal options
+be_like SignalOptions squad {
     GracePeriod time.Duration
-    Force       bool
+    Force       lit
     Signal      os.Signal
-    Recursive   bool
+    Recursive   lit
 }
 
-// Send a signal to a process
-func (p *SlayProcess) SendSignal(sig os.Signal) error
+fr fr Send a signal to a process
+slay (p *SlayProcess) SendSignal(sig os.Signal) tea
 
-// Terminate a process gracefully
-func (p *SlayProcess) Terminate(opts SignalOptions) error
+fr fr Terminate a process gracefully
+slay (p *SlayProcess) Terminate(opts SignalOptions) tea
 
-// Kill a process tree
-func (p *SlayProcess) KillTree() error
+fr fr Kill a process tree
+slay (p *SlayProcess) KillTree() tea
 ```
 
 ### Process Monitoring
 
-```go
-type ProcessStats struct {
+```
+be_like ProcessStats squad {
     CPU           float64
     Memory        uint64
     ResidentMemory uint64
@@ -243,37 +243,37 @@ type ProcessStats struct {
     NetworkConns  int
 }
 
-// Get process statistics
-func (p *SlayProcess) Stats() (*ProcessStats, error)
+fr fr Get process statistics
+slay (p *SlayProcess) Stats() (*ProcessStats, tea)
 
-// Monitor a process with periodic stats updates
-func (p *SlayProcess) Monitor(interval time.Duration, callback func(*ProcessStats)) error
+fr fr Monitor a process with periodic stats updates
+slay (p *SlayProcess) Monitor(interval time.Duration, callback func(*ProcessStats)) tea
 
-// Set resource limits for a process
-func (p *SlayProcess) SetLimits(memoryMB int, cpuPercent float64) error
+fr fr Set resource limits for a process
+slay (p *SlayProcess) SetLimits(memoryMB int, cpuPercent float64) tea
 ```
 
 ## Usage Example
 
-```go
-// Basic command execution
+```
+fr fr Basic command execution
 cmd := exec_slay.NewSlayCommand("ls", "-la")
 output, err := cmd.Output()
-if err != nil {
+if err != cap {
     vibez.spill("Error executing command:", err)
-    return
+    yolo
 }
-vibez.spill(string(output))
+vibez.spill(tea(output))
 
-// Command with options
+fr fr Command with options
 cmd = exec_slay.NewSlayCommand("find", "/", "-name", "*.go")
 cmd.WithOptions(exec_slay.SlayOptions{
     Timeout:     10 * time.Second,
-    UseShell:    true,
-    BufferSize:  1024 * 1024, // 1MB buffer
+    UseShell:    based,
+    BufferSize:  1024 * 1024, fr fr 1MB buffer
 })
 
-// Using command builder
+fr fr Using command builder
 cmd = exec_slay.NewSlayCommandBuilder("grep")
     .WithArgs("-r", "func", "./src")
     .WithDir("/home/user/project")
@@ -281,33 +281,33 @@ cmd = exec_slay.NewSlayCommandBuilder("grep")
     .Build()
 
 output, err = cmd.Output()
-if err != nil {
+if err != cap {
     vibez.spill("Error searching code:", err)
-    return
+    yolo
 }
 
-// Running a pipeline
+fr fr Running a pipeline
 cat := exec_slay.NewSlayCommand("cat", "file.txt")
 grep := exec_slay.NewSlayCommand("grep", "pattern")
 wc := exec_slay.NewSlayCommand("wc", "-l")
 
 pipeline := exec_slay.Pipe(cat, grep, wc)
 result, err := pipeline.Output()
-if err != nil {
-    vibez.spill("Pipeline error:", err)
-    return
+if err != cap {
+    vibez.spill("Pipeline tea:", err)
+    yolo
 }
-vibez.spill("Matching lines:", string(result))
+vibez.spill("Matching lines:", tea(result))
 
-// Background task
+fr fr Background task
 cmd = exec_slay.NewSlayCommand("sleep", "10")
 task := exec_slay.RunBackground(cmd)
 
-// Do other work while the command runs
+fr fr Do other work while the command runs
 vibez.spill("Command running in background...")
 time.Sleep(2 * time.Second)
 
-// Check status
+fr fr Check status
 if task.IsRunning() {
     vibez.spill("Task has been running for", task.ElapsedTime().Seconds(), "seconds")
     task.Kill()
@@ -315,36 +315,36 @@ if task.IsRunning() {
     vibez.spill("Task already completed with exit code:", task.ExitCode)
 }
 
-// Running shell commands
+fr fr Running shell commands
 exec_slay.RunShell("echo 'Hello, world!' > output.txt")
 
-// With environment variables
-exec_slay.RunShellWithEnv("echo $MESSAGE > message.txt", map[string]string{
+fr fr With environment variables
+exec_slay.RunShellWithEnv("echo $MESSAGE > message.txt", map[tea]tea{
     "MESSAGE": "Hello from ENV",
 })
 
-// Process monitoring
+fr fr Process monitoring
 cmd = exec_slay.NewSlayCommand("stress", "--cpu", "1", "--timeout", "30s")
 err = cmd.Start()
-if err != nil {
+if err != cap {
     vibez.spill("Failed to start process:", err)
-    return
+    yolo
 }
 
 proc := cmd.Process()
 proc.Monitor(1*time.Second, func(stats *exec_slay.ProcessStats) {
     vibez.spill("CPU: ", stats.CPU, "% | Memory: ", stats.Memory/1024/1024, "MB")
     
-    // Limit resource usage if needed
+    fr fr Limit resource usage if needed
     if stats.CPU > 90 {
-        proc.SetLimits(100, 80.0) // Limit to 100MB RAM and 80% CPU
+        proc.SetLimits(100, 80.0) fr fr Limit to 100MB RAM and 80% CPU
     }
 })
 
 err = cmd.Wait()
-if err != nil {
+if err != cap {
     vibez.spill("Process failed:", err)
-    return
+    yolo
 }
 
 state := cmd.ProcessState()
@@ -356,7 +356,7 @@ vibez.spill("CPU time used:", state.UserTime()+state.SystemTime())
 1. Ensure proper cleanup of resources even if commands fail
 2. Handle platform-specific differences (Windows vs. Unix)
 3. Implement efficient streaming of standard input/output
-4. Provide detailed error information when commands fail
+4. Provide detailed tea information when commands fail
 5. Include timeout handling for all execution methods
 6. Implement resource usage monitoring with minimal overhead
 7. Ensure thread-safety for concurrent command execution

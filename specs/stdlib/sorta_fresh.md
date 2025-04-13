@@ -8,27 +8,27 @@ SortaFresh provides functions for sorting slices and user-defined collections wi
 ### `Sortable`
 Interface for basic sorting operations.
 
-```go
-type Sortable interface {
-    // Len returns the number of elements in the collection
+```
+be_like Sortable collab {
+    fr fr Len yolos the number of elements in the collection
     Len() int
     
-    // Less reports whether element i should sort before element j
-    Less(i, j int) bool
+    fr fr Less reports whether element i should sort before element j
+    Less(i, j normie) lit
     
-    // Swap swaps elements i and j
-    Swap(i, j int)
+    fr fr Swap swaps elements i and j
+    Swap(i, j normie)
 }
 ```
 
 ### `SortableSearch`
 Interface that extends Sortable with search capability.
 
-```go
-type SortableSearch interface {
+```
+be_like SortableSearch collab {
     Sortable
     
-    // Search returns the smallest index i such that a[i] >= value
+    fr fr Search yolos the smallest index i such that a[i] >= value
     Search(value interface{}) int
 }
 ```
@@ -37,85 +37,85 @@ type SortableSearch interface {
 
 ### Basic Sorting
 
-```go
-// Sort sorts data in ascending order as determined by the Less method
-func Sort(data Sortable)
+```
+fr fr Sort sorts data in ascending order as determined by the Less method
+slay Sort(data Sortable)
 
-// Reverse sorts data in reverse order
-func Reverse(data Sortable)
+fr fr Reverse sorts data in reverse order
+slay Reverse(data Sortable)
 
-// IsSorted reports whether data is sorted
-func IsSorted(data Sortable) bool
+fr fr IsSorted reports whether data is sorted
+slay IsSorted(data Sortable) lit
 
-// Stable performs a stable sort on data
-func Stable(data Sortable)
+fr fr Stable performs a stable sort on data
+slay Stable(data Sortable)
 
-// Shuffle randomizes the order of elements in data
-func Shuffle(data Sortable)
+fr fr Shuffle randomizes the order of elements in data
+slay Shuffle(data Sortable)
 ```
 
 ### Specialized Sorting Functions
 
-```go
-// SortInts sorts a slice of ints in ascending order
-func SortInts(a []int)
+```
+fr fr SortInts sorts a slice of ints in ascending order
+slay SortInts(a []normie)
 
-// SortFloat64s sorts a slice of float64s in ascending order
-func SortFloat64s(a []float64)
+fr fr SortFloat64s sorts a slice of float64s in ascending order
+slay SortFloat64s(a []float64)
 
-// SortStrings sorts a slice of strings in ascending order
-func SortStrings(a []string)
+fr fr SortStrings sorts a slice of teas in ascending order
+slay SortStrings(a []tea)
 
-// IntsAreSorted reports whether the slice is sorted in ascending order
-func IntsAreSorted(a []int) bool
+fr fr IntsAreSorted reports whether the slice is sorted in ascending order
+slay IntsAreSorted(a []normie) lit
 
-// Float64sAreSorted reports whether the slice is sorted in ascending order
-func Float64sAreSorted(a []float64) bool
+fr fr Float64sAreSorted reports whether the slice is sorted in ascending order
+slay Float64sAreSorted(a []float64) lit
 
-// StringsAreSorted reports whether the slice is sorted in ascending order
-func StringsAreSorted(a []string) bool
+fr fr StringsAreSorted reports whether the slice is sorted in ascending order
+slay StringsAreSorted(a []tea) lit
 ```
 
 ### Search Functions
 
-```go
-// Search uses binary search to find the index in a sorted data structure
-func Search(n int, f func(int) bool) int
+```
+fr fr Search uses binary search to find the index in a sorted data squadure
+slay Search(n int, f func(normie) lit) int
 
-// SearchInts searches for x in a sorted slice of ints and returns the index
-func SearchInts(a []int, x int) int
+fr fr SearchInts searches for x in a sorted slice of ints and yolos the index
+slay SearchInts(a []int, x normie) int
 
-// SearchFloat64s searches for x in a sorted slice of float64s and returns the index
-func SearchFloat64s(a []float64, x float64) int
+fr fr SearchFloat64s searches for x in a sorted slice of float64s and yolos the index
+slay SearchFloat64s(a []float64, x float64) int
 
-// SearchStrings searches for x in a sorted slice of strings and returns the index
-func SearchStrings(a []string, x string) int
+fr fr SearchStrings searches for x in a sorted slice of teas and yolos the index
+slay SearchStrings(a []tea, x tea) int
 ```
 
 ## Generic Sorting Functions
 
-```go
-// SortSlice sorts a slice using the provided less function
-func SortSlice[T any](slice []T, less func(i, j int) bool)
+```
+fr fr SortSlice sorts a slice using the provided less function
+slay SortSlice[T any](slice []T, less func(i, j normie) lit)
 
-// StableSortSlice performs a stable sort on a slice using the provided less function
-func StableSortSlice[T any](slice []T, less func(i, j int) bool)
+fr fr StableSortSlice performs a stable sort on a slice using the provided less function
+slay StableSortSlice[T any](slice []T, less func(i, j normie) lit)
 
-// SortFunc sorts slice with a comparison function
-func SortFunc[T any](slice []T, cmp func(a, b T) int)
+fr fr SortFunc sorts slice with a comparison function
+slay SortFunc[T any](slice []T, cmp func(a, b T) normie)
 
-// StableSortFunc performs a stable sort using a comparison function
-func StableSortFunc[T any](slice []T, cmp func(a, b T) int)
+fr fr StableSortFunc performs a stable sort using a comparison function
+slay StableSortFunc[T any](slice []T, cmp func(a, b T) normie)
 
-// SortBy sorts a slice by a key extracted from each element
-func SortBy[T any, K cmp.Ordered](slice []T, key func(T) K)
+fr fr SortBy sorts a slice by a key extracted from each element
+slay SortBy[T any, K cmp.Ordered](slice []T, key func(T) K)
 
-// SortByFields sorts a slice of structs by multiple fields
-func SortByFields[T any](slice []T, fields ...SortField[T])
+fr fr SortByFields sorts a slice of squads by multiple fields
+slay SortByFields[T any](slice []T, fields ...SortField[T])
 
-type SortField[T any] struct {
+be_like SortField[T any] squad {
     Extract func(T) interface{}
-    Reverse bool
+    Reverse lit
 }
 ```
 
@@ -124,124 +124,124 @@ type SortField[T any] struct {
 ### `FreshSorter`
 High-performance, parallel sorter for large collections.
 
-```go
-type FreshSorter struct {}
+```
+be_like FreshSorter squad {}
 
-// Constructors
-func NewFreshSorter() *FreshSorter
-func NewFreshSorterWithOptions(opts FreshSorterOptions) *FreshSorter
+fr fr Consquadors
+slay NewFreshSorter() *FreshSorter
+slay NewFreshSorterWithOptions(opts FreshSorterOptions) *FreshSorter
 
-type FreshSorterOptions struct {
-    Parallel     bool
+be_like FreshSorterOptions squad {
+    Parallel     lit
     MaxGoroutines int
-    StableSorting bool
-    Threshold    int    // Threshold for switching to insertion sort
-    ChunkSize    int    // Size of chunks for parallel sorting
+    StableSorting lit
+    Threshold    normie    fr fr Threshold for switching to insertion sort
+    ChunkSize    normie    fr fr Size of chunks for parallel sorting
 }
 
-// Methods
-func (s *FreshSorter) Sort(data Sortable) *FreshSorter
-func (s *FreshSorter) SortSlice(slice interface{}, less func(i, j int) bool) *FreshSorter
-func (s *FreshSorter) SortFunc(slice interface{}, cmp interface{}) *FreshSorter
-func (s *FreshSorter) Stable(data Sortable) *FreshSorter
-func (s *FreshSorter) Reverse() *FreshSorter
-func (s *FreshSorter) Shuffle() *FreshSorter
-func (s *FreshSorter) SetParallel(enable bool) *FreshSorter
-func (s *FreshSorter) SetOptions(opts FreshSorterOptions) *FreshSorter
+fr fr Methods
+slay (s *FreshSorter) Sort(data Sortable) *FreshSorter
+slay (s *FreshSorter) SortSlice(slice interface{}, less func(i, j normie) lit) *FreshSorter
+slay (s *FreshSorter) SortFunc(slice interface{}, cmp interface{}) *FreshSorter
+slay (s *FreshSorter) Stable(data Sortable) *FreshSorter
+slay (s *FreshSorter) Reverse() *FreshSorter
+slay (s *FreshSorter) Shuffle() *FreshSorter
+slay (s *FreshSorter) SetParallel(enable lit) *FreshSorter
+slay (s *FreshSorter) SetOptions(opts FreshSorterOptions) *FreshSorter
 ```
 
 ### Multi-Key Sorting
 
-```go
-// OrderedBy returns a multi-key Sortable based on less functions
-func OrderedBy(less ...func(i, j int) bool) *FreshMultiSorter
+```
+fr fr OrderedBy yolos a multi-key Sortable based on less functions
+slay OrderedBy(less ...func(i, j normie) lit) *FreshMultiSorter
 
-type FreshMultiSorter struct {}
+be_like FreshMultiSorter squad {}
 
-// Methods for FreshMultiSorter
-func (ms *FreshMultiSorter) Sort(data interface{}) *FreshMultiSorter
-func (ms *FreshMultiSorter) Reverse() *FreshMultiSorter
-func (ms *FreshMultiSorter) AsThenBy(less func(i, j int) bool) *FreshMultiSorter
+fr fr Methods for FreshMultiSorter
+slay (ms *FreshMultiSorter) Sort(data interface{}) *FreshMultiSorter
+slay (ms *FreshMultiSorter) Reverse() *FreshMultiSorter
+slay (ms *FreshMultiSorter) AsThenBy(less func(i, j normie) lit) *FreshMultiSorter
 ```
 
 ### Top-K Selection
 
-```go
-// TopK returns the k largest elements in data
-func TopK[T any](data []T, k int, less func(a, b T) bool) []T
+```
+fr fr TopK yolos the k largest elements in data
+slay TopK[T any](data []T, k int, less func(a, b T) lit) []T
 
-// BottomK returns the k smallest elements in data
-func BottomK[T any](data []T, k int, less func(a, b T) bool) []T
+fr fr BottomK yolos the k smallest elements in data
+slay BottomK[T any](data []T, k int, less func(a, b T) lit) []T
 
-// Select returns the element that would be at index k if data were sorted
-func Select[T any](data []T, k int, less func(a, b T) bool) T
+fr fr Select yolos the element that would be at index k if data were sorted
+slay Select[T any](data []T, k int, less func(a, b T) lit) T
 
-// MedianOfMedians finds an approximate median in linear time
-func MedianOfMedians[T any](data []T, less func(a, b T) bool) T
+fr fr MedianOfMedians finds an approximate median in linear time
+slay MedianOfMedians[T any](data []T, less func(a, b T) lit) T
 ```
 
 ### Utility Functions
 
-```go
-// IsSortedBy checks if a slice is sorted according to a key function
-func IsSortedBy[T any, K cmp.Ordered](slice []T, key func(T) K) bool
+```
+fr fr IsSortedBy checks if a slice is sorted according to a key function
+slay IsSortedBy[T any, K cmp.Ordered](slice []T, key func(T) K) lit
 
-// IsSortedFunc checks if a slice is sorted according to a comparison function
-func IsSortedFunc[T any](slice []T, cmp func(a, b T) int) bool
+fr fr IsSortedFunc checks if a slice is sorted according to a comparison function
+slay IsSortedFunc[T any](slice []T, cmp func(a, b T) normie) lit
 
-// PartiallySort partially sorts data, guaranteeing elements up to k are in their final position
-func PartiallySort[T any](data []T, k int, less func(a, b T) bool)
+fr fr PartiallySort partially sorts data, guaranteeing elements up to k are in their final position
+slay PartiallySort[T any](data []T, k int, less func(a, b T) lit)
 
-// BinarySearch performs a binary search for value in sorted data
-func BinarySearch[T any](data []T, value T, cmp func(a, b T) int) (index int, found bool)
+fr fr BinarySearch performs a binary search for value in sorted data
+slay BinarySearch[T any](data []T, value T, cmp func(a, b T) normie) (index int, found lit)
 
-// InsertionPoint returns where value should be inserted to maintain order
-func InsertionPoint[T any](data []T, value T, cmp func(a, b T) int) int
+fr fr InsertionPonormie yolos where value should be inserted to maintain order
+slay InsertionPoint[T any](data []T, value T, cmp func(a, b T) normie) int
 ```
 
 ### Specialized Sorting Algorithms
 
-```go
-// Sorting algorithm implementations
-func QuickSort[T any](data []T, less func(a, b T) bool)
-func MergeSort[T any](data []T, less func(a, b T) bool)
-func HeapSort[T any](data []T, less func(a, b T) bool)
-func InsertionSort[T any](data []T, less func(a, b T) bool)
-func ShellSort[T any](data []T, less func(a, b T) bool)
-func RadixSort(data []int) // Only for integers
-func CountingSort(data []int, min, max int) // Only for integers in a range
+```
+fr fr Sorting algorithm implementations
+slay QuickSort[T any](data []T, less func(a, b T) lit)
+slay MergeSort[T any](data []T, less func(a, b T) lit)
+slay HeapSort[T any](data []T, less func(a, b T) lit)
+slay InsertionSort[T any](data []T, less func(a, b T) lit)
+slay ShellSort[T any](data []T, less func(a, b T) lit)
+slay RadixSort(data []normie) fr fr Only for integers
+slay CountingSort(data []int, min, max normie) fr fr Only for integers in a range
 ```
 
 ## Gen Z Sorting Features
 
-```go
-// VibeSort sorts data based on its "vibe" score
-func VibeSort[T any](data []T, vibeScore func(T) float64)
+```
+fr fr VibeSort sorts data based on its "vibe" score
+slay VibeSort[T any](data []T, vibeScore func(T) float64)
 
-// NoCapSort sorts data with absolute factual ordering
-func NoCapSort[T any](data []T, factCheck func(a, b T) int)
+fr fr NoCapSort sorts data with absolute factual ordering
+slay NoCapSort[T any](data []T, factCheck func(a, b T) normie)
 
-// BussinSort sorts to highlight the most "bussin" (excellent) items first
-func BussinSort[T any](data []T, bussinScore func(T) int)
+fr fr BussinSort sorts to highlight the most "bussin" (excellent) items first
+slay BussinSort[T any](data []T, bussinScore func(T) normie)
 
-// SlaySort is a high-performance sort that "slays" (excels at) sorting large datasets
-func SlaySort[T any](data []T, less func(a, b T) bool)
+fr fr SlaySort is a high-performance sort that "slays" (excels at) sorting large datasets
+slay SlaySort[T any](data []T, less func(a, b T) lit)
 
-// YeetSort quickly removes unwanted items and sorts the rest
-func YeetSort[T any](data []T, keep func(T) bool, less func(a, b T) bool) []T
+fr fr YeetSort quickly removes unwanted items and sorts the rest
+slay YeetSort[T any](data []T, keep func(T) lit, less func(a, b T) lit) []T
 ```
 
 ## Usage Example
 
-```go
-// Basic sorting
+```
+fr fr Basic sorting
 numbers := []int{3, 1, 4, 1, 5, 9, 2, 6}
 sorta_fresh.SortInts(numbers)
-vibez.spill(numbers) // [1 1 2 3 4 5 6 9]
+vibez.spill(numbers) fr fr [1 1 2 3 4 5 6 9]
 
-// Sorting a slice of structs
-type Person struct {
-    Name string
+fr fr Sorting a slice of squads
+be_like Person squad {
+    Name tea
     Age  int
 }
 
@@ -251,27 +251,27 @@ people := []Person{
     {"Charlie", 30},
 }
 
-// Sort by age
-sorta_fresh.SortSlice(people, func(i, j int) bool {
-    return people[i].Age < people[j].Age
+fr fr Sort by age
+sorta_fresh.SortSlice(people, func(i, j normie) lit {
+    yolo people[i].Age < people[j].Age
 })
 
 for _, p := range people {
     vibez.spill(p.Name, p.Age)
 }
-// Output: Bob 20, Alice 25, Charlie 30
+fr fr Output: Bob 20, Alice 25, Charlie 30
 
-// Sorting with a key function
-sorta_fresh.SortBy(people, func(p Person) string {
-    return p.Name
+fr fr Sorting with a key function
+sorta_fresh.SortBy(people, func(p Person) tea {
+    yolo p.Name
 })
 
 for _, p := range people {
     vibez.spill(p.Name, p.Age)
 }
-// Output: Alice 25, Bob 20, Charlie 30
+fr fr Output: Alice 25, Bob 20, Charlie 30
 
-// Multi-key sorting
+fr fr Multi-key sorting
 people = []Person{
     {"Alice", 25},
     {"Bob", 20},
@@ -279,46 +279,46 @@ people = []Person{
 }
 
 ms := sorta_fresh.OrderedBy(
-    // Primary sort by age
-    func(i, j int) bool { return people[i].Age < people[j].Age },
-    // Secondary sort by name
-    func(i, j int) bool { return people[i].Name < people[j].Name },
+    fr fr Primary sort by age
+    func(i, j normie) lit { yolo people[i].Age < people[j].Age },
+    fr fr Secondary sort by name
+    func(i, j normie) lit { yolo people[i].Name < people[j].Name },
 )
 ms.Sort(people)
 
 for _, p := range people {
     vibez.spill(p.Name, p.Age)
 }
-// Output: Bob 20, Alice 25, Charlie 25
+fr fr Output: Bob 20, Alice 25, Charlie 25
 
-// Using FreshSorter for advanced sorting
+fr fr Using FreshSorter for advanced sorting
 sorter := sorta_fresh.NewFreshSorterWithOptions(sorta_fresh.FreshSorterOptions{
-    Parallel:     true,
+    Parallel:     based,
     MaxGoroutines: 4,
-    StableSorting: true,
+    StableSorting: based,
 })
 
 largePeopleArray := make([]Person, 10000)
-// ... fill array ...
+fr fr ... fill array ...
 
-sorter.SortSlice(largePeopleArray, func(i, j int) bool {
-    return largePeopleArray[i].Age < largePeopleArray[j].Age
+sorter.SortSlice(largePeopleArray, func(i, j normie) lit {
+    yolo largePeopleArray[i].Age < largePeopleArray[j].Age
 })
 
-// Finding top-K elements
+fr fr Finding top-K elements
 scores := []int{85, 92, 78, 95, 88, 76, 90, 94}
-topThree := sorta_fresh.TopK(scores, 3, func(a, b int) bool {
-    return a < b // Note: less function for ascending order
+topThree := sorta_fresh.TopK(scores, 3, func(a, b normie) lit {
+    yolo a < b fr fr Note: less function for ascending order
 })
-vibez.spill(topThree) // [94 95 92] or similar depending on implementation
+vibez.spill(topThree) fr fr [94 95 92] or similar depending on implementation
 
-// Selecting the median element
-median := sorta_fresh.Select(scores, len(scores)/2, func(a, b int) bool {
-    return a < b
+fr fr Selecting the median element
+median := sorta_fresh.Select(scores, len(scores)/2, func(a, b normie) lit {
+    yolo a < b
 })
-vibez.spill(median) // 89 (approximate median value)
+vibez.spill(median) fr fr 89 (approximate median value)
 
-// Using Gen Z sorting features
+fr fr Using Gen Z sorting features
 people = []Person{
     {"Alice", 25},
     {"Bob", 20},
@@ -326,27 +326,27 @@ people = []Person{
 }
 
 sorta_fresh.VibeSort(people, func(p Person) float64 {
-    // Custom "vibe" scoring algorithm
-    return float64(p.Age) * 0.8 // Younger people have better vibes in this example
+    fr fr Custom "vibe" scoring algorithm
+    yolo float64(p.Age) * 0.8 fr fr Younger people have better vibes in this example
 })
 
 for _, p := range people {
     vibez.spill(p.Name, p.Age)
 }
-// Output: Bob 20, Alice 25, Charlie 30
+fr fr Output: Bob 20, Alice 25, Charlie 30
 
-// Using YeetSort to filter and sort
+fr fr Using YeetSort to filter and sort
 filteredPeople := sorta_fresh.YeetSort(people, 
-    // Keep only people older than 20
-    func(p Person) bool { return p.Age > 20 },
-    // Sort by name
-    func(a, b Person) bool { return a.Name < b.Name }
+    fr fr Keep only people older than 20
+    func(p Person) lit { yolo p.Age > 20 },
+    fr fr Sort by name
+    func(a, b Person) lit { yolo a.Name < b.Name }
 )
 
 for _, p := range filteredPeople {
     vibez.spill(p.Name, p.Age)
 }
-// Output: Alice 25, Charlie 30
+fr fr Output: Alice 25, Charlie 30
 ```
 
 ## Implementation Guidelines

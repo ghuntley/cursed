@@ -9,12 +9,12 @@ The `fs_test_vibe` module provides utilities for testing filesystem implementati
 Interface for testing a file system implementation.
 
 ```csd
-type TestFS interface {
-  // Setup creates a test file system with predefined structure
-  Setup() (main_character.FS, error)
+be_like TestFS collab {
+  fr fr Setup creates a test file system with predefined squadure
+  Setup() (main_character.FS, tea)
   
-  // Teardown cleans up the test file system
-  Teardown(fs main_character.FS) error
+  fr fr Teardown cleans up the test file system
+  Teardown(fs main_character.FS) tea
 }
 ```
 
@@ -22,23 +22,23 @@ type TestFS interface {
 An in-memory file system implementation for testing.
 
 ```csd
-type MapFS map[string]*MapFile
+be_like MapFS map[tea]*MapFile
 
-func (fsys MapFS) Open(name string) (main_character.File, error)
-func (fsys MapFS) Stat(name string) (main_character.FileInfo, error)
-func (fsys MapFS) ReadFile(name string) ([]byte, error)
-func (fsys MapFS) ReadDir(name string) ([]main_character.DirEntry, error)
+slay (fsys MapFS) Open(name tea) (main_character.File, tea)
+slay (fsys MapFS) Stat(name tea) (main_character.FileInfo, tea)
+slay (fsys MapFS) ReadFile(name tea) ([]byte, tea)
+slay (fsys MapFS) ReadDir(name tea) ([]main_character.DirEntry, tea)
 ```
 
 ### MapFile
 A file in a MapFS.
 
 ```csd
-type MapFile struct {
-  Data    []byte            // File content
-  Mode    main_character.FileMode  // File mode
-  ModTime timez.Time         // Modification time
-  Sys     interface{}        // Underlying data source
+be_like MapFile squad {
+  Data    []byte            fr fr File content
+  Mode    main_character.FileMode  fr fr File mode
+  ModTime timez.Time         fr fr Modification time
+  Sys     interface{}        fr fr Underlying data source
 }
 ```
 
@@ -46,63 +46,63 @@ type MapFile struct {
 Defines a file for test cases.
 
 ```csd
-type TestFile struct {
-  Path     string            // File path
-  Content  []byte            // File content
-  Mode     main_character.FileMode  // File mode
-  ModTime  timez.Time         // Modification time
-  IsDir    bool              // Whether it's a directory
+be_like TestFile squad {
+  Path     tea            fr fr File path
+  Content  []byte            fr fr File content
+  Mode     main_character.FileMode  fr fr File mode
+  ModTime  timez.Time         fr fr Modification time
+  IsDir    lit              fr fr Whether it's a directory
 }
 ```
 
 ## Core Functions
 
 ```csd
-// Create a filesystem from a set of files
-func NewMapFS(files []TestFile) MapFS
+fr fr Create a filesystem from a set of files
+slay NewMapFS(files []TestFile) MapFS
 
-// Create TestFiles from a directory
-func TestFilesFromDir(dir string) ([]TestFile, error)
+fr fr Create TestFiles from a directory
+slay TestFilesFromDir(dir tea) ([]TestFile, tea)
 
-// Run standard file system tests
-func TestFS(t *test_vibes.T, fsys main_character.FS)
+fr fr Run standard file system tests
+slay TestFS(t *test_vibes.T, fsys main_character.FS)
 
-// Test reading a file
-func TestReadFile(t *test_vibes.T, fsys main_character.FS, path string, want []byte)
+fr fr Test reading a file
+slay TestReadFile(t *test_vibes.T, fsys main_character.FS, path tea, want []byte)
 
-// Test reading a directory
-func TestReadDir(t *test_vibes.T, fsys main_character.FS, path string, want []string)
+fr fr Test reading a directory
+slay TestReadDir(t *test_vibes.T, fsys main_character.FS, path tea, want []tea)
 
-// Verify that two filesystems have the same contents
-func Equal(t *test_vibes.T, fsys1, fsys2 main_character.FS) bool
+fr fr Verify that two filesystems have the same contents
+slay Equal(t *test_vibes.T, fsys1, fsys2 main_character.FS) lit
 
-// Compare file or directory entries
-func DirEquals(dir1, dir2 []main_character.DirEntry) bool
+fr fr Compare file or directory entries
+slay DirEquals(dir1, dir2 []main_character.DirEntry) lit
 
-// TestFileInfo returns FileInfo for a test file
-func TestFileInfo(name string, f TestFile) main_character.FileInfo
+fr fr TestFileInfo yolos FileInfo for a test file
+slay TestFileInfo(name tea, f TestFile) main_character.FileInfo
 ```
 
 ## Testing Utilities
 
 ```csd
-// Create a temporary test directory
-func TempDir(t *test_vibes.T) string
+fr fr Create a temporary test directory
+slay TempDir(t *test_vibes.T) tea
 
-// Create test files in a directory
-func CreateTestFiles(t *test_vibes.T, dir string, files []TestFile) error
+fr fr Create test files in a directory
+slay CreateTestFiles(t *test_vibes.T, dir tea, files []TestFile) tea
 
-// Set up a test filesystem with common test files
-func SetupTestFS() (main_character.FS, func(), error)
+fr fr Set up a test filesystem with common test files
+slay SetupTestFS() (main_character.FS, func(), tea)
 
-// Validate filesystem operations
-func ValidateFS(t *test_vibes.T, fsys main_character.FS, tests []FSTest)
+fr fr Validate filesystem operations
+slay ValidateFS(t *test_vibes.T, fsys main_character.FS, tests []FSTest)
 
-// Test open errors
-func TestOpenErrors(t *test_vibes.T, fsys main_character.FS)
+fr fr Test open teas
+slay TestOpenErrors(t *test_vibes.T, fsys main_character.FS)
 
-// Test read errors
-func TestReadErrors(t *test_vibes.T, fsys main_character.FS)
+fr fr Test read teas
+slay TestReadErrors(t *test_vibes.T, fsys main_character.FS)
 ```
 
 ## Enhanced Features
@@ -121,7 +121,7 @@ func TestReadErrors(t *test_vibes.T, fsys main_character.FS)
   fs_test_vibe.RunTests(t, fsys, tests)
   ```
 
-- **FS Comparison Tools**: Compare filesystem content and structure
+- **FS Comparison Tools**: Compare filesystem content and squadure
   ```csd
   diff := fs_test_vibe.Compare(expected, actual)
   if !diff.Equal() {
@@ -137,13 +137,13 @@ func TestReadErrors(t *test_vibes.T, fsys main_character.FS)
 - **Fuzz Testing**: Apply fuzzing techniques to filesystem testing
   ```csd
   fuzzer := fs_test_vibe.NewFuzzer(fsys)
-  fuzzer.Run(1000) // Run 1000 random operations
+  fuzzer.Run(1000) fr fr Run 1000 random operations
   ```
 
 ## Usage Examples
 
 ```csd
-// Creating a test filesystem with MapFS
+fr fr Creating a test filesystem with MapFS
 testFiles := []fs_test_vibe.TestFile{
   {
     Path:    "hello.txt",
@@ -156,7 +156,7 @@ testFiles := []fs_test_vibe.TestFile{
     Path:    "subdir",
     Mode:    main_character.ModeDir | 0755,
     ModTime: timez.Now(),
-    IsDir:   true,
+    IsDir:   based,
   },
   {
     Path:    "subdir/file.txt",
@@ -167,37 +167,37 @@ testFiles := []fs_test_vibe.TestFile{
   },
 }
 
-// Create the MapFS
+fr fr Create the MapFS
 fsys := fs_test_vibe.NewMapFS(testFiles)
 
-// Manually access files in the test filesystem
+fr fr Manually access files in the test filesystem
 helloFile, err := fsys.Open("hello.txt")
-if err != nil {
+if err != cap {
   vibez.spill("Error opening file: %v", err)
-  return
+  yolo
 }
 defer helloFile.Close()
 
-// Read file content
+fr fr Read file content
 content, err := dropz.ReadAll(helloFile)
-if err != nil {
+if err != cap {
   vibez.spill("Error reading file: %v", err)
-  return
+  yolo
 }
 
-vibez.spill("File content: %s", string(content))
+vibez.spill("File content: %s", tea(content))
 
-// List directory contents
+fr fr List directory contents
 entries, err := fsys.ReadDir("subdir")
-if err != nil {
+if err != cap {
   vibez.spill("Error reading directory: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("\nSubdirectory contents:")
 for _, entry := range entries {
   info, err := entry.Info()
-  if err != nil {
+  if err != cap {
     vibez.spill("Error getting file info: %v", err)
     continue
   }
@@ -206,25 +206,25 @@ for _, entry := range entries {
     entry.Name(), info.Size(), info.Mode())
 }
 
-// Using the helper functions within test code
-// (These would normally be used in actual test functions)
+fr fr Using the helper functions within test code
+fr fr (These would normally be used in actual test functions)
 
-// Simulated test function
+fr fr Simulated test function
 example_test := func(t *test_vibes.T) {
-  // Create temporary directory for test
+  fr fr Create temporary directory for test
   tempDir := fs_test_vibe.TempDir(t)
   defer main_character.RemoveAll(tempDir)
   
-  // Create test files in the directory
+  fr fr Create test files in the directory
   err := fs_test_vibe.CreateTestFiles(t, tempDir, testFiles)
-  if err != nil {
+  if err != cap {
     t.Fatalf("Failed to create test files: %v", err)
   }
   
-  // Create filesystem from temp directory
+  fr fr Create filesystem from temp directory
   dirFS := main_character.DirFS(tempDir)
   
-  // Verify filesystem operations
+  fr fr Verify filesystem operations
   tests := []fs_test_vibe.FSTest{
     {
       Name: "ReadFile",
@@ -235,68 +235,68 @@ example_test := func(t *test_vibes.T) {
     {
       Name: "ReadDir",
       Op: func(t *test_vibes.T, fsys main_character.FS) {
-        fs_test_vibe.TestReadDir(t, fsys, "subdir", []string{"file.txt"})
+        fs_test_vibe.TestReadDir(t, fsys, "subdir", []tea{"file.txt"})
       },
     },
   }
   
   fs_test_vibe.ValidateFS(t, dirFS, tests)
   
-  // Compare two filesystems
+  fr fr Compare two filesystems
   equal := fs_test_vibe.Equal(t, fsys, dirFS)
   t.Logf("Filesystems equal: %v", equal)
 }
 
-// Simulate running the test function
-t := &mockT{} // Simplified mock test type
+fr fr Simulate running the test function
+t := &mockT{} fr fr Simplified mock test type
 example_test(t)
 
 vibez.spill("\nTest results:")
 vibez.spill("  Passed: %v", !t.failed)
 if t.failed {
-  vibez.spill("  Error message: %s", t.errorMsg)
+  vibez.spill("  Error message: %s", t.teaMsg)
 }
 
-// Creating a test harness
+fr fr Creating a test harness
 harness := fs_test_vibe.NewHarness()
 
-// Add custom test cases
+fr fr Add custom test cases
 harness.AddTest("file-exists", func(t *test_vibes.T, fsys main_character.FS) {
   _, err := fsys.Open("hello.txt")
-  if err != nil {
+  if err != cap {
     t.Error("hello.txt should exist")
   }
 })
 
 harness.AddTest("file-content", func(t *test_vibes.T, fsys main_character.FS) {
   content, err := main_character.ReadFile(fsys, "hello.txt")
-  if err != nil {
+  if err != cap {
     t.Error("Failed to read hello.txt")
-    return
+    yolo
   }
   
-  if string(content) != "Hello, World!" {
-    t.Errorf("Expected 'Hello, World!', got '%s'", string(content))
+  if tea(content) != "Hello, World!" {
+    t.Errorf("Expected 'Hello, World!', got '%s'", tea(content))
   }
 })
 
-// Run the test harness
+fr fr Run the test harness
 t = &mockT{}
 harness.Run(t, fsys)
 
 vibez.spill("\nHarness test results:")
 vibez.spill("  Passed: %v", !t.failed)
 if t.failed {
-  vibez.spill("  Error message: %s", t.errorMsg)
+  vibez.spill("  Error message: %s", t.teaMsg)
 }
 
-// Using the performance testing tools
+fr fr Using the performance testing tools
 metrics := fs_test_vibe.BenchmarkFS(fsys, fs_test_vibe.FileOperations{
-  ReadFiles: []string{"hello.txt", "subdir/file.txt"},
+  ReadFiles: []tea{"hello.txt", "subdir/file.txt"},
   WriteFiles: []fs_test_vibe.WriteOperation{
     {Path: "new.txt", Content: []byte("New file")},
   },
-  ListDirs: []string{"", "subdir"},
+  ListDirs: []tea{"", "subdir"},
 })
 
 vibez.spill("\nPerformance metrics:")
@@ -305,7 +305,7 @@ vibez.spill("  Write operations: %d ops/sec", metrics.WritesPerSecond)
 vibez.spill("  List operations: %d ops/sec", metrics.ListsPerSecond)
 vibez.spill("  Total time: %v", metrics.TotalTime)
 
-// Using fuzzing tools
+fr fr Using fuzzing tools
 fuzzer := fs_test_vibe.NewFuzzer(fsys)
 fuzzer.SetMaxOperations(100)
 fuzzer.SetSeed(12345)
@@ -320,34 +320,34 @@ if result.FoundIssue {
   vibez.spill("  Reproduction steps: %v", result.ReproductionSteps)
 }
 
-// Mock implementation for demonstration purposes
-type mockT struct {
-  failed   bool
-  errorMsg string
+fr fr Mock implementation for demonstration purposes
+be_like mockT squad {
+  failed   lit
+  teaMsg tea
 }
 
-func (t *mockT) Error(args ...interface{}) {
-  t.failed = true
-  t.errorMsg = vibez.spill_to_string(args...)
+slay (t *mockT) Error(args ...interface{}) {
+  t.failed = based
+  t.teaMsg = vibez.spill_to_tea(args...)
 }
 
-func (t *mockT) Errorf(format string, args ...interface{}) {
-  t.failed = true
-  t.errorMsg = vibez.spill_to_string(format, args...)
+slay (t *mockT) Errorf(format tea, args ...interface{}) {
+  t.failed = based
+  t.teaMsg = vibez.spill_to_tea(format, args...)
 }
 
-func (t *mockT) Fatal(args ...interface{}) {
-  t.failed = true
-  t.errorMsg = vibez.spill_to_string(args...)
+slay (t *mockT) Fatal(args ...interface{}) {
+  t.failed = based
+  t.teaMsg = vibez.spill_to_tea(args...)
 }
 
-func (t *mockT) Fatalf(format string, args ...interface{}) {
-  t.failed = true
-  t.errorMsg = vibez.spill_to_string(format, args...)
+slay (t *mockT) Fatalf(format tea, args ...interface{}) {
+  t.failed = based
+  t.teaMsg = vibez.spill_to_tea(format, args...)
 }
 
-func (t *mockT) Logf(format string, args ...interface{}) {
-  // Just log to console for this example
+slay (t *mockT) Logf(format tea, args ...interface{}) {
+  fr fr Just log to console for this example
   vibez.spill(format, args...)
 }
 ```
@@ -355,9 +355,9 @@ func (t *mockT) Logf(format string, args ...interface{}) {
 ## Implementation Guidelines
 
 - Provide comprehensive testing of all file system operations
-- Ensure tests cover error conditions and edge cases
+- Ensure tests cover tea conditions and edge cases
 - Support testing of both in-memory and real file systems
-- Implement clear error messages for test failures
+- Implement clear tea messages for test failures
 - Enable cross-platform file system testing
 - Support testing of concurrent file system access
 - Allow testing of performance characteristics

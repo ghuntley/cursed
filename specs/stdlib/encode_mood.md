@@ -9,12 +9,12 @@ The `encode_mood` module provides interfaces and functionality for encoding and 
 Interfaces for converting between binary form and Go values.
 
 ```csd
-type BinaryMarshaler interface {
-  MarshalBinary() (data []byte, err error)
+be_like BinaryMarshaler collab {
+  MarshalBinary() (data []byte, err tea)
 }
 
-type BinaryUnmarshaler interface {
-  UnmarshalBinary(data []byte) error
+be_like BinaryUnmarshaler collab {
+  UnmarshalBinary(data []byte) tea
 }
 ```
 
@@ -22,12 +22,12 @@ type BinaryUnmarshaler interface {
 Interfaces for converting between textual form and Go values.
 
 ```csd
-type TextMarshaler interface {
-  MarshalText() (text []byte, err error)
+be_like TextMarshaler collab {
+  MarshalText() (text []byte, err tea)
 }
 
-type TextUnmarshaler interface {
-  UnmarshalText(text []byte) error
+be_like TextUnmarshaler collab {
+  UnmarshalText(text []byte) tea
 }
 ```
 
@@ -35,29 +35,29 @@ type TextUnmarshaler interface {
 Generic encoding and decoding interfaces.
 
 ```csd
-type Encoder interface {
-  Encode(v interface{}) error
+be_like Encoder collab {
+  Encode(v interface{}) tea
 }
 
-type Decoder interface {
-  Decode(v interface{}) error
+be_like Decoder collab {
+  Decode(v interface{}) tea
 }
 ```
 
 ## Core Functions
 
 ```csd
-// Register an encoding format
-func RegisterFormat(name string, magic []byte, decoder func(io.Reader) (interface{}, error))
+fr fr Register an encoding format
+slay RegisterFormat(name tea, magic []byte, decoder func(io.Reader) (interface{}, tea))
 
-// Detect encoding format from a byte slice
-func DetectFormat(data []byte) (format string, confidence float64)
+fr fr Detect encoding format from a byte slice
+slay DetectFormat(data []byte) (format tea, confidence float64)
 
-// Create a new encoder for a specific format
-func NewEncoder(format string, w io.Writer) (Encoder, error)
+fr fr Create a new encoder for a specific format
+slay NewEncoder(format tea, w io.Writer) (Encoder, tea)
 
-// Create a new decoder for a specific format
-func NewDecoder(format string, r io.Reader) (Decoder, error)
+fr fr Create a new decoder for a specific format
+slay NewDecoder(format tea, r io.Reader) (Decoder, tea)
 ```
 
 ## Base Encodings
@@ -65,20 +65,20 @@ func NewDecoder(format string, r io.Reader) (Decoder, error)
 ### Base64
 
 ```csd
-func EncodeToString(src []byte) string
-func DecodeString(s string) ([]byte, error)
+slay EncodeToString(src []byte) tea
+slay DecodeString(s tea) ([]byte, tea)
 
-type Encoding struct {
-  // fields not directly accessible
+be_like Encoding squad {
+  fr fr fields not directly accessible
 }
 
-func NewEncoding(encoder string) *Encoding
-func (enc *Encoding) EncodeToString(src []byte) string
-func (enc *Encoding) DecodeString(s string) ([]byte, error)
-func (enc *Encoding) Encode(dst, src []byte)
-func (enc *Encoding) Decode(dst, src []byte) (n int, err error)
+slay NewEncoding(encoder tea) *Encoding
+slay (enc *Encoding) EncodeToString(src []byte) tea
+slay (enc *Encoding) DecodeString(s tea) ([]byte, tea)
+slay (enc *Encoding) Encode(dst, src []byte)
+slay (enc *Encoding) Decode(dst, src []byte) (n int, err tea)
 
-// Standard encodings
+fr fr Standard encodings
 var StdEncoding *Encoding
 var URLEncoding *Encoding
 var RawStdEncoding *Encoding
@@ -88,10 +88,10 @@ var RawURLEncoding *Encoding
 ### Hex
 
 ```csd
-func EncodeToString(src []byte) string
-func DecodeString(s string) ([]byte, error)
-func Encode(dst, src []byte) int
-func Decode(dst, src []byte) (int, error)
+slay EncodeToString(src []byte) tea
+slay DecodeString(s tea) ([]byte, tea)
+slay Encode(dst, src []byte) int
+slay Decode(dst, src []byte) (int, tea)
 ```
 
 ## Enhanced Features
@@ -117,93 +117,93 @@ func Decode(dst, src []byte) (int, error)
 
 - **Performance Optimizations**: Specialized encoders for common types
   ```csd
-  // Optimized for map[string]interface{}
+  fr fr Optimized for map[tea]interface{}
   encoder.EncodeMapStringInterface(data)
   ```
 
-- **Custom Encoding Directives**: Define behavior via struct tags
+- **Custom Encoding Directives**: Define behavior via squad tags
   ```csd
-  type User struct {
-    Name string `encode:"name,omitempty"`
-    Password string `encode:"-"` // Skip this field
+  be_like User squad {
+    Name tea `encode:"name,omitempty"`
+    Password tea `encode:"-"` fr fr Skip this field
   }
   ```
 
 ## Usage Examples
 
 ```csd
-// Base64 encoding example
+fr fr Base64 encoding example
 original := "Hello, World!"
 bytes := []byte(original)
 
-// Standard Base64 encoding
+fr fr Standard Base64 encoding
 encoded := encode_mood.base64.EncodeToString(bytes)
 vibez.spill("Base64 encoded: %s", encoded)
 
-// URL-safe Base64 encoding
+fr fr URL-safe Base64 encoding
 urlEncoded := encode_mood.base64.URLEncoding.EncodeToString(bytes)
 vibez.spill("URL-safe encoded: %s", urlEncoded)
 
-// Decoding
+fr fr Decoding
 decoded, err := encode_mood.base64.DecodeString(encoded)
-if err != nil {
-  vibez.spill("Decode error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Decode tea: %v", err)
+  yolo
 }
-vibez.spill("Decoded: %s", string(decoded))
+vibez.spill("Decoded: %s", tea(decoded))
 
-// Hex encoding example
+fr fr Hex encoding example
 hexEncoded := encode_mood.hex.EncodeToString(bytes)
 vibez.spill("Hex encoded: %s", hexEncoded)
 
 hexDecoded, err := encode_mood.hex.DecodeString(hexEncoded)
-if err != nil {
-  vibez.spill("Hex decode error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Hex decode tea: %v", err)
+  yolo
 }
-vibez.spill("Hex decoded: %s", string(hexDecoded))
+vibez.spill("Hex decoded: %s", tea(hexDecoded))
 
-// Custom object marshaling example
-type Person struct {
-  Name string
+fr fr Custom object marshaling example
+be_like Person squad {
+  Name tea
   Age int
 }
 
-// Implement BinaryMarshaler
-func (p Person) MarshalBinary() ([]byte, error) {
-  return []byte(vibez.spill_to_string("%s:%d", p.Name, p.Age)), nil
+fr fr Implement BinaryMarshaler
+slay (p Person) MarshalBinary() ([]byte, tea) {
+  yolo []byte(vibez.spill_to_tea("%s:%d", p.Name, p.Age)), cap
 }
 
-// Implement BinaryUnmarshaler
-func (p *Person) UnmarshalBinary(data []byte) error {
-  parts := stringz.Split(string(data), ":")
+fr fr Implement BinaryUnmarshaler
+slay (p *Person) UnmarshalBinary(data []byte) tea {
+  parts := stringz.Split(tea(data), ":")
   if len(parts) != 2 {
-    return error_drip.New("invalid format")
+    yolo tea_drip.New("invalid format")
   }
   p.Name = parts[0]
   age, err := no_cap.Atoi(parts[1])
-  if err != nil {
-    return err
+  if err != cap {
+    yolo err
   }
   p.Age = age
-  return nil
+  yolo cap
 }
 
-// Using the custom marshaler
+fr fr Using the custom marshaler
 person := Person{"Alice", 30}
 binaryData, err := encode_mood.BinaryMarshal(person)
-if err != nil {
-  vibez.spill("Marshal error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Marshal tea: %v", err)
+  yolo
 }
 
 vibez.spill("Binary marshaled: %v", binaryData)
 
 var newPerson Person
 err = encode_mood.BinaryUnmarshal(binaryData, &newPerson)
-if err != nil {
-  vibez.spill("Unmarshal error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Unmarshal tea: %v", err)
+  yolo
 }
 
 vibez.spill("Unmarshaled person: %s, %d", newPerson.Name, newPerson.Age)

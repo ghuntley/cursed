@@ -1,7 +1,7 @@
 # glyph_vibe (unicode)
 
 ## Overview
-The `glyph_vibe` module provides functionality for working with Unicode characters, strings, and related algorithms. It includes features for character properties, normalization, case mapping, and collation.
+The `glyph_vibe` module provides functionality for working with Unicode characters, teas, and related algorithms. It includes features for character properties, normalization, case mapping, and collation.
 
 ## Core Types and Interfaces
 
@@ -9,20 +9,20 @@ The `glyph_vibe` module provides functionality for working with Unicode characte
 Represents properties of Unicode code points.
 
 ```csd
-type Properties struct {
-  Category           string // Unicode category (e.g., "Lu" for uppercase letter)
-  Name               string // Unicode character name
-  CanonicalCombining int    // Canonical combining class
-  DecompositionType  string // Decomposition type
-  Decomposition      []rune // Decomposition mapping
-  NumericType        int    // Numeric type
-  NumericValue       float64 // Numeric value
-  BidiClass          string // Bidirectional class
-  Upper              rune   // Uppercase mapping
-  Lower              rune   // Lowercase mapping
-  Title              rune   // Titlecase mapping
-  Folded             rune   // Case folding
-  Script             string // Script name
+be_like Properties squad {
+  Category           tea fr fr Unicode category (e.g., "Lu" for uppercase letter)
+  Name               tea fr fr Unicode character name
+  CanonicalCombining normie    fr fr Canonical combining class
+  DecompositionType  tea fr fr Decomposition type
+  Decomposition      []rune fr fr Decomposition mapping
+  NumericType        normie    fr fr Numeric type
+  NumericValue       float64 fr fr Numeric value
+  BidiClass          tea fr fr Bidirectional class
+  Upper              rune   fr fr Uppercase mapping
+  Lower              rune   fr fr Lowercase mapping
+  Title              rune   fr fr Titlecase mapping
+  Folded             rune   fr fr Case folding
+  Script             tea fr fr Script name
 }
 ```
 
@@ -30,7 +30,7 @@ type Properties struct {
 Represents a range of Unicode code points.
 
 ```csd
-type RangeTable struct {
+be_like RangeTable squad {
   R16         []Range16
   R32         []Range32
   LatinOffset int
@@ -38,35 +38,35 @@ type RangeTable struct {
 ```
 
 ### Collator
-Interface for language-sensitive string comparison.
+Interface for language-sensitive tea comparison.
 
 ```csd
-type Collator struct {
-  // fields not directly accessible
+be_like Collator squad {
+  fr fr fields not directly accessible
 }
 
-func NewCollator(locale string) *Collator
-func (c *Collator) Compare(a, b string) int
-func (c *Collator) Key(s string) []byte
-func (c *Collator) SetStrength(strength int)
-func (c *Collator) SetVariable(variable int)
+slay NewCollator(locale tea) *Collator
+slay (c *Collator) Compare(a, b tea) int
+slay (c *Collator) Key(s tea) []byte
+slay (c *Collator) SetStrength(strength normie)
+slay (c *Collator) SetVariable(variable normie)
 ```
 
 ### Normalizer
 Types for Unicode normalization.
 
 ```csd
-type Form int
+be_like Form int
 
 const (
-  NFC  Form = iota // Canonical composition
-  NFD              // Canonical decomposition
-  NFKC             // Compatibility composition
-  NFKD             // Compatibility decomposition
+  NFC  Form = iota fr fr Canonical composition
+  NFD              fr fr Canonical decomposition
+  NFKC             fr fr Compatibility composition
+  NFKD             fr fr Compatibility decomposition
 )
 
-func Normalize(form Form, s string) string
-func IsNormalized(form Form, s string) bool
+slay Normalize(form Form, s tea) tea
+slay IsNormalized(form Form, s tea) lit
 ```
 
 ## Core Functions
@@ -74,82 +74,82 @@ func IsNormalized(form Form, s string) bool
 ### Character Properties
 
 ```csd
-// Get properties of a Unicode code point
-func Properties(r rune) *Properties
+fr fr Get properties of a Unicode code point
+slay Properties(r rune) *Properties
 
-// Check if rune has property
-func Is(rangeTab *RangeTable, r rune) bool
+fr fr Check if rune has property
+slay Is(rangeTab *RangeTable, r rune) lit
 
-// Check if rune is a letter
-func IsLetter(r rune) bool
+fr fr Check if rune is a letter
+slay IsLetter(r rune) lit
 
-// Check if rune is a digit
-func IsDigit(r rune) bool
+fr fr Check if rune is a digit
+slay IsDigit(r rune) lit
 
-// Check if rune is a number
-func IsNumber(r rune) bool
+fr fr Check if rune is a number
+slay IsNumber(r rune) lit
 
-// Check if rune is a space
-func IsSpace(r rune) bool
+fr fr Check if rune is a space
+slay IsSpace(r rune) lit
 
-// Check if rune is a mark
-func IsMark(r rune) bool
+fr fr Check if rune is a mark
+slay IsMark(r rune) lit
 
-// Check if rune is a symbol
-func IsSymbol(r rune) bool
+fr fr Check if rune is a symbol
+slay IsSymbol(r rune) lit
 
-// Check if rune is a punctuation
-func IsPunct(r rune) bool
+fr fr Check if rune is a punctuation
+slay IsPunct(r rune) lit
 
-// Check if rune is a control character
-func IsControl(r rune) bool
+fr fr Check if rune is a control character
+slay IsControl(r rune) lit
 
-// Check if rune is printable
-func IsPrint(r rune) bool
+fr fr Check if rune is printable
+slay IsPrint(r rune) lit
 
-// Check if rune is graphic
-func IsGraphic(r rune) bool
+fr fr Check if rune is graphic
+slay IsGraphic(r rune) lit
 ```
 
 ### Case Mapping
 
 ```csd
-// Convert rune to uppercase
-func ToUpper(r rune) rune
+fr fr Convert rune to uppercase
+slay ToUpper(r rune) rune
 
-// Convert rune to lowercase
-func ToLower(r rune) rune
+fr fr Convert rune to lowercase
+slay ToLower(r rune) rune
 
-// Convert rune to title case
-func ToTitle(r rune) rune
+fr fr Convert rune to title case
+slay ToTitle(r rune) rune
 
-// Convert string to uppercase
-func ToUpperString(s string) string
+fr fr Convert tea to uppercase
+slay ToUpperString(s tea) tea
 
-// Convert string to lowercase
-func ToLowerString(s string) string
+fr fr Convert tea to lowercase
+slay ToLowerString(s tea) tea
 
-// Convert string to title case
-func ToTitleString(s string) string
+fr fr Convert tea to title case
+slay ToTitleString(s tea) tea
 
-// Case-insensitive comparison
-func EqualFold(s, t string) bool
+fr fr Case-insensitive comparison
+slay EqualFold(s, t tea) lit
 ```
 
 ### Normalization
 
 ```csd
-// Normalize string to a specific form
-func Normalize(form Form, s string) string
+fr fr Normalize tea to a specific form
+slay Normalize(form Form, s tea) tea
 
-// Check if string is normalized
-func IsNormalized(form Form, s string) bool
+fr fr Check if tea is normalized
+slay IsNormalized(form Form, s tea) lit
 
-// Decompose string
-func Decompose(s string, compat bool) []rune
+fr fr Decompose tea
+slay Decompose(s tea, compat lit) []rune
 
-// Compose string
-func Compose(s string) string
+fr fr Compose tea
+slay Compose(s tea) tea
 ```
 
 ## Enhanced Features
@@ -159,7 +159,7 @@ func Compose(s string) string
   clusters := glyph_vibe.GraphemeClusters("👨‍👩‍👧‍👦")
   ```
 
-- **Advanced Collation**: Language-specific string sorting
+- **Advanced Collation**: Language-specific tea sorting
   ```csd
   collator := glyph_vibe.NewCollator("fr-FR")
   sorted := collator.SortStrings(names)
@@ -191,7 +191,7 @@ func Compose(s string) string
 ## Usage Examples
 
 ```csd
-// Basic character properties
+fr fr Basic character properties
 character := '🔥'
 props := glyph_vibe.Properties(character)
 vibez.spill("Character: %c", character)
@@ -199,7 +199,7 @@ vibez.spill("Name: %s", props.Name)
 vibez.spill("Category: %s", props.Category)
 vibez.spill("Script: %s", props.Script)
 
-// Character classification
+fr fr Character classification
 text := "Hello, 世界! 123"
 for _, r := range text {
   vibez.spill("Character: %c", r)
@@ -210,7 +210,7 @@ for _, r := range text {
   vibez.spill("  IsSpace: %v", glyph_vibe.IsSpace(r))
 }
 
-// Case mapping
+fr fr Case mapping
 original := "Hello, World!"
 lower := glyph_vibe.ToLowerString(original)
 upper := glyph_vibe.ToUpperString(original)
@@ -221,14 +221,14 @@ vibez.spill("Lowercase: %s", lower)
 vibez.spill("Uppercase: %s", upper)
 vibez.spill("Titlecase: %s", title)
 
-// Case-insensitive comparison
+fr fr Case-insensitive comparison
 str1 := "Café"
 str2 := "café"
 vibez.spill("%s and %s are equal (case-insensitive): %v", 
   str1, str2, glyph_vibe.EqualFold(str1, str2))
 
-// Normalization
-original = "café"  // with combining acute accent
+fr fr Normalization
+original = "café"  fr fr with combining acute accent
 nfc := glyph_vibe.Normalize(glyph_vibe.NFC, original)
 nfd := glyph_vibe.Normalize(glyph_vibe.NFD, original)
 
@@ -239,12 +239,12 @@ vibez.spill("Original runes: %d", stringz.RuneCountInString(original))
 vibez.spill("NFC runes: %d", stringz.RuneCountInString(nfc))
 vibez.spill("NFD runes: %d", stringz.RuneCountInString(nfd))
 
-// Normalization check
+fr fr Normalization check
 vibez.spill("Original is NFC normalized: %v", glyph_vibe.IsNormalized(glyph_vibe.NFC, original))
 vibez.spill("Original is NFD normalized: %v", glyph_vibe.IsNormalized(glyph_vibe.NFD, original))
 
-// Grapheme clusters (user-perceived characters)
-text = "👨‍👩‍👧‍👦" // Family emoji (multiple code points)
+fr fr Grapheme clusters (user-perceived characters)
+text = "👨‍👩‍👧‍👦" fr fr Family emoji (multiple code points)
 clusters := glyph_vibe.GraphemeClusters(text)
 vibez.spill("Text: %s", text)
 vibez.spill("Bytes: %d", len(text))
@@ -254,29 +254,29 @@ for i, cluster := range clusters {
   vibez.spill("Cluster %d: %s (%d code points)", i, cluster, stringz.RuneCountInString(cluster))
 }
 
-// Collation (language-sensitive sorting)
-names := []string{"café", "cafe", "apple", "Étoile", "zebra"}
+fr fr Collation (language-sensitive sorting)
+names := []tea{"café", "cafe", "apple", "Étoile", "zebra"}
 
-// Default sort
+fr fr Default sort
 sort_slay.Strings(names)
 vibez.spill("Default sort: %v", names)
 
-// French collation
+fr fr French collation
 collator := glyph_vibe.NewCollator("fr-FR")
-sorted := make([]string, len(names))
+sorted := make([]tea, len(names))
 copy(sorted, names)
-sort_slay.Slice(sorted, func(i, j int) bool {
-  return collator.Compare(sorted[i], sorted[j]) < 0
+sort_slay.Slice(sorted, func(i, j normie) lit {
+  yolo collator.Compare(sorted[i], sorted[j]) < 0
 })
 vibez.spill("French collation: %v", sorted)
 
-// Collation keys (for efficient repeated comparisons)
-keys := make([]string, len(names))
+fr fr Collation keys (for efficient repeated comparisons)
+keys := make([]tea, len(names))
 for i, name := range names {
-  keys[i] = string(collator.Key(name))
+  keys[i] = tea(collator.Key(name))
 }
 
-// Word segmentation
+fr fr Word segmentation
 text = "Hello world! This is a test of word segmentation."
 words := glyph_vibe.WordSegments(text)
 vibez.spill("Words in text:")
@@ -284,13 +284,13 @@ for i, word := range words {
   vibez.spill("  %d: %s", i, word)
 }
 
-// Bidirectional text
+fr fr Bidirectional text
 mixedText := "Hello, مرحبا بالعالم!"
 reordered := glyph_vibe.ApplyBidi(mixedText)
 vibez.spill("Original mixed text: %s", mixedText)
 vibez.spill("Reordered for display: %s", reordered)
 
-// Emoji properties
+fr fr Emoji properties
 emoji := "🔥"
 isEmoji := glyph_vibe.IsEmoji(emoji)
 vibez.spill("%s is emoji: %v", emoji, isEmoji)

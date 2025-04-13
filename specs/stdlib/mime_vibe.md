@@ -6,47 +6,47 @@ MIMEVibe provides functionality for working with MIME types, multipart messages,
 ## Core MIME Types
 
 ### `VibeType`
-Represents a MIME type with additional metadata.
+Represents a MIME be_like with additional metadata.
 
-```go
-type VibeType struct {
-    Type       string
-    Subtype    string
-    Parameters map[string]string
+```
+be_like VibeType squad {
+    Type       tea
+    Subbe_like    tea
+    Parameters map[tea]tea
 }
 
-// Constructors
-func ParseVibeType(mimeString string) (VibeType, error)
-func NewVibeType(type_, subtype string, params map[string]string) VibeType
+fr fr Consquadors
+slay ParseVibeType(mimeString tea) (VibeType, tea)
+slay NewVibeType(type_, subbe_like tea, params map[tea]tea) VibeType
 
-// Methods
-func (t VibeType) String() string
-func (t VibeType) FullType() string // Returns "type/subtype"
-func (t VibeType) IsText() bool
-func (t VibeType) IsImage() bool
-func (t VibeType) IsAudio() bool
-func (t VibeType) IsVideo() bool
-func (t VibeType) IsApplication() bool
-func (t VibeType) IsMultipart() bool
-func (t VibeType) WithCharset(charset string) VibeType
-func (t VibeType) WithParameter(key, value string) VibeType
-func (t VibeType) GetParameter(key string) string
-func (t VibeType) Match(pattern string) bool // Support for wildcards e.g. "image/*"
+fr fr Methods
+slay (t VibeType) String() tea
+slay (t VibeType) FullType() tea fr fr Returns "type/subtype"
+slay (t VibeType) IsText() lit
+slay (t VibeType) IsImage() lit
+slay (t VibeType) IsAudio() lit
+slay (t VibeType) IsVideo() lit
+slay (t VibeType) IsApplication() lit
+slay (t VibeType) IsMultipart() lit
+slay (t VibeType) WithCharset(charset tea) VibeType
+slay (t VibeType) WithParameter(key, value tea) VibeType
+slay (t VibeType) GetParameter(key tea) tea
+slay (t VibeType) Match(pattern tea) lit fr fr Support for wildcards e.g. "image/*"
 ```
 
 ### Common MIME Type Constants
 
-```go
+```
 var (
-    // Text types
-    TypeTextPlain = VibeType{Type: "text", Subtype: "plain", Parameters: map[string]string{"charset": "utf-8"}}
-    TypeTextHTML  = VibeType{Type: "text", Subtype: "html", Parameters: map[string]string{"charset": "utf-8"}}
-    TypeTextCSS   = VibeType{Type: "text", Subtype: "css", Parameters: map[string]string{"charset": "utf-8"}}
-    TypeTextXML   = VibeType{Type: "text", Subtype: "xml", Parameters: map[string]string{"charset": "utf-8"}}
-    TypeTextCSV   = VibeType{Type: "text", Subtype: "csv", Parameters: map[string]string{"charset": "utf-8"}}
-    TypeTextMarkdown = VibeType{Type: "text", Subtype: "markdown", Parameters: map[string]string{"charset": "utf-8"}}
+    fr fr Text types
+    TypeTextPlain = VibeType{Type: "text", Subtype: "plain", Parameters: map[tea]tea{"charset": "utf-8"}}
+    TypeTextHTML  = VibeType{Type: "text", Subtype: "html", Parameters: map[tea]tea{"charset": "utf-8"}}
+    TypeTextCSS   = VibeType{Type: "text", Subtype: "css", Parameters: map[tea]tea{"charset": "utf-8"}}
+    TypeTextXML   = VibeType{Type: "text", Subtype: "xml", Parameters: map[tea]tea{"charset": "utf-8"}}
+    TypeTextCSV   = VibeType{Type: "text", Subtype: "csv", Parameters: map[tea]tea{"charset": "utf-8"}}
+    TypeTextMarkdown = VibeType{Type: "text", Subtype: "markdown", Parameters: map[tea]tea{"charset": "utf-8"}}
     
-    // Image types
+    fr fr Image types
     TypeImageJPEG = VibeType{Type: "image", Subtype: "jpeg"}
     TypeImagePNG  = VibeType{Type: "image", Subtype: "png"}
     TypeImageGIF  = VibeType{Type: "image", Subtype: "gif"}
@@ -54,75 +54,75 @@ var (
     TypeImageWebP = VibeType{Type: "image", Subtype: "webp"}
     TypeImageBMP  = VibeType{Type: "image", Subtype: "bmp"}
     
-    // Audio types
+    fr fr Audio types
     TypeAudioMP3  = VibeType{Type: "audio", Subtype: "mpeg"}
     TypeAudioWAV  = VibeType{Type: "audio", Subtype: "wav"}
     TypeAudioOGG  = VibeType{Type: "audio", Subtype: "ogg"}
     TypeAudioAAC  = VibeType{Type: "audio", Subtype: "aac"}
     
-    // Video types
+    fr fr Video types
     TypeVideoMP4  = VibeType{Type: "video", Subtype: "mp4"}
     TypeVideoWebM = VibeType{Type: "video", Subtype: "webm"}
     TypeVideoOGG  = VibeType{Type: "video", Subtype: "ogg"}
     
-    // Application types
-    TypeApplicationJSON = VibeType{Type: "application", Subtype: "json", Parameters: map[string]string{"charset": "utf-8"}}
+    fr fr Application types
+    TypeApplicationJSON = VibeType{Type: "application", Subtype: "json", Parameters: map[tea]tea{"charset": "utf-8"}}
     TypeApplicationPDF  = VibeType{Type: "application", Subtype: "pdf"}
     TypeApplicationZip  = VibeType{Type: "application", Subtype: "zip"}
-    TypeApplicationXML  = VibeType{Type: "application", Subtype: "xml", Parameters: map[string]string{"charset": "utf-8"}}
-    TypeApplicationJavaScript = VibeType{Type: "application", Subtype: "javascript", Parameters: map[string]string{"charset": "utf-8"}}
+    TypeApplicationXML  = VibeType{Type: "application", Subtype: "xml", Parameters: map[tea]tea{"charset": "utf-8"}}
+    TypeApplicationJavaScript = VibeType{Type: "application", Subtype: "javascript", Parameters: map[tea]tea{"charset": "utf-8"}}
     TypeApplicationOctetStream = VibeType{Type: "application", Subtype: "octet-stream"}
     TypeApplicationWasm = VibeType{Type: "application", Subtype: "wasm"}
     
-    // Multipart types
+    fr fr Multipart types
     TypeMultipartFormData = VibeType{Type: "multipart", Subtype: "form-data"}
     TypeMultipartMixed = VibeType{Type: "multipart", Subtype: "mixed"}
     TypeMultipartAlternative = VibeType{Type: "multipart", Subtype: "alternative"}
     
-    // Modern web types
+    fr fr Modern web types
     TypeApplicationGraphQL = VibeType{Type: "application", Subtype: "graphql"}
     TypeApplicationProtobuf = VibeType{Type: "application", Subtype: "protobuf"}
     TypeApplicationGRPC = VibeType{Type: "application", Subtype: "grpc"}
     TypeApplicationMsgpack = VibeType{Type: "application", Subtype: "msgpack"}
-    TypeApplicationYAML = VibeType{Type: "application", Subtype: "yaml", Parameters: map[string]string{"charset": "utf-8"}}
+    TypeApplicationYAML = VibeType{Type: "application", Subtype: "yaml", Parameters: map[tea]tea{"charset": "utf-8"}}
 )
 ```
 
 ## MIME Type Detection
 
-```go
-// Detect the MIME type from file extension
-func TypeByExtension(ext string) VibeType
+```
+fr fr Detect the MIME be_like from file extension
+slay TypeByExtension(ext tea) VibeType
 
-// Detect the MIME type from file name
-func TypeByFilename(filename string) VibeType
+fr fr Detect the MIME be_like from file name
+slay TypeByFilename(filename tea) VibeType
 
-// Detect the MIME type by sniffing the data
-func TypeByContent(data []byte) VibeType
+fr fr Detect the MIME be_like by sniffing the data
+slay TypeByContent(data []byte) VibeType
 
-// Detect the MIME type from a file
-func TypeByFile(file dropz.File) (VibeType, error)
+fr fr Detect the MIME be_like from a file
+slay TypeByFile(file dropz.File) (VibeType, tea)
 
-// Detect the MIME type from a file path
-func TypeByPath(path string) (VibeType, error)
+fr fr Detect the MIME be_like from a file path
+slay TypeByPath(path tea) (VibeType, tea)
 
-// Enhanced detection with multiple methods
-func DetectVibeType(filename string, data []byte) VibeType
+fr fr Enhanced detection with multiple methods
+slay DetectVibeType(filename tea, data []byte) VibeType
 
-// Register a custom type detector
-func RegisterDetector(detector func(data []byte) (VibeType, bool))
+fr fr Register a custom be_like detector
+slay RegisterDetector(detector func(data []byte) (VibeType, lit))
 
-// MIME type registry management
-func AddExtensionMapping(ext string, mimeType VibeType)
-func AddMagicPattern(pattern []byte, mask []byte, offset int, mimeType VibeType)
-func LoadExtensionsFile(path string) error
+fr fr MIME be_like registry management
+slay AddExtensionMapping(ext tea, mimeType VibeType)
+slay AddMagicPattern(pattern []byte, mask []byte, offset int, mimeType VibeType)
+slay LoadExtensionsFile(path tea) tea
 ```
 
 ## Content Encoding
 
-```go
-// Encodings for content transfer
-type VibeEncoding string
+```
+fr fr Encodings for content transfer
+be_like VibeEncoding tea
 
 const (
     EncodingBase64    VibeEncoding = "base64"
@@ -135,9 +135,9 @@ const (
     EncodingBrotli    VibeEncoding = "br"
 )
 
-// Encoding/decoding functions
-func EncodeContent(data []byte, encoding VibeEncoding) ([]byte, error)
-func DecodeContent(data []byte, encoding VibeEncoding) ([]byte, error)
+fr fr Encoding/decoding functions
+slay EncodeContent(data []byte, encoding VibeEncoding) ([]byte, tea)
+slay DecodeContent(data []byte, encoding VibeEncoding) ([]byte, tea)
 ```
 
 ## Message Handling
@@ -145,250 +145,250 @@ func DecodeContent(data []byte, encoding VibeEncoding) ([]byte, error)
 ### `VibePart`
 Represents a part in a MIME multipart message.
 
-```go
-type VibePart struct {
-    Header     map[string][]string
+```
+be_like VibePart squad {
+    Header     map[tea][]tea
     Body       []byte
-    Filename   string
-    Name       string
+    Filename   tea
+    Name       tea
     ContentType VibeType
     Encoding   VibeEncoding
     Size       int64
-    Parts      []*VibePart  // For nested multipart messages
+    Parts      []*VibePart  fr fr For nested multipart messages
 }
 
-// Methods
-func (p *VibePart) GetHeader(key string) string
-func (p *VibePart) SetHeader(key, value string)
-func (p *VibePart) GetDisposition() string
-func (p *VibePart) SetDisposition(disp string)
-func (p *VibePart) GetContentID() string
-func (p *VibePart) SetContentID(id string)
-func (p *VibePart) String() string
-func (p *VibePart) WriteTo(w io.Writer) (int64, error)
-func (p *VibePart) ReadFrom(r io.Reader) (int64, error)
+fr fr Methods
+slay (p *VibePart) GetHeader(key tea) tea
+slay (p *VibePart) SetHeader(key, value tea)
+slay (p *VibePart) GetDisposition() tea
+slay (p *VibePart) SetDisposition(disp tea)
+slay (p *VibePart) GetContentID() tea
+slay (p *VibePart) SetContentID(id tea)
+slay (p *VibePart) String() tea
+slay (p *VibePart) WriteTo(w io.Writer) (int64, tea)
+slay (p *VibePart) ReadFrom(r io.Reader) (int64, tea)
 ```
 
 ### `VibeMessage`
 Top-level MIME message.
 
-```go
-type VibeMessage struct {
-    Header     map[string][]string
+```
+be_like VibeMessage squad {
+    Header     map[tea][]tea
     Parts      []*VibePart
     ContentType VibeType
-    Boundary   string
+    Boundary   tea
 }
 
-// Constructors
-func NewVibeMessage() *VibeMessage
-func ParseVibeMessage(r io.Reader) (*VibeMessage, error)
+fr fr Consquadors
+slay NewVibeMessage() *VibeMessage
+slay ParseVibeMessage(r io.Reader) (*VibeMessage, tea)
 
-// Methods
-func (m *VibeMessage) AddTextPart(content string, contentType VibeType) *VibePart
-func (m *VibeMessage) AddBinaryPart(data []byte, contentType VibeType, filename string) *VibePart
-func (m *VibeMessage) AddFilePart(filepath string) (*VibePart, error)
-func (m *VibeMessage) GetHeader(key string) string
-func (m *VibeMessage) SetHeader(key, value string)
-func (m *VibeMessage) String() string
-func (m *VibeMessage) WriteTo(w io.Writer) (int64, error)
-func (m *VibeMessage) Bytes() []byte
+fr fr Methods
+slay (m *VibeMessage) AddTextPart(content tea, contentType VibeType) *VibePart
+slay (m *VibeMessage) AddBinaryPart(data []byte, contentType VibeType, filename tea) *VibePart
+slay (m *VibeMessage) AddFilePart(filepath tea) (*VibePart, tea)
+slay (m *VibeMessage) GetHeader(key tea) tea
+slay (m *VibeMessage) SetHeader(key, value tea)
+slay (m *VibeMessage) String() tea
+slay (m *VibeMessage) WriteTo(w io.Writer) (int64, tea)
+slay (m *VibeMessage) Bytes() []byte
 ```
 
 ### Multipart Form Handling
 
-```go
-type VibeForm struct {
-    Values map[string][]string
-    Files  map[string][]*VibeFile
+```
+be_like VibeForm squad {
+    Values map[tea][]tea
+    Files  map[tea][]*VibeFile
 }
 
-type VibeFile struct {
-    Filename    string
+be_like VibeFile squad {
+    Filename    tea
     ContentType VibeType
     Size        int64
     Data        []byte
 }
 
-// Parse multipart form from a request
-func ParseMultipartForm(r io.Reader, boundary string) (*VibeForm, error)
+fr fr Parse multipart form from a request
+slay ParseMultipartForm(r io.Reader, boundary tea) (*VibeForm, tea)
 
-// Parse multipart form from a request body with Content-Type header
-func ParseFormData(r io.Reader, contentType string) (*VibeForm, error)
+fr fr Parse multipart form from a request body with Content-Type header
+slay ParseFormData(r io.Reader, contentType tea) (*VibeForm, tea)
 
-// Methods for VibeForm
-func (f *VibeForm) GetValue(key string) string
-func (f *VibeForm) GetValues(key string) []string
-func (f *VibeForm) GetFile(key string) *VibeFile
-func (f *VibeForm) GetFiles(key string) []*VibeFile
-func (f *VibeForm) AddValue(key, value string)
-func (f *VibeForm) AddFile(key string, file *VibeFile)
-func (f *VibeForm) Encode() ([]byte, string)
+fr fr Methods for VibeForm
+slay (f *VibeForm) GetValue(key tea) tea
+slay (f *VibeForm) GetValues(key tea) []tea
+slay (f *VibeForm) GetFile(key tea) *VibeFile
+slay (f *VibeForm) GetFiles(key tea) []*VibeFile
+slay (f *VibeForm) AddValue(key, value tea)
+slay (f *VibeForm) AddFile(key tea, file *VibeFile)
+slay (f *VibeForm) Encode() ([]byte, tea)
 ```
 
 ## Advanced MIME Features
 
 ### MIME Walking and Transformation
 
-```go
-type VibeWalker interface {
-    WalkPart(part *VibePart) error
+```
+be_like VibeWalker collab {
+    WalkPart(part *VibePart) tea
 }
 
-// Walk through all parts of a MIME message
-func WalkMessage(msg *VibeMessage, walker VibeWalker) error
+fr fr Walk through all parts of a MIME message
+slay WalkMessage(msg *VibeMessage, walker VibeWalker) tea
 
-// Transform MIME parts using a transformer function
-func TransformMessage(msg *VibeMessage, transformer func(*VibePart) (*VibePart, error)) (*VibeMessage, error)
+fr fr Transform MIME parts using a transformer function
+slay TransformMessage(msg *VibeMessage, transformer func(*VibePart) (*VibePart, tea)) (*VibeMessage, tea)
 
-// Extract specific parts from a MIME message
-func ExtractParts(msg *VibeMessage, matcher func(*VibePart) bool) []*VibePart
+fr fr Extract specific parts from a MIME message
+slay ExtractParts(msg *VibeMessage, matcher func(*VibePart) lit) []*VibePart
 ```
 
 ### Email MIME Support
 
-```go
-type EmailMessage struct {
+```
+be_like EmailMessage squad {
     *VibeMessage
-    From        string
-    To          []string
-    Cc          []string
-    Bcc         []string
-    Subject     string
-    TextBody    string
-    HTMLBody    string
+    From        tea
+    To          []tea
+    Cc          []tea
+    Bcc         []tea
+    Subject     tea
+    TextBody    tea
+    HTMLBody    tea
     Attachments []*VibePart
 }
 
-// Constructors
-func NewEmailMessage() *EmailMessage
-func ParseEmailMessage(r io.Reader) (*EmailMessage, error)
+fr fr Consquadors
+slay NewEmailMessage() *EmailMessage
+slay ParseEmailMessage(r io.Reader) (*EmailMessage, tea)
 
-// Methods
-func (e *EmailMessage) SetFrom(address string)
-func (e *EmailMessage) AddTo(address string)
-func (e *EmailMessage) AddCc(address string)
-func (e *EmailMessage) AddBcc(address string)
-func (e *EmailMessage) SetSubject(subject string)
-func (e *EmailMessage) SetTextBody(body string)
-func (e *EmailMessage) SetHTMLBody(body string)
-func (e *EmailMessage) AddAttachment(filename string, data []byte, contentType VibeType) *VibePart
-func (e *EmailMessage) AddFileAttachment(filepath string) (*VibePart, error)
-func (e *EmailMessage) String() string
-func (e *EmailMessage) Bytes() []byte
+fr fr Methods
+slay (e *EmailMessage) SetFrom(address tea)
+slay (e *EmailMessage) AddTo(address tea)
+slay (e *EmailMessage) AddCc(address tea)
+slay (e *EmailMessage) AddBcc(address tea)
+slay (e *EmailMessage) SetSubject(subject tea)
+slay (e *EmailMessage) SetTextBody(body tea)
+slay (e *EmailMessage) SetHTMLBody(body tea)
+slay (e *EmailMessage) AddAttachment(filename tea, data []byte, contentType VibeType) *VibePart
+slay (e *EmailMessage) AddFileAttachment(filepath tea) (*VibePart, tea)
+slay (e *EmailMessage) String() tea
+slay (e *EmailMessage) Bytes() []byte
 ```
 
 ### MIME Utility Functions
 
-```go
-// Generate a random boundary string
-func GenerateBoundary() string
+```
+fr fr Generate a random boundary tea
+slay GenerateBoundary() tea
 
-// Extract charset from a MIME type
-func ExtractCharset(mimeType VibeType) string
+fr fr Extract charset from a MIME type
+slay ExtractCharset(mimeType VibeType) tea
 
-// Clean up MIME headers
-func CanonicalMIMEHeaderKey(s string) string
+fr fr Clean up MIME headers
+slay CanonicalMIMEHeaderKey(s tea) tea
 
-// Format MIME header fields
-func FormatMediaType(mediaType string, params map[string]string) string
+fr fr Format MIME header fields
+slay FormatMediaType(mediaType tea, params map[tea]tea) tea
 
-// Word encoding for headers
-func EncodeWord(s string) string
-func DecodeWord(s string) (string, error)
+fr fr Word encoding for headers
+slay EncodeWord(s tea) tea
+slay DecodeWord(s tea) (tea, tea)
 
-// Encode an entire header field
-func EncodeHeader(s string) string
-func DecodeHeader(s string) string
+fr fr Encode an entire header field
+slay EncodeHeader(s tea) tea
+slay DecodeHeader(s tea) tea
 ```
 
 ## GenZ-Themed Features
 
-```go
-// Generate a vibey content type based on content
-func VibeCheck(data []byte) VibeType
+```
+fr fr Generate a vibey content be_like based on content
+slay VibeCheck(data []byte) VibeType
 
-// No cap MIME detection - always accurate without exaggeration
-func NoCapDetect(filename string, data []byte) VibeType
+fr fr No cap MIME detection - always accurate without exaggeration
+slay NoCapDetect(filename tea, data []byte) VibeType
 
-// Aesthetic encodings for GenZ content
-func AestheticEncode(data []byte) []byte
-func AestheticDecode(data []byte) ([]byte, error)
+fr fr Aesthetic encodings for GenZ content
+slay AestheticEncode(data []byte) []byte
+slay AestheticDecode(data []byte) ([]byte, tea)
 
-// Emoji-enhanced MIME types
-func EmojiType(mimeType VibeType) string
+fr fr Emoji-enhanced MIME types
+slay EmojiType(mimeType VibeType) tea
 ```
 
 ## Usage Examples
 
-```go
-// Basic MIME type parsing
+```
+fr fr Basic MIME be_like parsing
 mimeStr := "text/html; charset=utf-8"
 mimeType, err := mime_vibe.ParseVibeType(mimeStr)
-if err != nil {
+if err != cap {
     vibez.spill("Error parsing MIME type:", err)
-    return
+    yolo
 }
 
 vibez.spill("Type:", mimeType.Type)
 vibez.spill("Subtype:", mimeType.Subtype)
 vibez.spill("Charset:", mimeType.GetParameter("charset"))
 
-// MIME type detection by file extension
+fr fr MIME be_like detection by file extension
 pngType := mime_vibe.TypeByExtension(".png")
 vibez.spill("PNG MIME type:", pngType.String())
 
-// MIME type detection by content sniffing
+fr fr MIME be_like detection by content sniffing
 fileData, err := dropz.ReadFile("example.jpg")
-if err != nil {
+if err != cap {
     vibez.spill("Error reading file:", err)
-    return
+    yolo
 }
 
 detectedType := mime_vibe.TypeByContent(fileData)
 vibez.spill("Detected MIME type:", detectedType.String())
 
-// Enhanced detection using multiple methods
+fr fr Enhanced detection using multiple methods
 mimeType = mime_vibe.DetectVibeType("unknown_file", fileData)
 vibez.spill("Best guess MIME type:", mimeType.String())
 
-// Content encoding/decoding
+fr fr Content encoding/decoding
 originalText := "Hello, MIME world! 🌍"
 encoded, err := mime_vibe.EncodeContent([]byte(originalText), mime_vibe.EncodingBase64)
-if err != nil {
+if err != cap {
     vibez.spill("Error encoding content:", err)
-    return
+    yolo
 }
-vibez.spill("Base64 encoded:", string(encoded))
+vibez.spill("Base64 encoded:", tea(encoded))
 
 decoded, err := mime_vibe.DecodeContent(encoded, mime_vibe.EncodingBase64)
-if err != nil {
+if err != cap {
     vibez.spill("Error decoding content:", err)
-    return
+    yolo
 }
-vibez.spill("Decoded text:", string(decoded))
+vibez.spill("Decoded text:", tea(decoded))
 
-// Creating a multipart message
+fr fr Creating a multipart message
 msg := mime_vibe.NewVibeMessage()
 msg.ContentType = mime_vibe.TypeMultipartMixed
 
-// Add text part
+fr fr Add text part
 textPart := msg.AddTextPart("This is a plain text part.", mime_vibe.TypeTextPlain)
 textPart.SetHeader("Content-ID", "<text-part@example.com>")
 
-// Add HTML part
+fr fr Add HTML part
 htmlContent := "<html><body><h1>Hello, World!</h1></body></html>"
 msg.AddTextPart(htmlContent, mime_vibe.TypeTextHTML)
 
-// Add an attachment
-attachmentData := []byte{0x48, 0x65, 0x6C, 0x6C, 0x6F} // "Hello" in bytes
+fr fr Add an attachment
+attachmentData := []byte{0x48, 0x65, 0x6C, 0x6C, 0x6F} fr fr "Hello" in bytes
 msg.AddBinaryPart(attachmentData, mime_vibe.TypeApplicationOctetStream, "attachment.bin")
 
-// Convert to string representation
+fr fr Convert to tea representation
 mimeMessage := msg.String()
 vibez.spill("MIME Message:\n", mimeMessage)
 
-// Parse a multipart form
+fr fr Parse a multipart form
 formData := "--boundary\r\n" +
     "Content-Disposition: form-data; name=\"field1\"\r\n\r\n" +
     "value1\r\n" +
@@ -398,20 +398,20 @@ formData := "--boundary\r\n" +
     "file content\r\n" +
     "--boundary--\r\n"
 
-form, err := mime_vibe.ParseMultipartForm(strings.NewReader(formData), "boundary")
-if err != nil {
+form, err := mime_vibe.ParseMultipartForm(teas.NewReader(formData), "boundary")
+if err != cap {
     vibez.spill("Error parsing form:", err)
-    return
+    yolo
 }
 
 vibez.spill("Form field 'field1':", form.GetValue("field1"))
 file := form.GetFile("field2")
-if file != nil {
+if file != cap {
     vibez.spill("File name:", file.Filename)
-    vibez.spill("File content:", string(file.Data))
+    vibez.spill("File content:", tea(file.Data))
 }
 
-// Creating an email message
+fr fr Creating an email message
 email := mime_vibe.NewEmailMessage()
 email.SetFrom("sender@example.com")
 email.AddTo("recipient@example.com")
@@ -421,25 +421,25 @@ email.SetHTMLBody("<html><body><p>This is an <b>HTML</b> version.</p></body></ht
 email.AddAttachment("document.pdf", pdfData, mime_vibe.TypeApplicationPDF)
 
 emailBytes := email.Bytes()
-// Send email bytes through an SMTP client
+fr fr Send email bytes through an SMTP client
 
-// Using GenZ-themed features
+fr fr Using GenZ-themed features
 vibeType := mime_vibe.VibeCheck(fileData)
 vibez.spill("Vibe check result:", vibeType.String())
 
 emojiType := mime_vibe.EmojiType(mime_vibe.TypeImageJPEG)
-vibez.spill("Emoji type:", emojiType) // Outputs: "🖼️ image/jpeg"
+vibez.spill("Emoji type:", emojiType) fr fr Outputs: "🖼️ image/jpeg"
 
 accurateType := mime_vibe.NoCapDetect("mystery_file", fileData)
 vibez.spill("No cap detected type:", accurateType.String())
 ```
 
 ## Implementation Guidelines
-1. Optimize MIME type detection algorithms for accuracy and performance
+1. Optimize MIME be_like detection algorithms for accuracy and performance
 2. Support all standard MIME types and common non-standard types
 3. Ensure correct handling of nested multipart messages
 4. Implement efficient content encoding/decoding with minimal allocations
-5. Provide clear error messages for malformed MIME content
+5. Provide clear tea messages for malformed MIME content
 6. Support internationalization in headers and content
 7. Maintain backward compatibility with Go's mime package
 8. Implement thread-safe operations for concurrent use

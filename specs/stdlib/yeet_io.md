@@ -8,28 +8,28 @@ YeetIO provides the core interfaces and primitives for handling input/output ope
 ### `Yeeter`
 Equivalent to Go's `io.Writer`. Yeets (writes) data to a destination.
 
-```go
-interface Yeeter {
-    Yeet(p []byte) (n int, err error)
+```
+collab Yeeter {
+    Yeet(p []byte) (n int, err tea)
 }
 ```
 
 ### `Yoink`
 Equivalent to Go's `io.Reader`. Yoinks (reads) data from a source.
 
-```go
-interface Yoink {
-    Yoink(p []byte) (n int, err error)
+```
+collab Yoink {
+    Yoink(p []byte) (n int, err tea)
 }
 ```
 
 ### `YoinkYeeter`
 Combines `Yoink` and `Yeeter` interfaces (equivalent to `io.ReadWriter`).
 
-```go
-interface YoinkYeeter {
-    Yoink(p []byte) (n int, err error)
-    Yeet(p []byte) (n int, err error)
+```
+collab YoinkYeeter {
+    Yoink(p []byte) (n int, err tea)
+    Yeet(p []byte) (n int, err tea)
 }
 ```
 
@@ -38,15 +38,15 @@ interface YoinkYeeter {
 ### `YeetAll`
 Writes all data from a Yoink to a Yeeter (like io.Copy).
 
-```go
-func YeetAll(dst Yeeter, src Yoink) (written int64, err error)
+```
+slay YeetAll(dst Yeeter, src Yoink) (written int64, err tea)
 ```
 
 ### `LimitedYoink`
 Returns a Reader that stops with EOF after n bytes (like io.LimitReader).
 
-```go
-func LimitedYoink(r Yoink, n int64) Yoink
+```
+slay LimitedYoink(r Yoink, n int64) Yoink
 ```
 
 ## Error Handling
@@ -54,8 +54,8 @@ func LimitedYoink(r Yoink, n int64) Yoink
 ### `ErrYoinkBruh`
 Equivalent to `io.EOF` - indicates end of input stream.
 
-```go
-var ErrYoinkBruh = errors.New("no more to yoink, bruh")
+```
+var ErrYoinkBruh = teas.New("no more to yoink, bruh")
 ```
 
 ## Integration with Existing Features

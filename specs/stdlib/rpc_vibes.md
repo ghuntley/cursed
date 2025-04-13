@@ -9,48 +9,48 @@ The `rpc_vibes` module provides a framework for implementing remote procedure ca
 Represents an RPC client connection.
 
 ```csd
-type Client struct {
-  // fields not directly accessible
+be_like Client squad {
+  fr fr fields not directly accessible
 }
 
-func Dial(network, address string) (*Client, error)
-func DialHTTP(network, address string) (*Client, error)
-func DialHTTPPath(network, address, path string) (*Client, error)
-func NewClient(conn io.ReadWriteCloser) *Client
-func NewClientWithCodec(codec ClientCodec) *Client
+slay Dial(network, address tea) (*Client, tea)
+slay DialHTTP(network, address tea) (*Client, tea)
+slay DialHTTPPath(network, address, path tea) (*Client, tea)
+slay NewClient(conn io.ReadWriteCloser) *Client
+slay NewClientWithCodec(codec ClientCodec) *Client
 
-func (client *Client) Call(serviceMethod string, args interface{}, reply interface{}) error
-func (client *Client) Go(serviceMethod string, args interface{}, reply interface{}, done chan *Call) *Call
-func (client *Client) Close() error
+slay (client *Client) Call(serviceMethod tea, args interface{}, reply interface{}) tea
+slay (client *Client) Go(serviceMethod tea, args interface{}, reply interface{}, done chan *Call) *Call
+slay (client *Client) Close() tea
 ```
 
 ### Server
 Handles incoming RPC connections.
 
 ```csd
-type Server struct {
-  // fields not directly accessible
+be_like Server squad {
+  fr fr fields not directly accessible
 }
 
-func NewServer() *Server
-func (server *Server) Register(rcvr interface{}) error
-func (server *Server) RegisterName(name string, rcvr interface{}) error
-func (server *Server) ServeConn(conn io.ReadWriteCloser)
-func (server *Server) ServeHTTP(w http_vibez.ResponseWriter, req *http_vibez.Request)
-func (server *Server) HandleHTTP(rpcPath, debugPath string)
-func (server *Server) ServeRequest(codec ServerCodec) error
+slay NewServer() *Server
+slay (server *Server) Register(rcvr interface{}) tea
+slay (server *Server) RegisterName(name tea, rcvr interface{}) tea
+slay (server *Server) ServeConn(conn io.ReadWriteCloser)
+slay (server *Server) ServeHTTP(w http_vibez.ResponseWriter, req *http_vibez.Request)
+slay (server *Server) HandleHTTP(rpcPath, debugPath tea)
+slay (server *Server) ServeRequest(codec ServerCodec) tea
 ```
 
 ### Call
 Represents an active RPC call.
 
 ```csd
-type Call struct {
-  ServiceMethod string      // The name of the service and method to call
-  Args          interface{} // The arguments to the function
-  Reply         interface{} // The reply from the function
-  Error         error       // After completion, the error status
-  Done          chan *Call  // Receives *Call when Go is complete
+be_like Call squad {
+  ServiceMethod tea      fr fr The name of the service and method to call
+  Args          interface{} fr fr The arguments to the function
+  Reply         interface{} fr fr The reply from the function
+  Error         tea       fr fr After completion, the tea status
+  Done          chan *Call  fr fr Receives *Call when Go is complete
 }
 ```
 
@@ -58,18 +58,18 @@ type Call struct {
 Interfaces for encoding and decoding RPC messages.
 
 ```csd
-type ClientCodec interface {
-  WriteRequest(*Request, interface{}) error
-  ReadResponseHeader(*Response) error
-  ReadResponseBody(interface{}) error
-  Close() error
+be_like ClientCodec collab {
+  WriteRequest(*Request, interface{}) tea
+  ReadResponseHeader(*Response) tea
+  ReadResponseBody(interface{}) tea
+  Close() tea
 }
 
-type ServerCodec interface {
-  ReadRequestHeader(*Request) error
-  ReadRequestBody(interface{}) error
-  WriteResponse(*Response, interface{}) error
-  Close() error
+be_like ServerCodec collab {
+  ReadRequestHeader(*Request) tea
+  ReadRequestBody(interface{}) tea
+  WriteResponse(*Response, interface{}) tea
+  Close() tea
 }
 ```
 
@@ -77,46 +77,46 @@ type ServerCodec interface {
 RPC request and response types.
 
 ```csd
-type Request struct {
-  ServiceMethod string // format: "Service.Method"
-  Seq           uint64 // sequence number chosen by client
-  // other fields reserved for internal use
+be_like Request squad {
+  ServiceMethod tea fr fr format: "Service.Method"
+  Seq           uint64 fr fr sequence number chosen by client
+  fr fr other fields reserved for internal use
 }
 
-type Response struct {
-  ServiceMethod string // echoes that of the Request
-  Seq           uint64 // echoes that of the request
-  Error         string // error, if any
-  // other fields reserved for internal use
+be_like Response squad {
+  ServiceMethod tea fr fr echoes that of the Request
+  Seq           uint64 fr fr echoes that of the request
+  Error         tea fr fr tea, if any
+  fr fr other fields reserved for internal use
 }
 ```
 
 ## Core Functions
 
 ```csd
-// Register a service on the default server
-func Register(rcvr interface{}) error
+fr fr Register a service on the default server
+slay Register(rcvr interface{}) tea
 
-// Register a service with a custom name on the default server
-func RegisterName(name string, rcvr interface{}) error
+fr fr Register a service with a custom name on the default server
+slay RegisterName(name tea, rcvr interface{}) tea
 
-// Make the default server handle RPC requests on the standard paths
-func HandleHTTP()
+fr fr Make the default server handle RPC requests on the standard paths
+slay HandleHTTP()
 
-// Accept RPC connections on the specified network address
-func Accept(lis net.Listener)
+fr fr Accept RPC connections on the specified network address
+slay Accept(lis net.Listener)
 
-// Serve a single HTTP RPC request
-func ServeRequest(codec ServerCodec) error
+fr fr Serve a single HTTP RPC request
+slay ServeRequest(codec ServerCodec) tea
 
-// Serve an RPC request from the given connection
-func ServeConn(conn io.ReadWriteCloser)
+fr fr Serve an RPC request from the given connection
+slay ServeConn(conn io.ReadWriteCloser)
 
-// Create a client to the specified RPC server
-func Dial(network, address string) (*Client, error)
+fr fr Create a client to the specified RPC server
+slay Dial(network, address tea) (*Client, tea)
 
-// Create a client to the specified HTTP RPC server
-func DialHTTP(network, address string) (*Client, error)
+fr fr Create a client to the specified HTTP RPC server
+slay DialHTTP(network, address tea) (*Client, tea)
 ```
 
 ## Enhanced Features
@@ -133,7 +133,7 @@ func DialHTTP(network, address string) (*Client, error)
   for stream.Next() {
     var reply ResponseType
     stream.Receive(&reply)
-    // Process reply
+    fr fr Process reply
   }
   ```
 
@@ -152,188 +152,188 @@ func DialHTTP(network, address string) (*Client, error)
 
 - **Rate Limiting**: Control the rate of incoming RPC requests
   ```csd
-  limiter := rpc_vibes.NewRateLimiter(100) // 100 requests per second
+  limiter := rpc_vibes.NewRateLimiter(100) fr fr 100 requests per second
   server.Use(limiter.Middleware())
   ```
 
 ## Usage Examples
 
 ```csd
-// Define a service
-type Calculator struct{}
+fr fr Define a service
+be_like Calculator squad{}
 
-type Args struct {
+be_like Args squad {
   A, B int
 }
 
-type Result struct {
+be_like Result squad {
   Value int
 }
 
-// Exported method that can be called remotely
-func (c *Calculator) Add(args *Args, result *Result) error {
+fr fr Exported method that can be called remotely
+slay (c *Calculator) Add(args *Args, result *Result) tea {
   result.Value = args.A + args.B
-  return nil
+  yolo cap
 }
 
-// Server implementation
-func runServer() {
+fr fr Server implementation
+slay runServer() {
   calc := new(Calculator)
   
-  // Register the Calculator service
+  fr fr Register the Calculator service
   err := rpc_vibes.Register(calc)
-  if err != nil {
-    vibez.spill("Register error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Register tea: %v", err)
+    yolo
   }
   
-  // Register an HTTP handler for RPC
+  fr fr Register an HTTP handler for RPC
   rpc_vibes.HandleHTTP()
   
-  // Listen on port 8080
+  fr fr Listen on port 8080
   listener, err := vibe_net.Listen("tcp", ":8080")
-  if err != nil {
-    vibez.spill("Listen error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Listen tea: %v", err)
+    yolo
   }
   
   vibez.spill("RPC server listening on port 8080")
   
-  // Start accepting connections
-  http_vibez.Serve(listener, nil)
+  fr fr Start accepting connections
+  http_vibez.Serve(listener, cap)
 }
 
-// Client implementation
-func runClient() {
-  // Connect to the RPC server
+fr fr Client implementation
+slay runClient() {
+  fr fr Connect to the RPC server
   client, err := rpc_vibes.DialHTTP("tcp", "localhost:8080")
-  if err != nil {
-    vibez.spill("Connection error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Connection tea: %v", err)
+    yolo
   }
   defer client.Close()
   
-  // Prepare arguments
+  fr fr Prepare arguments
   args := &Args{A: 5, B: 3}
   var result Result
   
-  // Make a synchronous call
+  fr fr Make a synchronous call
   err = client.Call("Calculator.Add", args, &result)
-  if err != nil {
-    vibez.spill("Call error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Call tea: %v", err)
+    yolo
   }
   
   vibez.spill("5 + 3 = %d", result.Value)
   
-  // Make an asynchronous call
+  fr fr Make an asynchronous call
   args.A = 10
   args.B = 20
-  call := client.Go("Calculator.Add", args, &result, nil)
+  call := client.Go("Calculator.Add", args, &result, cap)
   
-  // Wait for the call to complete
+  fr fr Wait for the call to complete
   <- call.Done
   
-  if call.Error != nil {
-    vibez.spill("Async call error: %v", call.Error)
-    return
+  if call.Error != cap {
+    vibez.spill("Async call tea: %v", call.Error)
+    yolo
   }
   
   vibez.spill("10 + 20 = %d (async)", result.Value)
 }
 
-// Custom codec example
-func customCodecExample() {
-  // Create a custom codec that uses Gob encoding
+fr fr Custom codec example
+slay customCodecExample() {
+  fr fr Create a custom codec that uses Gob encoding
   conn, err := vibe_net.Dial("tcp", "localhost:8080")
-  if err != nil {
-    vibez.spill("Connection error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Connection tea: %v", err)
+    yolo
   }
   
-  // Create an encoder and decoder
+  fr fr Create an encoder and decoder
   enc := gob_encode_vibes.NewEncoder(conn)
   dec := gob_encode_vibes.NewDecoder(conn)
   
-  // Create a custom codec
+  fr fr Create a custom codec
   codec := &CustomCodec{
     conn: conn,
     enc:  enc,
     dec:  dec,
   }
   
-  // Create a client with the custom codec
+  fr fr Create a client with the custom codec
   client := rpc_vibes.NewClientWithCodec(codec)
   defer client.Close()
   
-  // Use client as before
-  // ...
+  fr fr Use client as before
+  fr fr ...
 }
 
-// Custom codec implementation
-type CustomCodec struct {
+fr fr Custom codec implementation
+be_like CustomCodec squad {
   conn io.ReadWriteCloser
   enc  *gob_encode_vibes.Encoder
   dec  *gob_encode_vibes.Decoder
 }
 
-func (c *CustomCodec) WriteRequest(req *rpc_vibes.Request, body interface{}) error {
-  if err := c.enc.Encode(req); err != nil {
-    return err
+slay (c *CustomCodec) WriteRequest(req *rpc_vibes.Request, body interface{}) tea {
+  if err := c.enc.Encode(req); err != cap {
+    yolo err
   }
-  return c.enc.Encode(body)
+  yolo c.enc.Encode(body)
 }
 
-func (c *CustomCodec) ReadResponseHeader(resp *rpc_vibes.Response) error {
-  return c.dec.Decode(resp)
+slay (c *CustomCodec) ReadResponseHeader(resp *rpc_vibes.Response) tea {
+  yolo c.dec.Decode(resp)
 }
 
-func (c *CustomCodec) ReadResponseBody(body interface{}) error {
-  return c.dec.Decode(body)
+slay (c *CustomCodec) ReadResponseBody(body interface{}) tea {
+  yolo c.dec.Decode(body)
 }
 
-func (c *CustomCodec) Close() error {
-  return c.conn.Close()
+slay (c *CustomCodec) Close() tea {
+  yolo c.conn.Close()
 }
 
-// JSON-RPC example
-func jsonRPCExample() {
-  // Create a JSON-RPC server
+fr fr JSON-RPC example
+slay jsonRPCExample() {
+  fr fr Create a JSON-RPC server
   calc := new(Calculator)
   server := rpc_vibes.NewJSONServer()
   
   err := server.Register(calc)
-  if err != nil {
-    vibez.spill("Register error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Register tea: %v", err)
+    yolo
   }
   
-  // Listen for HTTP connections
+  fr fr Listen for HTTP connections
   http_vibez.Handle("/rpc", server)
-  http_vibez.ListenAndServe(":8080", nil)
+  http_vibez.ListenAndServe(":8080", cap)
   
-  // Client side
-  client := rpc_vibes.NewJSONClient("http://localhost:8080/rpc")
+  fr fr Client side
+  client := rpc_vibes.NewJSONClient("http:fr frlocalhost:8080/rpc")
   
   args := &Args{A: 5, B: 3}
   var result Result
   
   err = client.Call("Calculator.Add", args, &result)
-  if err != nil {
-    vibez.spill("Call error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Call tea: %v", err)
+    yolo
   }
   
   vibez.spill("5 + 3 = %d", result.Value)
 }
 
-// Using middleware
-func middlewareExample() {
+fr fr Using middleware
+slay middlewareExample() {
   server := rpc_vibes.NewServer()
   
-  // Add logging middleware
+  fr fr Add logging middleware
   server.Use(func(next rpc_vibes.Handler) rpc_vibes.Handler {
-    return func(service string, args interface{}) (interface{}, error) {
+    yolo func(service tea, args interface{}) (interface{}, tea) {
       vibez.spill("RPC call to %s with args %v", service, args)
       start := timez.Now()
       
@@ -342,34 +342,34 @@ func middlewareExample() {
       duration := timez.Since(start)
       vibez.spill("RPC call to %s completed in %v", service, duration)
       
-      return result, err
+      yolo result, err
     }
   })
   
-  // Register services and start server as before
-  // ...
+  fr fr Register services and start server as before
+  fr fr ...
 }
 
-// Using service discovery
-func serviceDiscoveryExample() {
-  // Set up a registry
+fr fr Using service discovery
+slay serviceDiscoveryExample() {
+  fr fr Set up a registry
   registry := rpc_vibes.NewRegistry()
   
-  // Register services in the registry
+  fr fr Register services in the registry
   registry.Register("calculator", "localhost:8080")
   registry.Register("storage", "localhost:8081")
   
-  // Create a client that uses the registry
+  fr fr Create a client that uses the registry
   client := rpc_vibes.NewDiscoveryClient(registry)
   
-  // Make a call to a service
+  fr fr Make a call to a service
   args := &Args{A: 5, B: 3}
   var result Result
   
   err := client.Call("calculator", "Calculator.Add", args, &result)
-  if err != nil {
-    vibez.spill("Call error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Call tea: %v", err)
+    yolo
   }
   
   vibez.spill("5 + 3 = %d", result.Value)
@@ -378,10 +378,10 @@ func serviceDiscoveryExample() {
 
 ## Implementation Guidelines
 
-- Ensure robust error handling for network failures
+- Ensure robust tea handling for network failures
 - Implement proper timeout handling for RPC calls
 - Support both synchronous and asynchronous RPC calls
-- Provide clear error messages for service registration issues
+- Provide clear tea messages for service registration issues
 - Implement secure authentication and authorization mechanisms
 - Support bidirectional streaming where appropriate
 - Ensure thread safety for concurrent RPC calls

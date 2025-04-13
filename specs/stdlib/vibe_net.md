@@ -1,218 +1,218 @@
 # VibeNet (net package)
 
 ## Overview
-VibeNet provides a portable interface for network I/O, including TCP/IP, UDP, domain name resolution, and socket programming with modern vibes. It's inspired by Go's net package but with enhanced usability, extended protocols, and performance optimizations.
+VibeNet provides a portable collab for network I/O, including TCP/IP, UDP, domain name resolution, and socket programming with modern vibes. It's inspired by Go's net package but with enhanced usability, extended protocols, and performance optimizations.
 
 ## Core Types
 
 ### IP Addressing
 
-```go
-type IPVibe struct {}
+```
+be_like IPVibe squad {}
 
-// Constructors
-func ParseIP(s string) IPVibe
-func IPv4(a, b, c, d byte) IPVibe
+fr fr Consquadors
+slay ParseIP(s tea) IPVibe
+slay IPv4(a, b, c, d byte) IPVibe
 
-// Methods
-func (ip IPVibe) String() string
-func (ip IPVibe) IsLoopback() bool
-func (ip IPVibe) IsMulticast() bool
-func (ip IPVibe) IsGlobalUnicast() bool
-func (ip IPVibe) IsLinkLocalUnicast() bool
-func (ip IPVibe) IsLinkLocalMulticast() bool
-func (ip IPVibe) IsInterfaceLocalMulticast() bool
-func (ip IPVibe) IsPrivate() bool
-func (ip IPVibe) IsUnspecified() bool
-func (ip IPVibe) To4() IPVibe
-func (ip IPVibe) To16() IPVibe
-func (ip IPVibe) Equal(x IPVibe) bool
-func (ip IPVibe) IsIPv4() bool
-func (ip IPVibe) IsIPv6() bool
-func (ip IPVibe) MarshalText() ([]byte, error)
-func (ip *IPVibe) UnmarshalText(text []byte) error
+fr fr Methods
+slay (ip IPVibe) String() tea
+slay (ip IPVibe) IsLoopback() lit
+slay (ip IPVibe) IsMulticast() lit
+slay (ip IPVibe) IsGlobalUnicast() lit
+slay (ip IPVibe) IsLinkLocalUnicast() lit
+slay (ip IPVibe) IsLinkLocalMulticast() lit
+slay (ip IPVibe) IsInterfaceLocalMulticast() lit
+slay (ip IPVibe) IsPrivate() lit
+slay (ip IPVibe) IsUnspecified() lit
+slay (ip IPVibe) To4() IPVibe
+slay (ip IPVibe) To16() IPVibe
+slay (ip IPVibe) Equal(x IPVibe) lit
+slay (ip IPVibe) IsIPv4() lit
+slay (ip IPVibe) IsIPv6() lit
+slay (ip IPVibe) MarshalText() ([]byte, tea)
+slay (ip *IPVibe) UnmarshalText(text []byte) tea
 
-type IPNetVibe struct {
+be_like IPNetVibe squad {
     IP        IPVibe
     Mask      IPMaskVibe
     PrefixLen int
 }
 
-// Constructor
-func ParseCIDR(s string) (IPVibe, *IPNetVibe, error)
+fr fr Consquador
+slay ParseCIDR(s tea) (IPVibe, *IPNetVibe, tea)
 
-// Methods
-func (n *IPNetVibe) Contains(ip IPVibe) bool
-func (n *IPNetVibe) Network() string
-func (n *IPNetVibe) String() string
+fr fr Methods
+slay (n *IPNetVibe) Contains(ip IPVibe) lit
+slay (n *IPNetVibe) Network() tea
+slay (n *IPNetVibe) String() tea
 
-type IPMaskVibe []byte
+be_like IPMaskVibe []byte
 
-// Constructors
-func IPv4Mask(a, b, c, d byte) IPMaskVibe
-func CIDRMask(ones, bits int) IPMaskVibe
+fr fr Consquadors
+slay IPv4Mask(a, b, c, d byte) IPMaskVibe
+slay CIDRMask(ones, bits normie) IPMaskVibe
 
-// Methods
-func (m IPMaskVibe) String() string
-func (m IPMaskVibe) Size() (ones, bits int)
+fr fr Methods
+slay (m IPMaskVibe) String() tea
+slay (m IPMaskVibe) Size() (ones, bits normie)
 ```
 
 ### Network Address
 
-```go
-type AddrVibe interface {
-    Network() string
-    String() string
+```
+be_like AddrVibe collab {
+    Network() tea
+    String() tea
 }
 
-type TCPAddrVibe struct {}
+be_like TCPAddrVibe squad {}
 
-// Constructors
-func ResolveTCPAddr(network, address string) (*TCPAddrVibe, error)
+fr fr Consquadors
+slay ResolveTCPAddr(network, address tea) (*TCPAddrVibe, tea)
 
-// Methods
-func (a *TCPAddrVibe) Network() string
-func (a *TCPAddrVibe) String() string
-func (a *TCPAddrVibe) IP() IPVibe
-func (a *TCPAddrVibe) Port() int
-func (a *TCPAddrVibe) Zone() string
+fr fr Methods
+slay (a *TCPAddrVibe) Network() tea
+slay (a *TCPAddrVibe) String() tea
+slay (a *TCPAddrVibe) IP() IPVibe
+slay (a *TCPAddrVibe) Port() int
+slay (a *TCPAddrVibe) Zone() tea
 
-type UDPAddrVibe struct {}
+be_like UDPAddrVibe squad {}
 
-// Constructors
-func ResolveUDPAddr(network, address string) (*UDPAddrVibe, error)
+fr fr Consquadors
+slay ResolveUDPAddr(network, address tea) (*UDPAddrVibe, tea)
 
-// Methods
-func (a *UDPAddrVibe) Network() string
-func (a *UDPAddrVibe) String() string
-func (a *UDPAddrVibe) IP() IPVibe
-func (a *UDPAddrVibe) Port() int
-func (a *UDPAddrVibe) Zone() string
+fr fr Methods
+slay (a *UDPAddrVibe) Network() tea
+slay (a *UDPAddrVibe) String() tea
+slay (a *UDPAddrVibe) IP() IPVibe
+slay (a *UDPAddrVibe) Port() int
+slay (a *UDPAddrVibe) Zone() tea
 
-type UnixAddrVibe struct {}
+be_like UnixAddrVibe squad {}
 
-// Constructors
-func ResolveUnixAddr(network, address string) (*UnixAddrVibe, error)
+fr fr Consquadors
+slay ResolveUnixAddr(network, address tea) (*UnixAddrVibe, tea)
 
-// Methods
-func (a *UnixAddrVibe) Network() string
-func (a *UnixAddrVibe) String() string
-func (a *UnixAddrVibe) Name() string
+fr fr Methods
+slay (a *UnixAddrVibe) Network() tea
+slay (a *UnixAddrVibe) String() tea
+slay (a *UnixAddrVibe) Name() tea
 ```
 
 ### Connections
 
-```go
-type ConnVibe interface {
-    Read(b []byte) (n int, err error)
-    Write(b []byte) (n int, err error)
-    Close() error
+```
+be_like ConnVibe collab {
+    Read(b []byte) (n int, err tea)
+    Write(b []byte) (n int, err tea)
+    Close() tea
     LocalAddr() AddrVibe
     RemoteAddr() AddrVibe
-    SetDeadline(t time.Time) error
-    SetReadDeadline(t time.Time) error
-    SetWriteDeadline(t time.Time) error
+    SetDeadline(t time.Time) tea
+    SetReadDeadline(t time.Time) tea
+    SetWriteDeadline(t time.Time) tea
 }
 
-type TCPConnVibe struct {}
+be_like TCPConnVibe squad {}
 
-// Methods
-func (c *TCPConnVibe) Read(b []byte) (n int, err error)
-func (c *TCPConnVibe) Write(b []byte) (n int, err error)
-func (c *TCPConnVibe) Close() error
-func (c *TCPConnVibe) LocalAddr() AddrVibe
-func (c *TCPConnVibe) RemoteAddr() AddrVibe
-func (c *TCPConnVibe) SetDeadline(t time.Time) error
-func (c *TCPConnVibe) SetReadDeadline(t time.Time) error
-func (c *TCPConnVibe) SetWriteDeadline(t time.Time) error
-func (c *TCPConnVibe) SetKeepAlive(keepalive bool) error
-func (c *TCPConnVibe) SetKeepAlivePeriod(d time.Duration) error
-func (c *TCPConnVibe) SetLinger(sec int) error
-func (c *TCPConnVibe) SetNoDelay(noDelay bool) error
-func (c *TCPConnVibe) SetReadBuffer(bytes int) error
-func (c *TCPConnVibe) SetWriteBuffer(bytes int) error
+fr fr Methods
+slay (c *TCPConnVibe) Read(b []byte) (n int, err tea)
+slay (c *TCPConnVibe) Write(b []byte) (n int, err tea)
+slay (c *TCPConnVibe) Close() tea
+slay (c *TCPConnVibe) LocalAddr() AddrVibe
+slay (c *TCPConnVibe) RemoteAddr() AddrVibe
+slay (c *TCPConnVibe) SetDeadline(t time.Time) tea
+slay (c *TCPConnVibe) SetReadDeadline(t time.Time) tea
+slay (c *TCPConnVibe) SetWriteDeadline(t time.Time) tea
+slay (c *TCPConnVibe) SetKeepAlive(keepalive lit) tea
+slay (c *TCPConnVibe) SetKeepAlivePeriod(d time.Duration) tea
+slay (c *TCPConnVibe) SetLinger(sec normie) tea
+slay (c *TCPConnVibe) SetNoDelay(noDelay lit) tea
+slay (c *TCPConnVibe) SetReadBuffer(bytes normie) tea
+slay (c *TCPConnVibe) SetWriteBuffer(bytes normie) tea
 
-type UDPConnVibe struct {}
+be_like UDPConnVibe squad {}
 
-// Methods
-func (c *UDPConnVibe) Read(b []byte) (n int, err error)
-func (c *UDPConnVibe) Write(b []byte) (n int, err error)
-func (c *UDPConnVibe) Close() error
-func (c *UDPConnVibe) LocalAddr() AddrVibe
-func (c *UDPConnVibe) RemoteAddr() AddrVibe
-func (c *UDPConnVibe) SetDeadline(t time.Time) error
-func (c *UDPConnVibe) SetReadDeadline(t time.Time) error
-func (c *UDPConnVibe) SetWriteDeadline(t time.Time) error
-func (c *UDPConnVibe) ReadFromUDP(b []byte) (n int, addr *UDPAddrVibe, err error)
-func (c *UDPConnVibe) WriteToUDP(b []byte, addr *UDPAddrVibe) (n int, err error)
-func (c *UDPConnVibe) ReadFrom(b []byte) (int, AddrVibe, error)
-func (c *UDPConnVibe) WriteTo(b []byte, addr AddrVibe) (n int, err error)
+fr fr Methods
+slay (c *UDPConnVibe) Read(b []byte) (n int, err tea)
+slay (c *UDPConnVibe) Write(b []byte) (n int, err tea)
+slay (c *UDPConnVibe) Close() tea
+slay (c *UDPConnVibe) LocalAddr() AddrVibe
+slay (c *UDPConnVibe) RemoteAddr() AddrVibe
+slay (c *UDPConnVibe) SetDeadline(t time.Time) tea
+slay (c *UDPConnVibe) SetReadDeadline(t time.Time) tea
+slay (c *UDPConnVibe) SetWriteDeadline(t time.Time) tea
+slay (c *UDPConnVibe) ReadFromUDP(b []byte) (n int, addr *UDPAddrVibe, err tea)
+slay (c *UDPConnVibe) WriteToUDP(b []byte, addr *UDPAddrVibe) (n int, err tea)
+slay (c *UDPConnVibe) ReadFrom(b []byte) (int, AddrVibe, tea)
+slay (c *UDPConnVibe) WriteTo(b []byte, addr AddrVibe) (n int, err tea)
 ```
 
 ### Listeners
 
-```go
-type ListenerVibe interface {
-    Accept() (ConnVibe, error)
-    Close() error
+```
+be_like ListenerVibe collab {
+    Accept() (ConnVibe, tea)
+    Close() tea
     Addr() AddrVibe
 }
 
-type TCPListenerVibe struct {}
+be_like TCPListenerVibe squad {}
 
-// Constructors
-func ListenTCP(network string, laddr *TCPAddrVibe) (*TCPListenerVibe, error)
+fr fr Consquadors
+slay ListenTCP(network tea, laddr *TCPAddrVibe) (*TCPListenerVibe, tea)
 
-// Methods
-func (l *TCPListenerVibe) Accept() (ConnVibe, error)
-func (l *TCPListenerVibe) AcceptTCP() (*TCPConnVibe, error)
-func (l *TCPListenerVibe) Close() error
-func (l *TCPListenerVibe) Addr() AddrVibe
-func (l *TCPListenerVibe) SetDeadline(t time.Time) error
+fr fr Methods
+slay (l *TCPListenerVibe) Accept() (ConnVibe, tea)
+slay (l *TCPListenerVibe) AcceptTCP() (*TCPConnVibe, tea)
+slay (l *TCPListenerVibe) Close() tea
+slay (l *TCPListenerVibe) Addr() AddrVibe
+slay (l *TCPListenerVibe) SetDeadline(t time.Time) tea
 
-type UnixListenerVibe struct {}
+be_like UnixListenerVibe squad {}
 
-// Constructors
-func ListenUnix(network string, laddr *UnixAddrVibe) (*UnixListenerVibe, error)
+fr fr Consquadors
+slay ListenUnix(network tea, laddr *UnixAddrVibe) (*UnixListenerVibe, tea)
 
-// Methods
-func (l *UnixListenerVibe) Accept() (ConnVibe, error)
-func (l *UnixListenerVibe) AcceptUnix() (*UnixConnVibe, error)
-func (l *UnixListenerVibe) Close() error
-func (l *UnixListenerVibe) Addr() AddrVibe
-func (l *UnixListenerVibe) SetDeadline(t time.Time) error
+fr fr Methods
+slay (l *UnixListenerVibe) Accept() (ConnVibe, tea)
+slay (l *UnixListenerVibe) AcceptUnix() (*UnixConnVibe, tea)
+slay (l *UnixListenerVibe) Close() tea
+slay (l *UnixListenerVibe) Addr() AddrVibe
+slay (l *UnixListenerVibe) SetDeadline(t time.Time) tea
 ```
 
 ### DNS Resolution
 
-```go
-type DNSResolverVibe struct {}
+```
+be_like DNSResolverVibe squad {}
 
-// Constructor
-func NewDNSResolver() *DNSResolverVibe
+fr fr Consquador
+slay NewDNSResolver() *DNSResolverVibe
 
-// Methods
-func LookupHost(host string) (addrs []string, err error)
-func LookupIP(host string) ([]IPVibe, error)
-func LookupPort(network, service string) (port int, err error)
-func LookupCNAME(host string) (cname string, err error)
-func LookupSRV(service, proto, name string) (cname string, addrs []*SRVVibe, err error)
-func LookupMX(name string) ([]*MXVibe, error)
-func LookupNS(name string) ([]*NSVibe, error)
-func LookupTXT(name string) ([]string, error)
-func LookupAddr(addr string) (names []string, err error)
+fr fr Methods
+slay LookupHost(host tea) (addrs []tea, err tea)
+slay LookupIP(host tea) ([]IPVibe, tea)
+slay LookupPort(network, service tea) (port int, err tea)
+slay LookupCNAME(host tea) (cname tea, err tea)
+slay LookupSRV(service, proto, name tea) (cname tea, addrs []*SRVVibe, err tea)
+slay LookupMX(name tea) ([]*MXVibe, tea)
+slay LookupNS(name tea) ([]*NSVibe, tea)
+slay LookupTXT(name tea) ([]tea, tea)
+slay LookupAddr(addr tea) (names []tea, err tea)
 
-type MXVibe struct {
-    Host string
+be_like MXVibe squad {
+    Host tea
     Pref uint16
 }
 
-type NSVibe struct {
-    Host string
+be_like NSVibe squad {
+    Host tea
 }
 
-type SRVVibe struct {
-    Target   string
+be_like SRVVibe squad {
+    Target   tea
     Port     uint16
     Priority uint16
     Weight   uint16
@@ -221,76 +221,76 @@ type SRVVibe struct {
 
 ### Dialer
 
-```go
-type DialerVibe struct {
+```
+be_like DialerVibe squad {
     Timeout         time.Duration
     Deadline        time.Time
     LocalAddr       AddrVibe
-    DualStack       bool
+    DualStack       lit
     FallbackDelay   time.Duration
     KeepAlive       time.Duration
     Resolver        *DNSResolverVibe
-    Cancel          <-chan struct{}
-    Control         func(network, address string, c syscall.RawConn) error
+    Cancel          <-chan squad{}
+    Control         func(network, address tea, c syscall.RawConn) tea
 }
 
-// Methods
-func (d *DialerVibe) Dial(network, address string) (ConnVibe, error)
-func (d *DialerVibe) DialContext(ctx VibeContext, network, address string) (ConnVibe, error)
+fr fr Methods
+slay (d *DialerVibe) Dial(network, address tea) (ConnVibe, tea)
+slay (d *DialerVibe) DialContext(ctx VibeContext, network, address tea) (ConnVibe, tea)
 ```
 
 ## High-Level Functions
 
-```go
-// Dial connects to the address on the named network
-func Dial(network, address string) (ConnVibe, error)
+```
+fr fr Dial connects to the address on the named network
+slay Dial(network, address tea) (ConnVibe, tea)
 
-// DialTimeout connects to the address with a timeout
-func DialTimeout(network, address string, timeout time.Duration) (ConnVibe, error)
+fr fr DialTimeout connects to the address with a timeout
+slay DialTimeout(network, address tea, timeout time.Duration) (ConnVibe, tea)
 
-// Listen announces on the local network address
-func Listen(network, address string) (ListenerVibe, error)
+fr fr Listen announces on the local network address
+slay Listen(network, address tea) (ListenerVibe, tea)
 
-// ListenPacket listens for packets
-func ListenPacket(network, address string) (PacketConnVibe, error)
+fr fr ListenPacket listens for packets
+slay ListenPacket(network, address tea) (PacketConnVibe, tea)
 
-// ResolveTCPAddr resolves a TCP address
-func ResolveTCPAddr(network, address string) (*TCPAddrVibe, error)
+fr fr ResolveTCPAddr resolves a TCP address
+slay ResolveTCPAddr(network, address tea) (*TCPAddrVibe, tea)
 
-// ResolveUDPAddr resolves a UDP address
-func ResolveUDPAddr(network, address string) (*UDPAddrVibe, error)
+fr fr ResolveUDPAddr resolves a UDP address
+slay ResolveUDPAddr(network, address tea) (*UDPAddrVibe, tea)
 
-// ResolveUnixAddr resolves a Unix address
-func ResolveUnixAddr(network, address string) (*UnixAddrVibe, error)
+fr fr ResolveUnixAddr resolves a Unix address
+slay ResolveUnixAddr(network, address tea) (*UnixAddrVibe, tea)
 
-// DialTCP connects to the TCP address
-func DialTCP(network string, laddr, raddr *TCPAddrVibe) (*TCPConnVibe, error)
+fr fr DialTCP connects to the TCP address
+slay DialTCP(network tea, laddr, raddr *TCPAddrVibe) (*TCPConnVibe, tea)
 
-// DialUDP connects to the UDP address
-func DialUDP(network string, laddr, raddr *UDPAddrVibe) (*UDPConnVibe, error)
+fr fr DialUDP connects to the UDP address
+slay DialUDP(network tea, laddr, raddr *UDPAddrVibe) (*UDPConnVibe, tea)
 
-// DialUnix connects to the Unix address
-func DialUnix(network string, laddr, raddr *UnixAddrVibe) (*UnixConnVibe, error)
+fr fr DialUnix connects to the Unix address
+slay DialUnix(network tea, laddr, raddr *UnixAddrVibe) (*UnixConnVibe, tea)
 ```
 
 ## Enhanced Features
 
 ### Connection Pool
 
-```go
-type ConnPoolVibe struct {}
+```
+be_like ConnPoolVibe squad {}
 
-// Constructor
-func NewConnPool(network, address string, maxConns int) *ConnPoolVibe
+fr fr Consquador
+slay NewConnPool(network, address tea, maxConns normie) *ConnPoolVibe
 
-// Methods
-func (p *ConnPoolVibe) Get() (ConnVibe, error)
-func (p *ConnPoolVibe) Put(conn ConnVibe)
-func (p *ConnPoolVibe) Close() error
-func (p *ConnPoolVibe) Len() int
-func (p *ConnPoolVibe) Stats() ConnPoolStats
+fr fr Methods
+slay (p *ConnPoolVibe) Get() (ConnVibe, tea)
+slay (p *ConnPoolVibe) Put(conn ConnVibe)
+slay (p *ConnPoolVibe) Close() tea
+slay (p *ConnPoolVibe) Len() int
+slay (p *ConnPoolVibe) Stats() ConnPoolStats
 
-type ConnPoolStats struct {
+be_like ConnPoolStats squad {
     MaxConns      int
     ActiveConns   int
     IdleConns     int
@@ -302,19 +302,19 @@ type ConnPoolStats struct {
 
 ### Circuit Breaker
 
-```go
-type CircuitBreakerVibe struct {}
+```
+be_like CircuitBreakerVibe squad {}
 
-// Constructor
-func NewCircuitBreaker(maxFailures int, resetTimeout time.Duration) *CircuitBreakerVibe
+fr fr Consquador
+slay NewCircuitBreaker(maxFailures int, resetTimeout time.Duration) *CircuitBreakerVibe
 
-// Methods
-func (cb *CircuitBreakerVibe) Execute(fn func() error) error
-func (cb *CircuitBreakerVibe) State() CircuitBreakerState
-func (cb *CircuitBreakerVibe) Reset()
-func (cb *CircuitBreakerVibe) Trip()
+fr fr Methods
+slay (cb *CircuitBreakerVibe) Execute(fn func() tea) tea
+slay (cb *CircuitBreakerVibe) State() CircuitBreakerState
+slay (cb *CircuitBreakerVibe) Reset()
+slay (cb *CircuitBreakerVibe) Trip()
 
-type CircuitBreakerState int
+be_like CircuitBreakerState int
 
 const (
     CircuitClosed CircuitBreakerState = iota
@@ -325,230 +325,230 @@ const (
 
 ### Rate Limiter
 
-```go
-type RateLimiterVibe struct {}
+```
+be_like RateLimiterVibe squad {}
 
-// Constructor
-func NewRateLimiter(rate int, perDuration time.Duration) *RateLimiterVibe
+fr fr Consquador
+slay NewRateLimiter(rate int, perDuration time.Duration) *RateLimiterVibe
 
-// Methods
-func (rl *RateLimiterVibe) Allow() bool
-func (rl *RateLimiterVibe) Wait(ctx VibeContext) error
-func (rl *RateLimiterVibe) Reserve() *Reservation
-func (rl *RateLimiterVibe) SetRate(rate int, perDuration time.Duration)
+fr fr Methods
+slay (rl *RateLimiterVibe) Allow() lit
+slay (rl *RateLimiterVibe) Wait(ctx VibeContext) tea
+slay (rl *RateLimiterVibe) Reserve() *Reservation
+slay (rl *RateLimiterVibe) SetRate(rate int, perDuration time.Duration)
 
-type Reservation struct{}
+be_like Reservation squad{}
 
-// Methods
-func (r *Reservation) Cancel()
-func (r *Reservation) Delay() time.Duration
-func (r *Reservation) OK() bool
+fr fr Methods
+slay (r *Reservation) Cancel()
+slay (r *Reservation) Delay() time.Duration
+slay (r *Reservation) OK() lit
 ```
 
 ### Protocol Adapters
 
-```go
-// WebSocket adapter
-func WebSocketConn(conn ConnVibe) (*WebSocketConnVibe, error)
-type WebSocketConnVibe struct{}
+```
+fr fr WebSocket adapter
+slay WebSocketConn(conn ConnVibe) (*WebSocketConnVibe, tea)
+be_like WebSocketConnVibe squad{}
 
-// Methods
-func (ws *WebSocketConnVibe) ReadMessage() (messageType int, p []byte, err error)
-func (ws *WebSocketConnVibe) WriteMessage(messageType int, data []byte) error
-func (ws *WebSocketConnVibe) Close() error
+fr fr Methods
+slay (ws *WebSocketConnVibe) ReadMessage() (messageType int, p []byte, err tea)
+slay (ws *WebSocketConnVibe) WriteMessage(messageType int, data []byte) tea
+slay (ws *WebSocketConnVibe) Close() tea
 
-// MQTT adapter
-func MQTTConn(conn ConnVibe) (*MQTTConnVibe, error)
-type MQTTConnVibe struct{}
+fr fr MQTT adapter
+slay MQTTConn(conn ConnVibe) (*MQTTConnVibe, tea)
+be_like MQTTConnVibe squad{}
 
-// Methods
-func (mqtt *MQTTConnVibe) Subscribe(topic string, qos byte) error
-func (mqtt *MQTTConnVibe) Publish(topic string, qos byte, retain bool, payload []byte) error
-func (mqtt *MQTTConnVibe) Close() error
+fr fr Methods
+slay (mqtt *MQTTConnVibe) Subscribe(topic tea, qos byte) tea
+slay (mqtt *MQTTConnVibe) Publish(topic tea, qos byte, retain lit, payload []byte) tea
+slay (mqtt *MQTTConnVibe) Close() tea
 
-// HTTP/2 adapter
-func HTTP2Conn(conn ConnVibe) (*HTTP2ConnVibe, error)
-type HTTP2ConnVibe struct{}
+fr fr HTTP/2 adapter
+slay HTTP2Conn(conn ConnVibe) (*HTTP2ConnVibe, tea)
+be_like HTTP2ConnVibe squad{}
 
-// Methods
-func (h2 *HTTP2ConnVibe) CreateStream() (*HTTP2StreamVibe, error)
-func (h2 *HTTP2ConnVibe) Close() error
+fr fr Methods
+slay (h2 *HTTP2ConnVibe) CreateStream() (*HTTP2StreamVibe, tea)
+slay (h2 *HTTP2ConnVibe) Close() tea
 ```
 
 ### Enhanced IPv6 Support
 
-```go
-func IsIPv6Enabled() bool
-func PreferIPv6() bool
-func SetPreferIPv6(prefer bool)
-func IPv6InterfaceAddrs() ([]IPVibe, error)
+```
+slay IsIPv6Enabled() lit
+slay PreferIPv6() lit
+slay SetPreferIPv6(prefer lit)
+slay IPv6InterfaceAddrs() ([]IPVibe, tea)
 ```
 
 ### Network Interface
 
-```go
-type InterfaceVibe struct {
+```
+be_like InterfaceVibe squad {
     Index        int
     MTU          int
-    Name         string
+    Name         tea
     HardwareAddr HardwareAddrVibe
     Flags        InterfaceFlags
 }
 
-// Constructors
-func InterfaceByIndex(index int) (*InterfaceVibe, error)
-func InterfaceByName(name string) (*InterfaceVibe, error)
+fr fr Consquadors
+slay InterfaceByIndex(index normie) (*InterfaceVibe, tea)
+slay InterfaceByName(name tea) (*InterfaceVibe, tea)
 
-// Methods
-func (ifi *InterfaceVibe) Addrs() ([]AddrVibe, error)
-func (ifi *InterfaceVibe) MulticastAddrs() ([]AddrVibe, error)
+fr fr Methods
+slay (ifi *InterfaceVibe) Addrs() ([]AddrVibe, tea)
+slay (ifi *InterfaceVibe) MulticastAddrs() ([]AddrVibe, tea)
 
-// Functions
-func Interfaces() ([]InterfaceVibe, error)
+fr fr Functions
+slay Interfaces() ([]InterfaceVibe, tea)
 ```
 
 ## Usage Example
 
-```go
-// TCP Server Example
-func runTCPServer() {
-    // Create a TCP address for the server
+```
+fr fr TCP Server Example
+slay runTCPServer() {
+    fr fr Create a TCP address for the server
     addr, err := vibe_net.ResolveTCPAddr("tcp", ":8080")
-    if err != nil {
+    if err != cap {
         vibez.spill("Error resolving address:", err)
-        return
+        yolo
     }
     
-    // Create a TCP listener
+    fr fr Create a TCP listener
     listener, err := vibe_net.ListenTCP("tcp", addr)
-    if err != nil {
+    if err != cap {
         vibez.spill("Error listening:", err)
-        return
+        yolo
     }
     defer listener.Close()
     
     vibez.spill("Server listening on", listener.Addr())
     
     for {
-        // Accept a connection
+        fr fr Accept a connection
         conn, err := listener.Accept()
-        if err != nil {
+        if err != cap {
             vibez.spill("Error accepting connection:", err)
             continue
         }
         
-        // Handle the connection in a new goroutine
+        fr fr Handle the connection in a new goroutine
         go handleConnection(conn)
     }
 }
 
-func handleConnection(conn vibe_net.ConnVibe) {
+slay handleConnection(conn vibe_net.ConnVibe) {
     defer conn.Close()
     
-    // Set a deadline for the connection
+    fr fr Set a deadline for the connection
     conn.SetDeadline(time.Now().Add(10 * time.Second))
     
-    // Create a buffer for reading
+    fr fr Create a buffer for reading
     buffer := make([]byte, 1024)
     
-    // Read from the connection
+    fr fr Read from the connection
     n, err := conn.Read(buffer)
-    if err != nil {
+    if err != cap {
         vibez.spill("Error reading:", err)
-        return
+        yolo
     }
     
-    vibez.spill("Received:", string(buffer[:n]))
+    vibez.spill("Received:", tea(buffer[:n]))
     
-    // Write a response
+    fr fr Write a response
     response := "Hello from server!"
     _, err = conn.Write([]byte(response))
-    if err != nil {
+    if err != cap {
         vibez.spill("Error writing:", err)
-        return
+        yolo
     }
 }
 
-// TCP Client Example
-func runTCPClient() {
-    // Create a dialer with options
+fr fr TCP Client Example
+slay runTCPClient() {
+    fr fr Create a dialer with options
     dialer := &vibe_net.DialerVibe{
         Timeout:   5 * time.Second,
         KeepAlive: 30 * time.Second,
     }
     
-    // Connect to the server
+    fr fr Connect to the server
     conn, err := dialer.Dial("tcp", "localhost:8080")
-    if err != nil {
+    if err != cap {
         vibez.spill("Error connecting:", err)
-        return
+        yolo
     }
     defer conn.Close()
     
-    // Send a message
+    fr fr Send a message
     message := "Hello from client!"
     _, err = conn.Write([]byte(message))
-    if err != nil {
+    if err != cap {
         vibez.spill("Error sending message:", err)
-        return
+        yolo
     }
     
-    // Read the response
+    fr fr Read the response
     buffer := make([]byte, 1024)
     n, err := conn.Read(buffer)
-    if err != nil {
+    if err != cap {
         vibez.spill("Error reading response:", err)
-        return
+        yolo
     }
     
-    vibez.spill("Server response:", string(buffer[:n]))
+    vibez.spill("Server response:", tea(buffer[:n]))
 }
 
-// UDP Example
-func runUDPExample() {
-    // Create a UDP address
+fr fr UDP Example
+slay runUDPExample() {
+    fr fr Create a UDP address
     addr, err := vibe_net.ResolveUDPAddr("udp", ":8081")
-    if err != nil {
+    if err != cap {
         vibez.spill("Error resolving address:", err)
-        return
+        yolo
     }
     
-    // Create a UDP connection
+    fr fr Create a UDP connection
     conn, err := vibe_net.ListenUDP("udp", addr)
-    if err != nil {
+    if err != cap {
         vibez.spill("Error listening:", err)
-        return
+        yolo
     }
     defer conn.Close()
     
-    // Create a buffer for reading
+    fr fr Create a buffer for reading
     buffer := make([]byte, 1024)
     
-    // Read from the connection
+    fr fr Read from the connection
     n, remoteAddr, err := conn.ReadFromUDP(buffer)
-    if err != nil {
+    if err != cap {
         vibez.spill("Error reading:", err)
-        return
+        yolo
     }
     
-    vibez.spill("Received from", remoteAddr, ":", string(buffer[:n]))
+    vibez.spill("Received from", remoteAddr, ":", tea(buffer[:n]))
     
-    // Send a response
+    fr fr Send a response
     response := "Hello from UDP server!"
     _, err = conn.WriteToUDP([]byte(response), remoteAddr)
-    if err != nil {
+    if err != cap {
         vibez.spill("Error sending response:", err)
-        return
+        yolo
     }
 }
 
-// DNS Resolution Example
-func dnsExample() {
-    // Lookup host names
+fr fr DNS Resolution Example
+slay dnsExample() {
+    fr fr Lookup host names
     ips, err := vibe_net.LookupIP("example.com")
-    if err != nil {
+    if err != cap {
         vibez.spill("Error looking up IP:", err)
-        return
+        yolo
     }
     
     for _, ip := range ips {
@@ -557,11 +557,11 @@ func dnsExample() {
         vibez.spill("  Is IPv6:", ip.IsIPv6())
     }
     
-    // Lookup MX records
+    fr fr Lookup MX records
     mxRecords, err := vibe_net.LookupMX("gmail.com")
-    if err != nil {
+    if err != cap {
         vibez.spill("Error looking up MX records:", err)
-        return
+        yolo
     }
     
     for _, mx := range mxRecords {
@@ -569,13 +569,13 @@ func dnsExample() {
     }
 }
 
-// Network Interface Example
-func interfaceExample() {
-    // Get all network interfaces
+fr fr Network Interface Example
+slay interfaceExample() {
+    fr fr Get all network interfaces
     interfaces, err := vibe_net.Interfaces()
-    if err != nil {
+    if err != cap {
         vibez.spill("Error getting interfaces:", err)
-        return
+        yolo
     }
     
     for _, intf := range interfaces {
@@ -584,9 +584,9 @@ func interfaceExample() {
         vibez.spill("  MTU:", intf.MTU)
         vibez.spill("  Hardware address:", intf.HardwareAddr)
         
-        // Get addresses for this interface
+        fr fr Get addresses for this interface
         addrs, err := intf.Addrs()
-        if err != nil {
+        if err != cap {
             vibez.spill("  Error getting addresses:", err)
             continue
         }
@@ -597,26 +597,26 @@ func interfaceExample() {
     }
 }
 
-// Connection Pool Example
-func connectionPoolExample() {
-    // Create a connection pool
+fr fr Connection Pool Example
+slay connectionPoolExample() {
+    fr fr Create a connection pool
     pool := vibe_net.NewConnPool("tcp", "example.com:80", 10)
     defer pool.Close()
     
-    // Get a connection from the pool
+    fr fr Get a connection from the pool
     conn, err := pool.Get()
-    if err != nil {
+    if err != cap {
         vibez.spill("Error getting connection:", err)
-        return
+        yolo
     }
     
-    // Use the connection
-    // ...
+    fr fr Use the connection
+    fr fr ...
     
-    // Return the connection to the pool
+    fr fr Return the connection to the pool
     pool.Put(conn)
     
-    // Get pool statistics
+    fr fr Get pool statistics
     stats := pool.Stats()
     vibez.spill("Pool stats:")
     vibez.spill("  Active connections:", stats.ActiveConns)
@@ -626,7 +626,7 @@ func connectionPoolExample() {
 ```
 
 ## Implementation Guidelines
-1. Ensure consistent error handling across all network operations
+1. Ensure consistent tea handling across all network operations
 2. Provide backward compatibility with Go's net package
 3. Optimize for performance, especially in high-concurrency scenarios
 4. Implement proper resource cleanup to prevent leaks

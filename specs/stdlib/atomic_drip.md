@@ -9,40 +9,40 @@ The `atomic_drip` module provides low-level atomic memory operations for synchro
 Atomic versions of basic types.
 
 ```csd
-type Int32 struct {
-  // fields not directly accessible
+be_like Int32 squad {
+  fr fr fields not directly accessible
 }
 
-type Int64 struct {
-  // fields not directly accessible
+be_like Int64 squad {
+  fr fr fields not directly accessible
 }
 
-type Uint32 struct {
-  // fields not directly accessible
+be_like Uint32 squad {
+  fr fr fields not directly accessible
 }
 
-type Uint64 struct {
-  // fields not directly accessible
+be_like Uint64 squad {
+  fr fr fields not directly accessible
 }
 
-type Bool struct {
-  // fields not directly accessible
+be_like Bool squad {
+  fr fr fields not directly accessible
 }
 
-type Float32 struct {
-  // fields not directly accessible
+be_like Float32 squad {
+  fr fr fields not directly accessible
 }
 
-type Float64 struct {
-  // fields not directly accessible
+be_like Float64 squad {
+  fr fr fields not directly accessible
 }
 
-type String struct {
-  // fields not directly accessible
+be_like String squad {
+  fr fr fields not directly accessible
 }
 
-type Pointer[T any] struct {
-  // fields not directly accessible
+be_like Pointer[T any] squad {
+  fr fr fields not directly accessible
 }
 ```
 
@@ -50,14 +50,14 @@ type Pointer[T any] struct {
 Generic atomic value container.
 
 ```csd
-type Value[T any] struct {
-  // fields not directly accessible
+be_like Value[T any] squad {
+  fr fr fields not directly accessible
 }
 
-func (v *Value[T]) Load() T
-func (v *Value[T]) Store(val T)
-func (v *Value[T]) Swap(new T) T
-func (v *Value[T]) CompareAndSwap(old, new T) bool
+slay (v *Value[T]) Load() T
+slay (v *Value[T]) Store(val T)
+slay (v *Value[T]) Swap(new T) T
+slay (v *Value[T]) CompareAndSwap(old, new T) lit
 ```
 
 ## Core Methods
@@ -65,74 +65,74 @@ func (v *Value[T]) CompareAndSwap(old, new T) bool
 ### Int32/Int64 Methods
 
 ```csd
-func (i *Int32) Load() int32
-func (i *Int32) Store(val int32)
-func (i *Int32) Add(delta int32) int32
-func (i *Int32) Swap(new int32) int32
-func (i *Int32) CompareAndSwap(old, new int32) bool
+slay (i *Int32) Load() int32
+slay (i *Int32) Store(val int32)
+slay (i *Int32) Add(delta int32) int32
+slay (i *Int32) Swap(new int32) int32
+slay (i *Int32) CompareAndSwap(old, new int32) lit
 
-func (i *Int64) Load() int64
-func (i *Int64) Store(val int64)
-func (i *Int64) Add(delta int64) int64
-func (i *Int64) Swap(new int64) int64
-func (i *Int64) CompareAndSwap(old, new int64) bool
+slay (i *Int64) Load() int64
+slay (i *Int64) Store(val int64)
+slay (i *Int64) Add(delta int64) int64
+slay (i *Int64) Swap(new int64) int64
+slay (i *Int64) CompareAndSwap(old, new int64) lit
 ```
 
 ### Uint32/Uint64 Methods
 
 ```csd
-func (u *Uint32) Load() uint32
-func (u *Uint32) Store(val uint32)
-func (u *Uint32) Add(delta uint32) uint32
-func (u *Uint32) Swap(new uint32) uint32
-func (u *Uint32) CompareAndSwap(old, new uint32) bool
+slay (u *Uint32) Load() uint32
+slay (u *Uint32) Store(val uint32)
+slay (u *Uint32) Add(delta uint32) uint32
+slay (u *Uint32) Swap(new uint32) uint32
+slay (u *Uint32) CompareAndSwap(old, new uint32) lit
 
-func (u *Uint64) Load() uint64
-func (u *Uint64) Store(val uint64)
-func (u *Uint64) Add(delta uint64) uint64
-func (u *Uint64) Swap(new uint64) uint64
-func (u *Uint64) CompareAndSwap(old, new uint64) bool
+slay (u *Uint64) Load() uint64
+slay (u *Uint64) Store(val uint64)
+slay (u *Uint64) Add(delta uint64) uint64
+slay (u *Uint64) Swap(new uint64) uint64
+slay (u *Uint64) CompareAndSwap(old, new uint64) lit
 ```
 
 ### Bool Methods
 
 ```csd
-func (b *Bool) Load() bool
-func (b *Bool) Store(val bool)
-func (b *Bool) Swap(new bool) bool
-func (b *Bool) CompareAndSwap(old, new bool) bool
+slay (b *Bool) Load() lit
+slay (b *Bool) Store(val lit)
+slay (b *Bool) Swap(new lit) lit
+slay (b *Bool) CompareAndSwap(old, new lit) lit
 ```
 
 ### Float32/Float64 Methods
 
 ```csd
-func (f *Float32) Load() float32
-func (f *Float32) Store(val float32)
-func (f *Float32) Swap(new float32) float32
-func (f *Float32) CompareAndSwap(old, new float32) bool
+slay (f *Float32) Load() float32
+slay (f *Float32) Store(val float32)
+slay (f *Float32) Swap(new float32) float32
+slay (f *Float32) CompareAndSwap(old, new float32) lit
 
-func (f *Float64) Load() float64
-func (f *Float64) Store(val float64)
-func (f *Float64) Swap(new float64) float64
-func (f *Float64) CompareAndSwap(old, new float64) bool
+slay (f *Float64) Load() float64
+slay (f *Float64) Store(val float64)
+slay (f *Float64) Swap(new float64) float64
+slay (f *Float64) CompareAndSwap(old, new float64) lit
 ```
 
 ### String Methods
 
 ```csd
-func (s *String) Load() string
-func (s *String) Store(val string)
-func (s *String) Swap(new string) string
-func (s *String) CompareAndSwap(old, new string) bool
+slay (s *String) Load() tea
+slay (s *String) Store(val tea)
+slay (s *String) Swap(new tea) tea
+slay (s *String) CompareAndSwap(old, new tea) lit
 ```
 
 ### Pointer Methods
 
 ```csd
-func (p *Pointer[T]) Load() *T
-func (p *Pointer[T]) Store(val *T)
-func (p *Pointer[T]) Swap(new *T) *T
-func (p *Pointer[T]) CompareAndSwap(old, new *T) bool
+slay (p *Pointer[T]) Load() *T
+slay (p *Pointer[T]) Store(val *T)
+slay (p *Pointer[T]) Swap(new *T) *T
+slay (p *Pointer[T]) CompareAndSwap(old, new *T) lit
 ```
 
 ## Enhanced Features
@@ -141,9 +141,9 @@ func (p *Pointer[T]) CompareAndSwap(old, new *T) bool
   ```csd
   group := atomic_drip.NewWaitGroup()
   group.Add(1)
-  go func() {
+  stan slay() {
     defer group.Done()
-    // do work
+    fr fr do work
   }()
   group.Wait()
   ```
@@ -151,22 +151,22 @@ func (p *Pointer[T]) CompareAndSwap(old, new *T) bool
 - **Atomic Bitfield**: Efficient bit operations on atomic values
   ```csd
   bits := atomic_drip.NewBitfield32(0)
-  bits.SetBits(0x3)  // Set bits 0 and 1
-  val := bits.TestBit(1) // Check if bit 1 is set
+  bits.SetBits(0x3)  fr fr Set bits 0 and 1
+  val := bits.TestBit(1) fr fr Check if bit 1 is set
   ```
 
 - **Atomic Collections**: Thread-safe collections with atomic operations
   ```csd
-  queue := atomic_drip.NewQueue[string]()
+  queue := atomic_drip.NewQueue[tea]()
   queue.Push("item")
   item := queue.Pop()
   ```
 
-- **Atomic Flags**: Specialized boolean flags with extended operations
+- **Atomic Flags**: Specialized litean flags with extended operations
   ```csd
   flag := atomic_drip.NewFlag(false)
   if flag.SetIfUnset() {
-    // First goroutine to set the flag
+    fr fr First goroutine to set the flag
   }
   ```
 
@@ -179,108 +179,108 @@ func (p *Pointer[T]) CompareAndSwap(old, new *T) bool
 ## Usage Examples
 
 ```csd
-// Basic atomic integer operations
+fr fr Basic atomic integer operations
 counter := atomic_drip.Int64{}
 
-// Store a value
+fr fr Store a value
 counter.Store(10)
 
-// Add to the counter from multiple goroutines
+fr fr Add to the counter from multiple goroutines
 for i := 0; i < 10; i++ {
-  go func() {
+  stan slay() {
     for j := 0; j < 1000; j++ {
       counter.Add(1)
     }
   }()
 }
 
-// Wait for goroutines to finish (in real code, use proper synchronization)
+fr fr Wait for goroutines to finish (in real code, use proper synchronization)
 timez.Sleep(timez.Second)
 
-// Load the final value
+fr fr Load the final value
 finalValue := counter.Load()
 vibez.spill("Final counter value: %d", finalValue)
 
-// Compare and swap
+fr fr Compare and swap
 current := counter.Load()
 for {
-  // Try to update the counter if it's still equal to current
+  fr fr Try to update the counter if it's still equal to current
   if counter.CompareAndSwap(current, current+1) {
     break
   }
-  // Someone else modified it, get the new value and try again
+  fr fr Someone else modified it, get the new value and try again
   current = counter.Load()
 }
 
 vibez.spill("Counter after CAS: %d", counter.Load())
 
-// Atomic boolean
+fr fr Atomic litean
 done := atomic_drip.Bool{}
 done.Store(false)
 
-go func() {
-  // Simulate work
+stan slay() {
+  fr fr Simulate work
   timez.Sleep(timez.Millisecond * 500)
-  // Signal completion
-  done.Store(true)
+  fr fr Signal completion
+  done.Store(based)
 }()
 
-// Wait for completion
+fr fr Wait for completion
 for !done.Load() {
   timez.Sleep(timez.Millisecond * 10)
 }
 
 vibez.spill("Work completed!")
 
-// Atomic pointer
-type Data struct {
+fr fr Atomic pointer
+be_like Data squad {
   Value int
-  Name  string
+  Name  tea
 }
 
 ptr := atomic_drip.Pointer[Data]{}
 
-// Store a pointer to new data
+fr fr Store a pointer to new data
 newData := &Data{Value: 42, Name: "answer"}
 ptr.Store(newData)
 
-// Access the data safely from multiple goroutines
+fr fr Access the data safely from multiple goroutines
 data := ptr.Load()
 vibez.spill("Data: %+v", data)
 
-// Atomic Value (type-safe generic container)
-configValue := atomic_drip.Value[map[string]string]{}
+fr fr Atomic Value (type-safe generic container)
+configValue := atomic_drip.Value[map[tea]tea]{}
 
-// Initialize with a config
-config := map[string]string{
+fr fr Initialize with a config
+config := map[tea]tea{
   "host": "localhost",
   "port": "8080",
 }
 configValue.Store(config)
 
-// Access it from another goroutine
-go func() {
+fr fr Access it from another goroutine
+stan slay() {
   cfg := configValue.Load()
   vibez.spill("Config from goroutine: %v", cfg)
 }()
 
-// Update the config atomically
-updatedConfig := map[string]string{
+fr fr Update the config atomically
+updatedConfig := map[tea]tea{
   "host": "example.com",
   "port": "9090",
   "protocol": "https",
 }
 configValue.Store(updatedConfig)
 
-// Wait for goroutine
+fr fr Wait for goroutine
 timez.Sleep(timez.Millisecond * 100)
 
-// Atomic Float64
+fr fr Atomic Float64
 temperature := atomic_drip.Float64{}
 temperature.Store(98.6)
 
-go func() {
-  // Update temperature
+stan slay() {
+  fr fr Update temperature
   for i := 0; i < 10; i++ {
     current := temperature.Load()
     temperature.Store(current + 0.1)
@@ -288,29 +288,29 @@ go func() {
   }
 }()
 
-// Monitor temperature changes
+fr fr Monitor temperature changes
 for i := 0; i < 5; i++ {
   vibez.spill("Temperature: %.1f", temperature.Load())
   timez.Sleep(timez.Millisecond * 30)
 }
 
-// Atomic string
+fr fr Atomic tea
 message := atomic_drip.String{}
 message.Store("Hello")
 
-go func() {
+stan slay() {
   oldMsg := message.Swap("World")
   vibez.spill("Swapped '%s' with 'World'", oldMsg)
 }()
 
-// Wait for swap
+fr fr Wait for swap
 timez.Sleep(timez.Millisecond * 50)
 vibez.spill("Current message: %s", message.Load())
 
-// Using atomic bitfield
+fr fr Using atomic bitfield
 flags := atomic_drip.NewBitfield32(0)
-flags.SetBit(0)   // Set first bit
-flags.SetBit(2)   // Set third bit
+flags.SetBit(0)   fr fr Set first bit
+flags.SetBit(2)   fr fr Set third bit
 
 value := flags.Load()
 vibez.spill("Flags value: %b", value)
@@ -318,13 +318,13 @@ vibez.spill("Bit 0 set: %v", flags.TestBit(0))
 vibez.spill("Bit 1 set: %v", flags.TestBit(1))
 vibez.spill("Bit 2 set: %v", flags.TestBit(2))
 
-flags.ClearBit(0) // Clear first bit
+flags.ClearBit(0) fr fr Clear first bit
 vibez.spill("After clearing bit 0: %b", flags.Load())
 ```
 
 ## Implementation Guidelines
 
-- Implement all operations using hardware atomic instructions
+- Implement all operations using hardware atomic insquadions
 - Ensure correct memory ordering semantics
 - Optimize for common architectures (x86, ARM, etc.)
 - Provide fallbacks for architectures without direct atomic support

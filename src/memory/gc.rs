@@ -82,7 +82,7 @@ pub enum CollectionTrigger {
 
 /// Object mark state during collection
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum MarkState {
+pub enum MarkState {
     White, // Not yet visited
     Gray,  // Visited but not all references processed
     Black, // Fully processed
@@ -107,23 +107,23 @@ pub struct GarbageCollector {
 pub(crate) struct GcStateInner {
     pub objects: HashMap<usize, GcObject>,
     pub roots: HashSet<usize>,
-    gray_objects: VecDeque<usize>,
-    type_map: HashMap<TypeId, String>,
-    options: GcOptions,
+    pub gray_objects: VecDeque<usize>,
+    pub type_map: HashMap<TypeId, String>,
+    pub options: GcOptions,
     pub stats: MemoryStats,
-    collection_in_progress: bool,
-    debug_logs: Vec<String>,
+    pub collection_in_progress: bool,
+    pub debug_logs: Vec<String>,
 }
 
 /// Object tracked by the garbage collector
 #[derive(Debug, Clone)]
 pub(crate) struct GcObject {
-    ptr: usize,
-    size: usize,
-    type_id: TypeId,
-    tag: Tag,
-    mark_state: MarkState,
-    generation: usize,
+    pub ptr: usize,
+    pub size: usize,
+    pub type_id: TypeId,
+    pub tag: Tag,
+    pub mark_state: MarkState,
+    pub generation: usize,
 }
 
 impl GarbageCollector {
@@ -329,19 +329,29 @@ impl GarbageCollector {
         let start = std::time::Instant::now();
         let timeout = std::time::Duration::from_secs(5); // 5 second timeout
         
-        // Use a thread with a time limit to prevent infinite loops
-        let result = std::thread::scope(|s| {
-            let handle = s.spawn(|| {
-                self.collect_garbage_internal(CollectionTrigger::Manual);
-            });
-            
-            // Wait for the GC to complete or timeout
-            let _ = handle.join();
-        });
+        println!("GC: Starting collection with timeout of {:?}", timeout);
         
-        println!("GC: Collection completed in {:?}", start.elapsed());
+        // Run the improved mark and sweep algorithm with timeout protection
+        match self.mark_and_sweep(timeout) {
+            crate::memory::mark_sweep::CollectionResult::Success(stats) => {
+                println!("GC: Collection successful - freed {} objects ({} bytes) in {}ms",
+                         stats.objects_freed, stats.bytes_freed, stats.total_time_ms);
+            },
+            crate::memory::mark_sweep::CollectionResult::Timeout { stats, phase } => {
+                println!("WARNING: Garbage collection timed out after {:?} in '{}' phase",
+                         timeout, phase);
+                println!("GC: Partial collection stats - {} objects processed",
+                         stats.initial_objects - stats.final_objects);
+            },
+            crate::memory::mark_sweep::CollectionResult::Error(err) => {
+                println!("ERROR: Garbage collection failed: {}", err);
+            }
+        }
+        
+        // Fallback to the old implementation if the new one fails
         if start.elapsed() > timeout {
-            println!("WARNING: Garbage collection took more than {:?}, this indicates a potential problem.", timeout);
+            println!("WARNING: Using fallback garbage collection implementation");
+            self.collect_garbage_internal(CollectionTrigger::Manual);
         }
     }
 

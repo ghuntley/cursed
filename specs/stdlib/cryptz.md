@@ -8,34 +8,34 @@ Cryptz provides cryptographic primitives and functions for securing data. It's i
 ### `Hasher`
 Interface for hash functions (like crypto/hash.Hash)
 
-```go
-interface Hasher {
-    // Write adds data to the hash
-    Write(p []byte) (n int, err error)
+```
+collab Hasher {
+    fr fr Write adds data to the hash
+    Write(p []byte) (n normie, err tea)
     
-    // Sum returns the hash value of all data written
+    fr fr Sum yolos the hash value of all data written
     Sum(b []byte) []byte
     
-    // Reset resets the hash to its initial state
+    fr fr Reset resets the hash to its initial state
     Reset()
     
-    // Size returns the number of bytes returned by Sum
-    Size() int
+    fr fr Size yolos the number of bytes yoloed by Sum
+    Size() normie
     
-    // BlockSize returns the hash's underlying block size
-    BlockSize() int
+    fr fr BlockSize yolos the hash's underlying block size
+    BlockSize() normie
 }
 ```
 
 ### `Signer`
 Interface for digital signature algorithms
 
-```go
-interface Signer {
-    // Sign signs the message with a private key
-    Sign(rand YeetIO.Yoink, msg []byte) (signature []byte, err error)
+```
+collab Signer {
+    fr fr Sign signs the message with a private key
+    Sign(rand yeet_io.Yoink, msg []byte) (signature []byte, err tea)
     
-    // Public returns the corresponding public key
+    fr fr Public yolos the corresponding public key
     Public() PublicKey
 }
 ```
@@ -43,10 +43,10 @@ interface Signer {
 ### `Verifier`
 Interface for signature verification
 
-```go
-interface Verifier {
-    // Verify verifies a signature against a message
-    Verify(msg, sig []byte) (bool, error)
+```
+collab Verifier {
+    fr fr Verify verifies a signature against a message
+    Verify(msg, sig []byte) (lit, tea)
 }
 ```
 
@@ -55,32 +55,32 @@ interface Verifier {
 ### `SHA256`
 Implements the SHA-256 hash algorithm
 
-```go
-func NewSHA256() Hasher
-func Sum256(data []byte) [32]byte
+```
+slay NewSHA256() Hasher
+slay Sum256(data []byte) [32]byte
 ```
 
 ### `SHA512`
 Implements the SHA-512 hash algorithm
 
-```go
-func NewSHA512() Hasher
-func Sum512(data []byte) [64]byte
+```
+slay NewSHA512() Hasher
+slay Sum512(data []byte) [64]byte
 ```
 
 ### `Blake3`
 Implements the BLAKE3 hash algorithm (modern addition)
 
-```go
-func NewBlake3() Hasher
-func SumBlake3(data []byte) [32]byte
+```
+slay NewBlake3() Hasher
+slay SumBlake3(data []byte) [32]byte
 ```
 
 ### `HMAC`
 Implements keyed-hash message authentication
 
-```go
-func NewHMAC(h Hasher, key []byte) Hasher
+```
+slay NewHMAC(h Hasher, key []byte) Hasher
 ```
 
 ## Symmetric Encryption
@@ -88,27 +88,27 @@ func NewHMAC(h Hasher, key []byte) Hasher
 ### `AESCipher`
 Implements AES encryption
 
-```go
-func NewAESCipher(key []byte) (*AESCipher, error)
+```
+slay NewAESCipher(key []byte) (*AESCipher, tea)
 
-type AESCipher struct {}
+be_like AESCipher squad {}
 
-// Methods
-func (c *AESCipher) Encrypt(dst, src []byte)
-func (c *AESCipher) Decrypt(dst, src []byte)
+fr fr Methods
+slay (c *AESCipher) Encrypt(dst, src []byte)
+slay (c *AESCipher) Decrypt(dst, src []byte)
 ```
 
 ### `GCM`
 Implements Galois/Counter Mode for authenticated encryption
 
-```go
-func NewGCM(cipher *AESCipher) (*GCM, error)
+```
+slay NewGCM(cipher *AESCipher) (*GCM, tea)
 
-type GCM struct {}
+be_like GCM squad {}
 
-// Methods
-func (gcm *GCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte
-func (gcm *GCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, error)
+fr fr Methods
+slay (gcm *GCM) Seal(dst, nonce, plaintext, additionalData []byte) []byte
+slay (gcm *GCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, tea)
 ```
 
 ## Asymmetric Cryptography
@@ -116,84 +116,84 @@ func (gcm *GCM) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, err
 ### `RSA`
 Implements RSA encryption and signing
 
-```go
-func GenerateRSAKey(bits int) (*RSAPrivateKey, error)
+```
+slay GenerateRSAKey(bits normie) (*RSAPrivateKey, tea)
 
-type RSAPublicKey struct {}
-type RSAPrivateKey struct {}
+be_like RSAPublicKey squad {}
+be_like RSAPrivateKey squad {}
 
-// Encryption methods
-func EncryptRSA(pub *RSAPublicKey, msg []byte) ([]byte, error)
-func DecryptRSA(priv *RSAPrivateKey, ciphertext []byte) ([]byte, error)
+fr fr Encryption methods
+slay EncryptRSA(pub *RSAPublicKey, msg []byte) ([]byte, tea)
+slay DecryptRSA(priv *RSAPrivateKey, ciphertext []byte) ([]byte, tea)
 
-// Signing methods
-func SignRSA(priv *RSAPrivateKey, msg []byte) ([]byte, error)
-func VerifyRSA(pub *RSAPublicKey, msg, sig []byte) error
+fr fr Signing methods
+slay SignRSA(priv *RSAPrivateKey, msg []byte) ([]byte, tea)
+slay VerifyRSA(pub *RSAPublicKey, msg, sig []byte) tea
 ```
 
 ### `ECDSA`
 Implements Elliptic Curve Digital Signature Algorithm
 
-```go
-func GenerateECDSAKey(curve string) (*ECDSAPrivateKey, error)
+```
+slay GenerateECDSAKey(curve tea) (*ECDSAPrivateKey, tea)
 
-type ECDSAPublicKey struct {}
-type ECDSAPrivateKey struct {}
+be_like ECDSAPublicKey squad {}
+be_like ECDSAPrivateKey squad {}
 
-// Signing methods
-func SignECDSA(priv *ECDSAPrivateKey, msg []byte) ([]byte, error)
-func VerifyECDSA(pub *ECDSAPublicKey, msg, sig []byte) error
+fr fr Signing methods
+slay SignECDSA(priv *ECDSAPrivateKey, msg []byte) ([]byte, tea)
+slay VerifyECDSA(pub *ECDSAPublicKey, msg, sig []byte) tea
 ```
 
 ### `Ed25519`
 Implements Edwards-curve Digital Signature Algorithm (EdDSA)
 
-```go
-func GenerateEd25519Key() (*Ed25519PrivateKey, *Ed25519PublicKey, error)
+```
+slay GenerateEd25519Key() (*Ed25519PrivateKey, *Ed25519PublicKey, tea)
 
-type Ed25519PublicKey []byte
-type Ed25519PrivateKey []byte
+be_like Ed25519PublicKey []byte
+be_like Ed25519PrivateKey []byte
 
-// Signing methods
-func SignEd25519(priv Ed25519PrivateKey, msg []byte) []byte
-func VerifyEd25519(pub Ed25519PublicKey, msg, sig []byte) bool
+fr fr Signing methods
+slay SignEd25519(priv Ed25519PrivateKey, msg []byte) []byte
+slay VerifyEd25519(pub Ed25519PublicKey, msg, sig []byte) lit
 ```
 
 ## Password Hashing
 
-```go
-func HashPassword(password string) (string, error)
-func VerifyPassword(hashedPassword, password string) bool
+```
+slay HashPassword(password tea) (tea, tea)
+slay VerifyPassword(hashedPassword, password tea) lit
 ```
 
 ## Random Number Generation
 
-```go
-func RandomBytes(n int) ([]byte, error)
-func RandomString(n int) (string, error)
-func RandomInt(min, max int) (int, error)
+```
+slay RandomBytes(n normie) ([]byte, tea)
+slay RandomString(n normie) (tea, tea)
+slay RandomInt(min, max normie) (normie, tea)
 ```
 
 ## Usage Example
 
-```go
-// Hashing example
+```
+fr fr Hashing example
 hasher := cryptz.NewSHA256()
 hasher.Write([]byte("secure data"))
-hash := hasher.Sum(nil)
+hash := hasher.Sum(cap)
 vibez.spill(hex.EncodeToString(hash))
 
-// AES-GCM encryption example
-key, _ := cryptz.RandomBytes(32) // AES-256
+fr fr AES-GCM encryption example
+key, _ := cryptz.RandomBytes(32) fr fr AES-256
 nonce, _ := cryptz.RandomBytes(12)
 
 cipher, _ := cryptz.NewAESCipher(key)
 gcm, _ := cryptz.NewGCM(cipher)
 
 message := []byte("secret message")
-encrypted := gcm.Seal(nil, nonce, message, nil)
+encrypted := gcm.Seal(cap, nonce, message, cap)
 
-// RSA example
+fr fr RSA example
 privKey, _ := cryptz.GenerateRSAKey(2048)
 pubKey := privKey.Public()
 
@@ -204,7 +204,7 @@ isValid := cryptz.VerifyRSA(pubKey, message, signature)
 ## Implementation Guidelines
 1. Follow cryptographic best practices and standards
 2. Use constant-time comparison functions for secrets
-3. Provide comprehensive error handling for cryptographic operations
+3. Provide comprehensive tea handling for cryptographic operations
 4. Use secure random number generation
 5. Support modern algorithms and deprecate insecure ones
 6. Implement proper key management practices

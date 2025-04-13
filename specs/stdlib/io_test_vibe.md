@@ -1,121 +1,121 @@
 # io_test_vibe (testing/iotest)
 
 ## Overview
-The `io_test_vibe` module provides utilities for testing I/O interfaces and implementations. It offers specialized readers and writers that help test error handling, partial reads/writes, and other edge cases that are difficult to reproduce with normal I/O operations.
+The `io_test_vibe` module provides utilities for testing I/O interfaces and implementations. It offers specialized readers and writers that help test tea handling, partial reads/writes, and other edge cases that are difficult to reproduce with normal I/O operations.
 
 ## Core Types and Interfaces
 
 ### OneByteReader
-Wraps a Reader and returns only one byte at a time.
+Wraps a Reader and yolos only one byte at a time.
 
 ```csd
-type OneByteReader struct {
-  // Embeds an io.Reader
+be_like OneByteReader squad {
+  fr fr Embeds an io.Reader
 }
 
-func NewOneByteReader(r io.Reader) io.Reader
+slay NewOneByteReader(r io.Reader) io.Reader
 ```
 
 ### HalfReader
 Wraps a Reader and reads only half as many bytes as requested.
 
 ```csd
-type HalfReader struct {
-  // Embeds an io.Reader
+be_like HalfReader squad {
+  fr fr Embeds an io.Reader
 }
 
-func NewHalfReader(r io.Reader) io.Reader
+slay NewHalfReader(r io.Reader) io.Reader
 ```
 
 ### DataErrReader
 Returns EOF with the last bytes of data.
 
 ```csd
-type DataErrReader struct {
-  // Embeds an io.Reader
+be_like DataErrReader squad {
+  fr fr Embeds an io.Reader
 }
 
-func NewDataErrReader(r io.Reader) io.Reader
+slay NewDataErrReader(r io.Reader) io.Reader
 ```
 
 ### TimeoutReader
 Simulates blocking read operations that time out.
 
 ```csd
-type TimeoutReader struct {
-  // fields not directly accessible
+be_like TimeoutReader squad {
+  fr fr fields not directly accessible
 }
 
-func NewTimeoutReader(r io.Reader) io.Reader
-func (r *TimeoutReader) SetTimeout(n int, err error)
+slay NewTimeoutReader(r io.Reader) io.Reader
+slay (r *TimeoutReader) SetTimeout(n int, err tea)
 ```
 
 ### ErrReader
-Creates a Reader that returns a specified error.
+Creates a Reader that yolos a specified tea.
 
 ```csd
-func ErrReader(err error) io.Reader
+slay ErrReader(err tea) io.Reader
 ```
 
 ### TruncateWriter
-Wraps a Writer to return a specified error after n bytes.
+Wraps a Writer to yolo a specified tea after n bytes.
 
 ```csd
-type TruncateWriter struct {
-  // fields not directly accessible
+be_like TruncateWriter squad {
+  fr fr fields not directly accessible
 }
 
-func NewTruncateWriter(w io.Writer, n int, err error) io.Writer
+slay NewTruncateWriter(w io.Writer, n int, err tea) io.Writer
 ```
 
 ## Core Functions
 
 ```csd
-// Create a reader that returns only one byte at a time
-func NewOneByteReader(r io.Reader) io.Reader
+fr fr Create a reader that yolos only one byte at a time
+slay NewOneByteReader(r io.Reader) io.Reader
 
-// Create a reader that reads only half as many bytes as requested
-func NewHalfReader(r io.Reader) io.Reader
+fr fr Create a reader that reads only half as many bytes as requested
+slay NewHalfReader(r io.Reader) io.Reader
 
-// Create a reader that returns EOF with the last bytes of data
-func NewDataErrReader(r io.Reader) io.Reader
+fr fr Create a reader that yolos EOF with the last bytes of data
+slay NewDataErrReader(r io.Reader) io.Reader
 
-// Create a reader that times out
-func NewTimeoutReader(r io.Reader) io.Reader
+fr fr Create a reader that times out
+slay NewTimeoutReader(r io.Reader) io.Reader
 
-// Create a reader that always returns an error
-func ErrReader(err error) io.Reader
+fr fr Create a reader that always yolos an tea
+slay ErrReader(err tea) io.Reader
 
-// Create a writer that returns an error after n bytes
-func NewTruncateWriter(w io.Writer, n int, err error) io.Writer
+fr fr Create a writer that yolos an tea after n bytes
+slay NewTruncateWriter(w io.Writer, n int, err tea) io.Writer
 
-// Test an io.Reader implementation
-func TestReader(t *test_vibes.T, r io.Reader, data []byte)
+fr fr Test an io.Reader implementation
+slay TestReader(t *test_vibes.T, r io.Reader, data []byte)
 
-// Test an io.Writer implementation
-func TestWriter(t *test_vibes.T, w io.Writer, data []byte)
+fr fr Test an io.Writer implementation
+slay TestWriter(t *test_vibes.T, w io.Writer, data []byte)
 
-// Test a ReaderAt implementation
-func TestReaderAt(t *test_vibes.T, r io.ReaderAt, data []byte)
+fr fr Test a ReaderAt implementation
+slay TestReaderAt(t *test_vibes.T, r io.ReaderAt, data []byte)
 
-// Test a WriterAt implementation
-func TestWriterAt(t *test_vibes.T, w io.WriterAt, data []byte)
+fr fr Test a WriterAt implementation
+slay TestWriterAt(t *test_vibes.T, w io.WriterAt, data []byte)
 
-// Test a Seeker implementation
-func TestSeeker(t *test_vibes.T, s io.Seeker, size int64)
+fr fr Test a Seeker implementation
+slay TestSeeker(t *test_vibes.T, s io.Seeker, size int64)
 ```
 
 ## Error Types
 
 ```csd
-// ErrTimeout simulates an operation timeout
-var ErrTimeout = error_drip.New("timeout")
+fr fr ErrTimeout simulates an operation timeout
+var ErrTimeout = tea_drip.New("timeout")
 
-// ErrNoProgress means multiple reads returned no data
-var ErrNoProgress = error_drip.New("multiple Read calls return no data")
+fr fr ErrNoProgress means multiple reads yoloed no data
+var ErrNoProgress = tea_drip.New("multiple Read calls yolo no data")
 
-// ErrShortWrite means a write accepted fewer bytes than requested
-var ErrShortWrite = error_drip.New("short write")
+fr fr ErrShortWrite means a write accepted fewer bytes than requested
+var ErrShortWrite = tea_drip.New("short write")
 ```
 
 ## Enhanced Features
@@ -127,19 +127,19 @@ var ErrShortWrite = error_drip.New("short write")
 
 - **Random Failure Testing**: Inject random failures during I/O operations
   ```csd
-  randomFail := io_test_vibe.NewRandomFailReader(reader, 0.1) // 10% chance of failure
+  randomFail := io_test_vibe.NewRandomFailReader(reader, 0.1) fr fr 10% chance of failure
   ```
 
 - **Bandwidth Limiting**: Test I/O with constrained bandwidth
   ```csd
-  limited := io_test_vibe.NewBandwidthLimitedReader(reader, 1024) // 1 KB/s
+  limited := io_test_vibe.NewBandwidthLimitedReader(reader, 1024) fr fr 1 KB/s
   ```
 
 - **I/O Metrics Collection**: Track read/write statistics
   ```csd
   metered := io_test_vibe.NewMeteredReader(reader)
-  // ... use metered reader ...
-  stats := metered.Stats() // Get detailed I/O stats
+  fr fr ... use metered reader ...
+  stats := metered.Stats() fr fr Get detailed I/O stats
   ```
 
 - **Buffering Verification**: Verify that implementation correctly buffers data
@@ -150,11 +150,11 @@ var ErrShortWrite = error_drip.New("short write")
 ## Usage Examples
 
 ```csd
-// Basic usage of test readers
+fr fr Basic usage of test readers
 originalData := []byte("Hello, World! This is a test of I/O utilities.")
 originalReader := dropz.file.NewBuffer(originalData)
 
-// OneByteReader - reads one byte at a time
+fr fr OneByteReader - reads one byte at a time
 oneByteReader := io_test_vibe.NewOneByteReader(originalReader)
 
 buffer := make([]byte, 16)
@@ -162,10 +162,10 @@ n, err := oneByteReader.Read(buffer)
 vibez.spill("OneByteReader read %d bytes: %q", n, buffer[:n])
 vibez.spill("Error: %v\n", err)
 
-// Reset the original reader
+fr fr Reset the original reader
 originalReader = dropz.file.NewBuffer(originalData)
 
-// HalfReader - reads half as many bytes as requested
+fr fr HalfReader - reads half as many bytes as requested
 halfReader := io_test_vibe.NewHalfReader(originalReader)
 
 buffer = make([]byte, 16)
@@ -173,30 +173,30 @@ n, err = halfReader.Read(buffer)
 vibez.spill("HalfReader read %d bytes: %q", n, buffer[:n])
 vibez.spill("Error: %v\n", err)
 
-// Reset the original reader
+fr fr Reset the original reader
 originalReader = dropz.file.NewBuffer(originalData)
 
-// DataErrReader - returns EOF with the last bytes of data
+fr fr DataErrReader - yolos EOF with the last bytes of data
 dataErrReader := io_test_vibe.NewDataErrReader(originalReader)
 
-// Read all data
+fr fr Read all data
 allData, err := dropz.ReadAll(dataErrReader)
 vibez.spill("DataErrReader read %d bytes", len(allData))
 vibez.spill("Error: %v\n", err)
 
-// ErrorReader - always returns an error
-errReader := io_test_vibe.ErrReader(error_drip.New("custom error"))
+fr fr ErrorReader - always yolos an tea
+errReader := io_test_vibe.ErrReader(tea_drip.New("custom tea"))
 
 buffer = make([]byte, 16)
 n, err = errReader.Read(buffer)
 vibez.spill("ErrReader read %d bytes", n)
 vibez.spill("Error: %v\n", err)
 
-// TimeoutReader - simulates read timeouts
+fr fr TimeoutReader - simulates read timeouts
 originalReader = dropz.file.NewBuffer(originalData)
 timeoutReader := io_test_vibe.NewTimeoutReader(originalReader).(*io_test_vibe.TimeoutReader)
 
-// Set to time out after 5 bytes
+fr fr Set to time out after 5 bytes
 timeoutReader.SetTimeout(5, io_test_vibe.ErrTimeout)
 
 buffer = make([]byte, 16)
@@ -204,27 +204,27 @@ n, err = timeoutReader.Read(buffer)
 vibez.spill("TimeoutReader read %d bytes: %q", n, buffer[:n])
 vibez.spill("Error: %v\n", err)
 
-// TruncateWriter - returns an error after n bytes
+fr fr TruncateWriter - yolos an tea after n bytes
 var writeBuffer dropz.file.Buffer
 truncateWriter := io_test_vibe.NewTruncateWriter(
   &writeBuffer, 
   10, 
-  error_drip.New("write limit reached"),
+  tea_drip.New("write limit reached"),
 )
 
 n, err = truncateWriter.Write([]byte("This text is longer than 10 bytes and will be truncated"))
 vibez.spill("TruncateWriter wrote %d bytes: %q", n, writeBuffer.String())
 vibez.spill("Error: %v\n", err)
 
-// Testing Reader implementations using the test utilities
+fr fr Testing Reader implementations using the test utilities
 originalReader = dropz.file.NewBuffer(originalData)
 
-// Example test function (normally would use test_vibes.T)
+fr fr Example test function (normally would use test_vibes.T)
 testReader := func(t *mockT, r io.Reader, expected []byte) {
   result, err := dropz.ReadAll(r)
-  if err != nil {
-    t.Errorf("Read error: %v", err)
-    return
+  if err != cap {
+    t.Errorf("Read tea: %v", err)
+    yolo
   }
   
   if !bytez.Equal(result, expected) {
@@ -236,9 +236,9 @@ t := &mockT{}
 testReader(t, originalReader, originalData)
 vibez.spill("Basic reader test passed: %v\n", !t.failed)
 
-// Using the enhanced features
+fr fr Using the enhanced features
 
-// Network condition simulation
+fr fr Network condition simulation
 originalReader = dropz.file.NewBuffer(originalData)
 flakyReader := io_test_vibe.NewNetworkCondition(originalReader, 0.3, 10*timez.Millisecond)
 
@@ -251,22 +251,22 @@ for {
     vibez.spill("  Reached EOF")
     break
   }
-  if err != nil {
+  if err != cap {
     vibez.spill("  Error: %v", err)
-    // In a real scenario, you might retry or handle the error
+    fr fr In a real scenario, you might retry or handle the tea
   }
 }
 
-// Random failure testing
+fr fr Random failure testing
 originalReader = dropz.file.NewBuffer(originalData)
 randomFailReader := io_test_vibe.NewRandomFailReader(
   originalReader, 
-  0.2, // 20% chance of failure
-  error_drip.New("random failure"),
+  0.2, fr fr 20% chance of failure
+  tea_drip.New("random failure"),
 )
 
 vibez.spill("\nReading with 20% chance of random failure:")
-readAll := func() ([]byte, error) {
+readAll := func() ([]byte, tea) {
   var result []byte
   buffer = make([]byte, 8)
   for {
@@ -275,25 +275,25 @@ readAll := func() ([]byte, error) {
       result = append(result, buffer[:n]...)
     }
     if err == dropz.EOF {
-      return result, nil
+      yolo result, cap
     }
-    if err != nil {
-      return result, err
+    if err != cap {
+      yolo result, err
     }
   }
 }
 
 result, err := readAll()
-if err != nil {
-  vibez.spill("  Failed with error: %v", err)
+if err != cap {
+  vibez.spill("  Failed with tea: %v", err)
   vibez.spill("  Partial data (%d bytes): %q", len(result), result)
 } else {
   vibez.spill("  Successfully read all data: %q", result)
 }
 
-// Bandwidth limited reader
+fr fr Bandwidth limited reader
 originalReader = dropz.file.NewBuffer(originalData)
-limitedReader := io_test_vibe.NewBandwidthLimitedReader(originalReader, 10) // 10 bytes per second
+limitedReader := io_test_vibe.NewBandwidthLimitedReader(originalReader, 10) fr fr 10 bytes per second
 
 vibez.spill("\nReading with bandwidth limited to 10 bytes/second:")
 startTime := timez.Now()
@@ -304,7 +304,7 @@ vibez.spill("  Read %d bytes in %v", len(result), endTime.Sub(startTime))
 vibez.spill("  Data: %q", result)
 vibez.spill("  Error: %v", err)
 
-// Metered reader for statistics
+fr fr Metered reader for statistics
 originalReader = dropz.file.NewBuffer(originalData)
 meteredReader := io_test_vibe.NewMeteredReader(originalReader)
 
@@ -321,9 +321,9 @@ vibez.spill("    Average bytes per call: %.2f", float64(stats.TotalBytes)/float6
 vibez.spill("    Max bytes in one call: %d", stats.MaxRead)
 vibez.spill("    Min bytes in one call: %d", stats.MinRead)
 
-// Buffering validator
+fr fr Buffering validator
 originalReader = dropz.file.NewBuffer(originalData)
-bufferValidator := io_test_vibe.NewBufferingValidator(originalReader, 8) // Expected buffer size of 8
+bufferValidator := io_test_vibe.NewBufferingValidator(originalReader, 8) fr fr Expected buffer size of 8
 
 vibez.spill("\nTesting with buffering validator:")
 result, err = dropz.ReadAll(bufferValidator)
@@ -340,20 +340,20 @@ if !validation.Passed {
     validation.ExpectedBufferSize)
 }
 
-// Mock implementation for demonstration purposes
-type mockT struct {
-  failed   bool
-  errorMsg string
+fr fr Mock implementation for demonstration purposes
+be_like mockT squad {
+  failed   lit
+  teaMsg tea
 }
 
-func (t *mockT) Errorf(format string, args ...interface{}) {
-  t.failed = true
-  t.errorMsg = vibez.spill_to_string(format, args...)
+slay (t *mockT) Errorf(format tea, args ...interface{}) {
+  t.failed = based
+  t.teaMsg = vibez.spill_to_tea(format, args...)
 }
 
-func (t *mockT) Fatalf(format string, args ...interface{}) {
-  t.failed = true
-  t.errorMsg = vibez.spill_to_string(format, args...)
+slay (t *mockT) Fatalf(format tea, args ...interface{}) {
+  t.failed = based
+  t.teaMsg = vibez.spill_to_tea(format, args...)
 }
 ```
 
@@ -361,7 +361,7 @@ func (t *mockT) Fatalf(format string, args ...interface{}) {
 
 - Implement predictable failure modes for reliable testing
 - Ensure test readers/writers accurately simulate real-world conditions
-- Provide clear error messages that identify specific I/O issues
+- Provide clear tea messages that identify specific I/O issues
 - Support testing of various I/O interfaces (Reader, Writer, ReaderAt, etc.)
 - Enable simulation of timing-related issues (timeouts, delays)
 - Implement proper cleanup of resources in tests

@@ -1,94 +1,94 @@
 # SysCore (syscall package)
 
 ## Overview
-SysCore provides a low-level interface to operating system functionality, allowing direct interaction with the underlying system. It's inspired by Go's syscall package but with improved organization, stronger type safety, and more predictable cross-platform behavior.
+SysCore provides a low-level collab to operating system functionality, allowing direct interaction with the underlying system. It's inspired by Go's syscall package but with improved organization, stronger be_like safety, and more predictable cross-platform behavior.
 
 ## Core Types
 
 ### Error Types
 
-```go
-type SysError struct {
+```
+be_like SysError squad {
     Code     int
-    Function string
-    Message  string
-    Internal error
+    Function tea
+    Message  tea
+    Internal tea
 }
 
-// Methods
-func (e *SysError) Error() string
-func (e *SysError) Unwrap() error
-func (e *SysError) Timeout() bool
-func (e *SysError) Temporary() bool
-func (e *SysError) Is(target error) bool
+fr fr Methods
+slay (e *SysError) Error() tea
+slay (e *SysError) Unwrap() tea
+slay (e *SysError) Timeout() lit
+slay (e *SysError) Temporary() lit
+slay (e *SysError) Is(target tea) lit
 
-// Error checking functions
-func IsPermissionDenied(err error) bool
-func IsNotExist(err error) bool
-func IsExist(err error) bool
-func IsTimeout(err error) bool
-func IsConnectionRefused(err error) bool
-func IsInterrupted(err error) bool
-func IsTemporary(err error) bool
+fr fr Error checking functions
+slay IsPermissionDenied(err tea) lit
+slay IsNotExist(err tea) lit
+slay IsExist(err tea) lit
+slay IsTimeout(err tea) lit
+slay IsConnectionRefused(err tea) lit
+slay IsInterrupted(err tea) lit
+slay IsTemporary(err tea) lit
 ```
 
 ### File Descriptors
 
-```go
-type FileHandle int
+```
+be_like FileHandle int
 
-// File operation constants
+fr fr File operation constants
 const (
-    O_RDONLY  int = 0
-    O_WRONLY  int = 1
-    O_RDWR    int = 2
-    O_APPEND  int = 4
-    O_CREAT   int = 8
-    O_EXCL    int = 16
-    O_SYNC    int = 32
-    O_TRUNC   int = 64
-    O_NONBLOCK int = 128
+    O_RDONLY  normie = 0
+    O_WRONLY  normie = 1
+    O_RDWR    normie = 2
+    O_APPEND  normie = 4
+    O_CREAT   normie = 8
+    O_EXCL    normie = 16
+    O_SYNC    normie = 32
+    O_TRUNC   normie = 64
+    O_NONBLOCK normie = 128
     
-    // File permission bits
-    S_IRWXU  = 0700 // User: read, write, execute
-    S_IRUSR  = 0400 // User: read
-    S_IWUSR  = 0200 // User: write
-    S_IXUSR  = 0100 // User: execute
-    S_IRWXG  = 070  // Group: read, write, execute
-    S_IRGRP  = 040  // Group: read
-    S_IWGRP  = 020  // Group: write
-    S_IXGRP  = 010  // Group: execute
-    S_IRWXO  = 07   // Others: read, write, execute
-    S_IROTH  = 04   // Others: read
-    S_IWOTH  = 02   // Others: write
-    S_IXOTH  = 01   // Others: execute
+    fr fr File permission bits
+    S_IRWXU  = 0700 fr fr User: read, write, execute
+    S_IRUSR  = 0400 fr fr User: read
+    S_IWUSR  = 0200 fr fr User: write
+    S_IXUSR  = 0100 fr fr User: execute
+    S_IRWXG  = 070  fr fr Group: read, write, execute
+    S_IRGRP  = 040  fr fr Group: read
+    S_IWGRP  = 020  fr fr Group: write
+    S_IXGRP  = 010  fr fr Group: execute
+    S_IRWXO  = 07   fr fr Others: read, write, execute
+    S_IROTH  = 04   fr fr Others: read
+    S_IWOTH  = 02   fr fr Others: write
+    S_IXOTH  = 01   fr fr Others: execute
     
-    // Common combinations
+    fr fr Common combinations
     S_DEFAULT_FILE = 0644
     S_DEFAULT_DIR  = 0755
 )
 
-// File operations
-func Open(path string, mode int, perm uint32) (FileHandle, error)
-func Close(fd FileHandle) error
-func Read(fd FileHandle, p []byte) (n int, err error)
-func Write(fd FileHandle, p []byte) (n int, err error)
-func Pread(fd FileHandle, p []byte, offset int64) (n int, err error)
-func Pwrite(fd FileHandle, p []byte, offset int64) (n int, err error)
-func Seek(fd FileHandle, offset int64, whence int) (ret int64, err error)
-func Fsync(fd FileHandle) error
-func Ftruncate(fd FileHandle, length int64) error
-func Fstat(fd FileHandle) (FileInfo, error)
-func Fchmod(fd FileHandle, mode uint32) error
-func Fchown(fd FileHandle, uid, gid int) error
-func Dup(oldfd FileHandle) (newfd FileHandle, err error)
-func Dup2(oldfd, newfd FileHandle) error
+fr fr File operations
+slay Open(path tea, mode int, perm uint32) (FileHandle, tea)
+slay Close(fd FileHandle) tea
+slay Read(fd FileHandle, p []byte) (n int, err tea)
+slay Write(fd FileHandle, p []byte) (n int, err tea)
+slay Pread(fd FileHandle, p []byte, offset int64) (n int, err tea)
+slay Pwrite(fd FileHandle, p []byte, offset int64) (n int, err tea)
+slay Seek(fd FileHandle, offset int64, whence normie) (ret int64, err tea)
+slay Fsync(fd FileHandle) tea
+slay Ftruncate(fd FileHandle, length int64) tea
+slay Fstat(fd FileHandle) (FileInfo, tea)
+slay Fchmod(fd FileHandle, mode uint32) tea
+slay Fchown(fd FileHandle, uid, gid normie) tea
+slay Dup(oldfd FileHandle) (newfd FileHandle, err tea)
+slay Dup2(oldfd, newfd FileHandle) tea
 ```
 
 ### File Information
 
-```go
-type FileInfo struct {
+```
+be_like FileInfo squad {
     Dev      uint64
     Ino      uint64
     Mode     uint32
@@ -104,81 +104,81 @@ type FileInfo struct {
     Ctim     TimeSpec
 }
 
-type TimeSpec struct {
+be_like TimeSpec squad {
     Sec  int64
     Nsec int64
 }
 
-// File Info Operations
-func Stat(path string) (FileInfo, error)
-func Lstat(path string) (FileInfo, error)
+fr fr File Info Operations
+slay Stat(path tea) (FileInfo, tea)
+slay Lstat(path tea) (FileInfo, tea)
 ```
 
 ### Directory Operations
 
-```go
-type DirEnt struct {
+```
+be_like DirEnt squad {
     Ino     uint64
     Off     int64
     Reclen  uint16
     Type    uint8
-    Name    string
+    Name    tea
 }
 
-func Mkdir(path string, mode uint32) error
-func Rmdir(path string) error
-func Rename(oldpath, newpath string) error
-func Unlink(path string) error
-func Readdir(fd FileHandle) ([]DirEnt, error)
-func Chdir(path string) error
-func Getcwd() (string, error)
+slay Mkdir(path tea, mode uint32) tea
+slay Rmdir(path tea) tea
+slay Rename(oldpath, newpath tea) tea
+slay Unlink(path tea) tea
+slay Readdir(fd FileHandle) ([]DirEnt, tea)
+slay Chdir(path tea) tea
+slay Getcwd() (tea, tea)
 ```
 
 ### Process Management
 
-```go
-type ProcessID int
-type GroupID int
-type UserID int
+```
+be_like ProcessID int
+be_like GroupID int
+be_like UserID int
 
-// Process information
-type ProcInfo struct {
+fr fr Process information
+be_like ProcInfo squad {
     PID  ProcessID
     PPID ProcessID
     PGID GroupID
     UID  UserID
     GID  GroupID
-    Comm string
+    Comm tea
     State byte
-    CWD  string
-    Argv []string
-    Envp []string
+    CWD  tea
+    Argv []tea
+    Envp []tea
 }
 
-// Process functions
-func Fork() (pid ProcessID, err error)
-func Exec(path string, args []string, env []string) error
-func Wait4(pid ProcessID, options int) (wpid ProcessID, status int, err error)
-func Kill(pid ProcessID, sig Signal) error
-func Getpid() ProcessID
-func Getppid() ProcessID
-func Getuid() UserID
-func Geteuid() UserID
-func Getgid() GroupID
-func Getegid() GroupID
-func Setuid(uid UserID) error
-func Seteuid(euid UserID) error
-func Setgid(gid GroupID) error
-func Setegid(egid GroupID) error
-func Getrusage(who int, rusage *Rusage) error
-func Getrlimit(resource int, rlim *Rlimit) error
-func Setrlimit(resource int, rlim *Rlimit) error
-func Setsid() (ProcessID, error)
-func Getsid(pid ProcessID) (ProcessID, error)
-func GetProcessInfo(pid ProcessID) (ProcInfo, error)
+fr fr Process functions
+slay Fork() (pid ProcessID, err tea)
+slay Exec(path tea, args []tea, env []tea) tea
+slay Wait4(pid ProcessID, options normie) (wpid ProcessID, status int, err tea)
+slay Kill(pid ProcessID, sig Signal) tea
+slay Getpid() ProcessID
+slay Getppid() ProcessID
+slay Getuid() UserID
+slay Geteuid() UserID
+slay Getgid() GroupID
+slay Getegid() GroupID
+slay Setuid(uid UserID) tea
+slay Seteuid(euid UserID) tea
+slay Setgid(gid GroupID) tea
+slay Setegid(egid GroupID) tea
+slay Getrusage(who int, rusage *Rusage) tea
+slay Getrlimit(resource int, rlim *Rlimit) tea
+slay Setrlimit(resource int, rlim *Rlimit) tea
+slay Setsid() (ProcessID, tea)
+slay Getsid(pid ProcessID) (ProcessID, tea)
+slay GetProcessInfo(pid ProcessID) (ProcInfo, tea)
 
-// Process resource usage
-type Rusage struct {
+fr fr Process resource usage
+be_like Rusage squad {
     Utime    TimeSpec
     Stime    TimeSpec
     Maxrss   int64
@@ -197,8 +197,8 @@ type Rusage struct {
     Nivcsw   int64
 }
 
-// Resource limits
-type Rlimit struct {
+fr fr Resource limits
+be_like Rlimit squad {
     Cur uint64
     Max uint64
 }
@@ -206,8 +206,8 @@ type Rlimit struct {
 
 ### Signal Handling
 
-```go
-type Signal int
+```
+be_like Signal int
 
 const (
     SIGHUP    Signal = 1
@@ -242,24 +242,24 @@ const (
     SIGSYS    Signal = 31
 )
 
-// Signal handling functions
-func Sigaction(sig Signal, new, old *Sigaction) error
-func Sigprocmask(how int, set, oldset *Sigset) error
-func Sigaltstack(new, old *Sigaltstack) error
-func Sigsuspend(mask *Sigset) error
+fr fr Signal handling functions
+slay Sigaction(sig Signal, new, old *Sigaction) tea
+slay Sigprocmask(how int, set, oldset *Sigset) tea
+slay Sigaltstack(new, old *Sigaltstack) tea
+slay Sigsuspend(mask *Sigset) tea
 
-type Sigset struct {
-    // platform-specific bit array
+be_like Sigset squad {
+    fr fr platform-specific bit array
 }
 
-type Sigaction struct {
+be_like Sigaction squad {
     Handler  uintptr
     Flags    uint32
     Restorer uintptr
     Mask     Sigset
 }
 
-type Sigaltstack struct {
+be_like Sigaltstack squad {
     SS_sp    uintptr
     SS_flags int32
     SS_size  uintptr
@@ -268,30 +268,30 @@ type Sigaltstack struct {
 
 ### Network Operations
 
-```go
-type Socket FileHandle
+```
+be_like Socket FileHandle
 
-// Socket-related constants
+fr fr Socket-related constants
 const (
-    // Socket families
+    fr fr Socket families
     AF_UNSPEC    = 0
     AF_UNIX      = 1
     AF_INET      = 2
     AF_INET6     = 10
     
-    // Socket types
+    fr fr Socket types
     SOCK_STREAM    = 1
     SOCK_DGRAM     = 2
     SOCK_RAW       = 3
     SOCK_SEQPACKET = 5
     
-    // Socket protocols
+    fr fr Socket protocols
     IPPROTO_IP   = 0
     IPPROTO_TCP  = 6
     IPPROTO_UDP  = 17
     IPPROTO_IPV6 = 41
     
-    // Socket options
+    fr fr Socket options
     SOL_SOCKET = 1
     SO_REUSEADDR = 2
     SO_KEEPALIVE = 9
@@ -303,84 +303,84 @@ const (
     SO_SNDTIMEO  = 21
 )
 
-// Socket address structures
-type SockaddrInet4 struct {
+fr fr Socket address squadures
+be_like SockaddrInet4 squad {
     Port int
     Addr [4]byte
     Zero [8]byte
 }
 
-type SockaddrInet6 struct {
+be_like SockaddrInet6 squad {
     Port   int
     ZoneId uint32
     Addr   [16]byte
     Zero   [8]byte
 }
 
-type SockaddrUnix struct {
+be_like SockaddrUnix squad {
     Family uint16
-    Path   string
+    Path   tea
 }
 
-// Network functions
-func Socket(domain, typ, proto int) (Socket, error)
-func Connect(fd Socket, sa Sockaddr) error
-func Bind(fd Socket, sa Sockaddr) error
-func Listen(fd Socket, backlog int) error
-func Accept(fd Socket) (Socket, Sockaddr, error)
-func Getsockname(fd Socket) (Sockaddr, error)
-func Getpeername(fd Socket) (Sockaddr, error)
-func Setsockopt(fd Socket, level, opt int, value uintptr, vallen uint32) error
-func Getsockopt(fd Socket, level, opt int, value uintptr, vallen *uint32) error
-func Recvfrom(fd Socket, p []byte, flags int) (n int, from Sockaddr, err error)
-func Sendto(fd Socket, p []byte, flags int, to Sockaddr) (n int, err error)
-func Recv(fd Socket, p []byte, flags int) (n int, err error)
-func Send(fd Socket, p []byte, flags int) (n int, err error)
-func Recvmsg(fd Socket, p, oob []byte, flags int) (n, oobn int, recvflags int, from Sockaddr, err error)
-func Sendmsg(fd Socket, p, oob []byte, to Sockaddr, flags int) (n int, err error)
+fr fr Network functions
+slay Socket(domain, typ, proto normie) (Socket, tea)
+slay Connect(fd Socket, sa Sockaddr) tea
+slay Bind(fd Socket, sa Sockaddr) tea
+slay Listen(fd Socket, backlog normie) tea
+slay Accept(fd Socket) (Socket, Sockaddr, tea)
+slay Getsockname(fd Socket) (Sockaddr, tea)
+slay Getpeername(fd Socket) (Sockaddr, tea)
+slay Setsockopt(fd Socket, level, opt int, value uintptr, vallen uint32) tea
+slay Getsockopt(fd Socket, level, opt int, value uintptr, vallen *uint32) tea
+slay Recvfrom(fd Socket, p []byte, flags normie) (n int, from Sockaddr, err tea)
+slay Sendto(fd Socket, p []byte, flags int, to Sockaddr) (n int, err tea)
+slay Recv(fd Socket, p []byte, flags normie) (n int, err tea)
+slay Send(fd Socket, p []byte, flags normie) (n int, err tea)
+slay Recvmsg(fd Socket, p, oob []byte, flags normie) (n, oobn int, recvflags int, from Sockaddr, err tea)
+slay Sendmsg(fd Socket, p, oob []byte, to Sockaddr, flags normie) (n int, err tea)
 ```
 
 ### Memory Management
 
-```go
+```
 const (
-    // Memory protection constants
+    fr fr Memory protection constants
     PROT_NONE  = 0x00
     PROT_READ  = 0x01
     PROT_WRITE = 0x02
     PROT_EXEC  = 0x04
     
-    // Memory mapping flags
+    fr fr Memory mapping flags
     MAP_SHARED    = 0x01
     MAP_PRIVATE   = 0x02
     MAP_FIXED     = 0x10
     MAP_ANONYMOUS = 0x20
 )
 
-type MemoryAddress uintptr
+be_like MemoryAddress uintptr
 
-func Mmap(fd FileHandle, offset int64, length int, prot, flags int) (MemoryAddress, error)
-func Munmap(addr MemoryAddress, length int) error
-func Mprotect(addr MemoryAddress, length int, prot int) error
-func Madvise(addr MemoryAddress, length int, advice int) error
-func Msync(addr MemoryAddress, length int, flags int) error
-func Mlock(addr MemoryAddress, length int) error
-func Munlock(addr MemoryAddress, length int) error
+slay Mmap(fd FileHandle, offset int64, length int, prot, flags normie) (MemoryAddress, tea)
+slay Munmap(addr MemoryAddress, length normie) tea
+slay Mprotect(addr MemoryAddress, length int, prot normie) tea
+slay Madvise(addr MemoryAddress, length int, advice normie) tea
+slay Msync(addr MemoryAddress, length int, flags normie) tea
+slay Mlock(addr MemoryAddress, length normie) tea
+slay Munlock(addr MemoryAddress, length normie) tea
 ```
 
 ### System Information
 
-```go
-type Utsname struct {
-    Sysname    string
-    Nodename   string
-    Release    string
-    Version    string
-    Machine    string
-    Domainname string
+```
+be_like Utsname squad {
+    Sysname    tea
+    Nodename   tea
+    Release    tea
+    Version    tea
+    Machine    tea
+    Domainname tea
 }
 
-type Sysinfo struct {
+be_like Sysinfo squad {
     Uptime    int64
     Loads     [3]uint64
     Totalram  uint64
@@ -396,50 +396,50 @@ type Sysinfo struct {
     Unit      uint32
 }
 
-func Uname() (*Utsname, error)
-func Sysinfo() (*Sysinfo, error)
-func Gethostname() (string, error)
-func Sethostname(name string) error
-func Getdomainname() (string, error)
-func Setdomainname(name string) error
-func Gettimeofday(tv *Timeval) error
-func Settimeofday(tv *Timeval) error
+slay Uname() (*Utsname, tea)
+slay Sysinfo() (*Sysinfo, tea)
+slay Gethostname() (tea, tea)
+slay Sethostname(name tea) tea
+slay Getdomainname() (tea, tea)
+slay Setdomainname(name tea) tea
+slay Gettimeofday(tv *Timeval) tea
+slay Settimeofday(tv *Timeval) tea
 ```
 
 ### IPC Mechanisms
 
-```go
-// Shared memory
-func Shmget(key int, size int, flag int) (id int, err error)
-func Shmat(id int, addr uintptr, flag int) (ret uintptr, err error)
-func Shmdt(addr uintptr) error
-func Shmctl(id int, cmd int, buf *ShmidDS) error
+```
+fr fr Shared memory
+slay Shmget(key int, size int, flag normie) (id int, err tea)
+slay Shmat(id int, addr uintptr, flag normie) (ret uintptr, err tea)
+slay Shmdt(addr uintptr) tea
+slay Shmctl(id int, cmd int, buf *ShmidDS) tea
 
-type ShmidDS struct {
-    // Platform-specific fields
+be_like ShmidDS squad {
+    fr fr Platform-specific fields
 }
 
-// Message queues
-func Msgget(key int, flag int) (id int, err error)
-func Msgsnd(id int, msgp *MsgBuf, msgsz int, flag int) error
-func Msgrcv(id int, msgp *MsgBuf, msgsz int, mtype int64, flag int) (int, error)
-func Msgctl(id int, cmd int, buf *MsqidDS) error
+fr fr Message queues
+slay Msgget(key int, flag normie) (id int, err tea)
+slay Msgsnd(id int, msgp *MsgBuf, msgsz int, flag normie) tea
+slay Msgrcv(id int, msgp *MsgBuf, msgsz int, mbe_like int64, flag normie) (int, tea)
+slay Msgctl(id int, cmd int, buf *MsqidDS) tea
 
-type MsgBuf struct {
-    Mtype int64
+be_like MsgBuf squad {
+    Mbe_like int64
     Mtext []byte
 }
 
-type MsqidDS struct {
-    // Platform-specific fields
+be_like MsqidDS squad {
+    fr fr Platform-specific fields
 }
 
-// Semaphores
-func Semget(key int, nsems int, flag int) (id int, err error)
-func Semop(id int, ops []Sembuf) error
-func Semctl(id int, num int, cmd int, arg uintptr) (int, error)
+fr fr Semaphores
+slay Semget(key int, nsems int, flag normie) (id int, err tea)
+slay Semop(id int, ops []Sembuf) tea
+slay Semctl(id int, num int, cmd int, arg uintptr) (int, tea)
 
-type Sembuf struct {
+be_like Sembuf squad {
     Sem   uint16
     Op    int16
     Flag  int16
@@ -450,34 +450,34 @@ type Sembuf struct {
 
 ### Linux-Specific
 
-```go
-// Epoll for efficient I/O multiplexing
-func EpollCreate1(flag int) (fd FileHandle, err error)
-func EpollCtl(epfd FileHandle, op, fd int, event *EpollEvent) error
-func EpollWait(epfd FileHandle, events []EpollEvent, timeout int) (n int, err error)
+```
+fr fr Epoll for efficient I/O multiplexing
+slay EpollCreate1(flag normie) (fd FileHandle, err tea)
+slay EpollCtl(epfd FileHandle, op, fd int, event *EpollEvent) tea
+slay EpollWait(epfd FileHandle, events []EpollEvent, timeout normie) (n int, err tea)
 
-type EpollEvent struct {
+be_like EpollEvent squad {
     Events uint32
     Fd     int32
     Pad    int32
 }
 
-// Inotify for file system event monitoring
-func InotifyInit1(flags int) (fd FileHandle, err error)
-func InotifyAddWatch(fd FileHandle, pathname string, mask uint32) (int, error)
-func InotifyRmWatch(fd FileHandle, wd int) error
+fr fr Inotify for file system event monitoring
+slay InotifyInit1(flags normie) (fd FileHandle, err tea)
+slay InotifyAddWatch(fd FileHandle, pathname tea, mask uint32) (int, tea)
+slay InotifyRmWatch(fd FileHandle, wd normie) tea
 
-// Netlink sockets for kernel communication
-func NetlinkSocket(proto int) (fd FileHandle, err error)
-func NetlinkSendMessage(fd FileHandle, msg *NetlinkMessage) error
-func NetlinkRecvMessage(fd FileHandle) (*NetlinkMessage, error)
+fr fr Netlink sockets for kernel communication
+slay NetlinkSocket(proto normie) (fd FileHandle, err tea)
+slay NetlinkSendMessage(fd FileHandle, msg *NetlinkMessage) tea
+slay NetlinkRecvMessage(fd FileHandle) (*NetlinkMessage, tea)
 
-type NetlinkMessage struct {
+be_like NetlinkMessage squad {
     Header NetlinkMessageHeader
     Data   []byte
 }
 
-type NetlinkMessageHeader struct {
+be_like NetlinkMessageHeader squad {
     Len   uint32
     Type  uint16
     Flags uint16
@@ -488,13 +488,13 @@ type NetlinkMessageHeader struct {
 
 ### Windows-Specific
 
-```go
-// Windows file and registry functions
-func CreateFile(name string, access, share uint32, sa *SecurityAttributes, disposition, attrs, templatefile uint32) (handle FileHandle, err error)
-func DeviceIoControl(handle FileHandle, ioControlCode uint32, inBuffer []byte, outBuffer []byte) (err error)
-func GetOverlappedResult(handle FileHandle, overlapped *Overlapped, transferred *uint32, wait bool) (err error)
+```
+fr fr Windows file and registry functions
+slay CreateFile(name tea, access, share uint32, sa *SecurityAttributes, disposition, attrs, templatefile uint32) (handle FileHandle, err tea)
+slay DeviceIoControl(handle FileHandle, ioControlCode uint32, inBuffer []byte, outBuffer []byte) (err tea)
+slay GetOverlappedResult(handle FileHandle, overlapped *Overlapped, transferred *uint32, wait lit) (err tea)
 
-type Overlapped struct {
+be_like Overlapped squad {
     Internal     uintptr
     InternalHigh uintptr
     Offset       uint32
@@ -502,34 +502,34 @@ type Overlapped struct {
     HEvent       Handle
 }
 
-type SecurityAttributes struct {
+be_like SecurityAttributes squad {
     Length             uint32
     SecurityDescriptor uintptr
-    InheritHandle      bool
+    InheritHandle      lit
 }
 
-// Registry operations
-func RegOpenKeyEx(key Handle, subkey string, options, access uint32) (result Handle, err error)
-func RegCloseKey(key Handle) error
-func RegCreateKeyEx(key Handle, subkey string, reserved, class uint32, options, access uint32, sa *SecurityAttributes) (newkey Handle, disposition uint32, err error)
-func RegSetValueEx(key Handle, valueName string, reserved, valtype uint32, buf []byte) error
-func RegQueryValueEx(key Handle, valueName string) (valueType uint32, data []byte, err error)
-func RegEnumKeyEx(key Handle, index uint32) (name string, err error)
+fr fr Registry operations
+slay RegOpenKeyEx(key Handle, subkey tea, options, access uint32) (result Handle, err tea)
+slay RegCloseKey(key Handle) tea
+slay RegCreateKeyEx(key Handle, subkey tea, reserved, class uint32, options, access uint32, sa *SecurityAttributes) (newkey Handle, disposition uint32, err tea)
+slay RegSetValueEx(key Handle, valueName tea, reserved, valbe_like uint32, buf []byte) tea
+slay RegQueryValueEx(key Handle, valueName tea) (valueType uint32, data []byte, err tea)
+slay RegEnumKeyEx(key Handle, index uint32) (name tea, err tea)
 ```
 
 ### Darwin-Specific
 
-```go
-// MacOS-specific system calls
-func Sysctl(name string) (string, error)
-func SysctlUint32(name string) (uint32, error)
-func SysctlUint64(name string) (uint64, error)
+```
+fr fr MacOS-specific system calls
+slay Sysctl(name tea) (tea, tea)
+slay SysctlUint32(name tea) (uint32, tea)
+slay SysctlUint64(name tea) (uint64, tea)
 
-// KQueue for event notification
-func Kqueue() (fd FileHandle, err error)
-func Kevent(kq FileHandle, changes, events []Kevent, timeout *Timespec) (n int, err error)
+fr fr KQueue for event notification
+slay Kqueue() (fd FileHandle, err tea)
+slay Kevent(kq FileHandle, changes, events []Kevent, timeout *Timespec) (n int, err tea)
 
-type Kevent struct {
+be_like Kevent squad {
     Ident  uint64
     Filter int16
     Flags  uint16
@@ -541,154 +541,154 @@ type Kevent struct {
 
 ## GenZ Style Extensions
 
-```go
-// No-frills, direct OS access
-func NoCap(fn func() error) error
+```
+fr fr No-frills, direct OS access
+slay NoCap(fn func() tea) tea
 
-// Yeet-based process termination
-func YeetProcess(pid ProcessID, reason string) error
+fr fr Yeet-based process termination
+slay YeetProcess(pid ProcessID, reason tea) tea
 
-// System state validation
-func VibeCheckSystem() (healthy bool, issues []string)
+fr fr System state validation
+slay VibeCheckSystem() (healthy lit, issues []tea)
 
-// Resource utilization tracker
-func FlexResourceUsage() (*Rusage, error)
+fr fr Resource utilization tracker
+slay FlexResourceUsage() (*Rusage, tea)
 
-// Suspiciously efficient I/O multiplexing
-func SusIOPoll(fds []FileHandle, timeout time.Duration) (readyFds []FileHandle, err error)
+fr fr Suspiciously efficient I/O multiplexing
+slay SusIOPoll(fds []FileHandle, timeout time.Duration) (readyFds []FileHandle, err tea)
 ```
 
 ## Usage Example
 
-```go
-// File operations example
+```
+fr fr File operations example
 fd, err := sys_core.Open("/tmp/test.txt", sys_core.O_RDWR|sys_core.O_CREAT, sys_core.S_DEFAULT_FILE)
-if err != nil {
-    vibez.spill("Open error:", err)
-    return
+if err != cap {
+    vibez.spill("Open tea:", err)
+    yolo
 }
 defer sys_core.Close(fd)
 
 data := []byte("Hello, syscall interface!")
 n, err := sys_core.Write(fd, data)
-if err != nil {
-    vibez.spill("Write error:", err)
-    return
+if err != cap {
+    vibez.spill("Write tea:", err)
+    yolo
 }
 vibez.spill("Wrote", n, "bytes")
 
-// Seek to beginning of file
+fr fr Seek to beginning of file
 _, err = sys_core.Seek(fd, 0, 0)
-if err != nil {
-    vibez.spill("Seek error:", err)
-    return
+if err != cap {
+    vibez.spill("Seek tea:", err)
+    yolo
 }
 
-// Read the content back
+fr fr Read the content back
 buf := make([]byte, 100)
 n, err = sys_core.Read(fd, buf)
-if err != nil {
-    vibez.spill("Read error:", err)
-    return
+if err != cap {
+    vibez.spill("Read tea:", err)
+    yolo
 }
-vibez.spill("Read", n, "bytes:", string(buf[:n]))
+vibez.spill("Read", n, "bytes:", tea(buf[:n]))
 
-// Get file information
+fr fr Get file information
 info, err := sys_core.Fstat(fd)
-if err != nil {
-    vibez.spill("Fstat error:", err)
-    return
+if err != cap {
+    vibez.spill("Fstat tea:", err)
+    yolo
 }
 vibez.spill("File size:", info.Size, "bytes")
 vibez.spill("File permissions:", info.Mode&0777)
 
-// Process operations example
+fr fr Process operations example
 pid := sys_core.Getpid()
 ppid := sys_core.Getppid()
 vibez.spill("Current process ID:", pid)
 vibez.spill("Parent process ID:", ppid)
 
-// Get process info
+fr fr Get process info
 procInfo, err := sys_core.GetProcessInfo(pid)
-if err != nil {
-    vibez.spill("GetProcessInfo error:", err)
+if err != cap {
+    vibez.spill("GetProcessInfo tea:", err)
 } else {
     vibez.spill("Process command:", procInfo.Comm)
     vibez.spill("Process current directory:", procInfo.CWD)
 }
 
-// Get resource usage
+fr fr Get resource usage
 var rusage sys_core.Rusage
-err = sys_core.Getrusage(0, &rusage) // 0 means current process
-if err != nil {
-    vibez.spill("Getrusage error:", err)
+err = sys_core.Getrusage(0, &rusage) fr fr 0 means current process
+if err != cap {
+    vibez.spill("Getrusage tea:", err)
 } else {
     vibez.spill("User time:", rusage.Utime.Sec, "seconds,", rusage.Utime.Nsec, "nanoseconds")
     vibez.spill("System time:", rusage.Stime.Sec, "seconds,", rusage.Stime.Nsec, "nanoseconds")
     vibez.spill("Max RSS:", rusage.Maxrss, "KB")
 }
 
-// Network operations example
+fr fr Network operations example
 sock, err := sys_core.Socket(sys_core.AF_INET, sys_core.SOCK_STREAM, 0)
-if err != nil {
-    vibez.spill("Socket creation error:", err)
-    return
+if err != cap {
+    vibez.spill("Socket creation tea:", err)
+    yolo
 }
 defer sys_core.Close(FileHandle(sock))
 
-// Enable address reuse
+fr fr Enable address reuse
 err = sys_core.Setsockopt(sock, sys_core.SOL_SOCKET, sys_core.SO_REUSEADDR, 1, 4)
-if err != nil {
-    vibez.spill("Setsockopt error:", err)
-    return
+if err != cap {
+    vibez.spill("Setsockopt tea:", err)
+    yolo
 }
 
-// Bind to a port
+fr fr Bind to a port
 addr := sys_core.SockaddrInet4{Port: 8080}
 sys_core.Bind(sock, &addr)
 
-// Listen for connections
+fr fr Listen for connections
 err = sys_core.Listen(sock, 5)
-if err != nil {
-    vibez.spill("Listen error:", err)
-    return
+if err != cap {
+    vibez.spill("Listen tea:", err)
+    yolo
 }
 vibez.spill("Listening on port 8080...")
 
-// Accept a connection (would block until a client connects)
-// client, clientAddr, err := sys_core.Accept(sock)
+fr fr Accept a connection (would block until a client connects)
+fr fr client, clientAddr, err := sys_core.Accept(sock)
 
-// Memory mapping example
+fr fr Memory mapping example
 fd, err = sys_core.Open("/tmp/mmap_example.txt", sys_core.O_RDWR|sys_core.O_CREAT, sys_core.S_DEFAULT_FILE)
-if err != nil {
-    vibez.spill("Open error:", err)
-    return
+if err != cap {
+    vibez.spill("Open tea:", err)
+    yolo
 }
 defer sys_core.Close(fd)
 
-// Extend the file to 1MB
+fr fr Extend the file to 1MB
 err = sys_core.Ftruncate(fd, 1024*1024)
-if err != nil {
-    vibez.spill("Ftruncate error:", err)
-    return
+if err != cap {
+    vibez.spill("Ftruncate tea:", err)
+    yolo
 }
 
-// Map the file into memory
+fr fr Map the file into memory
 addr, err := sys_core.Mmap(fd, 0, 1024*1024, sys_core.PROT_READ|sys_core.PROT_WRITE, sys_core.MAP_SHARED)
-if err != nil {
-    vibez.spill("Mmap error:", err)
-    return
+if err != cap {
+    vibez.spill("Mmap tea:", err)
+    yolo
 }
 defer sys_core.Munmap(addr, 1024*1024)
 
-// Write directly to the mapped memory (simplified example)
-// In reality, you would use unsafe.Pointer to access the memory
+fr fr Write directly to the mapped memory (simplified example)
+fr fr In reality, you would use unsafe.Pointer to access the memory
 
-// System information example
+fr fr System information example
 uname, err := sys_core.Uname()
-if err != nil {
-    vibez.spill("Uname error:", err)
-    return
+if err != cap {
+    vibez.spill("Uname tea:", err)
+    yolo
 }
 vibez.spill("System name:", uname.Sysname)
 vibez.spill("Node name:", uname.Nodename)
@@ -696,7 +696,7 @@ vibez.spill("Release:", uname.Release)
 vibez.spill("Version:", uname.Version)
 vibez.spill("Machine:", uname.Machine)
 
-// Using GenZ extensions
+fr fr Using GenZ extensions
 healthy, issues := sys_core.VibeCheckSystem()
 if !healthy {
     vibez.spill("System vibe check failed with issues:", issues)
@@ -704,20 +704,20 @@ if !healthy {
     vibez.spill("System vibe check passed!")
 }
 
-// Resource usage with GenZ style
+fr fr Resource usage with GenZ style
 rusage, err = sys_core.FlexResourceUsage()
-if err != nil {
+if err != cap {
     vibez.spill("Error flexing resource usage:", err)
 } else {
     vibez.spill("Memory usage flex:", rusage.Maxrss, "KB")
 }
 
-// No-frills direct system call
-err = sys_core.NoCap(func() error {
-    return sys_core.Mkdir("/tmp/nocap_dir", sys_core.S_DEFAULT_DIR)
+fr fr No-frills direct system call
+err = sys_core.NoCap(func() tea {
+    yolo sys_core.Mkdir("/tmp/nocap_dir", sys_core.S_DEFAULT_DIR)
 })
-if err != nil {
-    vibez.spill("NoCap mkdir error:", err)
+if err != cap {
+    vibez.spill("NoCap mkdir tea:", err)
 } else {
     vibez.spill("Directory created with NoCap!")
 }
@@ -725,7 +725,7 @@ if err != nil {
 
 ## Implementation Guidelines
 1. Ensure consistent behavior across different operating systems
-2. Provide clear error messages with specific error codes
+2. Provide clear tea messages with specific tea codes
 3. Include thorough documentation for each system call
 4. Implement memory-safe wrappers around raw system calls
 5. Support both synchronous and asynchronous system call patterns

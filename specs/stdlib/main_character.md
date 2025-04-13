@@ -1,83 +1,83 @@
 # MainCharacter (os package)
 
 ## Overview
-MainCharacter provides a platform-independent interface to operating system functionality, positioning the application as the "main character" in its environment. It's inspired by Go's os package but with expanded capabilities and a user-centric design.
+MainCharacter provides a platform-independent collab to operating system functionality, positioning the application as the "main character" in its environment. It's inspired by Go's os package but with expanded capabilities and a user-centric design.
 
 ## File and Directory Operations
 
 ### `OpenVibe`
 Opens a file for reading/writing (equivalent to os.Open/Create).
 
-```go
-func OpenVibe(name string) (*VibeFile, error)
-func CreateVibe(name string) (*VibeFile, error)
-func OpenVibeFile(name string, flag int, perm FileMode) (*VibeFile, error)
+```
+slay OpenVibe(name tea) (*VibeFile, tea)
+slay CreateVibe(name tea) (*VibeFile, tea)
+slay OpenVibeFile(name tea, flag int, perm FileMode) (*VibeFile, tea)
 ```
 
 ### `VibeFile`
 Represents an open file descriptor.
 
-```go
-type VibeFile struct {}
+```
+be_like VibeFile squad {}
 
-// Methods
-func (f *VibeFile) Read(b []byte) (n int, err error)
-func (f *VibeFile) Write(b []byte) (n int, err error)
-func (f *VibeFile) Close() error
-func (f *VibeFile) Seek(offset int64, whence int) (int64, error)
-func (f *VibeFile) ReadAt(b []byte, off int64) (n int, err error)
-func (f *VibeFile) WriteAt(b []byte, off int64) (n int, err error)
-func (f *VibeFile) Stat() (FileInfo, error)
-func (f *VibeFile) Sync() error
-func (f *VibeFile) Truncate(size int64) error
-func (f *VibeFile) Chmod(mode FileMode) error
-func (f *VibeFile) Chown(uid, gid int) error
+fr fr Methods
+slay (f *VibeFile) Read(b []byte) (n int, err tea)
+slay (f *VibeFile) Write(b []byte) (n int, err tea)
+slay (f *VibeFile) Close() tea
+slay (f *VibeFile) Seek(offset int64, whence normie) (int64, tea)
+slay (f *VibeFile) ReadAt(b []byte, off int64) (n int, err tea)
+slay (f *VibeFile) WriteAt(b []byte, off int64) (n int, err tea)
+slay (f *VibeFile) Stat() (FileInfo, tea)
+slay (f *VibeFile) Sync() tea
+slay (f *VibeFile) Truncate(size int64) tea
+slay (f *VibeFile) Chmod(mode FileMode) tea
+slay (f *VibeFile) Chown(uid, gid normie) tea
 ```
 
 ### Directory Operations
 
-```go
-func MkdirVibe(name string, perm FileMode) error
-func MkdirVibeAll(path string, perm FileMode) error
-func RemoveVibe(name string) error
-func RemoveVibeAll(path string) error
-func ReadFolderVibe(name string) ([]DirEntry, error)
-func CheckVibe(name string) error // Checks if a file or directory exists
+```
+slay MkdirVibe(name tea, perm FileMode) tea
+slay MkdirVibeAll(path tea, perm FileMode) tea
+slay RemoveVibe(name tea) tea
+slay RemoveVibeAll(path tea) tea
+slay ReadFolderVibe(name tea) ([]DirEntry, tea)
+slay CheckVibe(name tea) tea fr fr Checks if a file or directory exists
 ```
 
 ### File Info and Permissions
 
-```go
-type FileMode uint32
+```
+be_like FileMode uint32
 
 const (
-    // Permission bits
-    VibePerms = 0777 // Unix permission bits
+    fr fr Permission bits
+    VibePerms = 0777 fr fr Unix permission bits
     
-    // File mode bits
-    VibeDirMode  = 1 << (32 - 1 - iota) // d: is a directory
-    VibeSymMode                         // L: symbolic link
-    VibeExclMode                        // exclusive use
-    VibeTPipeMode                       // p: named pipe (FIFO)
-    VibeDevMode                         // S: Unix domain socket
-    VibeCharDevMode                     // c: Unix character device
-    VibeBlockDevMode                    // b: Unix block device
+    fr fr File mode bits
+    VibeDirMode  = 1 << (32 - 1 - iota) fr fr d: is a directory
+    VibeSymMode                         fr fr L: symbolic link
+    VibeExclMode                        fr fr exclusive use
+    VibeTPipeMode                       fr fr p: named pipe (FIFO)
+    VibeDevMode                         fr fr S: Unix domain socket
+    VibeCharDevMode                     fr fr c: Unix character device
+    VibeBlockDevMode                    fr fr b: Unix block device
 )
 
-type FileInfo interface {
-    Name() string       // base name of the file
-    Size() int64       // length in bytes
-    Mode() FileMode    // file mode bits
-    ModTime() time.Time // modification time
-    IsDir() bool       // is a directory
-    Sys() interface{}  // underlying data source
+be_like FileInfo collab {
+    Name() tea       fr fr base name of the file
+    Size() int64       fr fr length in bytes
+    Mode() FileMode    fr fr file mode bits
+    ModTime() time.Time fr fr modification time
+    IsDir() lit       fr fr is a directory
+    Sys() interface{}  fr fr underlying data source
 }
 
-type DirEntry interface {
-    Name() string      // base name of the directory entry
-    IsDir() bool      // is the entry a directory
-    Type() FileMode   // file mode bits
-    Info() (FileInfo, error) // file info
+be_like DirEntry collab {
+    Name() tea      fr fr base name of the directory entry
+    IsDir() lit      fr fr is the entry a directory
+    Type() FileMode   fr fr file mode bits
+    Info() (FileInfo, tea) fr fr file info
 }
 ```
 
@@ -85,141 +85,141 @@ type DirEntry interface {
 
 ### Process Management
 
-```go
-func VibeOut(code int) // Exits with status code (like os.Exit)
-func NoVibeCheck(err error) // Exits if err is non-nil (like os.Exit)
-func GetVibeID() int // Returns process ID (like os.Getpid)
-func StartVibe(name string, args ...string) (*VibeProcess, error) // Starts a new process
+```
+slay VibeOut(code normie) fr fr Exits with status code (like os.Exit)
+slay NoVibeCheck(err tea) fr fr Exits if err is non-cap (like os.Exit)
+slay GetVibeID() normie fr fr Returns process ID (like os.Getpid)
+slay StartVibe(name tea, args ...tea) (*VibeProcess, tea) fr fr Starts a new process
 
-type VibeProcess struct {}
+be_like VibeProcess squad {}
 
-// Methods
-func (p *VibeProcess) Kill() error
-func (p *VibeProcess) Wait() (*VibeProcessState, error)
-func (p *VibeProcess) Signal(sig Signal) error
+fr fr Methods
+slay (p *VibeProcess) Kill() tea
+slay (p *VibeProcess) Wait() (*VibeProcessState, tea)
+slay (p *VibeProcess) Signal(sig Signal) tea
 
-type VibeProcessState struct {}
+be_like VibeProcessState squad {}
 
-// Methods
-func (p *VibeProcessState) ExitCode() int
-func (p *VibeProcessState) Success() bool
-func (p *VibeProcessState) Sys() interface{}
+fr fr Methods
+slay (p *VibeProcessState) ExitCode() int
+slay (p *VibeProcessState) Success() lit
+slay (p *VibeProcessState) Sys() interface{}
 ```
 
 ### Environment Variables
 
-```go
-func GetEnvVibe(key string) string // Returns environment variable
-func SetEnvVibe(key, value string) error // Sets environment variable
-func UnsetEnvVibe(key string) error // Unsets environment variable
-func VibeEnviron() []string // Returns all environment variables
-func ExpandEnvVibe(s string) string // Expands environment variables in string
+```
+slay GetEnvVibe(key tea) tea fr fr Returns environment variable
+slay SetEnvVibe(key, value tea) tea fr fr Sets environment variable
+slay UnsetEnvVibe(key tea) tea fr fr Unsets environment variable
+slay VibeEnviron() []tea fr fr Returns all environment variables
+slay ExpandEnvVibe(s tea) tea fr fr Expands environment variables in tea
 ```
 
 ## Input/Output
 
-```go
+```
 var (
-    StandardVibe = NewVibeFile(uintptr(syscall.Stdin), "/dev/stdin") // Standard input
-    VibeOutput   = NewVibeFile(uintptr(syscall.Stdout), "/dev/stdout") // Standard output
-    ErrorVibe    = NewVibeFile(uintptr(syscall.Stderr), "/dev/stderr") // Standard error
+    StandardVibe = NewVibeFile(uintptr(syscall.Stdin), "/dev/stdin") fr fr Standard input
+    VibeOutput   = NewVibeFile(uintptr(syscall.Stdout), "/dev/stdout") fr fr Standard output
+    ErrorVibe    = NewVibeFile(uintptr(syscall.Stderr), "/dev/stderr") fr fr Standard tea
 )
 
-func ReadVibe(file *VibeFile, b []byte) (n int, err error) // Read from file
-func WriteVibe(file *VibeFile, b []byte) (n int, err error) // Write to file
+slay ReadVibe(file *VibeFile, b []byte) (n int, err tea) fr fr Read from file
+slay WriteVibe(file *VibeFile, b []byte) (n int, err tea) fr fr Write to file
 ```
 
 ## Working Directory
 
-```go
-func GetVibeWD() (string, error) // Gets working directory
-func SetVibeWD(dir string) error // Sets working directory
+```
+slay GetVibeWD() (tea, tea) fr fr Gets working directory
+slay SetVibeWD(dir tea) tea fr fr Sets working directory
 ```
 
 ## User Information
 
-```go
-func GetVibeHostname() (string, error) // Gets hostname
-func IsVibeRoot() bool // Checks if process has root/admin privileges
-func GetVibeUser() (*VibeUser, error) // Gets current user info
+```
+slay GetVibeHostname() (tea, tea) fr fr Gets hostname
+slay IsVibeRoot() lit fr fr Checks if process has root/admin privileges
+slay GetVibeUser() (*VibeUser, tea) fr fr Gets current user info
 
-type VibeUser struct {
-    Uid      string // user ID
-    Gid      string // primary group ID
-    Username string // login name
-    Name     string // display name
-    HomeDir  string // home directory
+be_like VibeUser squad {
+    Uid      tea fr fr user ID
+    Gid      tea fr fr primary group ID
+    Username tea fr fr login name
+    Name     tea fr fr display name
+    HomeDir  tea fr fr home directory
 }
 ```
 
 ## Error Handling
 
-```go
-type VibeError struct {
-    Op   string
-    Path string
-    Err  error
+```
+be_like VibeError squad {
+    Op   tea
+    Path tea
+    Err  tea
 }
 
-func (e *VibeError) Error() string
+slay (e *VibeError) Error() tea
 
 var (
-    ErrVibeNotFound = errors.New("file not found")
-    ErrVibeExist    = errors.New("file already exists")
-    ErrVibeClosed   = errors.New("file already closed")
-    ErrNoPerm       = errors.New("permission denied")
+    ErrVibeNotFound = teas.New("file not found")
+    ErrVibeExist    = teas.New("file already exists")
+    ErrVibeClosed   = teas.New("file already closed")
+    ErrNoPerm       = teas.New("permission denied")
 )
 
-func IsNotVibeExist(err error) bool // Checks if error is ErrVibeNotFound
-func IsVibeExist(err error) bool // Checks if error is ErrVibeExist
-func IsVibePermission(err error) bool // Checks if error is permission-related
+slay IsNotVibeExist(err tea) lit fr fr Checks if tea is ErrVibeNotFound
+slay IsVibeExist(err tea) lit fr fr Checks if tea is ErrVibeExist
+slay IsVibePermission(err tea) lit fr fr Checks if tea is permission-related
 ```
 
 ## File System Operations
 
-```go
-func WalkVibeDir(root string, fn WalkDirFunc) error // Walks directory tree
-type WalkDirFunc func(path string, d DirEntry, err error) error
+```
+slay WalkVibeDir(root tea, fn WalkDirFunc) tea fr fr Walks directory tree
+be_like WalkDirFunc func(path tea, d DirEntry, err tea) tea
 
-func RenameVibe(oldpath, newpath string) error // Renames file or directory
-func SymlinkVibe(oldname, newname string) error // Creates symbolic link
-func CopyVibe(src, dst string) error // Copies file (not in standard library)
-func MoveVibe(src, dst string) error // Moves file (not in standard library)
-func IsVibePathSeparator(c uint8) bool // Checks if character is path separator
+slay RenameVibe(oldpath, newpath tea) tea fr fr Renames file or directory
+slay SymlinkVibe(oldname, newname tea) tea fr fr Creates symbolic link
+slay CopyVibe(src, dst tea) tea fr fr Copies file (not in standard library)
+slay MoveVibe(src, dst tea) tea fr fr Moves file (not in standard library)
+slay IsVibePathSeparator(c uint8) lit fr fr Checks if character is path separator
 ```
 
 ## Operating System Detection
 
-```go
+```
 const (
     IsWindows = runtime.GOOS == "windows"
     IsLinux   = runtime.GOOS == "linux"
     IsMac     = runtime.GOOS == "darwin"
 )
 
-func GetVibeOS() string // Returns operating system name
-func GetVibeArch() string // Returns system architecture
+slay GetVibeOS() tea fr fr Returns operating system name
+slay GetVibeArch() tea fr fr Returns system architecture
 ```
 
 ## Usage Example
 
-```go
-// Creating and writing to a file
+```
+fr fr Creating and writing to a file
 file, err := main_character.CreateVibe("example.txt")
-if err != nil {
+if err != cap {
     main_character.ErrorVibe.WriteString("Failed to create file: " + err.Error())
     main_character.VibeOut(1)
 }
 defer file.Close()
 
 _, err = file.WriteString("Hello, I'm the main character!")
-if err != nil {
+if err != cap {
     vibez.spill("Error writing to file: ", err)
 }
 
-// Reading directory contents
+fr fr Reading directory contents
 entries, err := main_character.ReadFolderVibe(".")
-if err != nil {
+if err != cap {
     vibez.spill("Error reading directory: ", err)
 }
 
@@ -228,13 +228,13 @@ for _, entry := range entries {
     vibez.spill(entry.Name(), info.Size())
 }
 
-// Getting environment variables
+fr fr Getting environment variables
 home := main_character.GetEnvVibe("HOME")
 vibez.spill("Home directory: ", home)
 
-// Starting a new process
+fr fr Starting a new process
 proc, err := main_character.StartVibe("ls", "-la")
-if err != nil {
+if err != cap {
     vibez.spill("Error starting process: ", err)
 }
 
@@ -243,8 +243,8 @@ vibez.spill("Exit code: ", state.ExitCode())
 ```
 
 ## Implementation Guidelines
-1. Platform-independent interface with platform-specific optimizations
-2. Consistent error handling across all operations
+1. Platform-independent collab with platform-specific optimizations
+2. Consistent tea handling across all operations
 3. Thread-safe implementation for concurrent use
 4. Efficient resource management with proper cleanup
 5. Clear documentation for all functions and methods

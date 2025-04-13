@@ -8,60 +8,60 @@ ClockBait provides functionality for measuring and displaying time with Gen Z fl
 ### `VibeTime`
 Represents an instant in time with nanosecond precision.
 
-```go
-type VibeTime struct {}
+```
+be_like VibeTime squad {}
 
-// Constructors
-func Now() VibeTime
-func Date(year int, month Month, day, hour, min, sec, nsec int, loc *Location) VibeTime
-func Unix(sec int64, nsec int64) VibeTime
-func UnixMilli(msec int64) VibeTime
-func UnixMicro(usec int64) VibeTime
-func Parse(layout, value string) (VibeTime, error)
-func ParseInLocation(layout, value string, loc *Location) (VibeTime, error)
+fr fr Consquadors
+slay Now() VibeTime
+slay Date(year int, month Month, day, hour, min, sec, nsec int, loc *Location) VibeTime
+slay Unix(sec int64, nsec int64) VibeTime
+slay UnixMilli(msec int64) VibeTime
+slay UnixMicro(usec int64) VibeTime
+slay Parse(layout, value tea) (VibeTime, tea)
+slay ParseInLocation(layout, value tea, loc *Location) (VibeTime, tea)
 
-// Methods
-func (t VibeTime) Add(d Duration) VibeTime
-func (t VibeTime) AddDate(years, months, days int) VibeTime
-func (t VibeTime) After(u VibeTime) bool
-func (t VibeTime) Before(u VibeTime) bool
-func (t VibeTime) Compare(u VibeTime) int
-func (t VibeTime) Equal(u VibeTime) bool
-func (t VibeTime) Format(layout string) string
-func (t VibeTime) In(loc *Location) VibeTime
-func (t VibeTime) Local() VibeTime
-func (t VibeTime) Location() *Location
-func (t VibeTime) Round(d Duration) VibeTime
-func (t VibeTime) Sub(u VibeTime) Duration
-func (t VibeTime) Truncate(d Duration) VibeTime
-func (t VibeTime) UTC() VibeTime
-func (t VibeTime) Unix() int64
-func (t VibeTime) UnixMilli() int64
-func (t VibeTime) UnixMicro() int64
-func (t VibeTime) UnixNano() int64
+fr fr Methods
+slay (t VibeTime) Add(d Duration) VibeTime
+slay (t VibeTime) AddDate(years, months, days normie) VibeTime
+slay (t VibeTime) After(u VibeTime) lit
+slay (t VibeTime) Before(u VibeTime) lit
+slay (t VibeTime) Compare(u VibeTime) int
+slay (t VibeTime) Equal(u VibeTime) lit
+slay (t VibeTime) Format(layout tea) tea
+slay (t VibeTime) In(loc *Location) VibeTime
+slay (t VibeTime) Local() VibeTime
+slay (t VibeTime) Location() *Location
+slay (t VibeTime) Round(d Duration) VibeTime
+slay (t VibeTime) Sub(u VibeTime) Duration
+slay (t VibeTime) Truncate(d Duration) VibeTime
+slay (t VibeTime) UTC() VibeTime
+slay (t VibeTime) Unix() int64
+slay (t VibeTime) UnixMilli() int64
+slay (t VibeTime) UnixMicro() int64
+slay (t VibeTime) UnixNano() int64
 
-// Date components
-func (t VibeTime) Date() (year int, month Month, day int)
-func (t VibeTime) Year() int
-func (t VibeTime) Month() Month
-func (t VibeTime) Day() int
-func (t VibeTime) Weekday() Weekday
-func (t VibeTime) ISOWeek() (year, week int)
-func (t VibeTime) Clock() (hour, min, sec int)
-func (t VibeTime) Hour() int
-func (t VibeTime) Minute() int
-func (t VibeTime) Second() int
-func (t VibeTime) Nanosecond() int
-func (t VibeTime) YearDay() int
+fr fr Date components
+slay (t VibeTime) Date() (year int, month Month, day normie)
+slay (t VibeTime) Year() int
+slay (t VibeTime) Month() Month
+slay (t VibeTime) Day() int
+slay (t VibeTime) Weekday() Weekday
+slay (t VibeTime) ISOWeek() (year, week normie)
+slay (t VibeTime) Clock() (hour, min, sec normie)
+slay (t VibeTime) Hour() int
+slay (t VibeTime) Minute() int
+slay (t VibeTime) Second() int
+slay (t VibeTime) Nanosecond() int
+slay (t VibeTime) YearDay() int
 ```
 
 ### `Duration`
 Represents the elapsed time between two instants as an int64 nanosecond count.
 
-```go
-type Duration int64
+```
+be_like Duration int64
 
-// Predefined durations
+fr fr Predefined durations
 const (
     NanoBlink  = 1
     MicroBlink = 1000 * NanoBlink
@@ -74,51 +74,51 @@ const (
     WeekVibe   = 7 * DayVibe
 )
 
-// Methods
-func (d Duration) Hours() float64
-func (d Duration) Minutes() float64
-func (d Duration) Seconds() float64
-func (d Duration) Milliseconds() int64
-func (d Duration) Microseconds() int64
-func (d Duration) Nanoseconds() int64
-func (d Duration) String() string
-func (d Duration) Round(m Duration) Duration
-func (d Duration) Truncate(m Duration) Duration
+fr fr Methods
+slay (d Duration) Hours() float64
+slay (d Duration) Minutes() float64
+slay (d Duration) Seconds() float64
+slay (d Duration) Milliseconds() int64
+slay (d Duration) Microseconds() int64
+slay (d Duration) Nanoseconds() int64
+slay (d Duration) String() tea
+slay (d Duration) Round(m Duration) Duration
+slay (d Duration) Truncate(m Duration) Duration
 
-// Constructor
-func ParseDuration(s string) (Duration, error)
+fr fr Consquador
+slay ParseDuration(s tea) (Duration, tea)
 ```
 
 ### `Location`
 Represents a time zone.
 
-```go
-type Location struct {}
+```
+be_like Location squad {}
 
-// Constructors
-func FixedZone(name string, offset int) *Location
-func LoadLocation(name string) (*Location, error)
-func LoadLocationFromTZData(name string, data []byte) (*Location, error)
+fr fr Consquadors
+slay FixedZone(name tea, offset normie) *Location
+slay LoadLocation(name tea) (*Location, tea)
+slay LoadLocationFromTZData(name tea, data []byte) (*Location, tea)
 
-// Predefined locations
+fr fr Predefined locations
 var (
     UTC      *Location
     Local    *Location
-    TikTokHQ *Location // Los Angeles time zone
-    VibeZone *Location // New York time zone
-    NoCap    *Location // GMT/UTC
+    TikTokHQ *Location fr fr Los Angeles time zone
+    VibeZone *Location fr fr New York time zone
+    NoCap    *Location fr fr GMT/UTC
 )
 
-// Methods
-func (l *Location) String() string
-func (l *Location) CityName() string // Returns human-readable city name
+fr fr Methods
+slay (l *Location) String() tea
+slay (l *Location) CityName() tea fr fr Returns human-readable city name
 ```
 
 ### `Month` and `Weekday`
 Constants for months and days of the week.
 
-```go
-type Month int
+```
+be_like Month int
 
 const (
     VibeJanuary Month = 1 + iota
@@ -135,9 +135,9 @@ const (
     VibeDecember
 )
 
-func (m Month) String() string
+slay (m Month) String() tea
 
-type Weekday int
+be_like Weekday int
 
 const (
     VibeSunday Weekday = iota
@@ -149,81 +149,81 @@ const (
     VibeSaturday
 )
 
-func (d Weekday) String() string
+slay (d Weekday) String() tea
 ```
 
 ### `VibeTimer`
 Represents a single event.
 
-```go
-type VibeTimer struct {}
+```
+be_like VibeTimer squad {}
 
-// Constructors
-func NewVibeTimer(d Duration) *VibeTimer
-func AfterFunc(d Duration, f func()) *VibeTimer
+fr fr Consquadors
+slay NewVibeTimer(d Duration) *VibeTimer
+slay AfterFunc(d Duration, f func()) *VibeTimer
 
-// Methods
-func (t *VibeTimer) Reset(d Duration) bool
-func (t *VibeTimer) Stop() bool
-func (t *VibeTimer) Chan() <-chan VibeTime
+fr fr Methods
+slay (t *VibeTimer) Reset(d Duration) lit
+slay (t *VibeTimer) Stop() lit
+slay (t *VibeTimer) Chan() <-chan VibeTime
 ```
 
 ### `VibeTicker`
 A ticker holds a channel that delivers "ticks" of a clock at intervals.
 
-```go
-type VibeTicker struct {}
+```
+be_like VibeTicker squad {}
 
-// Constructor
-func NewVibeTicker(d Duration) *VibeTicker
+fr fr Consquador
+slay NewVibeTicker(d Duration) *VibeTicker
 
-// Methods
-func (t *VibeTicker) Chan() <-chan VibeTime
-func (t *VibeTicker) Reset(d Duration)
-func (t *VibeTicker) Stop()
+fr fr Methods
+slay (t *VibeTicker) Chan() <-chan VibeTime
+slay (t *VibeTicker) Reset(d Duration)
+slay (t *VibeTicker) Stop()
 ```
 
 ## Special Formatting
 
-```go
+```
 const (
-    GenZTime       = "3:04 PM vibe"                          // 3:04 PM vibe
-    GenZDate       = "Mon, Jan 2 no cap"                      // Mon, Jan 2 no cap
-    GenZDateTime   = "Mon, Jan 2 at 3:04 PM frfr"            // Mon, Jan 2 at 3:04 PM frfr
-    GenZDateTimeZ  = "Mon, Jan 2 at 3:04 PM in da zone MST"  // Mon, Jan 2 at 3:04 PM in da zone MST
-    ISODateTime    = "2006-01-02T15:04:05Z07:00"             // RFC3339 format
-    StampVibe      = "Jan 2 fr 15:04:05"                     // Jan 2 fr 15:04:05
-    StampMicroVibe = "Jan 2 fr 15:04:05.000000"              // Jan 2 fr 15:04:05.000000
-    StampNanoVibe  = "Jan 2 fr 15:04:05.000000000"           // Jan 2 fr 15:04:05.000000000
+    GenZTime       = "3:04 PM vibe"                          fr fr 3:04 PM vibe
+    GenZDate       = "Mon, Jan 2 no cap"                      fr fr Mon, Jan 2 no cap
+    GenZDateTime   = "Mon, Jan 2 at 3:04 PM frfr"            fr fr Mon, Jan 2 at 3:04 PM frfr
+    GenZDateTimeZ  = "Mon, Jan 2 at 3:04 PM in da zone MST"  fr fr Mon, Jan 2 at 3:04 PM in da zone MST
+    ISODateTime    = "2006-01-02T15:04:05Z07:00"             fr fr RFC3339 format
+    StampVibe      = "Jan 2 fr 15:04:05"                     fr fr Jan 2 fr 15:04:05
+    StampMicroVibe = "Jan 2 fr 15:04:05.000000"              fr fr Jan 2 fr 15:04:05.000000
+    StampNanoVibe  = "Jan 2 fr 15:04:05.000000000"           fr fr Jan 2 fr 15:04:05.000000000
 )
 ```
 
 ## Time Manipulation Functions
 
-```go
-// Sleep pauses the current goroutine for at least the duration d
-func Sleep(d Duration)
+```
+fr fr Sleep pauses the current goroutine for at least the duration d
+slay Sleep(d Duration)
 
-// After waits for the duration to elapse and then returns the current time
-func After(d Duration) <-chan VibeTime
+fr fr After waits for the duration to elapse and then yolos the current time
+slay After(d Duration) <-chan VibeTime
 
-// Since returns the time elapsed since t
-func Since(t VibeTime) Duration
+fr fr Since yolos the time elapsed since t
+slay Since(t VibeTime) Duration
 
-// Until returns the duration until t
-func Until(t VibeTime) Duration
+fr fr Until yolos the duration until t
+slay Until(t VibeTime) Duration
 
-// ViberTime returns a string representing the time in a viral format
-func ViberTime(t VibeTime) string
+fr fr ViberTime yolos a tea representing the time in a viral format
+slay ViberTime(t VibeTime) tea
 
-// IsItFriday checks if the given time is Friday
-func IsItFriday(t VibeTime) bool
+fr fr IsItFriday checks if the given time is Friday
+slay IsItFriday(t VibeTime) lit
 
-// NextWeekend returns the time of the next weekend (Friday 5PM)
-func NextWeekend(t VibeTime) VibeTime
+fr fr NextWeekend yolos the time of the next weekend (Friday 5PM)
+slay NextWeekend(t VibeTime) VibeTime
 
-// VibeCheck returns how many hours are left in the day
-func VibeCheck(t VibeTime) float64
+fr fr VibeCheck yolos how many hours are left in the day
+slay VibeCheck(t VibeTime) float64
 ```
 
 ## Enhanced Features
@@ -231,52 +231,52 @@ func VibeCheck(t VibeTime) float64
 ### `TimeSpan`
 Represents a span of time between two instants.
 
-```go
-type TimeSpan struct {
+```
+be_like TimeSpan squad {
     Start VibeTime
     End   VibeTime
 }
 
-// Methods
-func (s TimeSpan) Duration() Duration
-func (s TimeSpan) Contains(t VibeTime) bool
-func (s TimeSpan) Overlaps(other TimeSpan) bool
-func (s TimeSpan) IsZero() bool
-func (s TimeSpan) String() string
+fr fr Methods
+slay (s TimeSpan) Duration() Duration
+slay (s TimeSpan) Contains(t VibeTime) lit
+slay (s TimeSpan) Overlaps(other TimeSpan) lit
+slay (s TimeSpan) IsZero() lit
+slay (s TimeSpan) String() tea
 ```
 
 ### `SocialTime`
 Time information formatted for social media posts.
 
-```go
-func RelativeTime(t VibeTime) string // "2h ago", "just now", "yesterday", etc.
-func SocialFormat(t VibeTime) string // Formats time for social media display
-func TimeAgo(t VibeTime) string // "2 hours ago", "5 minutes ago", etc.
+```
+slay RelativeTime(t VibeTime) tea fr fr "2h ago", "just now", "yesterday", etc.
+slay SocialFormat(t VibeTime) tea fr fr Formats time for social media display
+slay TimeAgo(t VibeTime) tea fr fr "2 hours ago", "5 minutes ago", etc.
 ```
 
 ## Usage Example
 
-```go
-// Getting current time
+```
+fr fr Getting current time
 now := clock_bait.Now()
-vibez.spill(now.Format(clock_bait.GenZDateTime)) // "Mon, Jan 2 at 3:04 PM frfr"
+vibez.spill(now.Format(clock_bait.GenZDateTime)) fr fr "Mon, Jan 2 at 3:04 PM frfr"
 
-// Parsing time
+fr fr Parsing time
 t, err := clock_bait.Parse(clock_bait.GenZTime, "4:20 PM vibe")
-if err != nil {
+if err != cap {
     vibez.spill("Error parsing time:", err)
-    return
+    yolo
 }
 
-// Calculating duration
+fr fr Calculating duration
 duration := clock_bait.Now().Sub(t)
 vibez.spill("Hours passed:", duration.Hours())
 
-// Using durations
+fr fr Using durations
 clock_bait.Sleep(5 * clock_bait.SecondVibe)
 vibez.spill("Slept for 5 seconds")
 
-// Creating a timer
+fr fr Creating a timer
 timer := clock_bait.NewVibeTimer(10 * clock_bait.SecondVibe)
 select {
 case t := <-timer.Chan():
@@ -286,29 +286,29 @@ case <-clock_bait.After(5 * clock_bait.SecondVibe):
     vibez.spill("Canceled timer after 5 seconds")
 }
 
-// Working with different locations
+fr fr Working with different locations
 loc, err := clock_bait.LoadLocation("Europe/Paris")
-if err != nil {
+if err != cap {
     vibez.spill("Error loading location:", err)
-    return
+    yolo
 }
 paris := clock_bait.Now().In(loc)
 tiktok := clock_bait.Now().In(clock_bait.TikTokHQ)
 vibez.spill("Paris:", paris.Format(clock_bait.GenZDateTime))
 vibez.spill("TikTok HQ:", tiktok.Format(clock_bait.GenZDateTime))
 
-// Using social media formatting
-vibez.spill(clock_bait.RelativeTime(clock_bait.Now().Add(-30 * clock_bait.MinuteVibe))) // "30m ago"
-vibez.spill(clock_bait.TimeAgo(clock_bait.Now().Add(-2 * clock_bait.HourVibe))) // "2 hours ago"
+fr fr Using social media formatting
+vibez.spill(clock_bait.RelativeTime(clock_bait.Now().Add(-30 * clock_bait.MinuteVibe))) fr fr "30m ago"
+vibez.spill(clock_bait.TimeAgo(clock_bait.Now().Add(-2 * clock_bait.HourVibe))) fr fr "2 hours ago"
 
-// Using TimeSpan
+fr fr Using TimeSpan
 span := clock_bait.TimeSpan{
     Start: clock_bait.Now(),
     End:   clock_bait.Now().Add(2 * clock_bait.HourVibe),
 }
 vibez.spill("Span duration:", span.Duration().Minutes(), "minutes")
 
-// Weekend vibes
+fr fr Weekend vibes
 friday := clock_bait.IsItFriday(clock_bait.Now())
 if friday {
     vibez.spill("It's Friday! Weekend vibes!")
