@@ -67,6 +67,7 @@ Implemented comprehensive tests for the standard library:
 - [x] Added support for multiple generator types (Int8, Int16, Int32, Int64, etc.)
 - [x] Implemented combinatorial generators (OneOf, AnyOf, etc.)
 - [x] Added specialized value generators for maps, slices, and other composite types
+- [x] Improved shrinking algorithms with distance calculation
 
 ### Details
 
@@ -90,9 +91,13 @@ The quick_test module provides property-based testing capabilities:
    - Type-specific shrinking strategies
    - Progressive shrinking with distance calculation
    - Composite value shrinking (arrays, maps)
+   - Sophisticated distance metrics for measuring shrinking progress
 5. **Reproducibility**: Supports specifying seeds for deterministic test runs
    - Fixed seed option for reproducing test failures
    - Automatic seed generation and recording for failure reproduction
+6. **Weighted Generators**: Support for generators with weighted probabilities
+   - Combine multiple generators with different probabilities
+   - Fine-grained control over the distribution of generated values
 
 ## Concurrency Support Module
 
