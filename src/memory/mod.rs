@@ -18,6 +18,7 @@ pub mod block;
 pub mod bump;
 pub mod channel;
 pub mod container;
+pub mod deadlock_detector;
 pub mod gc;
 pub mod mark_sweep;
 pub mod memory_visitor;
