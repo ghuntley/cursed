@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-devenv shell ./target/debug/cursed examples/simplest.csd
