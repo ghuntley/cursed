@@ -8,6 +8,7 @@ use crate::prelude::*;
 use std::time::Instant;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 /// Configuration for property-based testing
 #[derive(Clone, Debug)]
@@ -71,10 +72,16 @@ pub struct TestResult {
     pub count: i64,
     /// Iteration that caused failure
     pub failed_after: i64,
+    /// Input that caused failure
+    pub failed_value: Option<Object>,
+    /// Shrunk version of input that still fails
+    pub shrunk_input: Option<Object>,
     /// Number of shrink iterations
     pub shrink_count: i64,
     /// Seed used for this test run
     pub seed: i64,
+    /// Total time spent testing
+    pub runtime: std::time::Duration,
 }
 
 impl Default for TestResult {
@@ -83,8 +90,11 @@ impl Default for TestResult {
             passed: true,
             count: 0,
             failed_after: 0,
+            failed_value: None,
+            shrunk_input: None,
             shrink_count: 0,
             seed: 0,
+            runtime: std::time::Duration::from_secs(0),
         }
     }
 }
@@ -104,6 +114,7 @@ impl Traceable for TestResult {
 }
 
 /// Basic random number generator for testing
+#[derive(Clone)]
 pub struct Rand {
     seed: u64,
 }
@@ -138,14 +149,106 @@ impl Rand {
     }
 }
 
+impl Traceable for Rand {
+    fn trace(&self, _visitor: &mut dyn Visitor) {
+        // No objects to mark
+    }
+    
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>()
+    }
+    
+    fn tag(&self) -> Tag {
+        Tag::Object
+    }
+}
+
+// We don't need to manually implement Any since Rand is a concrete type
+// and 'static, which means it already has the Any trait implementation
+
 /// Shrink strategy constants
 pub const NO_SHRINK: i64 = 0;
 pub const DEFAULT_SHRINK: i64 = 1;
 pub const FULL_SHRINK: i64 = 2;
 pub const SMART_SHRINK: i64 = 3;
 
+/// Generator trait for producing test values
+pub trait Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object;
+}
+
+/// Function type that implements Generator
+pub struct GeneratorFunc {
+    func: Rc<Object>,
+}
+
+impl GeneratorFunc {
+    pub fn new(func: Object) -> Self {
+        GeneratorFunc {
+            func: Rc::new(func),
+        }
+    }
+}
+
+impl Generator for GeneratorFunc {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        // For simplicity, we'll just use a builtin approach rather than trying
+        // to call the function with the rand object which would be complex
+        let size_obj = Object::Integer(size);
+        
+        // Call the function with size directly
+        match call_test_function(&self.func, &[Rc::new(size_obj)]) {
+            Ok(result) => result,
+            Err(_) => Object::Null,
+        }
+    }
+}
+
+/// Always generates the same value
+pub struct ConstantGenerator {
+    value: Object,
+}
+
+impl ConstantGenerator {
+    pub fn new(value: Object) -> Self {
+        ConstantGenerator { value }
+    }
+}
+
+impl Generator for ConstantGenerator {
+    fn generate(&self, _rand: &mut Rand, _size: i64) -> Object {
+        self.value.clone()
+    }
+}
+
+/// Generator that selects from a fixed set of values
+pub struct OneOfGenerator {
+    values: Vec<Object>,
+}
+
+impl OneOfGenerator {
+    pub fn new(values: Vec<Object>) -> Self {
+        OneOfGenerator { values }
+    }
+}
+
+impl Generator for OneOfGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        if self.values.is_empty() {
+            return Object::Null;
+        }
+        let idx = rand.intn(self.values.len() as i64) as usize;
+        self.values[idx].clone()
+    }
+}
+
+/// Generate a value using the given generator
+pub fn generate(rand: &mut Rand, size: i64, generator: impl Generator) -> Object {
+    generator.generate(rand, size)
+}
+
 /// Run a property-based test with the given configuration
-pub fn check(_test_fn: Object, config: &Config) -> TestResult {
+pub fn check(test_fn: Object, config: &Config) -> TestResult {
     let start_time = Instant::now();
     let mut result = TestResult::default();
     result.seed = if config.seed != 0 { config.seed } else { 
@@ -164,19 +267,112 @@ pub fn check(_test_fn: Object, config: &Config) -> TestResult {
         
         // Generate test inputs based on random values and size
         let size = rand.int_range(config.min_size, config.max_size);
-        let _test_input = generate_test_input(&mut rand, size);
+        let test_input = generate_test_input(&mut rand, size);
         
-        // In a real implementation, we would run the test function here
-        // but for this simplified version, we'll just simulate success
+        // Call the test function with the input
+        match call_test_function(&test_fn, &[Rc::new(test_input.clone())]) {
+            Ok(Object::Boolean(true)) => {
+                // Test passed, continue to next iteration
+            },
+            _ => {
+                // Test failed
+                result.passed = false;
+                result.failed_after = i + 1;
+                result.failed_value = Some(test_input.clone());
+                
+                // Perform shrinking if enabled
+                if config.shrink_strategy != NO_SHRINK {
+                    let shrunk = shrink_test_case(&test_fn, &test_input, config.shrink_strategy, config.max_shrink_count);
+                    result.shrunk_input = Some(shrunk);
+                }
+                
+                break;
+            }
+        }
     }
     
-    // Set the test as passed by default
-    result.passed = true;
+    // If expected_failure is true, invert the result
+    if config.expect_failure {
+        result.passed = !result.passed;
+    }
     
-    let elapsed = start_time.elapsed();
+    result.runtime = start_time.elapsed();
     if !config.quiet {
-        println!("Test completed in {:.2?} with {} iterations, 0 failures", 
-                 elapsed, result.count);
+        if result.passed {
+            println!("Test completed in {:.2?} with {} iterations, 0 failures", 
+                    result.runtime, result.count);
+        } else {
+            println!("Test failed after {} iterations in {:.2?}", 
+                    result.failed_after, result.runtime);
+        }
+    }
+    
+    result
+}
+
+/// Test a property for many random values
+pub fn check_property(property: Object, generator: Object, config: &Config) -> TestResult {
+    let start_time = Instant::now();
+    let mut result = TestResult::default();
+    result.seed = if config.seed != 0 { config.seed } else { 
+        // Generate random seed if not provided
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let since_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        since_epoch.as_secs() as i64 ^ since_epoch.subsec_nanos() as i64
+    };
+    
+    // Create a random generator
+    let mut rand = Rand::new(result.seed as u64);
+    
+    // Create the generator function
+    let generator_func = GeneratorFunc::new(generator);
+    
+    // Run the test for config.max_count iterations
+    for i in 0..config.max_count {
+        result.count += 1;
+        
+        // Generate test input using the generator
+        let size = rand.int_range(config.min_size, config.max_size);
+        let test_input = generator_func.generate(&mut rand, size);
+        
+        // Call the property function with the input
+        match call_test_function(&property, &[Rc::new(test_input.clone())]) {
+            Ok(Object::Boolean(true)) => {
+                // Property holds, continue to next iteration
+            },
+            _ => {
+                // Property does not hold
+                result.passed = false;
+                result.failed_after = i + 1;
+                result.failed_value = Some(test_input.clone());
+                
+                // Perform shrinking if enabled
+                if config.shrink_strategy != NO_SHRINK {
+                    let shrunk = shrink_test_case(&property, &test_input, config.shrink_strategy, config.max_shrink_count);
+                    // Calculate the shrink distance before storing the value
+                    result.shrink_count = calculate_shrink_distance(&test_input, &shrunk);
+                    result.shrunk_input = Some(shrunk);
+                }
+                
+                break;
+            }
+        }
+    }
+    
+    // If expected_failure is true, invert the result
+    if config.expect_failure {
+        result.passed = !result.passed;
+    }
+    
+    result.runtime = start_time.elapsed();
+    if !config.quiet {
+        if result.passed {
+            println!("Property holds for all tested inputs: {} iterations in {:.2?}", 
+                    result.count, result.runtime);
+        } else {
+            println!("Property failed after {} iterations in {:.2?}", 
+                    result.failed_after, result.runtime);
+        }
     }
     
     result
@@ -305,7 +501,6 @@ fn generate_shrink_candidates(input: &Object, strategy: i64) -> Vec<Object> {
                 
                 // If strategy is FULL_SHRINK or SMART_SHRINK, also try to shrink elements
                 if (strategy == FULL_SHRINK || strategy == SMART_SHRINK) && !arr.is_empty() {
-                    let mut new_arr = arr.clone();
                     for element_candidates in generate_shrink_candidates(&arr[0], strategy) {
                         let mut new_arr = arr.clone();
                         new_arr[0] = element_candidates;
@@ -479,22 +674,470 @@ pub fn one_of_type(type_name: &str, min_size: i64, max_size: i64) -> Object {
     }
 }
 
+/// Create a generator that always returns the given value
+pub fn value(value: Object) -> Box<dyn Generator> {
+    Box::new(ConstantGenerator::new(value))
+}
+
+/// Create a generator that selects one of the provided values
+pub fn one_of(values: Vec<Object>) -> Box<dyn Generator> {
+    Box::new(OneOfGenerator::new(values))
+}
+
+/// Generate 8-bit integers
+pub struct Int8Generator;
+
+impl Generator for Int8Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max = if size > 127 { 127 } else { size };
+        let min = if -size < -128 { -128 } else { -size };
+        Object::Integer(rand.int_range(min, max))
+    }
+}
+
+/// Generate 8-bit integers
+pub fn int8() -> Box<dyn Generator> {
+    Box::new(Int8Generator)
+}
+
+/// Generate 8-bit integers in a specific range
+pub struct Int8RangeGenerator {
+    min: i8,
+    max: i8,
+}
+
+impl Int8RangeGenerator {
+    pub fn new(min: i8, max: i8) -> Self {
+        Int8RangeGenerator { min, max }
+    }
+}
+
+impl Generator for Int8RangeGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        Object::Integer(rand.int_range(self.min as i64, self.max as i64))
+    }
+}
+
+/// Generate 8-bit integers in a specific range
+pub fn int8_range(min: i8, max: i8) -> Box<dyn Generator> {
+    Box::new(Int8RangeGenerator::new(min, max))
+}
+
+/// Generate 16-bit integers
+pub struct Int16Generator;
+
+impl Generator for Int16Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max = if size > 32767 { 32767 } else { size };
+        let min = if -size < -32768 { -32768 } else { -size };
+        Object::Integer(rand.int_range(min, max))
+    }
+}
+
+/// Generate 16-bit integers
+pub fn int16() -> Box<dyn Generator> {
+    Box::new(Int16Generator)
+}
+
+/// Generate 16-bit integers in a specific range
+pub struct Int16RangeGenerator {
+    min: i16,
+    max: i16,
+}
+
+impl Int16RangeGenerator {
+    pub fn new(min: i16, max: i16) -> Self {
+        Int16RangeGenerator { min, max }
+    }
+}
+
+impl Generator for Int16RangeGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        Object::Integer(rand.int_range(self.min as i64, self.max as i64))
+    }
+}
+
+/// Generate 16-bit integers in a specific range
+pub fn int16_range(min: i16, max: i16) -> Box<dyn Generator> {
+    Box::new(Int16RangeGenerator::new(min, max))
+}
+
+/// Generate 32-bit integers
+pub struct Int32Generator;
+
+impl Generator for Int32Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max = if size > i32::MAX as i64 { i32::MAX as i64 } else { size };
+        let min = if -size < i32::MIN as i64 { i32::MIN as i64 } else { -size };
+        Object::Integer(rand.int_range(min, max))
+    }
+}
+
+/// Generate 32-bit integers
+pub fn int32() -> Box<dyn Generator> {
+    Box::new(Int32Generator)
+}
+
+/// Generate 32-bit integers in a specific range
+pub struct Int32RangeGenerator {
+    min: i32,
+    max: i32,
+}
+
+impl Int32RangeGenerator {
+    pub fn new(min: i32, max: i32) -> Self {
+        Int32RangeGenerator { min, max }
+    }
+}
+
+impl Generator for Int32RangeGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        Object::Integer(rand.int_range(self.min as i64, self.max as i64))
+    }
+}
+
+/// Generate 32-bit integers in a specific range
+pub fn int32_range(min: i32, max: i32) -> Box<dyn Generator> {
+    Box::new(Int32RangeGenerator::new(min, max))
+}
+
+/// Generate 64-bit integers
+pub struct Int64Generator;
+
+impl Generator for Int64Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max = size;
+        let min = -size;
+        Object::Integer(rand.int_range(min, max))
+    }
+}
+
+/// Generate 64-bit integers
+pub fn int64() -> Box<dyn Generator> {
+    Box::new(Int64Generator)
+}
+
+/// Generate 64-bit integers in a specific range
+pub struct Int64RangeGenerator {
+    min: i64,
+    max: i64,
+}
+
+impl Int64RangeGenerator {
+    pub fn new(min: i64, max: i64) -> Self {
+        Int64RangeGenerator { min, max }
+    }
+}
+
+impl Generator for Int64RangeGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        Object::Integer(rand.int_range(self.min, self.max))
+    }
+}
+
+/// Generate 64-bit integers in a specific range
+pub fn int64_range(min: i64, max: i64) -> Box<dyn Generator> {
+    Box::new(Int64RangeGenerator::new(min, max))
+}
+
+/// Generate native integers
+pub fn int() -> Box<dyn Generator> {
+    int64()
+}
+
+/// Generate native integers in a specific range
+pub fn int_range_gen(min: i64, max: i64) -> Box<dyn Generator> {
+    int64_range(min, max)
+}
+
+/// Generate boolean values
+pub struct BooleanGenerator;
+
+impl Generator for BooleanGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        Object::Boolean(rand.bool())
+    }
+}
+
+/// Generate boolean values
+pub fn boolean_gen() -> Box<dyn Generator> {
+    Box::new(BooleanGenerator)
+}
+
+/// Generate floating-point numbers
+pub struct Float64Generator;
+
+impl Generator for Float64Generator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let f = rand.next() as f64 / u64::MAX as f64 * 2.0 - 1.0;
+        Object::Float(f * size as f64)
+    }
+}
+
+/// Generate floating-point numbers
+pub fn float64() -> Box<dyn Generator> {
+    Box::new(Float64Generator)
+}
+
+/// Generate floating-point numbers in a specific range
+pub struct Float64RangeGenerator {
+    min: f64,
+    max: f64,
+}
+
+impl Float64RangeGenerator {
+    pub fn new(min: f64, max: f64) -> Self {
+        Float64RangeGenerator { min, max }
+    }
+}
+
+impl Generator for Float64RangeGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        let f = rand.next() as f64 / u64::MAX as f64;
+        Object::Float(self.min + f * (self.max - self.min))
+    }
+}
+
+/// Generate floating-point numbers in a specific range
+pub fn float64_range(min: f64, max: f64) -> Box<dyn Generator> {
+    Box::new(Float64RangeGenerator::new(min, max))
+}
+
+/// Generate strings
+pub struct StringGenerator {
+    min_len: i64,
+    max_len: i64,
+}
+
+impl StringGenerator {
+    pub fn new(min_len: i64, max_len: i64) -> Self {
+        StringGenerator { min_len, max_len }
+    }
+}
+
+impl Generator for StringGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max_len = if size < self.max_len { size } else { self.max_len };
+        let len = rand.int_range(self.min_len, max_len) as usize;
+        let mut s = String::with_capacity(len);
+        for _ in 0..len {
+            s.push(char::from_u32(rand.intn(95) as u32 + 32).unwrap_or(' '));
+        }
+        Object::String(s)
+    }
+}
+
+/// Generate strings
+pub fn string_gen() -> Box<dyn Generator> {
+    Box::new(StringGenerator::new(0, 100))
+}
+
+/// Generate strings with specific length constraints
+pub fn string_of_n(min_len: i64, max_len: i64) -> Box<dyn Generator> {
+    Box::new(StringGenerator::new(min_len, max_len))
+}
+
+/// Generate a slice of values
+pub struct SliceGenerator {
+    elem_gen: Box<dyn Generator>,
+    min_len: i64,
+    max_len: i64,
+}
+
+impl SliceGenerator {
+    pub fn new(elem_gen: Box<dyn Generator>, min_len: i64, max_len: i64) -> Self {
+        SliceGenerator { elem_gen, min_len, max_len }
+    }
+}
+
+impl Generator for SliceGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max_len = if size < self.max_len { size } else { self.max_len };
+        let len = rand.int_range(self.min_len, max_len) as usize;
+        let mut elements = Vec::with_capacity(len);
+        let element_size = if len > 0 { size / len as i64 } else { size };
+        
+        for _ in 0..len {
+            elements.push(self.elem_gen.generate(rand, element_size));
+        }
+        
+        Object::Array(elements)
+    }
+}
+
+/// Generate a slice of values
+pub fn slice_of(elem_gen: Box<dyn Generator>) -> Box<dyn Generator> {
+    Box::new(SliceGenerator::new(elem_gen, 0, 100))
+}
+
+/// Generate a slice of values with specific length constraints
+pub fn slice_of_n(min_len: i64, max_len: i64, elem_gen: Box<dyn Generator>) -> Box<dyn Generator> {
+    Box::new(SliceGenerator::new(elem_gen, min_len, max_len))
+}
+
+/// Generate a map of key-value pairs
+pub struct MapGenerator {
+    key_gen: Box<dyn Generator>,
+    value_gen: Box<dyn Generator>,
+    min_len: i64,
+    max_len: i64,
+}
+
+impl MapGenerator {
+    pub fn new(key_gen: Box<dyn Generator>, value_gen: Box<dyn Generator>, min_len: i64, max_len: i64) -> Self {
+        MapGenerator { key_gen, value_gen, min_len, max_len }
+    }
+}
+
+impl Generator for MapGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        let max_len = if size < self.max_len { size } else { self.max_len };
+        let len = rand.int_range(self.min_len, max_len) as usize;
+        let mut hash_map = HashMap::with_capacity(len);
+        let element_size = if len > 0 { size / len as i64 } else { size };
+        
+        // Try to generate unique keys up to len
+        let mut attempts = 0;
+        while hash_map.len() < len && attempts < len * 2 {
+            attempts += 1;
+            let key = self.key_gen.generate(rand, element_size);
+            if let Object::String(key_str) = key {
+                let value = self.value_gen.generate(rand, element_size);
+                hash_map.insert(key_str, value);
+            }
+        }
+        
+        Object::HashTable(hash_map)
+    }
+}
+
+/// Generate a map of key-value pairs
+pub fn map_of(key_gen: Box<dyn Generator>, value_gen: Box<dyn Generator>) -> Box<dyn Generator> {
+    Box::new(MapGenerator::new(key_gen, value_gen, 0, 100))
+}
+
+/// Generate a map of key-value pairs with specific size constraints
+pub fn map_of_n(min_len: i64, max_len: i64, key_gen: Box<dyn Generator>, value_gen: Box<dyn Generator>) -> Box<dyn Generator> {
+    Box::new(MapGenerator::new(key_gen, value_gen, min_len, max_len))
+}
+
+/// Generate a value by choosing from multiple generators
+pub struct AnyOfGenerator {
+    generators: Vec<Box<dyn Generator>>,
+}
+
+impl AnyOfGenerator {
+    pub fn new(generators: Vec<Box<dyn Generator>>) -> Self {
+        AnyOfGenerator { generators }
+    }
+}
+
+impl Generator for AnyOfGenerator {
+    fn generate(&self, rand: &mut Rand, size: i64) -> Object {
+        if self.generators.is_empty() {
+            return Object::Null;
+        }
+        let idx = rand.intn(self.generators.len() as i64) as usize;
+        self.generators[idx].generate(rand, size)
+    }
+}
+
+/// Generate a value by choosing from multiple generators
+pub fn any_of(generators: Vec<Box<dyn Generator>>) -> Box<dyn Generator> {
+    Box::new(AnyOfGenerator::new(generators))
+}
+
+/// A simple ASCII character generator
+pub struct AsciiGenerator;
+
+impl Generator for AsciiGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        let c = char::from_u32(rand.intn(128) as u32).unwrap_or(' ');
+        Object::String(c.to_string())
+    }
+}
+
+/// Generate ASCII characters
+pub fn ascii() -> Box<dyn Generator> {
+    Box::new(AsciiGenerator)
+}
+
+/// A simple alphanumeric character generator
+pub struct AlphaNumericGenerator;
+
+impl Generator for AlphaNumericGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        let char_type = rand.intn(3);
+        let c = match char_type {
+            0 => rand.intn(26) as u32 + 65, // A-Z
+            1 => rand.intn(26) as u32 + 97, // a-z
+            _ => rand.intn(10) as u32 + 48, // 0-9
+        };
+        Object::String(char::from_u32(c).unwrap_or('A').to_string())
+    }
+}
+
+/// Generate alphanumeric characters
+pub fn alpha_numeric() -> Box<dyn Generator> {
+    Box::new(AlphaNumericGenerator)
+}
+
+/// A simple byte value generator
+pub struct ByteGenerator;
+
+impl Generator for ByteGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        // Generate a value between 0 and 255
+        Object::Integer(rand.intn(256))
+    }
+}
+
+/// Generate a single byte value
+pub fn byte() -> Box<dyn Generator> {
+    Box::new(ByteGenerator)
+}
+
+/// A simple Unicode code point generator
+pub struct RuneGenerator;
+
+impl Generator for RuneGenerator {
+    fn generate(&self, rand: &mut Rand, _size: i64) -> Object {
+        // Generate code points in the Basic Multilingual Plane for simplicity
+        let c = rand.intn(0xFFFF) as u32 + 1;
+        if let Some(ch) = char::from_u32(c) {
+            Object::String(ch.to_string())
+        } else {
+            Object::String('?'.to_string())
+        }
+    }
+}
+
+/// Generate a single Unicode code point
+pub fn rune() -> Box<dyn Generator> {
+    Box::new(RuneGenerator)
+}
+
 /// Test that a property holds for all generated inputs
-pub fn for_all(_gen_func: Object, _test_func: Object, config: &Config) -> TestResult {
-    // Simplified implementation for demonstration purposes
-    let mut result = TestResult::default();
-    result.seed = if config.seed != 0 { config.seed } else { 
-        // Generate random seed if not provided
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let since_epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        since_epoch.as_secs() as i64 ^ since_epoch.subsec_nanos() as i64
+pub fn for_all(gen_func: Object, test_func: Object, config: &Config) -> TestResult {
+    // Call the check_property function with the generator and property
+    check_property(test_func, gen_func, config)
+}
+
+/// Test a property for many random values
+pub fn check_property_with_args(property: Object, args: Vec<Object>) -> Object {
+    let config = Config::default();
+    let generator = if args.len() >= 1 {
+        // The first argument is the generator function
+        args[0].clone()
+    } else {
+        // No generator provided, create a default one that returns null
+        // Simplified implementation that just returns a constant
+        Object::Null
     };
     
-    // Run the test for config.max_count iterations
-    result.count = config.max_count;
+    // Run the property test
+    let result = check_property(property, generator, &config);
     
-    // Set the test as passed by default
-    result.passed = true;
-    
-    result
+    // Convert the TestResult to a boolean Object
+    Object::Boolean(result.passed)
 }
