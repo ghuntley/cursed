@@ -305,19 +305,36 @@ impl<'a> Preprocessor<'a> {
                         };
                         
                         // Add the tokens to the stream with the metadata
-                        let be_like_token = self.token_buffer.remove(0).0;
-                        let be_like_loc = self.token_buffer[0].1.clone();
+                        let (be_like_token, be_like_loc) = self.token_buffer.remove(0);
                         
-                        let identifier_token = self.token_buffer.remove(0).0;
-                        let identifier_loc = self.token_buffer[0].1.clone();
+                        // Check if buffer is empty after removing first token
+                        if self.token_buffer.is_empty() {
+                            return Err(Error::new(
+                                "Preprocessor",
+                                "Unexpected end of token buffer during generic type processing",
+                                Some(be_like_loc.clone())
+                            ));
+                        }
+                        
+                        let (identifier_token, identifier_loc) = self.token_buffer.remove(0);
+                        let identifier_loc_clone = identifier_loc.clone(); // Clone early for later use
                         
                         // Remove the processed tokens (from LBracket to RBracket)
-                        for _ in 0..=end_index {
-                            self.token_buffer.remove(0);
+                        // First check if we have enough tokens
+                        if self.token_buffer.len() < end_index {
+                            // Not enough tokens in buffer, just clear the buffer
+                            self.token_buffer.clear();
+                        } else {
+                            // Remove tokens one by one
+                            for _ in 0..end_index {
+                                if !self.token_buffer.is_empty() {
+                                    self.token_buffer.remove(0);
+                                }
+                            }
                         }
                         
                         // Now add the tokens to the stream in the right order
-                        self.token_stream.add_token(be_like_token, be_like_loc.clone());
+                        self.token_stream.add_token(be_like_token, be_like_loc);
                         self.token_stream.add_token_with_metadata(
                             identifier_token, 
                             identifier_loc.clone(),
@@ -330,7 +347,7 @@ impl<'a> Preprocessor<'a> {
                             let squad_loc = if !self.token_buffer.is_empty() {
                                 self.token_buffer[0].1.clone()
                             } else {
-                                identifier_loc.clone()
+                                identifier_loc_clone
                             };
                             self.token_stream.add_token(squad_token, squad_loc);
                         }
@@ -411,19 +428,35 @@ impl<'a> Preprocessor<'a> {
                         };
                         
                         // Add the tokens to the stream with the metadata
-                        let slay_token = self.token_buffer.remove(0).0;
-                        let slay_loc = self.token_buffer[0].1.clone();
+                        let (slay_token, slay_loc) = self.token_buffer.remove(0);
                         
-                        let identifier_token = self.token_buffer.remove(0).0;
-                        let identifier_loc = self.token_buffer[0].1.clone();
+                        // Check if buffer is empty after removing first token
+                        if self.token_buffer.is_empty() {
+                            return Err(Error::new(
+                                "Preprocessor",
+                                "Unexpected end of token buffer during generic function processing",
+                                Some(slay_loc.clone())
+                            ));
+                        }
+                        
+                        let (identifier_token, identifier_loc) = self.token_buffer.remove(0);
                         
                         // Remove the processed tokens (from LBracket to RBracket)
-                        for _ in 0..=end_index {
-                            self.token_buffer.remove(0);
+                        // First check if we have enough tokens
+                        if self.token_buffer.len() < end_index {
+                            // Not enough tokens in buffer, just clear the buffer
+                            self.token_buffer.clear();
+                        } else {
+                            // Remove tokens one by one
+                            for _ in 0..end_index {
+                                if !self.token_buffer.is_empty() {
+                                    self.token_buffer.remove(0);
+                                }
+                            }
                         }
                         
                         // Now add the tokens to the stream in the right order
-                        self.token_stream.add_token(slay_token, slay_loc.clone());
+                        self.token_stream.add_token(slay_token, slay_loc);
                         self.token_stream.add_token_with_metadata(
                             identifier_token, 
                             identifier_loc.clone(),
@@ -504,12 +537,29 @@ impl<'a> Preprocessor<'a> {
                         };
                         
                         // Add the tokens to the stream with the metadata
-                        let identifier_token = self.token_buffer.remove(0).0;
-                        let identifier_loc = self.token_buffer[0].1.clone();
+                        let (identifier_token, identifier_loc) = self.token_buffer.remove(0);
+                        
+                        // Check if buffer is empty after removing first token
+                        if self.token_buffer.is_empty() {
+                            return Err(Error::new(
+                                "Preprocessor",
+                                "Unexpected end of token buffer during generic function call processing",
+                                Some(identifier_loc.clone())
+                            ));
+                        }
                         
                         // Remove the processed tokens (from LBracket to RBracket)
-                        for _ in 0..=end_index {
-                            self.token_buffer.remove(0);
+                        // First check if we have enough tokens
+                        if self.token_buffer.len() < end_index {
+                            // Not enough tokens in buffer, just clear the buffer
+                            self.token_buffer.clear();
+                        } else {
+                            // Remove tokens one by one
+                            for _ in 0..end_index {
+                                if !self.token_buffer.is_empty() {
+                                    self.token_buffer.remove(0);
+                                }
+                            }
                         }
                         
                         // Add the token with metadata
