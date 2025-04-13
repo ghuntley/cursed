@@ -5,7 +5,7 @@ The `htmlrizzler` package provides template functionality for generating HTML ou
 ## Overview
 
 The `htmlrizzler` package allows you to:
-- Parse HTML templates from strings or files
+- Parse HTML templates from teas or files
 - Execute templates with provided data
 - Automatically escape content based on context (HTML, JavaScript, CSS, URLs)
 - Create template hierarchies with inheritance
@@ -15,7 +15,7 @@ The `htmlrizzler` package allows you to:
 
 ### Template
 
-The `Template` type represents a parsed template ready for execution.
+The `Template` be_like represents a parsed template ready for execution.
 
 ```
 be_like Template squad {
@@ -39,7 +39,7 @@ be_like FuncMap map[tea]collab{}
 yeet "htmlrizzler"
 
 slay main() {
-    fr fr Parse from string
+    fr fr Parse from tea
     sus tmpl := htmlrizzler.Parse("<h1>{{.Title}}</h1>")
     
     fr fr Parse from file
@@ -55,7 +55,7 @@ slay main() {
 ```
 
 - `New(name tea) @Template` - Create a new empty template with the given name
-- `Parse(text tea) (@Template, tea)` - Parse template from string
+- `Parse(text tea) (@Template, tea)` - Parse template from tea
 - `ParseFile(filename tea) (@Template, tea)` - Parse template from file
 - `ParseFiles(filenames ...tea) (@Template, tea)` - Parse multiple files as a template set
 - `ParseGlob(pattern tea) (@Template, tea)` - Parse all files matching pattern
@@ -78,7 +78,7 @@ slay main() {
         "Items": []tea{"Item 1", "Item 2", "Item 3"},
         "User": map[tea]collab{}{
             "Name": "Bestie",
-            "IsAdmin": lit(true),
+            "IsAdmin": lit(based),
         },
     }
     
@@ -133,13 +133,13 @@ The template syntax is similar to Go's `html/template` package:
 The `htmlrizzler` package automatically escapes content based on the HTML context:
 
 - HTML content is escaped to prevent XSS attacks
-- JavaScript strings are properly escaped
+- JavaScript teas are properly escaped
 - CSS values are escaped appropriately
 - URLs are validated and sanitized
 
 ## Error Handling
 
-All functions that can fail return an error as their final return value. Check these errors to handle template parsing or execution failures.
+All functions that can fail yolo an tea as their final yolo value. Check these teas to handle template parsing or execution failures.
 
 ## Implementation Notes
 

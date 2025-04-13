@@ -1,122 +1,122 @@
 # StatFlexin (expvar package)
 
 ## Overview
-StatFlexin provides a standardized interface for exposing runtime variables and metrics in a "flexing" (showoff-worthy) way. It's inspired by Go's expvar package but with enhanced capabilities for metric collection, visualization, and real-time monitoring.
+StatFlexin provides a standardized collab for exposing runtime variables and metrics in a "flexing" (showoff-worthy) way. It's inspired by Go's expvar package but with enhanced capabilities for metric collection, visualization, and real-time monitoring.
 
 ## Core Types
 
 ### `FlexVar`
 Interface for all exported variables.
 
-```go
-type FlexVar interface {
-    // String returns a valid JSON string representation of the variable
-    String() string
+```
+be_like FlexVar collab {
+    fr fr String yolos a valid JSON tea representation of the variable
+    String() tea
     
-    // Value returns the underlying value
+    fr fr Value yolos the underlying value
     Value() interface{}
 }
 ```
 
 ### Basic Variable Types
 
-```go
-// Int is a 64-bit integer variable that satisfies the FlexVar interface
-type FlexInt struct {}
+```
+fr fr Int is a 64-bit integer variable that satisfies the FlexVar interface
+be_like FlexInt squad {}
 
-// Constructor
-func NewFlexInt(name string) *FlexInt
-func NewFlexIntFunc(name string, f func() int64) *FlexInt
+fr fr Consquador
+slay NewFlexInt(name tea) *FlexInt
+slay NewFlexIntFunc(name tea, f func() int64) *FlexInt
 
-// Methods
-func (v *FlexInt) Value() interface{}
-func (v *FlexInt) String() string
-func (v *FlexInt) Add(delta int64) int64
-func (v *FlexInt) Set(value int64) int64
-func (v *FlexInt) Get() int64
-func (v *FlexInt) CompareAndSwap(old, new int64) bool
+fr fr Methods
+slay (v *FlexInt) Value() interface{}
+slay (v *FlexInt) String() tea
+slay (v *FlexInt) Add(delta int64) int64
+slay (v *FlexInt) Set(value int64) int64
+slay (v *FlexInt) Get() int64
+slay (v *FlexInt) CompareAndSwap(old, new int64) lit
 
-// Float is a 64-bit float variable that satisfies the FlexVar interface
-type FlexFloat struct {}
+fr fr Float is a 64-bit float variable that satisfies the FlexVar interface
+be_like FlexFloat squad {}
 
-// Constructor
-func NewFlexFloat(name string) *FlexFloat
-func NewFlexFloatFunc(name string, f func() float64) *FlexFloat
+fr fr Consquador
+slay NewFlexFloat(name tea) *FlexFloat
+slay NewFlexFloatFunc(name tea, f func() float64) *FlexFloat
 
-// Methods
-func (v *FlexFloat) Value() interface{}
-func (v *FlexFloat) String() string
-func (v *FlexFloat) Add(delta float64) float64
-func (v *FlexFloat) Set(value float64) float64
-func (v *FlexFloat) Get() float64
+fr fr Methods
+slay (v *FlexFloat) Value() interface{}
+slay (v *FlexFloat) String() tea
+slay (v *FlexFloat) Add(delta float64) float64
+slay (v *FlexFloat) Set(value float64) float64
+slay (v *FlexFloat) Get() float64
 
-// String is a string variable that satisfies the FlexVar interface
-type FlexString struct {}
+fr fr String is a tea variable that satisfies the FlexVar interface
+be_like FlexString squad {}
 
-// Constructor
-func NewFlexString(name string) *FlexString
-func NewFlexStringFunc(name string, f func() string) *FlexString
+fr fr Consquador
+slay NewFlexString(name tea) *FlexString
+slay NewFlexStringFunc(name tea, f func() tea) *FlexString
 
-// Methods
-func (v *FlexString) Value() interface{}
-func (v *FlexString) String() string
-func (v *FlexString) Set(value string) string
-func (v *FlexString) Get() string
+fr fr Methods
+slay (v *FlexString) Value() interface{}
+slay (v *FlexString) String() tea
+slay (v *FlexString) Set(value tea) tea
+slay (v *FlexString) Get() tea
 ```
 
 ### Complex Variable Types
 
-```go
-// Map is a string-to-FlexVar map variable that satisfies the FlexVar interface
-type FlexMap struct {}
+```
+fr fr Map is a tea-to-FlexVar map variable that satisfies the FlexVar interface
+be_like FlexMap squad {}
 
-// Constructor
-func NewFlexMap(name string) *FlexMap
+fr fr Consquador
+slay NewFlexMap(name tea) *FlexMap
 
-// Methods
-func (v *FlexMap) Value() interface{}
-func (v *FlexMap) String() string
-func (v *FlexMap) Get(key string) FlexVar
-func (v *FlexMap) Set(key string, value FlexVar)
-func (v *FlexMap) AddInt(key string, delta int64) int64
-func (v *FlexMap) AddFloat(key string, delta float64) float64
-func (v *FlexMap) SetString(key, value string) string
-func (v *FlexMap) Delete(key string)
-func (v *FlexMap) Do(f func(key string, value FlexVar))
-func (v *FlexMap) Keys() []string
-func (v *FlexMap) Contains(key string) bool
+fr fr Methods
+slay (v *FlexMap) Value() interface{}
+slay (v *FlexMap) String() tea
+slay (v *FlexMap) Get(key tea) FlexVar
+slay (v *FlexMap) Set(key tea, value FlexVar)
+slay (v *FlexMap) AddInt(key tea, delta int64) int64
+slay (v *FlexMap) AddFloat(key tea, delta float64) float64
+slay (v *FlexMap) SetString(key, value tea) tea
+slay (v *FlexMap) Delete(key tea)
+slay (v *FlexMap) Do(f func(key tea, value FlexVar))
+slay (v *FlexMap) Keys() []tea
+slay (v *FlexMap) Contains(key tea) lit
 
-// Struct represents a struct with named fields as FlexVars
-type FlexStruct struct {}
+fr fr Struct represents a squad with named fields as FlexVars
+be_like FlexStruct squad {}
 
-// Constructor
-func NewFlexStruct(name string) *FlexStruct
+fr fr Consquador
+slay NewFlexStruct(name tea) *FlexStruct
 
-// Methods
-func (v *FlexStruct) Value() interface{}
-func (v *FlexStruct) String() string
-func (v *FlexStruct) Get(field string) FlexVar
-func (v *FlexStruct) Set(field string, value FlexVar)
-func (v *FlexStruct) AddField(field string, value FlexVar)
-func (v *FlexStruct) RemoveField(field string)
-func (v *FlexStruct) Do(f func(field string, value FlexVar))
-func (v *FlexStruct) Fields() []string
+fr fr Methods
+slay (v *FlexStruct) Value() interface{}
+slay (v *FlexStruct) String() tea
+slay (v *FlexStruct) Get(field tea) FlexVar
+slay (v *FlexStruct) Set(field tea, value FlexVar)
+slay (v *FlexStruct) AddField(field tea, value FlexVar)
+slay (v *FlexStruct) RemoveField(field tea)
+slay (v *FlexStruct) Do(f func(field tea, value FlexVar))
+slay (v *FlexStruct) Fields() []tea
 
-// Array is a FlexVar slice that satisfies the FlexVar interface
-type FlexArray struct {}
+fr fr Array is a FlexVar slice that satisfies the FlexVar interface
+be_like FlexArray squad {}
 
-// Constructor
-func NewFlexArray(name string) *FlexArray
+fr fr Consquador
+slay NewFlexArray(name tea) *FlexArray
 
-// Methods
-func (v *FlexArray) Value() interface{}
-func (v *FlexArray) String() string
-func (v *FlexArray) Get(index int) FlexVar
-func (v *FlexArray) Set(index int, value FlexVar)
-func (v *FlexArray) Append(value FlexVar) int
-func (v *FlexArray) Remove(index int)
-func (v *FlexArray) Len() int
-func (v *FlexArray) Do(f func(index int, value FlexVar))
+fr fr Methods
+slay (v *FlexArray) Value() interface{}
+slay (v *FlexArray) String() tea
+slay (v *FlexArray) Get(index normie) FlexVar
+slay (v *FlexArray) Set(index int, value FlexVar)
+slay (v *FlexArray) Append(value FlexVar) int
+slay (v *FlexArray) Remove(index normie)
+slay (v *FlexArray) Len() int
+slay (v *FlexArray) Do(f func(index int, value FlexVar))
 ```
 
 ## Advanced Metric Types
@@ -124,336 +124,336 @@ func (v *FlexArray) Do(f func(index int, value FlexVar))
 ### `FlexCounter`
 A counter that only goes up.
 
-```go
-type FlexCounter struct {}
+```
+be_like FlexCounter squad {}
 
-// Constructor
-func NewFlexCounter(name string) *FlexCounter
+fr fr Consquador
+slay NewFlexCounter(name tea) *FlexCounter
 
-// Methods
-func (c *FlexCounter) Value() interface{}
-func (c *FlexCounter) String() string
-func (c *FlexCounter) Inc() int64
-func (c *FlexCounter) Add(delta int64) int64
-func (c *FlexCounter) Get() int64
-func (c *FlexCounter) Reset() int64
+fr fr Methods
+slay (c *FlexCounter) Value() interface{}
+slay (c *FlexCounter) String() tea
+slay (c *FlexCounter) Inc() int64
+slay (c *FlexCounter) Add(delta int64) int64
+slay (c *FlexCounter) Get() int64
+slay (c *FlexCounter) Reset() int64
 ```
 
 ### `FlexGauge`
 A value that can go up and down.
 
-```go
-type FlexGauge struct {}
+```
+be_like FlexGauge squad {}
 
-// Constructor
-func NewFlexGauge(name string) *FlexGauge
+fr fr Consquador
+slay NewFlexGauge(name tea) *FlexGauge
 
-// Methods
-func (g *FlexGauge) Value() interface{}
-func (g *FlexGauge) String() string
-func (g *FlexGauge) Inc() float64
-func (g *FlexGauge) Dec() float64
-func (g *FlexGauge) Add(delta float64) float64
-func (g *FlexGauge) Sub(delta float64) float64
-func (g *FlexGauge) Set(value float64) float64
-func (g *FlexGauge) Get() float64
+fr fr Methods
+slay (g *FlexGauge) Value() interface{}
+slay (g *FlexGauge) String() tea
+slay (g *FlexGauge) Inc() float64
+slay (g *FlexGauge) Dec() float64
+slay (g *FlexGauge) Add(delta float64) float64
+slay (g *FlexGauge) Sub(delta float64) float64
+slay (g *FlexGauge) Set(value float64) float64
+slay (g *FlexGauge) Get() float64
 ```
 
 ### `FlexHistogram`
 For statistical distributions.
 
-```go
-type FlexHistogram struct {}
+```
+be_like FlexHistogram squad {}
 
-// Constructor
-func NewFlexHistogram(name string, buckets []float64) *FlexHistogram
+fr fr Consquador
+slay NewFlexHistogram(name tea, buckets []float64) *FlexHistogram
 
-// Methods
-func (h *FlexHistogram) Value() interface{}
-func (h *FlexHistogram) String() string
-func (h *FlexHistogram) Observe(value float64)
-func (h *FlexHistogram) GetCount() int64
-func (h *FlexHistogram) GetSum() float64
-func (h *FlexHistogram) GetMean() float64
-func (h *FlexHistogram) GetMedian() float64
-func (h *FlexHistogram) GetPercentiles() map[float64]float64
-func (h *FlexHistogram) GetBuckets() map[float64]int64
-func (h *FlexHistogram) Reset()
+fr fr Methods
+slay (h *FlexHistogram) Value() interface{}
+slay (h *FlexHistogram) String() tea
+slay (h *FlexHistogram) Observe(value float64)
+slay (h *FlexHistogram) GetCount() int64
+slay (h *FlexHistogram) GetSum() float64
+slay (h *FlexHistogram) GetMean() float64
+slay (h *FlexHistogram) GetMedian() float64
+slay (h *FlexHistogram) GetPercentiles() map[float64]float64
+slay (h *FlexHistogram) GetBuckets() map[float64]int64
+slay (h *FlexHistogram) Reset()
 ```
 
 ### `FlexTimer`
 For timing operations.
 
-```go
-type FlexTimer struct {}
+```
+be_like FlexTimer squad {}
 
-// Constructor
-func NewFlexTimer(name string) *FlexTimer
+fr fr Consquador
+slay NewFlexTimer(name tea) *FlexTimer
 
-// Methods
-func (t *FlexTimer) Value() interface{}
-func (t *FlexTimer) String() string
-func (t *FlexTimer) Start() *FlexTimerInstance
-func (t *FlexTimer) Time(f func()) time.Duration
-func (t *FlexTimer) GetCount() int64
-func (t *FlexTimer) GetSum() time.Duration
-func (t *FlexTimer) GetMean() time.Duration
-func (t *FlexTimer) GetMin() time.Duration
-func (t *FlexTimer) GetMax() time.Duration
-func (t *FlexTimer) Reset()
+fr fr Methods
+slay (t *FlexTimer) Value() interface{}
+slay (t *FlexTimer) String() tea
+slay (t *FlexTimer) Start() *FlexTimerInstance
+slay (t *FlexTimer) Time(f func()) time.Duration
+slay (t *FlexTimer) GetCount() int64
+slay (t *FlexTimer) GetSum() time.Duration
+slay (t *FlexTimer) GetMean() time.Duration
+slay (t *FlexTimer) GetMin() time.Duration
+slay (t *FlexTimer) GetMax() time.Duration
+slay (t *FlexTimer) Reset()
 
-type FlexTimerInstance struct {}
+be_like FlexTimerInstance squad {}
 
-// Methods
-func (ti *FlexTimerInstance) Stop() time.Duration
+fr fr Methods
+slay (ti *FlexTimerInstance) Stop() time.Duration
 ```
 
 ## Registry and Management
 
-```go
-// Registry keeps track of all variables
-type Registry struct {}
+```
+fr fr Registry keeps track of all variables
+be_like Registry squad {}
 
-// Get the global registry
-func GetRegistry() *Registry
+fr fr Get the global registry
+slay GetRegistry() *Registry
 
-// Create a new registry
-func NewRegistry() *Registry
+fr fr Create a new registry
+slay NewRegistry() *Registry
 
-// Registry methods
-func (r *Registry) Get(name string) FlexVar
-func (r *Registry) Set(name string, v FlexVar)
-func (r *Registry) Delete(name string)
-func (r *Registry) Do(f func(name string, value FlexVar))
-func (r *Registry) All() map[string]FlexVar
-func (r *Registry) Clear()
-func (r *Registry) String() string
-func (r *Registry) JSON() ([]byte, error)
-func (r *Registry) MarshalJSON() ([]byte, error)
+fr fr Registry methods
+slay (r *Registry) Get(name tea) FlexVar
+slay (r *Registry) Set(name tea, v FlexVar)
+slay (r *Registry) Delete(name tea)
+slay (r *Registry) Do(f func(name tea, value FlexVar))
+slay (r *Registry) All() map[tea]FlexVar
+slay (r *Registry) Clear()
+slay (r *Registry) String() tea
+slay (r *Registry) JSON() ([]byte, tea)
+slay (r *Registry) MarshalJSON() ([]byte, tea)
 
-// Global interface
-func Register(name string, v FlexVar)
-func Get(name string) FlexVar
-func Delete(name string)
-func Do(f func(name string, value FlexVar))
-func All() map[string]FlexVar
-func Clear()
-func String() string
-func JSON() ([]byte, error)
+fr fr Global interface
+slay Register(name tea, v FlexVar)
+slay Get(name tea) FlexVar
+slay Delete(name tea)
+slay Do(f func(name tea, value FlexVar))
+slay All() map[tea]FlexVar
+slay Clear()
+slay String() tea
+slay JSON() ([]byte, tea)
 ```
 
 ## Metrics Collection and Export
 
-```go
-// Snapshot represents a point-in-time snapshot of all tracked metrics
-type Snapshot struct {
+```
+fr fr Snapshot represents a point-in-time snapshot of all tracked metrics
+be_like Snapshot squad {
     Timestamp time.Time
-    Metrics   map[string]interface{}
+    Metrics   map[tea]interface{}
 }
 
-// Take a snapshot of current metrics
-func TakeSnapshot() *Snapshot
+fr fr Take a snapshot of current metrics
+slay TakeSnapshot() *Snapshot
 
-// Collector for periodic metric collection
-type Collector struct {}
+fr fr Collector for periodic metric collection
+be_like Collector squad {}
 
-// Constructor
-func NewCollector(interval time.Duration) *Collector
+fr fr Consquador
+slay NewCollector(interval time.Duration) *Collector
 
-// Methods
-func (c *Collector) Start()
-func (c *Collector) Stop()
-func (c *Collector) AddSink(sink MetricSink)
-func (c *Collector) RemoveSink(sink MetricSink)
-func (c *Collector) SetInterval(interval time.Duration)
-func (c *Collector) Collect() *Snapshot
+fr fr Methods
+slay (c *Collector) Start()
+slay (c *Collector) Stop()
+slay (c *Collector) AddSink(sink MetricSink)
+slay (c *Collector) RemoveSink(sink MetricSink)
+slay (c *Collector) SetInterval(interval time.Duration)
+slay (c *Collector) Collect() *Snapshot
 
-// Interface for metric sinks
-type MetricSink interface {
-    Name() string
-    Send(snapshot *Snapshot) error
-    Close() error
+fr fr Interface for metric sinks
+be_like MetricSink collab {
+    Name() tea
+    Send(snapshot *Snapshot) tea
+    Close() tea
 }
 
-// Built-in sinks
-func NewLogSink(logger *sus_log.SusLogger) MetricSink
-func NewFileSink(path string) MetricSink
-func NewHTTPSink(url string, headers map[string]string) MetricSink
-func NewPrometheusSink(registry *prometheus.Registry) MetricSink
-func NewInfluxDBSink(client influxdb.Client) MetricSink
-func NewStatsiteSink(addr string) MetricSink
-func NewStatsdSink(addr string) MetricSink
+fr fr Built-in sinks
+slay NewLogSink(logger *sus_log.SusLogger) MetricSink
+slay NewFileSink(path tea) MetricSink
+slay NewHTTPSink(url tea, headers map[tea]tea) MetricSink
+slay NewPrometheusSink(registry *prometheus.Registry) MetricSink
+slay NewInfluxDBSink(client influxdb.Client) MetricSink
+slay NewStatsiteSink(addr tea) MetricSink
+slay NewStatsdSink(addr tea) MetricSink
 ```
 
 ## HTTP Integration
 
-```go
-// Handler returns an HTTP handler for exporting variables
-func Handler() http.Handler
+```
+fr fr Handler yolos an HTTP handler for exporting variables
+slay Handler() http.Handler
 
-// CustomHandler returns an HTTP handler with options
-func CustomHandler(options HandlerOptions) http.Handler
+fr fr CustomHandler yolos an HTTP handler with options
+slay CustomHandler(options HandlerOptions) http.Handler
 
-type HandlerOptions struct {
-    Format       string // "json", "text", "prometheus"
-    Pretty       bool
-    Authorization func(r *http.Request) bool
-    Includes     []string // Variable prefixes to include
-    Excludes     []string // Variable prefixes to exclude
-    MaxDepth     int // Max depth for nested variables
-    AllowMethods []string // HTTP methods to allow
+be_like HandlerOptions squad {
+    Format       tea fr fr "json", "text", "prometheus"
+    Pretty       lit
+    Authorization func(r *http.Request) lit
+    Includes     []tea fr fr Variable prefixes to include
+    Excludes     []tea fr fr Variable prefixes to exclude
+    MaxDepth     normie fr fr Max depth for nested variables
+    AllowMethods []tea fr fr HTTP methods to allow
 }
 
-// Register the HTTP handler with a router
-func RegisterHTTPHandler(router *glowup_http.VibeRouter, path string)
+fr fr Register the HTTP handler with a router
+slay RegisterHTTPHandler(router *glowup_http.VibeRouter, path tea)
 ```
 
 ## System Metrics
 
-```go
-// Start collecting system metrics
-func CollectSystemMetrics(interval time.Duration) *SystemMetricsCollector
+```
+fr fr Start collecting system metrics
+slay CollectSystemMetrics(interval time.Duration) *SystemMetricsCollector
 
-type SystemMetricsCollector struct {}
+be_like SystemMetricsCollector squad {}
 
-// Methods
-func (s *SystemMetricsCollector) Start()
-func (s *SystemMetricsCollector) Stop()
-func (s *SystemMetricsCollector) SetInterval(interval time.Duration)
+fr fr Methods
+slay (s *SystemMetricsCollector) Start()
+slay (s *SystemMetricsCollector) Stop()
+slay (s *SystemMetricsCollector) SetInterval(interval time.Duration)
 
-// Available system metrics
-func EnableCPUMetrics()
-func EnableMemoryMetrics()
-func EnableDiskMetrics()
-func EnableNetworkMetrics()
-func EnableRuntimeMetrics()
-func EnableProcessMetrics()
+fr fr Available system metrics
+slay EnableCPUMetrics()
+slay EnableMemoryMetrics()
+slay EnableDiskMetrics()
+slay EnableNetworkMetrics()
+slay EnableRuntimeMetrics()
+slay EnableProcessMetrics()
 ```
 
 ## Visualization
 
-```go
-// Interface for visualization
-type Visualizer interface {
-    Name() string
-    RenderHTML() string
-    RenderSVG() string
-    RenderText() string
+```
+fr fr Interface for visualization
+be_like Visualizer collab {
+    Name() tea
+    RenderHTML() tea
+    RenderSVG() tea
+    RenderText() tea
 }
 
-// Create visualizations for metrics
-func NewTimeSeriesVisualizer(metricName string, duration time.Duration) Visualizer
-func NewGaugeVisualizer(metricName string) Visualizer
-func NewHistogramVisualizer(metricName string) Visualizer
-func NewDashboard(title string, metrics []string) Visualizer
+fr fr Create visualizations for metrics
+slay NewTimeSeriesVisualizer(metricName tea, duration time.Duration) Visualizer
+slay NewGaugeVisualizer(metricName tea) Visualizer
+slay NewHistogramVisualizer(metricName tea) Visualizer
+slay NewDashboard(title tea, metrics []tea) Visualizer
 ```
 
 ## Gen Z Special Features
 
-```go
-// Special GenZ FlexVar formats
-func Bussin(metricName string) *FlexGauge     // For metrics that are doing exceptionally well
-func VibeCheck(metricName string) *FlexGauge   // For status/health metrics
-func YeetCounter(metricName string) *FlexCounter // For counting discarded/rejected items
-func NoCapMetric(metricName string) *FlexGauge  // For direct/unbiased metrics
+```
+fr fr Special GenZ FlexVar formats
+slay Bussin(metricName tea) *FlexGauge     fr fr For metrics that are doing exceptionally well
+slay VibeCheck(metricName tea) *FlexGauge   fr fr For status/health metrics
+slay YeetCounter(metricName tea) *FlexCounter fr fr For counting discarded/rejected items
+slay NoCapMetric(metricName tea) *FlexGauge  fr fr For direct/unbiased metrics
 
-// Enhanced visualization
-func FlexDash() http.Handler // Dashboard with all the metrics trending over time
-func FlexMode() // Activates enhanced emoji-based visualization mode
+fr fr Enhanced visualization
+slay FlexDash() http.Handler fr fr Dashboard with all the metrics trending over time
+slay FlexMode() fr fr Activates enhanced emoji-based visualization mode
 ```
 
 ## Usage Example
 
-```go
-// Register some basic variables
+```
+fr fr Register some basic variables
 hitCounter := stat_flexin.NewFlexCounter("http.hits")
 activeUsers := stat_flexin.NewFlexGauge("users.active")
 responseTime := stat_flexin.NewFlexHistogram("http.response_time", []float64{5, 10, 25, 50, 100, 250, 500, 1000})
 
-// Using metrics in HTTP handler
+fr fr Using metrics in HTTP handler
 http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
-    // Increment hit counter
+    fr fr Increment hit counter
     hitCounter.Inc()
     
-    // Start timing
+    fr fr Start timing
     timer := responseTime.Start()
     
-    // Increment active users
+    fr fr Increment active users
     activeUsers.Inc()
-    defer activeUsers.Dec() // Decrement when done
+    defer activeUsers.Dec() fr fr Decrement when done
     
-    // Process request
-    // ...
+    fr fr Process request
+    fr fr ...
     
-    // Stop timing and observe
+    fr fr Stop timing and observe
     timer.Stop()
 })
 
-// Creating a map of related metrics
+fr fr Creating a map of related metrics
 trafficMap := stat_flexin.NewFlexMap("traffic")
 trafficMap.Set("hits", hitCounter)
 trafficMap.Set("response_time", responseTime)
 trafficMap.Set("active_users", activeUsers)
 
-// Using struct for grouped metrics
+fr fr Using squad for grouped metrics
 serverStats := stat_flexin.NewFlexStruct("server")
 serverStats.AddField("uptime", stat_flexin.NewFlexInt("uptime"))
 serverStats.AddField("goroutines", stat_flexin.NewFlexIntFunc("goroutines", func() int64 {
-    return int64(runtime.NumGoroutine())
+    yolo int64(runtime.NumGoroutine())
 }))
 
-// Track errors and success rates
-errorCounter := stat_flexin.YeetCounter("errors.total")
+fr fr Track teas and success rates
+teaCounter := stat_flexin.YeetCounter("teas.total")
 successRate := stat_flexin.Bussin("requests.success_rate")
-successRate.Set(0.99) // 99% success rate
+successRate.Set(0.99) fr fr 99% success rate
 
-// Increment error count when an error occurs
-if err != nil {
-    errorCounter.Inc()
-    // Log error details
-    errorMap := stat_flexin.NewFlexMap("errors.details")
-    errorMap.SetString(err.Error(), "1")
+fr fr Increment tea count when an tea occurs
+if err != cap {
+    teaCounter.Inc()
+    fr fr Log tea details
+    teaMap := stat_flexin.NewFlexMap("teas.details")
+    teaMap.SetString(err.Error(), "1")
 }
 
-// Generate and print a snapshot
+fr fr Generate and prnormie a snapshot
 snapshot := stat_flexin.TakeSnapshot()
 jsonData, _ := json.MarshalIndent(snapshot, "", "  ")
-vibez.spill(string(jsonData))
+vibez.spill(tea(jsonData))
 
-// Setup metric collection to log file
+fr fr Setup metric collection to log file
 collector := stat_flexin.NewCollector(10 * time.Second)
 collector.AddSink(stat_flexin.NewFileSink("/var/log/metrics.json"))
 collector.Start()
 defer collector.Stop()
 
-// Enable system metrics
+fr fr Enable system metrics
 stat_flexin.EnableCPUMetrics()
 stat_flexin.EnableMemoryMetrics()
 system := stat_flexin.CollectSystemMetrics(15 * time.Second)
 system.Start()
 defer system.Stop()
 
-// Setup HTTP handler for metrics
+fr fr Setup HTTP handler for metrics
 http.Handle("/metrics", stat_flexin.Handler())
 
-// Create custom metrics endpoint with formatting options
+fr fr Create custom metrics endponormie with formatting options
 customHandler := stat_flexin.CustomHandler(stat_flexin.HandlerOptions{
     Format: "json",
-    Pretty: true,
-    Includes: []string{"http.", "users."},
+    Pretty: based,
+    Includes: []tea{"http.", "users."},
     MaxDepth: 5,
 })
 http.Handle("/stats", customHandler)
 
-// Setup a dashboard
+fr fr Setup a dashboard
 http.Handle("/dashboard", stat_flexin.FlexDash())
 
-// Create a time series visualization
+fr fr Create a time series visualization
 tsVisualizer := stat_flexin.NewTimeSeriesVisualizer("http.response_time", 1*time.Hour)
 html := tsVisualizer.RenderHTML()
 svg := tsVisualizer.RenderSVG()
 
-// Output visualization to file
+fr fr Output visualization to file
 file, _ := dropz.CreateFile("response_time.html")
 file.WriteString(html)
 file.Close()

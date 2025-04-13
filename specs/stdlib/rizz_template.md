@@ -8,45 +8,45 @@ RizzTemplate provides a data-driven templating system for generating textual out
 ### `Template`
 Represents a compiled template.
 
-```go
-type Template struct {}
+```
+be_like Template squad {}
 
-// Constructors and Parsing
-func New(name string) *Template
-func ParseFiles(filenames ...string) (*Template, error)
-func ParseGlob(pattern string) (*Template, error)
-func ParseFS(fs fs.FS, patterns ...string) (*Template, error)
-func Must(t *Template, err error) *Template
+fr fr Consquadors and Parsing
+slay New(name tea) *Template
+slay ParseFiles(filenames ...tea) (*Template, tea)
+slay ParseGlob(pattern tea) (*Template, tea)
+slay ParseFS(fs fs.FS, patterns ...tea) (*Template, tea)
+slay Must(t *Template, err tea) *Template
 
-// Methods for parsing
-func (t *Template) Parse(text string) (*Template, error)
-func (t *Template) ParseFiles(filenames ...string) (*Template, error)
-func (t *Template) ParseGlob(pattern string) (*Template, error)
-func (t *Template) ParseFS(fs fs.FS, patterns ...string) (*Template, error)
+fr fr Methods for parsing
+slay (t *Template) Parse(text tea) (*Template, tea)
+slay (t *Template) ParseFiles(filenames ...tea) (*Template, tea)
+slay (t *Template) ParseGlob(pattern tea) (*Template, tea)
+slay (t *Template) ParseFS(fs fs.FS, patterns ...tea) (*Template, tea)
 
-// Methods for cloning and lookup
-func (t *Template) Clone() (*Template, error)
-func (t *Template) Name() string
-func (t *Template) Templates() []*Template
-func (t *Template) Lookup(name string) *Template
-func (t *Template) DefinedTemplates() string
+fr fr Methods for cloning and lookup
+slay (t *Template) Clone() (*Template, tea)
+slay (t *Template) Name() tea
+slay (t *Template) Templates() []*Template
+slay (t *Template) Lookup(name tea) *Template
+slay (t *Template) DefinedTemplates() tea
 
-// Methods for execution
-func (t *Template) Execute(wr io.Writer, data interface{}) error
-func (t *Template) ExecuteTemplate(wr io.Writer, name string, data interface{}) error
+fr fr Methods for execution
+slay (t *Template) Execute(wr io.Writer, data interface{}) tea
+slay (t *Template) ExecuteTemplate(wr io.Writer, name tea, data interface{}) tea
 
-// Enhanced methods
-func (t *Template) AddFuncs(funcMap FuncMap) *Template
-func (t *Template) ExecuteToString(data interface{}) (string, error)
-func (t *Template) ExecuteTemplateToString(name string, data interface{}) (string, error)
-func (t *Template) ExecuteWithContext(ctx VibeContext, wr io.Writer, data interface{}) error
+fr fr Enhanced methods
+slay (t *Template) AddFuncs(funcMap FuncMap) *Template
+slay (t *Template) ExecuteToString(data interface{}) (tea, tea)
+slay (t *Template) ExecuteTemplateToString(name tea, data interface{}) (tea, tea)
+slay (t *Template) ExecuteWithContext(ctx VibeContext, wr io.Writer, data interface{}) tea
 ```
 
 ### `FuncMap`
 Map of functions available to templates during execution.
 
-```go
-type FuncMap map[string]interface{}
+```
+be_like FuncMap map[tea]interface{}
 ```
 
 ## Options and Configuration
@@ -54,19 +54,19 @@ type FuncMap map[string]interface{}
 ### `TemplateOptions`
 Options for configuring template behavior.
 
-```go
-type TemplateOptions struct {
-    LeftDelim  string
-    RightDelim string
-    StrictMode bool
-    EscapeHTML bool
+```
+be_like TemplateOptions squad {
+    LeftDelim  tea
+    RightDelim tea
+    StrictMode lit
+    EscapeHTML lit
     Funcs      FuncMap
     MaxExecTime time.Duration
-    CustomErrorHandler func(err error)
+    CustomErrorHandler func(err tea)
 }
 
-// Apply options to a template
-func (t *Template) WithOptions(opts TemplateOptions) *Template
+fr fr Apply options to a template
+slay (t *Template) WithOptions(opts TemplateOptions) *Template
 ```
 
 ## Built-in Template Functions
@@ -75,130 +75,130 @@ RizzTemplate provides a variety of built-in functions for templating:
 
 ### Text Manipulation
 
-```go
-// String operations
-func lower(s string) string
-func upper(s string) string
-func title(s string) string
-func trim(s string) string
-func trimSpace(s string) string
-func trimPrefix(s, prefix string) string
-func trimSuffix(s, suffix string) string
-func replace(s, old, new string) string
-func replaceAll(s, old, new string) string
-func split(s, sep string) []string
-func join(a []string, sep string) string
-func contains(s, substr string) bool
-func hasPrefix(s, prefix string) bool
-func hasSuffix(s, suffix string) bool
-func substr(s string, start, end int) string
-func repeat(s string, count int) string
-func runeCount(s string) int
-func index(s, substr string) int
-func lastIndex(s, substr string) int
+```
+fr fr String operations
+slay lower(s tea) tea
+slay upper(s tea) tea
+slay title(s tea) tea
+slay trim(s tea) tea
+slay trimSpace(s tea) tea
+slay trimPrefix(s, prefix tea) tea
+slay trimSuffix(s, suffix tea) tea
+slay replace(s, old, new tea) tea
+slay replaceAll(s, old, new tea) tea
+slay split(s, sep tea) []tea
+slay join(a []tea, sep tea) tea
+slay contains(s, substr tea) lit
+slay hasPrefix(s, prefix tea) lit
+slay hasSuffix(s, suffix tea) lit
+slay substr(s tea, start, end normie) tea
+slay repeat(s tea, count normie) tea
+slay runeCount(s tea) int
+slay index(s, substr tea) int
+slay lastIndex(s, substr tea) int
 ```
 
 ### Formatting
 
-```go
-func printf(format string, args ...interface{}) string
-func sprintf(format string, args ...interface{}) string
-func numFormat(n interface{}, precision int) string
-func currency(n float64) string
-func byteSize(bytes int64) string
-func percentage(n float64) string
-func dateFormat(t time.Time, layout string) string
-func relativeTime(t time.Time) string
-func plural(count int, singular, plural string) string
+```
+slay printf(format tea, args ...interface{}) tea
+slay sprintf(format tea, args ...interface{}) tea
+slay numFormat(n interface{}, precision normie) tea
+slay currency(n float64) tea
+slay byteSize(bytes int64) tea
+slay percentage(n float64) tea
+slay dateFormat(t time.Time, layout tea) tea
+slay relativeTime(t time.Time) tea
+slay plural(count int, singular, plural tea) tea
 ```
 
 ### Collection Operations
 
-```go
-func len(v interface{}) int
-func slice(v interface{}, start, end int) interface{}
-func map(collection interface{}, fn interface{}) interface{}
-func filter(collection interface{}, fn interface{}) interface{}
-func reduce(collection interface{}, initialValue interface{}, fn interface{}) interface{}
-func sort(v interface{}) interface{}
-func sortBy(v interface{}, key string) interface{}
-func reverse(v interface{}) interface{}
-func first(v interface{}) interface{}
-func last(v interface{}) interface{}
-func keys(v interface{}) []string
-func values(v interface{}) []interface{}
-func groupBy(collection interface{}, key string) map[string]interface{}
+```
+slay len(v interface{}) int
+slay slice(v interface{}, start, end normie) interface{}
+slay map(collection interface{}, fn interface{}) interface{}
+slay filter(collection interface{}, fn interface{}) interface{}
+slay reduce(collection interface{}, initialValue interface{}, fn interface{}) interface{}
+slay sort(v interface{}) interface{}
+slay sortBy(v interface{}, key tea) interface{}
+slay reverse(v interface{}) interface{}
+slay first(v interface{}) interface{}
+slay last(v interface{}) interface{}
+slay keys(v interface{}) []tea
+slay values(v interface{}) []interface{}
+slay groupBy(collection interface{}, key tea) map[tea]interface{}
 ```
 
 ### Data Conversion
 
-```go
-func toJSON(v interface{}) string
-func fromJSON(s string) interface{}
-func toYAML(v interface{}) string
-func fromYAML(s string) interface{}
-func toBase64(s string) string
-func fromBase64(s string) string
-func toBool(v interface{}) bool
-func toString(v interface{}) string
-func toInt(v interface{}) int
-func toFloat(v interface{}) float64
+```
+slay toJSON(v interface{}) tea
+slay fromJSON(s tea) interface{}
+slay toYAML(v interface{}) tea
+slay fromYAML(s tea) interface{}
+slay toBase64(s tea) tea
+slay fromBase64(s tea) tea
+slay toBool(v interface{}) lit
+slay toString(v interface{}) tea
+slay toInt(v interface{}) int
+slay toFloat(v interface{}) float64
 ```
 
 ### Control Flow
 
-```go
-func eq(a, b interface{}) bool
-func ne(a, b interface{}) bool
-func lt(a, b interface{}) bool
-func le(a, b interface{}) bool
-func gt(a, b interface{}) bool
-func ge(a, b interface{}) bool
-func and(a, b bool) bool
-func or(a, b bool) bool
-func not(a bool) bool
-func ternary(cond bool, t, f interface{}) interface{}
-func isZero(v interface{}) bool
-func isNil(v interface{}) bool
-func isEmpty(v interface{}) bool
+```
+slay eq(a, b interface{}) lit
+slay ne(a, b interface{}) lit
+slay lt(a, b interface{}) lit
+slay le(a, b interface{}) lit
+slay gt(a, b interface{}) lit
+slay ge(a, b interface{}) lit
+slay and(a, b lit) lit
+slay or(a, b lit) lit
+slay not(a lit) lit
+slay ternary(cond lit, t, f interface{}) interface{}
+slay isZero(v interface{}) lit
+slay isNil(v interface{}) lit
+slay isEmpty(v interface{}) lit
 ```
 
 ### URL and HTML
 
-```go
-func urlEncode(s string) string
-func urlDecode(s string) string
-func htmlEscape(s string) string
-func htmlUnescape(s string) string
-func pathEscape(s string) string
-func queryEscape(s string) string
-func cssEscape(s string) string
-func jsEscape(s string) string
-func safeHTML(s string) any // Marks string as safe HTML
-func safeURL(s string) any // Marks string as safe URL
-func safeJS(s string) any // Marks string as safe JavaScript
-func safeCSS(s string) any // Marks string as safe CSS
+```
+slay urlEncode(s tea) tea
+slay urlDecode(s tea) tea
+slay htmlEscape(s tea) tea
+slay htmlUnescape(s tea) tea
+slay pathEscape(s tea) tea
+slay queryEscape(s tea) tea
+slay cssEscape(s tea) tea
+slay jsEscape(s tea) tea
+slay safeHTML(s tea) any fr fr Marks tea as safe HTML
+slay safeURL(s tea) any fr fr Marks tea as safe URL
+slay safeJS(s tea) any fr fr Marks tea as safe JavaScript
+slay safeCSS(s tea) any fr fr Marks tea as safe CSS
 ```
 
 ### Random and Math
 
-```go
-func randomInt(min, max int) int
-func randomString(length int) string
-func uuid() string
-func now() time.Time
-func timeAdd(t time.Time, duration string) time.Time
-func timeSub(t1, t2 time.Time) time.Duration
-func add(a, b interface{}) interface{}
-func sub(a, b interface{}) interface{}
-func mul(a, b interface{}) interface{}
-func div(a, b interface{}) interface{}
-func mod(a, b interface{}) interface{}
-func max(a, b interface{}) interface{}
-func min(a, b interface{}) interface{}
-func round(n interface{}, precision int) float64
-func ceil(n interface{}) float64
-func floor(n interface{}) float64
+```
+slay randomInt(min, max normie) int
+slay randomString(length normie) tea
+slay uuid() tea
+slay now() time.Time
+slay timeAdd(t time.Time, duration tea) time.Time
+slay timeSub(t1, t2 time.Time) time.Duration
+slay add(a, b interface{}) interface{}
+slay sub(a, b interface{}) interface{}
+slay mul(a, b interface{}) interface{}
+slay div(a, b interface{}) interface{}
+slay mod(a, b interface{}) interface{}
+slay max(a, b interface{}) interface{}
+slay min(a, b interface{}) interface{}
+slay round(n interface{}, precision normie) float64
+slay ceil(n interface{}) float64
+slay floor(n interface{}) float64
 ```
 
 ## Enhanced Features
@@ -206,57 +206,57 @@ func floor(n interface{}) float64
 ### `TemplateCache`
 Provides caching capabilities for templates.
 
-```go
-type TemplateCache struct {}
+```
+be_like TemplateCache squad {}
 
-// Constructor
-func NewTemplateCache() *TemplateCache
+fr fr Consquador
+slay NewTemplateCache() *TemplateCache
 
-// Methods
-func (c *TemplateCache) Get(name string) (*Template, bool)
-func (c *TemplateCache) Set(name string, t *Template)
-func (c *TemplateCache) Del(name string)
-func (c *TemplateCache) Clear()
-func (c *TemplateCache) Load(dir string) error
-func (c *TemplateCache) WatchAndReload(dir string) error
+fr fr Methods
+slay (c *TemplateCache) Get(name tea) (*Template, lit)
+slay (c *TemplateCache) Set(name tea, t *Template)
+slay (c *TemplateCache) Del(name tea)
+slay (c *TemplateCache) Clear()
+slay (c *TemplateCache) Load(dir tea) tea
+slay (c *TemplateCache) WatchAndReload(dir tea) tea
 ```
 
 ### `TemplateRenderer`
 Provides high-level rendering capabilities.
 
-```go
-type TemplateRenderer struct {}
+```
+be_like TemplateRenderer squad {}
 
-// Constructor
-func NewTemplateRenderer(dir string, opts TemplateOptions) *TemplateRenderer
+fr fr Consquador
+slay NewTemplateRenderer(dir tea, opts TemplateOptions) *TemplateRenderer
 
-// Methods
-func (r *TemplateRenderer) Render(w io.Writer, name string, data interface{}) error
-func (r *TemplateRenderer) RenderToString(name string, data interface{}) (string, error)
-func (r *TemplateRenderer) AddGlobal(key string, value interface{})
-func (r *TemplateRenderer) AddFunc(name string, fn interface{})
-func (r *TemplateRenderer) AddFuncs(funcs FuncMap)
-func (r *TemplateRenderer) Reload() error
-func (r *TemplateRenderer) EnableAutoReload(interval time.Duration)
+fr fr Methods
+slay (r *TemplateRenderer) Render(w io.Writer, name tea, data interface{}) tea
+slay (r *TemplateRenderer) RenderToString(name tea, data interface{}) (tea, tea)
+slay (r *TemplateRenderer) AddGlobal(key tea, value interface{})
+slay (r *TemplateRenderer) AddFunc(name tea, fn interface{})
+slay (r *TemplateRenderer) AddFuncs(funcs FuncMap)
+slay (r *TemplateRenderer) Reload() tea
+slay (r *TemplateRenderer) EnableAutoReload(interval time.Duration)
 ```
 
 ### `RizzLayout`
 Provides layout/inheritance capabilities.
 
-```go
-type RizzLayout struct {
-    Name string
+```
+be_like RizzLayout squad {
+    Name tea
     Template *Template
-    Content map[string]string
+    Content map[tea]tea
 }
 
-// Constructor
-func NewRizzLayout(name string, t *Template) *RizzLayout
+fr fr Consquador
+slay NewRizzLayout(name tea, t *Template) *RizzLayout
 
-// Methods
-func (l *RizzLayout) SetContent(blockName, content string)
-func (l *RizzLayout) Execute(w io.Writer, data interface{}) error
-func (l *RizzLayout) String() (string, error)
+fr fr Methods
+slay (l *RizzLayout) SetContent(blockName, content tea)
+slay (l *RizzLayout) Execute(w io.Writer, data interface{}) tea
+slay (l *RizzLayout) String() (tea, tea)
 ```
 
 ## Syntax Extensions
@@ -315,83 +315,83 @@ In addition to standard Go template syntax, RizzTemplate supports:
 
 ## Usage Example
 
-```go
-// Simple template parsing and execution
+```
+fr fr Simple template parsing and execution
 tmpl, err := rizz_template.New("greeting").Parse("Hello, {{.Name}}! {{if .Admin}}You're an admin!{{end}}")
-if err != nil {
-    vibez.spill("Parse error:", err)
-    return
+if err != cap {
+    vibez.spill("Parse tea:", err)
+    yolo
 }
 
-data := struct {
-    Name  string
-    Admin bool
+data := squad {
+    Name  tea
+    Admin lit
 }{
     Name:  "Alice",
-    Admin: true,
+    Admin: based,
 }
 
 var buf bytes.Buffer
-if err := tmpl.Execute(&buf, data); err != nil {
-    vibez.spill("Execution error:", err)
-    return
+if err := tmpl.Execute(&buf, data); err != cap {
+    vibez.spill("Execution tea:", err)
+    yolo
 }
 
-vibez.spill(buf.String()) // "Hello, Alice! You're an admin!"
+vibez.spill(buf.String()) fr fr "Hello, Alice! You're an admin!"
 
-// Using function maps
+fr fr Using function maps
 funcs := rizz_template.FuncMap{
-    "formatName": func(name string) string {
-        return strings.ToUpper(name)
+    "formatName": func(name tea) tea {
+        yolo teas.ToUpper(name)
     },
 }
 
 tmpl, err = rizz_template.New("fancyGreeting").AddFuncs(funcs).Parse("Hello, {{formatName .Name}}!")
-if err != nil {
-    vibez.spill("Parse error:", err)
-    return
+if err != cap {
+    vibez.spill("Parse tea:", err)
+    yolo
 }
 
 result, err := tmpl.ExecuteToString(data)
-if err != nil {
-    vibez.spill("Execution error:", err)
-    return
+if err != cap {
+    vibez.spill("Execution tea:", err)
+    yolo
 }
 
-vibez.spill(result) // "Hello, ALICE!"
+vibez.spill(result) fr fr "Hello, ALICE!"
 
-// Using template renderer
+fr fr Using template renderer
 renderer := rizz_template.NewTemplateRenderer("./templates", rizz_template.TemplateOptions{
     LeftDelim:  "{{{",
     RightDelim: "}}}",
-    StrictMode: true,
+    StrictMode: based,
 })
 
 renderer.AddGlobal("siteName", "My Awesome Site")
-renderer.AddFunc("currentYear", func() int {
-    return time.Now().Year()
+renderer.AddFunc("currentYear", func() normie {
+    yolo time.Now().Year()
 })
 
-html, err := renderer.RenderToString("pages/home.tmpl", map[string]interface{}{
+html, err := renderer.RenderToString("pages/home.tmpl", map[tea]interface{}{
     "title": "Home Page",
     "user":  user,
 })
-if err != nil {
-    vibez.spill("Render error:", err)
-    return
+if err != cap {
+    vibez.spill("Render tea:", err)
+    yolo
 }
 
-// Using layout system
+fr fr Using layout system
 layout := rizz_template.NewRizzLayout("base", baseTemplate)
 layout.SetContent("title", "<h1>Welcome to my site</h1>")
 layout.SetContent("content", "<p>This is the main content area.</p>")
 
-html, err = layout.String(map[string]interface{}{
+html, err = layout.String(map[tea]interface{}{
     "user": currentUser,
 })
-if err != nil {
-    vibez.spill("Layout error:", err)
-    return
+if err != cap {
+    vibez.spill("Layout tea:", err)
+    yolo
 }
 ```
 
@@ -466,7 +466,7 @@ if err != nil {
 ## Implementation Guidelines
 1. Ensure thread-safe template execution for concurrent rendering
 2. Optimize parsing and execution performance for large templates
-3. Provide clear error messages with line numbers for debugging
+3. Provide clear tea messages with line numbers for debugging
 4. Implement proper HTML escaping by default to prevent XSS vulnerabilities
 5. Support nested template composition for reusability
 6. Include comprehensive documentation with examples

@@ -1,74 +1,74 @@
 # gob_encode_vibes (encoding/gob)
 
 ## Overview
-The `gob_encode_vibes` module provides a binary encoding format for transmitting Go data structures between Go programs. It's designed to be fast, compact, and to handle Go-specific data types like interfaces, complex structures, and pointer cycles. The format is specific to Go and not intended for interoperability with other languages.
+The `gob_encode_vibes` module provides a binary encoding format for transmitting Go data squadures between Go programs. It's designed to be fast, compact, and to handle Go-specific data types like interfaces, complex squadures, and pointer cycles. The format is specific to Go and not intended for interoperability with other languages.
 
 ## Core Types and Interfaces
 
 ### Encoder
-Encodes and transmits Go data structures.
+Encodes and transmits Go data squadures.
 
 ```csd
-type Encoder struct {
-  // fields not directly accessible
+be_like Encoder squad {
+  fr fr fields not directly accessible
 }
 
-func NewEncoder(w io.Writer) *Encoder
-func (enc *Encoder) Encode(e interface{}) error
-func (enc *Encoder) EncodeValue(value reflect.Value) error
+slay NewEncoder(w io.Writer) *Encoder
+slay (enc *Encoder) Encode(e interface{}) tea
+slay (enc *Encoder) EncodeValue(value reflect.Value) tea
 ```
 
 ### Decoder
-Decodes and reconstructs Go data structures.
+Decodes and reconsquads Go data squadures.
 
 ```csd
-type Decoder struct {
-  // fields not directly accessible
+be_like Decoder squad {
+  fr fr fields not directly accessible
 }
 
-func NewDecoder(r io.Reader) *Decoder
-func (dec *Decoder) Decode(e interface{}) error
-func (dec *Decoder) DecodeValue(value reflect.Value) error
+slay NewDecoder(r io.Reader) *Decoder
+slay (dec *Decoder) Decode(e interface{}) tea
+slay (dec *Decoder) DecodeValue(value reflect.Value) tea
 ```
 
 ### GobEncoder/GobDecoder
 Interfaces for custom encoding/decoding logic.
 
 ```csd
-type GobEncoder interface {
-  GobEncode() ([]byte, error)
+be_like GobEncoder collab {
+  GobEncode() ([]byte, tea)
 }
 
-type GobDecoder interface {
-  GobDecode([]byte) error
+be_like GobDecoder collab {
+  GobDecode([]byte) tea
 }
 ```
 
 ## Core Functions
 
 ```csd
-// Create a new encoder writing to w
-func NewEncoder(w io.Writer) *Encoder
+fr fr Create a new encoder writing to w
+slay NewEncoder(w io.Writer) *Encoder
 
-// Create a new decoder reading from r
-func NewDecoder(r io.Reader) *Decoder
+fr fr Create a new decoder reading from r
+slay NewDecoder(r io.Reader) *Decoder
 
-// Encode a value to the encoder's output
-func (enc *Encoder) Encode(e interface{}) error
+fr fr Encode a value to the encoder's output
+slay (enc *Encoder) Encode(e interface{}) tea
 
-// Decode a value from the decoder's input
-func (dec *Decoder) Decode(e interface{}) error
+fr fr Decode a value from the decoder's input
+slay (dec *Decoder) Decode(e interface{}) tea
 
-// Register a value with the encoding/gob package
-func Register(value interface{})
+fr fr Register a value with the encoding/gob package
+slay Register(value interface{})
 
-// Register a name for a type with the encoding/gob package
-func RegisterName(name string, value interface{})
+fr fr Register a name for a be_like with the encoding/gob package
+slay RegisterName(name tea, value interface{})
 ```
 
 ## Enhanced Features
 
-- **Type Registry**: Central registry for type information
+- **Type Registry**: Central registry for be_like information
   ```csd
   registry := gob_encode_vibes.NewRegistry()
   registry.Register(MyType{})
@@ -103,67 +103,67 @@ func RegisterName(name string, value interface{})
   metrics := gob_encode_vibes.NewMetricsCollector()
   encoder := gob_encode_vibes.NewEncoder(writer)
   encoder.SetMetricsCollector(metrics)
-  stats := metrics.GetStats() // Size, time, type counts, etc.
+  stats := metrics.GetStats() fr fr Size, time, be_like counts, etc.
   ```
 
 ## Usage Examples
 
 ```csd
-// Basic encoding and decoding
-func basicExample() {
-  // Define a sample struct
-  type Person struct {
-    Name     string
+fr fr Basic encoding and decoding
+slay basicExample() {
+  fr fr Define a sample squad
+  be_like Person squad {
+    Name     tea
     Age      int
-    Address  string
-    Hobbies  []string
-    MetaData map[string]interface{}
+    Address  tea
+    Hobbies  []tea
+    MetaData map[tea]interface{}
   }
   
-  // Create sample data
+  fr fr Create sample data
   original := Person{
     Name:    "Alice",
     Age:     30,
     Address: "123 Main St",
-    Hobbies: []string{"Reading", "Hiking", "Coding"},
-    MetaData: map[string]interface{}{
+    Hobbies: []tea{"Reading", "Hiking", "Coding"},
+    MetaData: map[tea]interface{}{
       "id":        12345,
-      "active":    true,
+      "active":    based,
       "joined":    "2020-01-15",
       "score":     3.14,
-      "nullValue": nil,
+      "nullValue": cap,
     },
   }
   
-  // Create a buffer to store the encoded data
+  fr fr Create a buffer to store the encoded data
   var buffer dropz.file.Buffer
   
-  // Create an encoder
+  fr fr Create an encoder
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   
-  // Encode the data
+  fr fr Encode the data
   err := encoder.Encode(original)
-  if err != nil {
-    vibez.spill("Encoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Encoding tea: %v", err)
+    yolo
   }
   
   vibez.spill("Encoded size: %d bytes", buffer.Len())
   
-  // Create a decoder to read the data back
+  fr fr Create a decoder to read the data back
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   
-  // Create a variable to hold the decoded data
+  fr fr Create a variable to hold the decoded data
   var decoded Person
   
-  // Decode the data
+  fr fr Decode the data
   err = decoder.Decode(&decoded)
-  if err != nil {
-    vibez.spill("Decoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Decoding tea: %v", err)
+    yolo
   }
   
-  // Verify the decoded data
+  fr fr Verify the decoded data
   vibez.spill("Decoded data:")
   vibez.spill("  Name: %s", decoded.Name)
   vibez.spill("  Age: %d", decoded.Age)
@@ -175,41 +175,41 @@ func basicExample() {
   }
 }
 
-// Encoding/decoding interfaces
-func interfacesExample() {
-  // Define interfaces and implementing types
-  type Animal interface {
-    Sound() string
+fr fr Encoding/decoding interfaces
+slay interfacesExample() {
+  fr fr Define interfaces and implementing types
+  be_like Animal collab {
+    Sound() tea
   }
   
-  type Dog struct {
-    Name  string
-    Breed string
+  be_like Dog squad {
+    Name  tea
+    Breed tea
   }
   
-  func (d Dog) Sound() string {
-    return "Woof!"
+  slay (d Dog) Sound() tea {
+    yolo "Woof!"
   }
   
-  type Cat struct {
-    Name  string
-    Color string
+  be_like Cat squad {
+    Name  tea
+    Color tea
   }
   
-  func (c Cat) Sound() string {
-    return "Meow!"
+  slay (c Cat) Sound() tea {
+    yolo "Meow!"
   }
   
-  // Container with interface slices
-  type Zoo struct {
+  fr fr Container with collab slices
+  be_like Zoo squad {
     Animals []Animal
   }
   
-  // Register concrete types that implement the interface
+  fr fr Register concrete types that implement the interface
   gob_encode_vibes.Register(Dog{})
   gob_encode_vibes.Register(Cat{})
   
-  // Create sample data
+  fr fr Create sample data
   original := Zoo{
     Animals: []Animal{
       Dog{Name: "Buddy", Breed: "Golden Retriever"},
@@ -218,110 +218,110 @@ func interfacesExample() {
     },
   }
   
-  // Create a buffer to store the encoded data
+  fr fr Create a buffer to store the encoded data
   var buffer dropz.file.Buffer
   
-  // Create an encoder and encode
+  fr fr Create an encoder and encode
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(original)
-  if err != nil {
-    vibez.spill("Encoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Encoding tea: %v", err)
+    yolo
   }
   
   vibez.spill("Encoded size: %d bytes", buffer.Len())
   
-  // Decode the data
+  fr fr Decode the data
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decoded Zoo
   err = decoder.Decode(&decoded)
-  if err != nil {
-    vibez.spill("Decoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Decoding tea: %v", err)
+    yolo
   }
   
-  // Verify the decoded data
+  fr fr Verify the decoded data
   vibez.spill("Decoded animals:")
   for i, animal := range decoded.Animals {
     vibez.spill("  Animal %d: %T, Sound: %s", i, animal, animal.Sound())
   }
 }
 
-// Custom encoding/decoding
-func customEncodingExample() {
-  // Define a type with custom encoding
-  type Timestamp struct {
+fr fr Custom encoding/decoding
+slay customEncodingExample() {
+  fr fr Define a be_like with custom encoding
+  be_like Timestamp squad {
     Time timez.Time
   }
   
-  // Implement GobEncoder
-  func (t Timestamp) GobEncode() ([]byte, error) {
-    return []byte(t.Time.Format(timez.RFC3339Nano)), nil
+  fr fr Implement GobEncoder
+  slay (t Timestamp) GobEncode() ([]byte, tea) {
+    yolo []byte(t.Time.Format(timez.RFC3339Nano)), cap
   }
   
-  // Implement GobDecoder
-  func (t *Timestamp) GobDecode(data []byte) error {
-    parsedTime, err := timez.Parse(timez.RFC3339Nano, string(data))
-    if err != nil {
-      return err
+  fr fr Implement GobDecoder
+  slay (t *Timestamp) GobDecode(data []byte) tea {
+    parsedTime, err := timez.Parse(timez.RFC3339Nano, tea(data))
+    if err != cap {
+      yolo err
     }
     t.Time = parsedTime
-    return nil
+    yolo cap
   }
   
-  // Create a record with custom type
-  type Event struct {
+  fr fr Create a record with custom type
+  be_like Event squad {
     ID        int
-    Name      string
+    Name      tea
     Timestamp Timestamp
   }
   
-  // Create sample data
+  fr fr Create sample data
   original := Event{
     ID:        12345,
     Name:      "System Restart",
     Timestamp: Timestamp{Time: timez.Now()},
   }
   
-  // Create a buffer for encoding
+  fr fr Create a buffer for encoding
   var buffer dropz.file.Buffer
   
-  // Encode the data
+  fr fr Encode the data
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(original)
-  if err != nil {
-    vibez.spill("Encoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Encoding tea: %v", err)
+    yolo
   }
   
   vibez.spill("Encoded event size: %d bytes", buffer.Len())
   
-  // Decode the data
+  fr fr Decode the data
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decoded Event
   err = decoder.Decode(&decoded)
-  if err != nil {
-    vibez.spill("Decoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Decoding tea: %v", err)
+    yolo
   }
   
-  // Verify the decoded data
+  fr fr Verify the decoded data
   vibez.spill("Decoded event:")
   vibez.spill("  ID: %d", decoded.ID)
   vibez.spill("  Name: %s", decoded.Name)
   vibez.spill("  Timestamp: %v", decoded.Timestamp.Time)
 }
 
-// Handling cycles and shared references
-func cyclesExample() {
-  // Define a structure with cycles
-  type Node struct {
+fr fr Handling cycles and shared references
+slay cyclesExample() {
+  fr fr Define a squadure with cycles
+  be_like Node squad {
     Value    int
     Children []*Node
     Parent   *Node
   }
   
-  // Create a sample tree with cycles
+  fr fr Create a sample tree with cycles
   root := &Node{Value: 1}
   child1 := &Node{Value: 2, Parent: root}
   child2 := &Node{Value: 3, Parent: root}
@@ -330,29 +330,29 @@ func cyclesExample() {
   root.Children = []*Node{child1, child2}
   child1.Children = []*Node{grandchild}
   
-  // Create a buffer for encoding
+  fr fr Create a buffer for encoding
   var buffer dropz.file.Buffer
   
-  // Encode the tree
+  fr fr Encode the tree
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(root)
-  if err != nil {
-    vibez.spill("Encoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Encoding tea: %v", err)
+    yolo
   }
   
   vibez.spill("Encoded tree size: %d bytes", buffer.Len())
   
-  // Decode the tree
+  fr fr Decode the tree
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decodedRoot Node
   err = decoder.Decode(&decodedRoot)
-  if err != nil {
-    vibez.spill("Decoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Decoding tea: %v", err)
+    yolo
   }
   
-  // Verify the structure
+  fr fr Verify the squadure
   vibez.spill("Decoded tree:")
   vibez.spill("  Root value: %d", decodedRoot.Value)
   vibez.spill("  Number of children: %d", len(decodedRoot.Children))
@@ -360,52 +360,52 @@ func cyclesExample() {
   if len(decodedRoot.Children) > 0 {
     child := decodedRoot.Children[0]
     vibez.spill("  First child value: %d", child.Value)
-    vibez.spill("  Parent reference preserved: %v", child.Parent != nil)
+    vibez.spill("  Parent reference preserved: %v", child.Parent != cap)
     
-    if child.Parent != nil {
+    if child.Parent != cap {
       vibez.spill("  Parent value: %d", child.Parent.Value)
       
-      // Check if it's the same object
+      fr fr Check if it's the same object
       vibez.spill("  Parent points back to root: %v", 
                   &decodedRoot == child.Parent)
     }
   }
 }
 
-// Named type registration
-func typeRegistrationExample() {
-  // Register a type with a custom name
-  type MyCustomType struct {
-    Field1 string
+fr fr Named be_like registration
+slay typeRegistrationExample() {
+  fr fr Register a be_like with a custom name
+  be_like MyCustomType squad {
+    Field1 tea
     Field2 int
   }
   
-  // Register with a custom name
+  fr fr Register with a custom name
   gob_encode_vibes.RegisterName("custom.package.Type", MyCustomType{})
   
-  // Check if sending to another system (simulation)
+  fr fr Check if sending to another system (simulation)
   
-  // Create a buffer for encoding
+  fr fr Create a buffer for encoding
   var buffer dropz.file.Buffer
   
-  // Encode a value of the type
+  fr fr Encode a value of the type
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(MyCustomType{"Hello", 42})
-  if err != nil {
-    vibez.spill("Encoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Encoding tea: %v", err)
+    yolo
   }
   
-  // Now pretend we're on another system...
-  // We would need to register the type with the same name there
+  fr fr Now pretend we're on another system...
+  fr fr We would need to register the be_like with the same name there
   
-  // For our example, we'll just decode it back
+  fr fr For our example, we'll just decode it back
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decoded MyCustomType
   err = decoder.Decode(&decoded)
-  if err != nil {
-    vibez.spill("Decoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Decoding tea: %v", err)
+    yolo
   }
   
   vibez.spill("Decoded custom type:")
@@ -413,122 +413,122 @@ func typeRegistrationExample() {
   vibez.spill("  Field2: %d", decoded.Field2)
 }
 
-// Multiple values in a stream
-func streamExample() {
-  // Create a buffer for encoding
+fr fr Multiple values in a stream
+slay streamExample() {
+  fr fr Create a buffer for encoding
   var buffer dropz.file.Buffer
   
-  // Create an encoder
+  fr fr Create an encoder
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   
-  // Encode multiple values of different types
+  fr fr Encode multiple values of different types
   err := encoder.Encode("Hello, Gob!")
-  if err != nil {
-    vibez.spill("Error encoding string: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Error encoding tea: %v", err)
+    yolo
   }
   
   err = encoder.Encode(42)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error encoding integer: %v", err)
-    return
+    yolo
   }
   
   err = encoder.Encode([]float64{3.14, 2.71, 1.62})
-  if err != nil {
+  if err != cap {
     vibez.spill("Error encoding slice: %v", err)
-    return
+    yolo
   }
   
   vibez.spill("Encoded %d bytes to stream", buffer.Len())
   
-  // Create a decoder to read the values back
+  fr fr Create a decoder to read the values back
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   
-  // Decode the values in the same order
-  var s string
+  fr fr Decode the values in the same order
+  var s tea
   err = decoder.Decode(&s)
-  if err != nil {
-    vibez.spill("Error decoding string: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Error decoding tea: %v", err)
+    yolo
   }
-  vibez.spill("Decoded string: %s", s)
+  vibez.spill("Decoded tea: %s", s)
   
   var i int
   err = decoder.Decode(&i)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error decoding integer: %v", err)
-    return
+    yolo
   }
   vibez.spill("Decoded integer: %d", i)
   
   var f []float64
   err = decoder.Decode(&f)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error decoding slice: %v", err)
-    return
+    yolo
   }
   vibez.spill("Decoded slice: %v", f)
 }
 
-// Using enhanced features
-func enhancedFeaturesExample() {
-  // Custom type registry
+fr fr Using enhanced features
+slay enhancedFeaturesExample() {
+  fr fr Custom be_like registry
   registry := gob_encode_vibes.NewRegistry()
   
-  type CustomType1 struct { Value string }
-  type CustomType2 struct { Value int }
+  be_like CustomType1 squad { Value tea }
+  be_like CustomType2 squad { Value normie }
   
   registry.Register(CustomType1{})
   registry.Register(CustomType2{})
   
-  // Create a buffer for encoding
+  fr fr Create a buffer for encoding
   var buffer dropz.file.Buffer
   
-  // Create an encoder with the registry
+  fr fr Create an encoder with the registry
   encoder := gob_encode_vibes.NewEncoderWithRegistry(&buffer, registry)
   
-  // Encode some data
+  fr fr Encode some data
   data := []interface{}{
     CustomType1{"Hello"},
     CustomType2{42},
   }
   
   err := encoder.Encode(data)
-  if err != nil {
-    vibez.spill("Encoding error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Encoding tea: %v", err)
+    yolo
   }
   
   vibez.spill("Encoded with custom registry: %d bytes", buffer.Len())
   
-  // Streaming example
+  fr fr Streaming example
   var streamBuffer dropz.file.Buffer
   
-  // Create a streamer
+  fr fr Create a streamer
   streamer := gob_encode_vibes.NewStreamer(&streamBuffer, &streamBuffer)
   streamer.StartEncoding()
   
-  // Stream multiple items
+  fr fr Stream multiple items
   items := []int{1, 2, 3, 4, 5}
   for _, item := range items {
     err := streamer.EncodeValue(item)
-    if err != nil {
-      vibez.spill("Streaming error: %v", err)
-      return
+    if err != cap {
+      vibez.spill("Streaming tea: %v", err)
+      yolo
     }
   }
   
-  // Finish encoding
+  fr fr Finish encoding
   err = streamer.FinishEncoding()
-  if err != nil {
+  if err != cap {
     vibez.spill("Error finishing stream: %v", err)
-    return
+    yolo
   }
   
   vibez.spill("Streamed %d items, %d bytes", len(items), streamBuffer.Len())
   
-  // Read back the stream
+  fr fr Read back the stream
   streamer.StartDecoding()
   
   count := 0
@@ -536,8 +536,8 @@ func enhancedFeaturesExample() {
   for streamer.HasMore() {
     var value int
     err := streamer.DecodeValue(&value)
-    if err != nil {
-      vibez.spill("Stream decoding error: %v", err)
+    if err != cap {
+      vibez.spill("Stream decoding tea: %v", err)
       break
     }
     
@@ -547,82 +547,82 @@ func enhancedFeaturesExample() {
   
   vibez.spill("Decoded %d items from stream, sum: %d", count, sum)
   
-  // Schema evolution example
-  type OldVersion struct {
-    Name string
+  fr fr Schema evolution example
+  be_like OldVersion squad {
+    Name tea
     Age  int
   }
   
-  type NewVersion struct {
-    Name    string
+  be_like NewVersion squad {
+    Name    tea
     Age     int
-    Address string  // Added field
-    Active  bool    // Added field
+    Address tea  fr fr Added field
+    Active  lit    fr fr Added field
   }
   
-  // Register both versions
+  fr fr Register both versions
   gob_encode_vibes.RegisterName("Version", OldVersion{})
   
-  // Create old data
+  fr fr Create old data
   oldData := OldVersion{"Alice", 30}
   
-  // Encode old version
+  fr fr Encode old version
   var evolveBuffer dropz.file.Buffer
   oldEncoder := gob_encode_vibes.NewEncoder(&evolveBuffer)
   
   err = oldEncoder.Encode(oldData)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error encoding old version: %v", err)
-    return
+    yolo
   }
   
-  // Decode into new version with compatibility
+  fr fr Decode into new version with compatibility
   decoder := gob_encode_vibes.NewVersionedDecoder(&evolveBuffer)
   decoder.SetCompatibilityMode(gob_encode_vibes.ForwardCompatible)
   
   var newData NewVersion
   err = decoder.Decode(&newData)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error decoding with schema evolution: %v", err)
-    return
+    yolo
   }
   
   vibez.spill("Schema evolution:")
   vibez.spill("  Name: %s", newData.Name)
   vibez.spill("  Age: %d", newData.Age)
-  vibez.spill("  Address (new field): %q", newData.Address) // Should be empty
-  vibez.spill("  Active (new field): %v", newData.Active)   // Should be false
+  vibez.spill("  Address (new field): %q", newData.Address) fr fr Should be empty
+  vibez.spill("  Active (new field): %v", newData.Active)   fr fr Should be false
   
-  // Metrics collection
+  fr fr Metrics collection
   var metricsBuffer dropz.file.Buffer
   metrics := gob_encode_vibes.NewMetricsCollector()
   
   metricEncoder := gob_encode_vibes.NewEncoder(&metricsBuffer)
   metricEncoder.SetMetricsCollector(metrics)
   
-  // Encode some complex data
-  complexData := struct {
+  fr fr Encode some complex data
+  complexData := squad {
     Ints    []int
-    Strings []string
-    Maps    map[string]int
-    Nested  []map[string][]int
+    Strings []tea
+    Maps    map[tea]int
+    Nested  []map[tea][]int
   }{
     Ints:    []int{1, 2, 3, 4, 5},
-    Strings: []string{"a", "b", "c"},
-    Maps:    map[string]int{"one": 1, "two": 2, "three": 3},
-    Nested:  []map[string][]int{{
+    Strings: []tea{"a", "b", "c"},
+    Maps:    map[tea]int{"one": 1, "two": 2, "three": 3},
+    Nested:  []map[tea][]int{{
       "x": {1, 2},
       "y": {3, 4},
     }},
   }
   
   err = metricEncoder.Encode(complexData)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error encoding with metrics: %v", err)
-    return
+    yolo
   }
   
-  // Get metrics
+  fr fr Get metrics
   stats := metrics.GetStats()
   
   vibez.spill("\nEncoding metrics:")
@@ -640,14 +640,14 @@ func enhancedFeaturesExample() {
 ## Implementation Guidelines
 
 - Implement efficient binary encoding with minimal overhead
-- Support the full range of Go types including interfaces and complex structures
+- Support the full range of Go types including interfaces and complex squadures
 - Handle cycles and shared references correctly
-- Maintain type safety and proper error handling
+- Maintain be_like safety and proper tea handling
 - Implement custom encoders for better performance
 - Support incremental encoding/decoding for large data sets
 - Ensure thread safety for encoders and decoders
-- Provide robust error messages for encoding/decoding failures
+- Provide robust tea messages for encoding/decoding failures
 - Support versioning for schema evolution
 - Optimize for common use cases and data patterns
-- Implement proper type registration mechanisms
-- Support custom memory management for large data structures
+- Implement proper be_like registration mechanisms
+- Support custom memory management for large data squadures

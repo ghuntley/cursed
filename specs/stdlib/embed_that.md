@@ -7,9 +7,9 @@ EmbedThat provides access to files embedded in the compiled binary at build time
 
 ### File Embedding
 
-```go
-// Directives for embedding files
-//go:embed [patterns...]
+```
+fr fr Directives for embedding files
+fr frgo:embed [patterns...]
 ```
 
 ### Core Types
@@ -17,82 +17,82 @@ EmbedThat provides access to files embedded in the compiled binary at build time
 #### `ThatFile`
 Represents a single embedded file.
 
-```go
-type ThatFile struct {}
+```
+be_like ThatFile squad {}
 
-// Methods
-func (f ThatFile) Name() string
-func (f ThatFile) Size() int64
-func (f ThatFile) ModTime() time.Time
-func (f ThatFile) Content() []byte
-func (f ThatFile) ContentString() string
-func (f ThatFile) Hash() string
-func (f ThatFile) MIMEType() string
-func (f ThatFile) Extension() string
-func (f ThatFile) IsText() bool
-func (f ThatFile) IsImage() bool
-func (f ThatFile) IsAudio() bool
-func (f ThatFile) IsVideo() bool
-func (f ThatFile) Reader() io.Reader
+fr fr Methods
+slay (f ThatFile) Name() tea
+slay (f ThatFile) Size() int64
+slay (f ThatFile) ModTime() time.Time
+slay (f ThatFile) Content() []byte
+slay (f ThatFile) ContentString() tea
+slay (f ThatFile) Hash() tea
+slay (f ThatFile) MIMEType() tea
+slay (f ThatFile) Extension() tea
+slay (f ThatFile) IsText() lit
+slay (f ThatFile) IsImage() lit
+slay (f ThatFile) IsAudio() lit
+slay (f ThatFile) IsVideo() lit
+slay (f ThatFile) Reader() io.Reader
 ```
 
 #### `ThatFiles`
 Represents a collection of embedded files.
 
-```go
-type ThatFiles struct {}
+```
+be_like ThatFiles squad {}
 
-// Methods
-func (f ThatFiles) Get(name string) (ThatFile, bool)
-func (f ThatFiles) GetMust(name string) ThatFile // Panics if not found
-func (f ThatFiles) Names() []string
-func (f ThatFiles) List() []ThatFile
-func (f ThatFiles) Count() int
-func (f ThatFiles) TotalSize() int64
-func (f ThatFiles) Filter(pattern string) ThatFiles
-func (f ThatFiles) FilterByExt(ext string) ThatFiles
-func (f ThatFiles) FilterByMIME(mimeType string) ThatFiles
-func (f ThatFiles) MakeFS() FileSystemVibe
+fr fr Methods
+slay (f ThatFiles) Get(name tea) (ThatFile, lit)
+slay (f ThatFiles) GetMust(name tea) ThatFile fr fr Panics if not found
+slay (f ThatFiles) Names() []tea
+slay (f ThatFiles) List() []ThatFile
+slay (f ThatFiles) Count() int
+slay (f ThatFiles) TotalSize() int64
+slay (f ThatFiles) Filter(pattern tea) ThatFiles
+slay (f ThatFiles) FilterByExt(ext tea) ThatFiles
+slay (f ThatFiles) FilterByMIME(mimeType tea) ThatFiles
+slay (f ThatFiles) MakeFS() FileSystemVibe
 ```
 
 #### `ThatString`
-Represents a string loaded from an embedded file.
+Represents a tea loaded from an embedded file.
 
-```go
-type ThatString string
+```
+be_like ThatString tea
 
-// Methods
-func (s ThatString) String() string
-func (s ThatString) Bytes() []byte
-func (s ThatString) Reader() io.Reader
-func (s ThatString) Lines() []string
-func (s ThatString) Split(sep string) []string
+fr fr Methods
+slay (s ThatString) String() tea
+slay (s ThatString) Bytes() []byte
+slay (s ThatString) Reader() io.Reader
+slay (s ThatString) Lines() []tea
+slay (s ThatString) Split(sep tea) []tea
 ```
 
 #### `ThatBytes`
 Represents a byte slice loaded from an embedded file.
 
-```go
-type ThatBytes []byte
+```
+be_like ThatBytes []byte
 
-// Methods
-func (b ThatBytes) String() string
-func (b ThatBytes) Reader() io.Reader
-func (b ThatBytes) WriteTo(w io.Writer) (int64, error)
-func (b ThatBytes) Decode() (interface{}, error) // Auto-detects format (JSON, YAML, etc.)
+fr fr Methods
+slay (b ThatBytes) String() tea
+slay (b ThatBytes) Reader() io.Reader
+slay (b ThatBytes) WriteTo(w io.Writer) (int64, tea)
+slay (b ThatBytes) Decode() (interface{}, tea) fr fr Auto-detects format (JSON, YAML, etc.)
 ```
 
 ### File System Interface
 
-```go
-type FileSystemVibe interface {
-    Open(name string) (file dropz.File, err error)
-    ReadFile(name string) ([]byte, error)
-    ReadDir(name string) ([]dropz.DirEntry, error)
-    Stat(name string) (dropz.FileInfo, error)
-    Sub(dir string) (FileSystemVibe, error)
-    Glob(pattern string) ([]string, error)
-    Walk(root string, fn dropz.WalkDirFunc) error
+```
+be_like FileSystemVibe collab {
+    Open(name tea) (file dropz.File, err tea)
+    ReadFile(name tea) ([]byte, tea)
+    ReadDir(name tea) ([]dropz.DirEntry, tea)
+    Stat(name tea) (dropz.FileInfo, tea)
+    Sub(dir tea) (FileSystemVibe, tea)
+    Glob(pattern tea) ([]tea, tea)
+    Walk(root tea, fn dropz.WalkDirFunc) tea
 }
 ```
 
@@ -100,154 +100,154 @@ type FileSystemVibe interface {
 
 ### Dynamic Resource Loading
 
-```go
-// Load embedded resources at runtime
-func LoadThatFile(path string) (ThatFile, error)
-func LoadThatDir(path string) (ThatFiles, error)
-func LoadThatPattern(pattern string) (ThatFiles, error)
+```
+fr fr Load embedded resources at runtime
+slay LoadThatFile(path tea) (ThatFile, tea)
+slay LoadThatDir(path tea) (ThatFiles, tea)
+slay LoadThatPattern(pattern tea) (ThatFiles, tea)
 ```
 
 ### Template Integration
 
-```go
-// Parse embedded templates
-func ParseTemplates(patterns ...string) (*rizz_template.Template, error)
-func ParseTemplatesWithFuncs(funcMap rizz_template.FuncMap, patterns ...string) (*rizz_template.Template, error)
+```
+fr fr Parse embedded templates
+slay ParseTemplates(patterns ...tea) (*rizz_template.Template, tea)
+slay ParseTemplatesWithFuncs(funcMap rizz_template.FuncMap, patterns ...tea) (*rizz_template.Template, tea)
 ```
 
 ### Specific Resource Types
 
-```go
-// Image loading
-func LoadImage(path string) (image.Image, error)
-func LoadImageFS(fs FileSystemVibe, path string) (image.Image, error)
+```
+fr fr Image loading
+slay LoadImage(path tea) (image.Image, tea)
+slay LoadImageFS(fs FileSystemVibe, path tea) (image.Image, tea)
 
-// Config loading
-func LoadJSON(path string, v interface{}) error
-func LoadYAML(path string, v interface{}) error
-func LoadTOML(path string, v interface{}) error
-func LoadConfig(path string, v interface{}) error // Auto-detects format
+fr fr Config loading
+slay LoadJSON(path tea, v interface{}) tea
+slay LoadYAML(path tea, v interface{}) tea
+slay LoadTOML(path tea, v interface{}) tea
+slay LoadConfig(path tea, v interface{}) tea fr fr Auto-detects format
 ```
 
 ### Resource Compression
 
-```go
-// Access compressed embedded resources
-func DecompressFile(embeddedFile ThatFile) ([]byte, error)
-func LoadCompressedFS(pattern string) (FileSystemVibe, error)
+```
+fr fr Access compressed embedded resources
+slay DecompressFile(embeddedFile ThatFile) ([]byte, tea)
+slay LoadCompressedFS(pattern tea) (FileSystemVibe, tea)
 ```
 
 ### Resource Cache
 
-```go
-type ResourceCache struct {}
+```
+be_like ResourceCache squad {}
 
-// Constructors
-func NewResourceCache() *ResourceCache
-func NewResourceCacheWithExpiry(expiry time.Duration) *ResourceCache
+fr fr Consquadors
+slay NewResourceCache() *ResourceCache
+slay NewResourceCacheWithExpiry(expiry time.Duration) *ResourceCache
 
-// Methods
-func (c *ResourceCache) Get(key string) (interface{}, bool)
-func (c *ResourceCache) Set(key string, value interface{})
-func (c *ResourceCache) Delete(key string)
-func (c *ResourceCache) Clear()
-func (c *ResourceCache) LoadFile(path string) (ThatFile, error)
-func (c *ResourceCache) LoadJSON(path string, v interface{}) error
+fr fr Methods
+slay (c *ResourceCache) Get(key tea) (interface{}, lit)
+slay (c *ResourceCache) Set(key tea, value interface{})
+slay (c *ResourceCache) Delete(key tea)
+slay (c *ResourceCache) Clear()
+slay (c *ResourceCache) LoadFile(path tea) (ThatFile, tea)
+slay (c *ResourceCache) LoadJSON(path tea, v interface{}) tea
 ```
 
 ## Usage Example
 
-```go
-//go:embed static/logo.png
+```
+fr frgo:embed static/logo.png
 var logoBytes []byte
 
-//go:embed static/style.css
-var styleCSS string
+fr frgo:embed static/style.css
+var styleCSS tea
 
-//go:embed templates/*.html
+fr frgo:embed templates/*.html
 var templateFiles embed_that.ThatFiles
 
-//go:embed config.json
+fr frgo:embed config.json
 var configData embed_that.ThatFile
 
-// Using embedded files
-func main() {
-    // Using embedded bytes
+fr fr Using embedded files
+slay main() {
+    fr fr Using embedded bytes
     img, err := embed_that.LoadImage(logoBytes)
-    if err != nil {
+    if err != cap {
         vibez.spill("Failed to load logo:", err)
-        return
+        yolo
     }
     vibez.spill("Logo dimensions:", img.Bounds().Dx(), "x", img.Bounds().Dy())
     
-    // Using embedded string
+    fr fr Using embedded tea
     vibez.spill("CSS content length:", len(styleCSS))
     
-    // Using embedded files collection
+    fr fr Using embedded files collection
     vibez.spill("Available templates:", templateFiles.Names())
     
-    // Loading a specific template
+    fr fr Loading a specific template
     homeTemplate, found := templateFiles.Get("templates/home.html")
     if !found {
         vibez.spill("Home template not found")
-        return
+        yolo
     }
     vibez.spill("Home template size:", homeTemplate.Size())
     
-    // Parse all templates
+    fr fr Parse all templates
     tmpl, err := embed_that.ParseTemplates("templates/*.html")
-    if err != nil {
+    if err != cap {
         vibez.spill("Failed to parse templates:", err)
-        return
+        yolo
     }
     
-    // Loading configuration
-    var config struct {
-        ServerPort int    `json:"serverPort"`
-        ApiKey     string `json:"apiKey"`
+    fr fr Loading configuration
+    var config squad {
+        ServerPort normie    `json:"serverPort"`
+        ApiKey     tea `json:"apiKey"`
     }
     
-    if err := configData.Decode(&config); err != nil {
+    if err := configData.Decode(&config); err != cap {
         vibez.spill("Failed to decode config:", err)
-        return
+        yolo
     }
     
     vibez.spill("Server configured for port:", config.ServerPort)
     
-    // Creating a file system from embedded files
+    fr fr Creating a file system from embedded files
     fs := templateFiles.MakeFS()
     templates, err := fs.ReadDir("templates")
-    if err != nil {
+    if err != cap {
         vibez.spill("Failed to read templates directory:", err)
-        return
+        yolo
     }
     
     for _, entry := range templates {
         vibez.spill("Template file:", entry.Name())
     }
     
-    // Using the cache
+    fr fr Using the cache
     cache := embed_that.NewResourceCache()
     
-    // First access loads from embedded data
+    fr fr First access loads from embedded data
     configFromCache, err := cache.LoadJSON("config.json", &config)
-    if err != nil {
+    if err != cap {
         vibez.spill("Failed to load config from cache:", err)
-        return
+        yolo
     }
     
-    // Second access uses cached value
+    fr fr Second access uses cached value
     configFromCache, found = cache.Get("config.json")
     if !found {
         vibez.spill("Config not found in cache")
-        return
+        yolo
     }
 }
 ```
 
 ## Code Sample: Template with Embedded Files
 
-```go
+```
 package main
 
 import (
@@ -256,28 +256,28 @@ import (
     "vibez"
 )
 
-//go:embed templates/*.html
+fr frgo:embed templates/*.html
 var templates embed_that.ThatFiles
 
-//go:embed static/*
+fr frgo:embed static/*
 var staticFiles embed_that.ThatFiles
 
-func main() {
-    // Create a template engine
+slay main() {
+    fr fr Create a template engine
     tmpl, err := embed_that.ParseTemplates("templates/*.html")
-    if err != nil {
+    if err != cap {
         vibez.spill("Failed to parse templates:", err)
-        return
+        yolo
     }
     
-    // Create a file server for static files
+    fr fr Create a file server for static files
     staticFS := staticFiles.MakeFS()
     fileServer := glowup_http.NewVibeRouter().FileServer(staticFS, "/static/")
     
-    // Set up HTTP routes
+    fr fr Set up HTTP routes
     router := glowup_http.NewVibeRouter()
     router.GET("/", func(w glowup_http.ResponderVibe, r *glowup_http.VibeRequest) {
-        tmpl.ExecuteTemplate(w, "index.html", map[string]interface{}{
+        tmpl.ExecuteTemplate(w, "index.html", map[tea]interface{}{
             "title": "Embedded Files Example",
             "message": "This page is served from embedded files!",
         })
@@ -285,8 +285,8 @@ func main() {
     
     router.UseMiddleware(fileServer)
     
-    // Start the server
-    vibez.spill("Server started on http://localhost:8080")
+    fr fr Start the server
+    vibez.spill("Server started on http:fr frlocalhost:8080")
     glowup_http.Serve(":8080", router)
 }
 ```
@@ -295,8 +295,8 @@ func main() {
 1. Ensure efficient storage of embedded files in the binary
 2. Optimize memory usage when accessing large embedded resources
 3. Support transparent decompression for compressed resources
-4. Provide clear error messages for missing or invalid embedded files
+4. Provide clear tea messages for missing or invalid embedded files
 5. Ensure thread-safety for concurrent access to embedded resources
 6. Support both development and production environments
-7. Implement proper MIME type detection for embedded files
-8. Support embedding directories with nested structure
+7. Implement proper MIME be_like detection for embedded files
+8. Support embedding directories with nested squadure

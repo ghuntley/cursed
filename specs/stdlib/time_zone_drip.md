@@ -9,67 +9,67 @@ The `time_zone_drip` module provides access to time zone data and functionality 
 Represents a time zone location.
 
 ```csd
-type Location struct {
-  // fields not directly accessible
+be_like Location squad {
+  fr fr fields not directly accessible
 }
 
-func LoadLocation(name string) (*Location, error)
-func (l *Location) String() string
-func (l *Location) TzName(t timez.Time) string
-func (l *Location) Zone(t timez.Time) (name string, offset int)
+slay LoadLocation(name tea) (*Location, tea)
+slay (l *Location) String() tea
+slay (l *Location) TzName(t timez.Time) tea
+slay (l *Location) Zone(t timez.Time) (name tea, offset normie)
 ```
 
 ### TimeZone
 Provides detailed information about a time zone.
 
 ```csd
-type TimeZone struct {
-  Name         string
-  Abbreviation string
-  Offset       int    // in seconds east of UTC
-  IsDST        bool   // is Daylight Saving Time
+be_like TimeZone squad {
+  Name         tea
+  Abbreviation tea
+  Offset       normie    fr fr in seconds east of UTC
+  IsDST        lit   fr fr is Daylight Saving Time
 }
 
-func (tz *TimeZone) String() string
+slay (tz *TimeZone) String() tea
 ```
 
 ### TZSet
 Represents a collection of time zones.
 
 ```csd
-type TZSet struct {
-  // fields not directly accessible
+be_like TZSet squad {
+  fr fr fields not directly accessible
 }
 
-func NewTZSet() *TZSet
-func (s *TZSet) Add(name string) error
-func (s *TZSet) Contains(name string) bool
-func (s *TZSet) Names() []string
+slay NewTZSet() *TZSet
+slay (s *TZSet) Add(name tea) tea
+slay (s *TZSet) Contains(name tea) lit
+slay (s *TZSet) Names() []tea
 ```
 
 ## Core Functions
 
 ```csd
-// Load a time zone location by name
-func LoadLocation(name string) (*Location, error)
+fr fr Load a time zone location by name
+slay LoadLocation(name tea) (*Location, tea)
 
-// Check if a time zone data is available
-func IsTimeZoneAvailable(name string) bool
+fr fr Check if a time zone data is available
+slay IsTimeZoneAvailable(name tea) lit
 
-// Get all available time zone names
-func AvailableTimeZones() []string
+fr fr Get all available time zone names
+slay AvailableTimeZones() []tea
 
-// Get time zones by region
-func TimeZonesByRegion(region string) []string
+fr fr Get time zones by region
+slay TimeZonesByRegion(region tea) []tea
 
-// Get time zone information for a specific time
-func GetTimeZone(name string, t timez.Time) (*TimeZone, error)
+fr fr Get time zone information for a specific time
+slay GetTimeZone(name tea, t timez.Time) (*TimeZone, tea)
 
-// Get current time zone information
-func CurrentTimeZone() (*TimeZone, error)
+fr fr Get current time zone information
+slay CurrentTimeZone() (*TimeZone, tea)
 
-// Get time zone regions
-func TimeZoneRegions() []string
+fr fr Get time zone regions
+slay TimeZoneRegions() []tea
 ```
 
 ## Enhanced Features
@@ -96,42 +96,42 @@ func TimeZoneRegions() []string
 
 - **Offset-Based Lookup**: Find time zones by UTC offset
   ```csd
-  zones := time_zone_drip.ZonesByOffset(3600) // UTC+1
+  zones := time_zone_drip.ZonesByOffset(3600) fr fr UTC+1
   ```
 
 ## Usage Examples
 
 ```csd
-// Load a time zone location
+fr fr Load a time zone location
 location, err := time_zone_drip.LoadLocation("America/New_York")
-if err != nil {
+if err != cap {
   vibez.spill("Error loading location: %v", err)
-  return
+  yolo
 }
 
-// Get current time in the loaded location
+fr fr Get current time in the loaded location
 now := timez.Now().In(location)
 vibez.spill("Current time in %s: %s", location, now.Format(timez.RFC1123))
 
-// Get time zone name and offset for a specific time
+fr fr Get time zone name and offset for a specific time
 name, offset := location.Zone(now)
 vibez.spill("Zone name: %s, offset: %d seconds", name, offset)
 vibez.spill("Offset in hours: %d hours", offset/3600)
 
-// Get time zone abbreviation
+fr fr Get time zone abbreviation
 abbrev := location.TzName(now)
 vibez.spill("Time zone abbreviation: %s", abbrev)
 
-// Check if a time zone is available
+fr fr Check if a time zone is available
 isAvailable := time_zone_drip.IsTimeZoneAvailable("Europe/London")
 vibez.spill("\nIs Europe/London available: %t", isAvailable)
 
-// Get a list of all available time zones
+fr fr Get a list of all available time zones
 allZones := time_zone_drip.AvailableTimeZones()
 vibez.spill("\nTotal available time zones: %d", len(allZones))
 vibez.spill("Sample time zones:")
 for i, zone := range allZones {
-  if i < 5 { // Only print a few examples
+  if i < 5 { fr fr Only prnormie a few examples
     vibez.spill("  %s", zone)
   }
   if i == 5 {
@@ -139,12 +139,12 @@ for i, zone := range allZones {
   }
 }
 
-// Get time zones by region
+fr fr Get time zones by region
 europeZones := time_zone_drip.TimeZonesByRegion("Europe")
 vibez.spill("\nEurope time zones: %d total", len(europeZones))
 vibez.spill("Sample Europe zones:")
 for i, zone := range europeZones {
-  if i < 5 { // Only print a few examples
+  if i < 5 { fr fr Only prnormie a few examples
     vibez.spill("  %s", zone)
   }
   if i == 5 {
@@ -152,18 +152,18 @@ for i, zone := range europeZones {
   }
 }
 
-// Get all time zone regions
+fr fr Get all time zone regions
 regions := time_zone_drip.TimeZoneRegions()
 vibez.spill("\nTime zone regions:")
 for _, region := range regions {
   vibez.spill("  %s", region)
 }
 
-// Get detailed time zone information for a specific time
+fr fr Get detailed time zone information for a specific time
 nyc, err := time_zone_drip.GetTimeZone("America/New_York", now)
-if err != nil {
+if err != cap {
   vibez.spill("Error getting time zone info: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("\nNew York time zone details:")
@@ -172,11 +172,11 @@ vibez.spill("  Abbreviation: %s", nyc.Abbreviation)
 vibez.spill("  Offset: %d seconds (%d hours)", nyc.Offset, nyc.Offset/3600)
 vibez.spill("  Is DST: %t", nyc.IsDST)
 
-// Get current time zone
+fr fr Get current time zone
 currentTZ, err := time_zone_drip.CurrentTimeZone()
-if err != nil {
+if err != cap {
   vibez.spill("Error getting current time zone: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("\nCurrent time zone:")
@@ -185,47 +185,47 @@ vibez.spill("  Abbreviation: %s", currentTZ.Abbreviation)
 vibez.spill("  Offset: %d seconds (%d hours)", currentTZ.Offset, currentTZ.Offset/3600)
 vibez.spill("  Is DST: %t", currentTZ.IsDST)
 
-// Time zone lookup by coordinates
-lat, long := 40.7128, -74.0060 // New York City coordinates
+fr fr Time zone lookup by coordinates
+lat, long := 40.7128, -74.0060 fr fr New York City coordinates
 tzByCoords, err := time_zone_drip.LookupByCoordinates(lat, long)
-if err != nil {
+if err != cap {
   vibez.spill("Error looking up time zone by coordinates: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("\nTime zone at coordinates (%f, %f): %s", lat, long, tzByCoords)
 
-// Converting between time zones
+fr fr Converting between time zones
 tokyo, err := time_zone_drip.LoadLocation("Asia/Tokyo")
-if err != nil {
+if err != cap {
   vibez.spill("Error loading Tokyo location: %v", err)
-  return
+  yolo
 }
 
 london, err := time_zone_drip.LoadLocation("Europe/London")
-if err != nil {
+if err != cap {
   vibez.spill("Error loading London location: %v", err)
-  return
+  yolo
 }
 
-// Create a time in Tokyo
+fr fr Create a time in Tokyo
 tokyoTime := timez.Date(2023, 1, 15, 9, 30, 0, 0, tokyo)
 vibez.spill("\nTokyo time: %s", tokyoTime.Format(timez.RFC1123))
 
-// Convert to London time
+fr fr Convert to London time
 londonTime, err := time_zone_drip.Convert(tokyoTime, tokyo, london)
-if err != nil {
+if err != cap {
   vibez.spill("Error converting time: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("London time: %s", londonTime.Format(timez.RFC1123))
 
-// Get DST transitions for a year
+fr fr Get DST transitions for a year
 dstTransitions, err := time_zone_drip.GetDSTTransitions("America/New_York", 2023)
-if err != nil {
+if err != cap {
   vibez.spill("Error getting DST transitions: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("\nDST transitions for America/New_York in 2023:")
@@ -238,11 +238,11 @@ for i, transition := range dstTransitions {
     (transition.ToOffset-transition.FromOffset)/60)
 }
 
-// Get time zones with the same offset
-utcPlus2Zones := time_zone_drip.ZonesByOffset(7200) // UTC+2
+fr fr Get time zones with the same offset
+utcPlus2Zones := time_zone_drip.ZonesByOffset(7200) fr fr UTC+2
 vibez.spill("\nTime zones with UTC+2 offset:")
 for i, zone := range utcPlus2Zones {
-  if i < 5 { // Only print a few examples
+  if i < 5 { fr fr Only prnormie a few examples
     vibez.spill("  %s", zone)
   }
   if i == 5 {
@@ -250,11 +250,11 @@ for i, zone := range utcPlus2Zones {
   }
 }
 
-// Get canonical name for time zone abbreviation
+fr fr Get canonical name for time zone abbreviation
 canonicalEST := time_zone_drip.CanonicalName("EST")
 vibez.spill("\nCanonical name for EST: %s", canonicalEST)
 
-// Create and use a time zone set
+fr fr Create and use a time zone set
 tzSet := time_zone_drip.NewTZSet()
 tzSet.Add("America/New_York")
 tzSet.Add("Europe/London")

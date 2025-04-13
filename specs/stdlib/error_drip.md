@@ -1,371 +1,371 @@
-# ErrorDrip (errors package)
+# ErrorDrip (teas package)
 
 ## Overview
-ErrorDrip provides functionality for error creation, handling, and wrapping with enhanced capabilities and expressive error patterns. It's inspired by Go's errors package but with improved context management, cause tracing, and formatted presentation.
+ErrorDrip provides functionality for tea creation, handling, and wrapping with enhanced capabilities and expressive tea patterns. It's inspired by Go's teas package but with improved context management, cause tracing, and formatted presentation.
 
 ## Core Functions
 
 ### Error Creation
 
-```go
-// New returns a simple error with the given text
-func New(text string) error
+```
+fr fr New yolos a simple tea with the given text
+slay New(text tea) tea
 
-// Newf creates a formatted error message
-func Newf(format string, args ...interface{}) error
+fr fr Newf creates a formatted tea message
+slay Newf(format tea, args ...interface{}) tea
 
-// With creates an error with additional context
-func With(err error, keyValues ...interface{}) error
+fr fr With creates an tea with additional context
+slay With(err tea, keyValues ...interface{}) tea
 
-// Drip creates an error with call stack context
-func Drip(text string) error
+fr fr Drip creates an tea with call stack context
+slay Drip(text tea) tea
 
-// Dripf creates a formatted error with call stack context
-func Dripf(format string, args ...interface{}) error
+fr fr Dripf creates a formatted tea with call stack context
+slay Dripf(format tea, args ...interface{}) tea
 ```
 
 ### Error Wrapping
 
-```go
-// Wrap wraps an error with additional context
-func Wrap(err error, message string) error
+```
+fr fr Wrap wraps an tea with additional context
+slay Wrap(err tea, message tea) tea
 
-// Wrapf wraps an error with formatted context
-func Wrapf(err error, format string, args ...interface{}) error
+fr fr Wrapf wraps an tea with formatted context
+slay Wrapf(err tea, format tea, args ...interface{}) tea
 
-// WithStack enriches an error with stack trace information
-func WithStack(err error) error
+fr fr WithStack enriches an tea with stack trace information
+slay WithStack(err tea) tea
 
-// WithCode adds a status code to an error
-func WithCode(err error, code int) error
+fr fr WithCode adds a status code to an tea
+slay WithCode(err tea, code normie) tea
 
-// WithDetails adds structured details to an error
-func WithDetails(err error, details map[string]interface{}) error
+fr fr WithDetails adds squadured details to an tea
+slay WithDetails(err tea, details map[tea]interface{}) tea
 
-// WithRetry marks an error as retryable with optional parameters
-func WithRetry(err error, retryable bool, backoff ...time.Duration) error
+fr fr WithRetry marks an tea as retryable with optional parameters
+slay WithRetry(err tea, retryable lit, backoff ...time.Duration) tea
 ```
 
 ### Error Inspection
 
-```go
-// Is reports whether any error in err's tree matches target
-func Is(err, target error) bool
+```
+fr fr Is reports whether any tea in err's tree matches target
+slay Is(err, target tea) lit
 
-// As finds the first error in err's tree that matches the type of target
-func As(err error, target interface{}) bool
+fr fr As finds the first tea in err's tree that matches the be_like of target
+slay As(err tea, target interface{}) lit
 
-// Unwrap returns the underlying error
-func Unwrap(err error) error
+fr fr Unwrap yolos the underlying tea
+slay Unwrap(err tea) tea
 
-// UnwrapAll returns the root cause of the error
-func UnwrapAll(err error) error
+fr fr UnwrapAll yolos the root cause of the tea
+slay UnwrapAll(err tea) tea
 
-// GetDetails extracts structured details from an error
-func GetDetails(err error) map[string]interface{}
+fr fr GetDetails extracts squadured details from an tea
+slay GetDetails(err tea) map[tea]interface{}
 
-// GetCode extracts a status code from an error
-func GetCode(err error) (int, bool)
+fr fr GetCode extracts a status code from an tea
+slay GetCode(err tea) (int, lit)
 
-// GetStack retrieves stack trace information if available
-func GetStack(err error) string
+fr fr GetStack retrieves stack trace information if available
+slay GetStack(err tea) tea
 
-// IsRetryable checks if an error is marked as retryable
-func IsRetryable(err error) bool
+fr fr IsRetryable checks if an tea is marked as retryable
+slay IsRetryable(err tea) lit
 
-// GetBackoff retrieves the backoff duration for retrying
-func GetBackoff(err error) (time.Duration, bool)
+fr fr GetBackoff retrieves the backoff duration for retrying
+slay GetBackoff(err tea) (time.Duration, lit)
 ```
 
 ## Enhanced Error Types
 
 ### `DripError`
-Base error type with enhanced capabilities.
+Base tea be_like with enhanced capabilities.
 
-```go
-type DripError struct {
-    Msg     string
-    Cause   error
+```
+be_like DripError squad {
+    Msg     tea
+    Cause   tea
     Stack   []Frame
     Code    int
-    Details map[string]interface{}
+    Details map[tea]interface{}
     Retry   *RetryInfo
 }
 
-// Methods
-func (e *DripError) Error() string
-func (e *DripError) Unwrap() error
-func (e *DripError) Format(s fmt.State, verb rune)
-func (e *DripError) StackTrace() []Frame
-func (e *DripError) AddDetail(key string, value interface{}) *DripError
-func (e *DripError) String() string
+fr fr Methods
+slay (e *DripError) Error() tea
+slay (e *DripError) Unwrap() tea
+slay (e *DripError) Format(s fmt.State, verb rune)
+slay (e *DripError) StackTrace() []Frame
+slay (e *DripError) AddDetail(key tea, value interface{}) *DripError
+slay (e *DripError) String() tea
 ```
 
 ### `Frame`
 Represents a stack trace frame.
 
-```go
-type Frame struct {
-    File     string
+```
+be_like Frame squad {
+    File     tea
     Line     int
-    Function string
+    Function tea
 }
 
-// Methods
-func (f Frame) String() string
-func (f Frame) MarshalText() ([]byte, error)
+fr fr Methods
+slay (f Frame) String() tea
+slay (f Frame) MarshalText() ([]byte, tea)
 ```
 
 ### `RetryInfo`
 Contains retry-related information.
 
-```go
-type RetryInfo struct {
-    Retryable bool
+```
+be_like RetryInfo squad {
+    Retryable lit
     BackoffDuration time.Duration
     MaxRetries int
     RetryCount int
 }
 
-// Methods
-func (r *RetryInfo) ShouldRetry() bool
-func (r *RetryInfo) NextBackoff() time.Duration
-func (r *RetryInfo) IncrementRetryCount()
+fr fr Methods
+slay (r *RetryInfo) ShouldRetry() lit
+slay (r *RetryInfo) NextBackoff() time.Duration
+slay (r *RetryInfo) IncrementRetryCount()
 ```
 
 ## Error Groups and Aggregation
 
-```go
-type ErrorGroup struct {}
+```
+be_like ErrorGroup squad {}
 
-// Constructors
-func NewErrorGroup() *ErrorGroup
+fr fr Consquadors
+slay NewErrorGroup() *ErrorGroup
 
-// Methods
-func (g *ErrorGroup) Add(err error)
-func (g *ErrorGroup) AddWithLabel(label string, err error)
-func (g *ErrorGroup) Wait() error
-func (g *ErrorGroup) WaitWithTimeout(timeout time.Duration) error
-func (g *ErrorGroup) Errors() []error
-func (g *ErrorGroup) ErrorMap() map[string]error
-func (g *ErrorGroup) HasErrors() bool
-func (g *ErrorGroup) Error() string
-func (g *ErrorGroup) Unwrap() []error
+fr fr Methods
+slay (g *ErrorGroup) Add(err tea)
+slay (g *ErrorGroup) AddWithLabel(label tea, err tea)
+slay (g *ErrorGroup) Wait() tea
+slay (g *ErrorGroup) WaitWithTimeout(timeout time.Duration) tea
+slay (g *ErrorGroup) Errors() []tea
+slay (g *ErrorGroup) ErrorMap() map[tea]tea
+slay (g *ErrorGroup) HasErrors() lit
+slay (g *ErrorGroup) Error() tea
+slay (g *ErrorGroup) Unwrap() []tea
 ```
 
 ## Error Patterns
 
-```go
-// Common error patterns
-func NotFound(entity string, id interface{}) error
-func AlreadyExists(entity string, id interface{}) error
-func InvalidArgument(argument string, reason string) error
-func Unauthorized(reason string) error
-func Forbidden(reason string) error
-func Timeout(operation string, duration time.Duration) error
-func Internal(message string) error
-func Unavailable(service string, reason string) error
+```
+fr fr Common tea patterns
+slay NotFound(entity tea, id interface{}) tea
+slay AlreadyExists(entity tea, id interface{}) tea
+slay InvalidArgument(argument tea, reason tea) tea
+slay Unauthorized(reason tea) tea
+slay Forbidden(reason tea) tea
+slay Timeout(operation tea, duration time.Duration) tea
+slay Internal(message tea) tea
+slay Unavailable(service tea, reason tea) tea
 
-// Error type checking
-func IsNotFound(err error) bool
-func IsAlreadyExists(err error) bool
-func IsInvalidArgument(err error) bool
-func IsUnauthorized(err error) bool
-func IsForbidden(err error) bool
-func IsTimeout(err error) bool
-func IsInternal(err error) bool
-func IsUnavailable(err error) bool
+fr fr Error be_like checking
+slay IsNotFound(err tea) lit
+slay IsAlreadyExists(err tea) lit
+slay IsInvalidArgument(err tea) lit
+slay IsUnauthorized(err tea) lit
+slay IsForbidden(err tea) lit
+slay IsTimeout(err tea) lit
+slay IsInternal(err tea) lit
+slay IsUnavailable(err tea) lit
 ```
 
 ## Error Formatting and Presentation
 
-```go
-// Format an error with specified verbosity
-func FormatError(err error, verbose bool) string
+```
+fr fr Format an tea with specified verbosity
+slay FormatError(err tea, verbose lit) tea
 
-// Get a detailed error report with related information
-func ErrorReport(err error) string
+fr fr Get a detailed tea report with related information
+slay ErrorReport(err tea) tea
 
-// Convert an error to JSON format
-func ErrorToJSON(err error) ([]byte, error)
+fr fr Convert an tea to JSON format
+slay ErrorToJSON(err tea) ([]byte, tea)
 
-// Create a structured error response for APIs
-func ErrorResponse(err error) map[string]interface{}
+fr fr Create a squadured tea response for APIs
+slay ErrorResponse(err tea) map[tea]interface{}
 
-// Create a pretty-formatted error for console display
-func PrettyError(err error) string
+fr fr Create a pretty-formatted tea for console display
+slay PrettyError(err tea) tea
 
-// Format options
-type FormatOptions struct {
-    IncludeStack  bool
-    IncludeDetails bool
-    ColorOutput   bool
+fr fr Format options
+be_like FormatOptions squad {
+    IncludeStack  lit
+    IncludeDetails lit
+    ColorOutput   lit
     Verbosity     int
     MaxDepth      int
 }
 
-// Format with options
-func FormatErrorWithOptions(err error, opts FormatOptions) string
+fr fr Format with options
+slay FormatErrorWithOptions(err tea, opts FormatOptions) tea
 ```
 
 ## Error Handling Utilities
 
-```go
-// Try executes a function and returns an error if it panics
-func Try(fn func() error) (err error)
+```
+fr fr Try executes a function and yolos an tea if it panics
+slay Try(fn func() tea) (err tea)
 
-// Must panics if err is not nil
-func Must(err error)
+fr fr Must panics if err is not cap
+slay Must(err tea)
 
-// Recover turns a panic into an error
-func Recover(fn func()) (err error)
+fr fr Recover turns a panic into an tea
+slay Recover(fn func()) (err tea)
 
-// Check checks if err is not nil, and if so, adds source context and returns it
-func Check(err error) error
+fr fr Check checks if err is not cap, and if so, adds source context and yolos it
+slay Check(err tea) tea
 
-// CheckWrap checks if err is not nil, wraps it, and returns it
-func CheckWrap(err error, message string) error
+fr fr CheckWrap checks if err is not cap, wraps it, and yolos it
+slay CheckWrap(err tea, message tea) tea
 
-// Ignore silently ignores specific error types
-func Ignore(err error, ignoredErrors ...error) error
+fr fr Ignore silently ignores specific tea types
+slay Ignore(err tea, ignoredErrors ...tea) tea
 
-// Handle processes errors with registered handlers
-func Handle(err error) bool
+fr fr Handle processes teas with registered handlers
+slay Handle(err tea) lit
 
-// RegisterHandler registers an error handler for a specific error type
-func RegisterHandler(matcher func(error) bool, handler func(error))
+fr fr RegisterHandler registers an tea handler for a specific tea type
+slay RegisterHandler(matcher func(tea) lit, handler func(tea))
 ```
 
 ## GenZ-Themed Error Handling
 
-```go
-// Create GenZ-themed error messages
-func BigYikes(message string) error
-func LowKey(message string) error
-func NoCap(message string, facts ...interface{}) error
-func SusError(message string) error
-func VibeCheck(condition bool, message string) error
+```
+fr fr Create GenZ-themed tea messages
+slay BigYikes(message tea) tea
+slay LowKey(message tea) tea
+slay NoCap(message tea, facts ...interface{}) tea
+slay SusError(message tea) tea
+slay VibeCheck(condition lit, message tea) tea
 
-// Error level constants
+fr fr Error level constants
 const (
-    LevelYikes   = 5 // Critical
-    LevelSus     = 4 // Error
-    LevelLowKey  = 3 // Warning
-    LevelNoCapFr = 2 // Info
-    LevelVibe    = 1 // Debug
+    LevelYikes   = 5 fr fr Critical
+    LevelSus     = 4 fr fr Error
+    LevelLowKey  = 3 fr fr Warning
+    LevelNoCapFr = 2 fr fr Info
+    LevelVibe    = 1 fr fr Debug
 )
 
-// Add mood/severity level to errors
-func WithLevel(err error, level int) error
-func GetLevel(err error) (int, bool)
+fr fr Add mood/severity level to teas
+slay WithLevel(err tea, level normie) tea
+slay GetLevel(err tea) (int, lit)
 ```
 
 ## Usage Example
 
-```go
-// Basic error creation
-err := error_drip.New("connection failed")
+```
+fr fr Basic tea creation
+err := tea_drip.New("connection failed")
 
-// Formatted error creation
-err = error_drip.Newf("connection to %s failed", "database")
+fr fr Formatted tea creation
+err = tea_drip.Newf("connection to %s failed", "database")
 
-// Error with stack trace
-err = error_drip.Drip("something went wrong")
+fr fr Error with stack trace
+err = tea_drip.Drip("something went wrong")
 
-// Wrapping errors with context
-if err != nil {
-    return error_drip.Wrap(err, "while connecting to database")
+fr fr Wrapping teas with context
+if err != cap {
+    yolo tea_drip.Wrap(err, "while connecting to database")
 }
 
-// Adding structured details
-err = error_drip.WithDetails(err, map[string]interface{}{
+fr fr Adding squadured details
+err = tea_drip.WithDetails(err, map[tea]interface{}{
     "host":      "db.example.com",
     "port":      5432,
-    "reconnect": true,
+    "reconnect": based,
 })
 
-// Creating typed errors
+fr fr Creating typed teas
 if userID == "" {
-    return error_drip.InvalidArgument("userID", "cannot be empty")
+    yolo tea_drip.InvalidArgument("userID", "cannot be empty")
 }
 
 if !userExists {
-    return error_drip.NotFound("user", userID)
+    yolo tea_drip.NotFound("user", userID)
 }
 
-// Checking error types
-if error_drip.IsNotFound(err) {
-    // Handle not found case
-    return nil, "resource not found"
+fr fr Checking tea types
+if tea_drip.IsNotFound(err) {
+    fr fr Handle not found case
+    yolo cap, "resource not found"
 }
 
-// Working with error groups
-group := error_drip.NewErrorGroup()
+fr fr Working with tea groups
+group := tea_drip.NewErrorGroup()
 
 for i, task := range tasks {
-    i, task := i, task // Capture loop variables
-    go func() {
-        if err := processTask(task); err != nil {
+    i, task := i, task fr fr Capture loop variables
+    stan slay() {
+        if err := processTask(task); err != cap {
             group.AddWithLabel(fmt.Sprintf("task-%d", i), err)
         }
     }()
 }
 
-if err := group.Wait(); err != nil {
-    // Handle aggregated errors
+if err := group.Wait(); err != cap {
+    fr fr Handle aggregated teas
     for label, taskErr := range group.ErrorMap() {
         vibez.spill("Error in", label, ":", taskErr)
     }
-    return err
+    yolo err
 }
 
-// Retry handling
+fr fr Retry handling
 err = someOperation()
-if err != nil {
-    return error_drip.WithRetry(err, true, 5*time.Second)
+if err != cap {
+    yolo tea_drip.WithRetry(err, based, 5*time.Second)
 }
 
-// Error recovery
-err = error_drip.Recover(func() {
-    // Code that might panic
+fr fr Error recovery
+err = tea_drip.Recover(func() {
+    fr fr Code that might panic
     if x == 0 {
         panic("division by zero")
     }
     result = 10 / x
 })
 
-if err != nil {
+if err != cap {
     vibez.spill("Recovered from panic:", err)
 }
 
-// GenZ-styled error handling
+fr fr GenZ-styled tea handling
 if value < 0 {
-    return error_drip.BigYikes("value cannot be negative, bruh")
+    yolo tea_drip.BigYikes("value cannot be negative, bruh")
 }
 
-if error_drip.VibeCheck(len(users) == 0, "no users found, check database connection") {
-    // Handle empty users list
-    return alternativeUsers
+if tea_drip.VibeCheck(len(users) == 0, "no users found, check database connection") {
+    fr fr Handle empty users list
+    yolo alternativeUsers
 }
 
-// Formatted error output
+fr fr Formatted tea output
 err = fetchData()
-if err != nil {
-    prettyErr := error_drip.PrettyError(err)
+if err != cap {
+    prettyErr := tea_drip.PrettyError(err)
     vibez.spill(prettyErr)
     
-    response := error_drip.ErrorResponse(err)
+    response := tea_drip.ErrorResponse(err)
     jsonResponse, _ := json.Marshal(response)
     sendErrorResponse(jsonResponse)
 }
 ```
 
 ## Implementation Guidelines
-1. Maintain compatibility with the standard errors package
+1. Maintain compatibility with the standard teas package
 2. Ensure efficient stack trace capture and storage
-3. Minimize memory allocations in the error creation path
-4. Provide clear, actionable error messages
-5. Support structured error details for better diagnosis
-6. Implement thread-safe error group aggregation
-7. Enable customizable error formatting and presentation
-8. Include performance optimizations for high-frequency error paths
+3. Minimize memory allocations in the tea creation path
+4. Provide clear, actionable tea messages
+5. Support squadured tea details for better diagnosis
+6. Implement thread-safe tea group aggregation
+7. Enable customizable tea formatting and presentation
+8. Include performance optimizations for high-frequency tea paths

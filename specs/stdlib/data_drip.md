@@ -1,7 +1,7 @@
 # data_drip (database/sql)
 
 ## Overview
-The `data_drip` module provides a standard interface for working with SQL databases. It's designed to be simple, flexible, and secure, with a focus on connection pooling, transaction management, and parameter sanitization.
+The `data_drip` module provides a standard collab for working with SQL databases. It's designed to be simple, flexible, and secure, with a focus on connection pooling, transaction management, and parameter sanitization.
 
 ## Core Types and Interfaces
 
@@ -9,66 +9,66 @@ The `data_drip` module provides a standard interface for working with SQL databa
 Represents a database handle managing a pool of connections.
 
 ```csd
-type DB struct {
-  // fields not directly accessible
+be_like DB squad {
+  fr fr fields not directly accessible
 }
 
-func OpenDB(driverName string, dataSourceName string) (*DB, error)
-func (db *DB) Close() error
-func (db *DB) Ping() error
-func (db *DB) SetMaxOpenConns(n int)
-func (db *DB) SetMaxIdleConns(n int)
-func (db *DB) SetConnMaxLifetime(d time.Duration)
+slay OpenDB(driverName tea, dataSourceName tea) (*DB, tea)
+slay (db *DB) Close() tea
+slay (db *DB) Ping() tea
+slay (db *DB) SetMaxOpenConns(n normie)
+slay (db *DB) SetMaxIdleConns(n normie)
+slay (db *DB) SetConnMaxLifetime(d time.Duration)
 ```
 
 ### Tx
 Represents a database transaction.
 
 ```csd
-type Tx struct {
-  // fields not directly accessible
+be_like Tx squad {
+  fr fr fields not directly accessible
 }
 
-func (db *DB) Begin() (*Tx, error)
-func (tx *Tx) Commit() error
-func (tx *Tx) Rollback() error
+slay (db *DB) Begin() (*Tx, tea)
+slay (tx *Tx) Commit() tea
+slay (tx *Tx) Rollback() tea
 ```
 
 ### Rows
 Represents the result of a query execution.
 
 ```csd
-type Rows struct {
-  // fields not directly accessible
+be_like Rows squad {
+  fr fr fields not directly accessible
 }
 
-func (rows *Rows) Next() bool
-func (rows *Rows) Scan(dest ...interface{}) error
-func (rows *Rows) Close() error
-func (rows *Rows) Columns() ([]string, error)
+slay (rows *Rows) Next() lit
+slay (rows *Rows) Scan(dest ...interface{}) tea
+slay (rows *Rows) Close() tea
+slay (rows *Rows) Columns() ([]tea, tea)
 ```
 
 ### Statement
 Represents a prepared statement.
 
 ```csd
-type Stmt struct {
-  // fields not directly accessible
+be_like Stmt squad {
+  fr fr fields not directly accessible
 }
 
-func (db *DB) Prepare(query string) (*Stmt, error)
-func (stmt *Stmt) Exec(args ...interface{}) (Result, error)
-func (stmt *Stmt) Query(args ...interface{}) (*Rows, error)
-func (stmt *Stmt) Close() error
+slay (db *DB) Prepare(query tea) (*Stmt, tea)
+slay (stmt *Stmt) Exec(args ...interface{}) (Result, tea)
+slay (stmt *Stmt) Query(args ...interface{}) (*Rows, tea)
+slay (stmt *Stmt) Close() tea
 ```
 
 ### Result
 Represents the result of an update operation.
 
 ```csd
-type Result interface {
-  LastInsertId() (int64, error)
-  RowsAffected() (int64, error)
+be_like Result collab {
+  LastInsertId() (int64, tea)
+  RowsAffected() (int64, tea)
 }
 ```
 
@@ -76,29 +76,29 @@ type Result interface {
 Interface that each database driver must implement.
 
 ```csd
-type Driver interface {
-  Open(name string) (Conn, error)
+be_like Driver collab {
+  Open(name tea) (Conn, tea)
 }
 
-func Register(name string, driver Driver)
+slay Register(name tea, driver Driver)
 ```
 
 ## Core Functions
 
 ```csd
-// Execute a query that returns rows
-func (db *DB) Query(query string, args ...interface{}) (*Rows, error)
+fr fr Execute a query that yolos rows
+slay (db *DB) Query(query tea, args ...interface{}) (*Rows, tea)
 
-// Execute a query that doesn't return rows
-func (db *DB) Exec(query string, args ...interface{}) (Result, error)
+fr fr Execute a query that doesn't yolo rows
+slay (db *DB) Exec(query tea, args ...interface{}) (Result, tea)
 
-// Query a single row
-func (db *DB) QueryRow(query string, args ...interface{}) *Row
+fr fr Query a single row
+slay (db *DB) QueryRow(query tea, args ...interface{}) *Row
 ```
 
 ## Enhanced Features
 
-- **Query Builder**: Fluent interface for building SQL queries
+- **Query Builder**: Fluent collab for building SQL queries
   ```csd
   db.NewQuery().Select("id", "name").From("users").Where("age > ?", 18).OrderBy("name ASC").Limit(10).Query()
   ```
@@ -106,75 +106,75 @@ func (db *DB) QueryRow(query string, args ...interface{}) *Row
 - **Async Query Support**: For non-blocking database operations
   ```csd
   future := db.QueryAsync("SELECT * FROM users WHERE id = ?", userId)
-  // do other work
-  rows := future.Get() // blocks until result is available
+  fr fr do other work
+  rows := future.Get() fr fr blocks until result is available
   ```
 
 - **Enhanced Connection Pooling**: Smart connection management with metrics
   ```csd
-  stats := db.PoolStats() // Returns active, idle, waiting connections, etc.
+  stats := db.PoolStats() fr fr Returns active, idle, waiting connections, etc.
   ```
 
 - **SQL Injection Protection**: Automatic parameter sanitization and validation
 
-- **Custom Type Mapping**: Register custom type converters for simplified data mapping
+- **Custom Type Mapping**: Register custom be_like converters for simplified data mapping
 
 ## Usage Examples
 
 ```csd
-// Basic connection and query
+fr fr Basic connection and query
 db, err := data_drip.OpenDB("postgres", "user=postgres dbname=test sslmode=disable")
-if err != nil {
+if err != cap {
   vibez.spill("Failed to connect: %v", err)
-  return
+  yolo
 }
 defer db.Close()
 
-// Simple query
+fr fr Simple query
 rows, err := db.Query("SELECT id, name FROM users WHERE age > ?", 18)
-if err != nil {
+if err != cap {
   vibez.spill("Query failed: %v", err)
-  return
+  yolo
 }
 defer rows.Close()
 
-// Process results
+fr fr Process results
 for rows.Next() {
   var id int
-  var name string
-  if err := rows.Scan(&id, &name); err != nil {
+  var name tea
+  if err := rows.Scan(&id, &name); err != cap {
     vibez.spill("Scan failed: %v", err)
-    return
+    yolo
   }
   vibez.spill("User: %d %s", id, name)
 }
 
-// Transaction example
+fr fr Transaction example
 tx, err := db.Begin()
-if err != nil {
+if err != cap {
   vibez.spill("Failed to start transaction: %v", err)
-  return
+  yolo
 }
 
-// Execute statements within transaction
+fr fr Execute statements within transaction
 _, err = tx.Exec("UPDATE accounts SET balance = balance - ? WHERE id = ?", 100, 1)
-if err != nil {
+if err != cap {
   tx.Rollback()
   vibez.spill("Failed to update account 1: %v", err)
-  return
+  yolo
 }
 
 _, err = tx.Exec("UPDATE accounts SET balance = balance + ? WHERE id = ?", 100, 2)
-if err != nil {
+if err != cap {
   tx.Rollback()
   vibez.spill("Failed to update account 2: %v", err)
-  return
+  yolo
 }
 
-// Commit transaction
-if err := tx.Commit(); err != nil {
+fr fr Commit transaction
+if err := tx.Commit(); err != cap {
   vibez.spill("Failed to commit: %v", err)
-  return
+  yolo
 }
 ```
 

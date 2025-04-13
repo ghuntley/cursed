@@ -9,77 +9,77 @@ The `trace_tea` module provides runtime tracing facilities for program execution
 Represents a tracing task.
 
 ```csd
-type Task struct {
-  // fields not directly accessible
+be_like Task squad {
+  fr fr fields not directly accessible
 }
 
-func NewTask(name string, data interface{}) *Task
-func (t *Task) End()
-func (t *Task) LazyLog(fmt string, values ...interface{})
-func (t *Task) SetDeterministic(deterministic bool)
+slay NewTask(name tea, data interface{}) *Task
+slay (t *Task) End()
+slay (t *Task) LazyLog(fmt tea, values ...interface{})
+slay (t *Task) SetDeterministic(deterministic lit)
 ```
 
 ### Region
 Represents a traced region within a task.
 
 ```csd
-type Region struct {
-  // fields not directly accessible
+be_like Region squad {
+  fr fr fields not directly accessible
 }
 
-func StartRegion(ctx vibe_context.Context, regionType string) *Region
-func (r *Region) End()
-func (r *Region) LazyLog(fmt string, values ...interface{})
+slay StartRegion(ctx vibe_context.Context, regionType tea) *Region
+slay (r *Region) End()
+slay (r *Region) LazyLog(fmt tea, values ...interface{})
 ```
 
 ### Event
 Represents a single trace event.
 
 ```csd
-type Event struct {
-  // fields not directly accessible
+be_like Event squad {
+  fr fr fields not directly accessible
 }
 
-func NewEvent(name string, data interface{})
-func (e *Event) LazyLog(fmt string, values ...interface{})
+slay NewEvent(name tea, data interface{})
+slay (e *Event) LazyLog(fmt tea, values ...interface{})
 ```
 
 ## Core Functions
 
 ```csd
-// Start tracing to the specified writer
-func Start(w io.Writer) error
+fr fr Start tracing to the specified writer
+slay Start(w io.Writer) tea
 
-// Stop tracing and flush data to the writer
-func Stop() error
+fr fr Stop tracing and flush data to the writer
+slay Stop() tea
 
-// Create a new tracing task
-func NewTask(ctx vibe_context.Context, taskType string) (vibe_context.Context, *Task)
+fr fr Create a new tracing task
+slay NewTask(ctx vibe_context.Context, taskType tea) (vibe_context.Context, *Task)
 
-// Start a traced region within a task
-func StartRegion(ctx vibe_context.Context, regionType string) *Region
+fr fr Start a traced region within a task
+slay StartRegion(ctx vibe_context.Context, regionType tea) *Region
 
-// Log an event
-func Log(ctx vibe_context.Context, category, message string)
+fr fr Log an event
+slay Log(ctx vibe_context.Context, category, message tea)
 
-// Log formatted event details
-func Logf(ctx vibe_context.Context, category, format string, args ...interface{})
+fr fr Log formatted event details
+slay Logf(ctx vibe_context.Context, category, format tea, args ...interface{})
 
-// Annotate trace with user data
-func WithRegion(ctx vibe_context.Context, regionType string, fn func())
+fr fr Annotate trace with user data
+slay WithRegion(ctx vibe_context.Context, regionType tea, fn func())
 
-// Add context to trace logs
-func WithSpan(ctx vibe_context.Context, name string, fn func(ctx vibe_context.Context))
+fr fr Add context to trace logs
+slay WithSpan(ctx vibe_context.Context, name tea, fn func(ctx vibe_context.Context))
 
-// Create a trace event
-func NewEvent(category, name string) *Event
+fr fr Create a trace event
+slay NewEvent(category, name tea) *Event
 ```
 
 ## Event Categories
 
 ```csd
 const (
-  // Default runtime event categories
+  fr fr Default runtime event categories
   EventGoroutine   = "goroutine"
   EventNet         = "net"
   EventSyscall     = "syscall"
@@ -90,17 +90,17 @@ const (
   EventBlock       = "block"
   EventUserDefined = "user"
   
-  // Enhanced categories
-  EventAPI         = "api"         // API calls and responses
-  EventDatabase    = "database"    // Database operations
-  EventCache       = "cache"       // Cache operations
-  EventFile        = "file"        // File operations
-  EventCompute     = "compute"     // Intensive computation
-  EventAsyncWork   = "async"       // Asynchronous work
-  EventNetwork     = "network"     // Network operations
-  EventRender      = "render"      // UI rendering
-  EventLogger      = "logger"      // Logging operations
-  EventPerformance = "performance" // Performance metrics
+  fr fr Enhanced categories
+  EventAPI         = "api"         fr fr API calls and responses
+  EventDatabase    = "database"    fr fr Database operations
+  EventCache       = "cache"       fr fr Cache operations
+  EventFile        = "file"        fr fr File operations
+  EventCompute     = "compute"     fr fr Intensive computation
+  EventAsyncWork   = "async"       fr fr Asynchronous work
+  EventNetwork     = "network"     fr fr Network operations
+  EventRender      = "render"      fr fr UI rendering
+  EventLogger      = "logger"      fr fr Logging operations
+  EventPerformance = "performance" fr fr Performance metrics
 )
 ```
 
@@ -144,69 +144,69 @@ const (
 ## Usage Examples
 
 ```csd
-// Basic tracing example
-func basicTracingExample() {
-  // Create a buffer to store the trace
+fr fr Basic tracing example
+slay basicTracingExample() {
+  fr fr Create a buffer to store the trace
   var buf dropz.file.Buffer
   
-  // Start tracing
+  fr fr Start tracing
   err := trace_tea.Start(&buf)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to start trace: %v", err)
-    return
+    yolo
   }
   
-  // Execute code to be traced
+  fr fr Execute code to be traced
   for i := 0; i < 3; i++ {
-    go func(id int) {
-      // Create a new task
+    stan slay(id normie) {
+      fr fr Create a new task
       ctx := vibe_context.Background()
       ctx, task := trace_tea.NewTask(ctx, "worker")
       defer task.End()
       
-      // Log some information
+      fr fr Log some information
       trace_tea.Logf(ctx, "info", "Worker %d started", id)
       
-      // Create a region for a specific operation
+      fr fr Create a region for a specific operation
       reg := trace_tea.StartRegion(ctx, "process-data")
-      processData(id) // Some function that does work
+      processData(id) fr fr Some function that does work
       reg.End()
       
       trace_tea.Logf(ctx, "info", "Worker %d finished", id)
     }(i)
   }
   
-  // Wait for goroutines to finish
+  fr fr Wait for goroutines to finish
   timez.Sleep(100 * timez.Millisecond)
   
-  // Stop tracing
+  fr fr Stop tracing
   err = trace_tea.Stop()
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to stop trace: %v", err)
-    return
+    yolo
   }
   
-  // In a real application, you would save the trace to a file
+  fr fr In a real application, you would save the trace to a file
   vibez.spill("Trace completed, %d bytes captured", buf.Len())
   
-  // Save trace to a file
+  fr fr Save trace to a file
   err = dropz.WriteFile("trace.out", buf.Bytes(), 0644)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to write trace file: %v", err)
-    return
+    yolo
   }
   
   vibez.spill("Trace saved to trace.out")
 }
 
-// Function being traced
-func processData(id int) {
-  // Simulate some work
+fr fr Function being traced
+slay processData(id normie) {
+  fr fr Simulate some work
   timez.Sleep(30 * timez.Millisecond)
 }
 
-// Using regions and WithRegion helper
-func regionExample() {
+fr fr Using regions and WithRegion helper
+slay regionExample() {
   var buf dropz.file.Buffer
   trace_tea.Start(&buf)
   defer trace_tea.Stop()
@@ -215,22 +215,22 @@ func regionExample() {
   ctx, task := trace_tea.NewTask(ctx, "main-task")
   defer task.End()
   
-  // Use WithRegion for clean region handling
+  fr fr Use WithRegion for clean region handling
   trace_tea.WithRegion(ctx, "initialization", func() {
-    // Initialize something
+    fr fr Initialize something
     timez.Sleep(10 * timez.Millisecond)
   })
   
-  // Nested regions
+  fr fr Nested regions
   trace_tea.WithRegion(ctx, "processing", func() {
     trace_tea.Log(ctx, "info", "Starting processing")
     
-    // Sub-region 1
+    fr fr Sub-region 1
     trace_tea.WithRegion(ctx, "step1", func() {
       timez.Sleep(20 * timez.Millisecond)
     })
     
-    // Sub-region 2
+    fr fr Sub-region 2
     trace_tea.WithRegion(ctx, "step2", func() {
       timez.Sleep(30 * timez.Millisecond)
     })
@@ -241,8 +241,8 @@ func regionExample() {
   vibez.spill("Region example completed")
 }
 
-// Tracing asynchronous operations
-func asyncOperationExample() {
+fr fr Tracing asynchronous operations
+slay asyncOperationExample() {
   var buf dropz.file.Buffer
   trace_tea.Start(&buf)
   defer trace_tea.Stop()
@@ -251,53 +251,53 @@ func asyncOperationExample() {
   ctx, task := trace_tea.NewTask(ctx, "async-operation")
   defer task.End()
   
-  // Create a channel to signal completion
-  done := make(chan bool)
+  fr fr Create a channel to signal completion
+  done := make(chan lit)
   
-  // Parent context for linking async work
+  fr fr Parent context for linking async work
   pctx := trace_tea.ContextWithTask(ctx, "parent")
   
-  // Start async work
-  go func() {
-    // Link to parent context
+  fr fr Start async work
+  stan slay() {
+    fr fr Link to parent context
     cctx := trace_tea.ContextWithTask(pctx, "child")
     childTask := trace_tea.TaskFromContext(cctx)
     defer childTask.End()
     
-    // Do async work
+    fr fr Do async work
     trace_tea.Logf(cctx, "async", "Starting async work")
     timez.Sleep(50 * timez.Millisecond)
     trace_tea.Logf(cctx, "async", "Async work completed")
     
-    done <- true
+    done <- based
   }()
   
-  // Wait for completion
+  fr fr Wait for completion
   <-done
   vibez.spill("Async operation example completed")
 }
 
-// Using events for specific points in time
-func eventExample() {
+fr fr Using events for specific points in time
+slay eventExample() {
   var buf dropz.file.Buffer
   trace_tea.Start(&buf)
   defer trace_tea.Stop()
   
-  // Create and log events
+  fr fr Create and log events
   for i := 0; i < 5; i++ {
-    evt := trace_tea.NewEvent("custom", vibez.spill_to_string("event-%d", i))
+    evt := trace_tea.NewEvent("custom", vibez.spill_to_tea("event-%d", i))
     evt.LazyLog("Event details: iteration %d", i)
     
-    // Simulate some work
+    fr fr Simulate some work
     timez.Sleep(10 * timez.Millisecond)
   }
   
   vibez.spill("Event example completed")
 }
 
-// Using enhanced features
-func enhancedFeaturesExample() {
-  // Create a selective filter
+fr fr Using enhanced features
+slay enhancedFeaturesExample() {
+  fr fr Create a selective filter
   filter := trace_tea.NewFilter()
   filter.IncludeGoroutine("worker-*")
   filter.IncludeEvent(trace_tea.EventUserDefined)
@@ -306,33 +306,33 @@ func enhancedFeaturesExample() {
   
   var buf dropz.file.Buffer
   
-  // Start with filter
+  fr fr Start with filter
   trace_tea.StartWithFilter(&buf, filter)
   
-  // Create real-time analyzer
+  fr fr Create real-time analyzer
   analyzer := trace_tea.NewRealTimeAnalyzer()
-  analyzer.OnHighLatency(50*timez.Millisecond, func(taskName string, duration timez.Duration) {
+  analyzer.OnHighLatency(50*timez.Millisecond, func(taskName tea, duration timez.Duration) {
     vibez.spill("High latency detected in %s: %v", taskName, duration)
   })
   
-  // Register analyzer
+  fr fr Register analyzer
   trace_tea.RegisterAnalyzer(analyzer)
   
-  // Run some operations
+  fr fr Run some operations
   ctx := vibe_context.Background()
   
-  // Simulate API calls
+  fr fr Simulate API calls
   for i := 0; i < 3; i++ {
-    go func(id int) {
-      ctx, task := trace_tea.NewTask(ctx, vibez.spill_to_string("worker-%d", id))
+    stan slay(id normie) {
+      ctx, task := trace_tea.NewTask(ctx, vibez.spill_to_tea("worker-%d", id))
       defer task.End()
       
       reg := trace_tea.StartRegion(ctx, trace_tea.EventAPI)
       trace_tea.Logf(ctx, "api", "API call started")
       
-      // Simulate varying latencies
+      fr fr Simulate varying latencies
       if id == 1 {
-        timez.Sleep(60 * timez.Millisecond) // This should trigger high latency alert
+        timez.Sleep(60 * timez.Millisecond) fr fr This should trigger high latency alert
       } else {
         timez.Sleep(20 * timez.Millisecond)
       }
@@ -345,15 +345,15 @@ func enhancedFeaturesExample() {
   timez.Sleep(100 * timez.Millisecond)
   trace_tea.Stop()
   
-  // Generate visualizations and metrics from trace data
+  fr fr Generate visualizations and metrics from trace data
   visualizer := trace_tea.NewVisualizer(buf.Bytes())
   
-  // Generate timeline data (in a real application, you would use this data
-  // to create visualizations)
+  fr fr Generate timeline data (in a real application, you would use this data
+  fr fr to create visualizations)
   timeline := visualizer.GenerateTimeline()
   vibez.spill("Generated timeline with %d events", len(timeline.Events))
   
-  // Extract metrics
+  fr fr Extract metrics
   metrics := trace_tea.ExtractMetrics(buf.Bytes())
   apiLatency := metrics.AverageLatency(trace_tea.EventAPI)
   vibez.spill("Average API latency: %v", apiLatency)
@@ -364,8 +364,8 @@ func enhancedFeaturesExample() {
   vibez.spill("Enhanced features example completed")
 }
 
-// Run examples
-func runAllExamples() {
+fr fr Run examples
+slay runAllExamples() {
   vibez.spill("\n1. Basic Tracing Example")
   basicTracingExample()
   
@@ -382,7 +382,7 @@ func runAllExamples() {
   enhancedFeaturesExample()
 }
 
-// Run all examples
+fr fr Run all examples
 runAllExamples()
 ```
 

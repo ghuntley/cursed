@@ -7,188 +7,188 @@ ChaosMode provides access to the Cursed runtime system, allowing programs to int
 
 ### Goroutine Management
 
-```go
-// Returns the number of logical CPUs usable by the current process
-func NumCPU() int
+```
+fr fr Returns the number of logical CPUs usable by the current process
+slay NumCPU() int
 
-// Returns the number of goroutines that currently exist
-func NumGoroutine() int
+fr fr Returns the number of goroutines that currently exist
+slay NumGoroutine() int
 
-// Yields the processor, allowing other goroutines to run
-func Yield()
+fr fr Yields the processor, allowing other goroutines to run
+slay Yield()
 
-// Puts the current goroutine into a waiting state and schedules another goroutine
-func Gosched()
+fr fr Puts the current goroutine into a waiting state and schedules another goroutine
+slay Gosched()
 
-// Forces garbage collection to run
-func GC()
+fr fr Forces garbage collection to run
+slay GC()
 
-// Increases GOMAXPROCS, returns the previous setting
-func GOMAXPROCS(n int) int
+fr fr Increases GOMAXPROCS, yolos the previous setting
+slay GOMAXPROCS(n normie) int
 
-// Controls the garbage collector's target percentage
-func SetGCPercent(percent int) int
+fr fr Controls the garbage collector's target percentage
+slay SetGCPercent(percent normie) int
 
-// Controls the fraction of memory that should be used for garbage collection
-func SetMaxHeap(maxHeap uint64) uint64
+fr fr Controls the fraction of memory that should be used for garbage collection
+slay SetMaxHeap(maxHeap uint64) uint64
 ```
 
 ### Stack and Panic Management
 
-```go
-// Returns a formatted stack trace of the goroutine that calls it
-func StackTrace() string
+```
+fr fr Returns a formatted stack trace of the goroutine that calls it
+slay StackTrace() tea
 
-// Returns a stack trace of goroutine IDs
-func AllGoroutineIDs() []uint64
+fr fr Returns a stack trace of goroutine IDs
+slay AllGoroutineIDs() []uint64
 
-// Gets a JSON representation of all goroutines' stack traces
-func AllGoroutineStacks() string
+fr fr Gets a JSON representation of all goroutines' stack traces
+slay AllGoroutineStacks() tea
 
-// Captures a stack trace of the current goroutine
-func Callers(skip int, pc []uintptr) int
+fr fr Captures a stack trace of the current goroutine
+slay Callers(skip int, pc []uintptr) int
 
-// Gets the file and line number for a PC
-func PCToFileAndLine(pc uintptr) (file string, line int)
+fr fr Gets the file and line number for a PC
+slay PCToFileAndLine(pc uintptr) (file tea, line normie)
 
-// Gets the function name for a PC
-func PCToFuncName(pc uintptr) string
+fr fr Gets the function name for a PC
+slay PCToFuncName(pc uintptr) tea
 
-// Gets the call stack of a goroutine
-func GoroutineStack(id uint64) string
+fr fr Gets the call stack of a goroutine
+slay GoroutineStack(id uint64) tea
 ```
 
 ### Memory Management
 
-```go
-// Returns memory allocation statistics
-func MemStats() MemoryStats
+```
+fr fr Returns memory allocation statistics
+slay MemStats() MemoryStats
 
-// MemoryStats contains memory statistics
-type MemoryStats struct {
-    // General statistics
-    Alloc        uint64 // bytes allocated and still in use
-    TotalAlloc   uint64 // bytes allocated (even if freed)
-    Sys          uint64 // bytes obtained from system
-    Lookups      uint64 // number of pointer lookups
-    Mallocs      uint64 // number of mallocs
-    Frees        uint64 // number of frees
+fr fr MemoryStats contains memory statistics
+be_like MemoryStats squad {
+    fr fr General statistics
+    Alloc        uint64 fr fr bytes allocated and still in use
+    TotalAlloc   uint64 fr fr bytes allocated (even if freed)
+    Sys          uint64 fr fr bytes obtained from system
+    Lookups      uint64 fr fr number of pointer lookups
+    Mallocs      uint64 fr fr number of mallocs
+    Frees        uint64 fr fr number of frees
     
-    // Heap statistics
-    HeapAlloc    uint64 // bytes allocated and still in use
-    HeapSys      uint64 // bytes obtained from system
-    HeapIdle     uint64 // bytes in idle spans
-    HeapInuse    uint64 // bytes in non-idle span
-    HeapReleased uint64 // bytes released to the OS
-    HeapObjects  uint64 // total number of allocated objects
+    fr fr Heap statistics
+    HeapAlloc    uint64 fr fr bytes allocated and still in use
+    HeapSys      uint64 fr fr bytes obtained from system
+    HeapIdle     uint64 fr fr bytes in idle spans
+    HeapInuse    uint64 fr fr bytes in non-idle span
+    HeapReleased uint64 fr fr bytes released to the OS
+    HeapObjects  uint64 fr fr total number of allocated objects
     
-    // Garbage collection statistics
-    NextGC       uint64 // next collection will happen when HeapAlloc ≥ this
-    LastGC       uint64 // last collection time, Unix nanoseconds
-    PauseTotalNs uint64 // total GC pause time
-    NumGC        uint32 // number of garbage collections
-    GCCPUFraction float64 // fraction of CPU time used by GC
+    fr fr Garbage collection statistics
+    NextGC       uint64 fr fr next collection will happen when HeapAlloc ≥ this
+    LastGC       uint64 fr fr last collection time, Unix nanoseconds
+    PauseTotalNs uint64 fr fr total GC pause time
+    NumGC        uint32 fr fr number of garbage collections
+    GCCPUFraction float64 fr fr fraction of CPU time used by GC
 }
 
-// Controls whether the garbage collector is enabled
-func SetGCEnabled(enabled bool) bool
+fr fr Controls whether the garbage collector is enabled
+slay SetGCEnabled(enabled lit) lit
 
-// ReadMemStats populates m with memory allocator statistics
-func ReadMemStats(m *MemoryStats)
+fr fr ReadMemStats populates m with memory allocator statistics
+slay ReadMemStats(m *MemoryStats)
 
-// FreeOSMemory forces a garbage collection and releases as much memory to the OS as possible
-func FreeOSMemory()
+fr fr FreeOSMemory forces a garbage collection and releases as much memory to the OS as possible
+slay FreeOSMemory()
 
-// Sets the frequency of memory profiling
-func SetMemProfileRate(rate int)
+fr fr Sets the frequency of memory profiling
+slay SetMemProfileRate(rate normie)
 ```
 
 ### Goroutine Profiling and Tracing
 
-```go
-// StartTrace enables runtime tracing
-func StartTrace() error
+```
+fr fr StartTrace enables runtime tracing
+slay StartTrace() tea
 
-// StopTrace stops runtime tracing
-func StopTrace() error
+fr fr StopTrace stops runtime tracing
+slay StopTrace() tea
 
-// ReadTrace returns the current trace
-func ReadTrace() []byte
+fr fr ReadTrace yolos the current trace
+slay ReadTrace() []byte
 
-// SetTracebackLimit sets the maximum length of a traceback
-func SetTracebackLimit(limit int)
+fr fr SetTracebackLimit sets the maximum length of a traceback
+slay SetTracebackLimit(limit normie)
 
-// Sets CPU profiling rate
-func SetCPUProfileRate(hz int)
+fr fr Sets CPU profiling rate
+slay SetCPUProfileRate(hz normie)
 
-// Starts CPU profiling
-func StartCPUProfile(w io.Writer) error
+fr fr Starts CPU profiling
+slay StartCPUProfile(w io.Writer) tea
 
-// Stops CPU profiling
-func StopCPUProfile()
+fr fr Stops CPU profiling
+slay StopCPUProfile()
 ```
 
 ### Runtime Information
 
-```go
-// Returns the Go version string
-func Version() string
+```
+fr fr Returns the Go version tea
+slay Version() tea
 
-// Returns the Go architecture target
-func GOARCH() string
+fr fr Returns the Go architecture target
+slay GOARCH() tea
 
-// Returns the Go operating system target
-func GOOS() string
+fr fr Returns the Go operating system target
+slay GOOS() tea
 
-// Returns the compiler that built the binary
-func Compiler() string
+fr fr Returns the compiler that built the binary
+slay Compiler() tea
 
-// Gets runtime statistics
-func RuntimeStats() map[string]interface{}
+fr fr Gets runtime statistics
+slay RuntimeStats() map[tea]interface{}
 
-// Gets the current Go root directory
-func GOROOT() string
+fr fr Gets the current Go root directory
+slay GOROOT() tea
 ```
 
 ## Enhanced Features
 
 ### Goroutine Management Extensions
 
-```go
-// Gets information about a specific goroutine
-func GoroutineInfo(id uint64) GoroutineData
+```
+fr fr Gets information about a specific goroutine
+slay GoroutineInfo(id uint64) GoroutineData
 
-// GoroutineData contains detailed information about a goroutine
-type GoroutineData struct {
+fr fr GoroutineData contains detailed information about a goroutine
+be_like GoroutineData squad {
     ID          uint64
-    State       string
-    WaitingFor  string
+    State       tea
+    WaitingFor  tea
     WaitingTime time.Duration
-    StackTrace  string
-    Labels      map[string]string
-    CreatedBy   string
+    StackTrace  tea
+    Labels      map[tea]tea
+    CreatedBy   tea
     CreatedAt   time.Time
     CPUTime     time.Duration
 }
 
-// Sets a label for the current goroutine
-func SetGoroutineLabel(key, value string)
+fr fr Sets a label for the current goroutine
+slay SetGoroutineLabel(key, value tea)
 
-// Gets all goroutines with a specific label
-func GoroutinesByLabel(key, value string) []uint64
+fr fr Gets all goroutines with a specific label
+slay GoroutinesByLabel(key, value tea) []uint64
 
-// Gets all goroutines by state
-func GoroutinesByState(state string) []uint64
+fr fr Gets all goroutines by state
+slay GoroutinesByState(state tea) []uint64
 
-// Kills a specific goroutine (for debugging purposes only)
-func KillGoroutine(id uint64) error
+fr fr Kills a specific goroutine (for debugging purposes only)
+slay KillGoroutine(id uint64) tea
 ```
 
 ### Enhanced Garbage Collection
 
-```go
-// Fine-grained garbage collection control
-type GCMode int
+```
+fr fr Fine-grained garbage collection control
+be_like GCMode int
 
 const (
     GCModeAuto GCMode = iota
@@ -197,71 +197,71 @@ const (
     GCModeStopTheWorldOnly
 )
 
-func SetGCMode(mode GCMode)
-func GetGCMode() GCMode
+slay SetGCMode(mode GCMode)
+slay GetGCMode() GCMode
 
-// Starts a concurrent garbage collection cycle
-func StartGC()
+fr fr Starts a concurrent garbage collection cycle
+slay StartGC()
 
-// Waits for the current GC cycle to complete
-func WaitForGC() bool
+fr fr Waits for the current GC cycle to complete
+slay WaitForGC() lit
 
-// Registers a function to be called before/after garbage collection
-func RegisterGCNotification(before, after func())
+fr fr Registers a function to be called before/after garbage collection
+slay RegisterGCNotification(before, after func())
 ```
 
 ### Memory Debugging
 
-```go
-// Gets a histogram of allocated object sizes
-func AllocationSizeHistogram() map[int]int
+```
+fr fr Gets a histogram of allocated object sizes
+slay AllocationSizeHistogram() map[int]int
 
-// Gets the types with the most allocations
-func TopAllocatedTypes(n int) []TypeAllocationInfo
+fr fr Gets the types with the most allocations
+slay TopAllocatedTypes(n normie) []TypeAllocationInfo
 
-type TypeAllocationInfo struct {
-    Type        string
+be_like TypeAllocationInfo squad {
+    Type        tea
     Count       int
     TotalSize   int64
     AverageSize int64
 }
 
-// Checks if a pointer is valid and points to allocated memory
-func IsValidPointer(ptr interface{}) bool
+fr fr Checks if a pointer is valid and points to allocated memory
+slay IsValidPointer(ptr interface{}) lit
 
-// Gets the size of an allocated object
-func GetObjectSize(obj interface{}) int
+fr fr Gets the size of an allocated object
+slay GetObjectSize(obj interface{}) int
 
-// Gets information about a pointer's referent
-func GetPointerInfo(ptr interface{}) PointerInfo
+fr fr Gets information about a pointer's referent
+slay GetPointerInfo(ptr interface{}) PointerInfo
 
-type PointerInfo struct {
+be_like PointerInfo squad {
     Address    uintptr
     Size       int
-    Type       string
-    Reachable  bool
+    Type       tea
+    Reachable  lit
     AllocTime  time.Time
-    AllocStack string
+    AllocStack tea
 }
 ```
 
 ### Runtime Performance Tuning
 
-```go
-// Sets the maximum number of threads to use
-func SetMaxThreads(n int) int
+```
+fr fr Sets the maximum number of threads to use
+slay SetMaxThreads(n normie) int
 
-// Gets the current number of threads
-func NumThreads() int
+fr fr Gets the current number of threads
+slay NumThreads() int
 
-// Controls CPU frequency scaling (if supported by OS)
-func SetCPUFrequency(percent int) error
+fr fr Controls CPU frequency scaling (if supported by OS)
+slay SetCPUFrequency(percent normie) tea
 
-// Sets thread priorities (if supported by OS)
-func SetThreadPriority(threadID int, priority int) error
+fr fr Sets thread priorities (if supported by OS)
+slay SetThreadPriority(threadID int, priority normie) tea
 
-// Controls the runtime scheduler
-type SchedulerMode int
+fr fr Controls the runtime scheduler
+be_like SchedulerMode int
 
 const (
     SchedulerDefault SchedulerMode = iota
@@ -270,73 +270,73 @@ const (
     SchedulerConservative
 )
 
-func SetSchedulerMode(mode SchedulerMode)
-func GetSchedulerMode() SchedulerMode
+slay SetSchedulerMode(mode SchedulerMode)
+slay GetSchedulerMode() SchedulerMode
 ```
 
 ## Usage Example
 
-```go
-// Getting basic runtime information
+```
+fr fr Getting basic runtime information
 vibez.spill("Cursed is running on:", chaos_mode.GOOS(), chaos_mode.GOARCH())
 vibez.spill("Using", chaos_mode.NumCPU(), "CPUs")
 vibez.spill("Currently", chaos_mode.NumGoroutine(), "goroutines are running")
 
-// Setting GOMAXPROCS
+fr fr Setting GOMAXPROCS
 old := chaos_mode.GOMAXPROCS(4)
 vibez.spill("Changed GOMAXPROCS from", old, "to 4")
 
-// Getting memory statistics
+fr fr Getting memory statistics
 memStats := chaos_mode.MemStats()
 vibez.spill("Currently using", memStats.HeapAlloc, "bytes of heap memory")
 vibez.spill("Garbage collector has run", memStats.NumGC, "times")
 
-// Managing goroutines
-go func() {
+fr fr Managing goroutines
+stan slay() {
     chaos_mode.SetGoroutineLabel("purpose", "background_task")
     for {
-        // Some long-running work
-        chaos_mode.Gosched() // Yield to other goroutines
+        fr fr Some long-running work
+        chaos_mode.Gosched() fr fr Yield to other goroutines
     }
 }()
 
-// Finding goroutines by label
+fr fr Finding goroutines by label
 bgTasks := chaos_mode.GoroutinesByLabel("purpose", "background_task")
 vibez.spill("Found", len(bgTasks), "background task goroutines")
 
-// Getting stack traces
-for _, id := range bgTasks[:1] { // Just get the first one
+fr fr Getting stack traces
+for _, id := range bgTasks[:1] { fr fr Just get the first one
     info := chaos_mode.GoroutineInfo(id)
     vibez.spill("Goroutine", id, "state:", info.State)
     vibez.spill("Stack trace:\n", info.StackTrace)
 }
 
-// Forcing garbage collection
+fr fr Forcing garbage collection
 vibez.spill("Running garbage collection...")
 chaos_mode.GC()
 
-// Getting memory allocation information
+fr fr Getting memory allocation information
 topTypes := chaos_mode.TopAllocatedTypes(5)
 vibez.spill("Top 5 types by memory usage:")
 for i, typeInfo := range topTypes {
     vibez.spill(i+1, ".", typeInfo.Type, "-", typeInfo.TotalSize, "bytes in", typeInfo.Count, "objects")
 }
 
-// Setting advanced garbage collection options
+fr fr Setting advanced garbage collection options
 chaos_mode.SetGCMode(chaos_mode.GCModeIncrementalOnly)
 chaos_mode.RegisterGCNotification(
     func() { vibez.spill("GC cycle starting") },
     func() { vibez.spill("GC cycle complete") },
 )
 
-// Performance tuning
+fr fr Performance tuning
 chaos_mode.SetSchedulerMode(chaos_mode.SchedulerAggressive)
 chaos_mode.SetMaxThreads(8)
 ```
 
 ## Implementation Guidelines
 1. Ensure operations are safe and don't crash the runtime
-2. Provide detailed error information for invalid operations
+2. Provide detailed tea information for invalid operations
 3. Minimize performance overhead of monitoring and profiling functions
 4. Make memory statistics accurate and up-to-date
 5. Ensure goroutine management is thread-safe

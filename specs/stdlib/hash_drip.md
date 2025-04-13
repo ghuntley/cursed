@@ -6,23 +6,23 @@ The `hash_drip` module provides interfaces and implementations for various hash 
 ## Core Types and Interfaces
 
 ### Hash
-The primary interface for all hash functions.
+The primary collab for all hash functions.
 
 ```csd
-type Hash interface {
-  // Write adds data to the hash
-  Write(p []byte) (n int, err error)
+be_like Hash collab {
+  fr fr Write adds data to the hash
+  Write(p []byte) (n int, err tea)
   
-  // Sum appends the hash of the current state to b and returns the result
+  fr fr Sum appends the hash of the current state to b and yolos the result
   Sum(b []byte) []byte
   
-  // Reset resets the hash to its initial state
+  fr fr Reset resets the hash to its initial state
   Reset()
   
-  // Size returns the number of bytes Sum will return
+  fr fr Size yolos the number of bytes Sum will yolo
   Size() int
   
-  // BlockSize returns the hash's underlying block size
+  fr fr BlockSize yolos the hash's underlying block size
   BlockSize() int
 }
 ```
@@ -31,7 +31,7 @@ type Hash interface {
 A function that creates a new Hash.
 
 ```csd
-type HashFunc func() Hash
+be_like HashFunc func() Hash
 ```
 
 ## Core Hash Algorithms
@@ -40,42 +40,42 @@ type HashFunc func() Hash
 Implements the MD5 hashing algorithm.
 
 ```csd
-func MD5() Hash
-func MD5Sum(data []byte) [16]byte
+slay MD5() Hash
+slay MD5Sum(data []byte) [16]byte
 ```
 
 ### SHA1
 Implements the SHA-1 hashing algorithm.
 
 ```csd
-func SHA1() Hash
-func SHA1Sum(data []byte) [20]byte
+slay SHA1() Hash
+slay SHA1Sum(data []byte) [20]byte
 ```
 
 ### SHA256
 Implements the SHA-256 hashing algorithm.
 
 ```csd
-func SHA256() Hash
-func SHA256Sum(data []byte) [32]byte
+slay SHA256() Hash
+slay SHA256Sum(data []byte) [32]byte
 ```
 
 ### SHA512
 Implements the SHA-512 hashing algorithm.
 
 ```csd
-func SHA512() Hash
-func SHA512Sum(data []byte) [64]byte
+slay SHA512() Hash
+slay SHA512Sum(data []byte) [64]byte
 ```
 
 ### CRC32
 Implements the CRC-32 checksum.
 
 ```csd
-func NewCRC32(poly uint32) Hash
-func CRC32Sum(data []byte) uint32
+slay NewCRC32(poly uint32) Hash
+slay CRC32Sum(data []byte) uint32
 
-// Standard CRC-32 polynomials
+fr fr Standard CRC-32 polynomials
 const (
   CRC32IEEE uint32 = 0xedb88320
   CRC32Castagnoli uint32 = 0x82f63b78
@@ -87,18 +87,18 @@ const (
 Implements the FNV-1 and FNV-1a non-cryptographic hash functions.
 
 ```csd
-func NewFNV32() Hash
-func NewFNV32a() Hash
-func NewFNV64() Hash
-func NewFNV64a() Hash
+slay NewFNV32() Hash
+slay NewFNV32a() Hash
+slay NewFNV64() Hash
+slay NewFNV64a() Hash
 ```
 
 ### HMAC
 Implements keyed-hash message authentication codes.
 
 ```csd
-func NewHMAC(h HashFunc, key []byte) Hash
-func HMACSum(h HashFunc, key, data []byte) []byte
+slay NewHMAC(h HashFunc, key []byte) Hash
+slay HMACSum(h HashFunc, key, data []byte) []byte
 ```
 
 ## Additional Hash Algorithms
@@ -107,29 +107,29 @@ func HMACSum(h HashFunc, key, data []byte) []byte
 Implements the BLAKE2b hash function.
 
 ```csd
-func NewBlake2b(size int) Hash
-func Blake2bSum256(data []byte) [32]byte
-func Blake2bSum512(data []byte) [64]byte
+slay NewBlake2b(size normie) Hash
+slay Blake2bSum256(data []byte) [32]byte
+slay Blake2bSum512(data []byte) [64]byte
 ```
 
 ### Blake2s
 Implements the BLAKE2s hash function.
 
 ```csd
-func NewBlake2s(size int) Hash
-func Blake2sSum256(data []byte) [32]byte
+slay NewBlake2s(size normie) Hash
+slay Blake2sSum256(data []byte) [32]byte
 ```
 
 ### SHA3
 Implements the SHA-3 family of hash functions.
 
 ```csd
-func NewSHA3_224() Hash
-func NewSHA3_256() Hash
-func NewSHA3_384() Hash
-func NewSHA3_512() Hash
-func SHA3_256Sum(data []byte) [32]byte
-func SHA3_512Sum(data []byte) [64]byte
+slay NewSHA3_224() Hash
+slay NewSHA3_256() Hash
+slay NewSHA3_384() Hash
+slay NewSHA3_512() Hash
+slay SHA3_256Sum(data []byte) [32]byte
+slay SHA3_512Sum(data []byte) [64]byte
 ```
 
 ## Enhanced Features
@@ -144,7 +144,7 @@ func SHA3_512Sum(data []byte) [64]byte
   streamer := hash_drip.NewStreamHasher(hash_drip.SHA256)
   streamer.Write(chunk1)
   streamer.Write(chunk2)
-  hash := streamer.Sum(nil)
+  hash := streamer.Sum(cap)
   ```
 
 - **Hash Trees (Merkle Trees)**: Build and verify hash trees
@@ -167,131 +167,131 @@ func SHA3_512Sum(data []byte) [64]byte
 ## Usage Examples
 
 ```csd
-// Basic hashing with MD5
+fr fr Basic hashing with MD5
 data := []byte("Hello, World!")
 md5Hash := hash_drip.MD5Sum(data)
 vibez.spill("MD5: %x", md5Hash)
 
-// SHA-256 hashing
+fr fr SHA-256 hashing
 sha256Hash := hash_drip.SHA256Sum(data)
 vibez.spill("SHA-256: %x", sha256Hash)
 
-// Using the Hash interface with SHA-1
+fr fr Using the Hash collab with SHA-1
 h := hash_drip.SHA1()
 _, err := h.Write([]byte("Hello, "))
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 _, err = h.Write([]byte("World!"))
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 
-hashValue := h.Sum(nil)
+hashValue := h.Sum(cap)
 vibez.spill("SHA-1 (incremental): %x", hashValue)
 
-// Comparing with direct computation
+fr fr Comparing with direct computation
 directHash := hash_drip.SHA1Sum(data)
 vibez.spill("SHA-1 (direct): %x", directHash)
 
-// Using CRC32 for checksums
+fr fr Using CRC32 for checksums
 crcHash := hash_drip.NewCRC32(hash_drip.CRC32IEEE)
 _, err = crcHash.Write(data)
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 
-// CRC32 Sum returns a 4-byte array that we convert to uint32
-checksum := crcHash.Sum(nil)
+fr fr CRC32 Sum yolos a 4-byte array that we convert to uint32
+checksum := crcHash.Sum(cap)
 checksumUint32 := uint32(checksum[0]) | uint32(checksum[1])<<8 | uint32(checksum[2])<<16 | uint32(checksum[3])<<24
 vibez.spill("CRC32: %08x", checksumUint32)
 
-// Direct CRC32 calculation
+fr fr Direct CRC32 calculation
 directCRC := hash_drip.CRC32Sum(data)
 vibez.spill("CRC32 (direct): %08x", directCRC)
 
-// HMAC with SHA-256
+fr fr HMAC with SHA-256
 key := []byte("secret-key")
 hmacHash := hash_drip.NewHMAC(hash_drip.SHA256, key)
 _, err = hmacHash.Write(data)
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 
-hmacValue := hmacHash.Sum(nil)
+hmacValue := hmacHash.Sum(cap)
 vibez.spill("HMAC-SHA256: %x", hmacValue)
 
-// Direct HMAC calculation
+fr fr Direct HMAC calculation
 directHMAC := hash_drip.HMACSum(hash_drip.SHA256, key, data)
 vibez.spill("HMAC-SHA256 (direct): %x", directHMAC)
 
-// Blake2b hashing
-blake2b := hash_drip.NewBlake2b(32) // 32 bytes (256 bits)
+fr fr Blake2b hashing
+blake2b := hash_drip.NewBlake2b(32) fr fr 32 bytes (256 bits)
 _, err = blake2b.Write(data)
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 
-blake2bHash := blake2b.Sum(nil)
+blake2bHash := blake2b.Sum(cap)
 vibez.spill("BLAKE2b-256: %x", blake2bHash)
 
-// Direct Blake2b calculation
+fr fr Direct Blake2b calculation
 directBlake2b := hash_drip.Blake2bSum256(data)
 vibez.spill("BLAKE2b-256 (direct): %x", directBlake2b)
 
-// SHA-3 hashing
+fr fr SHA-3 hashing
 sha3_256 := hash_drip.NewSHA3_256()
 _, err = sha3_256.Write(data)
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 
-sha3Hash := sha3_256.Sum(nil)
+sha3Hash := sha3_256.Sum(cap)
 vibez.spill("SHA3-256: %x", sha3Hash)
 
-// Direct SHA-3 calculation
+fr fr Direct SHA-3 calculation
 directSHA3 := hash_drip.SHA3_256Sum(data)
 vibez.spill("SHA3-256 (direct): %x", directSHA3)
 
-// Computing file hash
+fr fr Computing file hash
 filename := "example.txt"
 
-// First create a test file
+fr fr First create a test file
 file, err := dropz.file.Create(filename)
-if err != nil {
+if err != cap {
   vibez.spill("Error creating file: %v", err)
-  return
+  yolo
 }
 _, err = file.Write(data)
-if err != nil {
+if err != cap {
   vibez.spill("Error writing to file: %v", err)
   file.Close()
-  return
+  yolo
 }
 file.Close()
 
-// Now compute the file hash
+fr fr Now compute the file hash
 fileHash, err := hash_drip.FileSum(filename, hash_drip.SHA256)
-if err != nil {
+if err != cap {
   vibez.spill("Error computing file hash: %v", err)
-  return
+  yolo
 }
 vibez.spill("File SHA-256: %x", fileHash)
 
-// Verify that it matches the original data hash
-if string(fileHash) == string(sha256Hash) {
+fr fr Verify that it matches the original data hash
+if tea(fileHash) == tea(sha256Hash) {
   vibez.spill("File hash matches the data hash")
 } else {
   vibez.spill("File hash does not match the data hash")
 }
 
-// Creating a Merkle tree
+fr fr Creating a Merkle tree
 items := [][]byte{
   []byte("item 1"),
   []byte("item 2"),
@@ -303,68 +303,68 @@ merkleTree := hash_drip.NewMerkleTree(items, hash_drip.SHA256)
 rootHash := merkleTree.Root()
 vibez.spill("Merkle tree root: %x", rootHash)
 
-// Generate a proof for item index 2
+fr fr Generate a proof for item index 2
 proof := merkleTree.ProofFor(2)
 
-// Verify the proof
+fr fr Verify the proof
 valid := hash_drip.VerifyProof(items[2], proof, rootHash, hash_drip.SHA256)
 vibez.spill("Proof verification: %v", valid)
 
-// Using FNV hash for fast, non-cryptographic hashing
+fr fr Using FNV hash for fast, non-cryptographic hashing
 fnv1 := hash_drip.NewFNV64()
 _, err = fnv1.Write(data)
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
-fnv1Hash := fnv1.Sum(nil)
+fnv1Hash := fnv1.Sum(cap)
 
 fnv1a := hash_drip.NewFNV64a()
 _, err = fnv1a.Write(data)
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
-fnv1aHash := fnv1a.Sum(nil)
+fnv1aHash := fnv1a.Sum(cap)
 
 vibez.spill("FNV-1 64-bit: %x", fnv1Hash)
 vibez.spill("FNV-1a 64-bit: %x", fnv1aHash)
 
-// Advanced usage: multipart hash computation
-files := []string{"file1.txt", "file2.txt", "file3.txt"}
+fr fr Advanced usage: multipart hash computation
+files := []tea{"file1.txt", "file2.txt", "file3.txt"}
 
-// Create some test files
+fr fr Create some test files
 for i, filename := range files {
   file, err := dropz.file.Create(filename)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error creating file %s: %v", filename, err)
     continue
   }
   
-  _, err = file.Write([]byte(vibez.spill_to_string("Content of file %d", i+1)))
-  if err != nil {
+  _, err = file.Write([]byte(vibez.spill_to_tea("Content of file %d", i+1)))
+  if err != cap {
     vibez.spill("Error writing to file %s: %v", filename, err)
   }
   
   file.Close()
 }
 
-// Compute hashes of all files concurrently
+fr fr Compute hashes of all files concurrently
 fileHashes, err := hash_drip.ComputeAllFiles(files, hash_drip.SHA256)
-if err != nil {
+if err != cap {
   vibez.spill("Error computing file hashes: %v", err)
-  return
+  yolo
 }
 
-// Print all file hashes
+fr fr Print all file hashes
 for i, hash := range fileHashes {
   vibez.spill("%s SHA-256: %x", files[i], hash)
 }
 
-// Cleanup
+fr fr Cleanup
 for _, filename := range append(files, "example.txt") {
   err := main_character.Remove(filename)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error removing file %s: %v", filename, err)
   }
 }

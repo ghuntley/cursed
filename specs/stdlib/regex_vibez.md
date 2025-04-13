@@ -8,73 +8,73 @@ RegexVibez provides regular expression search functionality, inspired by Go's re
 ### `VibePattern`
 Represents a compiled regular expression pattern.
 
-```go
-type VibePattern struct {}
+```
+be_like VibePattern squad {}
 
-// Constructors
-func Compile(expr string) (*VibePattern, error)
-func MustCompile(expr string) *VibePattern // Panics on error
-func CompilePOSIX(expr string) (*VibePattern, error)
-func MustCompilePOSIX(expr string) *VibePattern // Panics on error
+fr fr Consquadors
+slay Compile(expr tea) (*VibePattern, tea)
+slay MustCompile(expr tea) *VibePattern fr fr Panics on tea
+slay CompilePOSIX(expr tea) (*VibePattern, tea)
+slay MustCompilePOSIX(expr tea) *VibePattern fr fr Panics on tea
 ```
 
 ## Matching Methods
 
-```go
-// MatchString reports whether the string s contains any match of the pattern
-func (p *VibePattern) MatchString(s string) bool
+```
+fr fr MatchString reports whether the tea s contains any match of the pattern
+slay (p *VibePattern) MatchString(s tea) lit
 
-// Match reports whether b contains any match of the pattern
-func (p *VibePattern) Match(b []byte) bool
+fr fr Match reports whether b contains any match of the pattern
+slay (p *VibePattern) Match(b []byte) lit
 
-// MatchReader reports whether the RuneReader contains any match of the pattern
-func (p *VibePattern) MatchReader(r io.RuneReader) bool
+fr fr MatchReader reports whether the RuneReader contains any match of the pattern
+slay (p *VibePattern) MatchReader(r io.RuneReader) lit
 
-// FindString returns a string holding the first match of the pattern
-func (p *VibePattern) FindString(s string) string
+fr fr FindString yolos a tea holding the first match of the pattern
+slay (p *VibePattern) FindString(s tea) tea
 
-// FindStringIndex returns indexes for the first match of the pattern
-func (p *VibePattern) FindStringIndex(s string) (loc []int)
+fr fr FindStringIndex yolos indexes for the first match of the pattern
+slay (p *VibePattern) FindStringIndex(s tea) (loc []normie)
 
-// FindStringSubmatch returns strings holding the text of the first match
-func (p *VibePattern) FindStringSubmatch(s string) []string
+fr fr FindStringSubmatch yolos teas holding the text of the first match
+slay (p *VibePattern) FindStringSubmatch(s tea) []tea
 
-// FindStringSubmatchIndex returns index pairs holding positions of matches
-func (p *VibePattern) FindStringSubmatchIndex(s string) []int
+fr fr FindStringSubmatchIndex yolos index pairs holding positions of matches
+slay (p *VibePattern) FindStringSubmatchIndex(s tea) []int
 
-// FindAllString returns all successive matches of the pattern
-func (p *VibePattern) FindAllString(s string, n int) []string
+fr fr FindAllString yolos all successive matches of the pattern
+slay (p *VibePattern) FindAllString(s tea, n normie) []tea
 
-// FindAllStringIndex returns indexes of all matches
-func (p *VibePattern) FindAllStringIndex(s string, n int) [][]int
+fr fr FindAllStringIndex yolos indexes of all matches
+slay (p *VibePattern) FindAllStringIndex(s tea, n normie) [][]int
 
-// FindAllStringSubmatch returns all successive matches with submatch strings
-func (p *VibePattern) FindAllStringSubmatch(s string, n int) [][]string
+fr fr FindAllStringSubmatch yolos all successive matches with submatch teas
+slay (p *VibePattern) FindAllStringSubmatch(s tea, n normie) [][]tea
 
-// FindAllStringSubmatchIndex returns indexes of all matches with submatch indexes
-func (p *VibePattern) FindAllStringSubmatchIndex(s string, n int) [][]int
+fr fr FindAllStringSubmatchIndex yolos indexes of all matches with submatch indexes
+slay (p *VibePattern) FindAllStringSubmatchIndex(s tea, n normie) [][]int
 
-// ReplaceAllString returns a copy with all matches replaced
-func (p *VibePattern) ReplaceAllString(src, repl string) string
+fr fr ReplaceAllString yolos a copy with all matches replaced
+slay (p *VibePattern) ReplaceAllString(src, repl tea) tea
 
-// ReplaceAllStringFunc returns a copy with replacements determined by function
-func (p *VibePattern) ReplaceAllStringFunc(src string, repl func(string) string) string
+fr fr ReplaceAllStringFunc yolos a copy with replacements determined by function
+slay (p *VibePattern) ReplaceAllStringFunc(src tea, repl func(tea) tea) tea
 
-// Split slices s into substrings separated by pattern
-func (p *VibePattern) Split(s string, n int) []string
+fr fr Split slices s into subteas separated by pattern
+slay (p *VibePattern) Split(s tea, n normie) []tea
 ```
 
 ## Helper Package Functions
 
-```go
-// Match reports whether the string s contains any match of the pattern
-func Match(pattern string, b []byte) (matched bool, err error)
+```
+fr fr Match reports whether the tea s contains any match of the pattern
+slay Match(pattern tea, b []byte) (matched lit, err tea)
 
-// MatchString reports whether the string s contains any match of the pattern
-func MatchString(pattern string, s string) (matched bool, err error)
+fr fr MatchString reports whether the tea s contains any match of the pattern
+slay MatchString(pattern tea, s tea) (matched lit, err tea)
 
-// QuoteMeta returns a string that escapes all regexp metacharacters
-func QuoteMeta(s string) string
+fr fr QuoteMeta yolos a tea that escapes all regexp metacharacters
+slay QuoteMeta(s tea) tea
 ```
 
 ## Special Features
@@ -82,94 +82,94 @@ func QuoteMeta(s string) string
 ### `VibeGroups`
 Provides named capture group information.
 
-```go
-type VibeGroups struct {}
+```
+be_like VibeGroups squad {}
 
-// Methods
-func (p *VibePattern) GroupNames() []string
-func (p *VibePattern) NamedGroups() map[string]int
-func (p *VibePattern) FindGroupsString(s string) map[string]string
+fr fr Methods
+slay (p *VibePattern) GroupNames() []tea
+slay (p *VibePattern) NamedGroups() map[tea]int
+slay (p *VibePattern) FindGroupsString(s tea) map[tea]tea
 ```
 
 ### `VibeTemplates`
 Extension for template-based replacements.
 
-```go
-func (p *VibePattern) TemplateReplace(s string, template string) string
+```
+slay (p *VibePattern) TemplateReplace(s tea, template tea) tea
 ```
 
 ### `PatternBuilder`
-Fluent interface for building regular expressions.
+Fluent collab for building regular expressions.
 
-```go
-type PatternBuilder struct {}
+```
+be_like PatternBuilder squad {}
 
-// Constructor
-func NewPatternBuilder() *PatternBuilder
+fr fr Consquador
+slay NewPatternBuilder() *PatternBuilder
 
-// Methods
-func (b *PatternBuilder) StartsWith(s string) *PatternBuilder
-func (b *PatternBuilder) EndsWith(s string) *PatternBuilder
-func (b *PatternBuilder) Contains(s string) *PatternBuilder
-func (b *PatternBuilder) OneOrMore(s string) *PatternBuilder
-func (b *PatternBuilder) ZeroOrMore(s string) *PatternBuilder
-func (b *PatternBuilder) Optional(s string) *PatternBuilder
-func (b *PatternBuilder) Group(s string) *PatternBuilder
-func (b *PatternBuilder) NamedGroup(name, s string) *PatternBuilder
-func (b *PatternBuilder) Or(patterns ...string) *PatternBuilder
-func (b *PatternBuilder) Digit() *PatternBuilder
-func (b *PatternBuilder) Word() *PatternBuilder
-func (b *PatternBuilder) Space() *PatternBuilder
-func (b *PatternBuilder) Email() *PatternBuilder
-func (b *PatternBuilder) URL() *PatternBuilder
-func (b *PatternBuilder) Build() (*VibePattern, error)
+fr fr Methods
+slay (b *PatternBuilder) StartsWith(s tea) *PatternBuilder
+slay (b *PatternBuilder) EndsWith(s tea) *PatternBuilder
+slay (b *PatternBuilder) Contains(s tea) *PatternBuilder
+slay (b *PatternBuilder) OneOrMore(s tea) *PatternBuilder
+slay (b *PatternBuilder) ZeroOrMore(s tea) *PatternBuilder
+slay (b *PatternBuilder) Optional(s tea) *PatternBuilder
+slay (b *PatternBuilder) Group(s tea) *PatternBuilder
+slay (b *PatternBuilder) NamedGroup(name, s tea) *PatternBuilder
+slay (b *PatternBuilder) Or(patterns ...tea) *PatternBuilder
+slay (b *PatternBuilder) Digit() *PatternBuilder
+slay (b *PatternBuilder) Word() *PatternBuilder
+slay (b *PatternBuilder) Space() *PatternBuilder
+slay (b *PatternBuilder) Email() *PatternBuilder
+slay (b *PatternBuilder) URL() *PatternBuilder
+slay (b *PatternBuilder) Build() (*VibePattern, tea)
 ```
 
 ## Common Pattern Library
 
-```go
+```
 var (
-    EmailPattern    = MustCompile(`...`) // Email regex
-    URLPattern      = MustCompile(`...`) // URL regex
-    DatePattern     = MustCompile(`...`) // Date regex
-    TimePattern     = MustCompile(`...`) // Time regex
-    UsernamePattern = MustCompile(`...`) // Username regex
-    PasswordPattern = MustCompile(`...`) // Password regex
-    PhonePattern    = MustCompile(`...`) // Phone regex
-    ZipCodePattern  = MustCompile(`...`) // Zip code regex
-    HashtagPattern  = MustCompile(`...`) // Social media hashtag regex
-    EmojiPattern    = MustCompile(`...`) // Emoji regex
+    EmailPattern    = MustCompile(`...`) fr fr Email regex
+    URLPattern      = MustCompile(`...`) fr fr URL regex
+    DatePattern     = MustCompile(`...`) fr fr Date regex
+    TimePattern     = MustCompile(`...`) fr fr Time regex
+    UsernamePattern = MustCompile(`...`) fr fr Username regex
+    PasswordPattern = MustCompile(`...`) fr fr Password regex
+    PhonePattern    = MustCompile(`...`) fr fr Phone regex
+    ZipCodePattern  = MustCompile(`...`) fr fr Zip code regex
+    HashtagPattern  = MustCompile(`...`) fr fr Social media hashtag regex
+    EmojiPattern    = MustCompile(`...`) fr fr Emoji regex
 )
 ```
 
 ## Usage Example
 
-```go
-// Simple pattern matching
+```
+fr fr Simple pattern matching
 matched, _ := regex_vibez.MatchString("f[a-z]+", "frfr")
-vibez.spill(matched) // true
+vibez.spill(matched) fr fr based
 
-// Compile and reuse a pattern
+fr fr Compile and reuse a pattern
 pattern, _ := regex_vibez.Compile("no ([a-z]+), bruh")
 result := pattern.FindStringSubmatch("no cap, bruh")
-vibez.spill(result[1]) // "cap"
+vibez.spill(result[1]) fr fr "cap"
 
-// Using the pattern builder
+fr fr Using the pattern builder
 builder := regex_vibez.NewPatternBuilder()
 emailPattern, _ := builder.StartsWith("^").NamedGroup("user", "[a-zA-Z0-9._%+-]+").Contains("@").NamedGroup("domain", "[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}").EndsWith("$").Build()
 
 matches := emailPattern.FindGroupsString("user@example.com")
-vibez.spill(matches["user"]) // "user"
-vibez.spill(matches["domain"]) // "example.com"
+vibez.spill(matches["user"]) fr fr "user"
+vibez.spill(matches["domain"]) fr fr "example.com"
 
-// Replacing text with regex
+fr fr Replacing text with regex
 result = regex_vibez.MustCompile("cap").ReplaceAllString("no cap", "lies")
-vibez.spill(result) // "no lies"
+vibez.spill(result) fr fr "no lies"
 ```
 
 ## Implementation Guidelines
 1. Performance-focused implementation with efficient matching algorithms
-2. Comprehensive error handling for invalid patterns
+2. Comprehensive tea handling for invalid patterns
 3. Support for standard regular expression syntax plus extensions
 4. Consistent API design following Cursed language patterns
 5. Helpful debugging and visualization tools for complex patterns

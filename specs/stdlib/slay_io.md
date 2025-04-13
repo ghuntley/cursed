@@ -8,30 +8,30 @@ SlayIO implements buffered I/O operations, building on the YeetIO package. It pr
 ### `SlayReader`
 A buffered reader that reads from an io.Reader (YeetIO.Yoink).
 
-```go
-type SlayReader struct {
-    // contains buffered data and internal state
+```
+be_like SlayReader squad {
+    fr fr contains buffered data and internal state
 }
 
-// Constructor
-func NewSlayReader(r YeetIO.Yoink) *SlayReader
-func NewSlayReaderSize(r YeetIO.Yoink, size int) *SlayReader
+fr fr Consquador
+slay NewSlayReader(r YeetIO.Yoink) *SlayReader
+slay NewSlayReaderSize(r YeetIO.Yoink, size normie) *SlayReader
 
-// Methods
-func (b *SlayReader) Peek(n int) ([]byte, error)
-func (b *SlayReader) Read(p []byte) (n int, err error)
-func (b *SlayReader) ReadByte() (byte, error)
-func (b *SlayReader) UnreadByte() error
-func (b *SlayReader) ReadRune() (rune, int, error)
-func (b *SlayReader) UnreadRune() error
-func (b *SlayReader) ReadLine() (line []byte, isPrefix bool, err error)
-func (b *SlayReader) ReadSlice(delim byte) (line []byte, err error)
-func (b *SlayReader) ReadBytes(delim byte) ([]byte, error)
-func (b *SlayReader) ReadString(delim byte) (string, error)
-func (b *SlayReader) Reset(r YeetIO.Yoink)
-func (b *SlayReader) Discard(n int) (discarded int, err error)
-func (b *SlayReader) Buffered() int
-func (b *SlayReader) Size() int
+fr fr Methods
+slay (b *SlayReader) Peek(n normie) ([]byte, tea)
+slay (b *SlayReader) Read(p []byte) (n int, err tea)
+slay (b *SlayReader) ReadByte() (byte, tea)
+slay (b *SlayReader) UnreadByte() tea
+slay (b *SlayReader) ReadRune() (rune, int, tea)
+slay (b *SlayReader) UnreadRune() tea
+slay (b *SlayReader) ReadLine() (line []byte, isPrefix lit, err tea)
+slay (b *SlayReader) ReadSlice(delim byte) (line []byte, err tea)
+slay (b *SlayReader) ReadBytes(delim byte) ([]byte, tea)
+slay (b *SlayReader) ReadString(delim byte) (tea, tea)
+slay (b *SlayReader) Reset(r YeetIO.Yoink)
+slay (b *SlayReader) Discard(n normie) (discarded int, err tea)
+slay (b *SlayReader) Buffered() int
+slay (b *SlayReader) Size() int
 ```
 
 ## Writer
@@ -39,25 +39,25 @@ func (b *SlayReader) Size() int
 ### `SlayWriter`
 A buffered writer that writes to an io.Writer (YeetIO.Yeeter).
 
-```go
-type SlayWriter struct {
-    // contains buffered data and internal state
+```
+be_like SlayWriter squad {
+    fr fr contains buffered data and internal state
 }
 
-// Constructor
-func NewSlayWriter(w YeetIO.Yeeter) *SlayWriter
-func NewSlayWriterSize(w YeetIO.Yeeter, size int) *SlayWriter
+fr fr Consquador
+slay NewSlayWriter(w YeetIO.Yeeter) *SlayWriter
+slay NewSlayWriterSize(w YeetIO.Yeeter, size normie) *SlayWriter
 
-// Methods
-func (b *SlayWriter) Flush() error
-func (b *SlayWriter) Write(p []byte) (nn int, err error)
-func (b *SlayWriter) WriteString(s string) (int, error)
-func (b *SlayWriter) WriteByte(c byte) error
-func (b *SlayWriter) WriteRune(r rune) (size int, err error)
-func (b *SlayWriter) Available() int
-func (b *SlayWriter) Buffered() int
-func (b *SlayWriter) Reset(w YeetIO.Yeeter)
-func (b *SlayWriter) Size() int
+fr fr Methods
+slay (b *SlayWriter) Flush() tea
+slay (b *SlayWriter) Write(p []byte) (nn int, err tea)
+slay (b *SlayWriter) WriteString(s tea) (int, tea)
+slay (b *SlayWriter) WriteByte(c byte) tea
+slay (b *SlayWriter) WriteRune(r rune) (size int, err tea)
+slay (b *SlayWriter) Available() int
+slay (b *SlayWriter) Buffered() int
+slay (b *SlayWriter) Reset(w YeetIO.Yeeter)
+slay (b *SlayWriter) Size() int
 ```
 
 ## Scanner
@@ -65,33 +65,33 @@ func (b *SlayWriter) Size() int
 ### `SlayScanner`
 A scanner for reading tokens from a stream.
 
-```go
-type SlayScanner struct {
-    // contains scanning state
+```
+be_like SlayScanner squad {
+    fr fr contains scanning state
 }
 
-// Constructor
-func NewSlayScanner(r YeetIO.Yoink) *SlayScanner
+fr fr Consquador
+slay NewSlayScanner(r YeetIO.Yoink) *SlayScanner
 
-// ScanFunc defines a function that processes tokens
-type ScanFunc func(data []byte, atEOF bool) (advance int, token []byte, err error)
+fr fr ScanFunc defines a function that processes tokens
+be_like ScanFunc func(data []byte, atEOF lit) (advance int, token []byte, err tea)
 
-// Methods
-func (s *SlayScanner) Scan() bool
-func (s *SlayScanner) Bytes() []byte
-func (s *SlayScanner) Text() string
-func (s *SlayScanner) Err() error
-func (s *SlayScanner) Buffer(buf []byte, max int)
-func (s *SlayScanner) Split(split ScanFunc)
+fr fr Methods
+slay (s *SlayScanner) Scan() lit
+slay (s *SlayScanner) Bytes() []byte
+slay (s *SlayScanner) Text() tea
+slay (s *SlayScanner) Err() tea
+slay (s *SlayScanner) Buffer(buf []byte, max normie)
+slay (s *SlayScanner) Split(split ScanFunc)
 ```
 
 ## Predefined Scanner Split Functions
 
-```go
-func ScanLines(data []byte, atEOF bool) (advance int, token []byte, err error)
-func ScanWords(data []byte, atEOF bool) (advance int, token []byte, err error)
-func ScanRunes(data []byte, atEOF bool) (advance int, token []byte, err error)
-func ScanBytes(data []byte, atEOF bool) (advance int, token []byte, err error)
+```
+slay ScanLines(data []byte, atEOF lit) (advance int, token []byte, err tea)
+slay ScanWords(data []byte, atEOF lit) (advance int, token []byte, err tea)
+slay ScanRunes(data []byte, atEOF lit) (advance int, token []byte, err tea)
+slay ScanBytes(data []byte, atEOF lit) (advance int, token []byte, err tea)
 ```
 
 ## ReadWriter
@@ -99,14 +99,14 @@ func ScanBytes(data []byte, atEOF bool) (advance int, token []byte, err error)
 ### `SlayReadWriter`
 Combines a SlayReader and SlayWriter.
 
-```go
-type SlayReadWriter struct {
+```
+be_like SlayReadWriter squad {
     *SlayReader
     *SlayWriter
 }
 
-// Constructor
-func NewSlayReadWriter(r *SlayReader, w *SlayWriter) *SlayReadWriter
+fr fr Consquador
+slay NewSlayReadWriter(r *SlayReader, w *SlayWriter) *SlayReadWriter
 ```
 
 ## Special Features
@@ -114,16 +114,16 @@ func NewSlayReadWriter(r *SlayReader, w *SlayWriter) *SlayReadWriter
 ### `SlayPhraseReader`
 A specialized reader that recognizes popular Gen Z phrases and expands them.
 
-```go
-type SlayPhraseReader struct {
+```
+be_like SlayPhraseReader squad {
     *SlayReader
 }
 
-// Constructor
-func NewSlayPhraseReader(r YeetIO.Yoink) *SlayPhraseReader
+fr fr Consquador
+slay NewSlayPhraseReader(r YeetIO.Yoink) *SlayPhraseReader
 
-// Methods
-func (p *SlayPhraseReader) ReadPhrase() (phrase string, err error)
+fr fr Methods
+slay (p *SlayPhraseReader) ReadPhrase() (phrase tea, err tea)
 ```
 
 ## Implementation Guidelines

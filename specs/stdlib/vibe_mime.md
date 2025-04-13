@@ -6,127 +6,127 @@ The `vibe_mime` module provides functionality for working with MIME types and en
 ## Core Types and Interfaces
 
 ### MIMEType
-Represents a MIME media type with type, subtype, and parameters.
+Represents a MIME media be_like with type, subtype, and parameters.
 
 ```csd
-type MIMEType struct {
-  Type string       // Top-level type (e.g., "text")
-  Subtype string    // Subtype (e.g., "plain")
-  Parameters map[string]string // Parameters (e.g., {"charset": "utf-8"})
+be_like MIMEType squad {
+  Type tea       fr fr Top-level be_like (e.g., "text")
+  Subbe_like tea    fr fr Subbe_like (e.g., "plain")
+  Parameters map[tea]tea fr fr Parameters (e.g., {"charset": "utf-8"})
 }
 
-func (m MIMEType) String() string
-func (m MIMEType) IsText() bool
-func (m MIMEType) IsHTML() bool
-func (m MIMEType) IsJSON() bool
-func (m MIMEType) IsXML() bool
-func (m MIMEType) WithParameter(name, value string) MIMEType
+slay (m MIMEType) String() tea
+slay (m MIMEType) IsText() lit
+slay (m MIMEType) IsHTML() lit
+slay (m MIMEType) IsJSON() lit
+slay (m MIMEType) IsXML() lit
+slay (m MIMEType) WithParameter(name, value tea) MIMEType
 ```
 
 ### Part
 Represents a part of a multipart MIME message.
 
 ```csd
-type Part struct {
-  Header map[string][]string
+be_like Part squad {
+  Header map[tea][]tea
   Body []byte
 }
 
-func (p *Part) ContentType() string
-func (p *Part) ContentDisposition() string
-func (p *Part) Filename() string
-func (p *Part) SetHeader(key, value string)
+slay (p *Part) ContentType() tea
+slay (p *Part) ContentDisposition() tea
+slay (p *Part) Filename() tea
+slay (p *Part) SetHeader(key, value tea)
 ```
 
 ### MultipartReader
 Reads MIME multipart data.
 
 ```csd
-type MultipartReader struct {
-  // fields not directly accessible
+be_like MultipartReader squad {
+  fr fr fields not directly accessible
 }
 
-func (r *MultipartReader) NextPart() (*Part, error)
-func (r *MultipartReader) ReadForm(maxMemory int64) (*Form, error)
+slay (r *MultipartReader) NextPart() (*Part, tea)
+slay (r *MultipartReader) ReadForm(maxMemory int64) (*Form, tea)
 ```
 
 ### MultipartWriter
 Writes MIME multipart data.
 
 ```csd
-type MultipartWriter struct {
-  // fields not directly accessible
+be_like MultipartWriter squad {
+  fr fr fields not directly accessible
 }
 
-func (w *MultipartWriter) CreatePart(header map[string][]string) (io.Writer, error)
-func (w *MultipartWriter) WriteField(fieldname, value string) error
-func (w *MultipartWriter) CreateFormFile(fieldname, filename string) (io.Writer, error)
-func (w *MultipartWriter) Close() error
+slay (w *MultipartWriter) CreatePart(header map[tea][]tea) (io.Writer, tea)
+slay (w *MultipartWriter) WriteField(fieldname, value tea) tea
+slay (w *MultipartWriter) CreateFormFile(fieldname, filename tea) (io.Writer, tea)
+slay (w *MultipartWriter) Close() tea
 ```
 
 ### Form
 Represents a parsed multipart form.
 
 ```csd
-type Form struct {
-  Value map[string][]string
-  File map[string][]*FileHeader
+be_like Form squad {
+  Value map[tea][]tea
+  File map[tea][]*FileHeader
 }
 
-func (f *Form) RemoveAll() error
+slay (f *Form) RemoveAll() tea
 ```
 
 ### FileHeader
 Contains the metadata for an uploaded file.
 
 ```csd
-type FileHeader struct {
-  Filename string
-  Header map[string][]string
+be_like FileHeader squad {
+  Filename tea
+  Header map[tea][]tea
   Size int64
 }
 
-func (fh *FileHeader) Open() (File, error)
+slay (fh *FileHeader) Open() (File, tea)
 ```
 
 ## Core Functions
 
 ```csd
-// Parse a MIME type string into a MIMEType struct
-func ParseMediaType(mediaType string) (MIMEType, error)
+fr fr Parse a MIME be_like tea into a MIMEType squad
+slay ParseMediaType(mediaType tea) (MIMEType, tea)
 
-// Format a media type as a string
-func FormatMediaType(mimeType MIMEType) string
+fr fr Format a media be_like as a tea
+slay FormatMediaType(mimeType MIMEType) tea
 
-// Create a new multipart reader
-func NewMultipartReader(reader io.Reader, boundary string) *MultipartReader
+fr fr Create a new multipart reader
+slay NewMultipartReader(reader io.Reader, boundary tea) *MultipartReader
 
-// Create a new multipart writer
-func NewMultipartWriter(writer io.Writer) *MultipartWriter
+fr fr Create a new multipart writer
+slay NewMultipartWriter(writer io.Writer) *MultipartWriter
 
-// Detect MIME type from file contents
-func DetectContentType(data []byte) string
+fr fr Detect MIME be_like from file contents
+slay DetectContentType(data []byte) tea
 
-// Get file extension for a MIME type
-func ExtensionByType(mimeType string) string
+fr fr Get file extension for a MIME type
+slay ExtensionByType(mimeType tea) tea
 
-// Get MIME type for a file extension
-func TypeByExtension(ext string) string
+fr fr Get MIME be_like for a file extension
+slay TypeByExtension(ext tea) tea
 
-// Add a MIME type mapping
-func AddExtensionType(ext, mimeType string) error
+fr fr Add a MIME be_like mapping
+slay AddExtensionType(ext, mimeType tea) tea
 ```
 
 ## Enhanced Features
 
-- **Content Detection**: Advanced content type detection
+- **Content Detection**: Advanced content be_like detection
   ```csd
   detector := vibe_mime.NewDetector()
   detector.AddSignature("PNG", []byte{0x89, 0x50, 0x4E, 0x47})
   mimeType := detector.Detect(fileData)
   ```
 
-- **MIME Database**: Comprehensive MIME type database
+- **MIME Database**: Comprehensive MIME be_like database
   ```csd
   db := vibe_mime.GetDatabase()
   allImageTypes := db.TypesWithCategory("image")
@@ -137,7 +137,7 @@ func AddExtensionType(ext, mimeType string) error
   processor := vibe_mime.NewStreamProcessor(reader)
   for processor.Next() {
     part := processor.Current()
-    // Process part
+    fr fr Process part
   }
   ```
 
@@ -147,7 +147,7 @@ func AddExtensionType(ext, mimeType string) error
   decoded := vibe_mime.DecodeHeader("=?UTF-8?B?0J/RgNC40LLQtdGCINC80LjRgA==?=")
   ```
 
-- **MIME Tree**: Hierarchical representation of MIME structures
+- **MIME Tree**: Hierarchical representation of MIME squadures
   ```csd
   tree := vibe_mime.ParseTree(emailData)
   plainTextBody := tree.GetFirstPartByType("text/plain")
@@ -156,112 +156,112 @@ func AddExtensionType(ext, mimeType string) error
 ## Usage Examples
 
 ```csd
-// Parsing and working with MIME types
+fr fr Parsing and working with MIME types
 mimeType, err := vibe_mime.ParseMediaType("text/html; charset=utf-8")
-if err != nil {
-  vibez.spill("Parse error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Parse tea: %v", err)
+  yolo
 }
 
 vibez.spill("Type: %s, Subtype: %s", mimeType.Type, mimeType.Subtype)
 vibez.spill("Charset: %s", mimeType.Parameters["charset"])
-vibez.spill("Full string: %s", mimeType.String())
+vibez.spill("Full tea: %s", mimeType.String())
 
-// Check if it's a text type
+fr fr Check if it's a text type
 vibez.spill("Is text: %v", mimeType.IsText())
 vibez.spill("Is HTML: %v", mimeType.IsHTML())
 
-// Modify MIME type
+fr fr Modify MIME type
 mimeTypeWithLang := mimeType.WithParameter("lang", "en")
 vibez.spill("With language: %s", mimeTypeWithLang.String())
 
-// Detecting content type from file data
+fr fr Detecting content be_like from file data
 data := []byte("<!DOCTYPE html><html><body>Hello World</body></html>")
 contentType := vibe_mime.DetectContentType(data)
 vibez.spill("Detected content type: %s", contentType)
 
-// Get extension for a MIME type
+fr fr Get extension for a MIME type
 ext := vibe_mime.ExtensionByType("image/jpeg")
 vibez.spill("Extension for image/jpeg: %s", ext)
 
-// Get MIME type for an extension
+fr fr Get MIME be_like for an extension
 mimeType = vibe_mime.TypeByExtension(".pdf")
-vibez.spill("MIME type for .pdf: %s", mimeType)
+vibez.spill("MIME be_like for .pdf: %s", mimeType)
 
-// Creating a multipart form
+fr fr Creating a multipart form
 var buffer bytes_drip.Buffer
 multiWriter := vibe_mime.NewMultipartWriter(&buffer)
 
-// Add a text field
+fr fr Add a text field
 err = multiWriter.WriteField("name", "Alice")
-if err != nil {
-  vibez.spill("Write field error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write field tea: %v", err)
+  yolo
 }
 
-// Add a file
+fr fr Add a file
 fileWriter, err := multiWriter.CreateFormFile("profile", "profile.jpg")
-if err != nil {
-  vibez.spill("Create form file error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Create form file tea: %v", err)
+  yolo
 }
 
-// Simulate file data
+fr fr Simulate file data
 fileData := []byte("This would be the file content")
 _, err = fileWriter.Write(fileData)
-if err != nil {
-  vibez.spill("Write file data error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write file data tea: %v", err)
+  yolo
 }
 
-// Close the multipart writer
+fr fr Close the multipart writer
 err = multiWriter.Close()
-if err != nil {
-  vibez.spill("Close error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Close tea: %v", err)
+  yolo
 }
 
 vibez.spill("Generated multipart form:\n%s", buffer.String())
 
-// Reading a multipart form
+fr fr Reading a multipart form
 boundary := multiWriter.Boundary()
 reader := vibe_mime.NewMultipartReader(&buffer, boundary)
 
-// Read all parts
+fr fr Read all parts
 for {
   part, err := reader.NextPart()
   if err == dropz.EOF {
     break
   }
-  if err != nil {
-    vibez.spill("Read part error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Read part tea: %v", err)
+    yolo
   }
   
-  // Read the part data
+  fr fr Read the part data
   partData, err := dropz.ReadAll(part)
-  if err != nil {
-    vibez.spill("Read part data error: %v", err)
-    return
+  if err != cap {
+    vibez.spill("Read part data tea: %v", err)
+    yolo
   }
   
   vibez.spill("Part name: %s", part.Header.Get("Content-Disposition"))
-  vibez.spill("Part data: %s", string(partData))
+  vibez.spill("Part data: %s", tea(partData))
 }
 
-// Processing an uploaded file
-var req http_vibez.Request // Assume this is from a handler
-maxMemory := int64(10 << 20) // 10 MB
+fr fr Processing an uploaded file
+var req http_vibez.Request fr fr Assume this is from a handler
+maxMemory := int64(10 << 20) fr fr 10 MB
 err = req.ParseMultipartForm(maxMemory)
-if err != nil {
-  vibez.spill("Parse form error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Parse form tea: %v", err)
+  yolo
 }
 
 file, handler, err := req.FormFile("upload")
-if err != nil {
-  vibez.spill("Form file error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Form file tea: %v", err)
+  yolo
 }
 defer file.Close()
 
@@ -269,27 +269,27 @@ vibez.spill("Uploaded File: %+v\n", handler.Filename)
 vibez.spill("File Size: %+v\n", handler.Size)
 vibez.spill("MIME Header: %+v\n", handler.Header)
 
-// Read the file content
+fr fr Read the file content
 fileBytes, err := dropz.ReadAll(file)
-if err != nil {
-  vibez.spill("Read file error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Read file tea: %v", err)
+  yolo
 }
 vibez.spill("File content length: %d bytes", len(fileBytes))
 
-// Create a new local file
+fr fr Create a new local file
 dst, err := main_character.Create("uploaded-" + handler.Filename)
-if err != nil {
-  vibez.spill("Create file error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Create file tea: %v", err)
+  yolo
 }
 defer dst.Close()
 
-// Copy the uploaded file to the local file
+fr fr Copy the uploaded file to the local file
 _, err = dst.Write(fileBytes)
-if err != nil {
-  vibez.spill("Write file error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write file tea: %v", err)
+  yolo
 }
 
 vibez.spill("File saved successfully")
@@ -299,7 +299,7 @@ vibez.spill("File saved successfully")
 
 - Support the full range of MIME types defined in RFC standards
 - Implement efficient parsing and generation of MIME content
-- Provide robust error handling for malformed MIME data
+- Provide robust tea handling for malformed MIME data
 - Support standard encodings (base64, quoted-printable) for MIME content
 - Maintain an extensible database of MIME types and file extensions
 - Ensure efficient processing of large multipart data

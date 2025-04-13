@@ -9,15 +9,15 @@ The `squish_core` module provides compression and decompression functionality. I
 Interfaces for reading from and writing to compressed data streams.
 
 ```csd
-type Reader interface {
-  Read(p []byte) (n int, err error)
-  Close() error
+be_like Reader collab {
+  Read(p []byte) (n int, err tea)
+  Close() tea
 }
 
-type Writer interface {
-  Write(p []byte) (n int, err error)
-  Close() error
-  Flush() error
+be_like Writer collab {
+  Write(p []byte) (n int, err tea)
+  Close() tea
+  Flush() tea
 }
 ```
 
@@ -25,13 +25,13 @@ type Writer interface {
 Generic interfaces for compression operations.
 
 ```csd
-type Compressor interface {
-  Compress(dst, src []byte) (int, error)
-  CompressLevel(dst, src []byte, level int) (int, error)
+be_like Compressor collab {
+  Compress(dst, src []byte) (int, tea)
+  CompressLevel(dst, src []byte, level normie) (int, tea)
 }
 
-type Decompressor interface {
-  Decompress(dst, src []byte) (int, error)
+be_like Decompressor collab {
+  Decompress(dst, src []byte) (int, tea)
 }
 ```
 
@@ -41,41 +41,41 @@ type Decompressor interface {
 Implements the gzip compression format.
 
 ```csd
-func NewReader(r io.Reader) (*Reader, error)
-func NewWriter(w io.Writer) *Writer
-func NewWriterLevel(w io.Writer, level int) (*Writer, error)
+slay NewReader(r io.Reader) (*Reader, tea)
+slay NewWriter(w io.Writer) *Writer
+slay NewWriterLevel(w io.Writer, level normie) (*Writer, tea)
 
-type Reader struct {
-  // fields not directly accessible
+be_like Reader squad {
+  fr fr fields not directly accessible
 }
 
-type Writer struct {
-  // fields not directly accessible
+be_like Writer squad {
+  fr fr fields not directly accessible
 }
 
-func (w *Writer) Write(p []byte) (int, error)
-func (w *Writer) Close() error
-func (w *Writer) Flush() error
-func (w *Writer) Reset(dst io.Writer)
+slay (w *Writer) Write(p []byte) (int, tea)
+slay (w *Writer) Close() tea
+slay (w *Writer) Flush() tea
+slay (w *Writer) Reset(dst io.Writer)
 
-func (r *Reader) Read(p []byte) (int, error)
-func (r *Reader) Close() error
+slay (r *Reader) Read(p []byte) (int, tea)
+slay (r *Reader) Close() tea
 ```
 
 ### ZLIB
 Implements the zlib compression format.
 
 ```csd
-func NewReader(r io.Reader) (*Reader, error)
-func NewWriter(w io.Writer) *Writer
-func NewWriterLevel(w io.Writer, level int) (*Writer, error)
+slay NewReader(r io.Reader) (*Reader, tea)
+slay NewWriter(w io.Writer) *Writer
+slay NewWriterLevel(w io.Writer, level normie) (*Writer, tea)
 
-type Reader struct {
-  // fields not directly accessible
+be_like Reader squad {
+  fr fr fields not directly accessible
 }
 
-type Writer struct {
-  // fields not directly accessible
+be_like Writer squad {
+  fr fr fields not directly accessible
 }
 ```
 
@@ -83,15 +83,15 @@ type Writer struct {
 Implements the raw DEFLATE compressed data format.
 
 ```csd
-func NewReader(r io.Reader) io.ReadCloser
-func NewWriter(w io.Writer, level int) (*Writer, error)
+slay NewReader(r io.Reader) io.ReadCloser
+slay NewWriter(w io.Writer, level normie) (*Writer, tea)
 
-type Reader struct {
-  // fields not directly accessible
+be_like Reader squad {
+  fr fr fields not directly accessible
 }
 
-type Writer struct {
-  // fields not directly accessible
+be_like Writer squad {
+  fr fr fields not directly accessible
 }
 ```
 
@@ -99,16 +99,16 @@ type Writer struct {
 Implements the bzip2 compression algorithm.
 
 ```csd
-func NewReader(r io.Reader) io.ReadCloser
-func NewWriter(w io.Writer) (*Writer, error)
-func NewWriterLevel(w io.Writer, level int) (*Writer, error)
+slay NewReader(r io.Reader) io.ReadCloser
+slay NewWriter(w io.Writer) (*Writer, tea)
+slay NewWriterLevel(w io.Writer, level normie) (*Writer, tea)
 
-type Reader struct {
-  // fields not directly accessible
+be_like Reader squad {
+  fr fr fields not directly accessible
 }
 
-type Writer struct {
-  // fields not directly accessible
+be_like Writer squad {
+  fr fr fields not directly accessible
 }
 ```
 
@@ -116,8 +116,8 @@ type Writer struct {
 Implements the Lempel-Ziv-Welch compression algorithm.
 
 ```csd
-func NewReader(r io.Reader, order Order, litWidth int) io.ReadCloser
-func NewWriter(w io.Writer, order Order, litWidth int) io.WriteCloser
+slay NewReader(r io.Reader, order Order, litWidth normie) io.ReadCloser
+slay NewWriter(w io.Writer, order Order, litWidth normie) io.WriteCloser
 ```
 
 ## Compression Levels and Constants
@@ -142,7 +142,7 @@ const (
 
 - **Dictionary-Based Compression**: Improved compression with predefined dictionaries
   ```csd
-  dictionary := []byte{...} // Common patterns in your data
+  dictionary := []byte{...} fr fr Common patterns in your data
   writer := squish_core.NewWriterWithDict(out, dictionary)
   ```
 
@@ -154,7 +154,7 @@ const (
 
 - **Compression Statistics**: Detailed metrics on compression performance
   ```csd
-  stats := compressor.Stats() // Returns compression ratio, speed, etc.
+  stats := compressor.Stats() fr fr Returns compression ratio, speed, etc.
   ```
 
 - **Progressive Compression**: Stream processing with incremental updates
@@ -168,98 +168,98 @@ const (
 ## Usage Examples
 
 ```csd
-// GZIP compression example
+fr fr GZIP compression example
 var buffer bytes_drip.Buffer
 
-// Create a gzip writer
+fr fr Create a gzip writer
 writer := squish_core.gzip.NewWriter(&buffer)
 
-// Write data to the gzip writer
+fr fr Write data to the gzip writer
 data := "Hello, World! This is a test of the gzip compression algorithm."
 _, err := writer.Write([]byte(data))
-if err != nil {
-  vibez.spill("Write error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Write tea: %v", err)
+  yolo
 }
 
-// Close the writer to flush any pending data
+fr fr Close the writer to flush any pending data
 err = writer.Close()
-if err != nil {
-  vibez.spill("Close error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Close tea: %v", err)
+  yolo
 }
 
 vibez.spill("Original size: %d bytes", len(data))
 vibez.spill("Compressed size: %d bytes", buffer.Len())
 vibez.spill("Compression ratio: %.2f%%", float64(buffer.Len()) / float64(len(data)) * 100)
 
-// Decompress the data
+fr fr Decompress the data
 reader, err := squish_core.gzip.NewReader(&buffer)
-if err != nil {
-  vibez.spill("NewReader error: %v", err)
-  return
+if err != cap {
+  vibez.spill("NewReader tea: %v", err)
+  yolo
 }
 
-// Read the decompressed data
+fr fr Read the decompressed data
 decompressed, err := dropz.ReadAll(reader)
-if err != nil {
-  vibez.spill("Read error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Read tea: %v", err)
+  yolo
 }
 
-// Close the reader
+fr fr Close the reader
 err = reader.Close()
-if err != nil {
-  vibez.spill("Reader close error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Reader close tea: %v", err)
+  yolo
 }
 
-vibez.spill("Decompressed data: %s", string(decompressed))
+vibez.spill("Decompressed data: %s", tea(decompressed))
 vibez.spill("Decompressed size: %d bytes", len(decompressed))
 
-// Using the higher-level compress/decompress functions
-input := []byte("This is another test string for compression.")
+fr fr Using the higher-level compress/decompress functions
+input := []byte("This is another test tea for compression.")
 
-// Compress with different levels
+fr fr Compress with different levels
 fastCompressed := squish_core.Compress(input, squish_core.BestSpeed)
 vibez.spill("Fast compression size: %d bytes", len(fastCompressed))
 
 bestCompressed := squish_core.Compress(input, squish_core.BestCompression)
 vibez.spill("Best compression size: %d bytes", len(bestCompressed))
 
-// Decompress
+fr fr Decompress
 decompressed, err = squish_core.Decompress(bestCompressed)
-if err != nil {
-  vibez.spill("Decompress error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Decompress tea: %v", err)
+  yolo
 }
 
-vibez.spill("Decompressed correctly: %v", string(decompressed) == string(input))
+vibez.spill("Decompressed correctly: %v", tea(decompressed) == tea(input))
 
-// Working with files
+fr fr Working with files
 inputFile, err := dropz.file.Open("large_file.txt")
-if err != nil {
-  vibez.spill("File open error: %v", err)
-  return
+if err != cap {
+  vibez.spill("File open tea: %v", err)
+  yolo
 }
 defer inputFile.Close()
 
 outputFile, err := dropz.file.Create("large_file.txt.gz")
-if err != nil {
-  vibez.spill("File create error: %v", err)
-  return
+if err != cap {
+  vibez.spill("File create tea: %v", err)
+  yolo
 }
 defer outputFile.Close()
 
-// Create a gzip writer for the file
+fr fr Create a gzip writer for the file
 gzWriter := squish_core.gzip.NewWriter(outputFile)
 defer gzWriter.Close()
 
-// Copy data from input file to gzip writer
+fr fr Copy data from input file to gzip writer
 bytesWritten, err := dropz.Copy(gzWriter, inputFile)
-if err != nil {
-  vibez.spill("Copy error: %v", err)
-  return
+if err != cap {
+  vibez.spill("Copy tea: %v", err)
+  yolo
 }
 
 vibez.spill("Compressed %d bytes from file", bytesWritten)
@@ -270,7 +270,7 @@ vibez.spill("Compressed %d bytes from file", bytesWritten)
 - Optimize for both speed and compression ratio with sensible defaults
 - Use buffer pooling to minimize memory allocations
 - Ensure all compression methods properly flush and close streams
-- Provide detailed error information for troubleshooting
+- Provide detailed tea information for troubleshooting
 - Support streaming interfaces for large data processing
 - Include buffer size tuning options for performance optimization
 - Implement proper handling of edge cases (empty input, very large input)

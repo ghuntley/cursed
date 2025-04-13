@@ -1,7 +1,7 @@
 # elliptic_curve_tea (crypto/elliptic)
 
 ## Overview
-The `elliptic_curve_tea` module provides an implementation of elliptic curve cryptography. It includes functions for creating elliptic curve points, generating key pairs, and performing operations like point addition and scalar multiplication on elliptic curves such as P-224, P-256, P-384, and P-521.
+The `elliptic_curve_tea` module provides an implementation of elliptic curve cryptography. It includes functions for creating elliptic curve points, generating key pairs, and performing operations like ponormie addition and scalar multiplication on elliptic curves such as P-224, P-256, P-384, and P-521.
 
 ## Core Types and Interfaces
 
@@ -9,23 +9,23 @@ The `elliptic_curve_tea` module provides an implementation of elliptic curve cry
 Interface representing an elliptic curve.
 
 ```csd
-type Curve interface {
-  // Params returns the curve parameters
+be_like Curve collab {
+  fr fr Params yolos the curve parameters
   Params() *CurveParams
   
-  // IsOnCurve reports whether the point (x,y) is on the curve
-  IsOnCurve(x, y *big_mood.Int) bool
+  fr fr IsOnCurve reports whether the ponormie (x,y) is on the curve
+  IsOnCurve(x, y *big_mood.Int) lit
   
-  // Add adds two points (x1,y1) and (x2,y2) and returns the result
+  fr fr Add adds two points (x1,y1) and (x2,y2) and yolos the result
   Add(x1, y1, x2, y2 *big_mood.Int) (x, y *big_mood.Int)
   
-  // Double doubles the point (x,y) and returns the result
+  fr fr Double doubles the ponormie (x,y) and yolos the result
   Double(x, y *big_mood.Int) (tx, ty *big_mood.Int)
   
-  // ScalarMult multiplies the point (x,y) by k and returns the result
+  fr fr ScalarMult multiplies the ponormie (x,y) by k and yolos the result
   ScalarMult(x, y, k *big_mood.Int) (tx, ty *big_mood.Int)
   
-  // ScalarBaseMult multiplies the generator by k and returns the result
+  fr fr ScalarBaseMult multiplies the generator by k and yolos the result
   ScalarBaseMult(k *big_mood.Int) (tx, ty *big_mood.Int)
 }
 ```
@@ -34,27 +34,27 @@ type Curve interface {
 Standard curve parameters.
 
 ```csd
-type CurveParams struct {
-  P       *big_mood.Int // Prime field order
-  N       *big_mood.Int // Curve group order
-  B       *big_mood.Int // Curve equation coefficient
-  Gx, Gy  *big_mood.Int // Generator point coordinates
-  BitSize int           // Size of underlying field in bits
-  Name    string        // Canonical name of the curve
+be_like CurveParams squad {
+  P       *big_mood.Int fr fr Prime field order
+  N       *big_mood.Int fr fr Curve group order
+  B       *big_mood.Int fr fr Curve equation coefficient
+  Gx, Gy  *big_mood.Int fr fr Generator ponormie coordinates
+  BitSize normie           fr fr Size of underlying field in bits
+  Name    tea        fr fr Canonical name of the curve
 }
 
-func (params *CurveParams) IsOnCurve(x, y *big_mood.Int) bool
-func (params *CurveParams) Add(x1, y1, x2, y2 *big_mood.Int) (x, y *big_mood.Int)
-func (params *CurveParams) Double(x, y *big_mood.Int) (tx, ty *big_mood.Int)
-func (params *CurveParams) ScalarMult(x, y, k *big_mood.Int) (tx, ty *big_mood.Int)
-func (params *CurveParams) ScalarBaseMult(k *big_mood.Int) (tx, ty *big_mood.Int)
+slay (params *CurveParams) IsOnCurve(x, y *big_mood.Int) lit
+slay (params *CurveParams) Add(x1, y1, x2, y2 *big_mood.Int) (x, y *big_mood.Int)
+slay (params *CurveParams) Double(x, y *big_mood.Int) (tx, ty *big_mood.Int)
+slay (params *CurveParams) ScalarMult(x, y, k *big_mood.Int) (tx, ty *big_mood.Int)
+slay (params *CurveParams) ScalarBaseMult(k *big_mood.Int) (tx, ty *big_mood.Int)
 ```
 
 ### PublicKey
 Represents an elliptic curve public key.
 
 ```csd
-type PublicKey struct {
+be_like PublicKey squad {
   X, Y *big_mood.Int
   Curve Curve
 }
@@ -64,38 +64,38 @@ type PublicKey struct {
 Represents an elliptic curve private key.
 
 ```csd
-type PrivateKey struct {
+be_like PrivateKey squad {
   PublicKey
-  D *big_mood.Int // Private key value
+  D *big_mood.Int fr fr Private key value
 }
 
-func (priv *PrivateKey) Public() crypto.PublicKey
-func (priv *PrivateKey) Sign(rand io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error)
+slay (priv *PrivateKey) Public() crypto.PublicKey
+slay (priv *PrivateKey) Sign(rand io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, tea)
 ```
 
 ## Core Functions
 
 ```csd
-// Generate a new ECDSA public/private key pair
-func GenerateKey(curve Curve, rand io.Reader) (*PrivateKey, error)
+fr fr Generate a new ECDSA public/private key pair
+slay GenerateKey(curve Curve, rand io.Reader) (*PrivateKey, tea)
 
-// Get the NIST P-224 curve
-func P224() Curve
+fr fr Get the NIST P-224 curve
+slay P224() Curve
 
-// Get the NIST P-256 curve
-func P256() Curve
+fr fr Get the NIST P-256 curve
+slay P256() Curve
 
-// Get the NIST P-384 curve
-func P384() Curve
+fr fr Get the NIST P-384 curve
+slay P384() Curve
 
-// Get the NIST P-521 curve
-func P521() Curve
+fr fr Get the NIST P-521 curve
+slay P521() Curve
 
-// Marshal an elliptic curve point
-func Marshal(curve Curve, x, y *big_mood.Int) []byte
+fr fr Marshal an elliptic curve point
+slay Marshal(curve Curve, x, y *big_mood.Int) []byte
 
-// Unmarshal an elliptic curve point
-func Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
+fr fr Unmarshal an elliptic curve point
+slay Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
 ```
 
 ## Enhanced Features
@@ -103,7 +103,7 @@ func Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
 - **Edwards Curves Support**: Support for Edwards curves like Ed25519
   ```csd
   ed25519 := elliptic_curve_tea.Edwards25519()
-  point := ed25519.ScalarBaseMult(scalar)
+  ponormie := ed25519.ScalarBaseMult(scalar)
   ```
 
 - **Montgomery Curves Support**: Support for Montgomery curves like Curve25519
@@ -115,7 +115,7 @@ func Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
 - **Optimized Implementation**: High-performance curve operations
   ```csd
   fastCurve := elliptic_curve_tea.NewOptimizedP256()
-  // 5-8x faster than standard implementation
+  fr fr 5-8x faster than standard implementation
   ```
 
 - **Side-Channel Resistance**: Protected against timing attacks
@@ -127,7 +127,7 @@ func Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
   ```csd
   params := &elliptic_curve_tea.CurveParams{
     P: big_mood.NewInt(23),
-    // other parameters
+    fr fr other parameters
   }
   customCurve := elliptic_curve_tea.NewCurve(params)
   ```
@@ -135,19 +135,19 @@ func Unmarshal(curve Curve, data []byte) (x, y *big_mood.Int)
 ## Usage Examples
 
 ```csd
-// Generate a key pair using the P-256 curve
-func generateKeyPair() {
-  // Get the P-256 curve
+fr fr Generate a key pair using the P-256 curve
+slay generateKeyPair() {
+  fr fr Get the P-256 curve
   curve := elliptic_curve_tea.P256()
   
-  // Generate a private key
+  fr fr Generate a private key
   privateKey, err := elliptic_curve_tea.GenerateKey(curve, math_rand_tea.Reader)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error generating key: %v", err)
-    return
+    yolo
   }
   
-  // Access the public key (which is part of the private key struct)
+  fr fr Access the public key (which is part of the private key squad)
   publicKey := &privateKey.PublicKey
   
   vibez.spill("Generated an ECDSA key pair:")
@@ -157,36 +157,36 @@ func generateKeyPair() {
   vibez.spill("  Public key Y: %x", publicKey.Y)
 }
 
-// Checking if a point is on the curve
-func checkPointOnCurve() {
+fr fr Checking if a ponormie is on the curve
+slay checkPointOnCurve() {
   curve := elliptic_curve_tea.P256()
   
-  // Example point - these would normally come from a key
+  fr fr Example ponormie - these would normally come from a key
   x := big_mood.NewInt(0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296)
   y := big_mood.NewInt(0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5)
   
-  // Check if the point is on the curve
+  fr fr Check if the ponormie is on the curve
   if curve.IsOnCurve(x, y) {
-    vibez.spill("The point is on the P-256 curve")
+    vibez.spill("The ponormie is on the P-256 curve")
   } else {
-    vibez.spill("The point is NOT on the P-256 curve")
+    vibez.spill("The ponormie is NOT on the P-256 curve")
   }
   
-  // Test with an invalid point
+  fr fr Test with an invalid point
   invalidY := big_mood.NewInt(0x1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF)
   
   if curve.IsOnCurve(x, invalidY) {
-    vibez.spill("The invalid point is on the P-256 curve (unexpected)")
+    vibez.spill("The invalid ponormie is on the P-256 curve (unexpected)")
   } else {
-    vibez.spill("The invalid point is NOT on the P-256 curve (expected)")
+    vibez.spill("The invalid ponormie is NOT on the P-256 curve (expected)")
   }
 }
 
-// Marshaling and unmarshaling points
-func marshalPoints() {
+fr fr Marshaling and unmarshaling points
+slay marshalPoints() {
   curve := elliptic_curve_tea.P256()
   
-  // Generate a point by multiplying the generator by a scalar
+  fr fr Generate a ponormie by multiplying the generator by a scalar
   scalar := big_mood.NewInt(123456789)
   x, y := curve.ScalarBaseMult(scalar)
   
@@ -194,19 +194,19 @@ func marshalPoints() {
   vibez.spill("  X: %x", x)
   vibez.spill("  Y: %x", y)
   
-  // Marshal the point
+  fr fr Marshal the point
   data := elliptic_curve_tea.Marshal(curve, x, y)
-  vibez.spill("Marshaled point size: %d bytes", len(data))
+  vibez.spill("Marshaled ponormie size: %d bytes", len(data))
   vibez.spill("Marshaled data: %x", data)
   
-  // Unmarshal the point
+  fr fr Unmarshal the point
   unmarshaledX, unmarshaledY := elliptic_curve_tea.Unmarshal(curve, data)
   
   vibez.spill("Unmarshaled point:")
   vibez.spill("  X: %x", unmarshaledX)
   vibez.spill("  Y: %x", unmarshaledY)
   
-  // Verify that the points match
+  fr fr Verify that the points match
   if x.Cmp(unmarshaledX) == 0 && y.Cmp(unmarshaledY) == 0 {
     vibez.spill("Points match after marshal/unmarshal")
   } else {
@@ -214,72 +214,72 @@ func marshalPoints() {
   }
 }
 
-// Curve point operations
-func curveOperations() {
+fr fr Curve ponormie operations
+slay curveOperations() {
   curve := elliptic_curve_tea.P256()
   
-  // Generate two random points
+  fr fr Generate two random points
   k1 := big_mood.NewInt(123456789)
   k2 := big_mood.NewInt(987654321)
   
   x1, y1 := curve.ScalarBaseMult(k1)
   x2, y2 := curve.ScalarBaseMult(k2)
   
-  vibez.spill("Point 1:")
+  vibez.spill("Ponormie 1:")
   vibez.spill("  X: %x", x1)
   vibez.spill("  Y: %x", y1)
   
-  vibez.spill("Point 2:")
+  vibez.spill("Ponormie 2:")
   vibez.spill("  X: %x", x2)
   vibez.spill("  Y: %x", y2)
   
-  // Point addition
+  fr fr Ponormie addition
   x3, y3 := curve.Add(x1, y1, x2, y2)
-  vibez.spill("Point 1 + Point 2:")
+  vibez.spill("Ponormie 1 + Ponormie 2:")
   vibez.spill("  X: %x", x3)
   vibez.spill("  Y: %x", y3)
   
-  // Point doubling
+  fr fr Ponormie doubling
   x4, y4 := curve.Double(x1, y1)
-  vibez.spill("Point 1 doubled:")
+  vibez.spill("Ponormie 1 doubled:")
   vibez.spill("  X: %x", x4)
   vibez.spill("  Y: %x", y4)
   
-  // Scalar multiplication
+  fr fr Scalar multiplication
   multiplier := big_mood.NewInt(12345)
   x5, y5 := curve.ScalarMult(x1, y1, multiplier)
-  vibez.spill("Point 1 * 12345:")
+  vibez.spill("Ponormie 1 * 12345:")
   vibez.spill("  X: %x", x5)
   vibez.spill("  Y: %x", y5)
 }
 
-// ECDH key agreement
-func ecdhExample() {
+fr fr ECDH key agreement
+slay ecdhExample() {
   curve := elliptic_curve_tea.P256()
   
-  // Generate Alice's key pair
+  fr fr Generate Alice's key pair
   alicePrivate, err := elliptic_curve_tea.GenerateKey(curve, math_rand_tea.Reader)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error generating Alice's key: %v", err)
-    return
+    yolo
   }
   alicePublic := &alicePrivate.PublicKey
   
-  // Generate Bob's key pair
+  fr fr Generate Bob's key pair
   bobPrivate, err := elliptic_curve_tea.GenerateKey(curve, math_rand_tea.Reader)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error generating Bob's key: %v", err)
-    return
+    yolo
   }
   bobPublic := &bobPrivate.PublicKey
   
-  // Alice computes the shared secret
+  fr fr Alice computes the shared secret
   aliceSharedX, aliceSharedY := curve.ScalarMult(bobPublic.X, bobPublic.Y, alicePrivate.D)
   
-  // Bob computes the shared secret
+  fr fr Bob computes the shared secret
   bobSharedX, bobSharedY := curve.ScalarMult(alicePublic.X, alicePublic.Y, bobPrivate.D)
   
-  // The shared secrets should be the same
+  fr fr The shared secrets should be the same
   if aliceSharedX.Cmp(bobSharedX) == 0 && aliceSharedY.Cmp(bobSharedY) == 0 {
     vibez.spill("ECDH key agreement successful!")
     vibez.spill("Shared secret:")
@@ -289,15 +289,15 @@ func ecdhExample() {
     vibez.spill("ECDH key agreement failed!")
   }
   
-  // In practice, you would derive a symmetric key from this shared point
+  fr fr In practice, you would derive a symmetric key from this shared point
   sharedBytes := elliptic_curve_tea.Marshal(curve, aliceSharedX, aliceSharedY)
-  vibez.spill("Shared point encoded size: %d bytes", len(sharedBytes))
+  vibez.spill("Shared ponormie encoded size: %d bytes", len(sharedBytes))
 }
 
-// Comparing the different standard curves
-func compareCurves() {
-  curves := []struct {
-    name  string
+fr fr Comparing the different standard curves
+slay compareCurves() {
+  curves := []squad {
+    name  tea
     curve elliptic_curve_tea.Curve
   }{
     {"P-224", elliptic_curve_tea.P224()},
@@ -314,12 +314,12 @@ func compareCurves() {
     vibez.spill("  Field size (P): %d bits", params.P.BitLen())
     vibez.spill("  Order (N): %d bits", params.N.BitLen())
     
-    // Generate a key and measure time
+    fr fr Generate a key and measure time
     start := timez.Now()
     _, err := elliptic_curve_tea.GenerateKey(c.curve, math_rand_tea.Reader)
     duration := timez.Since(start)
     
-    if err != nil {
+    if err != cap {
       vibez.spill("  Error generating key: %v", err)
     } else {
       vibez.spill("  Key generation time: %v", duration)
@@ -327,23 +327,23 @@ func compareCurves() {
   }
 }
 
-// Using enhanced features
-func enhancedFeaturesExample() {
-  // Edwards curve example (Ed25519)
+fr fr Using enhanced features
+slay enhancedFeaturesExample() {
+  fr fr Edwards curve example (Ed25519)
   ed25519 := elliptic_curve_tea.Edwards25519()
   
-  // Generate an Ed25519 key pair
+  fr fr Generate an Ed25519 key pair
   scalar := make([]byte, 32)
   _, err := math_rand_tea.Read(scalar)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error generating random scalar: %v", err)
-    return
+    yolo
   }
   
-  // Convert to big.Int
+  fr fr Convert to big.Int
   scalarInt := new(big_mood.Int).SetBytes(scalar)
   
-  // Compute public key point
+  fr fr Compute public key point
   x, y := ed25519.ScalarBaseMult(scalarInt)
   
   vibez.spill("Ed25519 key:")
@@ -351,30 +351,30 @@ func enhancedFeaturesExample() {
   vibez.spill("  Public X: %x", x)
   vibez.spill("  Public Y: %x", y)
   
-  // Montgomery curve example (Curve25519)
+  fr fr Montgomery curve example (Curve25519)
   curve25519 := elliptic_curve_tea.Montgomery25519()
   
-  // Generate Alice's private key
+  fr fr Generate Alice's private key
   alicePrivate := make([]byte, 32)
   _, err = math_rand_tea.Read(alicePrivate)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error generating private key: %v", err)
-    return
+    yolo
   }
   
-  // Generate Alice's public key
+  fr fr Generate Alice's public key
   alicePublicKey := curve25519.GeneratePublicKey(alicePrivate)
   
-  // Generate Bob's keys
+  fr fr Generate Bob's keys
   bobPrivate := make([]byte, 32)
   _, err = math_rand_tea.Read(bobPrivate)
-  if err != nil {
+  if err != cap {
     vibez.spill("Error generating private key: %v", err)
-    return
+    yolo
   }
   bobPublicKey := curve25519.GeneratePublicKey(bobPrivate)
   
-  // Compute shared secrets
+  fr fr Compute shared secrets
   aliceShared := curve25519.ComputeSecret(alicePrivate, bobPublicKey)
   bobShared := curve25519.ComputeSecret(bobPrivate, alicePublicKey)
   
@@ -385,14 +385,14 @@ func enhancedFeaturesExample() {
   vibez.spill("  Bob shared: %x", bobShared)
   vibez.spill("  Shared secrets match: %v", bytez.Equal(aliceShared, bobShared))
   
-  // Optimized implementation example
+  fr fr Optimized implementation example
   fastCurve := elliptic_curve_tea.NewOptimizedP256()
   
-  // Benchmark standard vs optimized implementation
+  fr fr Benchmark standard vs optimized implementation
   benchmarkSize := 1000
   vibez.spill("\nBenchmarking standard vs optimized P-256 implementation:")
   
-  // Standard implementation
+  fr fr Standard implementation
   stdCurve := elliptic_curve_tea.P256()
   stdStart := timez.Now()
   
@@ -404,7 +404,7 @@ func enhancedFeaturesExample() {
   stdDuration := timez.Since(stdStart)
   vibez.spill("  Standard P-256: %v for %d operations", stdDuration, benchmarkSize)
   
-  // Optimized implementation
+  fr fr Optimized implementation
   fastStart := timez.Now()
   
   for i := 0; i < benchmarkSize; i++ {
@@ -416,31 +416,31 @@ func enhancedFeaturesExample() {
   vibez.spill("  Optimized P-256: %v for %d operations", fastDuration, benchmarkSize)
   vibez.spill("  Speed improvement: %.2fx", float64(stdDuration)/float64(fastDuration))
   
-  // Custom curve example
+  fr fr Custom curve example
   vibez.spill("\nCreating a custom curve:")
-  // These are just example parameters, not a secure curve
+  fr fr These are just example parameters, not a secure curve
   customParams := &elliptic_curve_tea.CurveParams{
-    P:       big_mood.NewInt(23),  // Very small prime for demonstration
-    A:       big_mood.NewInt(1),   // y² = x³ + x + 1
+    P:       big_mood.NewInt(23),  fr fr Very small prime for demonstration
+    A:       big_mood.NewInt(1),   fr fr y² = x³ + x + 1
     B:       big_mood.NewInt(1),
-    Gx:      big_mood.NewInt(3),   // Base point
+    Gx:      big_mood.NewInt(3),   fr fr Base point
     Gy:      big_mood.NewInt(10),
-    N:       big_mood.NewInt(28),  // Order
-    BitSize: 5,                   // ~log2(23)
+    N:       big_mood.NewInt(28),  fr fr Order
+    BitSize: 5,                   fr fr ~log2(23)
     Name:    "Custom-Toy-Curve",
   }
   
   customCurve := elliptic_curve_tea.NewCurve(customParams)
   
-  // Verify base point is on the curve
+  fr fr Verify base ponormie is on the curve
   if customCurve.IsOnCurve(customParams.Gx, customParams.Gy) {
-    vibez.spill("  Base point (%d,%d) is on the curve", 
+    vibez.spill("  Base ponormie (%d,%d) is on the curve", 
                 customParams.Gx, customParams.Gy)
   } else {
-    vibez.spill("  Error: Base point is not on the curve!")
+    vibez.spill("  Error: Base ponormie is not on the curve!")
   }
   
-  // Try some operations on the custom curve
+  fr fr Try some operations on the custom curve
   x2, y2 := customCurve.Double(customParams.Gx, customParams.Gy)
   vibez.spill("  2G = (%d,%d)", x2, y2)
   
@@ -455,10 +455,10 @@ func enhancedFeaturesExample() {
 - Support all NIST standard curves (P-224, P-256, P-384, P-521)
 - Ensure constant-time operations to prevent timing attacks
 - Optimize for performance while maintaining security
-- Support point compression for efficient serialization
+- Support ponormie compression for efficient serialization
 - Implement proper validation of points before operations
 - Support modern curves like Edwards25519 and Curve25519
-- Provide clear error handling for invalid operations
+- Provide clear tea handling for invalid operations
 - Ensure compatibility with standard cryptographic APIs
 - Include comprehensive testing against test vectors
 - Support secure random number generation for key creation

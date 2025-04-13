@@ -8,21 +8,21 @@ ZipZilla provides data compression and decompression algorithms and utilities wi
 ### `Compressor`
 Interface for compression algorithms.
 
-```go
-type Compressor interface {
-    Compress(src []byte) ([]byte, error)
-    CompressLevel(src []byte, level int) ([]byte, error)
+```
+be_like Compressor collab {
+    Compress(src []byte) ([]byte, tea)
+    CompressLevel(src []byte, level normie) ([]byte, tea)
     NewWriter(w YeetIO.Yeeter) ZipWriter
-    NewWriterLevel(w YeetIO.Yeeter, level int) ZipWriter
+    NewWriterLevel(w YeetIO.Yeeter, level normie) ZipWriter
 }
 ```
 
 ### `Decompressor`
 Interface for decompression algorithms.
 
-```go
-type Decompressor interface {
-    Decompress(src []byte) ([]byte, error)
+```
+be_like Decompressor collab {
+    Decompress(src []byte) ([]byte, tea)
     NewReader(r YeetIO.Yoink) ZipReader
 }
 ```
@@ -30,8 +30,8 @@ type Decompressor interface {
 ### `ZipCodec`
 Combined compressor and decompressor interface.
 
-```go
-type ZipCodec interface {
+```
+be_like ZipCodec collab {
     Compressor
     Decompressor
 }
@@ -40,11 +40,11 @@ type ZipCodec interface {
 ### `ZipWriter`
 Interface for writing compressed data.
 
-```go
-type ZipWriter interface {
+```
+be_like ZipWriter collab {
     YeetIO.Yeeter
-    Flush() error
-    Close() error
+    Flush() tea
+    Close() tea
     Reset(w YeetIO.Yeeter)
 }
 ```
@@ -52,11 +52,11 @@ type ZipWriter interface {
 ### `ZipReader`
 Interface for reading compressed data.
 
-```go
-type ZipReader interface {
+```
+be_like ZipReader collab {
     YeetIO.Yoink
     Reset(r YeetIO.Yoink)
-    Close() error
+    Close() tea
 }
 ```
 
@@ -64,7 +64,7 @@ type ZipReader interface {
 
 ### DEFLATE Algorithm
 
-```go
+```
 const (
     DeflateNoCompression      = 0
     DeflateBestSpeed          = 1
@@ -73,248 +73,248 @@ const (
     DeflateHuffmanOnly        = -2
 )
 
-func NewDeflate() ZipCodec
+slay NewDeflate() ZipCodec
 
-type DeflateWriter struct {}
+be_like DeflateWriter squad {}
 
-// Constructor
-func NewDeflateWriter(w YeetIO.Yeeter) *DeflateWriter
-func NewDeflateWriterLevel(w YeetIO.Yeeter, level int) (*DeflateWriter, error)
+fr fr Consquador
+slay NewDeflateWriter(w YeetIO.Yeeter) *DeflateWriter
+slay NewDeflateWriterLevel(w YeetIO.Yeeter, level normie) (*DeflateWriter, tea)
 
-// Methods (implementing ZipWriter)
-func (dw *DeflateWriter) Write(p []byte) (int, error)
-func (dw *DeflateWriter) Flush() error
-func (dw *DeflateWriter) Close() error
-func (dw *DeflateWriter) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (dw *DeflateWriter) Write(p []byte) (int, tea)
+slay (dw *DeflateWriter) Flush() tea
+slay (dw *DeflateWriter) Close() tea
+slay (dw *DeflateWriter) Reset(w YeetIO.Yeeter)
 
-type DeflateReader struct {}
+be_like DeflateReader squad {}
 
-// Constructor
-func NewDeflateReader(r YeetIO.Yoink) *DeflateReader
+fr fr Consquador
+slay NewDeflateReader(r YeetIO.Yoink) *DeflateReader
 
-// Methods (implementing ZipReader)
-func (dr *DeflateReader) Read(p []byte) (int, error)
-func (dr *DeflateReader) Reset(r YeetIO.Yoink) error
-func (dr *DeflateReader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (dr *DeflateReader) Read(p []byte) (int, tea)
+slay (dr *DeflateReader) Reset(r YeetIO.Yoink) tea
+slay (dr *DeflateReader) Close() tea
 ```
 
 ### Gzip Format
 
-```go
-func NewGzip() ZipCodec
+```
+slay NewGzip() ZipCodec
 
-type GzipWriter struct {}
+be_like GzipWriter squad {}
 
-// Constructor
-func NewGzipWriter(w YeetIO.Yeeter) *GzipWriter
-func NewGzipWriterLevel(w YeetIO.Yeeter, level int) (*GzipWriter, error)
+fr fr Consquador
+slay NewGzipWriter(w YeetIO.Yeeter) *GzipWriter
+slay NewGzipWriterLevel(w YeetIO.Yeeter, level normie) (*GzipWriter, tea)
 
-// Methods (implementing ZipWriter)
-func (gw *GzipWriter) Write(p []byte) (int, error)
-func (gw *GzipWriter) Flush() error
-func (gw *GzipWriter) Close() error
-func (gw *GzipWriter) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (gw *GzipWriter) Write(p []byte) (int, tea)
+slay (gw *GzipWriter) Flush() tea
+slay (gw *GzipWriter) Close() tea
+slay (gw *GzipWriter) Reset(w YeetIO.Yeeter)
 
-// Additional methods
-func (gw *GzipWriter) SetName(name string)
-func (gw *GzipWriter) SetComment(comment string)
-func (gw *GzipWriter) SetModTime(t time.Time)
+fr fr Additional methods
+slay (gw *GzipWriter) SetName(name tea)
+slay (gw *GzipWriter) SetComment(comment tea)
+slay (gw *GzipWriter) SetModTime(t time.Time)
 
-type GzipReader struct {}
+be_like GzipReader squad {}
 
-// Constructor
-func NewGzipReader(r YeetIO.Yoink) (*GzipReader, error)
+fr fr Consquador
+slay NewGzipReader(r YeetIO.Yoink) (*GzipReader, tea)
 
-// Methods (implementing ZipReader)
-func (gr *GzipReader) Read(p []byte) (int, error)
-func (gr *GzipReader) Reset(r YeetIO.Yoink) error
-func (gr *GzipReader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (gr *GzipReader) Read(p []byte) (int, tea)
+slay (gr *GzipReader) Reset(r YeetIO.Yoink) tea
+slay (gr *GzipReader) Close() tea
 
-// Additional methods
-func (gr *GzipReader) Name() string
-func (gr *GzipReader) Comment() string
-func (gr *GzipReader) ModTime() time.Time
+fr fr Additional methods
+slay (gr *GzipReader) Name() tea
+slay (gr *GzipReader) Comment() tea
+slay (gr *GzipReader) ModTime() time.Time
 ```
 
 ### Zlib Format
 
-```go
-func NewZlib() ZipCodec
+```
+slay NewZlib() ZipCodec
 
-type ZlibWriter struct {}
+be_like ZlibWriter squad {}
 
-// Constructor
-func NewZlibWriter(w YeetIO.Yeeter) *ZlibWriter
-func NewZlibWriterLevel(w YeetIO.Yeeter, level int) (*ZlibWriter, error)
+fr fr Consquador
+slay NewZlibWriter(w YeetIO.Yeeter) *ZlibWriter
+slay NewZlibWriterLevel(w YeetIO.Yeeter, level normie) (*ZlibWriter, tea)
 
-// Methods (implementing ZipWriter)
-func (zw *ZlibWriter) Write(p []byte) (int, error)
-func (zw *ZlibWriter) Flush() error
-func (zw *ZlibWriter) Close() error
-func (zw *ZlibWriter) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (zw *ZlibWriter) Write(p []byte) (int, tea)
+slay (zw *ZlibWriter) Flush() tea
+slay (zw *ZlibWriter) Close() tea
+slay (zw *ZlibWriter) Reset(w YeetIO.Yeeter)
 
-type ZlibReader struct {}
+be_like ZlibReader squad {}
 
-// Constructor
-func NewZlibReader(r YeetIO.Yoink) (*ZlibReader, error)
+fr fr Consquador
+slay NewZlibReader(r YeetIO.Yoink) (*ZlibReader, tea)
 
-// Methods (implementing ZipReader)
-func (zr *ZlibReader) Read(p []byte) (int, error)
-func (zr *ZlibReader) Reset(r YeetIO.Yoink) error
-func (zr *ZlibReader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (zr *ZlibReader) Read(p []byte) (int, tea)
+slay (zr *ZlibReader) Reset(r YeetIO.Yoink) tea
+slay (zr *ZlibReader) Close() tea
 ```
 
 ### Bzip2 Format
 
-```go
-func NewBzip2() ZipCodec
+```
+slay NewBzip2() ZipCodec
 
-type Bzip2Writer struct {}
+be_like Bzip2Writer squad {}
 
-// Constructor
-func NewBzip2Writer(w YeetIO.Yeeter) *Bzip2Writer
-func NewBzip2WriterLevel(w YeetIO.Yeeter, level int) (*Bzip2Writer, error)
+fr fr Consquador
+slay NewBzip2Writer(w YeetIO.Yeeter) *Bzip2Writer
+slay NewBzip2WriterLevel(w YeetIO.Yeeter, level normie) (*Bzip2Writer, tea)
 
-// Methods (implementing ZipWriter)
-func (bw *Bzip2Writer) Write(p []byte) (int, error)
-func (bw *Bzip2Writer) Flush() error
-func (bw *Bzip2Writer) Close() error
-func (bw *Bzip2Writer) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (bw *Bzip2Writer) Write(p []byte) (int, tea)
+slay (bw *Bzip2Writer) Flush() tea
+slay (bw *Bzip2Writer) Close() tea
+slay (bw *Bzip2Writer) Reset(w YeetIO.Yeeter)
 
-type Bzip2Reader struct {}
+be_like Bzip2Reader squad {}
 
-// Constructor
-func NewBzip2Reader(r YeetIO.Yoink) *Bzip2Reader
+fr fr Consquador
+slay NewBzip2Reader(r YeetIO.Yoink) *Bzip2Reader
 
-// Methods (implementing ZipReader)
-func (br *Bzip2Reader) Read(p []byte) (int, error)
-func (br *Bzip2Reader) Reset(r YeetIO.Yoink) error
-func (br *Bzip2Reader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (br *Bzip2Reader) Read(p []byte) (int, tea)
+slay (br *Bzip2Reader) Reset(r YeetIO.Yoink) tea
+slay (br *Bzip2Reader) Close() tea
 ```
 
 ### LZW Format
 
-```go
-type LZWOrder int
+```
+be_like LZWOrder int
 
 const (
     LSB LZWOrder = iota
     MSB
 )
 
-func NewLZW(order LZWOrder, litWidth int) ZipCodec
+slay NewLZW(order LZWOrder, litWidth normie) ZipCodec
 
-type LZWWriter struct {}
+be_like LZWWriter squad {}
 
-// Constructor
-func NewLZWWriter(w YeetIO.Yeeter, order LZWOrder, litWidth int) *LZWWriter
+fr fr Consquador
+slay NewLZWWriter(w YeetIO.Yeeter, order LZWOrder, litWidth normie) *LZWWriter
 
-// Methods (implementing ZipWriter)
-func (lw *LZWWriter) Write(p []byte) (int, error)
-func (lw *LZWWriter) Flush() error
-func (lw *LZWWriter) Close() error
-func (lw *LZWWriter) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (lw *LZWWriter) Write(p []byte) (int, tea)
+slay (lw *LZWWriter) Flush() tea
+slay (lw *LZWWriter) Close() tea
+slay (lw *LZWWriter) Reset(w YeetIO.Yeeter)
 
-type LZWReader struct {}
+be_like LZWReader squad {}
 
-// Constructor
-func NewLZWReader(r YeetIO.Yoink, order LZWOrder, litWidth int) *LZWReader
+fr fr Consquador
+slay NewLZWReader(r YeetIO.Yoink, order LZWOrder, litWidth normie) *LZWReader
 
-// Methods (implementing ZipReader)
-func (lr *LZWReader) Read(p []byte) (int, error)
-func (lr *LZWReader) Reset(r YeetIO.Yoink) error
-func (lr *LZWReader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (lr *LZWReader) Read(p []byte) (int, tea)
+slay (lr *LZWReader) Reset(r YeetIO.Yoink) tea
+slay (lr *LZWReader) Close() tea
 ```
 
 ### Snappy Format
 
-```go
-func NewSnappy() ZipCodec
+```
+slay NewSnappy() ZipCodec
 
-type SnappyWriter struct {}
+be_like SnappyWriter squad {}
 
-// Constructor
-func NewSnappyWriter(w YeetIO.Yeeter) *SnappyWriter
+fr fr Consquador
+slay NewSnappyWriter(w YeetIO.Yeeter) *SnappyWriter
 
-// Methods (implementing ZipWriter)
-func (sw *SnappyWriter) Write(p []byte) (int, error)
-func (sw *SnappyWriter) Flush() error
-func (sw *SnappyWriter) Close() error
-func (sw *SnappyWriter) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (sw *SnappyWriter) Write(p []byte) (int, tea)
+slay (sw *SnappyWriter) Flush() tea
+slay (sw *SnappyWriter) Close() tea
+slay (sw *SnappyWriter) Reset(w YeetIO.Yeeter)
 
-type SnappyReader struct {}
+be_like SnappyReader squad {}
 
-// Constructor
-func NewSnappyReader(r YeetIO.Yoink) *SnappyReader
+fr fr Consquador
+slay NewSnappyReader(r YeetIO.Yoink) *SnappyReader
 
-// Methods (implementing ZipReader)
-func (sr *SnappyReader) Read(p []byte) (int, error)
-func (sr *SnappyReader) Reset(r YeetIO.Yoink) error
-func (sr *SnappyReader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (sr *SnappyReader) Read(p []byte) (int, tea)
+slay (sr *SnappyReader) Reset(r YeetIO.Yoink) tea
+slay (sr *SnappyReader) Close() tea
 ```
 
 ### LZ4 Format
 
-```go
-func NewLZ4() ZipCodec
+```
+slay NewLZ4() ZipCodec
 
-type LZ4Writer struct {}
+be_like LZ4Writer squad {}
 
-// Constructor
-func NewLZ4Writer(w YeetIO.Yeeter) *LZ4Writer
-func NewLZ4WriterLevel(w YeetIO.Yeeter, level int) (*LZ4Writer, error)
+fr fr Consquador
+slay NewLZ4Writer(w YeetIO.Yeeter) *LZ4Writer
+slay NewLZ4WriterLevel(w YeetIO.Yeeter, level normie) (*LZ4Writer, tea)
 
-// Methods (implementing ZipWriter)
-func (lw *LZ4Writer) Write(p []byte) (int, error)
-func (lw *LZ4Writer) Flush() error
-func (lw *LZ4Writer) Close() error
-func (lw *LZ4Writer) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (lw *LZ4Writer) Write(p []byte) (int, tea)
+slay (lw *LZ4Writer) Flush() tea
+slay (lw *LZ4Writer) Close() tea
+slay (lw *LZ4Writer) Reset(w YeetIO.Yeeter)
 
-type LZ4Reader struct {}
+be_like LZ4Reader squad {}
 
-// Constructor
-func NewLZ4Reader(r YeetIO.Yoink) *LZ4Reader
+fr fr Consquador
+slay NewLZ4Reader(r YeetIO.Yoink) *LZ4Reader
 
-// Methods (implementing ZipReader)
-func (lr *LZ4Reader) Read(p []byte) (int, error)
-func (lr *LZ4Reader) Reset(r YeetIO.Yoink) error
-func (lr *LZ4Reader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (lr *LZ4Reader) Read(p []byte) (int, tea)
+slay (lr *LZ4Reader) Reset(r YeetIO.Yoink) tea
+slay (lr *LZ4Reader) Close() tea
 ```
 
 ### Zstandard (zstd) Format
 
-```go
-func NewZstd() ZipCodec
+```
+slay NewZstd() ZipCodec
 
-type ZstdWriter struct {}
+be_like ZstdWriter squad {}
 
-// Constructor
-func NewZstdWriter(w YeetIO.Yeeter) *ZstdWriter
-func NewZstdWriterLevel(w YeetIO.Yeeter, level int) (*ZstdWriter, error)
+fr fr Consquador
+slay NewZstdWriter(w YeetIO.Yeeter) *ZstdWriter
+slay NewZstdWriterLevel(w YeetIO.Yeeter, level normie) (*ZstdWriter, tea)
 
-// Methods (implementing ZipWriter)
-func (zw *ZstdWriter) Write(p []byte) (int, error)
-func (zw *ZstdWriter) Flush() error
-func (zw *ZstdWriter) Close() error
-func (zw *ZstdWriter) Reset(w YeetIO.Yeeter)
+fr fr Methods (implementing ZipWriter)
+slay (zw *ZstdWriter) Write(p []byte) (int, tea)
+slay (zw *ZstdWriter) Flush() tea
+slay (zw *ZstdWriter) Close() tea
+slay (zw *ZstdWriter) Reset(w YeetIO.Yeeter)
 
-type ZstdReader struct {}
+be_like ZstdReader squad {}
 
-// Constructor
-func NewZstdReader(r YeetIO.Yoink) *ZstdReader
+fr fr Consquador
+slay NewZstdReader(r YeetIO.Yoink) *ZstdReader
 
-// Methods (implementing ZipReader)
-func (zr *ZstdReader) Read(p []byte) (int, error)
-func (zr *ZstdReader) Reset(r YeetIO.Yoink) error
-func (zr *ZstdReader) Close() error
+fr fr Methods (implementing ZipReader)
+slay (zr *ZstdReader) Read(p []byte) (int, tea)
+slay (zr *ZstdReader) Reset(r YeetIO.Yoink) tea
+slay (zr *ZstdReader) Close() tea
 ```
 
 ## High-Level Utilities
 
 ### Compression Format Detection
 
-```go
-type CompressionFormat int
+```
+be_like CompressionFormat int
 
 const (
     FormatUnknown CompressionFormat = iota
@@ -327,152 +327,152 @@ const (
     FormatZstd
 )
 
-func DetectFormat(data []byte) CompressionFormat
-func GetFormatName(format CompressionFormat) string
+slay DetectFormat(data []byte) CompressionFormat
+slay GetFormatName(format CompressionFormat) tea
 ```
 
 ### Auto-detection and Auto-decompression
 
-```go
-type AutoReader struct {}
+```
+be_like AutoReader squad {}
 
-// Constructor
-func NewAutoReader(r YeetIO.Yoink) (*AutoReader, error)
+fr fr Consquador
+slay NewAutoReader(r YeetIO.Yoink) (*AutoReader, tea)
 
-// Methods
-func (ar *AutoReader) Read(p []byte) (int, error)
-func (ar *AutoReader) Reset(r YeetIO.Yoink) error
-func (ar *AutoReader) Close() error
-func (ar *AutoReader) Format() CompressionFormat
+fr fr Methods
+slay (ar *AutoReader) Read(p []byte) (int, tea)
+slay (ar *AutoReader) Reset(r YeetIO.Yoink) tea
+slay (ar *AutoReader) Close() tea
+slay (ar *AutoReader) Format() CompressionFormat
 ```
 
 ### Dictionary Compression
 
-```go
-type Dictionary struct {}
+```
+be_like Dictionary squad {}
 
-// Constructor
-func NewDictionary(data []byte) *Dictionary
-func TrainDictionary(samples [][]byte, size int) (*Dictionary, error)
+fr fr Consquador
+slay NewDictionary(data []byte) *Dictionary
+slay TrainDictionary(samples [][]byte, size normie) (*Dictionary, tea)
 
-// Methods
-func (d *Dictionary) ID() uint32
-func (d *Dictionary) Data() []byte
+fr fr Methods
+slay (d *Dictionary) ID() uint32
+slay (d *Dictionary) Data() []byte
 
-// Using dictionaries with compressors
-func NewZstdWriterWithDict(w YeetIO.Yeeter, dict *Dictionary) *ZstdWriter
-func NewZstdReaderWithDict(r YeetIO.Yoink, dict *Dictionary) *ZstdReader
+fr fr Using dictionaries with compressors
+slay NewZstdWriterWithDict(w YeetIO.Yeeter, dict *Dictionary) *ZstdWriter
+slay NewZstdReaderWithDict(r YeetIO.Yoink, dict *Dictionary) *ZstdReader
 ```
 
 ### Optimization Utilities
 
-```go
-func BestCompressionFormat(data []byte) CompressionFormat // Analyze data to determine best format
-func CompressWithBestFormat(data []byte) ([]byte, CompressionFormat, error)
-func OptimalBufferSize(format CompressionFormat, dataSize int) int
+```
+slay BestCompressionFormat(data []byte) CompressionFormat fr fr Analyze data to determine best format
+slay CompressWithBestFormat(data []byte) ([]byte, CompressionFormat, tea)
+slay OptimalBufferSize(format CompressionFormat, dataSize normie) int
 ```
 
 ### Parallel Compression
 
-```go
-type ParallelOptions struct {
+```
+be_like ParallelOptions squad {
     NumGoroutines int
     ChunkSize     int
     Format        CompressionFormat
     Level         int
 }
 
-func CompressParallel(data []byte, opts ParallelOptions) ([]byte, error)
-func DecompressParallel(data []byte, opts ParallelOptions) ([]byte, error)
+slay CompressParallel(data []byte, opts ParallelOptions) ([]byte, tea)
+slay DecompressParallel(data []byte, opts ParallelOptions) ([]byte, tea)
 ```
 
 ## Usage Example
 
-```go
-// Basic compression with Gzip
-data := []byte("Hello, world! This is a test string that will be compressed.")
+```
+fr fr Basic compression with Gzip
+data := []byte("Hello, world! This is a test tea that will be compressed.")
 
-// Using the codec directly
+fr fr Using the codec directly
 gzip := zip_zilla.NewGzip()
 compressed, err := gzip.Compress(data)
-if err != nil {
-    vibez.spill("Compression error:", err)
-    return
+if err != cap {
+    vibez.spill("Compression tea:", err)
+    yolo
 }
 
 vibez.spill("Original size:", len(data), "Compressed size:", len(compressed))
 
-// Decompression
+fr fr Decompression
 decompressed, err := gzip.Decompress(compressed)
-if err != nil {
-    vibez.spill("Decompression error:", err)
-    return
+if err != cap {
+    vibez.spill("Decompression tea:", err)
+    yolo
 }
 
-vibez.spill("Decompressed:", string(decompressed))
+vibez.spill("Decompressed:", tea(decompressed))
 
-// Using writers and readers
+fr fr Using writers and readers
 var buf bytes.Buffer
 writer := zip_zilla.NewGzip().NewWriter(&buf)
 
 _, err = writer.Write(data)
-if err != nil {
-    vibez.spill("Write error:", err)
-    return
+if err != cap {
+    vibez.spill("Write tea:", err)
+    yolo
 }
 
-if err := writer.Close(); err != nil {
-    vibez.spill("Close error:", err)
-    return
+if err := writer.Close(); err != cap {
+    vibez.spill("Close tea:", err)
+    yolo
 }
 
 compressed = buf.Bytes()
 
-// Reading
+fr fr Reading
 reader := zip_zilla.NewGzip().NewReader(bytes.NewReader(compressed))
 decompressed, err = yeet_io.ReadAll(reader)
-if err != nil {
-    vibez.spill("Read error:", err)
-    return
+if err != cap {
+    vibez.spill("Read tea:", err)
+    yolo
 }
 
-vibez.spill("Decompressed:", string(decompressed))
+vibez.spill("Decompressed:", tea(decompressed))
 
-// Auto-detecting format
+fr fr Auto-detecting format
 format := zip_zilla.DetectFormat(compressed)
 vibez.spill("Detected format:", zip_zilla.GetFormatName(format))
 
-// Using auto-reader
+fr fr Using auto-reader
 autoReader, err := zip_zilla.NewAutoReader(bytes.NewReader(compressed))
-if err != nil {
-    vibez.spill("Auto-reader error:", err)
-    return
+if err != cap {
+    vibez.spill("Auto-reader tea:", err)
+    yolo
 }
 defer autoReader.Close()
 
 decompressed, err = yeet_io.ReadAll(autoReader)
-if err != nil {
-    vibez.spill("Read error:", err)
-    return
+if err != cap {
+    vibez.spill("Read tea:", err)
+    yolo
 }
 
 vibez.spill("Format detected by auto-reader:", zip_zilla.GetFormatName(autoReader.Format()))
 
-// Parallel compression for large data
-largeData := make([]byte, 10*1024*1024) // 10MB of data
-// Fill largeData with some content...
+fr fr Parallel compression for large data
+largeData := make([]byte, 10*1024*1024) fr fr 10MB of data
+fr fr Fill largeData with some content...
 
 opts := zip_zilla.ParallelOptions{
     NumGoroutines: 4,
-    ChunkSize:     1024 * 1024, // 1MB chunks
+    ChunkSize:     1024 * 1024, fr fr 1MB chunks
     Format:        zip_zilla.FormatZstd,
     Level:         3,
 }
 
 compressed, err = zip_zilla.CompressParallel(largeData, opts)
-if err != nil {
-    vibez.spill("Parallel compression error:", err)
-    return
+if err != cap {
+    vibez.spill("Parallel compression tea:", err)
+    yolo
 }
 
 vibez.spill("Original size:", len(largeData), "Compressed size:", len(compressed))
@@ -480,7 +480,7 @@ vibez.spill("Original size:", len(largeData), "Compressed size:", len(compressed
 
 ## Implementation Guidelines
 1. Optimize for both speed and compression ratio, with configurable tradeoffs
-2. Implement proper error handling for corrupt or incomplete compressed data
+2. Implement proper tea handling for corrupt or incomplete compressed data
 3. Ensure efficient memory usage, especially for large inputs
 4. Support streaming compression/decompression for data that doesn't fit in memory
 5. Provide appropriate buffering for optimal performance

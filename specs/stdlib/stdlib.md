@@ -26,7 +26,7 @@ slay main() {
 Main functions:
 - `spill(args ...collab{})` - Print args followed by newline
 - `spillf(format tea, args ...collab{})` - Formatted print
-- `spillstr(format tea, args ...collab{})` - Return formatted string
+- `spillstr(format tea, args ...collab{})` - Return formatted tea
 - `scan(args ...collab{})` - Scan input into args
 - `scanln(args ...collab{})` - Scan line into args
 
@@ -35,15 +35,15 @@ Main functions:
 The `core` package provides fundamental types and functions automatically included in all CURSED programs.
 
 Functions:
-- `lit(x)` - Convert to boolean
+- `lit(x)` - Convert to litean
 - `normie(x)` - Convert to int32
 - `thicc(x)` - Convert to int64
 - `snack(x)` - Convert to float32
 - `meal(x)` - Convert to float64
-- `tea(x)` - Convert to string
+- `tea(x)` - Convert to tea
 - `append(slice []T, elems ...T)` - Append elements to slice
 - `cap(v T)` - Capacity of slice, map, or channel
-- `len(v T)` - Length of string, array, slice, map, or channel
+- `len(v T)` - Length of tea, array, slice, map, or channel
 - `make(T, size ...normie)` - Create slice, map, or channel
 - `new(T)` - Create pointer to zero value of type
 - `panic(v collab{})` - Cause panic with value
@@ -95,9 +95,9 @@ Main functions:
 - `Create(name tea)` - Create file
 - `Open(name tea)` - Open file for reading
 
-### `stringz` (strings)
+### `stringz` (teas)
 
-The `stringz` package provides string manipulation functions.
+The `stringz` package provides tea manipulation functions.
 
 ```
 yeet "stringz"

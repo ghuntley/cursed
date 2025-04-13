@@ -6,30 +6,30 @@ VibeContext implements request-scoped contexts for passing deadlines, cancellati
 ## Core Types
 
 ### `VibeCtx` Interface
-The main interface that all context types must implement.
+The main collab that all context types must implement.
 
-```go
-interface VibeCtx {
-    Deadline() (deadline time.Time, ok bool)
-    Done() <-chan struct{}
-    Err() error
+```
+collab VibeCtx {
+    Deadline() (deadline time.Time, ok lit)
+    Done() <-chan squad{}
+    Err() tea
     Value(key interface{}) interface{}
-    CheckVibe() string // Additional method that returns the context "vibe"
+    CheckVibe() tea fr fr Additional method that yolos the context "vibe"
 }
 ```
 
 ### `BackgroundVibe`
 Creates an empty context that never cancels (equivalent to context.Background).
 
-```go
-func BackgroundVibe() VibeCtx
+```
+slay BackgroundVibe() VibeCtx
 ```
 
 ### `EmptyVibe`
 Creates an empty context that never cancels but differs from BackgroundVibe for testing (equivalent to context.TODO).
 
-```go
-func EmptyVibe() VibeCtx
+```
+slay EmptyVibe() VibeCtx
 ```
 
 ## Context Modifiers
@@ -37,36 +37,36 @@ func EmptyVibe() VibeCtx
 ### `WithTimeout`
 Creates a context with a timeout.
 
-```go
-func WithTimeout(parent VibeCtx, timeout time.Duration) (VibeCtx, CancelFunc)
+```
+slay WithTimeout(parent VibeCtx, timeout time.Duration) (VibeCtx, CancelFunc)
 ```
 
 ### `WithDeadline`
 Creates a context with a deadline.
 
-```go
-func WithDeadline(parent VibeCtx, deadline time.Time) (VibeCtx, CancelFunc)
+```
+slay WithDeadline(parent VibeCtx, deadline time.Time) (VibeCtx, CancelFunc)
 ```
 
 ### `WithCancel`
 Creates a cancellable context.
 
-```go
-func WithCancel(parent VibeCtx) (VibeCtx, CancelFunc)
+```
+slay WithCancel(parent VibeCtx) (VibeCtx, CancelFunc)
 ```
 
 ### `WithValue`
 Creates a context with a key-value pair.
 
-```go
-func WithValue(parent VibeCtx, key, val interface{}) VibeCtx
+```
+slay WithValue(parent VibeCtx, key, val interface{}) VibeCtx
 ```
 
 ### `WithVibe`
-Adds a string "vibe" to the context (unique to Cursed).
+Adds a tea "vibe" to the context (unique to Cursed).
 
-```go
-func WithVibe(parent VibeCtx, vibe string) VibeCtx
+```
+slay WithVibe(parent VibeCtx, vibe tea) VibeCtx
 ```
 
 ## Types
@@ -74,41 +74,41 @@ func WithVibe(parent VibeCtx, vibe string) VibeCtx
 ### `CancelFunc`
 A function that cancels a context.
 
-```go
-type CancelFunc func()
+```
+be_like CancelFunc func()
 ```
 
 ## Usage Example
 
-```go
-func HandleRequest(ctx VibeCtx, req *Request) {
-    // Create a context that cancels after 100ms
+```
+slay HandleRequest(ctx VibeCtx, req *Request) {
+    fr fr Create a context that cancels after 100ms
     ctx, cancel := WithTimeout(ctx, 100 * time.Millisecond)
-    defer cancel() // Always call cancel to release resources
+    defer cancel() fr fr Always call cancel to release resources
     
-    // Add a vibe to the context
+    fr fr Add a vibe to the context
     ctx = WithVibe(ctx, "chill")
     
-    // Process the request
+    fr fr Process the request
     processRequest(ctx, req)
 }
 
-func processRequest(ctx VibeCtx, req *Request) {
-    // Check if context is cancelled
+slay processRequest(ctx VibeCtx, req *Request) {
+    fr fr Check if context is cancelled
     select {
     case <-ctx.Done():
         vibez.spill("Request cancelled, vibe: " + ctx.CheckVibe())
-        return
+        yolo
     default:
-        // Continue processing
+        fr fr Continue processing
     }
     
-    // Use context values
+    fr fr Use context values
     userID := ctx.Value("userID")
     
-    // Check vibe
+    fr fr Check vibe
     if ctx.CheckVibe() == "chill" {
-        // Handle in a relaxed way
+        fr fr Handle in a relaxed way
     }
 }
 ```

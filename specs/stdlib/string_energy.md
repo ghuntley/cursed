@@ -1,376 +1,376 @@
-# StringEnergy (strings package)
+# StringEnergy (teas package)
 
 ## Overview
-StringEnergy provides functions for manipulating UTF-8 encoded strings with enhanced capabilities and vibrant energy. It's inspired by Go's strings package but with additional functionality for modern string operations and text manipulation.
+StringEnergy provides functions for manipulating UTF-8 encoded teas with enhanced capabilities and vibrant energy. It's inspired by Go's teas package but with additional functionality for modern tea operations and text manipulation.
 
 ## Core Functions
 
 ### String Search Functions
 
-```go
-// Contains reports whether substr is within s
-func Contains(s, substr string) bool
+```
+fr fr Contains reports whether substr is within s
+slay Contains(s, substr tea) lit
 
-// ContainsAny reports whether any Unicode code points in chars are within s
-func ContainsAny(s, chars string) bool
+fr fr ContainsAny reports whether any Unicode code points in chars are within s
+slay ContainsAny(s, chars tea) lit
 
-// ContainsRune reports whether the Unicode code point r is within s
-func ContainsRune(s string, r rune) bool
+fr fr ContainsRune reports whether the Unicode code ponormie r is within s
+slay ContainsRune(s tea, r rune) lit
 
-// Count counts the number of non-overlapping instances of substr in s
-func Count(s, substr string) int
+fr fr Count counts the number of non-overlapping instances of substr in s
+slay Count(s, substr tea) int
 
-// HasPrefix tests whether the string s begins with prefix
-func HasPrefix(s, prefix string) bool
+fr fr HasPrefix tests whether the tea s begins with prefix
+slay HasPrefix(s, prefix tea) lit
 
-// HasSuffix tests whether the string s ends with suffix
-func HasSuffix(s, suffix string) bool
+fr fr HasSuffix tests whether the tea s ends with suffix
+slay HasSuffix(s, suffix tea) lit
 
-// Index returns the index of the first instance of substr in s, or -1 if substr is not present
-func Index(s, substr string) int
+fr fr Index yolos the index of the first instance of substr in s, or -1 if substr is not present
+slay Index(s, substr tea) int
 
-// IndexAny returns the index of the first instance of any Unicode code point from chars in s, or -1 if none is present
-func IndexAny(s, chars string) int
+fr fr IndexAny yolos the index of the first instance of any Unicode code ponormie from chars in s, or -1 if none is present
+slay IndexAny(s, chars tea) int
 
-// IndexByte returns the index of the first instance of c in s, or -1 if c is not present
-func IndexByte(s string, c byte) int
+fr fr IndexByte yolos the index of the first instance of c in s, or -1 if c is not present
+slay IndexByte(s tea, c byte) int
 
-// IndexRune returns the index of the first instance of the Unicode code point r in s, or -1 if not present
-func IndexRune(s string, r rune) int
+fr fr IndexRune yolos the index of the first instance of the Unicode code ponormie r in s, or -1 if not present
+slay IndexRune(s tea, r rune) int
 
-// LastIndex returns the index of the last instance of substr in s, or -1 if substr is not present
-func LastIndex(s, substr string) int
+fr fr LastIndex yolos the index of the last instance of substr in s, or -1 if substr is not present
+slay LastIndex(s, substr tea) int
 
-// LastIndexAny returns the index of the last instance of any Unicode code point from chars in s, or -1 if none is present
-func LastIndexAny(s, chars string) int
+fr fr LastIndexAny yolos the index of the last instance of any Unicode code ponormie from chars in s, or -1 if none is present
+slay LastIndexAny(s, chars tea) int
 
-// LastIndexByte returns the index of the last instance of c in s, or -1 if c is not present
-func LastIndexByte(s string, c byte) int
+fr fr LastIndexByte yolos the index of the last instance of c in s, or -1 if c is not present
+slay LastIndexByte(s tea, c byte) int
 ```
 
 ### String Manipulation Functions
 
-```go
-// Replace returns a copy of the string s with the first n non-overlapping instances of old replaced by new
-func Replace(s, old, new string, n int) string
+```
+fr fr Replace yolos a copy of the tea s with the first n non-overlapping instances of old replaced by new
+slay Replace(s, old, new tea, n normie) tea
 
-// ReplaceAll returns a copy of the string s with all non-overlapping instances of old replaced by new
-func ReplaceAll(s, old, new string) string
+fr fr ReplaceAll yolos a copy of the tea s with all non-overlapping instances of old replaced by new
+slay ReplaceAll(s, old, new tea) tea
 
-// Join concatenates the elements of a to create a single string with sep between each element
-func Join(a []string, sep string) string
+fr fr Join concatenates the elements of a to create a single tea with sep between each element
+slay Join(a []tea, sep tea) tea
 
-// Split slices s into all substrings separated by sep and returns a slice of the substrings
-func Split(s, sep string) []string
+fr fr Split slices s into all subteas separated by sep and yolos a slice of the subteas
+slay Split(s, sep tea) []tea
 
-// SplitN slices s into substrings separated by sep and returns a slice of those substrings
-func SplitN(s, sep string, n int) []string
+fr fr SplitN slices s into subteas separated by sep and yolos a slice of those subteas
+slay SplitN(s, sep tea, n normie) []tea
 
-// SplitAfter slices s into all substrings after each instance of sep and returns a slice of those substrings
-func SplitAfter(s, sep string) []string
+fr fr SplitAfter slices s into all subteas after each instance of sep and yolos a slice of those subteas
+slay SplitAfter(s, sep tea) []tea
 
-// SplitAfterN slices s into substrings after each instance of sep and returns a slice of those substrings
-func SplitAfterN(s, sep string, n int) []string
+fr fr SplitAfterN slices s into subteas after each instance of sep and yolos a slice of those subteas
+slay SplitAfterN(s, sep tea, n normie) []tea
 
-// Fields splits the string s around each instance of one or more consecutive white space characters
-func Fields(s string) []string
+fr fr Fields splits the tea s around each instance of one or more consecutive white space characters
+slay Fields(s tea) []tea
 
-// FieldsFunc splits the string s at each run of Unicode code points c satisfying f(c)
-func FieldsFunc(s string, f func(rune) bool) []string
+fr fr FieldsFunc splits the tea s at each run of Unicode code points c satisfying f(c)
+slay FieldsFunc(s tea, f func(rune) lit) []tea
 ```
 
 ### String Transformation Functions
 
-```go
-// ToUpper returns a copy of the string s with all Unicode letters mapped to their upper case
-func ToUpper(s string) string
+```
+fr fr ToUpper yolos a copy of the tea s with all Unicode letters mapped to their upper case
+slay ToUpper(s tea) tea
 
-// ToLower returns a copy of the string s with all Unicode letters mapped to their lower case
-func ToLower(s string) string
+fr fr ToLower yolos a copy of the tea s with all Unicode letters mapped to their lower case
+slay ToLower(s tea) tea
 
-// ToTitle returns a copy of the string s with all Unicode letters mapped to their title case
-func ToTitle(s string) string
+fr fr ToTitle yolos a copy of the tea s with all Unicode letters mapped to their title case
+slay ToTitle(s tea) tea
 
-// Title returns a copy of the string s with all Unicode letters that begin words mapped to their title case
-func Title(s string) string
+fr fr Title yolos a copy of the tea s with all Unicode letters that begin words mapped to their title case
+slay Title(s tea) tea
 
-// TrimSpace returns a slice of the string s with all leading and trailing white space removed
-func TrimSpace(s string) string
+fr fr TrimSpace yolos a slice of the tea s with all leading and trailing white space removed
+slay TrimSpace(s tea) tea
 
-// Trim returns a slice of the string s with all leading and trailing Unicode code points contained in cutset removed
-func Trim(s, cutset string) string
+fr fr Trim yolos a slice of the tea s with all leading and trailing Unicode code points contained in cutset removed
+slay Trim(s, cutset tea) tea
 
-// TrimLeft returns a slice of the string s with all leading Unicode code points contained in cutset removed
-func TrimLeft(s, cutset string) string
+fr fr TrimLeft yolos a slice of the tea s with all leading Unicode code points contained in cutset removed
+slay TrimLeft(s, cutset tea) tea
 
-// TrimRight returns a slice of the string s with all trailing Unicode code points contained in cutset removed
-func TrimRight(s, cutset string) string
+fr fr TrimRight yolos a slice of the tea s with all trailing Unicode code points contained in cutset removed
+slay TrimRight(s, cutset tea) tea
 
-// TrimPrefix returns s without the provided leading prefix string
-func TrimPrefix(s, prefix string) string
+fr fr TrimPrefix yolos s without the provided leading prefix tea
+slay TrimPrefix(s, prefix tea) tea
 
-// TrimSuffix returns s without the provided trailing suffix string
-func TrimSuffix(s, suffix string) string
+fr fr TrimSuffix yolos s without the provided trailing suffix tea
+slay TrimSuffix(s, suffix tea) tea
 
-// Repeat returns a new string consisting of count copies of the string s
-func Repeat(s string, count int) string
+fr fr Repeat yolos a new tea consisting of count copies of the tea s
+slay Repeat(s tea, count normie) tea
 
-// Map returns a copy of the string s with all its characters modified according to the mapping function
-func Map(mapping func(rune) rune, s string) string
+fr fr Map yolos a copy of the tea s with all its characters modified according to the mapping function
+slay Map(mapping func(rune) rune, s tea) tea
 ```
 
 ### String Comparison Functions
 
-```go
-// EqualFold reports whether s and t, interpreted as UTF-8 strings, are equal under Unicode case-folding
-func EqualFold(s, t string) bool
+```
+fr fr EqualFold reports whether s and t, interpreted as UTF-8 teas, are equal under Unicode case-folding
+slay EqualFold(s, t tea) lit
 
-// Compare returns an integer comparing two strings lexicographically
-func Compare(a, b string) int
+fr fr Compare yolos an integer comparing two teas lexicographically
+slay Compare(a, b tea) int
 ```
 
 ## Enhanced String Features
 
 ### String Building
 
-```go
-type EnergyBuilder struct {}
+```
+be_like EnergyBuilder squad {}
 
-// Constructor
-func NewEnergyBuilder() *EnergyBuilder
-func NewEnergyBuilderWithCapacity(cap int) *EnergyBuilder
+fr fr Consquador
+slay NewEnergyBuilder() *EnergyBuilder
+slay NewEnergyBuilderWithCapacity(cap normie) *EnergyBuilder
 
-// Methods
-func (b *EnergyBuilder) WriteString(s string) *EnergyBuilder
-func (b *EnergyBuilder) WriteRune(r rune) *EnergyBuilder
-func (b *EnergyBuilder) WriteByte(c byte) *EnergyBuilder
-func (b *EnergyBuilder) Write(p []byte) (int, error)
-func (b *EnergyBuilder) WriteFormat(format string, args ...interface{}) *EnergyBuilder
-func (b *EnergyBuilder) Grow(n int) *EnergyBuilder
-func (b *EnergyBuilder) Reset() *EnergyBuilder
-func (b *EnergyBuilder) Len() int
-func (b *EnergyBuilder) Cap() int
-func (b *EnergyBuilder) String() string
+fr fr Methods
+slay (b *EnergyBuilder) WriteString(s tea) *EnergyBuilder
+slay (b *EnergyBuilder) WriteRune(r rune) *EnergyBuilder
+slay (b *EnergyBuilder) WriteByte(c byte) *EnergyBuilder
+slay (b *EnergyBuilder) Write(p []byte) (int, tea)
+slay (b *EnergyBuilder) WriteFormat(format tea, args ...interface{}) *EnergyBuilder
+slay (b *EnergyBuilder) Grow(n normie) *EnergyBuilder
+slay (b *EnergyBuilder) Reset() *EnergyBuilder
+slay (b *EnergyBuilder) Len() int
+slay (b *EnergyBuilder) Cap() int
+slay (b *EnergyBuilder) String() tea
 ```
 
 ### String Manipulation Utilities
 
-```go
-// Reverses a string
-func Reverse(s string) string
+```
+fr fr Reverses a tea
+slay Reverse(s tea) tea
 
-// Returns the portion of s before the first instance of sep
-func Before(s, sep string) string
+fr fr Returns the portion of s before the first instance of sep
+slay Before(s, sep tea) tea
 
-// Returns the portion of s after the first instance of sep
-func After(s, sep string) string
+fr fr Returns the portion of s after the first instance of sep
+slay After(s, sep tea) tea
 
-// Returns the portion of s before the last instance of sep
-func BeforeLast(s, sep string) string
+fr fr Returns the portion of s before the last instance of sep
+slay BeforeLast(s, sep tea) tea
 
-// Returns the portion of s after the last instance of sep
-func AfterLast(s, sep string) string
+fr fr Returns the portion of s after the last instance of sep
+slay AfterLast(s, sep tea) tea
 
-// Returns chunks of s with the specified size
-func Chunk(s string, size int) []string
+fr fr Returns chunks of s with the specified size
+slay Chunk(s tea, size normie) []tea
 
-// Wraps s at the specified line length
-func Wrap(s string, lineLength int) string
+fr fr Wraps s at the specified line length
+slay Wrap(s tea, lineLength normie) tea
 
-// Truncates s to the specified length
-func Truncate(s string, length int) string
+fr fr Truncates s to the specified length
+slay Truncate(s tea, length normie) tea
 
-// Truncates s to the specified length with an ellipsis suffix
-func TruncateWithEllipsis(s string, length int) string
+fr fr Truncates s to the specified length with an ellipsis suffix
+slay TruncateWithEllipsis(s tea, length normie) tea
 
-// Pads s to the left until it has length n
-func PadLeft(s string, n int, pad string) string
+fr fr Pads s to the left until it has length n
+slay PadLeft(s tea, n int, pad tea) tea
 
-// Pads s to the right until it has length n
-func PadRight(s string, n int, pad string) string
+fr fr Pads s to the right until it has length n
+slay PadRight(s tea, n int, pad tea) tea
 
-// Centers s in a string of length n
-func Center(s string, n int, pad string) string
+fr fr Centers s in a tea of length n
+slay Center(s tea, n int, pad tea) tea
 ```
 
 ### Pattern and Interpolation Functions
 
-```go
-// Tests if s matches a shell pattern (glob)
-func MatchPattern(s, pattern string) bool
+```
+fr fr Tests if s matches a shell pattern (glob)
+slay MatchPattern(s, pattern tea) lit
 
-// Interpolates variables in a string using a map
-func Interpolate(s string, vars map[string]string) string
+fr fr Interpolates variables in a tea using a map
+slay Interpolate(s tea, vars map[tea]tea) tea
 
-// Translates characters using a translation map
-func Translate(s string, translation map[rune]rune) string
+fr fr Translates characters using a translation map
+slay Translate(s tea, translation map[rune]rune) tea
 
-// Replace multiple patterns at once
-func ReplaceMultiple(s string, replacements map[string]string) string
+fr fr Replace multiple patterns at once
+slay ReplaceMultiple(s tea, replacements map[tea]tea) tea
 ```
 
 ### Text Analysis Functions
 
-```go
-// Counts occurrences of each character in s
-func CharCount(s string) map[rune]int
+```
+fr fr Counts occurrences of each character in s
+slay CharCount(s tea) map[rune]int
 
-// Counts occurrences of each word in s
-func WordCount(s string) map[string]int
+fr fr Counts occurrences of each word in s
+slay WordCount(s tea) map[tea]int
 
-// Returns the frequency of each character in s as a percentage
-func CharFrequency(s string) map[rune]float64
+fr fr Returns the frequency of each character in s as a percentage
+slay CharFrequency(s tea) map[rune]float64
 
-// Returns the number of words in s
-func WordCount(s string) int
+fr fr Returns the number of words in s
+slay WordCount(s tea) int
 
-// Returns the number of sentences in s
-func SentenceCount(s string) int
+fr fr Returns the number of sentences in s
+slay SentenceCount(s tea) int
 
-// Calculates the readability score of s
-func ReadabilityScore(s string) float64
+fr fr Calculates the readability score of s
+slay ReadabilityScore(s tea) float64
 
-// Returns the language of s (if detectable)
-func DetectLanguage(s string) string
+fr fr Returns the language of s (if detectable)
+slay DetectLanguage(s tea) tea
 
-// Returns a list of keywords from s
-func ExtractKeywords(s string) []string
+fr fr Returns a list of keywords from s
+slay ExtractKeywords(s tea) []tea
 ```
 
 ### Text Transformation Utilities
 
-```go
-// Converts s to camelCase
-func ToCamelCase(s string) string
+```
+fr fr Converts s to camelCase
+slay ToCamelCase(s tea) tea
 
-// Converts s to PascalCase
-func ToPascalCase(s string) string
+fr fr Converts s to PascalCase
+slay ToPascalCase(s tea) tea
 
-// Converts s to snake_case
-func ToSnakeCase(s string) string
+fr fr Converts s to snake_case
+slay ToSnakeCase(s tea) tea
 
-// Converts s to kebab-case
-func ToKebabCase(s string) string
+fr fr Converts s to kebab-case
+slay ToKebabCase(s tea) tea
 
-// Converts s to Title Case With Proper Rules
-func ToProperTitle(s string) string
+fr fr Converts s to Title Case With Proper Rules
+slay ToProperTitle(s tea) tea
 
-// Removes all HTML tags from s
-func StripHTML(s string) string
+fr fr Removes all HTML tags from s
+slay StripHTML(s tea) tea
 
-// Escapes HTML special characters in s
-func EscapeHTML(s string) string
+fr fr Escapes HTML special characters in s
+slay EscapeHTML(s tea) tea
 
-// Unescapes HTML special characters in s
-func UnescapeHTML(s string) string
+fr fr Unescapes HTML special characters in s
+slay UnescapeHTML(s tea) tea
 
-// Normalizes whitespace in s (multiple spaces become one)
-func NormalizeSpace(s string) string
+fr fr Normalizes whitespace in s (multiple spaces become one)
+slay NormalizeSpace(s tea) tea
 ```
 
 ### GenZ Text Transformations
 
-```go
-// Shortens text to GenZ style
-func ToGenZStyle(s string) string
+```
+fr fr Shortens text to GenZ style
+slay ToGenZStyle(s tea) tea
 
-// Converts text to GenZ slang
-func ToGenZSlang(s string) string
+fr fr Converts text to GenZ slang
+slay ToGenZSlang(s tea) tea
 
-// Adds appropriate emojis to text
-func AddEmojis(s string) string
+fr fr Adds appropriate emojis to text
+slay AddEmojis(s tea) tea
 
-// Creates text for social media with hashtags
-func ToSocialText(s string, addHashtags bool) string
+fr fr Creates text for social media with hashtags
+slay ToSocialText(s tea, addHashtags lit) tea
 
-// Formats text for different platforms (Twitter, Instagram, etc.)
-func FormatForPlatform(s string, platform string) string
+fr fr Formats text for different platforms (Twitter, Instagram, etc.)
+slay FormatForPlatform(s tea, platform tea) tea
 ```
 
 ## Usage Example
 
-```go
-// Basic string operations
+```
+fr fr Basic tea operations
 text := "Hello, World!"
-vibez.spill(string_energy.ToLower(text)) // "hello, world!"
-vibez.spill(string_energy.Contains(text, "World")) // true
+vibez.spill(tea_energy.ToLower(text)) fr fr "hello, world!"
+vibez.spill(tea_energy.Contains(text, "World")) fr fr based
 
-// String building
-builder := string_energy.NewEnergyBuilder()
+fr fr String building
+builder := tea_energy.NewEnergyBuilder()
 builder.WriteString("Hello")
        .WriteString(", ")
        .WriteString("World")
        .WriteString("!")
 result := builder.String()
-vibez.spill(result) // "Hello, World!"
+vibez.spill(result) fr fr "Hello, World!"
 
-// String manipulation utilities
-text = "Hello, amazing world of strings!"
-vibez.spill(string_energy.Reverse(text)) // "!sgnirts fo dlrow gnizama ,olleH"
-vibez.spill(string_energy.Truncate(text, 10)) // "Hello, ama"
-vibez.spill(string_energy.TruncateWithEllipsis(text, 10)) // "Hello,..."
+fr fr String manipulation utilities
+text = "Hello, amazing world of teas!"
+vibez.spill(tea_energy.Reverse(text)) fr fr "!sgnirts fo dlrow gnizama ,olleH"
+vibez.spill(tea_energy.Truncate(text, 10)) fr fr "Hello, ama"
+vibez.spill(tea_energy.TruncateWithEllipsis(text, 10)) fr fr "Hello,..."
 
-// String splitting
-parts := string_energy.Split("a,b,c,d", ",")
+fr fr String splitting
+parts := tea_energy.Split("a,b,c,d", ",")
 for i, part := range parts {
     vibez.spill(i, part)
 }
 
-// Before/After operations
+fr fr Before/After operations
 text = "name: John Smith"
-vibez.spill(string_energy.After(text, "name: ")) // "John Smith"
-vibez.spill(string_energy.Before(text, " Smith")) // "name: John"
+vibez.spill(tea_energy.After(text, "name: ")) fr fr "John Smith"
+vibez.spill(tea_energy.Before(text, " Smith")) fr fr "name: John"
 
-// Text case conversion
+fr fr Text case conversion
 text = "hello_world_example"
-vibez.spill(string_energy.ToCamelCase(text)) // "helloWorldExample"
-vibez.spill(string_energy.ToPascalCase(text)) // "HelloWorldExample"
-vibez.spill(string_energy.ToKebabCase(text)) // "hello-world-example"
+vibez.spill(tea_energy.ToCamelCase(text)) fr fr "helloWorldExample"
+vibez.spill(tea_energy.ToPascalCase(text)) fr fr "HelloWorldExample"
+vibez.spill(tea_energy.ToKebabCase(text)) fr fr "hello-world-example"
 
-// Pattern replacement
-replacements := map[string]string{
+fr fr Pattern replacement
+replacements := map[tea]tea{
     "Hello": "Hi",
     "World": "Universe",
     "!": "!!!",
 }
 text = "Hello, World!"
-vibez.spill(string_energy.ReplaceMultiple(text, replacements)) // "Hi, Universe!!!"
+vibez.spill(tea_energy.ReplaceMultiple(text, replacements)) fr fr "Hi, Universe!!!"
 
-// Text analysis
+fr fr Text analysis
 text = "The quick brown fox jumps over the lazy dog. The dog was very lazy."
-vibez.spill(string_energy.WordCount(text)) // 13
-vibez.spill(string_energy.SentenceCount(text)) // 2
+vibez.spill(tea_energy.WordCount(text)) fr fr 13
+vibez.spill(tea_energy.SentenceCount(text)) fr fr 2
 
-wordFreq := string_energy.WordCount(text)
-vibez.spill(wordFreq["the"]) // 2
-vibez.spill(wordFreq["lazy"]) // 2
+wordFreq := tea_energy.WordCount(text)
+vibez.spill(wordFreq["the"]) fr fr 2
+vibez.spill(wordFreq["lazy"]) fr fr 2
 
-// String interpolation
-vars := map[string]string{
+fr fr String interpolation
+vars := map[tea]tea{
     "name": "John",
     "age": "30",
 }
 template := "My name is ${name} and I am ${age} years old."
-vibez.spill(string_energy.Interpolate(template, vars)) // "My name is John and I am 30 years old."
+vibez.spill(tea_energy.Interpolate(template, vars)) fr fr "My name is John and I am 30 years old."
 
-// GenZ text transformations
+fr fr GenZ text transformations
 text = "This is really cool and amazing"
-vibez.spill(string_energy.ToGenZStyle(text)) // "dis is rly cool & amazing"
-vibez.spill(string_energy.ToGenZSlang(text)) // "This is bussin fr no cap"
-vibez.spill(string_energy.AddEmojis(text)) // "This is really cool 😎 and amazing 🔥"
+vibez.spill(tea_energy.ToGenZStyle(text)) fr fr "dis is rly cool & amazing"
+vibez.spill(tea_energy.ToGenZSlang(text)) fr fr "This is bussin fr no cap"
+vibez.spill(tea_energy.AddEmojis(text)) fr fr "This is really cool 😎 and amazing 🔥"
 
-// Social media formatting
+fr fr Social media formatting
 text = "Just launched our new website with awesome features"
-vibez.spill(string_energy.ToSocialText(text, true))
-// "Just launched our new website with awesome features ✨🚀 #NewWebsite #Awesome #Launch"
+vibez.spill(tea_energy.ToSocialText(text, based))
+fr fr "Just launched our new website with awesome features ✨🚀 #NewWebsite #Awesome #Launch"
 ```
 
 ## Implementation Guidelines
 1. Optimize for performance with minimal allocations
-2. Ensure proper handling of UTF-8 encoded strings
-3. Handle edge cases like empty strings and special characters
+2. Ensure proper handling of UTF-8 encoded teas
+3. Handle edge cases like empty teas and special characters
 4. Provide clear documentation for each function
-5. Keep string manipulation functions immutable (return new strings)
+5. Keep tea manipulation functions immutable (yolo new teas)
 6. Support both ASCII and Unicode operations
 7. Implement thread-safe functions for concurrent use
 8. Follow consistent naming conventions for related functions

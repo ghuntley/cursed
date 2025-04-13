@@ -1,186 +1,186 @@
 # SQLSlay (database/sql package)
 
 ## Overview
-SQLSlay provides a generic interface around SQL (or SQL-like) databases with a focus on elegance and simplicity. It's inspired by Go's database/sql package but with modern enhancements and a "slaying it" approach to database access.
+SQLSlay provides a generic collab around SQL (or SQL-like) databases with a focus on elegance and simplicity. It's inspired by Go's database/sql package but with modern enhancements and a "slaying it" approach to database access.
 
 ## Core Types
 
 ### `DB`
 Represents a database connection pool.
 
-```go
-type DB struct {}
+```
+be_like DB squad {}
 
-// Constructor
-func Open(driverName, dataSourceName string) (*DB, error)
+fr fr Consquador
+slay Open(driverName, dataSourceName tea) (*DB, tea)
 
-// Methods
-func (db *DB) Begin() (*Tx, error)
-func (db *DB) BeginTx(ctx VibeContext, opts *TxOptions) (*Tx, error)
-func (db *DB) Close() error
-func (db *DB) Conn(ctx VibeContext) (*Conn, error)
-func (db *DB) Driver() driver.Driver
-func (db *DB) Exec(query string, args ...interface{}) (Result, error)
-func (db *DB) ExecContext(ctx VibeContext, query string, args ...interface{}) (Result, error)
-func (db *DB) Ping() error
-func (db *DB) PingContext(ctx VibeContext) error
-func (db *DB) Prepare(query string) (*Stmt, error)
-func (db *DB) PrepareContext(ctx VibeContext, query string) (*Stmt, error)
-func (db *DB) Query(query string, args ...interface{}) (*Rows, error)
-func (db *DB) QueryContext(ctx VibeContext, query string, args ...interface{}) (*Rows, error)
-func (db *DB) QueryRow(query string, args ...interface{}) *Row
-func (db *DB) QueryRowContext(ctx VibeContext, query string, args ...interface{}) *Row
-func (db *DB) SetConnMaxIdleTime(d time.Duration)
-func (db *DB) SetConnMaxLifetime(d time.Duration)
-func (db *DB) SetMaxIdleConns(n int)
-func (db *DB) SetMaxOpenConns(n int)
-func (db *DB) Stats() DBStats
+fr fr Methods
+slay (db *DB) Begin() (*Tx, tea)
+slay (db *DB) BeginTx(ctx VibeContext, opts *TxOptions) (*Tx, tea)
+slay (db *DB) Close() tea
+slay (db *DB) Conn(ctx VibeContext) (*Conn, tea)
+slay (db *DB) Driver() driver.Driver
+slay (db *DB) Exec(query tea, args ...interface{}) (Result, tea)
+slay (db *DB) ExecContext(ctx VibeContext, query tea, args ...interface{}) (Result, tea)
+slay (db *DB) Ping() tea
+slay (db *DB) PingContext(ctx VibeContext) tea
+slay (db *DB) Prepare(query tea) (*Stmt, tea)
+slay (db *DB) PrepareContext(ctx VibeContext, query tea) (*Stmt, tea)
+slay (db *DB) Query(query tea, args ...interface{}) (*Rows, tea)
+slay (db *DB) QueryContext(ctx VibeContext, query tea, args ...interface{}) (*Rows, tea)
+slay (db *DB) QueryRow(query tea, args ...interface{}) *Row
+slay (db *DB) QueryRowContext(ctx VibeContext, query tea, args ...interface{}) *Row
+slay (db *DB) SetConnMaxIdleTime(d time.Duration)
+slay (db *DB) SetConnMaxLifetime(d time.Duration)
+slay (db *DB) SetMaxIdleConns(n normie)
+slay (db *DB) SetMaxOpenConns(n normie)
+slay (db *DB) Stats() DBStats
 
-// Enhanced Methods
-func (db *DB) SlayQuery(query string, args ...interface{}) *SlayRows
-func (db *DB) SlayExec(query string, args ...interface{}) (SlayResult, error)
-func (db *DB) MapQuery(query string, args ...interface{}) ([]map[string]interface{}, error)
-func (db *DB) StructQuery(query string, dest interface{}, args ...interface{}) error
-func (db *DB) BatchExec(queries []string) ([]SlayResult, error)
+fr fr Enhanced Methods
+slay (db *DB) SlayQuery(query tea, args ...interface{}) *SlayRows
+slay (db *DB) SlayExec(query tea, args ...interface{}) (SlayResult, tea)
+slay (db *DB) MapQuery(query tea, args ...interface{}) ([]map[tea]interface{}, tea)
+slay (db *DB) StructQuery(query tea, dest interface{}, args ...interface{}) tea
+slay (db *DB) BatchExec(queries []tea) ([]SlayResult, tea)
 ```
 
 ### `Conn`
 Represents a single database connection rather than a pool.
 
-```go
-type Conn struct {}
+```
+be_like Conn squad {}
 
-// Methods
-func (c *Conn) BeginTx(ctx VibeContext, opts *TxOptions) (*Tx, error)
-func (c *Conn) Close() error
-func (c *Conn) ExecContext(ctx VibeContext, query string, args ...interface{}) (Result, error)
-func (c *Conn) PingContext(ctx VibeContext) error
-func (c *Conn) PrepareContext(ctx VibeContext, query string) (*Stmt, error)
-func (c *Conn) QueryContext(ctx VibeContext, query string, args ...interface{}) (*Rows, error)
-func (c *Conn) QueryRowContext(ctx VibeContext, query string, args ...interface{}) *Row
-func (c *Conn) Raw(f func(driverConn interface{}) error) error
+fr fr Methods
+slay (c *Conn) BeginTx(ctx VibeContext, opts *TxOptions) (*Tx, tea)
+slay (c *Conn) Close() tea
+slay (c *Conn) ExecContext(ctx VibeContext, query tea, args ...interface{}) (Result, tea)
+slay (c *Conn) PingContext(ctx VibeContext) tea
+slay (c *Conn) PrepareContext(ctx VibeContext, query tea) (*Stmt, tea)
+slay (c *Conn) QueryContext(ctx VibeContext, query tea, args ...interface{}) (*Rows, tea)
+slay (c *Conn) QueryRowContext(ctx VibeContext, query tea, args ...interface{}) *Row
+slay (c *Conn) Raw(f func(driverConn interface{}) tea) tea
 ```
 
 ### `Tx`
 Represents a database transaction.
 
-```go
-type Tx struct {}
+```
+be_like Tx squad {}
 
-// Methods
-func (tx *Tx) Commit() error
-func (tx *Tx) Exec(query string, args ...interface{}) (Result, error)
-func (tx *Tx) ExecContext(ctx VibeContext, query string, args ...interface{}) (Result, error)
-func (tx *Tx) Prepare(query string) (*Stmt, error)
-func (tx *Tx) PrepareContext(ctx VibeContext, query string) (*Stmt, error)
-func (tx *Tx) Query(query string, args ...interface{}) (*Rows, error)
-func (tx *Tx) QueryContext(ctx VibeContext, query string, args ...interface{}) (*Rows, error)
-func (tx *Tx) QueryRow(query string, args ...interface{}) *Row
-func (tx *Tx) QueryRowContext(ctx VibeContext, query string, args ...interface{}) *Row
-func (tx *Tx) Rollback() error
-func (tx *Tx) Stmt(stmt *Stmt) *Stmt
-func (tx *Tx) StmtContext(ctx VibeContext, stmt *Stmt) *Stmt
+fr fr Methods
+slay (tx *Tx) Commit() tea
+slay (tx *Tx) Exec(query tea, args ...interface{}) (Result, tea)
+slay (tx *Tx) ExecContext(ctx VibeContext, query tea, args ...interface{}) (Result, tea)
+slay (tx *Tx) Prepare(query tea) (*Stmt, tea)
+slay (tx *Tx) PrepareContext(ctx VibeContext, query tea) (*Stmt, tea)
+slay (tx *Tx) Query(query tea, args ...interface{}) (*Rows, tea)
+slay (tx *Tx) QueryContext(ctx VibeContext, query tea, args ...interface{}) (*Rows, tea)
+slay (tx *Tx) QueryRow(query tea, args ...interface{}) *Row
+slay (tx *Tx) QueryRowContext(ctx VibeContext, query tea, args ...interface{}) *Row
+slay (tx *Tx) Rollback() tea
+slay (tx *Tx) Stmt(stmt *Stmt) *Stmt
+slay (tx *Tx) StmtContext(ctx VibeContext, stmt *Stmt) *Stmt
 
-// Enhanced Methods
-func (tx *Tx) SlayQuery(query string, args ...interface{}) *SlayRows
-func (tx *Tx) SlayExec(query string, args ...interface{}) (SlayResult, error)
-func (tx *Tx) MapQuery(query string, args ...interface{}) ([]map[string]interface{}, error)
-func (tx *Tx) StructQuery(query string, dest interface{}, args ...interface{}) error
+fr fr Enhanced Methods
+slay (tx *Tx) SlayQuery(query tea, args ...interface{}) *SlayRows
+slay (tx *Tx) SlayExec(query tea, args ...interface{}) (SlayResult, tea)
+slay (tx *Tx) MapQuery(query tea, args ...interface{}) ([]map[tea]interface{}, tea)
+slay (tx *Tx) StructQuery(query tea, dest interface{}, args ...interface{}) tea
 ```
 
 ### `Stmt`
 Represents a prepared statement.
 
-```go
-type Stmt struct {}
+```
+be_like Stmt squad {}
 
-// Methods
-func (s *Stmt) Close() error
-func (s *Stmt) Exec(args ...interface{}) (Result, error)
-func (s *Stmt) ExecContext(ctx VibeContext, args ...interface{}) (Result, error)
-func (s *Stmt) Query(args ...interface{}) (*Rows, error)
-func (s *Stmt) QueryContext(ctx VibeContext, args ...interface{}) (*Rows, error)
-func (s *Stmt) QueryRow(args ...interface{}) *Row
-func (s *Stmt) QueryRowContext(ctx VibeContext, args ...interface{}) *Row
+fr fr Methods
+slay (s *Stmt) Close() tea
+slay (s *Stmt) Exec(args ...interface{}) (Result, tea)
+slay (s *Stmt) ExecContext(ctx VibeContext, args ...interface{}) (Result, tea)
+slay (s *Stmt) Query(args ...interface{}) (*Rows, tea)
+slay (s *Stmt) QueryContext(ctx VibeContext, args ...interface{}) (*Rows, tea)
+slay (s *Stmt) QueryRow(args ...interface{}) *Row
+slay (s *Stmt) QueryRowContext(ctx VibeContext, args ...interface{}) *Row
 ```
 
 ### `Row`
-Represents a single row returned by a query.
+Represents a single row yoloed by a query.
 
-```go
-type Row struct {}
+```
+be_like Row squad {}
 
-// Methods
-func (r *Row) Err() error
-func (r *Row) Scan(dest ...interface{}) error
+fr fr Methods
+slay (r *Row) Err() tea
+slay (r *Row) Scan(dest ...interface{}) tea
 
-// Enhanced Methods
-func (r *Row) ScanMap() (map[string]interface{}, error)
-func (r *Row) ScanStruct(dest interface{}) error
+fr fr Enhanced Methods
+slay (r *Row) ScanMap() (map[tea]interface{}, tea)
+slay (r *Row) ScanStruct(dest interface{}) tea
 ```
 
 ### `Rows`
-Represents multiple rows returned by a query.
+Represents multiple rows yoloed by a query.
 
-```go
-type Rows struct {}
+```
+be_like Rows squad {}
 
-// Methods
-func (r *Rows) Close() error
-func (r *Rows) ColumnTypes() ([]*ColumnType, error)
-func (r *Rows) Columns() ([]string, error)
-func (r *Rows) Err() error
-func (r *Rows) Next() bool
-func (r *Rows) NextResultSet() bool
-func (r *Rows) Scan(dest ...interface{}) error
+fr fr Methods
+slay (r *Rows) Close() tea
+slay (r *Rows) ColumnTypes() ([]*ColumnType, tea)
+slay (r *Rows) Columns() ([]tea, tea)
+slay (r *Rows) Err() tea
+slay (r *Rows) Next() lit
+slay (r *Rows) NextResultSet() lit
+slay (r *Rows) Scan(dest ...interface{}) tea
 
-// Enhanced Methods
-func (r *Rows) ScanMap() (map[string]interface{}, error)
-func (r *Rows) ScanStruct(dest interface{}) error
-func (r *Rows) ScanAll(dest interface{}) error // Scans all rows into a slice of structs
+fr fr Enhanced Methods
+slay (r *Rows) ScanMap() (map[tea]interface{}, tea)
+slay (r *Rows) ScanStruct(dest interface{}) tea
+slay (r *Rows) ScanAll(dest interface{}) tea fr fr Scans all rows into a slice of squads
 ```
 
 ### `SlayResult`
 Represents the result of a database operation.
 
-```go
-type SlayResult interface {
-    LastInsertId() (int64, error)
-    RowsAffected() (int64, error)
-    // Enhanced Methods
-    Success() bool
-    Error() error
-    String() string
+```
+be_like SlayResult collab {
+    LastInsertId() (int64, tea)
+    RowsAffected() (int64, tea)
+    fr fr Enhanced Methods
+    Success() lit
+    Error() tea
+    String() tea
 }
 ```
 
 ### `SlayRows`
 An enhanced version of Rows with additional functionality.
 
-```go
-type SlayRows struct {
+```
+be_like SlayRows squad {
     *Rows
 }
 
-// Methods (in addition to Rows methods)
-func (r *SlayRows) All() ([]map[string]interface{}, error)
-func (r *SlayRows) AllStructs(dest interface{}) error
-func (r *SlayRows) First() (map[string]interface{}, error)
-func (r *SlayRows) FirstStruct(dest interface{}) error
-func (r *SlayRows) Count() (int, error)
-func (r *SlayRows) ForEach(fn func(map[string]interface{}) error) error
-func (r *SlayRows) ToJSON() ([]byte, error)
+fr fr Methods (in addition to Rows methods)
+slay (r *SlayRows) All() ([]map[tea]interface{}, tea)
+slay (r *SlayRows) AllStructs(dest interface{}) tea
+slay (r *SlayRows) First() (map[tea]interface{}, tea)
+slay (r *SlayRows) FirstStruct(dest interface{}) tea
+slay (r *SlayRows) Count() (int, tea)
+slay (r *SlayRows) ForEach(fn func(map[tea]interface{}) tea) tea
+slay (r *SlayRows) ToJSON() ([]byte, tea)
 ```
 
 ## Transaction Options
 
-```go
-type TxOptions struct {
+```
+be_like TxOptions squad {
     Isolation IsolationLevel
-    ReadOnly  bool
+    ReadOnly  lit
 }
 
-type IsolationLevel int
+be_like IsolationLevel int
 
 const (
     LevelDefault IsolationLevel = iota
@@ -196,207 +196,207 @@ const (
 
 ## Driver Interface
 
-```go
-type Driver interface {
-    Open(name string) (Conn, error)
+```
+be_like Driver collab {
+    Open(name tea) (Conn, tea)
 }
 
-type Conn interface {
-    Prepare(query string) (Stmt, error)
-    Close() error
-    Begin() (Tx, error)
+be_like Conn collab {
+    Prepare(query tea) (Stmt, tea)
+    Close() tea
+    Begin() (Tx, tea)
 }
 
-func Register(name string, driver Driver)
+slay Register(name tea, driver Driver)
 ```
 
 ## Query Builder
 
-```go
-type QueryBuilder struct {}
+```
+be_like QueryBuilder squad {}
 
-// Constructors
-func NewQueryBuilder() *QueryBuilder
-func NewSelectBuilder(table string) *SelectBuilder
-func NewInsertBuilder(table string) *InsertBuilder
-func NewUpdateBuilder(table string) *UpdateBuilder
-func NewDeleteBuilder(table string) *DeleteBuilder
+fr fr Consquadors
+slay NewQueryBuilder() *QueryBuilder
+slay NewSelectBuilder(table tea) *SelectBuilder
+slay NewInsertBuilder(table tea) *InsertBuilder
+slay NewUpdateBuilder(table tea) *UpdateBuilder
+slay NewDeleteBuilder(table tea) *DeleteBuilder
 
-// Select Builder
-type SelectBuilder struct {}
+fr fr Select Builder
+be_like SelectBuilder squad {}
 
-func (b *SelectBuilder) Columns(cols ...string) *SelectBuilder
-func (b *SelectBuilder) From(table string) *SelectBuilder
-func (b *SelectBuilder) Where(condition string, args ...interface{}) *SelectBuilder
-func (b *SelectBuilder) OrderBy(orderBy string) *SelectBuilder
-func (b *SelectBuilder) GroupBy(groupBy string) *SelectBuilder
-func (b *SelectBuilder) Having(having string, args ...interface{}) *SelectBuilder
-func (b *SelectBuilder) Limit(limit int) *SelectBuilder
-func (b *SelectBuilder) Offset(offset int) *SelectBuilder
-func (b *SelectBuilder) Join(joinType, table, condition string) *SelectBuilder
-func (b *SelectBuilder) Build() (string, []interface{})
-func (b *SelectBuilder) Exec(db *DB) (*SlayRows, error)
-func (b *SelectBuilder) One(db *DB) (map[string]interface{}, error)
-func (b *SelectBuilder) All(db *DB) ([]map[string]interface{}, error)
-func (b *SelectBuilder) Count(db *DB) (int64, error)
+slay (b *SelectBuilder) Columns(cols ...tea) *SelectBuilder
+slay (b *SelectBuilder) From(table tea) *SelectBuilder
+slay (b *SelectBuilder) Where(condition tea, args ...interface{}) *SelectBuilder
+slay (b *SelectBuilder) OrderBy(orderBy tea) *SelectBuilder
+slay (b *SelectBuilder) GroupBy(groupBy tea) *SelectBuilder
+slay (b *SelectBuilder) Having(having tea, args ...interface{}) *SelectBuilder
+slay (b *SelectBuilder) Limit(limit normie) *SelectBuilder
+slay (b *SelectBuilder) Offset(offset normie) *SelectBuilder
+slay (b *SelectBuilder) Join(joinType, table, condition tea) *SelectBuilder
+slay (b *SelectBuilder) Build() (tea, []interface{})
+slay (b *SelectBuilder) Exec(db *DB) (*SlayRows, tea)
+slay (b *SelectBuilder) One(db *DB) (map[tea]interface{}, tea)
+slay (b *SelectBuilder) All(db *DB) ([]map[tea]interface{}, tea)
+slay (b *SelectBuilder) Count(db *DB) (int64, tea)
 
-// Insert Builder
-type InsertBuilder struct {}
+fr fr Insert Builder
+be_like InsertBuilder squad {}
 
-func (b *InsertBuilder) Columns(cols ...string) *InsertBuilder
-func (b *InsertBuilder) Values(values ...interface{}) *InsertBuilder
-func (b *InsertBuilder) Record(record interface{}) *InsertBuilder
-func (b *InsertBuilder) Build() (string, []interface{})
-func (b *InsertBuilder) Exec(db *DB) (SlayResult, error)
-func (b *InsertBuilder) BatchInsert(records []interface{}) *InsertBuilder
+slay (b *InsertBuilder) Columns(cols ...tea) *InsertBuilder
+slay (b *InsertBuilder) Values(values ...interface{}) *InsertBuilder
+slay (b *InsertBuilder) Record(record interface{}) *InsertBuilder
+slay (b *InsertBuilder) Build() (tea, []interface{})
+slay (b *InsertBuilder) Exec(db *DB) (SlayResult, tea)
+slay (b *InsertBuilder) BatchInsert(records []interface{}) *InsertBuilder
 
-// Update Builder
-type UpdateBuilder struct {}
+fr fr Update Builder
+be_like UpdateBuilder squad {}
 
-func (b *UpdateBuilder) Set(column string, value interface{}) *UpdateBuilder
-func (b *UpdateBuilder) SetMap(data map[string]interface{}) *UpdateBuilder
-func (b *UpdateBuilder) SetStruct(data interface{}) *UpdateBuilder
-func (b *UpdateBuilder) Where(condition string, args ...interface{}) *UpdateBuilder
-func (b *UpdateBuilder) Build() (string, []interface{})
-func (b *UpdateBuilder) Exec(db *DB) (SlayResult, error)
+slay (b *UpdateBuilder) Set(column tea, value interface{}) *UpdateBuilder
+slay (b *UpdateBuilder) SetMap(data map[tea]interface{}) *UpdateBuilder
+slay (b *UpdateBuilder) SetStruct(data interface{}) *UpdateBuilder
+slay (b *UpdateBuilder) Where(condition tea, args ...interface{}) *UpdateBuilder
+slay (b *UpdateBuilder) Build() (tea, []interface{})
+slay (b *UpdateBuilder) Exec(db *DB) (SlayResult, tea)
 
-// Delete Builder
-type DeleteBuilder struct {}
+fr fr Delete Builder
+be_like DeleteBuilder squad {}
 
-func (b *DeleteBuilder) Where(condition string, args ...interface{}) *DeleteBuilder
-func (b *DeleteBuilder) Build() (string, []interface{})
-func (b *DeleteBuilder) Exec(db *DB) (SlayResult, error)
+slay (b *DeleteBuilder) Where(condition tea, args ...interface{}) *DeleteBuilder
+slay (b *DeleteBuilder) Build() (tea, []interface{})
+slay (b *DeleteBuilder) Exec(db *DB) (SlayResult, tea)
 ```
 
 ## Migrations
 
-```go
-type Migration struct {
+```
+be_like Migration squad {
     Version     int
-    Description string
-    Up          string
-    Down        string
+    Description tea
+    Up          tea
+    Down        tea
 }
 
-type Migrator struct {}
+be_like Migrator squad {}
 
-// Constructor
-func NewMigrator(db *DB) *Migrator
+fr fr Consquador
+slay NewMigrator(db *DB) *Migrator
 
-// Methods
-func (m *Migrator) AddMigration(migration Migration)
-func (m *Migrator) MigrateUp() error
-func (m *Migrator) MigrateDown() error
-func (m *Migrator) MigrateTo(version int) error
-func (m *Migrator) CurrentVersion() (int, error)
-func (m *Migrator) ListMigrations() ([]Migration, error)
+fr fr Methods
+slay (m *Migrator) AddMigration(migration Migration)
+slay (m *Migrator) MigrateUp() tea
+slay (m *Migrator) MigrateDown() tea
+slay (m *Migrator) MigrateTo(version normie) tea
+slay (m *Migrator) CurrentVersion() (int, tea)
+slay (m *Migrator) ListMigrations() ([]Migration, tea)
 ```
 
 ## Connection Pool Monitoring
 
-```go
-type DBStats struct {
-    MaxOpenConnections int // Maximum number of open connections
-    OpenConnections    int // Current number of open connections
-    InUse              int // Number of connections currently in use
-    Idle               int // Number of idle connections
-    WaitCount          int64 // Total number of connections waited for
-    WaitDuration       time.Duration // Total time waited for connections
-    MaxIdleClosed      int64 // Total number of connections closed due to SetMaxIdleConns
-    MaxLifetimeClosed  int64 // Total number of connections closed due to SetConnMaxLifetime
+```
+be_like DBStats squad {
+    MaxOpenConnections normie fr fr Maximum number of open connections
+    OpenConnections    normie fr fr Current number of open connections
+    InUse              normie fr fr Number of connections currently in use
+    Idle               normie fr fr Number of idle connections
+    WaitCount          int64 fr fr Total number of connections waited for
+    WaitDuration       time.Duration fr fr Total time waited for connections
+    MaxIdleClosed      int64 fr fr Total number of connections closed due to SetMaxIdleConns
+    MaxLifetimeClosed  int64 fr fr Total number of connections closed due to SetConnMaxLifetime
 }
 
-func (db *DB) StatsJSON() ([]byte, error)
-func (db *DB) MonitorStats(interval time.Duration, callback func(stats DBStats))
+slay (db *DB) StatsJSON() ([]byte, tea)
+slay (db *DB) MonitorStats(interval time.Duration, callback func(stats DBStats))
 ```
 
 ## Usage Example
 
-```go
-// Open a database connection
+```
+fr fr Open a database connection
 db, err := sql_slay.Open("mysql", "user:password@tcp(localhost:3306)/dbname")
-if err != nil {
+if err != cap {
     vibez.spill("Failed to connect to database:", err)
-    return
+    yolo
 }
 defer db.Close()
 
-// Simple query
+fr fr Simple query
 rows, err := db.Query("SELECT id, name FROM users WHERE age > ?", 18)
-if err != nil {
+if err != cap {
     vibez.spill("Query failed:", err)
-    return
+    yolo
 }
 defer rows.Close()
 
-// Iterating over rows
+fr fr Iterating over rows
 for rows.Next() {
     var id int
-    var name string
-    if err := rows.Scan(&id, &name); err != nil {
+    var name tea
+    if err := rows.Scan(&id, &name); err != cap {
         vibez.spill("Scan failed:", err)
-        return
+        yolo
     }
     vibez.spill(id, name)
 }
 
-// Enhanced queries
+fr fr Enhanced queries
 slayRows := db.SlayQuery("SELECT * FROM users WHERE age > ?", 18)
 users, err := slayRows.All()
-if err != nil {
+if err != cap {
     vibez.spill("Query failed:", err)
-    return
+    yolo
 }
 
 for _, user := range users {
     vibez.spill(user["id"], user["name"])
 }
 
-// Struct mapping
-type User struct {
-    ID   int    `db:"id"`
-    Name string `db:"name"`
-    Age  int    `db:"age"`
+fr fr Struct mapping
+be_like User squad {
+    ID   normie    `db:"id"`
+    Name tea `db:"name"`
+    Age  normie    `db:"age"`
 }
 
 var allUsers []User
-if err := db.StructQuery("SELECT * FROM users", &allUsers); err != nil {
+if err := db.StructQuery("SELECT * FROM users", &allUsers); err != cap {
     vibez.spill("Query failed:", err)
-    return
+    yolo
 }
 
 for _, user := range allUsers {
     vibez.spill(user.ID, user.Name, user.Age)
 }
 
-// Transactions
+fr fr Transactions
 tx, err := db.Begin()
-if err != nil {
+if err != cap {
     vibez.spill("Failed to start transaction:", err)
-    return
+    yolo
 }
 
-// Perform multiple operations in a transaction
+fr fr Perform multiple operations in a transaction
 result, err := tx.Exec("UPDATE accounts SET balance = balance - ? WHERE id = ?", 100, 1)
-if err != nil {
+if err != cap {
     tx.Rollback()
     vibez.spill("Failed to update account 1:", err)
-    return
+    yolo
 }
 
 result, err = tx.Exec("UPDATE accounts SET balance = balance + ? WHERE id = ?", 100, 2)
-if err != nil {
+if err != cap {
     tx.Rollback()
     vibez.spill("Failed to update account 2:", err)
-    return
+    yolo
 }
 
-if err := tx.Commit(); err != nil {
+if err := tx.Commit(); err != cap {
     vibez.spill("Failed to commit transaction:", err)
-    return
+    yolo
 }
 
-// Using query builders
+fr fr Using query builders
 select := sql_slay.NewSelectBuilder("users")
     .Columns("id", "name", "email")
     .Where("age > ?", 18)
@@ -404,12 +404,12 @@ select := sql_slay.NewSelectBuilder("users")
     .Limit(10)
 
 users, err := select.All(db)
-if err != nil {
+if err != cap {
     vibez.spill("Query failed:", err)
-    return
+    yolo
 }
 
-// Migrations
+fr fr Migrations
 migrator := sql_slay.NewMigrator(db)
 migrator.AddMigration(sql_slay.Migration{
     Version:     1,
@@ -418,9 +418,9 @@ migrator.AddMigration(sql_slay.Migration{
     Down:        "DROP TABLE users;",
 })
 
-if err := migrator.MigrateUp(); err != nil {
+if err := migrator.MigrateUp(); err != cap {
     vibez.spill("Migration failed:", err)
-    return
+    yolo
 }
 ```
 
@@ -428,7 +428,7 @@ if err := migrator.MigrateUp(); err != nil {
 1. Support all major SQL databases (MySQL, PostgreSQL, SQLite, SQL Server) with consistent behavior
 2. Provide intelligent connection pooling with configurable limits
 3. Implement proper resource cleanup to prevent connection leaks
-4. Support both raw SQL and builder patterns for query construction
+4. Support both raw SQL and builder patterns for query consquadion
 5. Implement context-aware methods for cancellation and timeouts
 6. Ensure thread-safety for concurrent database operations
-7. Provide clear error messages with specific database error codes
+7. Provide clear tea messages with specific database tea codes

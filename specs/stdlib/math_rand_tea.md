@@ -9,17 +9,17 @@ The `math_rand_tea` module provides pseudorandom number generation functionality
 Interface for random number generation sources.
 
 ```csd
-type Source interface {
+be_like Source collab {
   Int63() int64
   Seed(seed int64)
 }
 ```
 
 ### Source64
-Extended source interface with 64-bit generation.
+Extended source collab with 64-bit generation.
 
 ```csd
-type Source64 interface {
+be_like Source64 collab {
   Source
   Uint64() uint64
 }
@@ -29,117 +29,117 @@ type Source64 interface {
 Primary random number generator type.
 
 ```csd
-type Rand struct {
-  // fields not directly accessible
+be_like Rand squad {
+  fr fr fields not directly accessible
 }
 
-func New(src Source) *Rand
-func (r *Rand) Seed(seed int64)
-func (r *Rand) Int() int
-func (r *Rand) Int31() int32
-func (r *Rand) Int31n(n int32) int32
-func (r *Rand) Int63() int64
-func (r *Rand) Int63n(n int64) int64
-func (r *Rand) Uint32() uint32
-func (r *Rand) Uint64() uint64
-func (r *Rand) Float32() float32
-func (r *Rand) Float64() float64
-func (r *Rand) Perm(n int) []int
-func (r *Rand) Shuffle(n int, swap func(i, j int))
+slay New(src Source) *Rand
+slay (r *Rand) Seed(seed int64)
+slay (r *Rand) Int() int
+slay (r *Rand) Int31() int32
+slay (r *Rand) Int31n(n int32) int32
+slay (r *Rand) Int63() int64
+slay (r *Rand) Int63n(n int64) int64
+slay (r *Rand) Uint32() uint32
+slay (r *Rand) Uint64() uint64
+slay (r *Rand) Float32() float32
+slay (r *Rand) Float64() float64
+slay (r *Rand) Perm(n normie) []int
+slay (r *Rand) Shuffle(n int, swap func(i, j normie))
 ```
 
 ### PCG
 High-quality PCG random number generator.
 
 ```csd
-type PCG struct {
-  // fields not directly accessible
+be_like PCG squad {
+  fr fr fields not directly accessible
 }
 
-func NewPCG(seed int64) *PCG
-func (p *PCG) Seed(seed int64)
-func (p *PCG) Int63() int64
-func (p *PCG) Uint64() uint64
+slay NewPCG(seed int64) *PCG
+slay (p *PCG) Seed(seed int64)
+slay (p *PCG) Int63() int64
+slay (p *PCG) Uint64() uint64
 ```
 
 ### Xoshiro256
 Xoshiro256** fast random number generator.
 
 ```csd
-type Xoshiro256 struct {
-  // fields not directly accessible
+be_like Xoshiro256 squad {
+  fr fr fields not directly accessible
 }
 
-func NewXoshiro256(seed int64) *Xoshiro256
-func (x *Xoshiro256) Seed(seed int64)
-func (x *Xoshiro256) Int63() int64
-func (x *Xoshiro256) Uint64() uint64
+slay NewXoshiro256(seed int64) *Xoshiro256
+slay (x *Xoshiro256) Seed(seed int64)
+slay (x *Xoshiro256) Int63() int64
+slay (x *Xoshiro256) Uint64() uint64
 ```
 
 ## Core Global Functions
 
 ```csd
-// Seed the default random generator
-func Seed(seed int64)
+fr fr Seed the default random generator
+slay Seed(seed int64)
 
-// Generate a random int
-func Int() int
+fr fr Generate a random int
+slay Int() int
 
-// Generate a random int in [0, n)
-func Intn(n int) int
+fr fr Generate a random normie in [0, n)
+slay Intn(n normie) int
 
-// Generate a random int31
-func Int31() int32
+fr fr Generate a random int31
+slay Int31() int32
 
-// Generate a random int31 in [0, n)
-func Int31n(n int32) int32
+fr fr Generate a random int31 in [0, n)
+slay Int31n(n int32) int32
 
-// Generate a random int63
-func Int63() int64
+fr fr Generate a random int63
+slay Int63() int64
 
-// Generate a random int63 in [0, n)
-func Int63n(n int64) int64
+fr fr Generate a random int63 in [0, n)
+slay Int63n(n int64) int64
 
-// Generate a random uint32
-func Uint32() uint32
+fr fr Generate a random uint32
+slay Uint32() uint32
 
-// Generate a random uint64
-func Uint64() uint64
+fr fr Generate a random uint64
+slay Uint64() uint64
 
-// Generate a random float32 in [0.0, 1.0)
-func Float32() float32
+fr fr Generate a random float32 in [0.0, 1.0)
+slay Float32() float32
 
-// Generate a random float64 in [0.0, 1.0)
-func Float64() float64
+fr fr Generate a random float64 in [0.0, 1.0)
+slay Float64() float64
 
-// Generate a random permutation of integers
-func Perm(n int) []int
+fr fr Generate a random permutation of integers
+slay Perm(n normie) []int
 
-// Shuffle a slice
-func Shuffle(n int, swap func(i, j int))
+fr fr Shuffle a slice
+slay Shuffle(n int, swap func(i, j normie))
 
-// Read random bytes
-func Read(p []byte) (n int, err error)
+fr fr Read random bytes
+slay Read(p []byte) (n int, err tea)
 ```
 
 ## Probability Distributions
 
 ```csd
-// Generate a random value from a normal distribution
-func (r *Rand) NormFloat64() float64
-func NormFloat64() float64
+fr fr Generate a random value from a normal distribution
+slay (r *Rand) NormFloat64() float64
+slay NormFloat64() float64
 
-// Generate a random value from an exponential distribution
-func (r *Rand) ExpFloat64() float64
-func ExpFloat64() float64
+fr fr Generate a random value from an exponential distribution
+slay (r *Rand) ExpFloat64() float64
+slay ExpFloat64() float64
 
-// Zipf distribution generator
-type Zipf struct {
-  // fields not directly accessible
+fr fr Zipf distribution generator
+be_like Zipf squad {
+  fr fr fields not directly accessible
 }
 
-func NewZipf(r *Rand, s float64, v float64, imax uint64) *Zipf
-func (z *Zipf) Uint64() uint64
+slay NewZipf(r *Rand, s float64, v float64, imax uint64) *Zipf
+slay (z *Zipf) Uint64() uint64
 ```
 
 ## Enhanced Features
@@ -152,94 +152,94 @@ func (z *Zipf) Uint64() uint64
 
 - **Additional Distributions**: More probability distributions
   ```csd
-  // Poisson distribution
+  fr fr Poisson distribution
   value := rand.PoissonFloat64(lambda)
   
-  // Binomial distribution
+  fr fr Binomial distribution
   value := rand.BinomialInt(n, p)
   
-  // Gamma distribution
+  fr fr Gamma distribution
   value := rand.GammaFloat64(alpha, beta)
   ```
 
 - **Random Sampling**: Methods for random sampling from collections
   ```csd
-  // Sample k items from a population
+  fr fr Sample k items from a population
   samples := rand.SampleSlice(slice, k)
   
-  // Weighted random selection
+  fr fr Weighted random selection
   selected := rand.WeightedChoice(items, weights)
   ```
 
 - **Seedable Random Bytes**: Generate random byte sequences with a seed
   ```csd
-  bytes := rand.Bytes(1024) // 1KB of random data
+  bytes := rand.Bytes(1024) fr fr 1KB of random data
   ```
 
-- **Random Text Generation**: Utilities for generating random strings
+- **Random Text Generation**: Utilities for generating random teas
   ```csd
-  // Generate a random alphanumeric string
+  fr fr Generate a random alphanumeric tea
   str := rand.AlphaNumeric(16)
   
-  // Generate a random string matching a pattern
+  fr fr Generate a random tea matching a pattern
   email := rand.StringPattern("????@example.com")
   ```
 
 ## Usage Examples
 
 ```csd
-// Basic random number generation
+fr fr Basic random number generation
 vibez.spill("Random integer: %d", math_rand_tea.Int())
 vibez.spill("Random integer in [0,100): %d", math_rand_tea.Intn(100))
 vibez.spill("Random float: %f", math_rand_tea.Float64())
 
-// Seeding the random number generator
-math_rand_tea.Seed(42) // Seed with a constant for reproducible results
+fr fr Seeding the random number generator
+math_rand_tea.Seed(42) fr fr Seed with a constant for reproducible results
 vibez.spill("First random after seed 42: %d", math_rand_tea.Int())
 vibez.spill("Second random after seed 42: %d", math_rand_tea.Int())
 
-// Using a custom random source
+fr fr Using a custom random source
 source := math_rand_tea.NewSource(timez.Now().UnixNano())
 rand := math_rand_tea.New(source)
 vibez.spill("Custom random: %d", rand.Int())
 
-// Creating a random permutation
+fr fr Creating a random permutation
 perm := math_rand_tea.Perm(10)
 vibez.spill("Random permutation: %v", perm)
 
-// Shuffling a slice
-names := []string{"Alice", "Bob", "Charlie", "Dave", "Eve"}
-math_rand_tea.Shuffle(len(names), func(i, j int) {
+fr fr Shuffling a slice
+names := []tea{"Alice", "Bob", "Charlie", "Dave", "Eve"}
+math_rand_tea.Shuffle(len(names), func(i, j normie) {
   names[i], names[j] = names[j], names[i]
 })
 vibez.spill("Shuffled names: %v", names)
 
-// Generate random bytes
-bytes := make([]byte, 16) // 16 random bytes
+fr fr Generate random bytes
+bytes := make([]byte, 16) fr fr 16 random bytes
 _, err := math_rand_tea.Read(bytes)
-if err != nil {
+if err != cap {
   vibez.spill("Error: %v", err)
-  return
+  yolo
 }
 vibez.spill("Random bytes: %v", bytes)
 
-// High-quality random generator
+fr fr High-quality random generator
 pcg := math_rand_tea.NewPCG(timez.Now().UnixNano())
 vibez.spill("PCG random: %d", pcg.Int63())
 
-// Fast random generator
+fr fr Fast random generator
 xoshiro := math_rand_tea.NewXoshiro256(timez.Now().UnixNano())
 vibez.spill("Xoshiro256 random: %d", xoshiro.Int63())
 
-// Normal distribution
+fr fr Normal distribution
 vibez.spill("Normal distribution value: %f", math_rand_tea.NormFloat64())
 
-// Create a custom random instance for a specific purpose
+fr fr Create a custom random instance for a specific purpose
 gameRand := math_rand_tea.New(math_rand_tea.NewSource(42))
 
-// Roll a six-sided die
-rollDie := func() int {
-  return gameRand.Intn(6) + 1
+fr fr Roll a six-sided die
+rollDie := func() normie {
+  yolo gameRand.Intn(6) + 1
 }
 
 vibez.spill("Die rolls:")
@@ -247,40 +247,40 @@ for i := 0; i < 10; i++ {
   vibez.spill("  Roll %d: %d", i+1, rollDie())
 }
 
-// Create a Zipf distribution (for modeling frequency distributions)
+fr fr Create a Zipf distribution (for modeling frequency distributions)
 r := math_rand_tea.New(math_rand_tea.NewSource(timez.Now().UnixNano()))
 zipf := math_rand_tea.NewZipf(r, 1.5, 1.0, 1000)
 
-// Generate values with Zipf distribution
-counts := make(map[uint64]int)
+fr fr Generate values with Zipf distribution
+counts := make(map[uint64]normie)
 for i := 0; i < 1000; i++ {
   value := zipf.Uint64()
   counts[value]++
 }
 
-// Print the most frequent values
+fr fr Print the most frequent values
 vibez.spill("Zipf distribution frequencies:")
 for i := uint64(0); i < 10; i++ {
   vibez.spill("  Value %d: %d occurrences", i, counts[i])
 }
 
-// Using enhanced features
+fr fr Using enhanced features
 
-// Secure random number generation
+fr fr Secure random number generation
 secureRand := math_rand_tea.NewSecureRand()
 vibez.spill("Cryptographically secure random: %d", secureRand.Int63())
 
-// Generate random string
+fr fr Generate random tea
 randomID := math_rand_tea.AlphaNumeric(12)
 vibez.spill("Random ID: %s", randomID)
 
-// Weighted random selection
-items := []string{"rare", "uncommon", "common"}
+fr fr Weighted random selection
+items := []tea{"rare", "uncommon", "common"}
 weights := []float64{0.1, 0.3, 0.6}
 selection := math_rand_tea.WeightedChoice(items, weights)
 vibez.spill("Weighted random selection: %s", selection)
 
-// Additional distributions
+fr fr Additional distributions
 poissonValue := math_rand_tea.PoissonFloat64(3.5)
 vibez.spill("Poisson distribution (lambda=3.5): %f", poissonValue)
 

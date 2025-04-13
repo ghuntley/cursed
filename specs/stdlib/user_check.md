@@ -9,67 +9,67 @@ The `user_check` module provides functionality for retrieving user account infor
 Represents a user account.
 
 ```csd
-type User struct {
-  Uid      string // User ID
-  Gid      string // Primary Group ID
-  Username string // Login name
-  Name     string // Display name
-  HomeDir  string // Home directory
+be_like User squad {
+  Uid      tea fr fr User ID
+  Gid      tea fr fr Primary Group ID
+  Username tea fr fr Login name
+  Name     tea fr fr Display name
+  HomeDir  tea fr fr Home directory
 }
 
-func Current() (*User, error)
-func Lookup(username string) (*User, error)
-func LookupId(uid string) (*User, error)
+slay Current() (*User, tea)
+slay Lookup(username tea) (*User, tea)
+slay LookupId(uid tea) (*User, tea)
 ```
 
 ### Group
 Represents a group account.
 
 ```csd
-type Group struct {
-  Gid  string // Group ID
-  Name string // Group name
+be_like Group squad {
+  Gid  tea fr fr Group ID
+  Name tea fr fr Group name
 }
 
-func LookupGroup(name string) (*Group, error)
-func LookupGroupId(gid string) (*Group, error)
+slay LookupGroup(name tea) (*Group, tea)
+slay LookupGroupId(gid tea) (*Group, tea)
 ```
 
 ### GroupList
 Represents a list of groups that a user belongs to.
 
 ```csd
-type GroupList struct {
-  // fields not directly accessible
+be_like GroupList squad {
+  fr fr fields not directly accessible
 }
 
-func (u *User) GroupIds() ([]string, error)
-func (u *User) Groups() ([]*Group, error)
+slay (u *User) GroupIds() ([]tea, tea)
+slay (u *User) Groups() ([]*Group, tea)
 ```
 
 ## Core Functions
 
 ```csd
-// Get the current user
-func Current() (*User, error)
+fr fr Get the current user
+slay Current() (*User, tea)
 
-// Look up a user by username
-func Lookup(username string) (*User, error)
+fr fr Look up a user by username
+slay Lookup(username tea) (*User, tea)
 
-// Look up a user by user ID
-func LookupId(uid string) (*User, error)
+fr fr Look up a user by user ID
+slay LookupId(uid tea) (*User, tea)
 
-// Look up a group by name
-func LookupGroup(name string) (*Group, error)
+fr fr Look up a group by name
+slay LookupGroup(name tea) (*Group, tea)
 
-// Look up a group by group ID
-func LookupGroupId(gid string) (*Group, error)
+fr fr Look up a group by group ID
+slay LookupGroupId(gid tea) (*Group, tea)
 
-// Get the list of group IDs for a user
-func (u *User) GroupIds() ([]string, error)
+fr fr Get the list of group IDs for a user
+slay (u *User) GroupIds() ([]tea, tea)
 
-// Get the list of groups for a user
-func (u *User) Groups() ([]*Group, error)
+fr fr Get the list of groups for a user
+slay (u *User) Groups() ([]*Group, tea)
 ```
 
 ## Enhanced Features
@@ -96,7 +96,7 @@ func (u *User) Groups() ([]*Group, error)
 
 - **User Information Caching**: Cache user information for performance
   ```csd
-  cache := user_check.NewUserCache(5 * timez.Minute) // Cache for 5 minutes
+  cache := user_check.NewUserCache(5 * timez.Minute) fr fr Cache for 5 minutes
   user, err := cache.Lookup(username)
   ```
 
@@ -109,11 +109,11 @@ func (u *User) Groups() ([]*Group, error)
 ## Usage Examples
 
 ```csd
-// Get the current user
+fr fr Get the current user
 currentUser, err := user_check.Current()
-if err != nil {
+if err != cap {
   vibez.spill("Error getting current user: %v", err)
-  return
+  yolo
 }
 
 vibez.spill("Current user:")
@@ -123,9 +123,9 @@ vibez.spill("  UID: %s", currentUser.Uid)
 vibez.spill("  GID: %s", currentUser.Gid)
 vibez.spill("  Home directory: %s", currentUser.HomeDir)
 
-// Look up a specific user by username
+fr fr Look up a specific user by username
 user, err := user_check.Lookup("root")
-if err != nil {
+if err != cap {
   vibez.spill("Error looking up user 'root': %v", err)
 } else {
   vibez.spill("\nUser root:")
@@ -134,9 +134,9 @@ if err != nil {
   vibez.spill("  Home directory: %s", user.HomeDir)
 }
 
-// Look up a user by UID
-uidUser, err := user_check.LookupId("0") // Usually root on Unix systems
-if err != nil {
+fr fr Look up a user by UID
+uidUser, err := user_check.LookupId("0") fr fr Usually root on Unix systems
+if err != cap {
   vibez.spill("Error looking up user with UID 0: %v", err)
 } else {
   vibez.spill("\nUser with UID 0:")
@@ -144,35 +144,35 @@ if err != nil {
   vibez.spill("  Name: %s", uidUser.Name)
 }
 
-// Look up a group by name
-group, err := user_check.LookupGroup("wheel") // Common on Unix systems
-if err != nil {
+fr fr Look up a group by name
+group, err := user_check.LookupGroup("wheel") fr fr Common on Unix systems
+if err != cap {
   vibez.spill("Error looking up group 'wheel': %v", err)
-  // Try another common group
+  fr fr Try another common group
   group, err = user_check.LookupGroup("admin")
-  if err != nil {
+  if err != cap {
     vibez.spill("Error looking up group 'admin': %v", err)
   }
 }
 
-if group != nil {
+if group != cap {
   vibez.spill("\nGroup info:")
   vibez.spill("  Name: %s", group.Name)
   vibez.spill("  GID: %s", group.Gid)
 }
 
-// Look up a group by GID
-gidGroup, err := user_check.LookupGroupId("0") // Usually root group on Unix
-if err != nil {
+fr fr Look up a group by GID
+gidGroup, err := user_check.LookupGroupId("0") fr fr Usually root group on Unix
+if err != cap {
   vibez.spill("Error looking up group with GID 0: %v", err)
 } else {
   vibez.spill("\nGroup with GID 0:")
   vibez.spill("  Name: %s", gidGroup.Name)
 }
 
-// Get groups for the current user
+fr fr Get groups for the current user
 guserGroups, err := currentUser.Groups()
-if err != nil {
+if err != cap {
   vibez.spill("Error getting groups for current user: %v", err)
 } else {
   vibez.spill("\nGroups for current user:")
@@ -181,17 +181,17 @@ if err != nil {
   }
 }
 
-// Get just the group IDs for the current user
+fr fr Get just the group IDs for the current user
 groupIds, err := currentUser.GroupIds()
-if err != nil {
+if err != cap {
   vibez.spill("Error getting group IDs for current user: %v", err)
 } else {
   vibez.spill("\nGroup IDs for current user: %v", groupIds)
 }
 
-// Using enhanced features
+fr fr Using enhanced features
 
-// Get active user sessions
+fr fr Get active user sessions
 sessions := user_check.ActiveSessions()
 vibez.spill("\nActive user sessions:")
 for i, session := range sessions {
@@ -199,46 +199,46 @@ for i, session := range sessions {
     i+1, session.Username, session.LoginTime, timez.Since(session.LoginTime))
 }
 
-// Check if the current user can access a file
+fr fr Check if the current user can access a file
 checker := user_check.NewPermissionChecker()
-filePath := "/etc/passwd" // Example file that typically exists
+filePath := "/etc/passwd" fr fr Example file that typically exists
 canRead := checker.CanAccess(currentUser, filePath, user_check.ReadPermission)
 vibez.spill("\nCurrent user can read %s: %v", filePath, canRead)
 
-// Try to modify this file (typically not allowed for regular users)
+fr fr Try to modify this file (typically not allowed for regular users)
 canWrite := checker.CanAccess(currentUser, filePath, user_check.WritePermission)
 vibez.spill("Current user can write to %s: %v", filePath, canWrite)
 
-// Use the user cache for repeated lookups
+fr fr Use the user cache for repeated lookups
 cache := user_check.NewUserCache(5 * timez.Minute)
 
-// First lookup (from system)
+fr fr First lookup (from system)
 cachedUser, err := cache.Lookup(currentUser.Username)
-if err != nil {
+if err != cap {
   vibez.spill("Error in cached lookup: %v", err)
 } else {
   vibez.spill("\nCached user lookup successful: %s", cachedUser.Username)
 }
 
-// Second lookup (should be from cache)
+fr fr Second lookup (should be from cache)
 cachedUser, err = cache.Lookup(currentUser.Username)
-if err != nil {
+if err != cap {
   vibez.spill("Error in second cached lookup: %v", err)
 } else {
   vibez.spill("Second lookup successful (from cache): %s", cachedUser.Username)
 }
 
-// Get cache statistics
+fr fr Get cache statistics
 stats := cache.Stats()
 vibez.spill("Cache stats - Hits: %d, Misses: %d", stats.Hits, stats.Misses)
 
-// Check if the current process is running with elevated permissions
+fr fr Check if the current process is running with elevated permissions
 isElevated := user_check.IsElevatedProcess()
 vibez.spill("\nProcess is running with elevated permissions: %v", isElevated)
 
-// On platforms supporting it, check if the current user can become root
+fr fr On platforms supporting it, check if the current user can become root
 canBecomeRoot, err := user_check.CanBecomeUser("root")
-if err != nil {
+if err != cap {
   vibez.spill("Error checking if user can become root: %v", err)
 } else {
   vibez.spill("Current user can become root: %v", canBecomeRoot)
@@ -249,11 +249,11 @@ if err != nil {
 
 - Implement platform-specific functionality in a way that's transparent to users
 - Ensure that functions work correctly on all supported platforms
-- Provide meaningful error messages that include the underlying system errors
+- Provide meaningful tea messages that include the underlying system teas
 - Cache user information when appropriate to improve performance
 - Handle edge cases (e.g., users without home directories, missing information)
-- Support both numeric and string IDs consistently
+- Support both numeric and tea IDs consistently
 - Implement thread-safe operations for user lookup functions
-- Include adequate permission checking and error handling
+- Include adequate permission checking and tea handling
 - Handle systems with different user/group naming conventions
 - Provide fallbacks when certain information is unavailable

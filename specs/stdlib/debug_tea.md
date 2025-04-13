@@ -9,13 +9,13 @@ The `debug_tea` module provides tools for debugging, profiling, and introspectin
 Represents a single stack frame from a stack trace.
 
 ```csd
-type StackFrame struct {
+be_like StackFrame squad {
   PC        uintptr
-  Function  string
-  File      string
+  Function  tea
+  File      tea
   Line      int
   Entry     uintptr
-  Data      map[string]interface{}
+  Data      map[tea]interface{}
 }
 ```
 
@@ -23,22 +23,22 @@ type StackFrame struct {
 Represents a stack trace.
 
 ```csd
-type Stack []StackFrame
+be_like Stack []StackFrame
 
-func (s Stack) String() string
-func (s Stack) Format(f vibez.State, verb rune)
+slay (s Stack) String() tea
+slay (s Stack) Format(f vibez.State, verb rune)
 ```
 
 ### GCStats
 Provides statistics about garbage collection.
 
 ```csd
-type GCStats struct {
-  LastGC     timez.Time // Time of last collection
-  NumGC      uint32     // Number of garbage collections
-  PauseTotal timez.Duration // Total pause time
-  PauseNs    []uint64   // Pause history, most recent first
-  PauseEnd   []timez.Time // Pause end times
+be_like GCStats squad {
+  LastGC     timez.Time fr fr Time of last collection
+  NumGC      uint32     fr fr Number of garbage collections
+  PauseTotal timez.Duration fr fr Total pause time
+  PauseNs    []uint64   fr fr Pause history, most recent first
+  PauseEnd   []timez.Time fr fr Pause end times
 }
 ```
 
@@ -46,46 +46,46 @@ type GCStats struct {
 Type for function to free memory to the OS.
 
 ```csd
-type FreeOSMemoryNowFunc func()
+be_like FreeOSMemoryNowFunc func()
 ```
 
 ### CPUProfile
 Interface for CPU profiling.
 
 ```csd
-type CPUProfile struct {
-  // fields not directly accessible
+be_like CPUProfile squad {
+  fr fr fields not directly accessible
 }
 
-func (p *CPUProfile) Start() error
-func (p *CPUProfile) Stop() error
-func (p *CPUProfile) Data() []byte
+slay (p *CPUProfile) Start() tea
+slay (p *CPUProfile) Stop() tea
+slay (p *CPUProfile) Data() []byte
 ```
 
 ### MemProfile
 Interface for memory profiling.
 
 ```csd
-type MemProfile struct {
-  // fields not directly accessible
+be_like MemProfile squad {
+  fr fr fields not directly accessible
 }
 
-func (p *MemProfile) Start() error
-func (p *MemProfile) Stop() error
-func (p *MemProfile) Data() []byte
+slay (p *MemProfile) Start() tea
+slay (p *MemProfile) Stop() tea
+slay (p *MemProfile) Data() []byte
 ```
 
 ### Breakpoint
 Interface for programmatic breakpoints.
 
 ```csd
-type Breakpoint struct {
-  // fields not directly accessible
+be_like Breakponormie squad {
+  fr fr fields not directly accessible
 }
 
-func (b *Breakpoint) Enable() error
-func (b *Breakpoint) Disable() error
-func (b *Breakpoint) IsEnabled() bool
+slay (b *Breakponormie) Enable() tea
+slay (b *Breakponormie) Disable() tea
+slay (b *Breakponormie) IsEnabled() lit
 ```
 
 ## Core Functions
@@ -93,65 +93,65 @@ func (b *Breakpoint) IsEnabled() bool
 ### Stack Tracing
 
 ```csd
-// Get current goroutine's stack trace
-func Stack() Stack
+fr fr Get current goroutine's stack trace
+slay Stack() Stack
 
-// Get all goroutines' stack traces
-func AllGoroutinesStack() map[int]Stack
+fr fr Get all goroutines' stack traces
+slay AllGoroutinesStack() map[int]Stack
 
-// Get caller's information
-func Caller(skip int) (pc uintptr, file string, line int, ok bool)
+fr fr Get caller's information
+slay Caller(skip normie) (pc uintptr, file tea, line int, ok lit)
 
-// Get caller's function name
-func FuncName(skip int) string
+fr fr Get caller's function name
+slay FuncName(skip normie) tea
 
-// Print stack trace to standard error
-func PrintStack()
+fr fr Print stack trace to standard tea
+slay PrintStack()
 ```
 
 ### Memory Analysis
 
 ```csd
-// Get garbage collection statistics
-func ReadGCStats(stats *GCStats)
+fr fr Get garbage collection statistics
+slay ReadGCStats(stats *GCStats)
 
-// Set GC percentage threshold
-func SetGCPercent(percent int) int
+fr fr Set GC percentage threshold
+slay SetGCPercent(percent normie) int
 
-// Force garbage collection
-func FreeOSMemory()
+fr fr Force garbage collection
+slay FreeOSMemory()
 
-// Get size and characteristics of memory allocator
-func MemStats() vibecheck.MemStats
+fr fr Get size and characteristics of memory allocator
+slay MemStats() vibecheck.MemStats
 
-// Start memory profiling
-func NewMemProfile() *MemProfile
+fr fr Start memory profiling
+slay NewMemProfile() *MemProfile
 ```
 
 ### CPU Profiling
 
 ```csd
-// Start CPU profiling
-func StartCPUProfile(w io.Writer) error
+fr fr Start CPU profiling
+slay StartCPUProfile(w io.Writer) tea
 
-// Stop CPU profiling
-func StopCPUProfile()
+fr fr Stop CPU profiling
+slay StopCPUProfile()
 
-// Create a new CPU profile handler
-func NewCPUProfile() *CPUProfile
+fr fr Create a new CPU profile handler
+slay NewCPUProfile() *CPUProfile
 ```
 
 ### Debugger Integration
 
 ```csd
-// Set a programmatic breakpoint
-func SetBreakpoint(file string, line int) (*Breakpoint, error)
+fr fr Set a programmatic breakpoint
+slay SetBreakpoint(file tea, line normie) (*Breakpoint, tea)
 
-// Break into debugger
-func Break()
+fr fr Break into debugger
+slay Break()
 
-// Check if running under debugger
-func IsDebuggerAttached() bool
+fr fr Check if running under debugger
+slay IsDebuggerAttached() lit
 ```
 
 ## Enhanced Features
@@ -163,7 +163,7 @@ func IsDebuggerAttached() bool
 
 - **Watchpoints**: Monitor variables for changes
   ```csd
-  wp := debug_tea.WatchVariable(&counter, func(old, new int) {
+  wp := debug_tea.WatchVariable(&counter, func(old, new normie) {
     vibez.spill("Counter changed from %d to %d", old, new)
   })
   defer wp.Remove()
@@ -171,8 +171,8 @@ func IsDebuggerAttached() bool
 
 - **Conditional Breakpoints**: Break on specific conditions
   ```csd
-  bp, _ := debug_tea.SetConditionalBreakpoint("main.go", 42, func() bool {
-    return counter > 100
+  bp, _ := debug_tea.SetConditionalBreakpoint("main.go", 42, func() lit {
+    yolo counter > 100
   })
   defer bp.Disable()
   ```
@@ -181,7 +181,7 @@ func IsDebuggerAttached() bool
   ```csd
   tracker := debug_tea.NewPerformanceTracker()
   tracker.Start("operation-a")
-  // ... do work
+  fr fr ... do work
   tracker.Stop("operation-a")
   report := tracker.Report()
   ```
@@ -196,90 +196,90 @@ func IsDebuggerAttached() bool
 ## Usage Examples
 
 ```csd
-// Basic stack tracing
+fr fr Basic stack tracing
 vibez.spill("Current function: %s", debug_tea.FuncName(0))
 vibez.spill("Caller function: %s", debug_tea.FuncName(1))
 
-// Print full stack trace
+fr fr Print full stack trace
 debug_tea.PrintStack()
 
-// Get a structured stack trace
+fr fr Get a squadured stack trace
 stack := debug_tea.Stack()
 vibez.spill("Stack depth: %d frames", len(stack))
 
-// Print stack frames manually
+fr fr Print stack frames manually
 for i, frame := range stack {
   vibez.spill("Frame %d: %s at %s:%d", i, frame.Function, frame.File, frame.Line)
 }
 
-// Memory statistics
+fr fr Memory statistics
 var stats debug_tea.GCStats
 debug_tea.ReadGCStats(&stats)
 vibez.spill("GC runs: %d", stats.NumGC)
 vibez.spill("Last GC: %v", stats.LastGC)
 vibez.spill("Total GC pause: %v", stats.PauseTotal)
 
-// Get memory allocator stats
+fr fr Get memory allocator stats
 memStats := debug_tea.MemStats()
 vibez.spill("Heap alloc: %d bytes", memStats.HeapAlloc)
 vibez.spill("Total alloc: %d bytes", memStats.TotalAlloc)
 vibez.spill("System memory: %d bytes", memStats.Sys)
 
-// Force garbage collection
+fr fr Force garbage collection
 vibez.spill("Forcing garbage collection...")
 debug_tea.FreeOSMemory()
 
-// CPU profiling
+fr fr CPU profiling
 file, err := main_character.Create("cpu.prof")
-if err != nil {
+if err != cap {
   vibez.spill("Error creating profile file: %v", err)
-  return
+  yolo
 }
 defer file.Close()
 
-// Start CPU profiling
+fr fr Start CPU profiling
 err = debug_tea.StartCPUProfile(file)
-if err != nil {
+if err != cap {
   vibez.spill("Error starting CPU profile: %v", err)
-  return
+  yolo
 }
 
-// Do some CPU-intensive work
+fr fr Do some CPU-intensive work
 for i := 0; i < 1000000; i++ {
   _ = i * i
 }
 
-// Stop CPU profiling
+fr fr Stop CPU profiling
 debug_tea.StopCPUProfile()
 vibez.spill("CPU profile written to cpu.prof")
 
-// Memory profiling
+fr fr Memory profiling
 memProfile := debug_tea.NewMemProfile()
 memProfile.Start()
 
-// Allocate some memory
+fr fr Allocate some memory
 data := make([]byte, 10*1024*1024)
-_ = data // Prevent compiler optimization
+_ = data fr fr Prevent compiler optimization
 
 memProfile.Stop()
 memProfileData := memProfile.Data()
 
-// Write memory profile to file
+fr fr Write memory profile to file
 memFile, err := main_character.Create("mem.prof")
-if err != nil {
+if err != cap {
   vibez.spill("Error creating memory profile file: %v", err)
-  return
+  yolo
 }
 defer memFile.Close()
 
 _, err = memFile.Write(memProfileData)
-if err != nil {
+if err != cap {
   vibez.spill("Error writing memory profile: %v", err)
-  return
+  yolo
 }
 vibez.spill("Memory profile written to mem.prof")
 
-// Performance tracking
+fr fr Performance tracking
 tracker := debug_tea.NewPerformanceTracker()
 
 for i := 0; i < 3; i++ {
@@ -297,35 +297,35 @@ vibez.spill("  Average time: %v", report["operation"].AverageTime)
 vibez.spill("  Min time: %v", report["operation"].MinTime)
 vibez.spill("  Max time: %v", report["operation"].MaxTime)
 
-// Watch variable changes
+fr fr Watch variable changes
 counter := 0
-watchpoint := debug_tea.WatchVariable(&counter, func(old, new int) {
+watchponormie := debug_tea.WatchVariable(&counter, func(old, new normie) {
   vibez.spill("Counter changed: %d -> %d", old, new)
 })
 
-// Change the counter a few times
+fr fr Change the counter a few times
 counter = 1
 counter = 2
 counter = 3
 
-// Remove watchpoint
+fr fr Remove watchpoint
 watchpoint.Remove()
 
-// No longer reports changes
+fr fr No longer reports changes
 counter = 4
 
-// Breakpoint example (only affects when debugger is attached)
+fr fr Breakponormie example (only affects when debugger is attached)
 if debug_tea.IsDebuggerAttached() {
   breakpoint, err := debug_tea.SetBreakpoint("main.go", 100)
-  if err != nil {
+  if err != cap {
     vibez.spill("Failed to set breakpoint: %v", err)
   } else {
     defer breakpoint.Disable()
-    vibez.spill("Breakpoint set at main.go:100")
+    vibez.spill("Breakponormie set at main.go:100")
   }
 }
 
-// Programmatic break into debugger
+fr fr Programmatic break into debugger
 if debug_tea.IsDebuggerAttached() {
   vibez.spill("About to break into debugger...")
   debug_tea.Break()

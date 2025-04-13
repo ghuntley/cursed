@@ -19,13 +19,19 @@ pub mod bump;
 pub mod channel;
 pub mod container;
 pub mod gc;
+pub mod mark_sweep;
 pub mod memory_visitor;
+pub mod root;
+pub mod scope;
 pub mod strategy;
 pub mod tagged;
 pub mod weak;
 
 // Re-export important types
 pub use container::{ContainerType, Specializable, SpecializedVector};
+pub use root::{RootScope, RootScopeGuard, ROOT_MANAGER};
+pub use gc::MarkState;
+pub use scope::{with_gc_scope, with_new_gc, with_gc_scope_fn, with_new_gc_fn};
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
@@ -105,7 +111,12 @@ impl<T: Traceable + Clone + 'static> Gc<T> {
         println!("Gc::new called for {}", std::any::type_name::<T>());
         let addr = ptr.as_ptr() as usize;
         println!("Adding root at address 0x{:x}", addr);
-        gc.add_root(addr);
+        
+        // Try to add to current root scope first
+        if !ROOT_MANAGER.lock().unwrap().add_root(addr) {
+            // If no active scope, add directly to the GC
+            gc.add_root(addr);
+        }
         println!("Root added successfully");
 
         Self {
@@ -184,7 +195,16 @@ impl<T: Traceable + Clone + 'static> Drop for Gc<T> {
         if let Some(gc) = self.gc.upgrade() {
             // Remove from roots when dropped
             let addr = self.ptr.as_ptr() as usize;
-            gc.remove_root(addr);
+            
+            // Try to remove from current root scope first
+            if !ROOT_MANAGER.lock().unwrap().remove_root(addr) {
+                // If no active scope, remove directly from GC
+                gc.remove_root(addr);
+            }
+            
+            println!("Gc::drop - Removed root 0x{:x}", addr);
+        } else {
+            println!("Gc::drop - GC no longer available, skipping root removal");
         }
         // If upgrade fails, the GC is already gone, so no need to remove root
     }

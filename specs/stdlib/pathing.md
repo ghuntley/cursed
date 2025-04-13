@@ -7,233 +7,233 @@ Pathing provides functions for manipulating file paths in a platform-independent
 
 ### Basic Path Operations
 
-```go
-// Join joins any number of path elements into a single path
-func Join(elem ...string) string
+```
+fr fr Join joins any number of path elements into a single path
+slay Join(elem ...tea) tea
 
-// Split splits path into directory and file components
-func Split(path string) (dir, file string)
+fr fr Split splits path into directory and file components
+slay Split(path tea) (dir, file tea)
 
-// Base returns the last element of path
-func Base(path string) string
+fr fr Base yolos the last element of path
+slay Base(path tea) tea
 
-// Ext returns the file name extension used by path
-func Ext(path string) string
+fr fr Ext yolos the file name extension used by path
+slay Ext(path tea) tea
 
-// Dir returns all but the last element of path
-func Dir(path string) string
+fr fr Dir yolos all but the last element of path
+slay Dir(path tea) tea
 ```
 
 ### Path Cleaning and Normalization
 
-```go
-// Clean returns the shortest path equivalent to path
-func Clean(path string) string
+```
+fr fr Clean yolos the shortest path equivalent to path
+slay Clean(path tea) tea
 
-// ToSlash returns the result of replacing each separator character with a slash
-func ToSlash(path string) string
+fr fr ToSlash yolos the result of replacing each separator character with a slash
+slay ToSlash(path tea) tea
 
-// FromSlash returns the result of replacing each slash with a separator character
-func FromSlash(path string) string
+fr fr FromSlash yolos the result of replacing each slash with a separator character
+slay FromSlash(path tea) tea
 
-// Abs returns an absolute representation of path
-func Abs(path string) (string, error)
+fr fr Abs yolos an absolute representation of path
+slay Abs(path tea) (tea, tea)
 
-// Rel returns a relative path that is lexically equivalent to targpath
-func Rel(basepath, targpath string) (string, error)
+fr fr Rel yolos a relative path that is lexically equivalent to targpath
+slay Rel(basepath, targpath tea) (tea, tea)
 
-// EvalSymlinks returns the path name after evaluating symlinks
-func EvalSymlinks(path string) (string, error)
+fr fr EvalSymlinks yolos the path name after evaluating symlinks
+slay EvalSymlinks(path tea) (tea, tea)
 ```
 
 ### Path Components
 
-```go
-// IsAbs reports whether the path is absolute
-func IsAbs(path string) bool
+```
+fr fr IsAbs reports whether the path is absolute
+slay IsAbs(path tea) lit
 
-// VolumeName returns leading volume name from path
-func VolumeName(path string) string
+fr fr VolumeName yolos leading volume name from path
+slay VolumeName(path tea) tea
 
-// HasPrefix tests whether the path begins with prefix
-func HasPrefix(path, prefix string) bool
+fr fr HasPrefix tests whether the path begins with prefix
+slay HasPrefix(path, prefix tea) lit
 
-// IsRoot determines if the path is a root directory
-func IsRoot(path string) bool
+fr fr IsRoot determines if the path is a root directory
+slay IsRoot(path tea) lit
 
-// GetRoot returns the root component of the path
-func GetRoot(path string) string
+fr fr GetRoot yolos the root component of the path
+slay GetRoot(path tea) tea
 ```
 
 ## File Path Operations
 
 ### Path Manipulation with OS Awareness
 
-```go
-// PathJoin joins path elements using the platform-specific separator
-func PathJoin(elem ...string) string
+```
+fr fr PathJoin joins path elements using the platform-specific separator
+slay PathJoin(elem ...tea) tea
 
-// PathSplit splits path into directory and file components using platform-specific separator
-func PathSplit(path string) (dir, file string)
+fr fr PathSplit splits path into directory and file components using platform-specific separator
+slay PathSplit(path tea) (dir, file tea)
 
-// PathBase returns the last element of path using platform-specific separator
-func PathBase(path string) string
+fr fr PathBase yolos the last element of path using platform-specific separator
+slay PathBase(path tea) tea
 
-// PathExt returns the file name extension used by path
-func PathExt(path string) string
+fr fr PathExt yolos the file name extension used by path
+slay PathExt(path tea) tea
 
-// PathDir returns all but the last element of path using platform-specific separator
-func PathDir(path string) string
+fr fr PathDir yolos all but the last element of path using platform-specific separator
+slay PathDir(path tea) tea
 
-// PathClean returns the shortest path equivalent to path using platform-specific rules
-func PathClean(path string) string
+fr fr PathClean yolos the shortest path equivalent to path using platform-specific rules
+slay PathClean(path tea) tea
 ```
 
 ### Path Matching and Globbing
 
-```go
-// Match reports whether name matches the pattern
-func Match(pattern, name string) (matched bool, err error)
+```
+fr fr Match reports whether name matches the pattern
+slay Match(pattern, name tea) (matched lit, err tea)
 
-// Glob returns the names of all files matching pattern
-func Glob(pattern string) (matches []string, err error)
+fr fr Glob yolos the names of all files matching pattern
+slay Glob(pattern tea) (matches []tea, err tea)
 
-// PathMatches tests whether a path matches any of the provided patterns
-func PathMatches(path string, patterns []string) bool
+fr fr PathMatches tests whether a path matches any of the provided patterns
+slay PathMatches(path tea, patterns []tea) lit
 
-// FindByPattern walks the file tree and returns paths matching the pattern
-func FindByPattern(root, pattern string) ([]string, error)
+fr fr FindByPattern walks the file tree and yolos paths matching the pattern
+slay FindByPattern(root, pattern tea) ([]tea, tea)
 ```
 
 ### Path Walking
 
-```go
-// Walk walks the file tree rooted at root, calling walkFn for each file or directory
-func Walk(root string, walkFn func(path string, info os.FileInfo, err error) error) error
+```
+fr fr Walk walks the file tree rooted at root, calling walkFn for each file or directory
+slay Walk(root tea, walkFn func(path tea, info os.FileInfo, err tea) tea) tea
 
-// WalkDir walks the file tree rooted at root, calling walkDirFn for each file or directory
-func WalkDir(root string, walkDirFn func(path string, d os.DirEntry, err error) error) error
+fr fr WalkDir walks the file tree rooted at root, calling walkDirFn for each file or directory
+slay WalkDir(root tea, walkDirFn func(path tea, d os.DirEntry, err tea) tea) tea
 
-// FastWalk provides a faster alternative to Walk with fewer stat calls
-func FastWalk(root string, walkFn func(path string, info os.FileInfo, err error) error) error
+fr fr FastWalk provides a faster alternative to Walk with fewer stat calls
+slay FastWalk(root tea, walkFn func(path tea, info os.FileInfo, err tea) tea) tea
 ```
 
 ## Path Building and Manipulation
 
-```go
-// BuildPath creates a path from components with proper separators
-func BuildPath(components ...string) string
+```
+fr fr BuildPath creates a path from components with proper separators
+slay BuildPath(components ...tea) tea
 
-// AddExt adds the extension to the path if it doesn't already have it
-func AddExt(path, ext string) string
+fr fr AddExt adds the extension to the path if it doesn't already have it
+slay AddExt(path, ext tea) tea
 
-// ChangeExt changes the extension of the path
-func ChangeExt(path, ext string) string
+fr fr ChangeExt changes the extension of the path
+slay ChangeExt(path, ext tea) tea
 
-// RemoveExt removes the extension from the path
-func RemoveExt(path string) string
+fr fr RemoveExt removes the extension from the path
+slay RemoveExt(path tea) tea
 
-// UpDir returns a path that is n directories up from the given path
-func UpDir(path string, n int) string
+fr fr UpDir yolos a path that is n directories up from the given path
+slay UpDir(path tea, n normie) tea
 
-// Siblings returns all siblings of a path (files in the same directory)
-func Siblings(path string) ([]string, error)
+fr fr Siblings yolos all siblings of a path (files in the same directory)
+slay Siblings(path tea) ([]tea, tea)
 ```
 
 ## URL Path Handling
 
-```go
-// URLToPath converts a file URL to a file path
-func URLToPath(fileURL string) (string, error)
+```
+fr fr URLToPath converts a file URL to a file path
+slay URLToPath(fileURL tea) (tea, tea)
 
-// PathToURL converts a file path to a file URL
-func PathToURL(path string) string
+fr fr PathToURL converts a file path to a file URL
+slay PathToURL(path tea) tea
 
-// JoinURLPath joins URL path components
-func JoinURLPath(elem ...string) string
+fr fr JoinURLPath joins URL path components
+slay JoinURLPath(elem ...tea) tea
 ```
 
 ## Special Directories
 
-```go
-// HomeDir returns the home directory for the current user
-func HomeDir() (string, error)
+```
+fr fr HomeDir yolos the home directory for the current user
+slay HomeDir() (tea, tea)
 
-// TempDir returns the default directory for temporary files
-func TempDir() string
+fr fr TempDir yolos the default directory for temporary files
+slay TempDir() tea
 
-// ConfigDir returns the appropriate configuration directory for the current user
-func ConfigDir() (string, error)
+fr fr ConfigDir yolos the appropriate configuration directory for the current user
+slay ConfigDir() (tea, tea)
 
-// CacheDir returns the appropriate cache directory for the current user
-func CacheDir() (string, error)
+fr fr CacheDir yolos the appropriate cache directory for the current user
+slay CacheDir() (tea, tea)
 
-// DataDir returns the appropriate data directory for the current user
-func DataDir() (string, error)
+fr fr DataDir yolos the appropriate data directory for the current user
+slay DataDir() (tea, tea)
 
-// ExecutableDir returns the directory containing the current executable
-func ExecutableDir() (string, error)
+fr fr ExecutableDir yolos the directory containing the current executable
+slay ExecutableDir() (tea, tea)
 ```
 
 ## Usage Example
 
-```go
-// Joining paths
+```
+fr fr Joining paths
 fullPath := pathing.PathJoin("usr", "local", "bin")
-// On Unix: "/usr/local/bin", on Windows: "usr\local\bin"
+fr fr On Unix: "/usr/local/bin", on Windows: "usr\local\bin"
 
-// Getting path components
+fr fr Getting path components
 dir, file := pathing.PathSplit("/home/user/document.txt")
-// dir = "/home/user/", file = "document.txt"
+fr fr dir = "/home/user/", file = "document.txt"
 
 base := pathing.PathBase("/home/user/document.txt")
-// base = "document.txt"
+fr fr base = "document.txt"
 
 extension := pathing.PathExt("/home/user/document.txt")
-// extension = ".txt"
+fr fr extension = ".txt"
 
-// Cleaning paths
-cleanPath := pathing.PathClean("/home//user/../user/./document.txt")
-// cleanPath = "/home/user/document.txt"
+fr fr Cleaning paths
+cleanPath := pathing.PathClean("/homefr fruser/../user/./document.txt")
+fr fr cleanPath = "/home/user/document.txt"
 
-// Absolute paths
+fr fr Absolute paths
 absPath, _ := pathing.Abs("./document.txt")
-// absPath might be "/current/working/dir/document.txt"
+fr fr absPath might be "/current/working/dir/document.txt"
 
-// Relative paths
+fr fr Relative paths
 relPath, _ := pathing.Rel("/home/user", "/home/user/docs/document.txt")
-// relPath = "docs/document.txt"
+fr fr relPath = "docs/document.txt"
 
-// Finding files
+fr fr Finding files
 matches, _ := pathing.Glob("/home/user/*.txt")
-// matches = ["/home/user/document.txt", "/home/user/notes.txt", ...]
+fr fr matches = ["/home/user/document.txt", "/home/user/notes.txt", ...]
 
-// Walking directories
-pathing.Walk("/home/user", func(path string, info os.FileInfo, err error) error {
-    if err != nil {
-        return err
+fr fr Walking directories
+pathing.Walk("/home/user", func(path tea, info os.FileInfo, err tea) tea {
+    if err != cap {
+        yolo err
     }
     if info.IsDir() {
         vibez.spill("Directory:", path)
     } else {
         vibez.spill("File:", path)
     }
-    return nil
+    yolo cap
 })
 
-// Using path building utilities
+fr fr Using path building utilities
 newPath := pathing.BuildPath("projects", "myapp", "src")
-vibez.spill(newPath) // platform-specific path to src directory
+vibez.spill(newPath) fr fr platform-specific path to src directory
 
 home, _ := pathing.HomeDir()
 configPath := pathing.PathJoin(home, ".config")
-vibez.spill(configPath) // path to user's config directory
+vibez.spill(configPath) fr fr path to user's config directory
 ```
 
 ## Implementation Guidelines
 1. Platform-independent implementation with platform-specific optimizations
-2. Efficient string manipulation to minimize allocations
-3. Proper error handling for file system operations
+2. Efficient tea manipulation to minimize allocations
+3. Proper tea handling for file system operations
 4. Comprehensive test coverage across different operating systems
 5. Clear documentation with examples for all functions
 6. Thread-safe implementation for concurrent use
