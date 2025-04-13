@@ -11,9 +11,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         &mut self, 
         _break_stmt: &BreakStatement
     ) -> Result<(), Error> {
-        // Get the current loop context
+        // Get the current (innermost) loop context from the stack
+        // For nested loops, this will be the context of the loop we're currently in
         if let Some(loop_context) = self.current_loop_context() {
-            // Branch to the break block
+            // Branch to the break block of the current loop context
             self.builder().build_unconditional_branch(loop_context.break_block)
                 .map_err(|e| Error::codegen(format!("Failed to build break branch: {}", e)))?;
         } else {
@@ -28,9 +29,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         &mut self, 
         _continue_stmt: &ContinueStatement
     ) -> Result<(), Error> {
-        // Get the current loop context
+        // Get the current (innermost) loop context from the stack
+        // For nested loops, this will be the context of the loop we're currently in
         if let Some(loop_context) = self.current_loop_context() {
-            // Branch to the continue block
+            // Branch to the continue block of the current loop context
             self.builder().build_unconditional_branch(loop_context.continue_block)
                 .map_err(|e| Error::codegen(format!("Failed to build continue branch: {}", e)))?;
         } else {

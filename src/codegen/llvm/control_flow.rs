@@ -226,6 +226,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let end_block = self.context().append_basic_block(function, "while_end");
         
         // Create a loop context for break/continue
+        // Each loop pushes its own context onto the stack
+        // When break/continue is encountered, it will use the innermost loop context
         let context = super::LoopContext {
             name: "while".to_string(),
             break_block: end_block,
@@ -306,6 +308,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let end_block = self.context().append_basic_block(function, "for_end");
         
         // Create a loop context for break/continue
+        // Each loop pushes its own context onto the stack
+        // When break/continue is encountered, it will use the innermost loop context
         let context = super::LoopContext {
             name: "for".to_string(),
             break_block: end_block,

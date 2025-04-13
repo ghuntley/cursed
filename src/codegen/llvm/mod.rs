@@ -76,7 +76,14 @@ mod break_continue;  // Break and continue statement handling
 mod control_flow;    // Control flow statements
 mod concurrency;     // Goroutine and channel operations
 
-/// Represents a loop context for tracking break/continue blocks
+/// Represents a loop context for tracking break/continue blocks in nested loops
+/// 
+/// When loops are nested, each loop creates its own context and pushes it onto
+/// the context stack. Break/continue statements always operate on the innermost
+/// loop context (the top of the stack). When a loop ends, its context is popped.
+/// 
+/// This ensures that break/continue statements in nested loops properly target
+/// the correct loop level.
 #[derive(Clone)]
 pub struct LoopContext<'ctx> {
     /// The name of the loop
