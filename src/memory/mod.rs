@@ -23,17 +23,21 @@ pub mod gc;
 // We've improved mark_sweep.rs directly instead of creating a separate module
 pub mod mark_sweep;
 pub mod memory_visitor;
+pub mod object_storage;
 pub mod root;
 pub mod scope;
 pub mod strategy;
 pub mod tagged;
+pub mod test_environment;
 pub mod weak;
 
 // Re-export important types
 pub use container::{ContainerType, Specializable, SpecializedVector};
 pub use root::{RootScope, RootScopeGuard, ROOT_MANAGER};
 pub use gc::MarkState;
+pub use object_storage::{global_object_storage, ObjectStorage, StorageWrapper};
 pub use scope::{with_gc_scope, with_new_gc, with_gc_scope_fn, with_new_gc_fn};
+pub use test_environment::{get_test_gc, is_test_environment, reset_test_environment};
 pub use weak::weak_registry;
 
 use std::marker::PhantomData;
@@ -108,13 +112,13 @@ pub trait Visitor {
 /// This implementation uses a Weak reference to the GarbageCollector to avoid
 /// circular references and potential deadlocks during cleanup.
 #[derive(Debug)]
-pub struct Gc<T: Traceable + Clone + 'static> {
+pub struct Gc<T: Traceable + Clone + Send + Sync + 'static> {
     ptr: NonNull<T>,
     gc: StdWeak<GarbageCollector>,
     _marker: PhantomData<T>,
 }
 
-impl<T: Traceable + Clone + 'static> Gc<T> {
+impl<T: Traceable + Clone + Send + Sync + 'static> Gc<T> {
     /// Create a new Gc reference
     pub fn new(ptr: NonNull<T>, gc: Arc<GarbageCollector>) -> Self {
         println!("Gc::new called for {}", std::any::type_name::<T>());
@@ -169,7 +173,7 @@ impl<T: Traceable + Clone + 'static> Gc<T> {
     }
 }
 
-impl<T: Traceable + Clone + 'static> Clone for Gc<T> {
+impl<T: Traceable + Clone + Send + Sync + 'static> Clone for Gc<T> {
     fn clone(&self) -> Self {
         // Try to upgrade the weak reference to get a temporary strong reference
         if let Some(gc) = self.gc.upgrade() {
@@ -198,7 +202,7 @@ impl<T: Traceable + Clone + 'static> Clone for Gc<T> {
     }
 }
 
-impl<T: Traceable + Clone + 'static> Drop for Gc<T> {
+impl<T: Traceable + Clone + Send + Sync + 'static> Drop for Gc<T> {
     fn drop(&mut self) {
         // Try to upgrade the weak reference to get a temporary strong reference
         if let Some(gc) = self.gc.upgrade() {

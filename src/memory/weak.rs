@@ -68,13 +68,13 @@ pub fn weak_registry() -> &'static Mutex<WeakRegistry> {
 /// This improved implementation maintains connection to the GC
 /// through a global registry, ensuring proper cycle detection.
 #[derive(Debug)]
-pub struct Weak<T: Traceable + Clone + 'static> {
+pub struct Weak<T: Traceable + Clone + Send + Sync + 'static> {
     ptr: NonNull<T>,
     gc: StdWeak<GarbageCollector>,
     _marker: PhantomData<T>,
 }
 
-impl<T: Traceable + Clone + 'static> Weak<T> {
+impl<T: Traceable + Clone + Send + Sync + 'static> Weak<T> {
     /// Create a new weak reference from a pointer
     pub fn new(ptr: NonNull<T>, gc: Arc<GarbageCollector>) -> Self {
         let addr = ptr.as_ptr() as usize;
@@ -162,7 +162,7 @@ impl<T: Traceable + Clone + 'static> Weak<T> {
     }
 }
 
-impl<T: Traceable + Clone + 'static> Clone for Weak<T> {
+impl<T: Traceable + Clone + Send + Sync + 'static> Clone for Weak<T> {
     fn clone(&self) -> Self {
         // When cloning, register the new weak reference too
         let addr = self.ptr.as_ptr() as usize;
@@ -185,7 +185,7 @@ impl<T: Traceable + Clone + 'static> Clone for Weak<T> {
     }
 }
 
-impl<T: Traceable + Clone + 'static> Drop for Weak<T> {
+impl<T: Traceable + Clone + Send + Sync + 'static> Drop for Weak<T> {
     fn drop(&mut self) {
         // When a weak reference is dropped, unregister it from the registry
         let addr = self.ptr.as_ptr() as usize;
