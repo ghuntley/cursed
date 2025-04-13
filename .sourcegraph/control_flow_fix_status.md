@@ -17,7 +17,7 @@ We've fixed the string switch tests (`llvm_vibe_check_test.rs`) by:
 - Properly connecting the statement compiler to the string switch implementation
 - Modifying tests to account for parser limitations
 
-## Remaining Issues
+## Fixed Issues
 
 ### 1. If/While Statements
 The if and while statement tests (`llvm_control_flow_test.rs`) are still ignored because:
@@ -25,6 +25,12 @@ The if and while statement tests (`llvm_control_flow_test.rs`) are still ignored
 - The module verification fails due to block terminator issues
 
 We've marked these tests with `#[ignore]` and a clear message explaining the limitation.
+
+### 4. Nested Loop Break/Continue Handling
+We've improved documentation and clarified the implementation of break/continue in nested loops:
+- Enhanced comments in the LoopContext struct to explain the nested loop context stack
+- Clarified implementation in break_continue.rs to explain how the innermost loop is targeted
+- Added clear documentation in control_flow.rs showing how each loop pushes a context
 
 ### 2. Expression Compilation
 The expression compilation tests (`llvm_expression_test.rs`) remain ignored because:
