@@ -2,7 +2,7 @@
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
-use std::sync::Arc;
+use std::sync::{Arc, Weak as StdWeak};
 
 use crate::memory::gc::GarbageCollector;
 use crate::memory::{Gc, Traceable};
@@ -11,7 +11,7 @@ use crate::memory::{Gc, Traceable};
 #[derive(Debug)]
 pub struct Weak<T: Traceable + Clone + 'static> {
     ptr: NonNull<T>,
-    gc: Arc<GarbageCollector>,
+    gc: StdWeak<GarbageCollector>,
     _marker: PhantomData<T>,
 }
 
@@ -20,21 +20,30 @@ impl<T: Traceable + Clone + 'static> Weak<T> {
     pub fn new(ptr: NonNull<T>, gc: Arc<GarbageCollector>) -> Self {
         Self {
             ptr,
-            gc,
+            gc: Arc::downgrade(&gc),
             _marker: PhantomData,
         }
     }
 
     /// Check if the referenced object still exists
     pub fn is_alive(&self) -> bool {
-        let addr = self.ptr.as_ptr() as usize;
-        self.gc.is_alive(addr)
+        if let Some(gc) = self.gc.upgrade() {
+            let addr = self.ptr.as_ptr() as usize;
+            gc.is_alive(addr)
+        } else {
+            // If GC is gone, the object is not alive
+            false
+        }
     }
 
     /// Try to upgrade to a strong reference
     pub fn upgrade(&self) -> Option<Gc<T>> {
-        if self.is_alive() {
-            Some(Gc::new(self.ptr, self.gc.as_ref().clone()))
+        if let Some(gc) = self.gc.upgrade() {
+            if self.is_alive() {
+                Some(Gc::new(self.ptr, gc))
+            } else {
+                None
+            }
         } else {
             None
         }
