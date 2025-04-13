@@ -98,6 +98,39 @@ pub fn wait_for_goroutines(timeout_ms: u64) -> usize {
     }
 }
 
+// Stdout capture for JIT execution
+struct StdoutCapture {
+    buffer: Arc<Mutex<String>>
+}
+
+impl StdoutCapture {
+    fn new() -> Self {
+        StdoutCapture {
+            buffer: Arc::new(Mutex::new(String::new()))
+        }
+    }
+    
+    fn clone(&self) -> Self {
+        StdoutCapture {
+            buffer: Arc::clone(&self.buffer)
+        }
+    }
+    
+    fn append(&self, text: &str) {
+        if let Ok(mut buffer) = self.buffer.lock() {
+            buffer.push_str(text);
+        }
+    }
+    
+    fn get_content(&self) -> String {
+        if let Ok(buffer) = self.buffer.lock() {
+            buffer.clone()
+        } else {
+            String::new()
+        }
+    }
+}
+
 /// Maps external functions to their implementations in the execution engine.
 ///
 /// This function sets up mappings between functions declared in the LLVM IR
@@ -122,12 +155,41 @@ pub fn map_external_functions(
         0 // Return 0 for success
     }
 
-    // Map the 'puts' function if it exists in the module
+    // Extract the module name (which is our package name)
+    let module_name = module.get_name().to_string_lossy();
+    println!("Mapping external functions for module: {}", module_name);
+
+    // Map all variations of the puts function
+    // 1. Standard "puts" function
     if let Some(puts_fn) = module.get_function("puts") {
         unsafe {
-            // Convert function pointer to usize as required by the API
             let addr = puts_impl as usize;
             execution_engine.add_global_mapping(&puts_fn, addr);
+            println!("Mapped puts function");
+        }
+    }
+    
+    // 2. Mangled package-specific puts function: _<package>_puts
+    let mangled_puts_name = format!("_{}_puts", module_name);
+    if let Some(mangled_puts) = module.get_function(&mangled_puts_name) {
+        unsafe {
+            let addr = puts_impl as usize;
+            execution_engine.add_global_mapping(&mangled_puts, addr);
+            println!("Mapped {} function", mangled_puts_name);
+        }
+    }
+    
+    // 3. Try a few common package names in case the module name doesn't match the package name
+    for pkg_name in &["minimal", "main", "test"] {
+        let mangled_name = format!("_{}_puts", pkg_name);
+        if mangled_name != mangled_puts_name {  // Skip if we already mapped this above
+            if let Some(fn_val) = module.get_function(&mangled_name) {
+                unsafe {
+                    let addr = puts_impl as usize;
+                    execution_engine.add_global_mapping(&fn_val, addr);
+                    println!("Mapped {} function", mangled_name);
+                }
+            }
         }
     }
 
@@ -234,16 +296,71 @@ impl<'ctx> JitCompiler<'ctx> {
         // Map external functions first
         self.map_functions()?;
         
-        // Find and execute the main function
+        // Debug info about module functions
+        if let Some(ref code_gen) = self.code_generator {
+            println!("DEBUG: JitCompiler - Available functions in module:");
+            let module = code_gen.module();
+            module.get_functions().for_each(|f| {
+                println!("DEBUG: JitCompiler - Function: {}", f.get_name().to_string_lossy());
+            });
+        } else {
+            println!("DEBUG: JitCompiler - No code generator available to list functions");
+        }
+        
+        // Try different variations of the main function name
         unsafe {
+            // First try the unmangled name "main"
+            println!("DEBUG: JitCompiler - Trying to get function 'main'");
             match self.execution_engine.get_function::<unsafe extern "C" fn() -> i32>("main") {
                 Ok(main_fn) => {
+                    println!("DEBUG: JitCompiler - Found main function, calling it");
                     let result = main_fn.call();
-                    Ok(result)
+                    println!("DEBUG: JitCompiler - Main function returned: {}", result);
+                    return Ok(result);
                 }
-                Err(e) => Err(Error::from_str(&format!(
-                    "Failed to get main function: {}", e
-                ))),
+                Err(e) => {
+                    println!("DEBUG: JitCompiler - Failed to get main function: {}", e);
+                    
+                    // If that failed, try to extract the package name from the code generator
+                    if let Some(ref code_gen) = self.code_generator {
+                        // Try the mangled name "_<package_name>_main"
+                        let package_name = code_gen.get_current_package_name();
+                        let mangled_name = format!("_{}_main", package_name);
+                        println!("DEBUG: JitCompiler - Trying to get function '{}'", mangled_name);
+                        
+                        match self.execution_engine.get_function::<unsafe extern "C" fn() -> i32>(&mangled_name) {
+                            Ok(main_fn) => {
+                                println!("DEBUG: JitCompiler - Found mangled main function, calling it");
+                                let result = main_fn.call();
+                                println!("DEBUG: JitCompiler - Mangled main function returned: {}", result);
+                                return Ok(result);
+                            }
+                            Err(e) => {
+                                println!("DEBUG: JitCompiler - Failed to get mangled main function: {}", e);
+                                
+                                // Last attempt: try just "_main"
+                                println!("DEBUG: JitCompiler - Trying to get function '_main'");
+                                match self.execution_engine.get_function::<unsafe extern "C" fn() -> i32>("_main") {
+                                    Ok(main_fn) => {
+                                        println!("DEBUG: JitCompiler - Found _main function, calling it");
+                                        let result = main_fn.call();
+                                        println!("DEBUG: JitCompiler - _main function returned: {}", result);
+                                        return Ok(result);
+                                    }
+                                    Err(e) => {
+                                        println!("DEBUG: JitCompiler - Failed to get _main function: {}", e);
+                                        return Err(Error::from_str(&format!(
+                                            "Failed to get main function (tried 'main', '{}', and '_main'): {}", 
+                                            mangled_name, e
+                                        )));
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        return Err(Error::from_str("No code generator available"));
+                    }
+                }
             }
         }
     }

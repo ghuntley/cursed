@@ -1,13 +1,17 @@
 //! Tests for specialized container memory layout optimizations
 
-use cursed::codegen::llvm::container_layout::ContainerKind;
+use cursed::codegen::llvm::ContainerKind;
 use cursed::codegen::llvm::LlvmCodeGenerator;
+// Import the extension traits
+use cursed::codegen::llvm::ContainerLayoutExtension;
+use cursed::codegen::llvm::MemoryLayoutExtension;
+use cursed::codegen::llvm::ContainerLayout;
+use cursed::codegen::llvm::MemoryLayout;
 use inkwell::context::Context;
 use inkwell::types::BasicTypeEnum;
 use std::path::PathBuf;
 
 #[test]
-#[ignore = "Integration test waiting for LLVM implementation to be fully integrated"]
 fn test_specialized_container_layout() {
     // Create a context for LLVM
     let context = Context::create();
@@ -33,12 +37,16 @@ fn test_specialized_container_layout() {
     );
 
     // Create specialized container through our container_layout implementation
-    let specialized_vec_type =
-        generator.create_specialized_container_type(element_type.into(), ContainerKind::Vector);
+    // Updated API signature now returns a Result<BasicTypeEnum, Error>
+    let specialized_vec_type = generator
+        .container_layout_manager()
+        .create_specialized_container(element_type.into(), ContainerKind::Vector)
+        .expect("Failed to create specialized container");
 
     // Compute sizes and alignment
-    let regular_size = generator.get_type_size(&vec_type.into());
-    let specialized_size = generator.get_type_size(&specialized_vec_type.into());
+    // Updated API now uses memory_layout_manager().get_type_size() instead of get_abi_size
+    let regular_size = generator.memory_layout_manager().get_type_size(&vec_type.into());
+    let specialized_size = generator.memory_layout_manager().get_type_size(&specialized_vec_type.into());
 
     // Since we're returning constant u64 values, we can directly use them
     let regular_size_val = regular_size;
@@ -54,25 +62,32 @@ fn test_specialized_container_layout() {
         .add_function("test_container_access", fn_type, None);
     let basic_block = context.append_basic_block(function, "entry");
     generator.builder_mut().position_at_end(basic_block);
+    
+    // Set the current function context
+    generator.set_current_function(function);
 
     // Create a container with our optimized container creation function
     // Convert capacity to u64 for our function
     let capacity: u64 = 10;
     let container_ptr = generator
-        .create_specialized_container(element_type.into(), capacity, ContainerKind::Vector);
+        .container_layout_manager()
+        .create_container_instance(element_type.into(), capacity, ContainerKind::Vector)
+        .expect("Failed to create container instance");
 
     // Create a pointer to an element using our optimized access function
     let index = context.i32_type().const_int(5, false);
-    // The element type parameter comes before container kind in our function
+    // Updated API now takes element_ptr first followed by index, element_type, and container_kind
     let element_ptr = generator
-        .generate_container_element_access(
+        .container_layout_manager()
+        .get_element_pointer(
             container_ptr,
-            index,
+            index.into(), 
             element_type.into(),
             ContainerKind::Vector
-        );
+        )
+        .expect("Failed to get element pointer");
 
-    // Load the element value
+    // Load the element value - using standard build_load API
     let element_value = generator
         .builder_mut()
         .build_load(element_type, element_ptr, "element_value")
@@ -82,8 +97,10 @@ fn test_specialized_container_layout() {
     let _ = generator.builder_mut().build_return(Some(&element_value));
 
     // Verify that the specialized container has the expected fields
+    // Updated API - struct_type().get_field_types() vs. get_field_types()
+    let fields = specialized_vec_type.into_struct_type().get_field_types();
     assert_eq!(
-        specialized_vec_type.get_field_types().len(),
+        fields.len(),
         4,
         "Specialized container should have 4 fields"
     );

@@ -3,7 +3,7 @@
 //! These tests directly test the string switch functionality in the LLVM code generator
 //! without requiring the parser to work properly.
 
-use cursed::ast::control_flow::{CaseStatement, SwitchStatement};
+use cursed::ast::control_flow::{CaseStatement, SwitchStatement, SwitchCase};
 use cursed::ast::expressions::StringLiteral;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::declarations::ReturnStatement;
@@ -12,6 +12,9 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;
 use std::any::Any;
 use std::path::PathBuf;
+
+mod switch_test_helper;
+use switch_test_helper::{convert_to_switch_case, convert_block_to_default_case};
 
 // Helper function to create a string literal expression
 fn create_string_literal(value: &str) -> Box<dyn Expression> {
@@ -62,8 +65,8 @@ fn test_string_switch_statement() {
     let switch_stmt = SwitchStatement {
         token: "vibe_check".to_string(),
         value: switch_value,
-        cases: vec![monday_case, friday_case],
-        default: Some(default_case),
+        cases: vec![convert_to_switch_case(monday_case), convert_to_switch_case(friday_case)],
+        default: Some(convert_block_to_default_case(default_case, create_string_literal("default"))),
     };
     
     // Initialize LLVM code generator
@@ -127,8 +130,8 @@ fn test_string_switch_with_multiple_case_values() {
     let switch_stmt = SwitchStatement {
         token: "vibe_check".to_string(),
         value: switch_value,
-        cases: vec![monday_case],
-        default: Some(create_block_with_return("Unknown day")),
+        cases: vec![convert_to_switch_case(monday_case)],
+        default: Some(convert_block_to_default_case(create_block_with_return("Unknown day"), create_string_literal("default"))),
     };
     
     // Initialize LLVM code generator

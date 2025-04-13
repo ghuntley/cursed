@@ -172,15 +172,22 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// branches based on the results.
     pub fn compile_string_switch_statement(
         &mut self,
-        switch_stmt: &dyn crate::ast::Statement,
+        switch_stmt: &crate::ast::control_flow::SwitchStatement,
         switch_value: PointerValue<'ctx>,
     ) -> Result<(), Error> {
-        // In a real-world implementation, we would properly downcast to SwitchStatement
-        // For the purposes of our test, we'll use a simplified implementation
-        // This demonstrates the core string comparison logic
+        // For string-based switch statements, we need to:  
+        // 1. Create a series of string comparison blocks for each case
+        // 2. Chain them together with conditional branches
+        // 3. Handle fallthrough and break statements
         
-        // In production, this would parse the real switch statement structure
+        // Return an error with a helpful message about the implementation status
+        return Err(Error::codegen(
+            "String switch values not yet fully supported. String comparison code is ready but needs to be connected to the AST parser. See .sourcegraph/string_switch_update.md for implementation status."
+            .to_string()
+        ));
         
+        // The following implementation is commented out until we fully implement string switches
+        /*
         // Get the current function
         let function = match self.builder_mut().get_insert_block() {
             Some(block) => block.get_parent(),
@@ -190,117 +197,141 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Create basic blocks for the end of the switch statement
         let end_block = self.context.append_basic_block(function, "switch.end");
         
-        // Create a default block (for demonstration)
+        // Create a default block
         let default_block = self.context.append_basic_block(function, "switch.default");
         
-        // For our test, create two case blocks
-        let case1_block = self.context.append_basic_block(function, "switch.case.monday");
-        let case2_block = self.context.append_basic_block(function, "switch.case.tuesday");
-        
-        // Create a mock case representation for test
-        // In production, this would extract data from the real switch statement
+        // Create a block for each case
+        let mut case_blocks = Vec::with_capacity(switch_stmt.cases.len());
+        for (i, _) in switch_stmt.cases.iter().enumerate() {
+            let case_block = self.context.append_basic_block(function, &format!("switch.case.{}", i));
+            case_blocks.push(case_block);
+        }
         
         // Save the current block before we start branching
         let current_block = self.builder_mut().get_insert_block().unwrap();
         
+        // Create a loop context for break statements within the switch
+        let loop_ctx = super::LoopContext {
+            name: "switch".to_string(),
+            break_block: end_block,
+            continue_block: end_block, // Continue doesn't make sense in a switch
+        };
+        self.push_loop_context(loop_ctx);
+        
         // We'll need to create a chain of comparison blocks
-        let first_comp_block = self.context.append_basic_block(function, "switch.first_comp");
+        let mut comp_blocks = Vec::with_capacity(switch_stmt.cases.len());
+        for (i, _) in switch_stmt.cases.iter().enumerate() {
+            let comp_block = self.context.append_basic_block(function, &format!("switch.comp.{}", i));
+            comp_blocks.push(comp_block);
+        }
         
         // Branch from current block to first comparison block
-        match self.builder_mut().build_unconditional_branch(first_comp_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to branch to first comparison: {}", e))),
-        };
+        if !comp_blocks.is_empty() {
+            match self.builder_mut().build_unconditional_branch(comp_blocks[0]) {
+                Ok(_) => {},
+                Err(e) => return Err(Error::codegen(format!("Failed to branch to first comparison: {}", e))),
+            };
+        } else {
+            // No cases, just branch to default
+            match self.builder_mut().build_unconditional_branch(default_block) {
+                Ok(_) => {},
+                Err(e) => return Err(Error::codegen(format!("Failed to branch to default: {}", e))),
+            };
+        }
         
-        // Position at the first comparison block
-        self.builder_mut().position_at_end(first_comp_block);
-        let current_comp_block = first_comp_block;
-        
-        // Create comparison blocks for our test cases
-        let comp1_block = self.context.append_basic_block(function, "switch.comp.1");
-        let comp2_block = self.context.append_basic_block(function, "switch.comp.2");
-        
-        // Branch to first comparison block
-        match self.builder_mut().build_unconditional_branch(comp1_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to branch to comparison: {}", e))),
-        };
-        
-        // Case 1: Compare with "Monday"
-        self.builder_mut().position_at_end(comp1_block);
-        let monday_str = self.create_string_constant("Monday")?;
-        let equal1 = self.generate_string_comparison(switch_value, monday_str)?;
-        
-        // If equal to Monday, branch to case1, otherwise continue to next comparison
-        match self.builder_mut().build_conditional_branch(equal1, case1_block, comp2_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
-        };
-        
-        // Case 2: Compare with "Tuesday"
-        self.builder_mut().position_at_end(comp2_block);
-        let tuesday_str = self.create_string_constant("Tuesday")?;
-        let equal2 = self.generate_string_comparison(switch_value, tuesday_str)?;
-        
-        // If equal to Tuesday, branch to case2, otherwise go to default
-        match self.builder_mut().build_conditional_branch(equal2, case2_block, default_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
-        };
-        
-        // Case 1 block: Monday
-        self.builder_mut().position_at_end(case1_block);
-        
-        // Set up break block for this case
-        let break1_block = self.context.append_basic_block(function, "switch.case1.break");
-        
-        // For a ghosted (break) statement, we would branch to break block
-        // For demonstration, always branch to break block
-        match self.builder_mut().build_unconditional_branch(break1_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
-        };
-        
-        // Connect break block to end block
-        self.builder_mut().position_at_end(break1_block);
-        match self.builder_mut().build_unconditional_branch(end_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to connect break: {}", e))),
-        };
-        
-        // Case 2 block: Tuesday
-        self.builder_mut().position_at_end(case2_block);
-        
-        // Set up break block for this case
-        let break2_block = self.context.append_basic_block(function, "switch.case2.break");
-        
-        // For a ghosted (break) statement, we would branch to break block
-        // For demonstration, always branch to break block
-        match self.builder_mut().build_unconditional_branch(break2_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
-        };
-        
-        // Connect break block to end block
-        self.builder_mut().position_at_end(break2_block);
-        match self.builder_mut().build_unconditional_branch(end_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to connect break: {}", e))),
-        };
+        // Build the comparison chain
+        for (i, case) in switch_stmt.cases.iter().enumerate() {
+            // Position at this comparison block
+            self.builder_mut().position_at_end(comp_blocks[i]);
+            
+            // Get the case value (string literal)
+            if let Some(expr) = case.expressions.first() {
+                // Check if this is a string literal
+                let case_str = self.evaluate_string_expr(&**expr)?;
+                let equal = self.generate_string_comparison(switch_value, case_str)?;
+                
+                // If equal to this string, branch to case, otherwise continue to next comparison
+                let next_block = if i < comp_blocks.len() - 1 {
+                    comp_blocks[i + 1]
+                } else {
+                    default_block
+                };
+                
+                match self.builder_mut().build_conditional_branch(equal, case_blocks[i], next_block) {
+                    Ok(_) => {},
+                    Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
+                };
+            } else {
+                // Empty case, branch to the next one
+                let next_block = if i < comp_blocks.len() - 1 {
+                    comp_blocks[i + 1]
+                } else {
+                    default_block
+                };
+                
+                match self.builder_mut().build_unconditional_branch(next_block) {
+                    Ok(_) => {},
+                    Err(e) => return Err(Error::codegen(format!("Failed to build branch: {}", e))),
+                };
+            }
+            
+            // Build the case block
+            self.builder_mut().position_at_end(case_blocks[i]);
+            
+            // Compile all statements in this case
+            for stmt in &case.body.statements {
+                match self.compile_statement_custom(&**stmt) {
+                    Ok(_) => {},
+                    Err(e) => return Err(e),
+                }
+            }
+            
+            // If no terminator (no break), fall through to next case or end
+            if self.builder_mut().get_insert_block().unwrap().get_terminator().is_none() {
+                let target = if i < case_blocks.len() - 1 {
+                    case_blocks[i + 1]
+                } else {
+                    end_block
+                };
+                
+                match self.builder_mut().build_unconditional_branch(target) {
+                    Ok(_) => {},
+                    Err(e) => return Err(Error::codegen(format!("Failed to build fallthrough: {}", e))),
+                };
+            }
+        }
         
         // Default block
         self.builder_mut().position_at_end(default_block);
         
-        // Branch from default to end
-        match self.builder_mut().build_unconditional_branch(end_block) {
-            Ok(_) => {},
-            Err(e) => return Err(Error::codegen(format!("Failed to build default branch: {}", e))),
-        };
+        // Compile default case statements if they exist
+        if let Some(default_case) = &switch_stmt.default {
+            for stmt in &default_case.statements {
+                match self.compile_statement_custom(&**stmt) {
+                    Ok(_) => {},
+                    Err(e) => return Err(e),
+                }
+            }
+        }
+        
+        // Branch from default to end if not already terminated
+        if self.builder_mut().get_insert_block().unwrap().get_terminator().is_none() {
+            match self.builder_mut().build_unconditional_branch(end_block) {
+                Ok(_) => {},
+                Err(e) => return Err(Error::codegen(format!("Failed to build default branch: {}", e))),
+            };
+        }
         
         // Position at the end block for continued code generation
         self.builder_mut().position_at_end(end_block);
         
-        Ok(())
+        // Pop the loop context
+        self.pop_loop_context();
+        */
+        
+        // Return error to indicate string switch is not supported yet
+        // This will be removed when the implementation is completed
+        // Err(Error::codegen("String switch values not yet supported".to_string()))
     }
     
     /// Simplified statement compiler for use within the string switch implementation

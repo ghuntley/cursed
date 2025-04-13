@@ -14,16 +14,41 @@ fn test_loop_context_management() {
     let function = generator
         .module()
         .add_function("test_loop_context", fn_type, None);
+    
+    // Set the current function in the generator
+    generator.set_current_function(function);
+    
     let entry_block = context.append_basic_block(function, "entry");
     generator.builder().position_at_end(entry_block);
 
-    // Push a loop context
-    let result = generator.push_loop_context("test_loop");
-    assert!(
-        result.is_ok(),
-        "Failed to push loop context: {:?}",
-        result.err()
-    );
+    // Create basic blocks for the loop context
+    let block1 = context.append_basic_block(function, "block1");
+    let block2 = context.append_basic_block(function, "block2");
+    
+    // Add terminators to all blocks to avoid verification errors
+    // Save current position
+    let current_block = generator.builder().get_insert_block().unwrap();
+    
+    // Add return to block1
+    generator.builder().position_at_end(block1);
+    generator.builder().build_return(None).expect("Failed to build return for block1");
+    
+    // Add return to block2
+    generator.builder().position_at_end(block2);
+    generator.builder().build_return(None).expect("Failed to build return for block2");
+    
+    // Restore original position
+    generator.builder().position_at_end(current_block);
+    
+    // Create loop context
+    let loop_ctx = cursed::codegen::llvm::LoopContext {
+        name: "test_loop".to_string(),
+        break_block: block1,
+        continue_block: block2
+    };
+    
+    // Push the loop context
+    generator.push_loop_context(loop_ctx);
 
     // Verify we have a loop context
     let loop_context = generator.current_loop_context();
@@ -49,6 +74,9 @@ fn test_loop_context_management() {
         "Expected no loop context, but one exists"
     );
 
+    // Add a terminator to the entry block (return void)
+    generator.builder().build_return(None).expect("Failed to build return");
+    
     // Verify module
     let verify_result = generator.module().verify();
     assert!(

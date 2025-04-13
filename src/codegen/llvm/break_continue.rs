@@ -1,8 +1,9 @@
 //! Code generation for break and continue statements
 
-use crate::ast::control_flow::{BreakStatement, ContinueStatement};
+use crate::ast::{BreakStatement, ContinueStatement};
 use crate::error::Error;
-use super::generator::LlvmCodeGenerator;
+use crate::ast::traits::Statement;
+use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Compile a break statement to LLVM IR

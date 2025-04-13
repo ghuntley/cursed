@@ -25,7 +25,7 @@
 
 
 ## Code Style Guidelines
-- Follow TDD (Test-Driven Development) for all new features
+- Follow TDD (Test-Driven Development) for all new features: DO NOT IGNORE OR COMMENT OUT TESTS. RESOLVE THE UNDERLYING REASON WHY THE TESTS FAIL.
 - Use descriptive comments for complex algorithms/unsafe code
 - Contain unsafe code in the smallest possible scope
 - Document safety requirements extensively
@@ -35,3 +35,4 @@
 - Keep the compiler pipeline stages modular and testable
 - Always add proper tests for new language features
 - Use Make as the primary build interface rather than direct cargo commands
+- 

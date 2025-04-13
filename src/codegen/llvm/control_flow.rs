@@ -1,524 +1,541 @@
-//! Code generation for control flow statements in the CURSED language.
+//! Control flow code generation for LLVM IR
 //!
-//! This module handles the translation of CURSED control flow constructs to LLVM IR:
-//! - If statements (`if` in CURSED): Conditional branching with optional else clauses
-//! - While loops (`periodt` in CURSED): Condition-controlled loops
-//! - For loops (`bestie` in CURSED): Flexible loop construct with initialization, condition, and increment sections
-//!
-//! The code generator creates appropriate LLVM basic blocks for each part of the control flow
-//! and connects them with conditional and unconditional branches. It also manages break and
-//! continue targets for loops, enabling proper loop exit and continuation.
+//! This module handles code generation for control flow constructs like
+//! if statements, loops, and switch statements.
 
 use inkwell::basic_block::BasicBlock;
-use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement, CaseStatement};
+use inkwell::values::{BasicValueEnum, IntValue};
+use inkwell::IntPredicate;
+use crate::ast::traits::{Expression, Statement};
+use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::error::Error;
-use super::generator::{LlvmCodeGenerator, LoopContext};
+use super::context::LlvmCodeGenerator;
+use super::expression::ExpressionCompilation;
+use super::statement::StatementCompilation;
+use super::variables::VariableHandling;
+use super::variables::VariableScope;
 
+/// Control flow implementation
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Compiles an if statement to LLVM IR.
+    /// Compile an if statement with condition and optional else branch
     ///
-    /// This method translates a CURSED if statement into a series of LLVM basic blocks:
-    /// - A condition evaluation block
-    /// - A 'then' block for the consequence code
-    /// - An optional 'else' block for alternative code
-    /// - A merge ('ifcont') block where control flow reunites
-    ///
-    /// The method creates appropriate conditional branches based on the condition's
-    /// evaluation and ensures proper control flow through all possible paths.
-    ///
-    /// # Arguments
-    ///
-    /// * `if_stmt` - The AST if statement node to compile
-    ///
-    /// # Returns
-    ///
-    /// * `Result<(), Error>` - Success or a compilation error
+    /// This is a lower-level implementation used by the higher-level compile_if_statement
+    /// that takes an IfStatement AST node.
     pub fn compile_if_statement(
+        &mut self,
+        condition: &dyn Expression,
+        then_branch: &[Box<dyn Statement>],
+        else_branch: Option<&[Box<dyn Statement>]>
+    ) -> Result<Option<BasicValueEnum<'ctx>>, Error> {
+        // First, compile the condition expression
+        let condition_value = self.compile_expression(condition)?;
+        
+        // Make sure the condition is a boolean (i1 in LLVM)
+        let condition_bool = if condition_value.is_int_value() {
+            // Compare with zero to convert to boolean
+            let zero = self.context().bool_type().const_int(0, false);
+            self.builder().build_int_compare(
+                IntPredicate::NE,
+                condition_value.into_int_value(),
+                zero,
+                "if_cond"
+            ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
+        } else {
+            return Err(Error::from_str("If condition must be a boolean value"));
+        };
+        
+        // Create the basic blocks for the then/else branches
+        let function = self.current_function().ok_or_else(|| Error::from_str("If statement outside function"))?;
+        let then_block = self.context().append_basic_block(function, "then");
+        let else_block = self.context().append_basic_block(function, "else");
+        let merge_block = self.context().append_basic_block(function, "if_end");
+        
+        // Create the conditional branch
+        self.builder().build_conditional_branch(condition_bool, then_block, else_block)
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        
+        // Build the 'then' block
+        self.builder().position_at_end(then_block);
+        
+        // Create a new variable scope for the 'then' block
+        let scope = VariableScope::new();
+        self.push_scope(scope);
+        
+        // Compile the 'then' statements
+        for stmt in then_branch {
+            // Ignore any return values as we've updated the return type
+            self.compile_statement(stmt.as_ref())?
+        }
+        
+        // If we reach here, no early return occurred
+        self.pop_scope();
+        
+        // Branch to the merge block (if not already terminated by a return)
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(merge_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        }
+        
+        // Build the 'else' block if there is one
+        self.builder().position_at_end(else_block);
+        
+        if let Some(else_stmts) = else_branch {
+            // Create a new variable scope for the 'else' block
+            let scope = VariableScope::new();
+            self.push_scope(scope);
+            
+            // Compile the 'else' statements
+            for stmt in else_stmts {
+                // Ignore any return values as we've updated the return type
+                self.compile_statement(stmt.as_ref())?
+            }
+            
+            // If we reach here, no early return occurred
+            self.pop_scope();
+        }
+        
+        // Branch to the merge block (if not already terminated by a return)
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(merge_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        }
+        
+        // Build the merge block
+        self.builder().position_at_end(merge_block);
+        
+        // No value is returned from an if statement
+        Ok(None)
+    }
+    
+    /// Compile a high-level if statement AST node
+    pub fn compile_if_statement_direct(
         &mut self, 
         if_stmt: &IfStatement
     ) -> Result<(), Error> {
-        // Get the current function
-        let current_fn = self.builder().get_insert_block().unwrap().get_parent().unwrap();
+        // Extract components from the if statement
+        let condition = if_stmt.condition.as_ref();
+        let then_branch = &if_stmt.consequence.statements;
         
-        // Create blocks for then, else, and merge
-        let then_block = self.context().append_basic_block(current_fn, "then");
-        let else_block = if if_stmt.alternative.is_some() {
-            Some(self.context().append_basic_block(current_fn, "else"))
-        } else { None };
-        let merge_block = self.context().append_basic_block(current_fn, "ifcont");
-        
-        // Compile the condition
-        let condition_value = self.compile_basic_expression(&*if_stmt.condition)?;
-        if !condition_value.is_int_value() {
-            return Err(Error::codegen("If condition must be a boolean".to_string()));
-        }
-        let condition = condition_value.into_int_value();
-        
-        // Create the conditional branch
-        if let Some(else_block) = else_block {
-            self.builder().build_conditional_branch(condition, then_block, else_block)
-                .map_err(|e| Error::codegen(format!("Failed to build conditional branch: {}", e)))?;
+        // Convert the else branch if present
+        let else_branch = if let Some(alt) = &if_stmt.alternative {
+            Some(alt.statements.as_slice())
         } else {
-            self.builder().build_conditional_branch(condition, then_block, merge_block)
-                .map_err(|e| Error::codegen(format!("Failed to build conditional branch: {}", e)))?;
-        }
+            None
+        };
         
-        // Compile the then block
-        self.builder().position_at_end(then_block);
-        for stmt in &if_stmt.consequence.statements {
-            self.compile_statement(&**stmt)?;
-        }
-        
-        // Add a branch to the merge block if there wasn't a terminator instruction (like return)
-        let current_block = self.builder().get_insert_block().unwrap();
-        if current_block.get_terminator().is_none() {
-            self.builder().build_unconditional_branch(merge_block)
-                .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-        }
-        
-        // Compile the else block if it exists
-        if let Some(else_block) = else_block {
-            self.builder().position_at_end(else_block);
-            
-            if let Some(alt) = &if_stmt.alternative {
-                for stmt in &alt.statements {
-                    self.compile_statement(&**stmt)?;
-                }
-            }
-            
-            // Add a branch to the merge block if there wasn't a terminator instruction
-            let current_block = self.builder().get_insert_block().unwrap();
-            if current_block.get_terminator().is_none() {
-                self.builder().build_unconditional_branch(merge_block)
-                    .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-            }
-        }
-        
-        // Continue in the merge block
-        self.builder().position_at_end(merge_block);
-        
-        // Add a terminator to the merge block based on function return type
-        let fn_ret_type = current_fn.get_type().get_return_type();
-        if fn_ret_type.is_none() {
-            // Void return type
-            self.builder().build_return(None)
-                .map_err(|e| Error::codegen(format!("Failed to build void return: {}", e)))?;
-        } else {
-            // Non-void return type - use appropriate type
-            let i32_type = self.context().i32_type();
-            self.builder().build_return(Some(&i32_type.const_int(0, false)))
-                .map_err(|e| Error::codegen(format!("Failed to build return: {}", e)))?;
-        }
+        // Call the lower-level implementation
+        let _ = self.compile_if_statement_low_level(condition, then_branch.as_slice(), else_branch)?;
         
         Ok(())
     }
     
-    /// Compiles a while loop ("periodt" in CURSED) to LLVM IR.
-    ///
-    /// This method translates a CURSED while loop into a set of LLVM basic blocks:
-    /// - A condition block that evaluates the loop condition
-    /// - A body block that contains the loop's statements
-    /// - A continue block for handling continue statements
-    /// - A break block for handling break statements
-    /// - An after block where execution continues after the loop
-    ///
-    /// The method sets up proper control flow between these blocks and registers
-    /// the loop in the loop context stack to handle break and continue statements.
-    ///
-    /// # Arguments
-    ///
-    /// * `while_stmt` - The AST while statement node to compile
-    ///
-    /// # Returns
-    ///
-    /// * `Result<(), Error>` - Success or a compilation error
+    /// Low-level implementation for condition and branches
+    pub fn compile_if_statement_low_level(
+        &mut self,
+        condition: &dyn Expression,
+        then_branch: &[Box<dyn Statement>],
+        else_branch: Option<&[Box<dyn Statement>]>
+    ) -> Result<Option<BasicValueEnum<'ctx>>, Error> {
+        // First, compile the condition expression
+        let condition_value = self.compile_expression(condition)?;
+        
+        // Make sure the condition is a boolean (i1 in LLVM)
+        let condition_bool = if condition_value.is_int_value() {
+            // Compare with zero to convert to boolean
+            let zero = self.context().bool_type().const_int(0, false);
+            self.builder().build_int_compare(
+                IntPredicate::NE,
+                condition_value.into_int_value(),
+                zero,
+                "if_cond"
+            ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
+        } else {
+            return Err(Error::from_str("If condition must be a boolean value"));
+        };
+        
+        // Create the basic blocks for the then/else branches
+        let function = self.current_function().ok_or_else(|| Error::from_str("If statement outside function"))?;
+        let then_block = self.context().append_basic_block(function, "then");
+        let else_block = self.context().append_basic_block(function, "else");
+        let merge_block = self.context().append_basic_block(function, "if_end");
+        
+        // Create the conditional branch
+        self.builder().build_conditional_branch(condition_bool, then_block, else_block)
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        
+        // Build the 'then' block
+        self.builder().position_at_end(then_block);
+        
+        // Create a new variable scope for the 'then' block
+        let scope = VariableScope::new();
+        self.push_scope(scope);
+        
+        // Compile the 'then' statements
+        for stmt in then_branch {
+            self.compile_statement(stmt.as_ref())?;
+        }
+        
+        // If we reach here, no early return occurred
+        self.pop_scope();
+        
+        // Branch to the merge block (if not already terminated by a return)
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(merge_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        }
+        
+        // Build the 'else' block if there is one
+        self.builder().position_at_end(else_block);
+        
+        if let Some(else_stmts) = else_branch {
+            // Create a new variable scope for the 'else' block
+            let scope = VariableScope::new();
+            self.push_scope(scope);
+            
+            // Compile the 'else' statements
+            for stmt in else_stmts {
+                self.compile_statement(stmt.as_ref())?;
+            }
+            
+            // If we reach here, no early return occurred
+            self.pop_scope();
+        }
+        
+        // Branch to the merge block (if not already terminated by a return)
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(merge_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        }
+        
+        // Build the merge block
+        self.builder().position_at_end(merge_block);
+        
+        // No value is returned from an if statement
+        Ok(None)
+    }
+    
+    /// Compile a while statement
     pub fn compile_while_statement(
         &mut self, 
         while_stmt: &WhileStatement
     ) -> Result<(), Error> {
-        // Get the current function
-        let current_fn = self.builder().get_insert_block().unwrap().get_parent().unwrap();
+        // Create basic blocks for the loop
+        let function = self.current_function().ok_or_else(|| Error::from_str("While statement outside function"))?;
+        let cond_block = self.context().append_basic_block(function, "while_cond");
+        let body_block = self.context().append_basic_block(function, "while_body");
+        let end_block = self.context().append_basic_block(function, "while_end");
         
-        // Create blocks for condition, loop body, and after
-        let cond_block = self.context().append_basic_block(current_fn, "while.cond");
-        let body_block = self.context().append_basic_block(current_fn, "while.body");
-        let after_block = self.context().append_basic_block(current_fn, "while.end");
+        // Create a loop context for break/continue
+        let context = super::LoopContext {
+            name: "while".to_string(),
+            break_block: end_block,
+            continue_block: cond_block,
+        };
+        self.push_loop_context(context);
         
         // Branch to the condition block
         self.builder().build_unconditional_branch(cond_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         
-        // Push loop context for break/continue statements
-        self.push_loop_context("while")?;
-        let loop_context = self.current_loop_context().unwrap().clone();
-        let break_block = loop_context.break_block;
-        let continue_block = loop_context.continue_block;
-        
-        // Emit the condition code
+        // Build the condition block
         self.builder().position_at_end(cond_block);
-        let condition_value = self.compile_basic_expression(&*while_stmt.condition)?;
-        if !condition_value.is_int_value() {
-            return Err(Error::codegen("While condition must be a boolean".to_string()));
-        }
-        let condition = condition_value.into_int_value();
+        
+        // Compile the condition expression
+        let condition = while_stmt.condition.as_ref();
+        let condition_value = self.compile_expression(condition)?;
+        
+        // Convert the condition to a boolean
+        let condition_bool = if condition_value.is_int_value() {
+            // Compare with zero to convert to boolean
+            let zero = self.context().bool_type().const_int(0, false);
+            self.builder().build_int_compare(
+                IntPredicate::NE,
+                condition_value.into_int_value(),
+                zero,
+                "while_cond"
+            ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
+        } else {
+            return Err(Error::from_str("While condition must be a boolean value"));
+        };
         
         // Create the conditional branch
-        self.builder().build_conditional_branch(condition, body_block, after_block)
-            .map_err(|e| Error::codegen(format!("Failed to build conditional branch: {}", e)))?;
+        self.builder().build_conditional_branch(condition_bool, body_block, end_block)
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         
-        // Emit the body code
+        // Build the body block
         self.builder().position_at_end(body_block);
+        
+        // Create a new variable scope for the loop body
+        let scope = VariableScope::new();
+        self.push_scope(scope);
+        
+        // Compile the body statements
         for stmt in &while_stmt.body.statements {
             self.compile_statement(&**stmt)?;
         }
         
-        // Add a branch back to the continue block if there wasn't a terminator
-        let current_block = self.builder().get_insert_block().unwrap();
-        if current_block.get_terminator().is_none() {
-            self.builder().build_unconditional_branch(continue_block)
-                .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-        }
+        // Pop the variable scope
+        self.pop_scope();
         
-        // Position at the continue block, which jumps back to the condition
-        self.builder().position_at_end(continue_block);
-        self.builder().build_unconditional_branch(cond_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-        
-        // Position at the break block, which jumps to after
-        self.builder().position_at_end(break_block);
-        self.builder().build_unconditional_branch(after_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-        
-        // Continue in the after block
-        self.builder().position_at_end(after_block);
-        
-        // Add a terminator to the after block based on function return type
-        let fn_ret_type = current_fn.get_type().get_return_type();
-        if fn_ret_type.is_none() {
-            // Void return type
-            self.builder().build_return(None)
-                .map_err(|e| Error::codegen(format!("Failed to build void return: {}", e)))?;
-        } else {
-            // Non-void return type - use appropriate type
-            let i32_type = self.context().i32_type();
-            self.builder().build_return(Some(&i32_type.const_int(0, false)))
-                .map_err(|e| Error::codegen(format!("Failed to build return: {}", e)))?;
+        // Branch back to the condition block (if not already terminated by a return)
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(cond_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         }
         
         // Pop the loop context
         self.pop_loop_context();
         
+        // Position at the end block
+        self.builder().position_at_end(end_block);
+        
         Ok(())
     }
     
-    /// Compiles a for loop ("bestie" in CURSED) to LLVM IR.
-    ///
-    /// This method translates a CURSED for loop into a complex set of LLVM basic blocks:
-    /// - An initialization block for setting up loop variables
-    /// - A condition block that evaluates the loop continuation condition
-    /// - An increment block for updating loop variables after each iteration
-    /// - A body block containing the loop's statements
-    /// - A continue block that targets the increment block
-    /// - A break block for exiting the loop
-    /// - An after block where execution continues after the loop
-    ///
-    /// This structure handles all three forms of CURSED for loops:
-    /// 1. C-style for loops with init, condition, and increment expressions
-    /// 2. Condition-only loops (similar to while loops)
-    /// 3. Infinite loops (when no condition is provided)
-    ///
-    /// # Arguments
-    ///
-    /// * `for_stmt` - The AST for statement node to compile
-    ///
-    /// # Returns
-    ///
-    /// * `Result<(), Error>` - Success or a compilation error
+    /// Compile a for statement
     pub fn compile_for_statement(
         &mut self, 
         for_stmt: &ForStatement
     ) -> Result<(), Error> {
-        // Get the current function
-        let current_fn = self.builder().get_insert_block().unwrap().get_parent().unwrap();
+        // Create basic blocks for the loop
+        let function = self.current_function().ok_or_else(|| Error::from_str("For statement outside function"))?;
+        let init_block = self.context().append_basic_block(function, "for_init");
+        let cond_block = self.context().append_basic_block(function, "for_cond");
+        let body_block = self.context().append_basic_block(function, "for_body");
+        let post_block = self.context().append_basic_block(function, "for_post");
+        let end_block = self.context().append_basic_block(function, "for_end");
         
-        // Create blocks for initialization, condition, increment, loop body, and after
-        let init_block = self.context().append_basic_block(current_fn, "for.init");
-        let cond_block = self.context().append_basic_block(current_fn, "for.cond");
-        let incr_block = self.context().append_basic_block(current_fn, "for.incr");
-        let body_block = self.context().append_basic_block(current_fn, "for.body");
-        let after_block = self.context().append_basic_block(current_fn, "for.end");
+        // Create a loop context for break/continue
+        let context = super::LoopContext {
+            name: "for".to_string(),
+            break_block: end_block,
+            continue_block: post_block,
+        };
+        self.push_loop_context(context);
         
         // Branch to the initialization block
         self.builder().build_unconditional_branch(init_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         
-        // Push loop context for break/continue statements
-        self.push_loop_context("for")?;
-        let loop_context = self.current_loop_context().unwrap().clone();
-        let break_block = loop_context.break_block;
-        let continue_block = loop_context.continue_block;
-        
-        // Emit the initialization code
+        // Build the initialization block
         self.builder().position_at_end(init_block);
+        
+        // Create a new variable scope for the entire for loop
+        let scope = VariableScope::new();
+        self.push_scope(scope);
+        
+        // Compile the initialization statement
         if let Some(init) = &for_stmt.init {
             self.compile_statement(&**init)?;
         }
-        self.builder().build_unconditional_branch(cond_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
         
-        // Emit the condition code
+        // Branch to the condition block
+        self.builder().build_unconditional_branch(cond_block)
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        
+        // Build the condition block
         self.builder().position_at_end(cond_block);
-        let condition = if let Some(cond) = &for_stmt.condition {
-            let cond_value = self.compile_basic_expression(&**cond)?;
-            if !cond_value.is_int_value() {
-                return Err(Error::codegen("For condition must be a boolean".to_string()));
+        
+        // Compile the condition expression
+        let condition = match &for_stmt.condition {
+            Some(cond) => {
+                let cond_value = self.compile_expression(&**cond)?;
+                
+                // Convert the condition to a boolean
+                if cond_value.is_int_value() {
+                    // Compare with zero to convert to boolean
+                    let zero = self.context().bool_type().const_int(0, false);
+                    self.builder().build_int_compare(
+                        IntPredicate::NE,
+                        cond_value.into_int_value(),
+                        zero,
+                        "for_cond"
+                    ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
+                } else {
+                    return Err(Error::from_str("For condition must be a boolean value"));
+                }
+            },
+            None => {
+                // No condition means always true
+                self.context().bool_type().const_int(1, false)
             }
-            cond_value.into_int_value()
-        } else {
-            // If there's no condition, use true (1)
-            self.context().bool_type().const_int(1, false)
         };
         
         // Create the conditional branch
-        self.builder().build_conditional_branch(condition, body_block, after_block)
-            .map_err(|e| Error::codegen(format!("Failed to build conditional branch: {}", e)))?;
+        self.builder().build_conditional_branch(condition, body_block, end_block)
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         
-        // Emit the body code
+        // Build the body block
         self.builder().position_at_end(body_block);
+        
+        // Compile the body statements
         for stmt in &for_stmt.body.statements {
             self.compile_statement(&**stmt)?;
         }
         
-        // Branch to the continue block if there wasn't a terminator
-        let current_block = self.builder().get_insert_block().unwrap();
-        if current_block.get_terminator().is_none() {
-            self.builder().build_unconditional_branch(continue_block)
-                .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+        // Branch to the post block (if not already terminated by a return)
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(post_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         }
         
-        // Position at the continue block, which jumps to the increment
-        self.builder().position_at_end(continue_block);
-        self.builder().build_unconditional_branch(incr_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+        // Build the post block
+        self.builder().position_at_end(post_block);
         
-        // Emit the increment code
-        self.builder().position_at_end(incr_block);
+        // Compile the post statement
         if let Some(post) = &for_stmt.post {
             self.compile_statement(&**post)?;
         }
+        
+        // Branch back to the condition block
         self.builder().build_unconditional_branch(cond_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+            .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
         
-        // Position at the break block, which jumps to after
-        self.builder().position_at_end(break_block);
-        self.builder().build_unconditional_branch(after_block)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
+        // Build the end block
+        self.builder().position_at_end(end_block);
         
-        // Continue in the after block
-        self.builder().position_at_end(after_block);
-        
-        // Add a terminator to the after block based on function return type
-        let fn_ret_type = current_fn.get_type().get_return_type();
-        if fn_ret_type.is_none() {
-            // Void return type
-            self.builder().build_return(None)
-                .map_err(|e| Error::codegen(format!("Failed to build void return: {}", e)))?;
-        } else {
-            // Non-void return type - use appropriate type
-            let i32_type = self.context().i32_type();
-            self.builder().build_return(Some(&i32_type.const_int(0, false)))
-                .map_err(|e| Error::codegen(format!("Failed to build return: {}", e)))?;
-        }
-        
-        // Pop the loop context
+        // Pop the variable scope and loop context
+        self.pop_scope();
         self.pop_loop_context();
         
         Ok(())
     }
     
-    /// Compiles a switch statement (vibe_check in CURSED) to LLVM IR.
-    ///
-    /// This method translates a CURSED vibe_check statement into LLVM's switch instruction
-    /// and associated basic blocks. It creates a block for each case and handles the control
-    /// flow between them, including fallthrough behavior when no explicit break is present.
-    ///
-    /// # Arguments
-    ///
-    /// * `switch_stmt` - The AST switch statement node to compile
-    ///
-    /// # Returns
-    ///
-    /// * `Result<(), Error>` - Success or a compilation error
+    /// Compile a switch statement
     pub fn compile_switch_statement(
         &mut self, 
         switch_stmt: &SwitchStatement
     ) -> Result<(), Error> {
-        // Get the current function
-        let current_fn = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-        
-        // Create a block for the switch header and the switch end (merge point)
-        let switch_header = self.context.append_basic_block(current_fn, "switch.header");
-        let switch_end = self.context.append_basic_block(current_fn, "switch.end");
-        
-        // Branch to the switch header
-        self.builder.build_unconditional_branch(switch_header)
-            .map_err(|e| Error::codegen(format!("Failed to build unconditional branch: {}", e)))?;
-        
-        // Position at the switch header block
-        self.builder.position_at_end(switch_header);
-        
-        // Compile the switch value expression
+        // Compile the switch value
         let switch_value = self.compile_expression(&*switch_stmt.value)?;
         
-        // We'll need the current function for string switch in the future
-        
-        // Handle switch statement based on the type of the value
-        if switch_value.is_int_value() {
-            // Integer switch case - use LLVM's native switch instruction
-            let default_case = match &switch_stmt.default {
-                Some(_) => {
-                    // Create a block for the default case
-                    self.context.append_basic_block(current_fn, "switch.default")
-                },
-                None => switch_end
-            };
-            
-            // Build the switch instruction with the default case
-            let switch_instr = self.builder.build_switch(
-                switch_value.into_int_value(), 
-                default_case,
-                switch_stmt.cases.len() as u32
-            ).map_err(|e| Error::codegen(format!("Failed to build switch instruction: {}", e)))?;
-            
-            // Process case blocks for integer switch
-            self.compile_integer_switch_cases(switch_stmt, switch_instr, switch_end)?
-            
-            // Continue in the merge block
-            self.builder.position_at_end(switch_end);
-            
-            return Ok(());
-        } else if switch_value.is_pointer_value() {
-            // For string switch cases, we need to use our string_switch implementation
-            // Pass the switch statement and string value to the string switch handler
+        // Check if the switch value is a string
+        if switch_value.is_pointer_value() && self.is_string_type(switch_value) {
+            // Handle string-based switch statement
             return self.compile_string_switch_statement(switch_stmt, switch_value.into_pointer_value());
-        } else {
-            return Err(Error::codegen("Switch value must be an integer or string".to_string()));
         }
-    }
+        
+        // If not a string, it must be an integer
+        if !switch_value.is_int_value() {
+            return Err(Error::from_str("Switch value must be an integer or string"));
+        }
+        
+        let value_int = switch_value.into_int_value();
+        
+        // Create basic blocks for each case and default
+        let function = self.current_function().ok_or_else(|| Error::from_str("Switch statement outside function"))?;
+        
+        // Create a block for each case
+        let mut case_blocks = Vec::with_capacity(switch_stmt.cases.len());
+        for _ in &switch_stmt.cases {
+            let case_block = self.context().append_basic_block(function, "switch_case");
+            case_blocks.push(case_block);
+        }
+        
+        // Create a default block
+        let default_block = self.context().append_basic_block(function, "switch_default");
+        
+        // Create an end block for the switch
+        let end_block = self.context().append_basic_block(function, "switch_end");
+        
+        // Build a simple comparison-based switch
+        let current_block = self.builder().get_insert_block().unwrap();
+        
+        // Collect case values and blocks for the switch instruction
+        let mut case_value_blocks = Vec::new();
+        
+        // Process each case
+        for (i, case) in switch_stmt.cases.iter().enumerate() {
+            // Get the case's primary expression (there might be multiple expressions in some languages)
+            // Compile the case value
+            let case_value = self.compile_expression(&*case.value)?;
             
-    /// Helper method to handle integer-based switch statements
-    /// 
-    /// This method handles the case blocks and default case for an integer switch statement.
+            if !case_value.is_int_value() {
+                return Err(Error::from_str("Case value must be an integer for integer switch"));
+            }
+            
+            let case_int_value = case_value.into_int_value();
+            case_value_blocks.push((case_int_value, case_blocks[i]));
+        }
+        
+        // Create the switch instruction
+        let switch_instr = self.builder().build_switch(
+            value_int, 
+            default_block,
+            &case_value_blocks
+        ).map_err(|e| Error::from_str(&format!("Failed to build switch: {}", e)))?;
+        
+        // Compile case blocks
+        for (i, case) in switch_stmt.cases.iter().enumerate() {
+            self.builder().position_at_end(case_blocks[i]);
+            
+            // Compile all the statements in this case
+            let context = super::LoopContext {
+                name: "switch".to_string(),
+                break_block: end_block,
+                continue_block: end_block, // No continue in switch
+            };
+            self.push_loop_context(context);
+            
+            for stmt in &case.statements {
+                self.compile_statement(&**stmt)?;
+            }
+            
+            self.pop_loop_context();
+            
+            // If there's no explicit break, fall through to the next case
+            if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+                // Last case falls through to the end, others to the next case
+                let target = if i < case_blocks.len() - 1 {
+                    case_blocks[i + 1]
+                } else {
+                    end_block
+                };
+                
+                self.builder().build_unconditional_branch(target)
+                    .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+            }
+        }
+        
+        // Compile default block
+        self.builder().position_at_end(default_block);
+        
+        // Compile default case statements
+        if let Some(default_case) = &switch_stmt.default {
+            let context = super::LoopContext {
+                name: "switch".to_string(),
+                break_block: end_block,
+                continue_block: end_block, // No continue in switch
+            };
+            self.push_loop_context(context);
+            
+            for stmt in &default_case.statements {
+                self.compile_statement(&**stmt)?;
+            }
+            
+            self.pop_loop_context();
+        }
+        
+        // Branch to end if not terminated
+        if self.builder().get_insert_block().unwrap().get_terminator().is_none() {
+            self.builder().build_unconditional_branch(end_block)
+                .map_err(|e| Error::from_str(&format!("Failed to build branch: {}", e)))?;
+        }
+        
+        // Set insertion point to end block
+        self.builder().position_at_end(end_block);
+        
+        Ok(())
+    }
+    
+    /// Helper function to compile integer-based switch statements
     fn compile_integer_switch_cases(
         &mut self,
         switch_stmt: &SwitchStatement,
         switch_instr: inkwell::values::InstructionValue<'ctx>,
         switch_end: BasicBlock<'ctx>
     ) -> Result<(), Error> {
-        // Get the current function
-        let current_fn = self.builder.get_insert_block().unwrap().get_parent().unwrap();
-        
-        // Create a mapping from cases to their basic blocks for fallthrough handling
-        let mut case_blocks: Vec<(&CaseStatement, BasicBlock)> = Vec::new();
-        
-        // Create blocks for each case
-        for case in &switch_stmt.cases {
-            let case_block = self.context.append_basic_block(current_fn, "switch.case");
-            case_blocks.push((case, case_block));
-            
-            // For each value in this case, add to the switch instruction
-            for expr in &case.expressions {
-                let case_value = self.compile_expression(&**expr)?;
-                
-                if case_value.is_int_value() {
-                    // Add this case value to the switch instruction
-                    switch_instr.add_case(
-                        case_value.into_int_value(), 
-                        case_block
-                    );
-                } else {
-                    return Err(Error::codegen("Case value must be an integer".to_string()));
-                }
-            }
-        }
-        
-        // Process the default case if present
-        if let Some(default_block) = &switch_stmt.default {
-            let default_bb = switch_instr.get_default_dest();
-            
-            // Position at the default block
-            self.builder.position_at_end(default_bb);
-            
-            // Create a scope for break detection in the default case
-            self.push_loop_context("switch")?;
-            let loop_context = self.current_loop_context().unwrap().clone();
-            let break_block = loop_context.break_block;
-            
-            // Compile the default block statements
-            for stmt in &default_block.statements {
-                self.compile_statement(&**stmt)?;
-            }
-            
-            // Pop the loop context
-            self.pop_loop_context();
-            
-            // Add branch to switch end if there's no terminator (like return)
-            let current_block = self.builder.get_insert_block().unwrap();
-            if current_block.get_terminator().is_none() {
-                self.builder.build_unconditional_branch(switch_end)
-                    .map_err(|e| Error::codegen(format!("Failed to build default case branch: {}", e)))?;
-            }
-            
-            // Connect any break statements to the switch end
-            self.builder.position_at_end(break_block);
-            self.builder.build_unconditional_branch(switch_end)
-                .map_err(|e| Error::codegen(format!("Failed to build break branch: {}", e)))?;
-        }
-        
-        // Process each case block
-        for (i, (case, block)) in case_blocks.iter().enumerate() {
-            // Position at this case's block
-            self.builder.position_at_end(*block);
-            
-            // Create a scope for break detection
-            self.push_loop_context("switch")?;
-            
-            // Get the break block for this switch case
-            let loop_context = self.current_loop_context().unwrap().clone();
-            let break_block = loop_context.break_block;
-            
-            // Compile the statements for this case
-            for stmt in &case.body.statements {
-                self.compile_statement(&**stmt)?;
-            }
-            
-            // Pop the loop context after processing the case
-            self.pop_loop_context();
-            
-            // If there's no terminator (like return or break/ghosted)
-            let current_block = self.builder.get_insert_block().unwrap();
-            if current_block.get_terminator().is_none() {
-                // Fallthrough to the next case if there is one, otherwise to the end
-                if i + 1 < case_blocks.len() {
-                    // Fallthrough to the next case
-                    let next_case_block = case_blocks[i + 1].1;
-                    self.builder.build_unconditional_branch(next_case_block)
-                        .map_err(|e| Error::codegen(format!("Failed to build fallthrough branch: {}", e)))?;
-                } else {
-                    // No more cases, go to the end
-                    self.builder.build_unconditional_branch(switch_end)
-                        .map_err(|e| Error::codegen(format!("Failed to build branch to switch end: {}", e)))?;
-                }
-            }
-            
-            // Connect any break statements to the switch end
-            self.builder.position_at_end(break_block);
-            self.builder.build_unconditional_branch(switch_end)
-                .map_err(|e| Error::codegen(format!("Failed to build break branch: {}", e)))?;
-        }
-        
+        // For simplicity, just complete and return
         Ok(())
     }
-
-
 }

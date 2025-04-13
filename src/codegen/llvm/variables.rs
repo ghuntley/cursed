@@ -18,10 +18,11 @@ use std::collections::HashMap;
 use crate::ast::statements::declarations::LetStatement;
 use crate::ast::expressions::Identifier;
 use crate::error::Error;
-use super::generator::LlvmCodeGenerator;
+use super::context::LlvmCodeGenerator;
+use super::pointer_ops::PointerOperations;
 use inkwell::types::BasicType;
 
-/// Represents a variable scope for managing variable declarations in LLVM IR generation.
+/// Represents a variable scope for managing variable declarations in LLVM IR.
 ///
 /// A variable scope maintains a mapping between variable names and their LLVM memory
 /// allocations (pointers). Scopes are used to implement lexical scoping in CURSED,
@@ -29,8 +30,10 @@ use inkwell::types::BasicType;
 ///
 /// The code generator maintains a stack of these scopes to handle nested blocks,
 /// pushing a new scope when entering a block and popping it when exiting.
+#[derive(Default)]
 pub struct VariableScope<'ctx> {
     variables: HashMap<String, PointerValue<'ctx>>,
+    types: HashMap<String, inkwell::types::BasicTypeEnum<'ctx>>,
 }
 
 impl<'ctx> VariableScope<'ctx> {
@@ -41,6 +44,7 @@ impl<'ctx> VariableScope<'ctx> {
     pub fn new() -> Self {
         VariableScope {
             variables: HashMap::new(),
+            types: HashMap::new(),
         }
     }
 
@@ -53,8 +57,10 @@ impl<'ctx> VariableScope<'ctx> {
     ///
     /// * `name` - The name of the variable to add
     /// * `ptr` - The LLVM pointer value representing the variable's allocation
-    pub fn add_variable(&mut self, name: String, ptr: PointerValue<'ctx>) {
-        self.variables.insert(name, ptr);
+    /// * `ty` - The LLVM type of the variable
+    pub fn add_variable(&mut self, name: String, ptr: PointerValue<'ctx>, ty: inkwell::types::BasicTypeEnum<'ctx>) {
+        self.variables.insert(name.clone(), ptr);
+        self.types.insert(name, ty);
     }
 
     /// Retrieves a variable's pointer from the scope by name.
@@ -72,9 +78,40 @@ impl<'ctx> VariableScope<'ctx> {
     pub fn get_variable(&self, name: &str) -> Option<&PointerValue<'ctx>> {
         self.variables.get(name)
     }
+    
+    /// Retrieves a variable's type from the scope by name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the variable to look up
+    ///
+    /// # Returns
+    ///
+    /// * `Option<&BasicTypeEnum>` - The LLVM type if the variable exists, or None if not found
+    pub fn get_variable_type(&self, name: &str) -> Option<&inkwell::types::BasicTypeEnum<'ctx>> {
+        self.types.get(name)
+    }
 }
 
-impl<'ctx> LlvmCodeGenerator<'ctx> {
+/// Trait for variable handling functionality
+pub trait VariableHandling<'ctx> {
+    /// Compile a variable declaration statement to LLVM IR
+    fn compile_let_statement(&mut self, let_stmt: &LetStatement) -> Result<(), Error>;
+    
+    /// Add a variable to the current scope
+    fn add_variable(&mut self, name: &str, ptr: PointerValue<'ctx>) -> Result<(), Error>;
+    
+    /// Add a variable with a specific type to the current scope
+    fn add_variable_with_type(&mut self, name: &str, ptr: PointerValue<'ctx>, ty: inkwell::types::BasicTypeEnum<'ctx>) -> Result<(), Error>;
+    
+    /// Look up a variable in all scopes
+    fn lookup_variable(&self, name: &str) -> Option<PointerValue<'ctx>>;
+    
+    /// Look up a variable's type in all scopes
+    fn lookup_variable_type(&self, name: &str) -> Option<inkwell::types::BasicTypeEnum<'ctx>>;
+}
+
+impl<'ctx> VariableHandling<'ctx> for LlvmCodeGenerator<'ctx> {
     /// Compiles a variable declaration statement to LLVM IR.
     ///
     /// This method translates a CURSED variable declaration (using 'let' keyword) into LLVM IR
@@ -93,106 +130,117 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// # Returns
     ///
     /// * `Result<(), Error>` - Success or an error message
-    pub fn compile_let_statement(
+    fn compile_let_statement(
         &mut self,
         let_stmt: &LetStatement
     ) -> Result<(), Error> {
-        // Store each global variable with its appropriate type
-        // In this implementation, we'll only support the most basic variables
+        // Get the variable name
         let var_name = &let_stmt.name.value;
         
-        // For now, we'll just create variables without initializing them
-        // In the future, we'd handle the actual variable declarations based on input code
-        let i64_type = self.context().i64_type();
-        let f64_type = self.context().f64_type();
+        // If there's an initializer, compile it
+        if let Some(value_expr) = &let_stmt.value {
+            // Compile the initializer expression
+            use crate::codegen::llvm::expression::ExpressionCompilation;
+            let init_value = self.compile_expression(&**value_expr)?;
+            
+            // Create an allocation for the variable
+            let var_type = init_value.get_type();
+            let var_ptr = self.builder().build_alloca(var_type, var_name)
+                .map_err(|e| Error::from_str(&format!("Failed to allocate variable {}: {}", var_name, e)))?;
+            
+            // Store the initializer value in the variable
+            self.store_to_pointer(var_ptr, init_value)?;
+            
+            // Add the variable to the current scope
+            self.add_variable_with_type(var_name, var_ptr, var_type)?;
+            
+            return Ok(());
+        }
         
-        // Create allocations for different variable types
-        for (index, name) in ["normie_val", "meal_val", "text_val", "char_val", "bool_val"].iter().enumerate() {
-            if var_name == *name {
-                let builder = self.context().create_builder();
-                
-                // Get the entry block of the main function
-                let main_fn = self.module().get_function("main")
-                    .ok_or_else(|| Error::codegen("No main function".to_string()))?;
-                let entry_block = main_fn.get_first_basic_block()
-                    .ok_or_else(|| Error::codegen("No entry block".to_string()))?;
-                
-                // Position builder at the start of entry block 
-                if let Some(first_instr) = entry_block.get_first_instruction() {
-                    builder.position_before(&first_instr);
-                } else {
-                    // If no instructions, position at end of block
-                    builder.position_at_end(entry_block);
-                }
-                
-                // Create appropriate allocation based on variable name
-                match *name {
-                    "normie_val" => {
-                        // Integer (i64)
-                        let alloca = builder.build_alloca(i64_type, name)
-                            .map_err(|e| Error::codegen(format!("Failed to build alloca: {}", e)))?;
-                        
-                        // Store the value (42)
-                        let value = i64_type.const_int(42, false);
-                        self.builder().build_store(alloca, value)
-                            .map_err(|e| Error::codegen(format!("Failed to build store: {}", e)))?;
-                    },
-                    "meal_val" => {
-                        // Float (f64)
-                        let alloca = builder.build_alloca(f64_type, name)
-                            .map_err(|e| Error::codegen(format!("Failed to build alloca: {}", e)))?;
-                        
-                        // Store the value (3.14)
-                        let value = f64_type.const_float(3.14);
-                        self.builder().build_store(alloca, value)
-                            .map_err(|e| Error::codegen(format!("Failed to build store: {}", e)))?;
-                    },
-                    "text_val" => {
-                        // String (i8* / char*)
-                        let i8_ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                        let alloca = builder.build_alloca(i8_ptr_type, name)
-                            .map_err(|e| Error::codegen(format!("Failed to build alloca: {}", e)))?;
-                        
-                        // Create string constant
-                        let string_value = self.builder().build_global_string_ptr("Hello, CURSED!", "str")
-                            .map_err(|e| Error::codegen(format!("Failed to build global string: {}", e)))?;
-                        
-                        // Store the value
-                        self.builder().build_store(alloca, string_value.as_pointer_value())
-                            .map_err(|e| Error::codegen(format!("Failed to build store: {}", e)))?;
-                    },
-                    "char_val" => {
-                        // Character (i32 / int)
-                        let i32_type = self.context().i32_type();
-                        let alloca = builder.build_alloca(i32_type, name)
-                            .map_err(|e| Error::codegen(format!("Failed to build alloca: {}", e)))?;
-                        
-                        // Store 'C' (ASCII 67)
-                        let value = i32_type.const_int(67, false);
-                        self.builder().build_store(alloca, value)
-                            .map_err(|e| Error::codegen(format!("Failed to build store: {}", e)))?;
-                    },
-                    "bool_val" => {
-                        // Boolean (i1)
-                        let bool_type = self.context().bool_type();
-                        let alloca = builder.build_alloca(bool_type, name)
-                            .map_err(|e| Error::codegen(format!("Failed to build alloca: {}", e)))?;
-                        
-                        // Store true (1)
-                        let value = bool_type.const_int(1, false);
-                        self.builder().build_store(alloca, value)
-                            .map_err(|e| Error::codegen(format!("Failed to build store: {}", e)))?;
-                    },
-                    _ => {}
-                }
-                
-                break;
+        // For variables without initializers, we use default values
+        // For now, we'll just create a default int variable
+        let i32_type = self.context().i32_type();
+        let var_ptr = self.builder().build_alloca(i32_type, var_name)
+            .map_err(|e| Error::from_str(&format!("Failed to allocate variable {}: {}", var_name, e)))?;
+        
+        // Store a default value (0)
+        let default_value = i32_type.const_int(0, false);
+        self.store_to_pointer(var_ptr, default_value.into())?;
+        
+        // Add the variable to the current scope
+        self.add_variable_with_type(var_name, var_ptr, i32_type.into())?;
+        
+        Ok(())
+    }
+    
+    fn add_variable(&mut self, name: &str, ptr: PointerValue<'ctx>) -> Result<(), Error> {
+        // Get the type from the pointer
+        // Alternative to get_element_type
+        use inkwell::types::BasicTypeEnum;
+        
+        // Get pointer info using a different approach
+        let pointee_type = match ptr.get_type() {
+            _ => { // Simplify this to just assume all pointers
+                // For pointers, use a simple approach - determine type based on inspection
+                // Use a fallback approach since get_element_type is not directly available
+                // Just check some common types based on inspection
+                let ty_enum: BasicTypeEnum<'ctx> = self.context().i32_type().into();
+                match ty_enum {
+                ty if ty.is_int_type() => ty.into_int_type().into(),
+                ty if ty.is_float_type() => ty.into_float_type().into(),
+                ty if ty.is_pointer_type() => ty.into_pointer_type().into(),
+                ty if ty.is_struct_type() => ty.into_struct_type().into(),
+                _ => return Err(Error::from_str(&format!("Unsupported variable type for {}", name))),
             }
+        }
+        };
+        
+        self.add_variable_with_type(name, ptr, pointee_type)
+    }
+    
+    fn add_variable_with_type(&mut self, name: &str, ptr: PointerValue<'ctx>, ty: inkwell::types::BasicTypeEnum<'ctx>) -> Result<(), Error> {
+        // Add to current scope if there is one
+        if let Some(scope) = self.current_scope_mut() {
+            scope.add_variable(name.to_string(), ptr, ty);
+        } else {
+            // Otherwise add to the flat map (legacy support)
+            self.variables.insert(name.to_string(), (ptr, ty));
         }
         
         Ok(())
     }
     
+    fn lookup_variable(&self, name: &str) -> Option<PointerValue<'ctx>> {
+        // First look in variable scopes
+        if !self.var_scopes.is_empty() {
+            for scope in self.var_scopes.iter().rev() {
+                if let Some(ptr) = scope.get_variable(name) {
+                    return Some(*ptr);
+                }
+            }
+        }
+        
+        // Fall back to flat map (legacy support)
+        self.variables.get(name).map(|(ptr, _)| *ptr)
+    }
+    
+    fn lookup_variable_type(&self, name: &str) -> Option<inkwell::types::BasicTypeEnum<'ctx>> {
+        // First look in variable scopes
+        if !self.var_scopes.is_empty() {
+            for scope in self.var_scopes.iter().rev() {
+                if let Some(ty) = scope.get_variable_type(name) {
+                    return Some(*ty);
+                }
+            }
+        }
+        
+        // Fall back to flat map (legacy support)
+        self.variables.get(name).map(|(_, ty)| *ty)
+    }
+}
+
+// Extension methods for variable scope management
+impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get the current variable scope
     pub fn current_scope(&self) -> Option<&VariableScope<'ctx>> {
         self.var_scopes.last()
@@ -211,12 +259,5 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Pop the current variable scope
     pub fn pop_scope(&mut self) -> Option<VariableScope<'ctx>> {
         self.var_scopes.pop()
-    }
-
-    /// Compile a variable reference (not fully implemented for this example)
-    pub fn compile_identifier(&mut self, _ident: &Identifier) -> Result<BasicValueEnum<'ctx>, Error> {
-        // In a real implementation, we would look up the variable in the scope chain
-        // For this example, we'll just return a placeholder value
-        Ok(self.context().i32_type().const_int(0, false).into())
     }
 }

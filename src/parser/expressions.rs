@@ -84,7 +84,7 @@ impl<'a> Parser<'a> {
 
         // We can't delegate to parse_var_statement directly as it will cause infinite recursion
         // Instead, create a simple identifier expression to make the test pass for now
-        let token = self.current_token.clone();
+        let token = self.current_token.token_literal();
         self.next_token()?; // Advance past 'Sus'
 
         // Get variable name if there is one
@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
 
         // Return a placeholder expression
         Ok(Box::new(ast::Identifier {
-            token: token.token_literal(),
+            token: token.clone(),
             value: var_name,
         }))
     }
@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
         println!("DEBUG: Parsing assignment expression with Assign token");
 
         // Get the token and advance past it
-        let token = self.current_token.clone();
+        let token = self.current_token.token_literal();
         self.next_token()?; // Advance past 'Assign'
 
         // Parse right side expression
@@ -125,14 +125,14 @@ impl<'a> Parser<'a> {
         // Create a simple identifier expression for now
         // In a real implementation we'd need a proper assignment expression type
         Ok(Box::new(ast::Identifier {
-            token: token.token_literal(),
+            token: token.clone(),
             value: format!("assign={}", right.string()),
         }))
     }
 
     /// Parse a pointer expression (@expr or @Type)
     fn parse_pointer_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
+        let token = self.current_token.token_literal();
         println!(
             "DEBUG: Parsing pointer expression, current token: {:?}",
             &self.current_token
@@ -166,7 +166,7 @@ impl<'a> Parser<'a> {
                 target.string()
             );
             let pointer_type = PointerType {
-                token,
+                token: token.clone(),
                 target_type: target,
             };
             Ok(Box::new(pointer_type))
@@ -176,7 +176,7 @@ impl<'a> Parser<'a> {
                 target.string()
             );
             let pointer_expr = PointerDereference {
-                token,
+                token: token.clone(),
                 pointer: target,
             };
             Ok(Box::new(pointer_expr))
@@ -192,7 +192,7 @@ impl<'a> Parser<'a> {
             Token::String(_) => self.parse_string_literal(),
             Token::Rune(_) => self.parse_rune_literal(),
             Token::Basic => self.parse_default_case_expression(),
-            Token::Vibe => self.parse_package_stmt(),
+            // Token::Vibe is now handled in statements.rs
             Token::Slay => self.parse_function_declaration(),
             // Add support for switch expressions
             Token::VibeCheck => {
@@ -350,8 +350,9 @@ impl<'a> Parser<'a> {
             | Token::BitOr
             | Token::BitXor => Some(Parser::parse_infix_expression),
             Token::LParen => Some(Parser::parse_call_expression),
-            Token::LBracket => Some(Parser::parse_index_expression),
+            Token::LBracket => Some(Parser::parse_index_or_type_expression),
             Token::Dot => Some(Parser::parse_dot_expression),
+            Token::LBrace => Some(Parser::parse_be_like_expression), // Handle struct instantiation
             _ => None,
         }
     }
@@ -407,32 +408,120 @@ impl<'a> Parser<'a> {
         }))
     }
 
-    /// Parse a function call expression (like fn(x, y))
+    /// Parse a function call expression (like fn(x, y) or fn[T](x, y))
+    /// 
+    /// This method handles both regular and generic function calls. For generic calls,
+    /// it detects the type parameters in square brackets before the argument list.
     fn parse_call_expression(
         &mut self,
         function: Box<dyn Expression>,
     ) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
+        let token = self.current_token.token_literal();
+        
+        // Check if this is a generic function call with type arguments
+        if self.peek_token_is(Token::LBracket) {
+            // This is a generic function call with type arguments
+            // Push a generic function call context to disambiguate
+            self.push_context(ParsingContext::GenericFunctionCall);
+            
+            self.next_token()?; // Advance past '(' to '['  
+            
+            // Parse type arguments within the context
+            let type_arguments = self.parse_type_arguments()?;
+            
+            // Parse the actual arguments
+            let arguments = self.parse_call_arguments()?;
+            
+            // Pop the context when we're done
+            self.pop_context();
+            
+            return Ok(Box::new(ast::GenericCallExpression {
+                token,
+                function,
+                type_arguments,
+                arguments,
+            }));
+        }
+        
+        // Regular function call without type arguments
         let arguments = self.parse_call_arguments()?;
 
         Ok(Box::new(ast::CallExpression {
             token,
             function,
             arguments,
+            type_arguments: Vec::new(), // No type arguments for regular calls
         }))
+    }
+    
+    /// Parse type arguments [T, U, ...]
+    fn parse_type_arguments(&mut self) -> Result<Vec<Box<dyn Expression>>, Error> {
+        let mut type_args = Vec::new();
+        
+        self.next_token()?; // Skip past '['
+        
+        // Handle empty type argument list
+        if self.current_token_is(Token::RBracket) {
+            self.next_token()?; // Skip past ']'
+            return Ok(type_args);
+        }
+        
+        // Parse first type argument
+        type_args.push(self.parse_expression(Precedence::Lowest)?);
+        
+        // Parse any additional type arguments
+        while self.peek_token_is(Token::Comma) {
+            self.next_token()?; // Skip past comma
+            self.next_token()?; // Move to next type argument
+            type_args.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        
+        // Expect closing bracket
+        if !self.current_token_is(Token::RBracket) && !self.peek_token_is(Token::RBracket) {
+            return Err(self.error(&format!(
+                "Expected ']' after type arguments, got {:?}",
+                self.peek_token
+            )));
+        }
+        
+        // Advance past ']'
+        if self.current_token_is(Token::RBracket) {
+            self.next_token()?;
+        } else if self.peek_token_is(Token::RBracket) {
+            self.next_token()?; // Move to ']'
+            self.next_token()?; // Move past ']'
+        }
+        
+        Ok(type_args)
     }
 
     /// Parse the arguments to a function call
     fn parse_call_arguments(&mut self) -> Result<Vec<Box<dyn Expression>>, Error> {
         let mut args = Vec::new();
+        
+        // Ensure we're at the opening parenthesis
+        if !self.current_token_is(Token::LParen) {
+            // We need to find the opening parenthesis
+            if self.peek_token_is(Token::LParen) {
+                self.next_token()?; // Move to '('
+            } else {
+                return Err(self.error(&format!(
+                    "Expected '(' to start argument list, got {:?}",
+                    self.current_token
+                )));
+            }
+        }
 
+        // Move past the opening paren
+        self.next_token()?;
+        
         // Handle empty argument list
-        if self.peek_token_is(Token::RParen) {
-            self.next_token()?;
+        if self.current_token_is(Token::RParen) {
+            self.next_token()?; // Skip past ')'
             return Ok(args);
         }
 
-        self.next_token()?; // Skip past the '('
+        // Parse first argument
         args.push(self.parse_expression(Precedence::Lowest)?);
 
         while self.peek_token_is(Token::Comma) {
@@ -450,13 +539,58 @@ impl<'a> Parser<'a> {
         Ok(args)
     }
 
-    /// Parse an index expression (like array[index])
-    fn parse_index_expression(
+    /// Parse an index expression or a type expression (like array[index] or Type[T])
+    /// 
+    /// This method handles both regular array indexing and generic type parameters
+    /// by looking at the left expression and determining what kind of construct we're parsing.
+    fn parse_index_or_type_expression(
         &mut self,
         left: Box<dyn Expression>,
     ) -> Result<Box<dyn Expression>, Error> {
         let token = self.current_token.clone();
 
+        // Check if this is a type instantiation (e.g., Box[T])
+        // This is a heuristic - we look at what we're indexing into
+        // If it's an identifier that starts with an uppercase letter, it's likely a type
+        if let Some(ident) = left.as_any().downcast_ref::<ast::Identifier>() {
+            // Check if identifier might be a type name (starting with uppercase)
+            if !ident.value.is_empty() && ident.value.chars().next().unwrap().is_uppercase() {
+                // This is likely a type instantiation like Box[T]
+                // Push a type parameter context to help disambiguate
+                self.push_context(ParsingContext::TypeParameters);
+                
+                self.next_token()?; // Skip past the '['
+                
+                // Parse type arguments
+                let type_arguments = self.parse_type_arguments()?;
+                
+                // Pop the type parameter context
+                self.pop_context();
+                
+                // No need to manually advance past ']' as parse_type_arguments does that
+                
+                // Create a TypeReference that we can use for further processing
+                let type_ref = ast::TypeReference {
+                    token: token.token_literal(),
+                    name: ident.clone(),
+                    type_arguments,
+                };
+                
+                // Check if this is followed by a struct instantiation
+                if self.current_token_is(Token::LBrace) {
+                    // Push struct instantiation context
+                    self.push_context(ParsingContext::TypeInstantiation);
+                    let result = self.parse_be_like_expression(Box::new(type_ref));
+                    self.pop_context();
+                    return result;
+                }
+                
+                // Otherwise, it's just a type reference
+                return Ok(Box::new(type_ref));
+            }
+        }
+
+        // Regular array indexing
         self.next_token()?; // Skip past the '['
         let index = self.parse_expression(Precedence::Lowest)?;
 
@@ -466,6 +600,116 @@ impl<'a> Parser<'a> {
         self.next_token()?;
 
         Ok(Box::new(ast::IndexExpression { token, left, index }))
+    }
+    
+    /// Parse a struct instantiation expression (like Type{field: value})
+    fn parse_be_like_expression(
+        &mut self,
+        struct_type: Box<dyn Expression>,
+    ) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.token_literal();
+        let mut fields = Vec::new();
+        
+        self.next_token()?; // Skip past '{'
+        
+        // Parse fields until we reach a closing brace
+        while !self.current_token_is(Token::RBrace) && !self.current_token_is(Token::Eof) {
+            // Parse field name
+            if !matches!(self.current_token, Token::Identifier(_)) {
+                return Err(self.error(&format!(
+                    "Expected field name, got {:?}",
+                    self.current_token
+                )));
+            }
+            
+            let field_name = if let Token::Identifier(name) = &self.current_token {
+                name.clone()
+            } else {
+                String::new() // Unreachable due to check above
+            };
+            
+            self.next_token()?; // Skip past field name
+            
+            // Expect colon
+            if !self.current_token_is(Token::Colon) {
+                return Err(self.error(&format!(
+                    "Expected ':' after field name, got {:?}",
+                    self.current_token
+                )));
+            }
+            self.next_token()?; // Skip past colon
+            
+            // Parse field value
+            let field_value = self.parse_expression(Precedence::Lowest)?;
+            
+            // Add field to list
+            fields.push((field_name, field_value));
+            
+            // Check for comma
+            if self.peek_token_is(Token::Comma) {
+                self.next_token()?; // Skip to comma
+                self.next_token()?; // Skip past comma
+            } else if !self.peek_token_is(Token::RBrace) {
+                return Err(self.error(&format!(
+                    "Expected '}}' or ',' after field value, got {:?}",
+                    self.peek_token
+                )));
+            }
+        }
+        
+        // Skip past closing brace
+        if !self.current_token_is(Token::RBrace) {
+            return Err(self.error(&format!(
+                "Expected '}}', got {:?}",
+                self.current_token
+            )));
+        }
+        self.next_token()?; // Skip past '}'
+        
+        // If the struct_type is a TypeReference, we use it directly
+        // Otherwise, we extract the struct name from an identifier
+        
+        if let Some(type_ref) = struct_type.as_any().downcast_ref::<ast::TypeReference>() {
+            // Use the type reference with its type arguments
+            // Can't directly clone Vec<Box<dyn Expression>>, so we need to make a deep clone by creating new boxes
+            let type_args = type_ref.type_arguments.iter()
+                .map(|arg| {
+                    // Since we can't clone the trait object directly, we need to handle it differently
+                    // If it's an Identifier, which is the most common case, we can clone it directly
+                    if let Some(ident) = arg.as_any().downcast_ref::<ast::Identifier>() {
+                        Box::new(ast::Identifier {
+                            token: ident.token.clone(),
+                            value: ident.value.clone(),
+                        }) as Box<dyn ast::Expression>
+                    } else {
+                        // Create a string literal placeholder for types we can't clone properly
+                        // In practice, most type arguments are identifiers anyway
+                        Box::new(ast::StringLiteral {
+                            token: "type".to_string(),
+                            value: arg.string(),
+                        }) as Box<dyn ast::Expression>
+                    }
+                })
+                .collect::<Vec<_>>();
+            
+            return Ok(Box::new(ast::BeLikeExpression {
+                token,
+                struct_name: type_ref.name.clone(),
+                type_arguments: type_args,
+                fields,
+            }));
+        } else if let Some(ident) = struct_type.as_any().downcast_ref::<ast::Identifier>() {
+            // Use the identifier as struct name without type arguments
+            return Ok(Box::new(ast::BeLikeExpression {
+                token,
+                struct_name: ident.clone(),
+                type_arguments: Vec::new(),
+                fields,
+            }));
+        }
+        
+        // Fallback for other types
+        Err(self.error(&format!("Invalid struct type in instantiation")))
     }
 
     /// Parse a dot expression (like obj.prop)
@@ -734,23 +978,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parse a package statement (vibe main)
-    fn parse_package_stmt(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
-        self.next_token()?; // Skip past 'vibe'
-
-        let package_name = if let Token::Identifier(name) = &self.current_token {
-            name.clone()
-        } else {
-            "unknown".to_string()
-        };
-
-        self.next_token()?; // Skip past package name
-
-        Ok(Box::new(ast::StringLiteral {
-            token: token.token_literal(),
-            value: format!("package {}", package_name),
-        }))
-    }
+    // parse_package_stmt has been moved to statements.rs
 
     /// Parse a function declaration (slay functionName() { ... })
     fn parse_function_declaration(&mut self) -> Result<Box<dyn Expression>, Error> {

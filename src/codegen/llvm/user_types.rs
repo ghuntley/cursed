@@ -6,7 +6,11 @@ use std::collections::HashMap;
 use crate::ast::declarations::{StructDeclaration, FieldDefinition};
 use crate::ast::traits::Expression;
 use crate::error::Error;
-use super::generator::LlvmCodeGenerator;
+use super::context::LlvmCodeGenerator;
+use crate::ast::declarations::{StructStatement, FunctionStatement};
+use crate::ast::expressions::Identifier;
+use crate::ast::expressions::struct_expr::{StructLiteral, StructFieldAccess};
+use crate::ast::expressions::method_expr::MethodCall;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Declare a struct type in LLVM

@@ -2,13 +2,17 @@
 
 use cursed::ast::base::Program;
 use cursed::ast::expressions::{CallExpression, Identifier, IntegerLiteral};
-use cursed::lexer::Token;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
-use cursed::ast::FunctionStatement;
-use cursed::ast::ParameterStatement;
+use cursed::ast::declarations::FunctionStatement;
+use cursed::ast::declarations::ParameterStatement;
+use cursed::ast::declarations::GenericConstraint;
 use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::FunctionMonomorphization;
+use cursed::codegen::llvm::monomorphization::SpecializedFunctionBuilder;
 use cursed::codegen::MonomorphizationManager;
+use cursed::codegen::llvm::MonomorphizationManagerExtension;
+use cursed::codegen::llvm::SpecializedFunctionBuilderExtension;
 use cursed::core::type_checker::Type;
 use inkwell::context::Context;
 use std::path::PathBuf;
@@ -25,7 +29,9 @@ fn test_compile_generic_call_expression() {
     let identity_function = create_generic_identity_function();
 
     // Register the generic function in the code generator
+    // Updated API now uses monomorphization_manager() to access the manager
     code_gen
+        .monomorphization_manager()
         .register_generic_function(&identity_function)
         .expect("Should register generic function");
 
@@ -40,14 +46,16 @@ fn test_compile_generic_call_expression() {
     );
 
     // Compile the generic call
-    let result = code_gen.compile_generic_call_expression(&generic_call);
+    // Updated API now uses specialized_function_builder().compile_generic_call()
+    let result = code_gen.specialized_function_builder().compile_generic_call(&generic_call);
 
     // Verify the compilation succeeded
     assert!(result.is_ok(), "Generic call compilation should succeed");
 
     // Verify the specialized function exists in the module
+    // Updated API now uses direct monomorphization_manager() calls
     let specialized_name = code_gen
-        .mono_manager
+        .monomorphization_manager()
         .get_specialized_function_name(&identity_function.name.value, &[Type::Normie])
         .expect("Should have specialized function name");
 
@@ -74,9 +82,11 @@ fn create_generic_function_call(
     // For testing, create a simple CallExpression instead of GenericCallExpression
     // In a real implementation, we'd use GenericCallExpression for generic calls
     CallExpression {
-        token: Token::LParen,
+        token: "(".to_string(),
         function,
         arguments,
+        // New fields for updated CallExpression struct
+        type_arguments: type_args,
     }
 }
 
@@ -132,5 +142,7 @@ fn create_generic_identity_function() -> FunctionStatement {
         body: body,
         return_type,
         type_parameters,
+        // New fields in updated FunctionStatement struct 
+        generic_constraints: vec![],
     }
 }

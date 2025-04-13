@@ -19,6 +19,8 @@ use crate::core::generic_instantiation::GenericInstantiator;
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use std::collections::HashMap;
+use crate::codegen::llvm::FunctionMonomorphization;
+use crate::codegen::llvm::StructMonomorphization;
 
 /// Manages the specialization of generic code through monomorphization
 ///

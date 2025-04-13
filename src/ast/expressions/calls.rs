@@ -27,14 +27,15 @@ use std::any::Any;
 /// - function: identifier "foo"
 /// - arguments: [IntegerLiteral(1), StringLiteral("hello"), BooleanLiteral(true)]
 pub struct CallExpression {
-    pub token: Token,
+    pub token: String,
     pub function: Box<dyn Expression>,
     pub arguments: Vec<Box<dyn Expression>>,
+    pub type_arguments: Vec<crate::core::type_checker::Type>,
 }
 
 impl Node for CallExpression {
     fn token_literal(&self) -> String {
-        self.token.token_literal()
+        self.token.clone()
     }
 
     fn string(&self) -> String {
@@ -86,7 +87,7 @@ impl Expression for CallExpression {
 /// - type_arguments: [TypeLiteral(int), TypeLiteral(string)]
 /// - arguments: [IntegerLiteral(5), StringLiteral("value")]
 pub struct GenericCallExpression {
-    pub token: Token,
+    pub token: String,
     pub function: Box<dyn Expression>,
     pub type_arguments: Vec<Box<dyn Expression>>,
     pub arguments: Vec<Box<dyn Expression>>,
@@ -94,7 +95,7 @@ pub struct GenericCallExpression {
 
 impl Node for GenericCallExpression {
     fn token_literal(&self) -> String {
-        self.token.token_literal()
+        self.token.clone()
     }
 
     fn string(&self) -> String {

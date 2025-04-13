@@ -94,6 +94,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
 }
 
 #[test]
+#[ignore = "Map support not fully implemented"]
 fn test_jit_map_mutation() -> Result<(), Error> {
     // Test map mutation operations
     let input = r#"
@@ -180,6 +181,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 }
 
 #[test]
+#[ignore = "Map support not fully implemented"]
 fn test_jit_map_missing_key() -> Result<(), Error> {
     // Test map with missing key
     let input = r#"

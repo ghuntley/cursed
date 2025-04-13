@@ -1,51 +1,67 @@
-//! LLVM struct monomorphization implementation
+//! Struct monomorphization for LLVM code generation
 //!
-//! This module provides the implementation for generating specialized
-//! versions of generic structs with concrete types.
+//! This module handles the specialization of generic struct types in LLVM code generation.
+//! It creates concrete implementations of generic structs with specific type parameters.
 
+use inkwell::types::StructType;
 use crate::ast::declarations::SquadStatement;
-use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::core::generic_instantiation::GenericInstantiator;
 use crate::core::type_checker::Type;
 use crate::error::Error;
-use inkwell::types::StructType;
+use super::context::LlvmCodeGenerator;
 
-impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Generate a specialized struct type with concrete type parameters
-    pub fn generate_specialized_struct(
+/// Trait for struct monomorphization functionality
+pub trait StructMonomorphization<'ctx> {
+    /// Generate a specialized struct type with concrete type arguments
+    fn generate_specialized_struct(
+        &mut self,
+        generic_struct: &SquadStatement,
+        specialized_name: &str,
+        type_args: &[Type],
+    ) -> Result<StructType<'ctx>, Error>;
+    
+    /// Register GC metadata for a specialized struct type
+    fn register_struct_gc_metadata(
+        &mut self,
+        type_name: &str,
+        traceable_fields: Vec<(usize, String)>,
+    ) -> Result<(), Error>;
+}
+
+impl<'ctx> StructMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
+    fn generate_specialized_struct(
         &mut self,
         generic_struct: &SquadStatement,
         specialized_name: &str,
         type_args: &[Type],
     ) -> Result<StructType<'ctx>, Error> {
-        // Create the opaque struct type first
-        let struct_type = self.context.opaque_struct_type(specialized_name);
-
-        // In a real implementation, we would convert all field types to LLVM types
-        // For now, we'll just create an empty struct
-        let field_types = Vec::new();
-
-        // Set the body of the struct type
-        struct_type.set_body(&field_types, false);
+        // Create a specialized struct type with the given type arguments
+        let struct_type = self.context().opaque_struct_type(specialized_name);
+        
+        // For this simplified implementation, we'll just create a struct with basic fields
+        // In a real implementation, we would substitute type parameters with concrete types
+        
+        println!("Generating specialized struct: {} with {} type args", 
+                specialized_name, type_args.len());
 
         Ok(struct_type)
     }
 
-    /// Register garbage collection metadata for a type
-    pub fn register_gc_metadata(
+    fn register_struct_gc_metadata(
         &mut self,
         type_name: &str,
         traceable_fields: Vec<(usize, String)>,
     ) -> Result<(), Error> {
-        // In a real implementation, this would register information about which fields
-        // in the struct contain GC-managed references that need to be traced during collection
+        // Use the core implementation from context.rs
+        self.register_gc_metadata(type_name, traceable_fields)
+    }
+}
 
-        // For the simplified implementation, we'll just log the fields that would be traced
-        println!(
-            "Registering GC metadata for {}: {:?}",
-            type_name, traceable_fields
-        );
-
-        Ok(())
+// Extension methods that don't need to be part of the trait
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Get information about a generic struct type
+    pub fn get_generic_struct_info(&self, name: &str) -> Option<&SquadStatement> {
+        // This would normally look up the struct in a symbol table
+        // For now, return None to indicate no struct was found
+        None
     }
 }
