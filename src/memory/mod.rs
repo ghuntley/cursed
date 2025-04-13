@@ -20,6 +20,7 @@ pub mod channel;
 pub mod container;
 pub mod deadlock_detector;
 pub mod gc;
+// We've improved mark_sweep.rs directly instead of creating a separate module
 pub mod mark_sweep;
 pub mod memory_visitor;
 pub mod root;
@@ -33,6 +34,7 @@ pub use container::{ContainerType, Specializable, SpecializedVector};
 pub use root::{RootScope, RootScopeGuard, ROOT_MANAGER};
 pub use gc::MarkState;
 pub use scope::{with_gc_scope, with_new_gc, with_gc_scope_fn, with_new_gc_fn};
+pub use weak::weak_registry;
 
 use std::marker::PhantomData;
 use std::ptr::NonNull;
@@ -73,6 +75,12 @@ pub trait Traceable: 'static {
 
     /// Get the type tag for this object
     fn tag(&self) -> Tag;
+    
+    /// Optional finalization method called before the object is collected
+    /// This can be used for cleanup operations like closing files or freeing resources
+    fn finalize(&mut self) {
+        // Default implementation does nothing
+    }
 }
 
 /// Visitor for traversing object graphs during garbage collection
