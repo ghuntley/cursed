@@ -33,7 +33,7 @@ pub fn try_read_with_timeout<'a, T>(
                 // If we're approaching timeout, report potential deadlock
                 if start.elapsed() > timeout * 9 / 10 {
                     println!("[LOCK] ⚠️ Potential deadlock detected acquiring read lock in {}", context);
-                    println!("[LOCK] Stack trace: {:?}", std::backtrace::Backtrace::capture());
+                    println!("[LOCK] Stack trace: {:#?}", std::backtrace::Backtrace::capture());
                 }
             }
         }
@@ -69,7 +69,7 @@ pub fn try_write_with_timeout<'a, T>(
                 // If we're approaching timeout, report potential deadlock
                 if start.elapsed() > timeout * 9 / 10 {
                     println!("[LOCK] ⚠️ Potential deadlock detected acquiring write lock in {}", context);
-                    println!("[LOCK] Stack trace: {:?}", std::backtrace::Backtrace::capture());
+                    println!("[LOCK] Stack trace: {:#?}", std::backtrace::Backtrace::capture());
                 }
             }
         }
@@ -105,7 +105,7 @@ pub fn try_mutex_with_timeout<'a, T>(
                 // If we're approaching timeout, report potential deadlock
                 if start.elapsed() > timeout * 9 / 10 {
                     println!("[LOCK] ⚠️ Potential deadlock detected acquiring mutex in {}", context);
-                    println!("[LOCK] Stack trace: {:?}", std::backtrace::Backtrace::capture());
+                    println!("[LOCK] Stack trace: {:#?}", std::backtrace::Backtrace::capture());
                 }
             }
         }
