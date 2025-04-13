@@ -953,17 +953,15 @@ impl GarbageCollector {
             println!("GC: Finalizing object at 0x{:x} (type: {:?})", addr, tag);
         }
         
-        // For now, use a more simplified approach to call finalize
-        // In a real implementation with direct access to objects, we would properly call finalize
-        // on the specific object type using the correct vtable information
-        
-        // This version just logs the finalization attempt but doesn't actually call it
-        // since we don't have a way to reconstruct the fat pointer (address + vtable)
-        let result = false; // Indicate no finalization occurred
+        // Use the object storage system to finalize the object directly
+        let result = crate::memory::object_storage::global_object_storage().remove_and_finalize(addr);
         
         if verbose {
-            // Just log that we would have finalized the object if we had direct access
-            println!("GC: Would finalize object at 0x{:x} (type: {:?})", addr, tag);
+            if result {
+                println!("GC: Successfully finalized object at 0x{:x} (type: {:?})", addr, tag);
+            } else {
+                println!("GC: Object at 0x{:x} not found in object storage for finalization", addr);
+            }
         }
         
         if verbose {
