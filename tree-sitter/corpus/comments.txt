@@ -1,0 +1,76 @@
+==================
+Line Comments
+==================
+
+vibe main
+
+fr fr This is a line comment
+slay main() {
+  fr fr Another comment
+  print("Hello")
+}
+
+---
+
+(source_file
+  (package_clause
+    (identifier))
+  (function_declaration
+    (identifier)
+    (parameter_list)
+    (block
+      (expression_statement
+        (expression
+          (primary_expression
+            (call_expression
+              (expression
+                (primary_expression
+                  (operand
+                    (identifier))))
+              (arguments
+                (expression_list
+                  (expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (string_literal))))))))))))))))
+
+==================
+Block Comments
+==================
+
+vibe main
+
+no cap
+This is a block comment
+that spans multiple lines
+on god
+
+slay main() {
+  print("Hello")
+}
+
+---
+
+(source_file
+  (package_clause
+    (identifier))
+  (function_declaration
+    (identifier)
+    (parameter_list)
+    (block
+      (expression_statement
+        (expression
+          (primary_expression
+            (call_expression
+              (expression
+                (primary_expression
+                  (operand
+                    (identifier))))
+              (arguments
+                (expression_list
+                  (expression
+                    (primary_expression
+                      (operand
+                        (literal
+                          (string_literal))))))))))))))))

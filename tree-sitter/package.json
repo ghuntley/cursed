@@ -1,0 +1,24 @@
+{
+  "name": "tree-sitter-cursed",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the CURSED programming language",
+  "main": "bindings/node",
+  "scripts": {
+    "test": "tree-sitter test",
+    "build": "tree-sitter generate"
+  },
+  "keywords": [
+    "parser",
+    "lexer",
+    "cursed",
+    "tree-sitter"
+  ],
+  "author": "CURSED Language Team",
+  "license": "MIT",
+  "dependencies": {
+    "nan": "^2.17.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.7"
+  }
+}
