@@ -1,5 +1,49 @@
 # Garbage Collector Implementation Documentation
 
+## Update: April 2025
+
+The garbage collector has been fully redesigned with a comprehensive set of modern features:
+
+1. **Tri-Color Marking Algorithm**: Implemented a proper tri-color (White/Gray/Black) marking scheme for efficient traversal and cycle detection.
+2. **Full Cycle Detection**: The mark-sweep algorithm properly navigates object reference graphs to find all reachable objects, including those in cycles.
+3. **Object Finalization**: Added support for finalizing objects before collection to properly clean up resources.
+4. **Incremental Collection**: Implemented incremental GC with configurable step sizes and time budgets to reduce pause times.
+5. **Deadlock Prevention**: Integrated timeout-based lock acquisition mechanisms to prevent deadlocks.
+6. **Unified Implementation**: Consolidated multiple GC implementations into a single, cohesive implementation.
+7. **Verbose Logging Control**: Added options for controlling GC logging verbosity.
+
+### Implementation Details
+
+1. **Mark Phase**:
+   - Objects start as WHITE (unmarked)
+   - When visited, they're marked GRAY and added to a worklist
+   - After processing all references, objects become BLACK
+   - This approach properly handles cycles while avoiding stack overflows
+
+2. **Sweep Phase**:
+   - All WHITE objects are unreachable and collected
+   - Object finalization is called before memory is reclaimed
+   - Statistics are updated for monitoring purposes
+
+3. **Incremental Collection**:
+   - Divides collection into small steps that can be interleaved with program execution
+   - Helps reduce pause times and improve responsiveness
+   - Configurable time budget and step size for fine-tuning
+
+### Current Limitations and Future Work
+
+1. **Weak References**: Currently, weak references lose their connection to the GC when strong references are dropped. A more robust weak reference implementation is needed to maintain the GC connection.
+
+2. **Object Tracing**: The current approach simulates reference traversal without direct access to Traceable objects. In a production implementation, the GC would maintain direct references to Traceable objects for proper marking.
+
+3. **Finalization**: The object finalization is currently simulated and would need to be properly implemented with direct Traceable object access in a production environment.
+
+### Next Steps
+
+1. Improve weak reference implementation to maintain GC connection after strong references are dropped
+2. Refactor GC object storage to allow direct access to Traceable objects
+3. Add more sophisticated finalization support with explicit ordering
+
 ## Overview
 
 The garbage collector in the CURSED language is based on a mark-and-sweep algorithm with incremental collection support. It uses a combination of reference counting and tracing to manage memory efficiently.

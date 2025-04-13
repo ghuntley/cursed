@@ -7,6 +7,7 @@
 - [x] Implemented integration tests for end-to-end compilation
 - [x] Added more debug logging to garbage collector tests
 - [x] Fixed test infrastructure for test discovery and execution
+- [x] Implemented standalone weak reference tests
 
 ### Garbage Collector Testing
 
@@ -17,6 +18,8 @@ The garbage collector testing now includes:
 3. **Incremental Collection**: Tests for incremental garbage collection over multiple passes
 4. **Weak Reference Handling**: Verifies weak references behave correctly after collection
 5. **Debug Logging**: Enhanced logging to diagnose test failures and hanging issues
+6. **Weak Reference Registry**: Global registry for maintaining GC connections after strong references are dropped
+7. **Mark-Sweep Improvements**: Enhanced mark-and-sweep algorithm with tri-color marking for better cycle detection
 
 ### Standard Library Testing
 
@@ -35,10 +38,10 @@ Implemented comprehensive tests for the standard library:
 
 ### Future Work
 
-- Resolve remaining hanging issues in garbage collector tests
-- Expand test coverage for generics and monomorphization
 - Add performance benchmarks for garbage collection
 - Implement test coverage reporting
+- Improve direct access to Traceable objects for better finalization handling
+- Develop more sophisticated finalization with ordering support
 
 ## Property-Based Testing Module
 

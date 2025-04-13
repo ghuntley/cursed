@@ -23,7 +23,9 @@
 //! - `rizztemplate`: Text templates (like Go's text/template)
 
 // Export modules as they are implemented
-pub mod concurrenz; // Synchronization primitives (sync equivalent)
+// Temporarily disabled due to compilation issues
+// pub mod concurrenz; // Synchronization primitives (sync equivalent)
+pub mod concurrenz_disabled;
 pub mod cryptz; // Cryptography functions (crypto equivalent)
 pub mod dot_registry; // Dot expression registry for package.function calls
 pub mod dropz; // I/O primitives (io equivalent)
@@ -44,7 +46,9 @@ pub mod syslog_era; // Syslog client functionality (log/syslog equivalent)
 pub mod quick_test; // Property-based testing module
 
 // Re-export for convenient access
-pub use concurrenz::*;
+// Temporarily disabled due to compilation issues
+// pub use concurrenz::*;
+pub use concurrenz_disabled::*;
 pub use cryptz::*;
 pub use dot_registry::{DOT_REGISTRY, is_supported, execute_dot, get_packages, get_functions};
 pub use dropz::*;

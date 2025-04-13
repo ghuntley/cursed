@@ -126,6 +126,9 @@ pub(crate) struct GcObject {
     pub generation: usize,
 }
 
+// We now have a single garbage collector implementation with all the improvements integrated
+// No need to import from other modules
+
 impl GarbageCollector {
     /// Create a new garbage collector with default options
     pub fn new() -> Self {
@@ -587,7 +590,7 @@ impl GarbageCollector {
     }
 
     // Mark a specific object as gray
-    fn mark_object(&self, addr: usize) {
+    fn mark_object_as_gray(&self, addr: usize) {
         println!("GC: mark_object called for 0x{:x}", addr);
         // Use a scope to ensure we release the lock quickly
         {
@@ -620,7 +623,7 @@ impl GarbageCollector {
 impl Visitor for GarbageCollector {
     fn visit(&mut self, ptr: NonNull<dyn Traceable>) {
         let addr = ptr.as_ptr() as *const () as usize;
-        self.mark_object(addr);
+        self.mark_object_as_gray(addr);
     }
 
     fn visit_with_context(&mut self, ptr: NonNull<dyn Traceable>, _context: &str) {
@@ -628,7 +631,7 @@ impl Visitor for GarbageCollector {
     }
 
     fn visit_ptr(&mut self, addr: usize, _tag: Tag) {
-        self.mark_object(addr);
+        self.mark_object_as_gray(addr);
     }
 }
 

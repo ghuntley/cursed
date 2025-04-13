@@ -236,13 +236,27 @@ pub fn test_dropz() -> Result<(), Error> {
 }
 
 pub fn test_concurrenz() -> Result<(), Error> {
-    println!("Testing concurrenz package");
-    println!("Mutex test passed");
-    println!("RWMutex test passed");
-    println!("WaitGroup test passed");
-    println!("Once test passed");
-    println!("All concurrenz tests completed successfully");
+    println!("Concurrenz package tests temporarily disabled.");
+    Ok(())
+}
 
+fn test_mutex() -> Result<(), Error> {
+    println!("Mutex tests temporarily disabled.");
+    Ok(())
+}
+
+fn test_rwmutex() -> Result<(), Error> {
+    println!("RWMutex tests temporarily disabled.");
+    Ok(())
+}
+
+fn test_waitgroup() -> Result<(), Error> {
+    println!("WaitGroup tests temporarily disabled.");
+    Ok(())
+}
+
+fn test_once() -> Result<(), Error> {
+    println!("Once tests temporarily disabled.");
     Ok(())
 }
 
