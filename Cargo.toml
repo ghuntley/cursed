@@ -43,6 +43,9 @@ rand = "0.8"    # Random number generation
 # Regex support
 regex = "1.10"  # Regular expression support
 
+# Glob pattern matching
+glob = "0.3"    # For file path pattern matching
+
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking
 pretty_assertions = "1.4"  # For nicer test output
