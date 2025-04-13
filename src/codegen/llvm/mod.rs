@@ -40,7 +40,9 @@ pub use self::context::LlvmCodeGenerator;
 
 // Re-export traits for module functionality
 pub use self::container_layout::{ContainerLayout, ContainerLayoutExtension, ContainerLayoutManager};
+pub use self::dot_expressions::DotExpressionCompilation;
 pub use self::expression::ExpressionCompilation;
+pub use self::hook_dot_expressions::patch_main_function; // Temporary dot expression patch
 pub use self::memory_layout::{MemoryLayout, MemoryLayoutExtension, MemoryLayoutManager};
 pub use self::monomorphization::{MonomorphizationManagerExtension, SpecializedFunctionBuilderExtension, SpecializedFunctionBuilder, MonomorphizationManager};
 pub use self::statement::StatementCompilation;
@@ -55,6 +57,8 @@ mod context;         // Main LlvmCodeGenerator implementation
 mod basic_expressions;
 mod builder;
 pub mod container_layout; // Container memory layout optimization
+mod dot_expressions;  // Dot expression compilation (module.function)
+mod hook_dot_expressions; // Temporary patch for dot expressions
 mod errors;
 mod expression;
 pub mod function_monomorphization;

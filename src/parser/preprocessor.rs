@@ -306,18 +306,33 @@ impl<'a> Preprocessor<'a> {
                         
                         // Add the tokens to the stream with the metadata
                         let be_like_token = self.token_buffer.remove(0).0;
-                        self.token_stream.add_token(be_like_token, self.token_buffer[0].1.clone());
+                        let be_like_loc = self.token_buffer[0].1.clone();
                         
                         let identifier_token = self.token_buffer.remove(0).0;
+                        let identifier_loc = self.token_buffer[0].1.clone();
+                        
+                        // Remove the processed tokens (from LBracket to RBracket)
+                        for _ in 0..=end_index {
+                            self.token_buffer.remove(0);
+                        }
+                        
+                        // Now add the tokens to the stream in the right order
+                        self.token_stream.add_token(be_like_token, be_like_loc.clone());
                         self.token_stream.add_token_with_metadata(
                             identifier_token, 
-                            self.token_buffer[0].1.clone(),
+                            identifier_loc.clone(),
                             metadata
                         );
                         
-                        // Skip all the tokens we've processed (the type parameters)
-                        for _ in 0..=end_index {
-                            self.token_buffer.remove(0);
+                        // Add the squad token directly instead of waiting for it
+                        if !self.token_buffer.is_empty() && matches!(self.token_buffer[0].0, Token::Squad) {
+                            let squad_token = self.token_buffer.remove(0).0;
+                            let squad_loc = if !self.token_buffer.is_empty() {
+                                self.token_buffer[0].1.clone()
+                            } else {
+                                identifier_loc.clone()
+                            };
+                            self.token_stream.add_token(squad_token, squad_loc);
                         }
                         
                         return Ok(());
@@ -397,19 +412,23 @@ impl<'a> Preprocessor<'a> {
                         
                         // Add the tokens to the stream with the metadata
                         let slay_token = self.token_buffer.remove(0).0;
-                        self.token_stream.add_token(slay_token, self.token_buffer[0].1.clone());
+                        let slay_loc = self.token_buffer[0].1.clone();
                         
                         let identifier_token = self.token_buffer.remove(0).0;
-                        self.token_stream.add_token_with_metadata(
-                            identifier_token, 
-                            self.token_buffer[0].1.clone(),
-                            metadata
-                        );
+                        let identifier_loc = self.token_buffer[0].1.clone();
                         
-                        // Skip all the tokens we've processed (the type parameters)
+                        // Remove the processed tokens (from LBracket to RBracket)
                         for _ in 0..=end_index {
                             self.token_buffer.remove(0);
                         }
+                        
+                        // Now add the tokens to the stream in the right order
+                        self.token_stream.add_token(slay_token, slay_loc.clone());
+                        self.token_stream.add_token_with_metadata(
+                            identifier_token, 
+                            identifier_loc.clone(),
+                            metadata
+                        );
                         
                         return Ok(());
                     }
@@ -486,16 +505,19 @@ impl<'a> Preprocessor<'a> {
                         
                         // Add the tokens to the stream with the metadata
                         let identifier_token = self.token_buffer.remove(0).0;
-                        self.token_stream.add_token_with_metadata(
-                            identifier_token, 
-                            self.token_buffer[0].1.clone(),
-                            metadata
-                        );
+                        let identifier_loc = self.token_buffer[0].1.clone();
                         
-                        // Skip all the tokens we've processed (the type arguments)
+                        // Remove the processed tokens (from LBracket to RBracket)
                         for _ in 0..=end_index {
                             self.token_buffer.remove(0);
                         }
+                        
+                        // Add the token with metadata
+                        self.token_stream.add_token_with_metadata(
+                            identifier_token, 
+                            identifier_loc.clone(),
+                            metadata
+                        );
                         
                         return Ok(());
                     }

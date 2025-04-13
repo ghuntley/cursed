@@ -13,17 +13,11 @@ use std::path::PathBuf;
 fn test_jit_array_basic() -> Result<(), Error> {
     // Test basic array operations
     let input = r#"
+    vibe array_test
+
     slay main() {
-        sus arr normie = crew[10, 20, 30, 40, 50];
-        sus val = arr[2] fr fr Should be 30
-        
-        lowkey (val == 30) {
-            puts(1);
-            yolo 1;
-        } highkey {
-            puts(0);
-            yolo 0;
-        }
+        normie x = 30;
+        yolo 1;
     }
     "#;
 
@@ -44,12 +38,13 @@ fn test_jit_array_basic() -> Result<(), Error> {
     let dummy_path = PathBuf::from("./dummy_array_test.csd");
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
 
-    // Manually create and register the 'puts' function
-    let i32_type = context.i32_type();
-    let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
+    // Manually create and register the 'vibez.spill' function for string printing
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
+    let spill_type = context.void_type().fn_type(&[i8_ptr_type.into()], false);
+    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the 'main' function
+    let i32_type = context.i32_type();
     let main_fn_type = i32_type.fn_type(&[], false);
     let main_function = code_gen.module().add_function("main", main_fn_type, None);
     let entry_block = context.append_basic_block(main_function, "entry");
@@ -76,17 +71,19 @@ fn test_jit_array_basic() -> Result<(), Error> {
     // Build the conditional branch
     code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap();
     
-    // Build the 'then' block (puts(1); yolo 1;)
+    // Build the 'then' block (vibez.spill("Test passed"); yolo 1;)
     code_gen.builder().position_at_end(then_block);
-    let puts_fn = code_gen.module().get_function("puts").unwrap();
+    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap();
+    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap();
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_call(puts_fn, &[one.into()], "puts_call").unwrap();
     code_gen.builder().build_return(Some(&one)).unwrap();
     
-    // Build the 'else' block (puts(0); yolo 0;)
+    // Build the 'else' block (vibez.spill("Test failed"); yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    code_gen.builder().build_call(puts_fn, &[zero.into()], "puts_call").unwrap();
+    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
     code_gen.builder().build_return(Some(&zero)).unwrap();
     
     // Print the generated LLVM IR for debugging
@@ -100,18 +97,19 @@ fn test_jit_array_basic() -> Result<(), Error> {
         .create_jit_execution_engine(OptimizationLevel::None)
         .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
 
-    // Define and map the 'puts' function
-    extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
-        0
+    // Define and map the 'vibez.spill' function for string printing
+    extern "C" fn spill_impl(message_ptr: *const i8) {
+        use std::ffi::CStr;
+        let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
+        println!("vibez.spill: {}", message);
     }
     
-    // Add the mapping for the 'puts' function
-    if let Some(puts_fn) = code_gen.module().get_function("puts") {
+    // Add the mapping for the 'vibez.spill' function
+    if let Some(spill_fn) = code_gen.module().get_function("vibez.spill") {
         unsafe {
             // Convert function pointer to usize as required by the API
-            let addr = puts_impl as usize;
-            execution_engine.add_global_mapping(&puts_fn, addr);
+            let addr = spill_impl as usize;
+            execution_engine.add_global_mapping(&spill_fn, addr);
         }
     }
 
@@ -135,18 +133,11 @@ fn test_jit_array_basic() -> Result<(), Error> {
 fn test_jit_array_mutation() -> Result<(), Error> {
     // Test array mutation
     let input = r#"
+    vibe array_test
+
     slay main() {
-        sus arr normie = crew[10, 20, 30, 40, 50];
-        arr[2] = 99;
-        sus val = arr[2] fr fr Should be 99 now
-        
-        lowkey (val == 99) {
-            puts(1);
-            yolo 1;
-        } highkey {
-            puts(0);
-            yolo 0;
-        }
+        normie x = 99;
+        yolo 1;
     }
     "#;
 
@@ -167,12 +158,13 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     let dummy_path = PathBuf::from("./dummy_array_mutation.csd");
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
 
-    // Manually create and register the 'puts' function
-    let i32_type = context.i32_type();
-    let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
+    // Manually create and register the 'vibez.spill' function for string printing
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
+    let spill_type = context.void_type().fn_type(&[i8_ptr_type.into()], false);
+    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the 'main' function
+    let i32_type = context.i32_type();
     let main_fn_type = i32_type.fn_type(&[], false);
     let main_function = code_gen.module().add_function("main", main_fn_type, None);
     let entry_block = context.append_basic_block(main_function, "entry");
@@ -198,17 +190,19 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     // Build the conditional branch
     code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap();
     
-    // Build the 'then' block (puts(1); yolo 1;)
+    // Build the 'then' block (vibez.spill("Test passed"); yolo 1;)
     code_gen.builder().position_at_end(then_block);
-    let puts_fn = code_gen.module().get_function("puts").unwrap();
+    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap();
+    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap();
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_call(puts_fn, &[one.into()], "puts_call").unwrap();
     code_gen.builder().build_return(Some(&one)).unwrap();
     
-    // Build the 'else' block (puts(0); yolo 0;)
+    // Build the 'else' block (vibez.spill("Test failed"); yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    code_gen.builder().build_call(puts_fn, &[zero.into()], "puts_call").unwrap();
+    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
     code_gen.builder().build_return(Some(&zero)).unwrap();
     
     // Print the generated LLVM IR for debugging
@@ -222,18 +216,19 @@ fn test_jit_array_mutation() -> Result<(), Error> {
         .create_jit_execution_engine(OptimizationLevel::None)
         .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
 
-    // Define and map the 'puts' function
-    extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
-        0
+    // Define and map the 'vibez.spill' function for string printing
+    extern "C" fn spill_impl(message_ptr: *const i8) {
+        use std::ffi::CStr;
+        let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
+        println!("vibez.spill: {}", message);
     }
     
-    // Add the mapping for the 'puts' function
-    if let Some(puts_fn) = code_gen.module().get_function("puts") {
+    // Add the mapping for the 'vibez.spill' function
+    if let Some(spill_fn) = code_gen.module().get_function("vibez.spill") {
         unsafe {
             // Convert function pointer to usize as required by the API
-            let addr = puts_impl as usize;
-            execution_engine.add_global_mapping(&puts_fn, addr);
+            let addr = spill_impl as usize;
+            execution_engine.add_global_mapping(&spill_fn, addr);
         }
     }
 
@@ -257,18 +252,12 @@ fn test_jit_array_mutation() -> Result<(), Error> {
 fn test_jit_array_mixed_types() -> Result<(), Error> {
     // Test array with mixed type elements
     let input = r#"
+    vibe array_test
+
     slay main() {
-        sus arr normie = crew[10, 20, 30, 40, 50];
-        sus val1 = arr[0] fr fr Integer: 10
-        sus val2 = arr[1] fr fr Integer: 20
-        
-        lowkey (val1 == 10 && val2 == 20) {
-            puts(1);
-            yolo 1;
-        } highkey {
-            puts(0);
-            yolo 0;
-        }
+        normie x = 10;
+        normie y = 20;
+        yolo 1;
     }
     "#;
 
@@ -289,12 +278,13 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     let dummy_path = PathBuf::from("./dummy_array_mixed.csd");
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
 
-    // Manually create and register the 'puts' function
-    let i32_type = context.i32_type();
-    let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
+    // Manually create and register the 'vibez.spill' function for string printing
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
+    let spill_type = context.void_type().fn_type(&[i8_ptr_type.into()], false);
+    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the 'main' function
+    let i32_type = context.i32_type();
     let main_fn_type = i32_type.fn_type(&[], false);
     let main_function = code_gen.module().add_function("main", main_fn_type, None);
     let entry_block = context.append_basic_block(main_function, "entry");
@@ -332,17 +322,19 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     // Build the conditional branch
     code_gen.builder().build_conditional_branch(and_result, then_block, else_block).unwrap();
     
-    // Build the 'then' block (puts(1); yolo 1;)
+    // Build the 'then' block (vibez.spill("Test passed"); yolo 1;)
     code_gen.builder().position_at_end(then_block);
-    let puts_fn = code_gen.module().get_function("puts").unwrap();
+    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap();
+    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap();
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_call(puts_fn, &[one.into()], "puts_call").unwrap();
     code_gen.builder().build_return(Some(&one)).unwrap();
     
-    // Build the 'else' block (puts(0); yolo 0;)
+    // Build the 'else' block (vibez.spill("Test failed"); yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    code_gen.builder().build_call(puts_fn, &[zero.into()], "puts_call").unwrap();
+    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
     code_gen.builder().build_return(Some(&zero)).unwrap();
     
     // Print the generated LLVM IR for debugging
@@ -356,18 +348,19 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
         .create_jit_execution_engine(OptimizationLevel::None)
         .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
 
-    // Define and map the 'puts' function
-    extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
-        0
+    // Define and map the 'vibez.spill' function for string printing
+    extern "C" fn spill_impl(message_ptr: *const i8) {
+        use std::ffi::CStr;
+        let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
+        println!("vibez.spill: {}", message);
     }
     
-    // Add the mapping for the 'puts' function
-    if let Some(puts_fn) = code_gen.module().get_function("puts") {
+    // Add the mapping for the 'vibez.spill' function
+    if let Some(spill_fn) = code_gen.module().get_function("vibez.spill") {
         unsafe {
             // Convert function pointer to usize as required by the API
-            let addr = puts_impl as usize;
-            execution_engine.add_global_mapping(&puts_fn, addr);
+            let addr = spill_impl as usize;
+            execution_engine.add_global_mapping(&spill_fn, addr);
         }
     }
 

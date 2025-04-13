@@ -1,0 +1,239 @@
+<!-- Stringz (strings) Section in GenZ Style -->
+<section id="stringz" class="docs-section animate-on-scroll">
+  <div class="section-pop">word manipulation</div>
+  <h2>Stringz Package (strings)</h2>
+  <p>The <code>stringz</code> package is your go-to squad for manipulating text in CURSED. It's giving string manipulation energy with all the functions you need to transform, search, and organize your text data.</p>
+
+  <div class="feature-box">
+    <h3>Core Functions</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Contains</code></td>
+          <td>Check if a string contains a substring</td>
+          <td><code>stringz.Contains("hello", "ell")</code> u2192 <code>based</code></td>
+        </tr>
+        <tr>
+          <td><code>Count</code></td>
+          <td>Count occurrences of a substring</td>
+          <td><code>stringz.Count("hello", "l")</code> u2192 <code>2</code></td>
+        </tr>
+        <tr>
+          <td><code>HasPrefix</code></td>
+          <td>Check if a string starts with a prefix</td>
+          <td><code>stringz.HasPrefix("hello", "he")</code> u2192 <code>based</code></td>
+        </tr>
+        <tr>
+          <td><code>HasSuffix</code></td>
+          <td>Check if a string ends with a suffix</td>
+          <td><code>stringz.HasSuffix("hello", "lo")</code> u2192 <code>based</code></td>
+        </tr>
+        <tr>
+          <td><code>Index</code></td>
+          <td>Find position of substring</td>
+          <td><code>stringz.Index("hello", "ll")</code> u2192 <code>2</code></td>
+        </tr>
+        <tr>
+          <td><code>Join</code></td>
+          <td>Join slice of strings with separator</td>
+          <td><code>stringz.Join([]tea{"a", "b"}, "-")</code> u2192 <code>"a-b"</code></td>
+        </tr>
+        <tr>
+          <td><code>Split</code></td>
+          <td>Split string by separator</td>
+          <td><code>stringz.Split("a-b", "-")</code> u2192 <code>[]tea{"a", "b"}</code></td>
+        </tr>
+        <tr>
+          <td><code>ToLower</code></td>
+          <td>Convert to lowercase</td>
+          <td><code>stringz.ToLower("Hello")</code> u2192 <code>"hello"</code></td>
+        </tr>
+        <tr>
+          <td><code>ToUpper</code></td>
+          <td>Convert to uppercase</td>
+          <td><code>stringz.ToUpper("Hello")</code> u2192 <code>"HELLO"</code></td>
+        </tr>
+        <tr>
+          <td><code>Trim</code></td>
+          <td>Remove cutset from both ends</td>
+          <td><code>stringz.Trim(" hi ", " ")</code> u2192 <code>"hi"</code></td>
+        </tr>
+        <tr>
+          <td><code>Replace</code></td>
+          <td>Replace occurrences of a substring</td>
+          <td><code>stringz.Replace("oops", "o", "a", 1)</code> u2192 <code>"aops"</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Basic String Operations</div>
+    <pre><code><span class="keyword">yeet</span> "stringz"
+
+<span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> s tea = "  Hello, World!  "
+    
+    <span class="comment">fr fr Trim spaces from both ends</span>
+    trimmed := stringz.TrimSpace(s)  <span class="comment">fr fr "Hello, World!"</span>
+    
+    <span class="comment">fr fr Convert to lowercase</span>
+    lower := stringz.ToLower(trimmed)  <span class="comment">fr fr "hello, world!"</span>
+    
+    <span class="comment">fr fr Convert to uppercase</span>
+    upper := stringz.ToUpper(trimmed)  <span class="comment">fr fr "HELLO, WORLD!"</span>
+    
+    <span class="comment">fr fr Check if string contains a substring</span>
+    <span class="keyword">lowkey</span> stringz.Contains(lower, "world") {
+        vibez.spill("Found 'world' in the string!")
+    }
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Splitting and Joining</h3>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Split string by comma</span>
+    <span class="keyword">sus</span> csv tea = "apple,banana,cherry,date"
+    fruits := stringz.Split(csv, ",")  <span class="comment">fr fr []tea{"apple", "banana", "cherry", "date"}</span>
+    
+    vibez.spill("Fruits list:")
+    <span class="keyword">bestie</span> i, fruit := <span class="keyword">flex</span> fruits {
+        vibez.spillf("%d: %s\n", i+1, fruit)
+    }
+    
+    <span class="comment">fr fr Join strings with a separator</span>
+    <span class="keyword">sus</span> newFruits []tea = []tea{"grape", "kiwi", "lemon"}
+    newList := stringz.Join(newFruits, " & ")  <span class="comment">fr fr "grape & kiwi & lemon"</span>
+    vibez.spill("New fruits:", newList)
+    
+    <span class="comment">fr fr Fields splits by whitespace</span>
+    <span class="keyword">sus</span> sentence tea = "This   is   a   sentence"
+    words := stringz.Fields(sentence)  <span class="comment">fr fr []tea{"This", "is", "a", "sentence"}</span>
+    wordCount := len(words)
+    vibez.spill("Word count:", wordCount)
+    
+    <span class="comment">fr fr Split by whitespace but keep a maximum of 2 substrings</span>
+    parts := stringz.SplitN(sentence, " ", 3)  <span class="comment">fr fr []tea{"This", "is", "a   sentence"}</span>
+    vibez.spill("First part:", parts[0])
+    vibez.spill("Last part:", parts[len(parts)-1])
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Searching and Replacing</div>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> s tea = "hello world, hello universe"
+    
+    <span class="comment">fr fr Find first occurrence</span>
+    pos := stringz.Index(s, "hello")  <span class="comment">fr fr 0</span>
+    vibez.spill("First 'hello' at position:", pos)
+    
+    <span class="comment">fr fr Find last occurrence</span>
+    lastPos := stringz.LastIndex(s, "hello")  <span class="comment">fr fr 13</span>
+    vibez.spill("Last 'hello' at position:", lastPos)
+    
+    <span class="comment">fr fr Replace first 'hello' with 'hi'</span>
+    replaced := stringz.Replace(s, "hello", "hi", 1)  <span class="comment">fr fr "hi world, hello universe"</span>
+    vibez.spill("After replacing first 'hello':", replaced)
+    
+    <span class="comment">fr fr Replace all occurrences</span>
+    allReplaced := stringz.ReplaceAll(s, "hello", "hey")  <span class="comment">fr fr "hey world, hey universe"</span>
+    vibez.spill("After replacing all 'hello':", allReplaced)
+    
+    <span class="comment">fr fr Check if string starts with a prefix</span>
+    <span class="keyword">lowkey</span> stringz.HasPrefix(s, "hello") {
+        vibez.spill("String starts with 'hello'")
+    }
+    
+    <span class="comment">fr fr Check if string ends with a suffix</span>
+    <span class="keyword">lowkey</span> stringz.HasSuffix(s, "universe") {
+        vibez.spill("String ends with 'universe'")
+    }
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>String Manipulation Helpers</h4>
+    <pre><code><span class="keyword">slay</span> processUsername(username tea) tea {
+    <span class="comment">fr fr Trim whitespace</span>
+    username = stringz.TrimSpace(username)
+    
+    <span class="comment">fr fr Convert to lowercase</span>
+    username = stringz.ToLower(username)
+    
+    <span class="comment">fr fr Replace spaces with underscores</span>
+    username = stringz.ReplaceAll(username, " ", "_")
+    
+    <span class="comment">fr fr Truncate if too long</span>
+    <span class="keyword">lowkey</span> len(username) > 20 {
+        username = username[:20]
+    }
+    
+    <span class="keyword">yolo</span> username
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>String Builders</h3>
+    <p>For efficient string concatenation when building strings piece by piece:</p>
+    <pre><code><span class="keyword">yeet</span> "dropz"
+
+<span class="keyword">slay</span> generateReport(items []tea) tea {
+    <span class="comment">fr fr Create a string builder for efficient concatenation</span>
+    <span class="keyword">sus</span> sb dropz.Builder
+    
+    <span class="comment">fr fr Write the header</span>
+    sb.WriteString("REPORT\n")
+    sb.WriteString("======\n\n")
+    
+    <span class="comment">fr fr Add items</span>
+    <span class="keyword">bestie</span> i, item := <span class="keyword">flex</span> items {
+        <span class="comment">fr fr Format with Sprintf and add to builder</span>
+        line := vibez.spillstr("%d. %s\n", i+1, item)
+        sb.WriteString(line)
+    }
+    
+    <span class="comment">fr fr Add footer</span>
+    sb.WriteString("\nEnd of report")
+    
+    <span class="comment">fr fr Get the final string</span>
+    <span class="keyword">yolo</span> sb.String()
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>String Performance Tips</h4>
+    <ul>
+      <li>Use <code>dropz.Builder</code> for building strings in loops</li>
+      <li>Preallocate slices when you know the approximate size</li>
+      <li>For simple concatenation of a few strings, <code>+</code> is fine</li>
+      <li><code>bytes</code> package functions can be more efficient for byte manipulation</li>
+      <li>Regular expressions (<code>regex</code> package) are powerful but can be slower</li>
+    </ul>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Regular Expression Integration</div>
+    <pre><code><span class="keyword">yeet</span> "regex"
+
+<span class="keyword">slay</span> validateEmail(email tea) lit {
+    <span class="comment">fr fr Compile regex pattern for email validation</span>
+    pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+    re, err := regex.Compile(pattern)
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span> <span class="keyword">sus</span>  <span class="comment">fr fr Return false if pattern is invalid</span>
+    }
+    
+    <span class="comment">fr fr Check if the email matches the pattern</span>
+    <span class="keyword">yolo</span> re.MatchString(email)
+}</code></pre>
+  </div>
+</section>

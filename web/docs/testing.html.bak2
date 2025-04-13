@@ -1,0 +1,170 @@
+<!-- Testing Section in GenZ Style -->
+<section id="testing" class="docs-section animate-on-scroll">
+  <div class="section-pop">trust but verify</div>
+  <h2>Testing</h2>
+  <p>Bestie, we need to make sure our code actually works! CURSED comes with built-in testing that's giving reliability and peace of mind vibes.</p>
+
+  <div class="code-block">
+    <div class="code-title">Basic Test</div>
+    <pre><code><span class="comment">fr fr In file math_test.csd</span>
+<span class="keyword">vibe</span> math_test
+
+<span class="keyword">yeet</span> (
+    "vibez"
+    "check"  <span class="comment">fr fr Testing utilities</span>
+    "me/app/math"  <span class="comment">fr fr Package we're testing</span>
+)
+
+<span class="comment">fr fr Test function names must start with Test</span>
+<span class="keyword">slay</span> TestAdd(t @check.Test) {
+    got := math.Add(2, 3)
+    want := 5
+    
+    <span class="keyword">lowkey</span> got != want {
+        t.Errorf("Add(2, 3) = %d; want %d", got, want)
+    }
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Running Tests</h3>
+    <pre><code><span class="comment">fr fr Run all tests</span>
+$ cursed test
+
+<span class="comment">fr fr Run tests in specific package</span>
+$ cursed test me/app/math
+
+<span class="comment">fr fr Run specific test</span>
+$ cursed test -run TestAdd
+
+<span class="comment">fr fr See test coverage</span>
+$ cursed test -cover</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Table-Driven Tests</div>
+    <pre><code><span class="keyword">slay</span> TestMultiply(t @check.Test) {
+    <span class="comment">fr fr Define test cases</span>
+    tests := []<span class="keyword">squad</span> {
+        name tea
+        x, y normie
+        want normie
+    }{
+        {"positive", 2, 3, 6},
+        {"zero", 0, 5, 0},
+        {"negative", -2, 3, -6},
+    }
+    
+    <span class="comment">fr fr Run all test cases</span>
+    <span class="keyword">bestie</span> _, test := <span class="keyword">flex</span> tests {
+        t.Run(test.name, <span class="keyword">slay</span>(t @check.Test) {
+            got := math.Multiply(test.x, test.y)
+            <span class="keyword">lowkey</span> got != test.want {
+                t.Errorf("Multiply(%d, %d) = %d; want %d", 
+                          test.x, test.y, got, test.want)
+            }
+        })
+    }
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Subtests & Setup/Teardown</div>
+    <pre><code><span class="keyword">slay</span> TestDatabase(t @check.Test) {
+    <span class="comment">fr fr Setup database connection</span>
+    db, err := setupTestDB()
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        t.Fatalf("Failed to setup test DB: %v", err)
+    }
+    
+    <span class="comment">fr fr Clean up when test finishes</span>
+    <span class="keyword">later</span> teardownTestDB(db)
+    
+    <span class="comment">fr fr Subtests</span>
+    t.Run("Insert", <span class="keyword">slay</span>(t @check.Test) {
+        err := db.Insert("key", "value")
+        <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+            t.Errorf("Insert failed: %v", err)
+        }
+    })
+    
+    t.Run("Get", <span class="keyword">slay</span>(t @check.Test) {
+        value, err := db.Get("key")
+        <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+            t.Errorf("Get failed: %v", err)
+        }
+        <span class="keyword">lowkey</span> value != "value" {
+            t.Errorf("Got %q; want %q", value, "value")
+        }
+    })
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Mock Testing</h3>
+    <pre><code><span class="comment">fr fr Interface we want to mock</span>
+<span class="keyword">be_like</span> UserService <span class="keyword">collab</span> {
+    GetUser(id tea) (@User, tea)
+    CreateUser(user @User) tea
+}
+
+<span class="comment">fr fr Mock implementation</span>
+<span class="keyword">be_like</span> MockUserService <span class="keyword">squad</span> {
+    users tea[tea]@User
+}
+
+<span class="keyword">slay</span> (m @MockUserService) GetUser(id tea) (@User, tea) {
+    user, exists := m.users[id]
+    <span class="keyword">lowkey</span> !exists {
+        <span class="keyword">yolo</span> <span class="keyword">cap</span>, "user not found"
+    }
+    <span class="keyword">yolo</span> user, ""
+}
+
+<span class="keyword">slay</span> (m @MockUserService) CreateUser(user @User) tea {
+    m.users[user.ID] = user
+    <span class="keyword">yolo</span> ""
+}
+
+<span class="comment">fr fr Testing with mocks</span>
+<span class="keyword">slay</span> TestUserHandler(t @check.Test) {
+    mockService := &MockUserService{
+        users: make(tea[tea]@User),
+    }
+    
+    handler := NewUserHandler(mockService)
+    
+    <span class="comment">fr fr Test creating a user</span>
+    resp := handler.CreateUserHandler(createUserRequest())
+    <span class="keyword">lowkey</span> resp.Error != "" {
+        t.Errorf("Expected no error, got: %s", resp.Error)
+    }
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Benchmarking - When Performance is the Main Character</h4>
+    <p>Measure and optimize your code's performance with benchmarks:</p>
+    <pre><code><span class="keyword">slay</span> BenchmarkFibonacci(b @check.Benchmark) {
+    <span class="keyword">bestie</span> i := 0; i < b.N; i++ {
+        Fibonacci(20)  <span class="comment">fr fr Run your function b.N times</span>
+    }
+}
+
+<span class="comment">fr fr Run benchmarks</span>
+$ cursed test -bench=.</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Testing Best Practices that Slap</h4>
+    <ul>
+      <li>Write tests before code (TDD vibes)</li>
+      <li>Test both happy paths and error cases</li>
+      <li>Use descriptive test and variable names</li>
+      <li>Keep tests fast and independent</li>
+      <li>Aim for high test coverage, but focus on critical paths</li>
+      <li>Use table-driven tests for similar test cases</li>
+      <li>Mock external dependencies like databases and APIs</li>
+    </ul>
+  </div>
+</section>

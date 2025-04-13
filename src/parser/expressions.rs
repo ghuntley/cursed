@@ -418,6 +418,14 @@ impl<'a> Parser<'a> {
     ) -> Result<Box<dyn Expression>, Error> {
         let token = self.current_token.token_literal();
         
+        println!("DEBUG CALL EXPR: Parsing call expression for function: {}", function.string());
+        
+        // Check if the function is a DotExpression
+        if let Some(dot_expr) = function.as_any().downcast_ref::<ast::expressions::DotExpression>() {
+            println!("DEBUG CALL EXPR: Function is a DotExpression: {}.{}", 
+                     dot_expr.object.string(), dot_expr.property);
+        }
+        
         // Check if this is a generic function call with type arguments
         if self.peek_token_is(Token::LBracket) {
             // This is a generic function call with type arguments
@@ -435,6 +443,7 @@ impl<'a> Parser<'a> {
             // Pop the context when we're done
             self.pop_context();
             
+            println!("DEBUG CALL EXPR: Created generic call expression");
             return Ok(Box::new(ast::GenericCallExpression {
                 token,
                 function,
@@ -445,7 +454,9 @@ impl<'a> Parser<'a> {
         
         // Regular function call without type arguments
         let arguments = self.parse_call_arguments()?;
-
+        
+        println!("DEBUG CALL EXPR: Created regular call expression with {} arguments", arguments.len());
+        
         Ok(Box::new(ast::CallExpression {
             token,
             function,
@@ -731,13 +742,27 @@ impl<'a> Parser<'a> {
             String::new() // Unreachable due to check above
         };
 
+        println!("DEBUG DOT EXPR: Before creating DotExpression for {}.{}", left.string(), property);
+        
         self.next_token()?; // Skip past the identifier
 
-        // Create a simple string literal for dot access
-        Ok(Box::new(ast::StringLiteral {
+        // Create a proper DotExpression object
+        let dot_expr = DotExpression {
             token: token.token_literal(),
-            value: format!("dot_access.{}", property),
-        }))
+            object: left,
+            property,
+        };
+        
+        // Check if this is a method call (property followed by '(')
+        if self.current_token_is(Token::LParen) {
+            println!("DEBUG DOT EXPR: Converting dot expression to method call");
+            // This is a method call, parse it as a call expression
+            return self.parse_call_expression(Box::new(dot_expr));
+        }
+        
+        // Regular property access
+        println!("DEBUG DOT EXPR: Returning pure dot expression");
+        Ok(Box::new(dot_expr))
     }
 
     /// Parse an identifier
@@ -865,6 +890,59 @@ impl<'a> Parser<'a> {
             
             // Expect colon after key
             if !self.peek_token_is(Token::Colon) {
+                // If we don't see a colon, this might not be a hash literal
+                // Try to recover by checking if this could be a function call argument
+                if self.in_context(ParsingContext::Expression) {
+                    println!("DEBUG: Found likely non-hash expression in hash context: {}", key.string());
+                    
+                    // For dot expressions or other complex expressions, we want to preserve them
+                    if key.as_any().downcast_ref::<DotExpression>().is_some() ||
+                       key.as_any().downcast_ref::<ast::CallExpression>().is_some() {
+                        println!("DEBUG: Preserving complex expression: {}", key.string());
+                        // Pop context and return the original expression
+                        self.pop_context();
+                        return Ok(key);
+                    }
+                    
+                    // Check if string representation looks like a dot expression (e.g., "vibez.spill")
+                    let key_str = key.string();
+                    if key_str.contains('.') && !key_str.parse::<f64>().is_ok() { // Contains dot but not a float number
+                        println!("DEBUG: Creating DotExpression from string: {}", key_str);
+                        
+                        // Split the string at the dot
+                        let parts: Vec<&str> = key_str.split('.').collect();
+                        if parts.len() == 2 { // Simple case: one dot
+                            let object_name = parts[0];
+                            let property_name = parts[1];
+                            
+                            // Create object expression (identifier)
+                            let object = Box::new(ast::Identifier {
+                                token: object_name.to_string(),
+                                value: object_name.to_string(),
+                            }) as Box<dyn Expression>;
+                            
+                            // Create the dot expression
+                            let dot_expr = DotExpression {
+                                token: ".".to_string(),
+                                object,
+                                property: property_name.to_string(),
+                            };
+                            
+                            // Pop context and return the dot expression
+                            self.pop_context();
+                            return Ok(Box::new(dot_expr));
+                        }
+                    }
+                    
+                    // Pop context and return a placeholder for simpler expressions
+                    self.pop_context();
+                    println!("DEBUG: Converting to placeholder string: {}", key.string());
+                    return Ok(Box::new(ast::StringLiteral {
+                        token: token.token_literal(),
+                        value: "expression".to_string(),
+                    }));
+                }
+                
                 // Pop context before returning error
                 self.pop_context();
                 return Err(self.error(&format!("Expected ':' after hash key, got {:?}", self.peek_token)));

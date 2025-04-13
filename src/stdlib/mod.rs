@@ -25,10 +25,13 @@
 // Export modules as they are implemented
 pub mod concurrenz; // Synchronization primitives (sync equivalent)
 pub mod cryptz; // Cryptography functions (crypto equivalent)
+pub mod dot_registry; // Dot expression registry for package.function calls
 pub mod dropz; // I/O primitives (io equivalent)
+pub mod vector2d; // Vector2D type implementation and methods
 pub mod htmlrizzler; // HTML templates (html/template equivalent)
 pub mod json_tea; // JSON encoding/decoding (encoding/json equivalent)
 pub mod mathz; // Math functions (math equivalent)
+pub mod oglogging_simplified; // Logging functionality (log equivalent)
 pub mod reflectz; // Runtime reflection (reflect equivalent)
 pub mod regex_vibez; // Regular expressions (regexp equivalent)
 pub mod rizztemplate; // Text templates (text/template equivalent)
@@ -41,10 +44,12 @@ pub mod web_vibez; // HTTP client and server (net/http equivalent)
 // Re-export for convenient access
 pub use concurrenz::*;
 pub use cryptz::*;
+pub use dot_registry::{DOT_REGISTRY, is_supported, execute_dot, get_packages, get_functions};
 pub use dropz::*;
-pub use htmlrizzler::*;
+pub use htmlrizzler::{escape_html, escape_js, escape_url};
 pub use json_tea::*;
 pub use mathz::*;
+pub use oglogging_simplified as oglogging;
 pub use reflectz::*;
 pub use regex_vibez::*;
 pub use rizztemplate::*;

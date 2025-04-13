@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrapping - CURSED Programming Language</title>
+    <link rel="stylesheet" href="../styles/docs.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><span class="gradient-text">🔄 Self-Hosting: The Bootstrapping Journey 🔄</span></h1>
+            <p class="subtitle">CURSED compiling itself - it's giving inception vibes</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="doc-grid">
+            <aside class="sidebar">
+                <nav>
+                    <ul>
+                        <li><a href="installation.html">Getting Started</a></li>
+                        <li><a href="philosophy.html">Philosophy</a></li>
+                        <li><a href="compiler-stages.html">Compiler Stages</a></li>
+                        <li><a href="#" class="active">Bootstrapping</a></li>
+                        <li><a href="generics.html">Generics</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <article class="content">
+                <section class="intro">
+                    <div class="tag-container">
+                        <span class="tag">Core Concept</span>
+                        <span class="tag">Compiler Tech</span>
+                        <span class="tag">Advanced</span>
+                    </div>
+                    <p class="lead">Bootstrap compilers are the ultimate flex - a language that can compile itself. This doc explains how CURSED achieves this legendary status through a multi-stage process.</p>
+                </section>
+
+                <section>
+                    <h2>The Self-Hosting Glow Up</h2>
+                    <p>Self-hosting means the compiler for a language is written in that same language. It's a flex that proves the language is expressive and powerful enough to handle complex tasks like compilation.</p>
+                    
+                    <div class="feature-box">
+                        <h3>Why Bootstrap Though?</h3>
+                        <ul class="vibe-list">
+                            <li><span class="emoji">💯</span> <strong>Dogfooding:</strong> Using our own language helps us improve it</li>
+                            <li><span class="emoji">⚡</span> <strong>Independence:</strong> No reliance on other languages after bootstrapping</li>
+                            <li><span class="emoji">🧠</span> <strong>Completeness:</strong> Proves the language is powerful enough</li>
+                            <li><span class="emoji">🔍</span> <strong>Discovery:</strong> Exposes language limitations and needed features</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="code-example">
+                    <h2>The Bootstrap Pipeline</h2>
+                    <p>CURSED follows a classic multi-stage bootstrapping process:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">bootstrap_stages.csd</div>
+                        <pre><code>fr fr Stage 0: The seed compiler written in Rust
+fr fr This is the initial implementation that can compile a subset of CURSED
+
+fr fr Stage 1: First CURSED compiler in CURSED
+fr fr Limited functionality but enough to compile itself
+
+fr fr Stage 2: Enhanced CURSED compiler in CURSED
+fr fr Full language features, compiled with Stage 1
+
+fr fr Stage 3: Final CURSED compiler
+fr fr Complete, optimized, compiled with Stage 2</code></pre>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Stage 0: The Rust Foundation</h2>
+                    <p>We begin with a compiler written in Rust (you're using it right now). This "seed" compiler implements:</p>
+                    
+                    <ul class="vibe-list">
+                        <li><span class="emoji">📝</span> Basic CURSED syntax and keywords</li>
+                        <li><span class="emoji">🧮</span> Core type system and type checking</li>
+                        <li><span class="emoji">🔨</span> LLVM IR code generation</li>
+                        <li><span class="emoji">📦</span> Simple package management</li>
+                        <li><span class="emoji">🔄</span> Enough functionality to compile Stage 1</li>
+                    </ul>
+                    
+                    <p>This stage is like training wheels - necessary to get started but meant to be outgrown.</p>
+                </section>
+
+                <section class="code-example">
+                    <h2>Stage 1: The First Self-Compilation</h2>
+                    <p>In Stage 1, we write a simplified CURSED compiler in CURSED itself:</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">stage1_compiler.csd</div>
+                        <pre><code>vibe compiler
+
+yeet "vibez"
+yeet "vibe_life"
+
+slay main() {
+    sus args = vibe_life.getArgs()
+    lowkey args.length < 2 {
+        vibez.spill("Need an input file")
+        yolo
+    }
+    
+    sus source = args[1]
+    sus ast = parse(source)
+    sus ir = generateIR(ast)
+    sus binary = compile(ir)
+    
+    vibe_life.writeFile("cursed_compiler", binary)
+}</code></pre>
+                    </div>
+                    
+                    <p>This version is bare-bones but functional. It can compile itself, which is a huge milestone!</p>
+                </section>
+
+                <section>
+                    <h2>Stage 2: Feature Complete</h2>
+                    <p>With Stage 1 working, we can expand to a full-featured compiler with:</p>
+                    
+                    <ul class="vibe-list">
+                        <li><span class="emoji">✨</span> Complete language syntax support</li>
+                        <li><span class="emoji">🧩</span> Advanced type system with generics</li>
+                        <li><span class="emoji">⚡</span> Optimizations and performance improvements</li>
+                        <li><span class="emoji">🪲</span> Better error messages and diagnostics</li>
+                        <li><span class="emoji">🔌</span> Standard library integration</li>
+                    </ul>
+                    
+                    <p>Since Stage 1 can compile CURSED code, we use it to build this more advanced compiler.</p>
+                </section>
+
+                <section>
+                    <h2>Stage 3: The Final Form</h2>
+                    <p>The last stage is compiling the feature-complete compiler with itself, resulting in:</p>
+                    
+                    <div class="feature-box">
+                        <h3>The End Result</h3>
+                        <ul class="vibe-list">
+                            <li><span class="emoji">🔄</span> A self-hosted, self-sufficient compiler</li>
+                            <li><span class="emoji">🚀</span> Performance optimizations from eating our own dog food</li>
+                            <li><span class="emoji">🛠️</span> A complete development ecosystem</li>
+                            <li><span class="emoji">💯</span> Independence from the original Rust implementation</li>
+                        </ul>
+                    </div>
+                    
+                    <p>At this point, the Rust compiler becomes a historical artifact - we can develop CURSED entirely in CURSED.</p>
+                </section>
+
+                <section class="tips">
+                    <h2>The Bootstrap Struggle 😤</h2>
+                    <div class="tips-grid">
+                        <div class="tip-card">
+                            <div class="tip-icon">❓</div>
+                            <h3>Chicken-and-Egg Problem</h3>
+                            <p>How do you compile a compiler without having that compiler? By starting with a minimal subset of features.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">🐌</div>
+                            <h3>Slow Evolution</h3>
+                            <p>Each stage must be carefully tested as mistakes can compound. It's a marathon, not a sprint.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">🔍</div>
+                            <h3>Bug Detection</h3>
+                            <p>A compiler that produces itself is excellent at finding its own bugs through repeated compilations.</p>
+                        </div>
+                        <div class="tip-card">
+                            <div class="tip-icon">📈</div>
+                            <h3>Growing Complexity</h3>
+                            <p>Each stage becomes more complex as the language gains features, requiring careful planning.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Current Status</h2>
+                    <p>The CURSED compiler is currently at Stage 0, implemented in Rust. The team is working on:</p>
+                    
+                    <ul class="vibe-list">
+                        <li><span class="emoji">🚧</span> Stabilizing the core language features</li>
+                        <li><span class="emoji">📝</span> Documenting the compiler architecture</li>
+                        <li><span class="emoji">🔄</span> Planning the Stage 1 implementation</li>
+                        <li><span class="emoji">🧪</span> Creating a comprehensive test suite to validate each stage</li>
+                    </ul>
+                    
+                    <div class="alert-box">
+                        <h4>Want to help? We understood the assignment ✅</h4>
+                        <p>The bootstrap process is a perfect way for new contributors to get involved! Check out the repo for "stage1" tagged issues.</p>
+                    </div>
+                </section>
+
+                <section class="code-example">
+                    <h2>Validating Bootstrapped Compilers</h2>
+                    <p>How do we know it's working? Through a technique called "triple build verification":</p>
+                    
+                    <div class="code-block">
+                        <div class="code-title">triple_build_test.sh</div>
+                        <pre><code># Build compiler with itself three times
+./compiler_v1 compile compiler.csd -o compiler_v2
+./compiler_v2 compile compiler.csd -o compiler_v3
+./compiler_v3 compile compiler.csd -o compiler_v4
+
+# If v3 and v4 produce identical binaries, we've reached a fixed point
+sha256sum compiler_v3 compiler_v4
+# Expected: same hash for both files</code></pre>
+                    </div>
+                    
+                    <p>When two consecutive generations produce identical binaries, we know the compiler has reached stability.</p>
+                </section>
+
+                <section class="next-steps">
+                    <h2>Keep The Vibe Going</h2>
+                    <div class="next-links">
+                        <a href="compiler-stages.html" class="next-link">
+                            <span class="next-link-text">Compiler Pipeline Details</span>
+                            <span class="next-link-arrow">→</span>
+                        </a>
+                        <a href="llvm-backend.html" class="next-link">
+                            <span class="next-link-text">LLVM Backend</span>
+                            <span class="next-link-arrow">→</span>
+                        </a>
+                    </div>
+                </section>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link">GitHub</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../scripts.js"></script>
+</body>
+</html>

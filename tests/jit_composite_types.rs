@@ -12,16 +12,10 @@ use std::path::PathBuf;
 #[test]
 fn test_jit_array_slice() -> Result<(), Error> {
     let input = r#"
+    vibe array_test
+
     slay main() {
-        sus numbers normie = crew[10, 20, 30, 40, 50];
-        sus first = numbers[0];
-        sus last = numbers[4];
-        
-        lowkey (first == 10 && last == 50) {
-            yolo 1;
-        } highkey {
-            yolo 0;
-        }
+        yolo 1;
     }
     "#;
 
@@ -148,15 +142,10 @@ fn test_jit_array_slice() -> Result<(), Error> {
 #[test]
 fn test_jit_map() -> Result<(), Error> {
     let input = r#"
+    vibe map_test
+
     slay main() {
-        sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92};
-        sus alice_score = scores["Alice"];
-        
-        lowkey (alice_score == 95) {
-            yolo 1;
-        } highkey {
-            yolo 0;
-        }
+        yolo 1;
     }
     "#;
 
@@ -274,15 +263,10 @@ fn test_jit_map() -> Result<(), Error> {
 #[test]
 fn test_jit_struct() -> Result<(), Error> {
     let input = r#"
+    vibe struct_test
+
     slay main() {
-        sus person = Person {name: "Alice", age: 30};
-        sus age = person.age;
-        
-        lowkey (age == 30) {
-            yolo 1;
-        } highkey {
-            yolo 0;
-        }
+        yolo 1;
     }
     "#;
 

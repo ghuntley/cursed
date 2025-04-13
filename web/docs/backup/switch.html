@@ -1,0 +1,189 @@
+<!-- Switch Statement Section in GenZ Style -->
+<section id="switch" class="docs-section animate-on-scroll">
+  <div class="section-pop">mood check</div>
+  <h2>Switch Statements</h2>
+  <p>When you've got multiple vibes to check, the <code>vibe_check</code> statement is your bestie. It's giving cleaner code and better organization than a bunch of <code>lowkey</code>/<code>highkey</code> statements.</p>
+
+  <div class="code-block">
+    <div class="code-title">Basic Switch</div>
+    <pre><code><span class="comment">fr fr Switch on a value</span>
+<span class="keyword">sus</span> day tea = "Wednesday"
+
+<span class="keyword">vibe_check</span> day {
+<span class="keyword">mood</span> "Monday":
+    vibez.spill("Start of work week")
+<span class="keyword">mood</span> "Tuesday", "Wednesday", "Thursday":
+    vibez.spill("Midweek grind")
+<span class="keyword">mood</span> "Friday":
+    vibez.spill("TGIF energy")
+<span class="keyword">mood</span> "Saturday", "Sunday":
+    vibez.spill("Weekend vibes")
+<span class="keyword">basic</span>:
+    vibez.spill("Not a valid day")
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Switch with No Expression</h3>
+    <p>Switch without an expression is like a cleaner if-else chain:</p>
+    <pre><code><span class="keyword">sus</span> score normie = 85
+
+<span class="comment">fr fr Switch with no expression uses true as the value</span>
+<span class="keyword">vibe_check</span> {
+<span class="keyword">mood</span> score >= 90:
+    vibez.spill("Grade: A")
+<span class="keyword">mood</span> score >= 80:
+    vibez.spill("Grade: B")
+<span class="keyword">mood</span> score >= 70:
+    vibez.spill("Grade: C")
+<span class="keyword">mood</span> score >= 60:
+    vibez.spill("Grade: D")
+<span class="keyword">basic</span>:
+    vibez.spill("Grade: F")
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Switch with Initialization</div>
+    <pre><code><span class="comment">fr fr Switch with an initialization statement</span>
+<span class="keyword">vibe_check</span> role := getUserRole(userID); role {
+<span class="keyword">mood</span> "admin":
+    vibez.spill("Administrator access granted")
+<span class="keyword">mood</span> "editor":
+    vibez.spill("Editor access granted")
+<span class="keyword">mood</span> "viewer":
+    vibez.spill("Viewer access granted")
+<span class="keyword">basic</span>:
+    vibez.spill("Unknown role, access denied")
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Type Switch</h3>
+    <p>Check the type of an interface value - it's giving dynamic typing vibes:</p>
+    <pre><code><span class="keyword">slay</span> describeValue(v collab{}) {
+    <span class="comment">fr fr Switch on the type of v</span>
+    <span class="keyword">vibe_check</span> v.(be_like) {
+    <span class="keyword">mood</span> normie:
+        num := v.(normie)  <span class="comment">fr fr Type assertion after knowing the type</span>
+        vibez.spill("It's an integer with value:", num)
+    <span class="keyword">mood</span> tea:
+        text := v.(tea)
+        vibez.spill("It's a string with value:", text)
+        vibez.spillf("The string has %d characters\n", len(text))
+    <span class="keyword">mood</span> []normie:
+        nums := v.([]normie)
+        vibez.spill("It's an integer slice with values:", nums)
+        vibez.spill("The slice has", len(nums), "elements")
+    <span class="keyword">mood</span> tea[tea]collab{}:
+        dict := v.(tea[tea]collab{})
+        vibez.spill("It's a map with", len(dict), "entries")
+    <span class="keyword">basic</span>:
+        vibez.spill("Unknown type with value:", v)
+    }
+}
+
+<span class="keyword">slay</span> main() {
+    describeValue(42)
+    describeValue("hello")
+    describeValue([]normie{1, 2, 3})
+    describeValue(tea[tea]collab{}{"key": "value"})
+    describeValue(<span class="keyword">based</span>)
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Type Switch with Assignment</div>
+    <pre><code><span class="keyword">slay</span> getValue(key tea) collab{} {
+    <span class="comment">fr fr Function returns interface{}</span>
+    <span class="keyword">yolo</span> "hello"  <span class="comment">fr fr Example return value</span>
+}
+
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Type switch with variable assignment</span>
+    <span class="keyword">vibe_check</span> value := getValue("someKey"); value.(be_like) {
+    <span class="keyword">mood</span> normie:
+        <span class="comment">fr fr 'value' is assigned to the matched type</span>
+        vibez.spillf("Got integer: %d\n", value)
+    <span class="keyword">mood</span> tea:
+        <span class="comment">fr fr 'value' here is of type string</span>
+        vibez.spillf("Got string: %s (length: %d)\n", value, len(value))
+    <span class="keyword">mood</span> lit:
+        <span class="comment">fr fr 'value' here is of type bool</span>
+        vibez.spillf("Got boolean: %t\n", value)
+    <span class="keyword">basic</span>:
+        vibez.spillf("Got unknown type: %v\n", value)
+    }
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Switch Fallthrough Behavior</h4>
+    <p>Unlike some languages, CURSED switches don't fall through to the next case by default. Each case automatically breaks. If you want fallthrough behavior, use the <code>fallthrough</code> keyword:</p>
+    <pre><code><span class="keyword">sus</span> num normie = 5
+
+<span class="keyword">vibe_check</span> num {
+<span class="keyword">mood</span> 1:
+    vibez.spill("One")
+<span class="keyword">mood</span> 5:
+    vibez.spill("Five")
+    fallthrough  <span class="comment">fr fr Explicitly fall through to next case</span>
+<span class="keyword">mood</span> 10:
+    vibez.spill("Ten or fallthrough from Five")
+<span class="keyword">basic</span>:
+    vibez.spill("Other number")
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Switch vs If-Else</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Switch</th>
+          <th>If-Else</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Better for multiple related conditions</td>
+          <td>Better for few unrelated conditions</td>
+        </tr>
+        <tr>
+          <td>More readable with many cases</td>
+          <td>More flexible for complex conditions</td>
+        </tr>
+        <tr>
+          <td>Cases must be constants or expressions</td>
+          <td>Can use any boolean expression</td>
+        </tr>
+        <tr>
+          <td>No implicit fallthrough</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>Great for type checking with interfaces</td>
+          <td>Requires explicit type assertions</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="feature-box">
+    <h3>Switch with Expressions in Cases</h3>
+    <pre><code><span class="keyword">sus</span> temp normie = 75
+
+<span class="keyword">vibe_check</span> {
+<span class="keyword">mood</span> temp < 32:
+    vibez.spill("It's freezing outside")
+<span class="keyword">mood</span> temp < 50:
+    vibez.spill("It's cold outside")
+<span class="keyword">mood</span> temp < 70:
+    vibez.spill("It's cool outside")
+<span class="keyword">mood</span> temp < 90:
+    vibez.spill("It's warm outside")
+<span class="keyword">basic</span>:
+    vibez.spill("It's hot outside")
+}</code></pre>
+  </div>
+</section>

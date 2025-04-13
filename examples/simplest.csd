@@ -1,7 +1,8 @@
 vibe main
 
+yeet "vibez"
+
 slay main() {
-    normie x = 0;
-    vibez.spill(x);
+    vibez.spill("Hello World");
     yolo 0;
 }

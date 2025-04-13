@@ -1,0 +1,171 @@
+<!-- Toolchain Section in GenZ Style -->
+<section id="toolchain" class="docs-section animate-on-scroll">
+  <div class="section-pop">dev kit vibez</div>
+  <h2>Toolchain</h2>
+  <p>Let's get this bread with the CURSED toolchain! These developer tools are bussin' and will help you slay your coding projects.</p>
+
+  <div class="feature-box">
+    <h3>Core CLI Commands</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Command</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>cursed build</code></td>
+          <td>Compile packages and dependencies</td>
+          <td><code>cursed build main.csd</code></td>
+        </tr>
+        <tr>
+          <td><code>cursed run</code></td>
+          <td>Compile and run</td>
+          <td><code>cursed run app.csd</code></td>
+        </tr>
+        <tr>
+          <td><code>cursed test</code></td>
+          <td>Run tests</td>
+          <td><code>cursed test ./...</code></td>
+        </tr>
+        <tr>
+          <td><code>cursed fmt</code></td>
+          <td>Format code (like gofmt)</td>
+          <td><code>cursed fmt ./...</code></td>
+        </tr>
+        <tr>
+          <td><code>cursed get</code></td>
+          <td>Download and install packages</td>
+          <td><code>cursed get github.com/user/package</code></td>
+        </tr>
+        <tr>
+          <td><code>cursed doc</code></td>
+          <td>Show documentation</td>
+          <td><code>cursed doc vibez</code></td>
+        </tr>
+        <tr>
+          <td><code>cursed vet</code></td>
+          <td>Report likely mistakes</td>
+          <td><code>cursed vet ./...</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Building Projects</div>
+    <pre><code><span class="comment">fr fr Compile a single file</span>
+$ cursed build main.csd
+
+<span class="comment">fr fr Compile and link a package and dependencies</span>
+$ cursed build
+
+<span class="comment">fr fr Cross compile for different OS/architecture</span>
+$ CS_GOOS=windows CS_GOARCH=amd64 cursed build
+
+<span class="comment">fr fr Build with race detector</span>
+$ cursed build -race
+
+<span class="comment">fr fr Build with optimization levels</span>
+$ cursed build -opt=2</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Project Structure</h3>
+    <pre><code>my-cursed-project/
+├── .cursed/           <span class="comment">fr fr Project metadata</span>
+├── cmd/               <span class="comment">fr fr Command line applications</span>
+│   └── server/
+│       └── main.csd   <span class="comment">fr fr Entry point for server application</span>
+├── internal/          <span class="comment">fr fr Private application code</span>
+│   ├── auth/
+│   └── db/
+├── pkg/               <span class="comment">fr fr Public library code</span>
+│   └── models/
+├── test/              <span class="comment">fr fr Additional test files</span>
+├── web/               <span class="comment">fr fr Web assets</span>
+├── views/             <span class="comment">fr fr Templates</span>
+├── go.mod             <span class="comment">fr fr Go modules compatibility</span>
+└── README.md          <span class="comment">fr fr Project documentation</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Package Management</div>
+    <pre><code><span class="comment">fr fr Initialize a module</span>
+$ cursed mod init github.com/username/project
+
+<span class="comment">fr fr Add a dependency</span>
+$ cursed get github.com/username/somelib
+
+<span class="comment">fr fr Update dependencies</span>
+$ cursed get -u ./...
+
+<span class="comment">fr fr Clean up unused dependencies</span>
+$ cursed mod tidy</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>IDE Support</h4>
+    <p>CURSED has integrations with popular editors that are giving productivity vibes:</p>
+    <ul>
+      <li><strong>VS Code:</strong> Install the "CURSED Language" extension</li>
+      <li><strong>JetBrains:</strong> CURSED plugin available in the marketplace</li>
+      <li><strong>Vim/Neovim:</strong> CURSED syntax and tooling plugins</li>
+      <li><strong>Emacs:</strong> cursed-mode for syntax highlighting and linting</li>
+    </ul>
+  </div>
+
+  <div class="feature-box">
+    <h3>Debugging Tools</h3>
+    <pre><code><span class="comment">fr fr Run with verbose logging</span>
+$ cursed run -v main.csd
+
+<span class="comment">fr fr Debug mode with extended info</span>
+$ cursed run -debug main.csd
+
+<span class="comment">fr fr Profiling</span>
+$ cursed test -cpuprofile=cpu.prof -memprofile=mem.prof
+
+<span class="comment">fr fr Analyze profiles</span>
+$ cursed tool pprof cpu.prof
+
+<span class="comment">fr fr Trace execution</span>
+$ cursed trace main.csd</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Common Build Flags</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Flag</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>-o output</code></td>
+          <td>Name output file</td>
+        </tr>
+        <tr>
+          <td><code>-race</code></td>
+          <td>Enable race detection</td>
+        </tr>
+        <tr>
+          <td><code>-tags</code></td>
+          <td>Build with specific tags</td>
+        </tr>
+        <tr>
+          <td><code>-ldflags</code></td>
+          <td>Pass arguments to linker</td>
+        </tr>
+        <tr>
+          <td><code>-gcflags</code></td>
+          <td>Pass arguments to compiler</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

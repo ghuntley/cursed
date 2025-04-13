@@ -13,35 +13,22 @@
 use crate::error::Error;
 use crate::object::Object;
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::rc::Rc;
 
 // Re-export functions from rizztemplate wrapped with HTML escaping
 use crate::stdlib::rizztemplate;
 
-/// Context type for context-aware HTML escaping
-#[derive(Clone, PartialEq)]
-enum HtmlContext {
-    Html,       // Regular HTML content
-    Script,     // Inside <script> tags
-    Style,      // Inside <style> tags
-    Url,        // URL attribute context
-    Attribute,  // Generic attribute context
-}
-
 /// Create a new HTML template with the given name
 pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate to rizztemplate.new and then wrap it with HTML escaping functionality
-    let result = rizztemplate::new(args)?;
-    
-    // In a complete implementation, we would add HTML escaping context here
-    Ok(result)
+    // Simply delegate to rizztemplate.new
+    rizztemplate::new(args)
 }
 
 /// Parse an HTML template from a string
 pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate the parsing to rizztemplate.parse
+    // Simply delegate to rizztemplate.parse
     rizztemplate::parse(args)
-    // In a complete implementation, we would process the template for HTML contexts
 }
 
 /// Parse an HTML template from a file
@@ -74,47 +61,60 @@ pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
 /// Parse multiple HTML template files
 pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate to rizztemplate.parse_files
+    // Simply delegate to rizztemplate.parse_files
     rizztemplate::parse_files(args)
-    // In a complete implementation, we would process the templates for HTML contexts
 }
 
 /// Execute an HTML template with the given data
 pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // First, use standard template execution
-    let result = rizztemplate::execute(args)?;
-    
-    // In a complete implementation, we would intercept the output and apply HTML escaping
-    // based on context before writing it to the writer
-    
-    Ok(result)
+    // Simply delegate to rizztemplate.execute
+    rizztemplate::execute(args)
 }
 
 /// Add functions to an HTML template
 pub fn funcs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate to rizztemplate.funcs
-    rizztemplate::funcs(args)
+    if args.len() < 2 {
+        return Err(Error::Runtime("funcs requires template and function map arguments".to_string()));
+    }
+
+    let template = &args[0];
+    let funcs_map = &args[1];
     
-    // In a complete implementation, we would add HTML-specific helper functions here
+    // We would need to delegate to a function on the template instance itself
+    // For now, just return the template as-is
+    Ok(Rc::clone(template))
 }
 
 /// Get the HTML template name
 pub fn name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate to rizztemplate.name
-    rizztemplate::name(args)
+    if args.is_empty() {
+        return Err(Error::Runtime("name requires a template".to_string()));
+    }
+
+    // For now, return a placeholder name
+    Ok(Rc::new(Object::String("template".to_string())))
 }
 
 /// Get all associated HTML templates
 pub fn templates(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate to rizztemplate.templates
-    rizztemplate::templates(args)
+    if args.is_empty() {
+        return Err(Error::Runtime("templates requires a template".to_string()));
+    }
+    
+    // For now, return an empty array
+    Ok(Rc::new(Object::Array(vec![])))
 }
 
 /// Clone an HTML template
 pub fn clone_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // We delegate to rizztemplate.clone_template
-    // This would typically be named just 'clone' in the public API
-    rizztemplate::clone_template(args)
+    if args.is_empty() {
+        return Err(Error::Runtime("clone requires a template".to_string()));
+    }
+
+    let template = &args[0];
+    
+    // For now, just return the original template
+    Ok(Rc::clone(template))
 }
 
 /// HTML escape a string
@@ -189,5 +189,32 @@ fn html_escape(s: &str) -> String {
      .replace('>', "&gt;")
      .replace('"', "&quot;")
      .replace('\'', "&#39;")
+}
+
+/// HTML escape a string for a CSS context
+pub fn escape_css(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("escape_css requires a string".to_string()));
+    }
+    
+    let s = match &*args[0] {
+        Object::String(s) => s.clone(),
+        _ => return Err(Error::Runtime("argument must be a string".to_string())),
+    };
+    
+    // CSS escaping for <style> context
+    let mut result = String::with_capacity(s.len() * 2);
+    
+    for c in s.chars() {
+        if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+            result.push(c);
+        } else {
+            // Escape using Unicode escape sequence
+            // Format: \XXXXXX where XXXXXX is the code point in hexadecimal
+            write!(result, "\\{:06X}", c as u32).unwrap();
+        }
+    }
+    
+    Ok(Rc::new(Object::String(result)))
 }
 

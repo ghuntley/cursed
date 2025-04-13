@@ -1,8 +1,16 @@
-// Minimal example
 vibe main
 
+yeet "vibez"
+
 slay main() {
-    normie x = 1; 
-    vibez.spill(x);
-    yolo 0;
+  sus test := "Hello"
+
+  switch test {
+    case "Hello":
+      vibez.spill("It's a greeting")
+    case "Goodbye":
+      vibez.spill("It's a farewell")
+    default:
+      vibez.spill("I don't know what this is")
+  }
 }

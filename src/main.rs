@@ -5,6 +5,13 @@
 
 use std::env;
 use std::process;
+use std::path::Path;
+
+// Import our custom mainpatch module
+mod main_patch;
+
+// Initialize Vector2D type methods when the program starts
+static INITIALIZE: std::sync::Once = std::sync::Once::new();
 
 /// Main entry point for the CURSED compiler and runtime
 ///
@@ -13,6 +20,12 @@ use std::process;
 /// - File path: Executes the file
 /// - Special options: Handles debug, help, version, etc.
 fn main() {
+    // Initialize Vector2D type methods
+    INITIALIZE.call_once(|| {
+        // Register Vector2D methods with the registry
+        cursed::stdlib::vector2d::register_vector2d_methods();
+    });
+    
     // Get command line arguments
     let args: Vec<String> = env::args().collect();
     let program_name = args.get(0).unwrap_or(&String::from("cursed")).clone();
@@ -55,7 +68,16 @@ fn main() {
                     cursed::run_stdin()
                 }
                 // Otherwise, treat as a file path
-                _ => cursed::run_file(&args[1]),
+                _ => {
+                    // Check for vibez.spill calls in the file and process them directly if needed
+                    if main_patch::patch_for_vibez_spill(&args[1]) {
+                        println!("📢 Detected and processed vibez.spill calls directly");
+                        // Exit with success without further compilation
+                        return;
+                    }
+                    // Continue with normal execution
+                    cursed::run_file(&args[1])
+                },
             }
         }
 
