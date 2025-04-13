@@ -4,6 +4,8 @@ mod tests {
     use cursed::ast::traits::Expression;
     use cursed::lexer::Lexer;
     use cursed::parser::Parser;
+    use cursed::Node;
+    use cursed::ast::StatementExtensions;
 
     #[test]
     fn test_dot_expression_parsing() {
@@ -24,10 +26,10 @@ mod tests {
         let expr = expr_stmt.expression();
         
         // Debug output the expression type
-        println!("Expression type: {}", std::any::type_name_of_val(expr.as_ref().as_any()));
+        println!("Expression type: {}", std::any::type_name_of_val(expr.expect("Expression should not be None").as_ref().as_any()));
         
         // Try to cast it to a CallExpression
-        let call_expr_any = expr.as_any();
+        let call_expr_any = expr.expect("Expression should not be None").as_any();
         
         // Check if it's a DotExpression first
         if let Some(dot_expr) = call_expr_any.downcast_ref::<DotExpression>() {
