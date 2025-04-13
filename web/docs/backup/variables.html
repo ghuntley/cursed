@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED - Variables & Constants | Storage Vibe</title>
+    <meta name="description" content="Learn how to create and manage variables and constants in CURSED. Understanding data storage with static typing and GenZ syntax.">
+    <link rel="stylesheet" href="../styles/docs.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../images/cursed-logo.svg">
+</head>
+<body>
+    <header>
+        <div class="header-container container">
+            <a href="../index.html" class="logo">
+                <img src="../images/cursed-logo.svg" alt="CURSED Logo">
+                <span>CURSED</span>
+            </a>
+            
+            <nav>
+                <button id="menu-toggle" class="menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <ul>
+                    <li><a href="../index.html#features">Features</a></li>
+                    <li><a href="../index.html#code">Examples</a></li>
+                    <li><a href="index.html" class="active">Docs</a></li>
+                    <li><a href="../index.html#community">Community</a></li>
+                    <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
+                    <li><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="docs-hero">
+            <div class="container">
+                <div class="docs-hero-content">
+                    <h1><span class="glow-text">Variables & Constants</span> &#xd83d;&#xdcbe;</h1>
+                    <p><span class="highlight-text">Storage vibe for your data</span></p>
+                </div>
+            </div>
+        </section>
+
+        <div class="container">
+            <div class="doc-grid">
+                <aside class="sidebar">
+                    <nav>
+                        <ul>
+                            <li><a href="index.html">Documentation Home</a></li>
+                            <li><a href="overview.html">Language Overview</a></li>
+                            <li><a href="hello-world.html">Hello World</a></li>
+                            <li><a href="variables.html" class="active">Variables & Constants</a></li>
+                            <li><a href="basic-types.html">Basic Types</a></li>
+                            <li><a href="functions.html">Functions</a></li>
+                            <li><a href="packages.html">Packages</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <article class="content">
+                    <section class="intro">
+                        <div class="tag-container">
+                            <span class="tag">Basics</span>
+                            <span class="tag">Data Storage</span>
+                            <span class="tag">Core Concept</span>
+                        </div>
+                        <p class="lead">Storing data is like, literally the moment. Let's talk about variables and constants in CURSED. It's giving dynamic storage but make it static typed.</p>
+                    </section>
+
+                    <section>
+                        <h2>Variables</h2>
+                        <p>Variables store data that can change during program execution. In CURSED, you declare them using the <code>sus</code> keyword (short for "suspicious" in Gen Z slang).</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Variable Declaration</div>
+                            <pre><code><span class="comment">fr fr Explicit type declaration</span>
+<span class="keyword">sus</span> name tea = "Bestie"
+<span class="keyword">sus</span> age normie = 21
+<span class="keyword">sus</span> temperature snack = 98.6
+
+<span class="comment">fr fr Short declaration with type inference</span>
+name := "Bestie"  <span class="comment">fr fr Type inferred as tea (string)</span>
+age := 21  <span class="comment">fr fr Type inferred as normie (int32)</span>
+cool := <span class="keyword">based</span>  <span class="comment">fr fr Type inferred as lit (boolean)</span>
+
+<span class="comment">fr fr Multiple variables at once</span>
+<span class="keyword">sus</span> x, y, z normie = 10, 20, 30
+x, y, z := 10, 20, 30  <span class="comment">fr fr Same as above with inference</span>
+
+<span class="comment">fr fr Zero values (used when no value is specified)</span>
+<span class="keyword">sus</span> counter normie  <span class="comment">fr fr Zero value: 0</span>
+<span class="keyword">sus</span> ready lit     <span class="comment">fr fr Zero value: sus (false)</span>
+<span class="keyword">sus</span> message tea  <span class="comment">fr fr Zero value: "" (empty string)</span></code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Constants</h2>
+                        <p>Constants hold values that cannot change during program execution. In CURSED, constants are declared using the <code>facts</code> keyword, because they're facts - unchangeable truths.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Constant Declaration</div>
+                            <pre><code><span class="comment">fr fr Basic constant declaration</span>
+<span class="keyword">facts</span> PI = 3.14159
+<span class="keyword">facts</span> VERSION = "v1.0.0"
+<span class="keyword">facts</span> DEBUG_MODE = <span class="keyword">based</span>
+
+<span class="comment">fr fr Multiple constants</span>
+<span class="keyword">facts</span> (
+    MAX_USERS = 100
+    TIMEOUT_MS = 1500
+    APP_NAME = "CURSED App"
+)
+
+<span class="comment">fr fr Constants must be assigned at declaration time</span>
+<span class="comment">fr fr and cannot be changed later</span>
+<span class="keyword">facts</span> API_KEY = "abc123"  <span class="comment">fr fr This is immutable</span>
+<span class="comment">fr fr API_KEY = "xyz789"  // This would cause a compile error</span></code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Scope</h2>
+                        <p>Variables in CURSED have different levels of scope:</p>
+                        
+                        <div class="feature-box">
+                            <h3>Variable Scope Levels</h3>
+                            <ul class="vibe-list">
+                                <li><span class="emoji">&#xd83c;&#xdf10;</span> <strong>Package Level:</strong> Declared outside any function, accessible throughout the package</li>
+                                <li><span class="emoji">&#xd83d;&#xdd17;</span> <strong>Function Level:</strong> Declared inside a function, only accessible within that function</li>
+                                <li><span class="emoji">📎</span> <strong>Block Level:</strong> Declared inside a code block, only accessible within that block</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Variable Scope Example</div>
+                            <pre><code><span class="comment">fr fr Package level - accessible anywhere in this file</span>
+<span class="keyword">sus</span> globalCounter normie = 0
+
+<span class="keyword">slay</span> incrementCounter() {
+    <span class="comment">fr fr Function level - only accessible in this function</span>
+    <span class="keyword">sus</span> localVar tea = "inside function"
+    globalCounter++
+    
+    <span class="keyword">lowkey</span> globalCounter > 5 {
+        <span class="comment">fr fr Block level - only accessible in this block</span>
+        <span class="keyword">sus</span> message tea = "Counter is getting high"
+        vibez.spill(message)
+    }
+    
+    <span class="comment">fr fr message is not accessible here</span>
+}</code></pre>
+                        </div>
+                    </section>
+
+                    <section class="next-steps">
+                        <h2>Keep The Vibe Going</h2>
+                        <div class="next-links">
+                            <a href="basic-types.html" class="next-link">
+                                <span class="next-link-text">Basic Types</span>
+                                <span class="next-link-arrow">→</span>
+                            </a>
+                            <a href="functions.html" class="next-link">
+                                <span class="next-link-text">Functions</span>
+                                <span class="next-link-arrow">→</span>
+                            </a>
+                        </div>
+                    </section>
+                </article>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+            <div class="social-links">
+                <a href="https://github.com/ghuntley/cursed" class="social-link">GitHub</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../scripts.js"></script>
+</body>
+</html>

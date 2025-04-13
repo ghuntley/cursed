@@ -19,6 +19,7 @@ pub mod calls;
 pub mod channel;
 pub mod collections;
 pub mod concurrency;
+pub mod dot_expression;
 pub mod generics;
 pub mod identifiers;
 pub mod literals;
@@ -38,5 +39,6 @@ pub use channel::{ReceiveExpression, SendExpression};
 pub use special::{AssignmentExpression, BeLikeExpression, DefaultCase};
 
 // Specific imports from generics to avoid conflicts
+pub use dot_expression::DotExpression;
 pub use generics::TypeReference;
 pub use types::TypeConversionExpression;

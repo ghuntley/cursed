@@ -7,6 +7,7 @@
 //! In CURSED, dot expressions appear in code like: `object.property` or `package.function`
 
 use crate::ast::{Node, Expression};
+use std::any::Any;
 
 /// Represents a property or field access expression using dot notation in the AST.
 ///
@@ -25,7 +26,6 @@ use crate::ast::{Node, Expression};
 /// The AST would have a `DotExpression` with:
 /// - object: the expression before the dot (e.g., `user`, `math`, `myString`)
 /// - property: the identifier after the dot (e.g., `name`, `sqrt`, `length`)
-#[derive(Debug)]
 pub struct DotExpression {
     pub token: String,
     pub object: Box<dyn Expression>,
@@ -37,15 +37,15 @@ impl Node for DotExpression {
         self.token.clone()
     }
     
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
+    fn string(&self) -> String {
+        format!("{}.{}", self.object.string(), self.property)
     }
 }
 
 impl Expression for DotExpression {
     fn expression_node(&self) {}
     
-    fn as_node(&self) -> &dyn Node {
+    fn as_any(&self) -> &dyn Any {
         self
     }
 }

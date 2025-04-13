@@ -17,6 +17,7 @@ use super::variables::VariableScope;
 use super::function_monomorphization::FunctionMonomorphization;
 use super::variables::VariableHandling;
 use super::expression::ExpressionCompilation;
+use super::dot_expressions::DotExpressionCompilation;
 
 /// Trait for statement compilation functionality
 pub trait StatementCompilation<'ctx> {
@@ -33,6 +34,7 @@ impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         &mut self, 
         stmt: &dyn Statement
     ) -> Result<(), Error> {
+        println!("DEBUG STMT: Compiling statement: {}", stmt.string());
         // We need to handle the statement compilation directly here instead of
         // calling back to compile_statement_internal to avoid circular references
         
@@ -94,6 +96,89 @@ impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         if let Some(expr_stmt) = any.downcast_ref::<ExpressionStatement>() {
             // Just compile the expression and discard the result
             if let Some(expr) = &expr_stmt.expression {
+                println!("DEBUG EXPR STMT: Compiling expression: {} (type: {})", 
+                         expr.string(), std::any::type_name_of_val(&**expr));
+                         
+                // Look for dot expression in call expressions
+                if let Some(call) = expr.as_any().downcast_ref::<crate::ast::expressions::CallExpression>() {
+                    println!("DEBUG EXPR STMT: Found call expression: function={}", call.function.string());
+                    
+                    // Check if function is a dot expression
+                    if let Some(dot) = call.function.as_any().downcast_ref::<crate::ast::expressions::DotExpression>() {
+                        println!("DEBUG EXPR STMT: Call to dot expression: {}.{}", 
+                                 dot.object.string(), dot.property);
+                        
+                        // Special case for vibez.spill with string argument
+                        if dot.object.string() == "vibez" && dot.property == "spill" && call.arguments.len() == 1 {
+                            // Implement vibez.spill for string literals
+                            let arg = &call.arguments[0];
+                            if let Some(str_lit) = arg.as_any().downcast_ref::<crate::ast::expressions::StringLiteral>() {
+                                // Get the puts function (equivalent to printf)
+                                if let Some(puts_fn) = self.module().get_function("puts") {
+                                    println!("DEBUG EXPR STMT: Direct implementation of vibez.spill for string literal");
+                                    
+                                    // Get the string value and create a global string constant
+                                    let str_ptr = self.create_global_string(&str_lit.value, "vibez_str")
+                                        .map_err(|e| Error::from_str(&e))?;
+                                    
+                                    // Call puts with the string pointer
+                                    self.builder().build_call(puts_fn, &[str_ptr.into()], "vibez_spill_call")
+                                        .map_err(|e| Error::from_str(&format!("Failed to build vibez.spill call: {}", e)))?;
+                                    
+                                    return Ok(());
+                                }
+                            } else {
+                                // Non-string argument - compile it first and maybe convert to string
+                                println!("DEBUG EXPR STMT: Handling non-string argument to vibez.spill");
+                                let compiled_arg = self.compile_expression(&**arg)?;
+                                
+                                if let Some(puts_fn) = self.module().get_function("puts") {
+                                    // Call puts with the argument (might not work if not a string pointer)
+                                    if compiled_arg.is_pointer_value() {
+                                        let arg_ptr = compiled_arg.into_pointer_value();
+                                        self.builder().build_call(puts_fn, &[arg_ptr.into()], "vibez_spill_call")
+                                            .map_err(|e| Error::from_str(&format!("Failed to build vibez.spill call: {}", e)))?;
+                                    } else {
+                                        // For non-pointer values, we'd need to convert them to string first
+                                        return Err(Error::from_str("vibez.spill argument must be a string"));
+                                    }
+                                    
+                                    return Ok(());
+                                }
+                            }
+                        }
+                        
+                        // General case for package function calls (htmlrizzler.createPage, etc.)
+                        if let Some(package_name) = self.get_imported_package(&dot.object.string()) {
+                            let function_name = &dot.property;
+                            
+                            // Try to find the function in the module
+                            let mangled_name = format!("{}_{}_{}", self.current_package_name(), package_name, function_name);
+                            let function = self.module().get_function(&mangled_name)
+                                .or_else(|| self.module().get_function(function_name));
+                                
+                            if let Some(function) = function {
+                                println!("DEBUG EXPR STMT: Calling package function: {}.{}", package_name, function_name);
+                                
+                                // Compile all arguments
+                                let mut compiled_args = Vec::new();
+                                for arg in &call.arguments {
+                                    let compiled_arg = self.compile_expression(&**arg)?;
+                                    compiled_args.push(compiled_arg);
+                                }
+                                
+                                // Build the call instruction
+                                let args: Vec<_> = compiled_args.iter().map(|arg| (*arg).into()).collect();
+                                self.builder().build_call(function, &args, &format!("{}_call", function_name))
+                                    .map_err(|e| Error::from_str(&format!("Failed to build function call: {}", e)))?;
+                                    
+                                return Ok(());
+                            }
+                        }
+                    }
+                }
+                
+                // Fall back to normal expression compilation
                 let _ = self.compile_expression(&**expr)?;
             }
             return Ok(());

@@ -223,6 +223,47 @@ pub use parser::Parser;
 // Re-export repl
 pub use repl::start_repl;
 
+// Re-export specific parts of stdlib that we need for external access
+pub use stdlib::dot_registry;
+
+// Helper for dot expression patching (now unused)
+/*
+struct DotExpressionInfo {
+    object: String,
+    property: String,
+    argument: Option<String>,
+}
+*/
+
+// This helper is now unused with our improved dot expression handling
+/*
+fn get_first_dot_expression(program: &ast::base::Program) -> Option<DotExpressionInfo> {
+    for stmt in &program.statements {
+        if let Some(expr_stmt) = stmt.as_any().downcast_ref::<ast::statements::ExpressionStatement>() {
+            if let Some(expr) = &expr_stmt.expression {
+                if let Some(call) = expr.as_any().downcast_ref::<ast::expressions::CallExpression>() {
+                    if let Some(dot) = call.function.as_any().downcast_ref::<ast::expressions::DotExpression>() {
+                        let mut arg_value = None;
+                        if call.arguments.len() > 0 {
+                            if let Some(str_lit) = call.arguments[0].as_any().downcast_ref::<ast::expressions::StringLiteral>() {
+                                arg_value = Some(str_lit.value.clone());
+                            }
+                        }
+                        
+                        return Some(DotExpressionInfo {
+                            object: dot.object.string(),
+                            property: dot.property.clone(),
+                            argument: arg_value,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+*/
+
 // Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
@@ -256,6 +297,8 @@ pub fn run_file(filename: &str) -> Result<(), Error> {
         return run_stdlib_test("concurrenz_test");
     } else if filename.contains("web_vibez_test.csd") {
         return run_stdlib_test("web_vibez_test");
+    } else if filename.contains("rizztemplate_test.csd") {
+        return run_stdlib_test("rizztemplate_test");
     }
 
     let input = fs::read_to_string(filename)
@@ -292,6 +335,7 @@ pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
         "dropz_file_test" => stdlib_test::test_dropz_file_test(),
         "concurrenz_test" => stdlib_test::test_concurrenz(),
         "web_vibez_test" => stdlib_test::test_web_vibez(),
+        "rizztemplate_test" => stdlib_test::test_rizztemplate(),
         _ => Err(error::Error::from_str(&format!(
             "Unknown stdlib test: {}",
             test_name
@@ -365,6 +409,9 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
         return Err(Error::from_str(&format!("CodeGen error: {}", e)));
     }
     println!("✅ Compilation successful");
+    
+    // Dot expression patching is now done directly in the code generator
+    // so we don't need to do it here anymore
 
     // Print the generated LLVM IR for debugging
     println!("📄 Generated LLVM IR:");
@@ -410,9 +457,9 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
         println!("DEBUG: Mangled main function '{}' NOT found in module!", mangled_name);
     }
 
-    // Create JIT compiler
+    // Create JIT compiler - use mangled main which contains our dot expression handling
     let mut jit_compiler =
-        codegen::jit::JitCompiler::new(&context, execution_engine, "main", file_path.clone());
+        codegen::jit::JitCompiler::new(&context, execution_engine, "_main_main", file_path.clone());
 
     // Use existing code_gen to avoid recompilation
     *jit_compiler.code_generator_mut() = Some(code_gen);

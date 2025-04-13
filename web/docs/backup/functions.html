@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED - Functions | Code Queen Behavior</title>
+    <meta name="description" content="Master functions in CURSED - from basic definition to closures and generics. Learn how to slay with modular code.">
+    <link rel="stylesheet" href="../styles/docs.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../images/cursed-logo.svg">
+</head>
+<body>
+    <header>
+        <div class="header-container container">
+            <a href="../index.html" class="logo">
+                <img src="../images/cursed-logo.svg" alt="CURSED Logo">
+                <span>CURSED</span>
+            </a>
+            
+            <nav>
+                <button id="menu-toggle" class="menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <ul>
+                    <li><a href="../index.html#features">Features</a></li>
+                    <li><a href="../index.html#code">Examples</a></li>
+                    <li><a href="index.html" class="active">Docs</a></li>
+                    <li><a href="../index.html#community">Community</a></li>
+                    <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
+                    <li><button id="theme-toggle" class="theme-toggle">🌙</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="docs-hero">
+            <div class="container">
+                <div class="docs-hero-content">
+                    <h1><span class="glow-text">Functions</span> &#xd83d;&#xdcaa;</h1>
+                    <p><span class="highlight-text">Code that slays on demand</span></p>
+                </div>
+            </div>
+        </section>
+
+        <div class="container">
+            <div class="doc-grid">
+                <aside class="sidebar">
+                    <nav>
+                        <ul>
+                            <li><a href="index.html">Documentation Home</a></li>
+                            <li><a href="overview.html">Language Overview</a></li>
+                            <li><a href="hello-world.html">Hello World</a></li>
+                            <li><a href="variables.html">Variables</a></li>
+                            <li><a href="functions.html" class="active">Functions</a></li>
+                            <li><a href="generics.html">Generics</a></li>
+                            <li><a href="error-handling.html">Error Handling</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <article class="content">
+                    <section class="intro">
+                        <div class="tag-container">
+                            <span class="tag">Core Concept</span>
+                            <span class="tag">Code Organization</span>
+                            <span class="tag">Fundamentals</span>
+                        </div>
+                        <p class="lead">Functions in CURSED literally slay! They're the main character of your code, doing all the hard work while looking absolutely fab. Let's spill the tea on how to use them.</p>
+                    </section>
+
+                    <section>
+                        <h2>Function Basics</h2>
+                        <p>Functions are blocks of reusable code that perform specific tasks. In CURSED, you define them using the <code>slay</code> keyword.</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Basic Function</div>
+                            <pre><code><span class="comment">fr fr Function with parameters and return type</span>
+<span class="keyword">slay</span> add(x normie, y normie) normie {
+    <span class="keyword">yolo</span> x + y  <span class="comment">fr fr Return the sum</span>
+}
+
+<span class="comment">fr fr Function with no parameters or return value</span>
+<span class="keyword">slay</span> sayHi() {
+    vibez.spill("Hiiii bestie!")
+}
+
+<span class="comment">fr fr Function with multiple return values</span>
+<span class="keyword">slay</span> divideAndRemainder(a normie, b normie) (normie, normie) {
+    <span class="keyword">yolo</span> a / b, a % b
+}</code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Calling Functions</h2>
+                        <p>Using functions is straightforward - just call them by name with the appropriate arguments:</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Function Calls</div>
+                            <pre><code><span class="comment">fr fr Basic function calls</span>
+sayHi()  <span class="comment">fr fr Calls function with no arguments</span>
+
+sus result = add(5, 3)  <span class="comment">fr fr Calls add function with arguments 5 and 3</span>
+vibez.spill(result)  <span class="comment">fr fr Output: 8</span>
+
+<span class="comment">fr fr Using multiple return values</span>
+sus quotient, remainder = divideAndRemainder(10, 3)
+vibez.spill(quotient, remainder)  <span class="comment">fr fr Output: 3 1</span>
+
+<span class="comment">fr fr Ignoring values you don't need with _</span>
+sus _, rem = divideAndRemainder(10, 3)  <span class="comment">fr fr Only keep remainder</span></code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Named Return Values</h2>
+                        <p>You can name return values for clarity and implicit returns:</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Named Return Values</div>
+                            <pre><code><span class="comment">fr fr Named return values</span>
+<span class="keyword">slay</span> divide(a normie, b normie) (quotient normie, remainder normie) {
+    quotient = a / b
+    remainder = a % b
+    <span class="keyword">yolo</span>  <span class="comment">fr fr Empty return uses named values</span>
+}
+
+<span class="comment">fr fr Named returns with early exit</span>
+<span class="keyword">slay</span> safeDivide(a normie, b normie) (q normie, r normie, err tea) {
+    <span class="keyword">lowkey</span> b == 0 {
+        err = "Cannot divide by zero"
+        <span class="keyword">yolo</span>  <span class="comment">fr fr Returns zero values for q and r, with error message</span>
+    }
+    
+    q = a / b
+    r = a % b
+    <span class="keyword">yolo</span>  <span class="comment">fr fr Returns q, r, and empty string for err</span>
+}</code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Variadic Functions</h2>
+                        <p>Functions that accept a variable number of arguments:</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Variadic Functions</div>
+                            <pre><code><span class="comment">fr fr Variadic function with the ... syntax</span>
+<span class="keyword">slay</span> sum(numbers ...normie) normie {
+    <span class="keyword">sus</span> total normie = 0
+    <span class="keyword">bestie</span> _, num := <span class="keyword">flex</span> numbers {
+        total += num
+    }
+    <span class="keyword">yolo</span> total
+}
+
+<span class="comment">fr fr Calling variadic functions</span>
+vibez.spill(sum(1, 2, 3))  <span class="comment">fr fr Output: 6</span>
+vibez.spill(sum(5, 10, 15, 20))  <span class="comment">fr fr Output: 50</span>
+vibez.spill(sum())  <span class="comment">fr fr Output: 0 (no arguments is valid)</span>
+
+<span class="comment">fr fr Spreading a slice into variadic arguments</span>
+nums := []normie{1, 2, 3, 4, 5}
+vibez.spill(sum(nums...))  <span class="comment">fr fr Output: 15</span></code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Anonymous Functions</h2>
+                        <p>Create functions on the fly without naming them:</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Anonymous Functions</div>
+                            <pre><code><span class="comment">fr fr Anonymous function assigned to a variable</span>
+sus double = <span class="keyword">slay</span>(x normie) normie {
+    <span class="keyword">yolo</span> x * 2
+}
+
+vibez.spill(double(5))  <span class="comment">fr fr Output: 10</span>
+
+<span class="comment">fr fr Anonymous function as an argument</span>
+<span class="keyword">slay</span> apply(n normie, f slay(normie) normie) normie {
+    <span class="keyword">yolo</span> f(n)
+}
+
+vibez.spill(apply(5, double))  <span class="comment">fr fr Output: 10</span>
+
+<span class="comment">fr fr Inline anonymous function</span>
+result := apply(5, <span class="keyword">slay</span>(x normie) normie {
+    <span class="keyword">yolo</span> x * x  <span class="comment">fr fr Square the input</span>
+})
+vibez.spill(result)  <span class="comment">fr fr Output: 25</span></code></pre>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2>Closures</h2>
+                        <p>Anonymous functions that capture variables from their surrounding scope:</p>
+                        
+                        <div class="code-block">
+                            <div class="code-title">Closures</div>
+                            <pre><code><span class="comment">fr fr Function that returns a closure</span>
+<span class="keyword">slay</span> multiplier(factor normie) slay(normie) normie {
+    <span class="comment">fr fr Returns a function that multiplies by factor</span>
+    <span class="keyword">yolo</span> <span class="keyword">slay</span>(x normie) normie {
+        <span class="keyword">yolo</span> x * factor  <span class="comment">fr fr Captures 'factor' from outer scope</span>
+    }
+}
+
+<span class="comment">fr fr Create specialized multiplier functions</span>
+sus double = multiplier(2)
+sus triple = multiplier(3)
+
+vibez.spill(double(5))  <span class="comment">fr fr Output: 10</span>
+vibez.spill(triple(5))  <span class="comment">fr fr Output: 15</span></code></pre>
+                        </div>
+                    </section>
+
+                    <section class="next-steps">
+                        <h2>Keep The Vibe Going</h2>
+                        <div class="next-links">
+                            <a href="generics.html" class="next-link">
+                                <span class="next-link-text">Generics</span>
+                                <span class="next-link-arrow">→</span>
+                            </a>
+                            <a href="error-handling.html" class="next-link">
+                                <span class="next-link-text">Error Handling</span>
+                                <span class="next-link-arrow">→</span>
+                            </a>
+                        </div>
+                    </section>
+                </article>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+            <div class="social-links">
+                <a href="https://github.com/ghuntley/cursed" class="social-link">GitHub</a>
+                <a href="#" class="social-link">Discord</a>
+                <a href="#" class="social-link">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../scripts.js"></script>
+</body>
+</html>

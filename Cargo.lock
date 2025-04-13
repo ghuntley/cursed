@@ -385,6 +385,7 @@ dependencies = [
  "criterion",
  "dirs",
  "env_logger",
+ "glob",
  "hex",
  "hmac",
  "inkwell",
@@ -392,11 +393,13 @@ dependencies = [
  "log",
  "md5",
  "num-traits",
+ "once_cell",
  "pretty_assertions",
  "proptest",
  "rand",
  "regex",
  "rustyline",
+ "serde_json",
  "sha1",
  "sha2",
  "thiserror",
@@ -540,6 +543,12 @@ dependencies = [
  "r-efi",
  "wasi 0.14.2+wasi-0.2.4",
 ]
+
+[[package]]
+name = "glob"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 
 [[package]]
 name = "half"

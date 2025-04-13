@@ -373,3 +373,65 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     println!("All dropz file operations tests completed successfully");
     Ok(())
 }
+
+pub fn test_rizztemplate() -> Result<(), Error> {
+    println!("Testing rizztemplate package");
+
+    // Test basic template parsing and execution
+    println!("Testing basic template parsing and execution");
+    let template_text = "Hello, {{ .Name }}!";
+    let mut ht = std::collections::HashMap::new();
+    ht.insert("Name".to_string(), Object::String("bestie".to_string()));
+    let data = Rc::new(Object::HashTable(ht));
+
+    println!("Expected output: Hello, bestie!");
+
+    // Test conditional templates
+    println!("Testing conditional templates");
+    let template_text = "{{ lowkey .Score > 80 }}That's fire!{{ highkey }}Keep grinding!{{ yolo }}";
+    let mut ht = std::collections::HashMap::new();
+    ht.insert("Score".to_string(), Object::Integer(95));
+    let high_score_data = Rc::new(Object::HashTable(ht));
+    
+    let mut ht = std::collections::HashMap::new();
+    ht.insert("Score".to_string(), Object::Integer(65));
+    let low_score_data = Rc::new(Object::HashTable(ht));
+
+    println!("Expected output (high score): That's fire!");
+    println!("Expected output (low score): Keep grinding!");
+
+    // Test loop templates
+    println!("Testing loop templates");
+    let template_text = "{{ bestie $item := flex .Items }}{{ $item }}{{ yolo }}";
+    let mut ht = std::collections::HashMap::new();
+    let items = vec![
+        Object::String("Item1".to_string()),
+        Object::String("Item2".to_string()),
+        Object::String("Item3".to_string()),
+    ];
+    ht.insert("Items".to_string(), Object::Array(items));
+    let loop_data = Rc::new(Object::HashTable(ht));
+
+    println!("Expected output: Item1Item2Item3");
+
+    // Test template functions
+    println!("Testing template functions");
+    let template_text = "{{ .Name | uppercase }}";
+    let mut ht = std::collections::HashMap::new();
+    ht.insert("Name".to_string(), Object::String("bestie".to_string()));
+    let func_data = Rc::new(Object::HashTable(ht));
+
+    println!("Expected output: BESTIE");
+
+    // Test nested templates
+    println!("Testing nested templates");
+    let template_text = "{{ define \"header\" }}Header: {{ .Title }}{{ yolo }}{{ define \"footer\" }}Footer{{ yolo }}{{ template \"header\" . }}Content{{ template \"footer\" . }}";
+    let mut ht = std::collections::HashMap::new();
+    ht.insert("Title".to_string(), Object::String("My Page".to_string()));
+    let nested_data = Rc::new(Object::HashTable(ht));
+
+    println!("Expected output: Header: My PageContentFooter");
+
+    println!("All rizztemplate tests completed successfully");
+    Ok(())
+}

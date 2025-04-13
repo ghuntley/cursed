@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CURSED - Concurrency | Multitasking But Make It Slay</title>
+  <meta name="description" content="Master CURSED's concurrency model with goroutines and channels. Run code in parallel without the drama.">
+  <link rel="stylesheet" href="../styles/main.css">
+  <link rel="stylesheet" href="../styles/responsive.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="../images/cursed-logo.svg">
+</head>
+<body>
+  <header>
+    <div class="header-container container">
+      <a href="../index.html" class="logo">
+        <img src="../images/cursed-logo.svg" alt="CURSED Logo">
+        <span>CURSED</span>
+      </a>
+      
+      <nav>
+        <button id="menu-toggle" class="menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <ul>
+          <li><a href="../index.html#features">Features</a></li>
+          <li><a href="../index.html#code">Examples</a></li>
+          <li><a href="../docs.html" class="active">Docs</a></li>
+          <li><a href="../index.html#community">Community</a></li>
+          <li><a href="https://github.com/ghuntley/cursed" target="_blank">GitHub</a></li>
+          <li><button id="theme-toggle" class="theme-toggle">ud83cudf19</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="docs-hero">
+      <div class="container">
+        <div class="docs-hero-content">
+          <h1>Concurrency <span class="glow-text">That Ate And Left No Crumbs</span> u23e9</h1>
+          <p>Do multiple things <span class="highlight-text">at the same time</span> without making a mess, bestie</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="docs-content-single">
+        <div class="section-pop">multitasking era</div>
+        <h2>Concurrency in CURSED</h2>
+        <p>CURSED's concurrency model lets your code live its best parallel life with goroutines and channels - based on Go's approach but with that Gen Z swagger.</p>
+
+        <div class="feature-box">
+          <h3>Why Concurrency Slays</h3>
+          <ul>
+            <li><span class="emoji-tag">ud83dude80</span> <strong>Speed:</strong> Utilize all your CPU cores for faster execution</li>
+            <li><span class="emoji-tag">ud83dudc0e</span> <strong>Responsiveness:</strong> Keep your UI snappy while heavy work happens in the background</li>
+            <li><span class="emoji-tag">ud83eudd1d</span> <strong>Simple Model:</strong> Concurrency without the complexity of locks and threads</li>
+            <li><span class="emoji-tag">ud83dude4c</span> <strong>Scalability:</strong> Easily scale from one core to many</li>
+            <li><span class="emoji-tag">ud83dudc85</span> <strong>Clean Design:</strong> Share memory by communicating, not by sharing memory</li>
+          </ul>
+        </div>
+
+        <h3>Goroutines: The Main Character</h3>
+        <p>Goroutines are lightweight threads managed by the CURSED runtime. They're the blueprint for concurrent code:</p>
+
+        <div class="code-block">
+          <div class="code-title">Basic Goroutine</div>
+          <pre><code><span class="keyword">slay</span> count(name tea, n normie) {
+    <span class="keyword">bestie</span> i := 0; i < n; i++ {
+        vibez.spillf("%s: %d\n", name, i)
+        timez.sleep(100) <span class="comment">fr fr Sleep for 100ms</span>
+    }
+}
+
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Start two goroutines</span>
+    <span class="keyword">stan</span> count("bestie", 5)  <span class="comment">fr fr Runs in background</span>
+    <span class="keyword">stan</span> count("girlboss", 5)  <span class="comment">fr fr Runs in background</span>
+    
+    <span class="comment">fr fr Main goroutine continues here</span>
+    vibez.spill("Starting counters...")
+    
+    <span class="comment">fr fr Sleep to let goroutines finish</span>
+    timez.sleep(1000)  <span class="comment">fr fr Wait 1 second</span>
+    
+    vibez.spill("Done!")
+}</code></pre>
+        </div>
+
+        <div class="info-callout">
+          <h3>ud83dudc40 The Tea on Goroutines</h3>
+          <p>Goroutines are:</p>
+          <ul>
+            <li><strong>Lightweight:</strong> You can launch thousands without drama</li>
+            <li><strong>Not Threads:</strong> They're managed by the CURSED runtime, not the OS</li>
+            <li><strong>Independent:</strong> They run concurrently with other goroutines</li>
+            <li><strong>Simple:</strong> Just add <code>stan</code> before any function call</li>
+          </ul>
+          <p>The CURSED runtime will automatically distribute goroutines across available CPU cores for maximum efficiency.</p>
+        </div>
+
+        <h3>Channels: Communication that Doesn't Ghost</h3>
+        <p>Channels are the secret sauce that let goroutines talk to each other without drama:</p>
+
+        <div class="code-block">
+          <div class="code-title">Basic Channel Usage</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create a channel for integers</span>
+    <span class="keyword">sus</span> ch = make(dm&lt;normie&gt;)  <span class="comment">fr fr Unbuffered channel</span>
+    
+    <span class="comment">fr fr Start a goroutine that sends a value</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        vibez.spill("Sending value...")
+        ch <- 42  <span class="comment">fr fr Send 42 to the channel</span>
+        vibez.spill("Value sent!")
+    }()
+    
+    <span class="comment">fr fr Receive the value from the channel</span>
+    vibez.spill("About to receive...")
+    <span class="keyword">sus</span> value = <-ch  <span class="comment">fr fr This blocks until a value is received</span>
+    vibez.spillf("Received: %d\n", value)
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-title">Buffered Channels</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Create a buffered channel (holds up to 3 values)</span>
+    <span class="keyword">sus</span> ch = make(dm&lt;tea&gt;, 3)
+    
+    <span class="comment">fr fr These sends won't block because there's buffer space</span>
+    ch <- "first"   <span class="comment">fr fr Doesn't block</span>
+    ch <- "second"  <span class="comment">fr fr Doesn't block</span>
+    ch <- "third"   <span class="comment">fr fr Doesn't block</span>
+    
+    <span class="comment">fr fr This would block because the buffer is full</span>
+    <span class="comment">fr fr ch <- "fourth"  // Would block until someone receives</span>
+    
+    <span class="comment">fr fr Receive values</span>
+    vibez.spill(<-ch)  <span class="comment">fr fr "first"</span>
+    vibez.spill(<-ch)  <span class="comment">fr fr "second"</span>
+    vibez.spill(<-ch)  <span class="comment">fr fr "third"</span>
+}</code></pre>
+        </div>
+
+        <h3>Channel Range and Close</h3>
+        <p>Manage your channels like a girlboss with these techniques:</p>
+
+        <div class="code-block">
+          <div class="code-title">Channel Range and Close</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> jobs = make(dm&lt;normie&gt;, 5)
+    <span class="keyword">sus</span> results = make(dm&lt;normie&gt;, 5)
+    
+    <span class="comment">fr fr Start worker goroutines</span>
+    <span class="keyword">bestie</span> w := 0; w < 3; w++ {
+        <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+            <span class="keyword">bestie</span> j := <span class="keyword">flex</span> jobs {
+                vibez.spillf("Worker processing job %d\n", j)
+                results <- j * 2  <span class="comment">fr fr Send result back</span>
+            }
+        }()
+    }
+    
+    <span class="comment">fr fr Send jobs</span>
+    <span class="keyword">bestie</span> j := 1; j <= 5; j++ {
+        jobs <- j
+    }
+    close(jobs)  <span class="comment">fr fr No more jobs</span>
+    
+    <span class="comment">fr fr Collect results</span>
+    <span class="keyword">bestie</span> a := 0; a < 5; a++ {
+        vibez.spillf("Result: %d\n", <-results)
+    }
+}</code></pre>
+        </div>
+
+        <h3>Select Statement: No FOMO</h3>
+        <p>The <code>select</code> statement lets you work with multiple channels without missing out:</p>
+
+        <div class="code-block">
+          <div class="code-title">Select Statement</div>
+          <pre><code><span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> c1 = make(dm&lt;tea&gt;)
+    <span class="keyword">sus</span> c2 = make(dm&lt;tea&gt;)
+    <span class="keyword">sus</span> timeout = make(dm&lt;lit&gt;)
+    
+    <span class="comment">fr fr Send value after 1 second</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        timez.sleep(1000)
+        c1 <- "one"
+    }()
+    
+    <span class="comment">fr fr Send value after 2 seconds</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        timez.sleep(2000)
+        c2 <- "two"
+    }()
+    
+    <span class="comment">fr fr Timeout after 1.5 seconds</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        timez.sleep(1500)
+        timeout <- <span class="keyword">based</span>
+    }()
+    
+    <span class="comment">fr fr Use select to work with multiple channels</span>
+    <span class="keyword">bestie</span> i := 0; i < 2; i++ {
+        <span class="keyword">select</span> {
+            <span class="keyword">mood</span> msg := <-c1:
+                vibez.spillf("Received from c1: %s\n", msg)
+            <span class="keyword">mood</span> msg := <-c2:
+                vibez.spillf("Received from c2: %s\n", msg)
+            <span class="keyword">mood</span> <-timeout:
+                vibez.spill("Timeout!")
+        }
+    }
+}</code></pre>
+        </div>
+
+        <div class="warning-box">
+          <h4>u26a0ufe0f Avoid These Yikes Moments</h4>
+          <p>Even with CURSED's clean concurrency, you can still hit some rough patches:</p>
+          <ul>
+            <li><strong>Deadlocks:</strong> When goroutines are waiting for each other forever (that's the no-text-back energy)</li>
+            <li><strong>Race Conditions:</strong> When multiple goroutines access shared data without coordination (messy group chat vibes)</li>
+            <li><strong>Goroutine Leaks:</strong> Creating goroutines that never exit (like that friend who never leaves your apartment)</li>
+            <li><strong>Channel Blocking:</strong> Trying to send on a full channel or receive from an empty one without handling it</li>
+          </ul>
+        </div>
+
+        <h3>Mutex: When You Need Private Time</h3>
+        <p>While channels are the preferred way to coordinate, sometimes you need a mutex for shared memory:</p>
+
+        <div class="code-block">
+          <div class="code-title">Using Mutex</div>
+          <pre><code><span class="keyword">yeet</span> "concurrenz"
+
+<span class="keyword">be_like</span> Counter <span class="keyword">squad</span> {
+    mu concurrenz.Mutex
+    value normie
+}
+
+<span class="keyword">slay</span> (c @Counter) increment() {
+    c.mu.lock()   <span class="comment">fr fr Lock before updating shared data</span>
+    <span class="keyword">later</span> c.mu.unlock()  <span class="comment">fr fr Make sure we unlock even if error</span>
+    
+    c.value++  <span class="comment">fr fr Critical section - protected by mutex</span>
+}
+
+<span class="keyword">slay</span> (c @Counter) get() normie {
+    c.mu.lock()
+    <span class="keyword">later</span> c.mu.unlock()
+    
+    <span class="keyword">yolo</span> c.value
+}
+
+<span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> counter = Counter{value: 0}
+    
+    <span class="comment">fr fr Launch 1000 goroutines to increment</span>
+    <span class="keyword">bestie</span> i := 0; i < 1000; i++ {
+        <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+            counter.increment()
+        }()
+    }
+    
+    <span class="comment">fr fr Wait a bit for goroutines to finish</span>
+    timez.sleep(1000)
+    
+    <span class="comment">fr fr Print final value</span>
+    vibez.spillf("Final count: %d\n", counter.get())
+}</code></pre>
+        </div>
+
+        <h3>Real World Patterns</h3>
+        <p>Slay your concurrent code with these iconic patterns:</p>
+
+        <div class="steps-container">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Worker Pool</h4>
+              <p>Distribute tasks among a fixed number of workers like a fair group project</p>
+              <div class="code-block mini">
+                <pre><code><span class="keyword">sus</span> jobs = make(dm&lt;Job&gt;, 100)
+<span class="keyword">sus</span> results = make(dm&lt;Result&gt;, 100)
+
+<span class="comment">fr fr Start workers</span>
+<span class="keyword">bestie</span> w := 0; w < numWorkers; w++ {
+    <span class="keyword">stan</span> worker(jobs, results)
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>Pipeline Pattern</h4>
+              <p>Chain operations together through multiple stages like a TikTok dance routine</p>
+              <div class="code-block mini">
+                <pre><code><span class="keyword">sus</span> stage1 = generateData()
+<span class="keyword">sus</span> stage2 = processData(stage1)
+<span class="keyword">sus</span> stage3 = analyzeData(stage2)
+<span class="keyword">sus</span> results = formatData(stage3)</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Fan-out, Fan-in</h4>
+              <p>Distribute work to multiple goroutines then collect results like a group chat plan</p>
+              <div class="code-block mini">
+                <pre><code><span class="comment">fr fr Fan out to multiple workers</span>
+<span class="keyword">bestie</span> i := 0; i < 10; i++ {
+    <span class="keyword">stan</span> process(input, results)
+}
+
+<span class="comment">fr fr Fan in results</span>
+<span class="keyword">slay</span> merge(results) dm&lt;Result&gt; {
+    <span class="keyword">sus</span> merged = make(dm&lt;Result&gt;)
+    <span class="comment">fr fr Collect from all channels</span>
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pro-tip-box">
+          <h4>u2728 Pro Tips</h4>
+          <p>Level up your concurrent code with these elite strats:</p>
+          <ul>
+            <li>Use buffered channels when you know exactly how many values you're sending</li>
+            <li>For independent tasks that need no communication, just launch goroutines and wait at the end</li>
+            <li>Use <code>select</code> with a default case for non-blocking channel operations</li>
+            <li>Always handle channel closing properly to avoid panics</li>
+            <li>Remember: goroutines are cheap, but not free - don't launch millions without reason</li>
+          </ul>
+        </div>
+
+        <h3>A Complete Example: Web Crawler</h3>
+        <p>Let's put it all together with a legit concurrent web crawler:</p>
+
+        <div class="code-block">
+          <div class="code-title">Concurrent Web Crawler</div>
+          <pre><code><span class="keyword">vibe</span> main
+
+<span class="keyword">yeet</span> "vibez"  <span class="comment">fr fr For output</span>
+<span class="keyword">yeet</span> "concurrenz"  <span class="comment">fr fr For WaitGroup</span>
+<span class="keyword">yeet</span> "web_vibez"  <span class="comment">fr fr For HTTP</span>
+<span class="keyword">yeet</span> "stringz"  <span class="comment">fr fr For string manipulation</span>
+
+<span class="comment">fr fr Store crawled URLs to avoid duplicates</span>
+<span class="keyword">be_like</span> SafeUrlMap <span class="keyword">squad</span> {
+    mu concurrenz.Mutex
+    visited tea[tea]lit
+}
+
+<span class="keyword">slay</span> (s @SafeUrlMap) has(url tea) lit {
+    s.mu.lock()
+    <span class="keyword">later</span> s.mu.unlock()
+    
+    _, exists := s.visited[url]
+    <span class="keyword">yolo</span> exists
+}
+
+<span class="keyword">slay</span> (s @SafeUrlMap) add(url tea) {
+    s.mu.lock()
+    <span class="keyword">later</span> s.mu.unlock()
+    
+    s.visited[url] = <span class="keyword">based</span>
+}
+
+<span class="comment">fr fr Crawl a URL and find links</span>
+<span class="keyword">slay</span> crawl(url tea, depth normie, urlMap @SafeUrlMap, wg @concurrenz.WaitGroup) {
+    <span class="keyword">later</span> wg.done()  <span class="comment">fr fr Signal this crawl is done when we return</span>
+    
+    <span class="comment">fr fr Stop at max depth</span>
+    <span class="keyword">lowkey</span> depth <= 0 {
+        <span class="keyword">yolo</span>
+    }
+    
+    <span class="comment">fr fr Skip already visited URLs</span>
+    <span class="keyword">lowkey</span> urlMap.has(url) {
+        <span class="keyword">yolo</span>
+    }
+    
+    <span class="comment">fr fr Mark as visited</span>
+    urlMap.add(url)
+    
+    <span class="comment">fr fr Fetch the URL</span>
+    vibez.spillf("Crawling: %s\n", url)
+    resp, err := web_vibez.get(url)
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        vibez.spillf("Error fetching %s: %s\n", url, err.error())
+        <span class="keyword">yolo</span>
+    }
+    <span class="keyword">later</span> resp.body.close()
+    
+    <span class="comment">fr fr Find links (simplified - real code would parse HTML)</span>
+    <span class="keyword">sus</span> links = extract_links(resp)
+    
+    <span class="comment">fr fr Crawl links concurrently</span>
+    <span class="keyword">bestie</span> _, link := <span class="keyword">flex</span> links {
+        <span class="keyword">lowkey</span> stringz.has_prefix(link, "http") {
+            wg.add(1)
+            <span class="keyword">stan</span> crawl(link, depth-1, urlMap, wg)
+        }
+    }
+}
+
+<span class="keyword">slay</span> main() {
+    <span class="keyword">sus</span> urlMap = SafeUrlMap{visited: make(tea[tea]lit)}
+    <span class="keyword">sus</span> wg concurrenz.WaitGroup
+    
+    <span class="comment">fr fr Starting URL and depth</span>
+    <span class="keyword">sus</span> startUrl = "https://example.com"
+    <span class="keyword">sus</span> maxDepth = 2
+    
+    <span class="comment">fr fr Start the crawl</span>
+    wg.add(1)
+    <span class="keyword">stan</span> crawl(startUrl, maxDepth, &urlMap, &wg)
+    
+    <span class="comment">fr fr Wait for all crawls to finish</span>
+    wg.wait()
+    
+    <span class="comment">fr fr Print results</span>
+    vibez.spillf("Crawling complete! Visited %d URLs.\n", len(urlMap.visited))
+}</code></pre>
+        </div>
+
+        <div class="next-steps">
+          <h3>Vibe With These Next</h3>
+          <p>Ready to level up your concurrency skills? Check these out:</p>
+          <ul>
+            <li><a href="#" class="gradient-link">Advanced Concurrency Patterns</a></li>
+            <li><a href="#" class="gradient-link">Performance Optimization Techniques</a></li>
+            <li><a href="#" class="gradient-link">Error Handling in Concurrent Code</a></li>
+            <li><a href="#" class="gradient-link">Building Scalable Network Services</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-container">
+        <div class="footer-column">
+          <div class="footer-logo">
+            <span>CURSED</span>
+          </div>
+          <p>A programming language that combines Go-like syntax with GenZ slang. <span class="neon-text">Created for education</span>, fun, and <span class="highlight-text">the culture</span>. <span class="big-word">Period.</span></p>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="../docs.html">Documentation</a></li>
+            <li><a href="#">Tutorials</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">Examples</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>Community</h3>
+          <ul>
+            <li><a href="https://github.com/ghuntley/cursed">GitHub</a></li>
+            <li><a href="#">Discord</a></li>
+            <li><a href="#">Twitter</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-column">
+          <h3>More</h3>
+          <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Roadmap</a></li>
+            <li><a href="#">Contributing</a></li>
+            <li><a href="#">License</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        <p>&copy; 2025 CURSED Programming Language. No cap, all rights reserved.</p>
+        <div class="social-icons">
+          <a href="#" class="social-icon">ud83dudc7e</a>
+          <a href="#" class="social-icon">ud83dudcf8</a>
+          <a href="#" class="social-icon">ud83dudcac</a>
+          <a href="#" class="social-icon">ud83dudc3e</a>
+        </div>
+        <div class="trendy-badges">
+          <span class="trendy-badge">#Aesthetic</span>
+          <span class="trendy-badge">#CodeCore</span>
+          <span class="trendy-badge">#BuiltDifferent</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../scripts.js"></script>
+</body>
+</html>

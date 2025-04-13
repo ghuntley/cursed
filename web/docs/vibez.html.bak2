@@ -1,0 +1,259 @@
+<!-- Vibez (fmt) Section in GenZ Style -->
+<section id="vibez" class="docs-section animate-on-scroll">
+  <div class="section-pop">spill the tea</div>
+  <h2>Vibez Package (fmt)</h2>
+  <p>The <code>vibez</code> package is how your code communicates with the world - it's giving conversation energy! Use it to spill text to the console, format strings, and read user input.</p>
+
+  <div class="feature-box">
+    <h3>Core Functions</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Function</th>
+          <th>Description</th>
+          <th>Equivalent</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>spill(args ...collab{})</code></td>
+          <td>Print to standard output with newline</td>
+          <td>fmt.Println</td>
+        </tr>
+        <tr>
+          <td><code>spillf(format tea, args ...collab{})</code></td>
+          <td>Formatted print to standard output</td>
+          <td>fmt.Printf</td>
+        </tr>
+        <tr>
+          <td><code>spillstr(format tea, args ...collab{})</code></td>
+          <td>Return formatted string</td>
+          <td>fmt.Sprintf</td>
+        </tr>
+        <tr>
+          <td><code>fspill(w Writer, args ...collab{})</code></td>
+          <td>Print to Writer with newline</td>
+          <td>fmt.Fprintln</td>
+        </tr>
+        <tr>
+          <td><code>fspillf(w Writer, format tea, args ...collab{})</code></td>
+          <td>Formatted print to Writer</td>
+          <td>fmt.Fprintf</td>
+        </tr>
+        <tr>
+          <td><code>scan(args ...collab{})</code></td>
+          <td>Scan standard input into variables</td>
+          <td>fmt.Scan</td>
+        </tr>
+        <tr>
+          <td><code>scanln(args ...collab{})</code></td>
+          <td>Scan line from standard input</td>
+          <td>fmt.Scanln</td>
+        </tr>
+        <tr>
+          <td><code>scanf(format tea, args ...collab{})</code></td>
+          <td>Formatted scan from standard input</td>
+          <td>fmt.Scanf</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Basic Output</div>
+    <pre><code><span class="keyword">yeet</span> "vibez"
+
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Basic print with newline</span>
+    vibez.spill("Hello, world!")
+    
+    <span class="comment">fr fr Print multiple items</span>
+    vibez.spill("Name:", "Taylor", "Age:", 25)
+    
+    <span class="comment">fr fr Print without newline</span>
+    vibez.spillf("Loading... ")
+    <span class="comment">fr fr Continue on same line</span>
+    vibez.spillf("Done!\n")
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Formatting Verbs</h3>
+    <pre><code><span class="keyword">slay</span> main() {
+    name := "bestie"
+    age := 21
+    height := 1.75
+    isOnline := <span class="keyword">based</span>
+    
+    <span class="comment">fr fr String formatting (%s)</span>
+    vibez.spillf("Hey %s!\n", name)
+    
+    <span class="comment">fr fr Integer formatting (%d)</span>
+    vibez.spillf("Age: %d\n", age)
+    
+    <span class="comment">fr fr Float formatting (%f)</span>
+    vibez.spillf("Height: %.2f meters\n", height)  <span class="comment">fr fr 2 decimal places</span>
+    
+    <span class="comment">fr fr Boolean formatting (%t)</span>
+    vibez.spillf("Online: %t\n", isOnline)
+    
+    <span class="comment">fr fr Type formatting (%T)</span>
+    vibez.spillf("Type of height: %T\n", height)
+    
+    <span class="comment">fr fr Quoted string (%q)</span>
+    vibez.spillf("Quoted: %q\n", name)  <span class="comment">fr fr Adds quotes: "bestie"</span>
+    
+    <span class="comment">fr fr Hex formatting (%x)</span>
+    vibez.spillf("Hex: %x\n", 255)  <span class="comment">fr fr Outputs: ff</span>
+    
+    <span class="comment">fr fr Width specification</span>
+    vibez.spillf("|%10s|\n", name)  <span class="comment">fr fr Right-aligned, width 10</span>
+    vibez.spillf("|%-10s|\n", name)  <span class="comment">fr fr Left-aligned, width 10</span>
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Creating Strings</div>
+    <pre><code><span class="keyword">slay</span> main() {
+    name := "Alex"
+    followers := 1024
+    
+    <span class="comment">fr fr Format a string without printing</span>
+    bioText := vibez.spillstr("@%s has %d followers", name, followers)
+    
+    <span class="comment">fr fr Use the formatted string</span>
+    vibez.spill("Profile:", bioText)
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Reading Input</h3>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Read a single value</span>
+    vibez.spill("Enter your age:")
+    sus age normie
+    vibez.scan(&age)
+    
+    <span class="comment">fr fr Read a line of text</span>
+    vibez.spill("Enter your full name:")
+    sus name tea
+    vibez.scanln(&name)  <span class="comment">fr fr Reads until newline</span>
+    
+    <span class="comment">fr fr Read formatted input</span>
+    vibez.spill("Enter height and weight (separated by space):")
+    sus height, weight snack
+    vibez.scanf("%f %f", &height, &weight)
+    
+    vibez.spillf("Profile - Name: %s, Age: %d, Height: %.1f, Weight: %.1f\n", 
+                name, age, height, weight)
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Writing to Custom Writers</h4>
+    <p>When you need to spill the tea to places other than the console:</p>
+    <pre><code><span class="keyword">yeet</span> (
+    "vibez"
+    "dropz"
+    "vibe_life"
+)
+
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Write to a file</span>
+    file, err := vibe_life.Create("output.txt")
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        vibez.spill("Error creating file:", err)
+        <span class="keyword">yolo</span>
+    }
+    <span class="keyword">later</span> file.Close()
+    
+    <span class="comment">fr fr Write formatted output to file</span>
+    vibez.fspillf(file, "User ID: %d\n", 12345)
+    vibez.fspill(file, "Status: Active")
+    
+    <span class="comment">fr fr Create a string builder</span>
+    sus builder dropz.Builder
+    vibez.fspillf(&builder, "Items: %d\n", 5)
+    vibez.fspill(&builder, "Category: Electronics")
+    
+    <span class="comment">fr fr Get the resulting string</span>
+    result := builder.tea()
+    vibez.spill("Built string:", result)
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Common Format Specifiers</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Verb</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>%v</code></td>
+          <td>Default format</td>
+          <td><code>%v</code> → <code>"hello"</code>, <code>123</code>, <code>true</code></td>
+        </tr>
+        <tr>
+          <td><code>%+v</code></td>
+          <td>Struct with field names</td>
+          <td><code>%+v</code> → <code>{Name:"Alice" Age:25}</code></td>
+        </tr>
+        <tr>
+          <td><code>%#v</code></td>
+          <td>Go syntax representation</td>
+          <td><code>%#v</code> → <code>main.Person{Name:"Alice", Age:25}</code></td>
+        </tr>
+        <tr>
+          <td><code>%T</code></td>
+          <td>Type of value</td>
+          <td><code>%T</code> → <code>string</code>, <code>int</code>, <code>bool</code></td>
+        </tr>
+        <tr>
+          <td><code>%t</code></td>
+          <td>Boolean</td>
+          <td><code>%t</code> → <code>true</code> or <code>false</code></td>
+        </tr>
+        <tr>
+          <td><code>%d</code></td>
+          <td>Decimal integer</td>
+          <td><code>%d</code> → <code>123</code></td>
+        </tr>
+        <tr>
+          <td><code>%f</code></td>
+          <td>Float</td>
+          <td><code>%f</code> → <code>123.456000</code></td>
+        </tr>
+        <tr>
+          <td><code>%.2f</code></td>
+          <td>Float with precision</td>
+          <td><code>%.2f</code> → <code>123.46</code></td>
+        </tr>
+        <tr>
+          <td><code>%s</code></td>
+          <td>String</td>
+          <td><code>%s</code> → <code>hello</code></td>
+        </tr>
+        <tr>
+          <td><code>%q</code></td>
+          <td>Quoted string</td>
+          <td><code>%q</code> → <code>"hello"</code></td>
+        </tr>
+        <tr>
+          <td><code>%x</code></td>
+          <td>Hex encoding</td>
+          <td><code>%x</code> → <code>7b</code> (for 123)</td>
+        </tr>
+        <tr>
+          <td><code>%p</code></td>
+          <td>Pointer address</td>
+          <td><code>%p</code> → <code>0xc00008a020</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

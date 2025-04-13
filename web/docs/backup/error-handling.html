@@ -1,0 +1,204 @@
+<!-- Error Handling Section in GenZ Style -->
+<section id="error-handling" class="docs-section animate-on-scroll">
+  <div class="section-pop">no drama</div>
+  <h2>Error Handling</h2>
+  <p>Even the most bussin' code can fail sometimes. Let's talk about how CURSED handles errors with explicit checks and returns - it's giving responsible vibes without the drama of exceptions!</p>
+
+  <div class="code-block">
+    <div class="code-title">Returning Errors</div>
+    <pre><code><span class="comment">fr fr Function that returns a result and an error</span>
+<span class="keyword">slay</span> divide(a, b snack) (snack, tea) {
+    <span class="comment">fr fr Check for division by zero</span>
+    <span class="keyword">lowkey</span> b == 0 {
+        <span class="keyword">yolo</span> 0, "division by zero is not it, bestie"  <span class="comment">fr fr Return error</span>
+    }
+    
+    <span class="comment">fr fr Success case</span>
+    <span class="keyword">yolo</span> a / b, ""  <span class="comment">fr fr Empty string means no error</span>
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Checking Errors</h3>
+    <pre><code><span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Call a function that might return an error</span>
+    result, err := divide(10.0, 0.0)
+    
+    <span class="comment">fr fr Always check errors</span>
+    <span class="keyword">lowkey</span> err != "" {
+        vibez.spill("Error:", err)
+        <span class="keyword">yolo</span>  <span class="comment">fr fr Exit early when there's an error</span>
+    }
+    
+    <span class="comment">fr fr Process the result (only runs if no error)</span>
+    vibez.spill("Result:", result)
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Error Interface</div>
+    <pre><code><span class="comment">fr fr The standard Error interface</span>
+<span class="keyword">be_like</span> Error <span class="keyword">collab</span> {
+    Error() tea
+}
+
+<span class="comment">fr fr Creating custom error types</span>
+<span class="keyword">be_like</span> ValidationError <span class="keyword">squad</span> {
+    field tea
+    message tea
+}
+
+<span class="comment">fr fr Implement the Error interface</span>
+<span class="keyword">slay</span> (e ValidationError) Error() tea {
+    <span class="keyword">yolo</span> e.field + ": " + e.message
+}
+
+<span class="comment">fr fr Function that returns an error interface</span>
+<span class="keyword">slay</span> validateUser(user User) Error {
+    <span class="keyword">lowkey</span> len(user.Name) < 3 {
+        <span class="keyword">yolo</span> ValidationError{
+            field: "name",
+            message: "must be at least 3 characters",
+        }
+    }
+    
+    <span class="keyword">lowkey</span> !stringz.Contains(user.Email, "@") {
+        <span class="keyword">yolo</span> ValidationError{
+            field: "email",
+            message: "invalid email format",
+        }
+    }
+    
+    <span class="keyword">yolo</span> <span class="keyword">cap</span>  <span class="comment">fr fr nil means no error</span>
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Using Custom Errors</h3>
+    <pre><code><span class="keyword">slay</span> processUser(user User) tea {
+    <span class="comment">fr fr Check validation errors</span>
+    err := validateUser(user)
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="comment">fr fr Get more information about the specific error</span>
+        <span class="keyword">vibe_check</span> err.(be_like) {
+        <span class="keyword">mood</span> ValidationError:
+            valErr := err.(ValidationError)
+            <span class="keyword">yolo</span> "Validation failed: " + valErr.field + " " + valErr.message
+        <span class="keyword">basic</span>:
+            <span class="keyword">yolo</span> "Error: " + err.Error()
+        }
+    }
+    
+    <span class="comment">fr fr Process the valid user</span>
+    <span class="keyword">yolo</span> "User processed successfully"
+}</code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Error Wrapping & Unwrapping</h4>
+    <p>When errors pass through layers of code, you can wrap them to add context:</p>
+    <pre><code><span class="keyword">be_like</span> WrappedError <span class="keyword">squad</span> {
+    context tea
+    cause Error
+}
+
+<span class="keyword">slay</span> (e WrappedError) Error() tea {
+    <span class="keyword">yolo</span> e.context + ": " + e.cause.Error()
+}
+
+<span class="comment">fr fr Function that returns a wrapped error</span>
+<span class="keyword">slay</span> readUserData(userID tea) (@User, Error) {
+    data, err := readFile("users/" + userID + ".json")
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span> <span class="keyword">cap</span>, WrappedError{
+            context: "failed to read user data",
+            cause: err,
+        }
+    }
+    
+    <span class="comment">fr fr Parse the user data</span>
+    <span class="keyword">sus</span> user User
+    err = json_tea.Unmarshal([]byte(data), &user)
+    <span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+        <span class="keyword">yolo</span> <span class="keyword">cap</span>, WrappedError{
+            context: "failed to parse user data",
+            cause: err,
+        }
+    }
+    
+    <span class="keyword">yolo</span> &user, <span class="keyword">cap</span>
+}</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Error Handling Patterns</div>
+    <pre><code><span class="comment">fr fr Sentinel errors (predefined error values)</span>
+<span class="keyword">sus</span> ErrNotFound = SimpleError{"resource not found"}
+<span class="keyword">sus</span> ErrPermissionDenied = SimpleError{"permission denied"}
+<span class="keyword">sus</span> ErrTimeout = SimpleError{"operation timed out"}
+
+<span class="keyword">be_like</span> SimpleError <span class="keyword">squad</span> {
+    message tea
+}
+
+<span class="keyword">slay</span> (e SimpleError) Error() tea {
+    <span class="keyword">yolo</span> e.message
+}
+
+<span class="comment">fr fr Using sentinel errors</span>
+<span class="keyword">slay</span> findResource(id tea) (Resource, Error) {
+    <span class="comment">fr fr Resource not found case</span>
+    <span class="keyword">lowkey</span> resourceDoesNotExist(id) {
+        <span class="keyword">yolo</span> Resource{}, ErrNotFound
+    }
+    
+    <span class="comment">fr fr Permission issue</span>
+    <span class="keyword">lowkey</span> !hasPermission() {
+        <span class="keyword">yolo</span> Resource{}, ErrPermissionDenied
+    }
+    
+    <span class="comment">fr fr Normal case</span>
+    resource, err := loadResource(id)
+    <span class="keyword">yolo</span> resource, err
+}</code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Error Handling Best Practices</h4>
+    <ul>
+      <li>Always check error returns from functions</li>
+      <li>Return errors rather than handling them internally (except in high-level code)</li>
+      <li>Add context to errors as they travel up the call stack</li>
+      <li>Keep the original error cause for debugging</li>
+      <li>Use sentinel errors for expected error conditions that callers might want to check</li>
+      <li>Create custom error types when you need to include additional information</li>
+      <li>Don't use panic for normal error handling (reserve for unrecoverable situations)</li>
+    </ul>
+  </div>
+
+  <div class="feature-box">
+    <h3>Panic and Recover</h3>
+    <p>For truly exceptional situations, CURSED has panic and recover:</p>
+    <pre><code><span class="comment">fr fr Function that might panic</span>
+<span class="keyword">slay</span> riskyOperation() {
+    <span class="comment">fr fr Defer a recovery function</span>
+    <span class="keyword">later</span> <span class="keyword">slay</span>() {
+        <span class="comment">fr fr Recover from panic</span>
+        <span class="keyword">lowkey</span> r := recover(); r != <span class="keyword">cap</span> {
+            vibez.spill("Recovered from panic:", r)
+        }
+    }()
+    
+    <span class="comment">fr fr This will cause a panic</span>
+    <span class="keyword">sus</span> slice []normie
+    vibez.spill(slice[10])  <span class="comment">fr fr Index out of range, will panic</span>
+}
+
+<span class="keyword">slay</span> main() {
+    vibez.spill("Before risky operation")
+    riskyOperation()
+    vibez.spill("After risky operation")  <span class="comment">fr fr This will still run thanks to recover</span>
+}</code></pre>
+    <p>Important: Use panic only for truly unrecoverable situations, not for normal error handling!</p>
+  </div>
+</section>

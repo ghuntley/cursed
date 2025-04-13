@@ -1,0 +1,354 @@
+<!-- Timez (time) Section in GenZ Style -->
+<section id="timez" class="docs-section animate-on-scroll">
+  <div class="section-pop">temporal vibes</div>
+  <h2>Timez Package (time)</h2>
+  <p>The <code>timez</code> package gives your CURSED code temporal awareness. It's serving clock management, date formatting, and duration tracking with big vibe energy.</p>
+
+  <div class="feature-box">
+    <h3>Core Types</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Time</code></td>
+          <td>Represents a moment in time</td>
+          <td><code>timez.Now()</code></td>
+        </tr>
+        <tr>
+          <td><code>Duration</code></td>
+          <td>Time span between two points</td>
+          <td><code>5 * timez.Second</code></td>
+        </tr>
+        <tr>
+          <td><code>Location</code></td>
+          <td>Time zone information</td>
+          <td><code>timez.UTC</code></td>
+        </tr>
+        <tr>
+          <td><code>Ticker</code></td>
+          <td>Delivers time at intervals</td>
+          <td><code>timez.NewTicker(1 * timez.Second)</code></td>
+        </tr>
+        <tr>
+          <td><code>Timer</code></td>
+          <td>Delivers time after a delay</td>
+          <td><code>timez.NewTimer(5 * timez.Second)</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Getting Current Time</div>
+    <pre><code><span class="keyword">yeet</span> "timez"
+
+<span class="keyword">slay</span> main() {
+    <span class="comment">fr fr Get current local time</span>
+    now := timez.Now()
+    vibez.spill("Current time:", now)
+    
+    <span class="comment">fr fr Get current UTC time</span>
+    utcNow := now.UTC()
+    vibez.spill("UTC time:", utcNow)
+    
+    <span class="comment">fr fr Extract components</span>
+    year := now.Year()           <span class="comment">fr fr 2025</span>
+    month := now.Month()         <span class="comment">fr fr April</span>
+    day := now.Day()             <span class="comment">fr fr 12</span>
+    hour := now.Hour()           <span class="comment">fr fr 15 (3 PM)</span>
+    minute := now.Minute()       <span class="comment">fr fr 30</span>
+    second := now.Second()       <span class="comment">fr fr 45</span>
+    nanosecond := now.Nanosecond() <span class="comment">fr fr 123456789</span>
+    
+    vibez.spillf("%d-%02d-%02d %02d:%02d:%02d\n", 
+               year, month, day, hour, minute, second)
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Creating Time Values</h3>
+    <pre><code><span class="comment">fr fr Create a specific time (yr, mo, day, hr, min, sec, nsec, loc)</span>
+birthday := timez.Date(2000, timez.January, 15, 0, 0, 0, 0, timez.Local)
+
+<span class="comment">fr fr Parse a time string</span>
+timeStr := "2025-04-12 15:30:45"
+layout := "2006-01-02 15:04:05"  <span class="comment">fr fr Reference time format</span>
+
+parsedTime, err := timez.Parse(layout, timeStr)
+<span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+    vibez.spill("Error parsing time:", err)
+    <span class="keyword">yolo</span>
+}
+
+vibez.spill("Parsed time:", parsedTime)
+
+<span class="comment">fr fr Parse time in a specific location</span>
+loc, _ := timez.LoadLocation("America/New_York")
+parsedTimeInLocation, _ := timez.ParseInLocation(layout, timeStr, loc)</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Formatting Time</div>
+    <pre><code><span class="comment">fr fr Format time using standard layouts</span>
+now := timez.Now()
+
+<span class="comment">fr fr Standard formats</span>
+vibez.spill(now.Format(timez.RFC3339))         <span class="comment">fr fr 2025-04-12T15:30:45Z</span>
+vibez.spill(now.Format(timez.RFC1123))         <span class="comment">fr fr Sat, 12 Apr 2025 15:30:45 UTC</span>
+vibez.spill(now.Format(timez.Kitchen))         <span class="comment">fr fr 3:30PM</span>
+
+<span class="comment">fr fr Custom formats</span>
+vibez.spill(now.Format("Jan 2 2006 at 3:04PM"))  <span class="comment">fr fr Apr 12 2025 at 3:30PM</span>
+vibez.spill(now.Format("2006-01-02"))           <span class="comment">fr fr 2025-04-12</span>
+vibez.spill(now.Format("15:04:05"))             <span class="comment">fr fr 15:30:45</span>
+
+<span class="comment">fr fr Format with weekday and 12-hour clock</span>
+vibez.spill(now.Format("Monday, January 2, 2006 at 3:04:05 PM"))  <span class="comment">fr fr Saturday, April 12, 2025 at 3:30:45 PM</span></code></pre>
+  </div>
+
+  <div class="alert-box">
+    <h4>Time Formatting Magic Reference</h4>
+    <p>CURSED (like Go) uses a reference time for formatting: <code>Mon Jan 2 15:04:05 MST 2006</code> (01/02 03:04:05PM '06 -0700)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Example</th>
+          <th>Format</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2006</td>
+          <td>Year (4 digits)</td>
+        </tr>
+        <tr>
+          <td>06</td>
+          <td>Year (2 digits)</td>
+        </tr>
+        <tr>
+          <td>January</td>
+          <td>Month (full name)</td>
+        </tr>
+        <tr>
+          <td>Jan</td>
+          <td>Month (3-letter abbreviation)</td>
+        </tr>
+        <tr>
+          <td>01</td>
+          <td>Month (zero-padded 2 digits)</td>
+        </tr>
+        <tr>
+          <td>1</td>
+          <td>Month (no padding)</td>
+        </tr>
+        <tr>
+          <td>Monday</td>
+          <td>Weekday (full name)</td>
+        </tr>
+        <tr>
+          <td>Mon</td>
+          <td>Weekday (3-letter abbreviation)</td>
+        </tr>
+        <tr>
+          <td>02</td>
+          <td>Day (zero-padded 2 digits)</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Day (no padding)</td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td>Hour (24-hour, zero-padded)</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Hour (12-hour, no padding)</td>
+        </tr>
+        <tr>
+          <td>03</td>
+          <td>Hour (12-hour, zero-padded)</td>
+        </tr>
+        <tr>
+          <td>PM</td>
+          <td>AM/PM</td>
+        </tr>
+        <tr>
+          <td>04</td>
+          <td>Minute (zero-padded)</td>
+        </tr>
+        <tr>
+          <td>05</td>
+          <td>Second (zero-padded)</td>
+        </tr>
+        <tr>
+          <td>MST</td>
+          <td>Timezone name</td>
+        </tr>
+        <tr>
+          <td>-0700</td>
+          <td>Timezone offset</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="feature-box">
+    <h3>Time Durations</h3>
+    <pre><code><span class="comment">fr fr Define durations</span>
+second := 1 * timez.Second
+minute := 1 * timez.Minute
+hour := 1 * timez.Hour
+day := 24 * timez.Hour
+
+<span class="comment">fr fr Custom duration</span>
+timeout := 2*timez.Minute + 30*timez.Second
+
+<span class="comment">fr fr Sleep for a duration</span>
+vibez.spill("Taking a quick nap...")
+timez.Sleep(3 * timez.Second)
+vibez.spill("Woke up!")
+
+<span class="comment">fr fr Parse duration from string</span>
+dur, err := timez.ParseDuration("4h30m")
+<span class="keyword">lowkey</span> err == <span class="keyword">cap</span> {
+    vibez.spillf("Parsed duration: %v (%.2f hours)\n", 
+               dur, dur.Hours())
+}
+
+<span class="comment">fr fr Duration components</span>
+d := 3*timez.Hour + 24*timez.Minute + 15*timez.Second
+vibez.spillf("Hours: %.2f\n", d.Hours())       <span class="comment">fr fr 3.40</span>
+vibez.spillf("Minutes: %.2f\n", d.Minutes())   <span class="comment">fr fr 204.25</span>
+vibez.spillf("Seconds: %.2f\n", d.Seconds())   <span class="comment">fr fr 12255.00</span>
+vibez.spillf("Milliseconds: %d\n", d.Milliseconds()) <span class="comment">fr fr 12255000</span></code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Time Calculations</div>
+    <pre><code><span class="comment">fr fr Get current time</span>
+now := timez.Now()
+
+<span class="comment">fr fr Add a duration</span>
+later := now.Add(2 * timez.Hour)
+vibez.spill("Two hours from now:", later.Format(timez.Kitchen))
+
+<span class="comment">fr fr Subtract a duration</span>
+earlier := now.Add(-30 * timez.Minute)
+vibez.spill("30 minutes ago:", earlier.Format(timez.Kitchen))
+
+<span class="comment">fr fr Difference between two times</span>
+tomorrow := now.AddDate(0, 0, 1)  <span class="comment">fr fr Add 1 day (0 years, 0 months)</span>
+diff := tomorrow.Sub(now)  <span class="comment">fr fr Returns a Duration</span>
+vibez.spillf("Until tomorrow: %.2f hours\n", diff.Hours())
+
+<span class="comment">fr fr Adding years, months, days</span>
+birthday := timez.Date(2000, timez.January, 15, 0, 0, 0, 0, timez.Local)
+nextBirthday := birthday.AddDate(26, 0, 0)  <span class="comment">fr fr 26 years later</span>
+
+<span class="comment">fr fr Checking time relationships</span>
+before := now.Before(later)   <span class="comment">fr fr true</span>
+after := now.After(earlier)   <span class="comment">fr fr true</span>
+equal := now.Equal(now)       <span class="comment">fr fr true</span></code></pre>
+  </div>
+
+  <div class="tip-box">
+    <h4>Timers and Tickers</h4>
+    <pre><code><span class="comment">fr fr One-time timer</span>
+timer := timez.NewTimer(2 * timez.Second)
+
+<span class="comment">fr fr Wait for the timer</span>
+<-timer.C  <span class="comment">fr fr Blocks until timer fires</span>
+vibez.spill("Timer expired!")
+
+<span class="comment">fr fr Alternative: time.After</span>
+<span class="keyword">select</span> {
+<span class="keyword">mood</span> <-timez.After(1 * timez.Second):
+    vibez.spill("One second has passed")
+}
+
+<span class="comment">fr fr Periodic ticker</span>
+ticker := timez.NewTicker(500 * timez.Millisecond)
+<span class="keyword">later</span> ticker.Stop()  <span class="comment">fr fr Don't forget to stop the ticker!</span>
+
+count := 0
+<span class="keyword">bestie</span> count < 5 {
+    <-ticker.C  <span class="comment">fr fr Wait for tick</span>
+    vibez.spillf("Tick %d\n", count)
+    count++
+}</code></pre>
+  </div>
+
+  <div class="feature-box">
+    <h3>Time Zones</h3>
+    <pre><code><span class="comment">fr fr Get the local location</span>
+loc := timez.Local
+vibez.spill("Local timezone:", loc.String())
+
+<span class="comment">fr fr Load a time zone by name</span>
+nyc, err := timez.LoadLocation("America/New_York")
+<span class="keyword">lowkey</span> err != <span class="keyword">cap</span> {
+    vibez.spill("Error loading location:", err)
+}
+
+<span class="comment">fr fr Convert time to a different time zone</span>
+now := timez.Now()
+nowInNYC := now.In(nyc)
+
+vibez.spillf("Local: %s\n", now.Format(timez.RFC1123))
+vibez.spillf("New York: %s\n", nowInNYC.Format(timez.RFC1123))
+
+<span class="comment">fr fr Use UTC time zone</span>
+utcTime := now.UTC()
+vibez.spillf("UTC: %s\n", utcTime.Format(timez.RFC1123))</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-title">Time for Timeouts</div>
+    <pre><code><span class="comment">fr fr Create a context with timeout</span>
+<span class="keyword">yeet</span> "contextz"
+
+<span class="keyword">slay</span> doWithTimeout() {
+    <span class="comment">fr fr Create a context that cancels after 2 seconds</span>
+    ctx, cancel := contextz.WithTimeout(contextz.Background(), 2*timez.Second)
+    <span class="keyword">later</span> cancel()  <span class="comment">fr fr Always call cancel, even if the timeout occurs</span>
+    
+    <span class="comment">fr fr Channel to signal task completion</span>
+    done := make(dm<lit>)
+    
+    <span class="comment">fr fr Start a long-running task</span>
+    <span class="keyword">stan</span> <span class="keyword">slay</span>() {
+        <span class="comment">fr fr Simulate work</span>
+        <span class="keyword">bestie</span> i := 0; i < 5; i++ {
+            <span class="keyword">select</span> {
+            <span class="keyword">mood</span> <-ctx.Done():
+                <span class="comment">fr fr Context was canceled or timed out</span>
+                vibez.spill("Task canceled, cleaning up...")
+                <span class="keyword">yolo</span>
+            <span class="keyword">basic</span>:
+                <span class="comment">fr fr Do some work</span>
+                vibez.spillf("Working... (%d/5)\n", i+1)
+                timez.Sleep(500 * timez.Millisecond)
+            }
+        }
+        
+        <span class="comment">fr fr Signal task completion</span>
+        done <- <span class="keyword">based</span>
+    }()
+    
+    <span class="comment">fr fr Wait for either completion or timeout</span>
+    <span class="keyword">select</span> {
+    <span class="keyword">mood</span> <-done:
+        vibez.spill("Task completed successfully!")
+    <span class="keyword">mood</span> <-ctx.Done():
+        vibez.spill("Timeout expired before task completed:", ctx.Err())
+    }
+}</code></pre>
+  </div>
+</section>

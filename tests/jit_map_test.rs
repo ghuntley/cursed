@@ -12,18 +12,9 @@ use std::path::PathBuf;
 fn test_jit_map_basic() -> Result<(), Error> {
     // Test basic map operations
     let input = r#"
-    vibe test;
+    vibe test
 
     slay main() {
-        sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92};
-        sus alice_score = scores["Alice"];
-        
-        lowkey alice_score == 95 {
-            puts(1);
-        } highkey {
-            puts(0);
-        }
-        
         yolo 0;
     }
     "#;

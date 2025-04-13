@@ -5,11 +5,12 @@
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::traits::Expression;
-use crate::ast::expressions::{Identifier, CallExpression};
+use crate::ast::expressions::{Identifier, CallExpression, DotExpression};
 use crate::ast::pointer::types::PointerType;
 use crate::ast::pointer::operations::PointerDereference;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
+use super::dot_expressions::DotExpressionCompilation;
 use super::pointer_ops::PointerOperations;
 use super::basic_expressions::BasicExpressionOperations;
 use super::function_monomorphization::FunctionMonomorphization;
@@ -32,6 +33,9 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         // Try to handle specific expression types
         let any = expr.as_any();
         
+        println!("DEBUG Expression Compilation: Type={}, String={}", 
+                 std::any::type_name_of_val(expr), expr.string());
+        
         // Handle identifier expressions (variable references)
         if let Some(ident) = any.downcast_ref::<Identifier>() {
             return self.compile_identifier(ident);
@@ -52,12 +56,41 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             return self.compile_pointer_dereference(pointer_deref);
         }
         
+        // Handle dot expressions (object.property)
+        if let Some(dot_expr) = any.downcast_ref::<DotExpression>() {
+            println!("DEBUG: Found dot expression in compile_expression: {}.{}", 
+                     dot_expr.object.string(), dot_expr.property);
+            return self.compile_dot_expression(dot_expr);
+        }
+        
         // Fall back to basic expressions (literals, arithmetic operations)
         self.compile_basic_expression(expr)
     }
     
     fn compile_identifier(&mut self, ident: &Identifier) -> Result<BasicValueEnum<'ctx>, Error> {
         println!("DEBUG: Compiling identifier: {}", ident.value);
+        
+        // Check if this is actually a dot expression that was parsed as an identifier
+        if ident.value.contains(".") {
+            let parts: Vec<&str> = ident.value.split(".").collect();
+            if parts.len() == 2 {
+                // Create a DotExpression on the fly
+                let object_ident = Identifier {
+                    token: parts[0].to_string(),
+                    value: parts[0].to_string(),
+                };
+                
+                let dot_expr = DotExpression {
+                    token: ".".to_string(),
+                    object: Box::new(object_ident),
+                    property: parts[1].to_string(),
+                };
+                
+                println!("DEBUG: Converting identifier to dot expression: {}.{}", 
+                         parts[0], parts[1]);
+                return self.compile_dot_expression(&dot_expr);
+            }
+        }
         
         // First try to look up in the variable scope
         if !self.var_scopes.is_empty() {
@@ -135,6 +168,51 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         // Access the function directly, since it's a required field
         // We need to use as_ref() to get &dyn Expression from Box<dyn Expression>
         let callee_expr = call.function.as_ref();
+        
+        // Try to use our dot expression hook for any supported function
+        if let Some(hook_result) = super::hook_dot_expressions::dot_expression_call_hook(self, call)? {
+        println!("DEBUG: Used dot expression hook for direct call");
+        return Ok(hook_result);
+        }
+        
+        // Special case for dot expressions like vibez.spill (fallback)
+        if let Some(dot_expr) = callee_expr.as_any().downcast_ref::<DotExpression>() {
+        println!("DEBUG CALL: Found DotExpression callee: {}.{}", dot_expr.object.string(), dot_expr.property);
+        
+        // Special case for vibez.spill
+        if dot_expr.object.string() == "vibez" && dot_expr.property == "spill" && call.arguments.len() == 1 {
+        println!("DEBUG CALL: Special handling for vibez.spill");
+        
+        // Compile the string argument
+        let arg = self.compile_expression(&*call.arguments[0])?;
+        
+        // Get the puts function and call it
+        if let Some(puts_fn) = self.module().get_function("puts") {
+        println!("DEBUG CALL: Found puts function for vibez.spill");
+        
+        println!("DEBUG CALL: Arg type: {}", if arg.is_int_value() { "int" } 
+                                     else if arg.is_pointer_value() { "pointer" } 
+                                     else { "other" });
+                                         
+        // For puts, we need to ensure the argument is a pointer to a null-terminated string
+        // For string literals, we should already have a global string constant
+        let arg_ptr = if arg.is_pointer_value() {
+            // Already a pointer, use it directly
+            arg.into_pointer_value()
+        } else {
+        // Something else, convert to string and create a global
+            return Err(Error::from_str("vibez.spill argument must be a string"));
+        };
+        
+            // Call puts with the string argument
+                let result = self.builder().build_call(puts_fn, &[arg_ptr.into()], "vibez_spill_call")
+                        .map_err(|e| Error::from_str(&format!("Failed to build vibez.spill call: {}", e)))?;
+                    
+                    // Return the argument value as the result
+                    return Ok(arg);
+                }
+            }
+        }
         
         // Evaluate the callee to get a function value
         let callee_value = self.compile_expression(callee_expr)?;

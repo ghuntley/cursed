@@ -309,7 +309,21 @@ impl<'ctx> JitCompiler<'ctx> {
         
         // Try different variations of the main function name
         unsafe {
-            // First try the unmangled name "main"
+            // First try the _main_main function which handles dot expressions
+            println!("DEBUG: JitCompiler - Trying to get function '_main_main'");
+            match self.execution_engine.get_function::<unsafe extern "C" fn() -> i32>("_main_main") {
+                Ok(main_fn) => {
+                    println!("DEBUG: JitCompiler - Found _main_main function, calling it");
+                    let result = main_fn.call();
+                    println!("DEBUG: JitCompiler - _main_main function returned: {}", result);
+                    return Ok(result);
+                }
+                Err(e) => {
+                    println!("DEBUG: JitCompiler - Failed to get {} function: {}", self.module_name, e);
+                }
+            }
+            
+            // If that failed, try the unmangled name "main"
             println!("DEBUG: JitCompiler - Trying to get function 'main'");
             match self.execution_engine.get_function::<unsafe extern "C" fn() -> i32>("main") {
                 Ok(main_fn) => {
