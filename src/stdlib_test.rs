@@ -274,6 +274,72 @@ pub fn test_web_vibez() -> Result<(), Error> {
     Ok(())
 }
 
+pub fn test_cryptz() -> Result<(), Error> {
+    println!("Testing cryptz package");
+    
+    // Test data
+    let test_string = "test_data";
+    let test_key = "secret_key";
+    
+    // Test MD5 function
+    let args = vec![Rc::new(Object::String(test_string.to_string()))];
+    let result = crate::stdlib::cryptz::md5sum(&args)?;
+    let md5_hash = if let Object::String(s) = &*result { s.clone() } else { String::new() };
+    println!("MD5 hash of \"{}\" is {}", test_string, md5_hash);
+    
+    // Test SHA-1 function
+    let args = vec![Rc::new(Object::String(test_string.to_string()))];
+    let result = crate::stdlib::cryptz::sha1sum(&args)?;
+    let sha1_hash = if let Object::String(s) = &*result { s.clone() } else { String::new() };
+    println!("SHA-1 hash of \"{}\" is {}", test_string, sha1_hash);
+    
+    // Test SHA-256 function
+    let args = vec![Rc::new(Object::String(test_string.to_string()))];
+    let result = crate::stdlib::cryptz::sha256sum(&args)?;
+    let sha256_hash = if let Object::String(s) = &*result { s.clone() } else { String::new() };
+    println!("SHA-256 hash of \"{}\" is {}", test_string, sha256_hash);
+    
+    // Test HMAC with MD5
+    let args = vec![
+        Rc::new(Object::String(test_string.to_string())),
+        Rc::new(Object::String(test_key.to_string())),
+        Rc::new(Object::String("md5".to_string())),
+    ];
+    let result = crate::stdlib::cryptz::hmac(&args)?;
+    let hmac_md5 = if let Object::String(s) = &*result { s.clone() } else { String::new() };
+    println!("HMAC-MD5 of \"{}\" with key \"{}\" is {}", test_string, test_key, hmac_md5);
+    
+    // Test HMAC with SHA-1
+    let args = vec![
+        Rc::new(Object::String(test_string.to_string())),
+        Rc::new(Object::String(test_key.to_string())),
+        Rc::new(Object::String("sha1".to_string())),
+    ];
+    let result = crate::stdlib::cryptz::hmac(&args)?;
+    let hmac_sha1 = if let Object::String(s) = &*result { s.clone() } else { String::new() };
+    println!("HMAC-SHA1 of \"{}\" with key \"{}\" is {}", test_string, test_key, hmac_sha1);
+    
+    // Test HMAC with SHA-256
+    let args = vec![
+        Rc::new(Object::String(test_string.to_string())),
+        Rc::new(Object::String(test_key.to_string())),
+        Rc::new(Object::String("sha256".to_string())),
+    ];
+    let result = crate::stdlib::cryptz::hmac(&args)?;
+    let hmac_sha256 = if let Object::String(s) = &*result { s.clone() } else { String::new() };
+    println!("HMAC-SHA256 of \"{}\" with key \"{}\" is {}", test_string, test_key, hmac_sha256);
+    
+    // Test random bytes generation
+    let args = vec![Rc::new(Object::Integer(16))];
+    let result = crate::stdlib::cryptz::random_bytes(&args)?;
+    if let Object::Array(bytes) = &*result {
+        println!("Generated {} random bytes", bytes.len());
+    }
+    
+    println!("All cryptz tests completed successfully");
+    Ok(())
+}
+
 pub fn test_dropz_file_test() -> Result<(), Error> {
     println!("Testing dropz file operations");
 

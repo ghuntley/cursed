@@ -103,6 +103,11 @@ pub enum Object {
     Array(Vec<Object>),
     HashTable(HashMap<String, Object>),
     Channel(Rc<RefCell<Channel>>),
+    Mutex(RefCell<crate::stdlib::concurrenz::CursedMutex>),
+    RWMutex(RefCell<crate::stdlib::concurrenz::CursedRWMutex>),
+    WaitGroup(RefCell<crate::stdlib::concurrenz::CursedWaitGroup>),
+    Once(RefCell<crate::stdlib::concurrenz::CursedOnce>),
+    Option(Option<Rc<Object>>),
     CompiledFunction {
         ir_representation: String,
         num_locals: usize,
@@ -198,6 +203,11 @@ impl Clone for Object {
             Object::Array(elements) => Object::Array(elements.clone()),
             Object::HashTable(map) => Object::HashTable(map.clone()),
             Object::Channel(channel) => Object::Channel(channel.clone()),
+            Object::Mutex(mutex) => Object::Mutex(mutex.clone()),
+            Object::RWMutex(rwmutex) => Object::RWMutex(rwmutex.clone()),
+            Object::WaitGroup(wg) => Object::WaitGroup(wg.clone()),
+            Object::Once(once) => Object::Once(once.clone()),
+            Object::Option(opt) => Object::Option(opt.clone()),
             Object::CompiledFunction {
                 ir_representation,
                 num_locals,
@@ -340,6 +350,24 @@ impl Traceable for Object {
             Object::Reference(ref_obj) => {
                 // Trace the referenced object
                 ref_obj.borrow().trace(visitor);
+            },
+            Object::Mutex(_) => {
+                // Mutex doesn't contain any references to trace
+            },
+            Object::RWMutex(_) => {
+                // RWMutex doesn't contain any references to trace
+            },
+            Object::WaitGroup(_) => {
+                // WaitGroup doesn't contain any references to trace
+            },
+            Object::Once(_) => {
+                // Once doesn't contain any references to trace
+            },
+            Object::Option(opt) => {
+                // Trace the option value if present
+                if let Some(obj) = opt {
+                    obj.trace(visitor);
+                }
             }
         }
     }
@@ -455,6 +483,17 @@ impl Traceable for Object {
             Object::Null => std::mem::size_of::<()>(),
             Object::Reference(ref_obj) => {
                 std::mem::size_of::<Rc<RefCell<Object>>>() + ref_obj.borrow().size()
+            },
+            Object::Mutex(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedMutex>>(),
+            Object::RWMutex(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedRWMutex>>(),
+            Object::WaitGroup(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedWaitGroup>>(),
+            Object::Once(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedOnce>>(),
+            Object::Option(opt) => {
+                let base_size = std::mem::size_of::<Option<Rc<Object>>>();
+                match opt {
+                    Some(obj) => base_size + obj.size(),
+                    None => base_size,
+                }
             }
         }
     }
@@ -477,6 +516,14 @@ impl Traceable for Object {
             Object::Error { .. } => Tag::Object,
             Object::Reference(_) => Tag::Object,
             Object::Char(_) => Tag::Int,
+            Object::Mutex(_) => Tag::Object,
+            Object::RWMutex(_) => Tag::Object,
+            Object::WaitGroup(_) => Tag::Object,
+            Object::Once(_) => Tag::Object,
+            Object::Option(opt) => match opt {
+                Some(obj) => obj.tag(),
+                None => Tag::Null,
+            },
             Object::Null => Tag::Null,
         }
     }
@@ -582,6 +629,14 @@ impl Display for Object {
                     "method {}:{}({}){}{{ ... }}",
                     receiver_type, name, params_str, return_str
                 )
+            },
+            Object::Mutex(_) => write!(f, "[Mutex]"),
+            Object::RWMutex(_) => write!(f, "[RWMutex]"),
+            Object::WaitGroup(_) => write!(f, "[WaitGroup]"),
+            Object::Once(_) => write!(f, "[Once]"),
+            Object::Option(opt) => match opt {
+                Some(obj) => write!(f, "Some({})", obj),
+                None => write!(f, "None"),
             }
         }
     }
@@ -736,6 +791,36 @@ impl Object {
             _ => false,
         }
     }
+    
+    pub fn is_int(&self) -> bool {
+        matches!(self, Object::Integer(_))
+    }
+    
+    pub fn as_int(&self) -> Option<i64> {
+        match self {
+            Object::Integer(i) => Some(*i),
+            _ => None,
+        }
+    }
+    
+    pub fn is_bool(&self) -> bool {
+        matches!(self, Object::Boolean(_))
+    }
+    
+    pub fn is_string(&self) -> bool {
+        matches!(self, Object::String(_))
+    }
+    
+    pub fn is_array(&self) -> bool {
+        matches!(self, Object::Array(_))
+    }
+    
+    pub fn as_array(&self) -> Option<&Vec<Object>> {
+        match self {
+            Object::Array(arr) => Some(arr),
+            _ => None,
+        }
+    }
 
     pub fn is_hashable(&self) -> bool {
         match self {
@@ -792,31 +877,21 @@ impl Object {
             Object::Instance { .. } => "instance",
             Object::Error { .. } => "error",
             Object::Reference(ref_obj) => ref_obj.borrow().type_name(),
+            Object::Mutex(_) => "mutex",
+            Object::RWMutex(_) => "rwmutex",
+            Object::WaitGroup(_) => "waitgroup",
+            Object::Once(_) => "once",
+            Object::Option(Some(obj)) => "option",
+            Object::Option(None) => "option",
             Object::Null => "null",
         }
     }
 
     /// Check if the object is of the given type
     pub fn is_type(&self, type_name: &str) -> bool {
-        match (self, type_name) {
-            (Object::Integer(_), "integer") => true,
-            (Object::Float(_), "float") => true,
-            (Object::Boolean(_), "boolean") => true,
-            (Object::String(_), "string") => true,
-            (Object::Char(_), "char") => true,
-            (Object::Array(_), "array") => true,
-            (Object::HashTable(_), "hash") => true,
-            (Object::Channel(_), "channel") => true,
-            (Object::CompiledFunction { .. }, "function") => true,
-            (Object::Closure { .. }, "closure") => true,
-            (Object::Builtin { .. }, "builtin") => true,
-            (Object::Struct { .. }, "struct") => true,
-            (Object::Interface { .. }, "interface") => true,
-            (Object::Method { .. }, "method") => true,
-            (Object::Instance { .. }, "instance") => true,
-            (Object::Error { .. }, "error") => true,
-            (Object::Null, "null") => true,
-            _ => false,
+        match self.type_name() {
+            n if n == type_name => true,
+            _ => false
         }
     }
 
@@ -894,6 +969,11 @@ impl Object {
             Object::Instance { .. } => true,
             Object::Error { .. } => false,
             Object::Reference(ref_obj) => ref_obj.borrow().is_truthy(),
+            Object::Mutex(_) => true,
+            Object::RWMutex(_) => true,
+            Object::WaitGroup(_) => true,
+            Object::Once(once) => once.borrow().is_done(),
+            Object::Option(opt) => opt.is_some(),
             Object::Null => false,
         }
     }
@@ -959,6 +1039,14 @@ impl Object {
             }
             Object::Null => "null".to_string(),
             Object::Reference(ref_obj) => format!("&{}", ref_obj.borrow().to_string()),
+            Object::Mutex(_) => "[Mutex]".to_string(),
+            Object::RWMutex(_) => "[RWMutex]".to_string(),
+            Object::WaitGroup(_) => "[WaitGroup]".to_string(),
+            Object::Once(_) => "[Once]".to_string(),
+            Object::Option(opt) => match opt {
+                Some(obj) => format!("Some({})", obj.to_string()),
+                None => "None".to_string(),
+            },
             Object::Method {
                 receiver_type,
                 name,
@@ -1204,26 +1292,7 @@ impl Object {
 
     /// Checks if the object is exactly of the given type
     pub fn type_check_exact(&self, type_name: &str) -> bool {
-        match self {
-            Object::Integer(_) => type_name == "integer",
-            Object::Float(_) => type_name == "float",
-            Object::Boolean(_) => type_name == "boolean",
-            Object::String(_) => type_name == "string",
-            Object::Char(_) => type_name == "char",
-            Object::Array(_) => type_name == "array",
-            Object::HashTable(_) => type_name == "hash",
-            Object::Channel(_) => type_name == "channel",
-            Object::CompiledFunction { .. } => type_name == "function",
-            Object::Closure { .. } => type_name == "closure",
-            Object::Builtin { .. } => type_name == "builtin",
-            Object::Struct { .. } => type_name == "struct",
-            Object::Interface { .. } => type_name == "interface",
-            Object::Method { .. } => type_name == "method",
-            Object::Instance { .. } => type_name == "instance",
-            Object::Error { .. } => type_name == "error",
-            Object::Reference(ref_obj) => ref_obj.borrow().type_check_exact(type_name),
-            Object::Null => type_name == "null",
-        }
+        self.type_name() == type_name
     }
 
     /// Returns a string representation of the object
@@ -1368,6 +1437,14 @@ impl Object {
             }
             Object::Null => "null".to_string(),
             Object::Reference(ref_obj) => format!("&{}", ref_obj.borrow().inspect()),
+            Object::Mutex(_) => "[Mutex]".to_string(),
+            Object::RWMutex(_) => "[RWMutex]".to_string(),
+            Object::WaitGroup(_) => "[WaitGroup]".to_string(),
+            Object::Once(once) => format!("[Once:{}]", if once.borrow().is_done() { "done" } else { "pending" }),
+            Object::Option(opt) => match opt {
+                Some(obj) => format!("Some({})", obj.inspect()),
+                None => "None".to_string(),
+            },
         }
     }
 }

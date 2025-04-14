@@ -35,27 +35,27 @@ fn test_rand() {
 fn test_basic_generators() {
     // Test integer generator
     let int_val = int_range(1, 10);
-    assert!(int_val.is_int());
-    let value = int_val.as_int().unwrap();
+    assert!(matches!(int_val, Object::Integer(_)));
+    let value = match int_val { Object::Integer(i) => i, _ => panic!("Not an integer") };
     assert!(value >= 1 && value <= 10);
     
     // Test boolean generator
     let bool_val = boolean();
-    assert!(bool_val.is_bool());
+    assert!(matches!(bool_val, Object::Boolean(_)));
     
     // Test string generator
     let string_val = string();
-    assert!(string_val.is_string());
+    assert!(matches!(string_val, Object::String(_)));
     
     // Test array generator
     let array_val = int_array(5, 10, 1, 100);
-    assert!(array_val.is_array());
-    let elements = array_val.as_array().unwrap();
+    assert!(matches!(array_val, Object::Array(_)));
+    let elements = match array_val { Object::Array(a) => a, _ => panic!("Not an array") };
     assert!(elements.len() >= 5 && elements.len() <= 10);
     
     for elem in elements {
-        assert!(elem.is_int());
-        let val = elem.as_int().unwrap();
+        assert!(matches!(elem, Object::Integer(_)));
+        let val = match elem { Object::Integer(i) => i, _ => panic!("Not an integer") };
         assert!(val >= 1 && val <= 100);
     }
 }

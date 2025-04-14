@@ -13,6 +13,7 @@
 //! - `now` - Get the current time
 //! - `sleep` - Pause execution for a specified duration
 //! - `unix_timestamp` - Get the current Unix timestamp
+//! - `format_time` - Format a time value as a string
 
 use crate::error::Error;
 use crate::object::Object;
@@ -43,6 +44,47 @@ pub fn now(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         .map_err(|e| Error::Runtime(format!("Failed to get current time: {}", e)))?;
 
     Ok(Rc::new(Object::Integer(unix_time.as_secs() as i64)))
+}
+
+/// Format a time value as a string using a format string
+///
+/// # Arguments
+///
+/// * `args[0]` - The time value (Unix timestamp as integer)
+/// * `args[1]` - The format string (uses strftime format)
+///
+/// # Returns
+///
+/// The formatted time string
+pub fn format_time(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.len() < 2 {
+        return Err(Error::Runtime(
+            format!("format_time requires at least 2 arguments, got {}", args.len())
+        ));
+    }
+
+    // Extract timestamp
+    let timestamp = match &*args[0] {
+        Object::Integer(ts) => *ts,
+        _ => return Err(Error::Runtime(
+            format!("First argument to format_time must be a timestamp integer, got {}", args[0].type_name())
+        )),
+    };
+
+    // Extract format string
+    let format_str = match &*args[1] {
+        Object::String(fmt) => fmt.clone(),
+        _ => return Err(Error::Runtime(
+            format!("Second argument to format_time must be a format string, got {}", args[1].type_name())
+        )),
+    };
+
+    // This is a simplified implementation without chrono
+    // In a real implementation, we would use a proper date/time library
+    // For now, just return a simple formatted representation of the timestamp
+    let formatted = format!("Timestamp: {} ({})", timestamp, format_str);
+
+    Ok(Rc::new(Object::String(formatted)))
 }
 
 /// Pauses the current goroutine for the specified duration

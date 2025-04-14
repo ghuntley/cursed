@@ -9,10 +9,41 @@
 //! - String searching: `contains`, `has_prefix`, `has_suffix`, `count`
 //! - String splitting/joining: `split`, `join`
 //! - String transformations: `to_lower`, `to_upper`, `trim`
+//! - String measurement: `len`
 
 use crate::error::Error;
 use crate::object::Object;
 use std::rc::Rc;
+
+/// Returns the length of a string in characters
+///
+/// # Arguments
+///
+/// * `args[0]` - The string to measure
+///
+/// # Returns
+///
+/// An integer representing the number of characters in the string
+pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.len() != 1 {
+        return Err(Error::new(
+            "ArgumentError",
+            format!("len takes exactly 1 argument, got {}", args.len()),
+            None,
+        ));
+    }
+
+    let s = match &*args[0] {
+        Object::String(s) => s,
+        _ => return Err(Error::new(
+            "TypeError", 
+            format!("len requires a string, got {}", args[0].type_name()),
+            None,
+        )),
+    };
+
+    Ok(Rc::new(Object::Integer(s.chars().count() as i64)))
+}
 
 /// Checks if a string contains a substring
 ///
