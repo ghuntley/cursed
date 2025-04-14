@@ -3,6 +3,7 @@ mod tests {
     use std::sync::Arc;
     use std::time::Duration;
     use std::thread;
+    use std::cell::RefCell;
     
     use cursed::memory::gc::GarbageCollector;
     use cursed::memory::{Gc, Tag, Traceable, Visitor};
@@ -10,23 +11,23 @@ mod tests {
     #[derive(Clone, Debug)]
     struct TestNode {
         id: usize,
-        next: Option<Gc<TestNode>>,
+        next: RefCell<Option<Gc<TestNode>>>,
     }
 
     impl TestNode {
         fn new(id: usize) -> Self {
-            Self { id, next: None }
+            Self { id, next: RefCell::new(None) }
         }
         
-        fn set_next(&mut self, next: Gc<TestNode>) {
-            self.next = Some(next);
+        fn set_next(&self, next: Gc<TestNode>) {
+            *self.next.borrow_mut() = Some(next);
         }
     }
 
     impl Traceable for TestNode {
         fn trace(&self, visitor: &mut dyn Visitor) {
             println!("TestNode({})::trace called", self.id);
-            if let Some(next) = &self.next {
+            if let Some(next) = &*self.next.borrow() {
                 println!("TestNode({})::trace tracing next reference", self.id);
                 if let Some(inner) = next.inner() {
                     unsafe {
@@ -140,14 +141,15 @@ mod tests {
             println!("Created nodes 1 and 2");
             
             // Step 4: Create circular references
-            {
-                let inner1: &mut TestNode = node1.inner().unwrap() as &mut TestNode;
+            // With RefCell we can directly modify the object without unsafe code
+            if let Some(inner1) = node1.inner() {
                 inner1.set_next(node2.clone());
                 println!("Set node1.next = node2");
             }
             
-            {
-                let inner2: &mut TestNode = node2.inner().unwrap() as &mut TestNode;
+            
+            // Create circular reference for node2
+            if let Some(inner2) = node2.inner() {
                 inner2.set_next(node1.clone());
                 println!("Set node2.next = node1");
             }
