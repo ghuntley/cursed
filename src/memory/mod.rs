@@ -1,229 +1,364 @@
-//! Memory management and garbage collection for the CURSED language
+//! Memory management module for the CURSED language
 //!
-//! This module implements the memory management system and garbage collector
-//! for CURSED. It provides safe memory allocation, automatic reclamation of
-//! unreachable objects, and utilities for handling complex data structures.
-//!
-//! ## Components
-//!
-//! * `gc`: Core garbage collection implementation using a mark-and-sweep algorithm
-//! * `weak`: Weak references to avoid reference cycles
-//! * `container`: Specialized container implementations for better performance
-//! * `strategy`: Different memory management strategies
-//! * `allocator`: Memory allocation utilities
-//! * `channel`: Thread-safe communication channels
-//! * `thread_safe`: Thread-safe wrappers for memory management
+//! This module provides garbage collection and memory management for CURSED.
+//! It includes both regular (non-thread-safe) and thread-safe garbage collection.
 
-pub mod allocator;
-pub mod block;
-pub mod bump;
-pub mod channel;
-pub mod container;
-pub mod deadlock_detector;
-pub mod finalization_order;
-pub mod gc;
-// We've improved mark_sweep.rs directly instead of creating a separate module
-pub mod mark_sweep;
-pub mod memory_visitor;
-pub mod object_storage;
-pub mod root;
-pub mod scope;
-pub mod strategy;
-pub mod tagged;
-pub mod test_environment;
-pub mod thread_safe;
-pub mod weak;
+/// Enable debug logging for memory operations
+pub const DEBUG_MEMORY: bool = true;
 
-// Re-export important types
-pub use container::{ContainerType, Specializable, SpecializedVector};
-pub use finalization_order::{finalization_graph, register_dependency, finalize_objects_ordered};
-pub use root::{RootScope, RootScopeGuard, ROOT_MANAGER};
-pub use gc::MarkState;
-pub use object_storage::{global_object_storage, ObjectStorage, StorageWrapper};
-pub use scope::{with_gc_scope, with_new_gc, with_gc_scope_fn, with_new_gc_fn};
-pub use test_environment::{get_test_gc, is_test_environment, reset_test_environment};
-pub use thread_safe::{ThreadSafePointer, ThreadSafeTraceable};
-pub use weak::weak_registry;
+/// Print debug info if debugging is enabled
+#[macro_export]
+macro_rules! debug_println {
+    ($($arg:tt)*) => {
+        if $crate::memory::DEBUG_MEMORY {
+            println!("[GC_DEBUG] {}", format!($($arg)*));
+        }
+    };
+}
 
-use std::marker::PhantomData;
 use std::ptr::NonNull;
-use std::sync::{Arc, Weak as StdWeak};
 
-use crate::memory::gc::GarbageCollector;
+// Public modules
+pub mod gc;
+pub mod thread_safe_gc;
+pub mod thread_safe_weak;
+pub mod weak;
+pub mod weak_registry;
+pub mod object_storage;
+pub mod finalization_order;
+pub mod test_environment;
 
-/// Type tag for different memory-managed object types
-///
-/// These tags are used by the garbage collector to identify object types
-/// during marking and sweeping. Each tag corresponds to a specific
-/// type of object that can be managed by the garbage collector.
+// Re-exports
+pub use object_storage::{ObjectStorage, StorageWrapper, global_object_storage, register_dependency};
+
+// Re-export types
+pub use gc::GarbageCollector;
+pub use thread_safe_gc::ThreadSafeGc;
+pub use thread_safe_weak::ThreadSafeWeak;
+pub use weak::Weak;
+pub use weak_registry::GlobalWeakRegistry;
+
+// For testing (re-exported)
+#[cfg(test)]
+pub use gc::{get_test_gc, reset_test_environment};
+
+/// Object tags for the garbage collector
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tag {
-    Int,
-    Float,
-    Boolean,
-    String,
-    Array,
-    Map,
-    Function,
+    /// Generic object
     Object,
+    /// Function object
+    Function,
+    /// Array object
+    Array,
+    /// Hash/map object
+    Hash,
+    /// String object
+    String,
+    /// Environment object
+    Environment,
+    /// Integer object
+    Int,
+    /// Float object
+    Float,
+    /// Boolean object
+    Boolean,
+    /// Map object
+    Map,
+    /// Null object
     Null,
 }
 
 /// Trait for objects that can be traced by the garbage collector
-///
-/// Objects implementing this trait can participate in garbage collection.
-/// The `trace` method allows the GC to traverse object references during
-/// the mark phase, while `size` and `tag` provide metadata needed for
-/// memory management operations.
-pub trait Traceable: 'static {
-    /// Trace all references in this object
+pub trait Traceable {
+    /// Trace all references contained in this object
     fn trace(&self, visitor: &mut dyn Visitor);
-
-    /// Get the size of this object in bytes
+    
+    /// Get the memory size of this object
     fn size(&self) -> usize;
-
-    /// Get the type tag for this object
+    
+    /// Get the object tag
     fn tag(&self) -> Tag;
     
-    /// Optional finalization method called before the object is collected
-    /// This can be used for cleanup operations like closing files or freeing resources
-    fn finalize(&mut self) {
-        // Default implementation does nothing
-    }
+    /// Called when the object is being finalized during garbage collection
+    /// Default implementation does nothing
+    fn finalize(&mut self) {}
 }
 
-/// Visitor for traversing object graphs during garbage collection
-///
-/// This trait defines the interface for objects that traverse the object graph
-/// during garbage collection's mark phase. Implementations of this trait
-/// visit each reachable object, marking it and its references as live.
+/// Visitor for traversing object graphs
 pub trait Visitor {
     /// Visit a traceable object
     fn visit(&mut self, ptr: NonNull<dyn Traceable>);
-
-    /// Visit with context information (for debugging)
-    fn visit_with_context(&mut self, ptr: NonNull<dyn Traceable>, context: &str);
-
-    /// Visit a pointer by its raw address
-    fn visit_ptr(&mut self, ptr: usize, tag: Tag);
 }
 
-/// Smart pointer for garbage-collected objects
-///
-/// `Gc<T>` is a reference-counted smart pointer that provides safe access
-/// to heap-allocated objects managed by the garbage collector. It automatically
-/// registers and unregisters objects as roots when created and destroyed.
-/// 
-/// This implementation uses a Weak reference to the GarbageCollector to avoid
-/// circular references and potential deadlocks during cleanup.
+/// Extended visitor that supports thread-safe objects
+/// This is separated from the base Visitor to maintain object safety
+pub trait ThreadSafeVisitor: Visitor {
+    /// Visit a thread-safe GC object
+    fn visit_thread_safe<T: Traceable + Send + Sync + 'static>(&mut self, ptr: &ThreadSafeGc<T>);
+}
+
+/// A thread-safe version of Traceable that can be shared across threads
+pub struct ThreadSafeTraceable<T: Traceable>(NonNull<T>);
+
+impl<T: Traceable> ThreadSafeTraceable<T> {
+    /// Create a new thread-safe traceable object
+    pub fn new(ptr: NonNull<T>) -> Self {
+        Self(ptr)
+    }
+    
+    /// Get the inner object
+    pub fn inner(&self) -> &T {
+        unsafe { self.0.as_ref() }
+    }
+    
+    /// Get a mutable reference to the inner object
+    pub unsafe fn inner_mut(&mut self) -> &mut T {
+        self.0.as_mut()
+    }
+}
+
+impl<T: Traceable> Traceable for ThreadSafeTraceable<T> {
+    fn trace(&self, visitor: &mut dyn Visitor) {
+        unsafe { self.0.as_ref().trace(visitor) }
+    }
+    
+    fn size(&self) -> usize {
+        unsafe { self.0.as_ref().size() }
+    }
+    
+    fn tag(&self) -> Tag {
+        unsafe { self.0.as_ref().tag() }
+    }
+}
+
+// Thread-safe traceable is Send + Sync if T is Traceable
+unsafe impl<T: Traceable + Send> Send for ThreadSafeTraceable<T> {}
+unsafe impl<T: Traceable + Sync> Sync for ThreadSafeTraceable<T> {}
+
+/// A garbage collected pointer (non-thread-safe version)
 #[derive(Debug)]
-pub struct Gc<T: Traceable + Clone + Send + Sync + 'static> {
-    ptr: NonNull<T>,
-    gc: StdWeak<GarbageCollector>,
-    _marker: PhantomData<T>,
+pub struct Gc<T: Traceable + 'static> {
+    /// The garbage collector that owns this object
+    gc: Arc<GarbageCollector>,
+    /// The object ID
+    id: usize,
+    /// Phantom data to bind the type parameter
+    _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: Traceable + Clone + Send + Sync + 'static> Gc<T> {
-    /// Create a new Gc reference
-    pub fn new(ptr: NonNull<T>, gc: Arc<GarbageCollector>) -> Self {
-        println!("Gc::new called for {}", std::any::type_name::<T>());
-        let addr = ptr.as_ptr() as usize;
-        println!("Adding root at address 0x{:x}", addr);
+impl<T: Traceable + 'static> Drop for Gc<T> {
+    fn drop(&mut self) {
+        // When the last reference is dropped, remove from the root set
+        self.gc.remove_root(self.id);
+    }
+}
+
+impl<T: Traceable + 'static> Clone for Gc<T> {
+    fn clone(&self) -> Self {
+        // Add another root reference
+        self.gc.add_root(self.id);
         
-        // Try to add to current root scope first
-        if !ROOT_MANAGER.lock().unwrap().add_root(addr) {
-            // If no active scope, add directly to the GC
-            gc.add_root(addr);
-        }
-        println!("Root added successfully");
-
         Self {
-            ptr,
-            gc: Arc::downgrade(&gc), // Use weak reference to avoid circular reference
-            _marker: PhantomData,
+            gc: self.gc.clone(),
+            id: self.id,
+            _phantom: std::marker::PhantomData,
         }
     }
+}
 
-    /// Get a reference to the inner value
-    pub fn inner(&self) -> Option<&T> {
-        unsafe { Some(&*self.ptr.as_ptr()) }
-    }
-
-    /// Get a mutable reference to the inner value
-    pub fn inner_mut(&mut self) -> Option<&mut T> {
-        unsafe { Some(&mut *self.ptr.as_ptr()) }
-    }
-
-    /// Get the raw pointer
-    pub fn as_ptr(&self) -> *mut T {
-        self.ptr.as_ptr()
-    }
-
-    /// Create a weak reference to this object
-    pub fn downgrade(&self) -> weak::Weak<T> {
-        // Try to upgrade the weak reference to get a temporary strong reference
-        if let Some(gc) = self.gc.upgrade() {
-            weak::Weak::new(self.ptr, gc)
-        } else {
-            // This should never happen in practice, but just in case 
-            // create a default GarbageCollector
-            let gc = Arc::new(GarbageCollector::new());
-            weak::Weak::new(self.ptr, gc)
+impl<T: Traceable + 'static> Gc<T> {
+    /// Create a new garbage collected pointer
+    pub(crate) fn new(gc: Arc<GarbageCollector>, id: usize) -> Self {
+        // Add to the root set
+        gc.add_root(id);
+        
+        Self {
+            gc,
+            id,
+            _phantom: std::marker::PhantomData,
         }
     }
     
-    /// Get the GarbageCollector for this object
-    fn gc(&self) -> Option<Arc<GarbageCollector>> {
-        self.gc.upgrade()
+    /// Get a reference to the inner object
+    pub fn inner(&self) -> Option<&T> {
+        // Access the object through the GC
+        self.gc.get_object::<T>(self.id)
+    }
+    
+    /// Get the object ID
+    pub fn id(&self) -> usize {
+        self.id
+    }
+    
+    /// Convert this strong reference to a weak reference
+    pub fn downgrade(&self) -> Weak<T> {
+        Weak::new(&self.gc, self.id)
     }
 }
 
-impl<T: Traceable + Clone + Send + Sync + 'static> Clone for Gc<T> {
-    fn clone(&self) -> Self {
-        // Try to upgrade the weak reference to get a temporary strong reference
-        if let Some(gc) = self.gc.upgrade() {
-            // Register as a new root when cloned
-            let addr = self.ptr.as_ptr() as usize;
-            gc.add_root(addr);
+/// Extension trait for Traceable to get as Any
+trait TraceableAsAny {
+    fn as_any(&self) -> &dyn std::any::Any;
+}
 
-            Self {
-                ptr: self.ptr,
-                gc: Arc::downgrade(&gc),
-                _marker: PhantomData,
-            }
-        } else {
-            // This should never happen in practice, but just in case
-            // create a default GarbageCollector
-            let gc = Arc::new(GarbageCollector::new());
-            let addr = self.ptr.as_ptr() as usize;
-            gc.add_root(addr);
-            
-            Self {
-                ptr: self.ptr,
-                gc: Arc::downgrade(&gc),
-                _marker: PhantomData,
-            }
-        }
+impl<T: Traceable + 'static> TraceableAsAny for T {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
-impl<T: Traceable + Clone + Send + Sync + 'static> Drop for Gc<T> {
-    fn drop(&mut self) {
-        // Try to upgrade the weak reference to get a temporary strong reference
-        if let Some(gc) = self.gc.upgrade() {
-            // Remove from roots when dropped
-            let addr = self.ptr.as_ptr() as usize;
-            
-            // Try to remove from current root scope first
-            if !ROOT_MANAGER.lock().unwrap().remove_root(addr) {
-                // If no active scope, remove directly from GC
-                gc.remove_root(addr);
+// Import std::sync::Arc for GC
+use std::sync::Arc;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+    use std::sync::{Arc, Mutex};
+    
+    #[derive(Debug)]
+    struct TestObject {
+        value: i32,
+        next: RefCell<Option<Gc<TestObject>>>,
+    }
+    
+    impl TestObject {
+        fn new(value: i32) -> Self {
+            Self {
+                value,
+                next: RefCell::new(None),
+            }
+        }
+        
+        fn set_next(&self, next: Gc<TestObject>) {
+            *self.next.borrow_mut() = Some(next);
+        }
+    }
+    
+    impl Traceable for TestObject {
+        fn trace(&self, visitor: &mut dyn Visitor) {
+            if let Some(next) = &*self.next.borrow() {
+                unsafe {
+                    // This would typically point to an actual object instance
+                    // but for testing purposes we're skipping this part
+                    // visitor.visit(NonNull::new_unchecked(...));
+                }
+            }
+        }
+        
+        fn size(&self) -> usize {
+            std::mem::size_of::<Self>()
+        }
+        
+        fn tag(&self) -> Tag {
+            Tag::Object
+        }
+    }
+    
+    #[test]
+    fn test_gc_basic() {
+        let gc = GarbageCollector::new();
+        
+        // Allocate an object
+        let obj = gc.allocate(TestObject::new(42));
+        
+        // Check we can access it
+        assert_eq!(obj.inner().unwrap().value, 42);
+        
+        // Run GC - object should still be accessible
+        gc.collect_garbage();
+        assert_eq!(obj.inner().unwrap().value, 42);
+        
+        // Create a weak reference
+        let weak = obj.downgrade();
+        
+        // Drop the strong reference
+        drop(obj);
+        
+        // Run GC - object should be collected
+        gc.collect_garbage();
+        
+        // Weak reference should not be upgradeable
+        assert!(weak.upgrade().is_none());
+    }
+    
+    #[test]
+    fn test_thread_safe_gc_basic() {
+        // Create a thread-safe object
+        #[derive(Debug)]
+        struct ThreadSafeTestObject {
+            value: Mutex<i32>,
+        }
+        
+        impl ThreadSafeTestObject {
+            fn new(value: i32) -> Self {
+                Self {
+                    value: Mutex::new(value),
+                }
             }
             
-            println!("Gc::drop - Removed root 0x{:x}", addr);
-        } else {
-            println!("Gc::drop - GC no longer available, skipping root removal");
+            fn get_value(&self) -> i32 {
+                *self.value.lock().unwrap()
+            }
+            
+            fn set_value(&self, value: i32) {
+                *self.value.lock().unwrap() = value;
+            }
         }
-        // If upgrade fails, the GC is already gone, so no need to remove root
+        
+        impl Traceable for ThreadSafeTestObject {
+            fn trace(&self, _visitor: &mut dyn Visitor) {
+                // No references to trace
+            }
+            
+            fn size(&self) -> usize {
+                std::mem::size_of::<Self>()
+            }
+            
+            fn tag(&self) -> Tag {
+                Tag::Object
+            }
+        }
+        
+        // Must be Send + Sync for ThreadSafeGc
+        unsafe impl Send for ThreadSafeTestObject {}
+        unsafe impl Sync for ThreadSafeTestObject {}
+        
+        // Create a GC
+        let gc = GarbageCollector::new();
+        
+        // Allocate a thread-safe object
+        let obj = gc.allocate_thread_safe(ThreadSafeTestObject::new(42));
+        
+        // Check we can access it
+        assert_eq!(obj.inner().unwrap().get_value(), 42);
+        
+        // Run GC - object should still be accessible
+        gc.collect_garbage();
+        assert_eq!(obj.inner().unwrap().get_value(), 42);
+        
+        // Create a weak reference
+        let weak = obj.downgrade();
+        
+        // Upgrade the weak reference
+        let upgraded = weak.upgrade().unwrap();
+        assert_eq!(upgraded.inner().unwrap().get_value(), 42);
+        
+        // Modify through the upgraded reference
+        upgraded.inner().unwrap().set_value(100);
+        
+        // Original sees the change
+        assert_eq!(obj.inner().unwrap().get_value(), 100);
+        
+        // Drop both strong references
+        drop(obj);
+        drop(upgraded);
+        
+        // Run GC - object should be collected
+        gc.collect_garbage();
+        
+        // Weak reference should not be upgradeable
+        assert!(weak.upgrade().is_none());
     }
 }
