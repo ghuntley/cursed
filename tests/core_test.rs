@@ -12,82 +12,106 @@ mod tests {
     #[test]
     fn test_type_conversions() {
         // Test lit (boolean conversion)
-        let result = stdlib::lit(Object::Integer(0));
-        assert_eq!(result, Object::Boolean(false));
+        let arg = std::rc::Rc::new(Object::Integer(0));
+        let result = stdlib::lit(&[arg]).unwrap();
+        assert_eq!(*result, Object::Boolean(false));
 
-        let result = stdlib::lit(Object::Integer(42));
-        assert_eq!(result, Object::Boolean(true));
+        let arg = std::rc::Rc::new(Object::Integer(42));
+        let result = stdlib::lit(&[arg]).unwrap();
+        assert_eq!(*result, Object::Boolean(true));
 
-        let result = stdlib::lit(Object::String("hello".to_string()));
-        assert_eq!(result, Object::Boolean(true));
+        let arg = std::rc::Rc::new(Object::String("hello".to_string()));
+        let result = stdlib::lit(&[arg]).unwrap();
+        assert_eq!(*result, Object::Boolean(true));
 
-        let result = stdlib::lit(Object::String("".to_string()));
-        assert_eq!(result, Object::Boolean(false));
+        let arg = std::rc::Rc::new(Object::String("".to_string()));
+        let result = stdlib::lit(&[arg]).unwrap();
+        assert_eq!(*result, Object::Boolean(false));
 
         // Test normie (int32 conversion)
-        let result = stdlib::normie(Object::Float(42.7));
-        assert_eq!(result, Object::Integer(42));
+        let arg = std::rc::Rc::new(Object::Float(42.7));
+        let result = stdlib::normie(&[arg]).unwrap();
+        assert_eq!(*result, Object::Integer(42));
 
-        let result = stdlib::normie(Object::Boolean(true));
-        assert_eq!(result, Object::Integer(1));
+        let arg = std::rc::Rc::new(Object::Boolean(true));
+        let result = stdlib::normie(&[arg]).unwrap();
+        assert_eq!(*result, Object::Integer(1));
 
-        let result = stdlib::normie(Object::String("123".to_string()));
-        assert_eq!(result, Object::Integer(123));
+        let arg = std::rc::Rc::new(Object::String("123".to_string()));
+        let result = stdlib::normie(&[arg]).unwrap();
+        assert_eq!(*result, Object::Integer(123));
 
         // Test thicc (int64 conversion)
-        let result = stdlib::thicc(Object::Float(42.7));
-        assert_eq!(result, Object::Integer(42));
+        let arg = std::rc::Rc::new(Object::Float(42.7));
+        let result = stdlib::thicc(&[arg]).unwrap();
+        assert_eq!(*result, Object::Integer(42));
 
         // Test snack (float32 conversion)
-        let result = stdlib::snack(Object::Integer(42));
-        assert!(matches!(result, Object::Float(f) if f == 42.0));
+        let arg = std::rc::Rc::new(Object::Integer(42));
+        let result = stdlib::snack(&[arg]).unwrap();
+        if let Object::Float(f) = &*result {
+            assert_eq!(*f, 42.0);
+        } else {
+            panic!("Expected float");
+        }
 
         // Test meal (float64 conversion)
-        let result = stdlib::meal(Object::Boolean(true));
-        assert!(matches!(result, Object::Float(f) if f == 1.0));
+        let arg = std::rc::Rc::new(Object::Boolean(true));
+        let result = stdlib::meal(&[arg]).unwrap();
+        if let Object::Float(f) = &*result {
+            assert!(f == &1.0);
+        } else {
+            panic!("Expected float");
+        }
 
         // Test tea (string conversion)
-        let result = stdlib::tea(Object::Integer(42));
-        assert_eq!(result, Object::String("42".to_string()));
+        let arg = std::rc::Rc::new(Object::Integer(42));
+        let result = stdlib::tea(&[arg]).unwrap();
+        assert_eq!(*result, Object::String("42".to_string()));
     }
 
     #[test]
     fn test_len_and_cap() {
         // Test len with string
-        let result = stdlib::len(Object::String("hello".to_string()));
-        assert_eq!(result, Object::Integer(5));
+        let string_obj = std::rc::Rc::new(Object::String("hello".to_string()));
+        let result = stdlib::len(&[string_obj]).unwrap();
+        assert_eq!(*result, Object::Integer(5));
 
         // Test len with array
         let array = Object::Array(vec![Object::Integer(1), Object::Integer(2)]);
-        let result = stdlib::len(array.clone());
-        assert_eq!(result, Object::Integer(2));
+        let array_obj = std::rc::Rc::new(array.clone());
+        let result = stdlib::len(&[array_obj]).unwrap();
+        assert_eq!(*result, Object::Integer(2));
 
         // Test cap with array
         let mut vec = Vec::with_capacity(10);
         vec.push(Object::Integer(1));
         vec.push(Object::Integer(2));
         let array = Object::Array(vec);
-        let result = stdlib::cap(array);
-        assert_eq!(result, Object::Integer(10));
+        let array_obj = std::rc::Rc::new(array);
+        let result = stdlib::cap(&[array_obj]).unwrap();
+        assert_eq!(*result, Object::Integer(10));
     }
 
     #[test]
     fn test_append() {
         // Test append with array
-        let original = Object::Array(vec![Object::Integer(1), Object::Integer(2)]);
-        let elems = vec![Object::Integer(3), Object::Integer(4)];
+        let original = std::rc::Rc::new(Object::Array(vec![Object::Integer(1), Object::Integer(2)]));
+        let elem1 = std::rc::Rc::new(Object::Integer(3));
+        let elem2 = std::rc::Rc::new(Object::Integer(4));
         
-        let result = stdlib::append(original.clone(), elems);
+        let args = vec![original.clone(), elem1, elem2];
+        let result = stdlib::append(&args).unwrap();
         
         // Check original is unchanged
-        if let Object::Array(arr) = original {
+        if let Object::Array(arr) = &*original {
             assert_eq!(arr.len(), 2);
         } else {
             panic!("Expected array");
         }
         
         // Check result has all elements
-        if let Object::Array(arr) = result {
+        if let Object::Array(arr) = &*result {
             assert_eq!(arr.len(), 4);
             assert_eq!(arr[0], Object::Integer(1));
             assert_eq!(arr[1], Object::Integer(2));
@@ -101,29 +125,41 @@ mod tests {
     #[test]
     fn test_make() {
         // Test make slice
-        let result = stdlib::make("slice", Some(3), None);
-        if let Object::Array(arr) = result {
+        let type_arg = std::rc::Rc::new(Object::String("slice".to_string()));
+        let size_arg = std::rc::Rc::new(Object::Integer(3));
+        
+        let result = stdlib::make(&[type_arg, size_arg]).unwrap();
+        if let Object::Array(arr) = &*result {
             assert_eq!(arr.len(), 3);
             assert_eq!(arr.capacity(), 3);
             // Check all elements are null
             for elem in arr {
-                assert_eq!(elem, Object::Null);
+                assert_eq!(*elem, Object::Null);
             }
         } else {
             panic!("Expected array");
         }
         
         // Test make with zero size
-        let result = stdlib::make("slice", Some(0), None);
-        if let Object::Array(arr) = result {
+        let type_arg = std::rc::Rc::new(Object::String("slice".to_string()));
+        let size_arg = std::rc::Rc::new(Object::Integer(0));
+        
+        let result = stdlib::make(&[type_arg, size_arg]).unwrap();
+        if let Object::Array(arr) = &*result {
             assert_eq!(arr.len(), 0);
         } else {
             panic!("Expected array");
         }
         
         // Test make map (placeholder implementation)
-        let result = stdlib::make("map", None, None);
-        assert!(matches!(result, Object::Array(arr) if arr.is_empty()));
+        let type_arg = std::rc::Rc::new(Object::String("map".to_string()));
+        
+        let result = stdlib::make(&[type_arg]).unwrap();
+        if let Object::Array(arr) = &*result {
+            assert!(arr.is_empty());
+        } else {
+            panic!("Expected array");
+        }
     }
     
     #[test]
@@ -131,27 +167,43 @@ mod tests {
         // We need to update these tests since the Object::Pointer type doesn't exist
         // Let's just test that we get the right type of values
         
-        let result = stdlib::new("normie");
-        assert!(matches!(result, Object::Integer(0)));
+        let type_arg = std::rc::Rc::new(Object::String("normie".to_string()));
+        let result = stdlib::core_new(&[type_arg]).unwrap();
+        if let Object::Integer(i) = &*result {
+            assert_eq!(*i, 0);
+        } else {
+            panic!("Expected integer");
+        }
         
-        let result = stdlib::new("tea");
-        assert!(matches!(result, Object::String(s) if s.is_empty()));
+        let type_arg = std::rc::Rc::new(Object::String("tea".to_string()));
+        let result = stdlib::core_new(&[type_arg]).unwrap();
+        if let Object::String(s) = &*result {
+            assert!(s.is_empty());
+        } else {
+            panic!("Expected string");
+        }
         
-        let result = stdlib::new("lit");
-        assert!(matches!(result, Object::Boolean(false)));
+        let type_arg = std::rc::Rc::new(Object::String("lit".to_string()));
+        let result = stdlib::core_new(&[type_arg]).unwrap();
+        if let Object::Boolean(b) = &*result {
+            assert_eq!(*b, false);
+        } else {
+            panic!("Expected boolean");
+        }
     }
     
     #[test]
     fn test_panic_and_recover() {
         // Test that panic causes a panic
+        let panic_message = std::rc::Rc::new(Object::String("Test panic".to_string()));
         let result = panic::catch_unwind(AssertUnwindSafe(|| {
-            stdlib::panic(Object::String("Test panic".to_string()));
+            stdlib::panic(&[panic_message]).unwrap();
         }));
         assert!(result.is_err());
         
         // Test recover when not in a panic
-        let result = stdlib::recover();
-        assert_eq!(result, Object::Null);
+        let result = stdlib::recover(&[]).unwrap();
+        assert!(matches!(*result, Object::Null));
         
         // Test recover during a panic is difficult to test directly in unit tests
         // A more complete test would be part of the language integration tests

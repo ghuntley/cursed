@@ -12,6 +12,7 @@
 //! * `strategy`: Different memory management strategies
 //! * `allocator`: Memory allocation utilities
 //! * `channel`: Thread-safe communication channels
+//! * `thread_safe`: Thread-safe wrappers for memory management
 
 pub mod allocator;
 pub mod block;
@@ -30,6 +31,7 @@ pub mod scope;
 pub mod strategy;
 pub mod tagged;
 pub mod test_environment;
+pub mod thread_safe;
 pub mod weak;
 
 // Re-export important types
@@ -40,6 +42,7 @@ pub use gc::MarkState;
 pub use object_storage::{global_object_storage, ObjectStorage, StorageWrapper};
 pub use scope::{with_gc_scope, with_new_gc, with_gc_scope_fn, with_new_gc_fn};
 pub use test_environment::{get_test_gc, is_test_environment, reset_test_environment};
+pub use thread_safe::{ThreadSafePointer, ThreadSafeTraceable};
 pub use weak::weak_registry;
 
 use std::marker::PhantomData;

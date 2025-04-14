@@ -20,6 +20,7 @@ The garbage collector testing now includes:
 5. **Debug Logging**: Enhanced logging to diagnose test failures and hanging issues
 6. **Weak Reference Registry**: Global registry for maintaining GC connections after strong references are dropped
 7. **Mark-Sweep Improvements**: Enhanced mark-and-sweep algorithm with tri-color marking for better cycle detection
+8. **Thread-Safe Implementation**: Added thread-safe wrappers for pointers and traceable objects to ensure Send and Sync compliance
 
 ### Standard Library Testing
 
@@ -56,6 +57,7 @@ Implemented comprehensive tests for the standard library:
 3. **Finalization Ordering**: Objects are finalized in dependency order to prevent use-after-free issues
 4. **Cycle Detection**: The finalization system properly handles circular dependencies
 5. **Thread Safety**: Both systems are implemented in a thread-safe manner with appropriate locking
+6. **Cross-Thread Memory Management**: Added ThreadSafePointer and ThreadSafeTraceable wrappers to allow safely sharing objects between threads
 
 ## Property-Based Testing Module
 

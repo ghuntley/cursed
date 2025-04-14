@@ -21,8 +21,10 @@
 //! - `reflectz`: Runtime reflection (like Go's reflect)
 //! - `htmlrizzler`: HTML templates (like Go's html/template)
 //! - `rizztemplate`: Text templates (like Go's text/template)
+//! - `core`: Core built-in functions (like Go's builtin)
 
 // Export modules as they are implemented
+pub mod core; // Core built-in functions (builtin equivalent)
 pub mod concurrenz; // Synchronization primitives (sync equivalent)
 // Keep disabled version for backward compatibility
 pub mod concurrenz_disabled;
@@ -78,3 +80,7 @@ pub use chadlogging::{Logger, Handler, Record, Attr, TextHandler, JSONHandler,
                     debug, info, warn, error, group, new, default};
 // Character classification exports
 pub use is_uppercase::{is_uppercase, is_lowercase, is_digit, is_alpha, to_uppercase, to_lowercase};
+// Core built-in exports
+pub use core::{lit, normie, thicc, snack, meal, tea, len, cap, append, make, panic, recover};
+// Re-export core::new with a different name to avoid conflict with chadlogging::new
+pub use core::new as core_new;

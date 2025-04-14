@@ -468,13 +468,13 @@ pub fn test_quick_test() -> Result<(), Error> {
     println!("Random string: {}", string_val);
     
     let int_array_val = crate::stdlib::quick_test::int_array(3, 7, 0, 100);
-    println!("Random integer array: {}", int_array_val);
+    println!("Random integer array: {:?}", int_array_val);
     
     let float_val = crate::stdlib::quick_test::float_range(-1.0, 1.0);
     println!("Random float in range [-1.0, 1.0]: {}", float_val);
     
     let hash_map_val = crate::stdlib::quick_test::hash_map(2, 5);
-    println!("Random hash map: {}", hash_map_val);
+    println!("Random hash map: {:?}", hash_map_val);
     
     // Test typed generator
     let string_type_val = crate::stdlib::quick_test::one_of_type("string", 5, 10);
