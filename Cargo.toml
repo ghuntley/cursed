@@ -51,6 +51,8 @@ parking_lot = "0.12"  # Better RwLock implementation with timeout support
 # Glob pattern matching
 glob = "0.3"    # For file path pattern matching
 
+# We removed reqwest dependency since we're using mock HTTP responses only
+
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking
 pretty_assertions = "1.4"  # For nicer test output

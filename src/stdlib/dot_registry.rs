@@ -6,6 +6,7 @@
 
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::rc::Rc;
 use once_cell::sync::Lazy;
 use crate::error::Error;
 use serde_json::{Value, json};
@@ -55,6 +56,9 @@ impl DotRegistry {
     
     /// Initialize standard library dot functions
     fn init_stdlib(&mut self) {
+        // Register reflectz package
+        crate::stdlib::reflectz::register_functions();
+        
         // Register vibez package
         self.register_handler("vibez", "spill", vibez_spill_handler);
         
@@ -64,9 +68,29 @@ impl DotRegistry {
         // Register timez package
         self.register_handler("timez", "Now", timez_now_handler);
 
+        // Register cryptz package
+        self.register_handler("cryptz", "md5sum", cryptz_md5sum_handler);
+        self.register_handler("cryptz", "sha1sum", cryptz_sha1sum_handler);
+        self.register_handler("cryptz", "sha256sum", cryptz_sha256sum_handler);
+        self.register_handler("cryptz", "hmac", cryptz_hmac_handler);
+        self.register_handler("cryptz", "random_bytes", cryptz_random_bytes_handler);
+        
         // Register generic handlers for mathz package
         self.register_generic_handler("mathz", "CalculateArea", mathz_calculate_area_handler);
         self.register_generic_handler("mathz", "ConditionalCalculation", mathz_conditional_calculation_handler);
+        
+        // Register core package functions
+        self.register_handler("core", "len", core_len_handler);
+        self.register_handler("core", "cap", core_cap_handler);
+        self.register_handler("core", "lit", core_lit_handler);
+        self.register_handler("core", "normie", core_normie_handler);
+        self.register_handler("core", "thicc", core_thicc_handler);
+        self.register_handler("core", "snack", core_snack_handler);
+        self.register_handler("core", "meal", core_meal_handler);
+        self.register_handler("core", "tea", core_tea_handler);
+        self.register_handler("core", "append", core_append_handler);
+        self.register_handler("core", "make", core_make_handler);
+        self.register_handler("core", "new", core_new_handler);
     }
     
     /// Register a handler for a dot expression
@@ -425,6 +449,161 @@ fn mathz_conditional_calculation_handler(args: Vec<Value>) -> Result<Value, Erro
     Ok(json!(result))
 }
 
+// Core function handlers
+
+/// Handler for core.len function
+fn core_len_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.len requires one argument"));
+    }
+
+    // For strings, return the string length
+    Ok(args[0].len().to_string())
+}
+
+/// Handler for core.cap function
+fn core_cap_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.cap requires one argument"));
+    }
+
+    // This is a placeholder - in a real implementation, this would
+    // determine the capacity based on the type of the argument
+    Ok(args[0].capacity().to_string())
+}
+
+/// Handler for core.lit function (boolean conversion)
+fn core_lit_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.lit requires one argument"));
+    }
+
+    let value = &args[0];
+    let result = match value.as_str() {
+        "0" | "false" | "False" | "" => "false",
+        _ => "true",
+    };
+
+    Ok(result.to_string())
+}
+
+/// Handler for core.normie function (int32 conversion)
+fn core_normie_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.normie requires one argument"));
+    }
+
+    let value = args[0].parse::<i32>().unwrap_or(0);
+    Ok(value.to_string())
+}
+
+/// Handler for core.thicc function (int64 conversion)
+fn core_thicc_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.thicc requires one argument"));
+    }
+
+    let value = args[0].parse::<i64>().unwrap_or(0);
+    Ok(value.to_string())
+}
+
+/// Handler for core.snack function (float32 conversion)
+fn core_snack_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.snack requires one argument"));
+    }
+
+    let value = args[0].parse::<f32>().unwrap_or(0.0);
+    Ok(value.to_string())
+}
+
+/// Handler for core.meal function (float64 conversion)
+fn core_meal_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.meal requires one argument"));
+    }
+
+    let value = args[0].parse::<f64>().unwrap_or(0.0);
+    Ok(value.to_string())
+}
+
+/// Handler for core.tea function (string conversion)
+fn core_tea_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.tea requires one argument"));
+    }
+
+    // Already a string, just return it
+    Ok(args[0].clone())
+}
+
+/// Handler for core.append function
+fn core_append_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.len() < 2 {
+        return Err(Error::from_str("core.append requires at least two arguments"));
+    }
+
+    // In a real implementation, this would parse the first argument as an array
+    // and append the remaining arguments to it
+    // For this simple handler, we'll just join all the arguments
+    let slice = &args[0];
+    let mut elements = slice.clone();
+    for elem in &args[1..] {
+        elements.push(',');
+        elements.push_str(elem);
+    }
+
+    Ok(format!("[{}]", elements))
+}
+
+/// Handler for core.make function
+fn core_make_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.make requires at least one argument"));
+    }
+
+    let type_name = &args[0];
+    let size = args.get(1).and_then(|s| s.parse::<usize>().ok()).unwrap_or(0);
+
+    match type_name.as_str() {
+        "slice" | "array" => {
+            // Create an array of nulls with the given size
+            let mut nulls = Vec::new();
+            for _ in 0..size {
+                nulls.push("null");
+            }
+            Ok(format!("[{}]", nulls.join(", ")))
+        },
+        "map" => {
+            // Create an empty map
+            Ok("{}".to_string())
+        },
+        "channel" => {
+            // Create a channel representation
+            Ok(format!("channel({})", size))
+        },
+        _ => Err(Error::from_str(&format!("Unsupported type for make: {}", type_name))),
+    }
+}
+
+/// Handler for core.new function
+fn core_new_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("core.new requires one argument"));
+    }
+
+    let type_name = &args[0];
+    match type_name.as_str() {
+        "int" | "normie" => Ok("0".to_string()),
+        "int64" | "thicc" => Ok("0".to_string()),
+        "float32" | "snack" => Ok("0.0".to_string()),
+        "float64" | "meal" => Ok("0.0".to_string()),
+        "string" | "tea" => Ok("\"\"".to_string()),
+        "bool" | "lit" => Ok("false".to_string()),
+        _ => Ok("null".to_string()),
+    }
+}
+
 // Global API functions
 
 /// Global function to check if a dot expression is supported
@@ -514,5 +693,131 @@ pub fn get_methods(type_name: &str) -> Vec<String> {
         registry.methods(type_name)
     } else {
         Vec::new()
+    }
+}
+
+// Cryptz package handlers
+
+/// Handler for cryptz.md5sum function
+fn cryptz_md5sum_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("cryptz.md5sum requires one argument"));
+    }
+    let input = &args[0];
+    
+    // Call the md5sum function from the cryptz module
+    match crate::stdlib::cryptz::md5sum(&[Rc::new(crate::object::Object::String(input.clone()))]) {
+        Ok(result) => {
+            if let crate::object::Object::String(hash) = &*result {
+                Ok(hash.clone())
+            } else {
+                Err(Error::from_str("Unexpected result type from md5sum"))
+            }
+        },
+        Err(e) => Err(e),
+    }
+}
+
+/// Handler for cryptz.sha1sum function
+fn cryptz_sha1sum_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("cryptz.sha1sum requires one argument"));
+    }
+    let input = &args[0];
+    
+    // Call the sha1sum function from the cryptz module
+    match crate::stdlib::cryptz::sha1sum(&[Rc::new(crate::object::Object::String(input.clone()))]) {
+        Ok(result) => {
+            if let crate::object::Object::String(hash) = &*result {
+                Ok(hash.clone())
+            } else {
+                Err(Error::from_str("Unexpected result type from sha1sum"))
+            }
+        },
+        Err(e) => Err(e),
+    }
+}
+
+/// Handler for cryptz.sha256sum function
+fn cryptz_sha256sum_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("cryptz.sha256sum requires one argument"));
+    }
+    let input = &args[0];
+    
+    // Call the sha256sum function from the cryptz module
+    match crate::stdlib::cryptz::sha256sum(&[Rc::new(crate::object::Object::String(input.clone()))]) {
+        Ok(result) => {
+            if let crate::object::Object::String(hash) = &*result {
+                Ok(hash.clone())
+            } else {
+                Err(Error::from_str("Unexpected result type from sha256sum"))
+            }
+        },
+        Err(e) => Err(e),
+    }
+}
+
+/// Handler for cryptz.hmac function
+fn cryptz_hmac_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.len() < 3 {
+        return Err(Error::from_str("cryptz.hmac requires 3 arguments: data, key, and algorithm"));
+    }
+    let data = &args[0];
+    let key = &args[1];
+    let algorithm = &args[2];
+    
+    // Call the hmac function from the cryptz module
+    let hmac_args = vec![
+        Rc::new(crate::object::Object::String(data.clone())),
+        Rc::new(crate::object::Object::String(key.clone())),
+        Rc::new(crate::object::Object::String(algorithm.clone())),
+    ];
+    
+    match crate::stdlib::cryptz::hmac(&hmac_args) {
+        Ok(result) => {
+            if let crate::object::Object::String(hash) = &*result {
+                Ok(hash.clone())
+            } else {
+                Err(Error::from_str("Unexpected result type from hmac"))
+            }
+        },
+        Err(e) => Err(e),
+    }
+}
+
+/// Handler for cryptz.random_bytes function
+fn cryptz_random_bytes_handler(args: Vec<String>) -> Result<String, Error> {
+    if args.is_empty() {
+        return Err(Error::from_str("cryptz.random_bytes requires one argument"));
+    }
+    
+    // Parse the length argument as an integer
+    let length = match args[0].parse::<i64>() {
+        Ok(n) => n,
+        Err(_) => return Err(Error::from_str("cryptz.random_bytes expects an integer length")),
+    };
+    
+    // Call the random_bytes function from the cryptz module
+    match crate::stdlib::cryptz::random_bytes(&[Rc::new(crate::object::Object::Integer(length))]) {
+        Ok(result) => {
+            if let crate::object::Object::Array(bytes) = &*result {
+                // Convert the array to a JSON string representation
+                let bytes_json: Vec<Value> = bytes.iter()
+                    .map(|b| {
+                        if let crate::object::Object::Integer(n) = &*b {
+                            Value::Number(serde_json::Number::from(*n))
+                        } else {
+                            Value::Null
+                        }
+                    })
+                    .collect();
+                
+                Ok(serde_json::to_string(&bytes_json).unwrap_or_else(|_| "[]".to_string()))
+            } else {
+                Err(Error::from_str("Unexpected result type from random_bytes"))
+            }
+        },
+        Err(e) => Err(e),
     }
 }

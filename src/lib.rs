@@ -292,6 +292,7 @@ pub fn run_file(filename: &str) -> Result<(), Error> {
         ("web_vibez_test.csd", "web_vibez_test"),
         ("rizztemplate_test.csd", "rizztemplate_test"),
         ("quick_test_test.csd", "quick_test_test"),
+        ("cryptz_test.csd", "cryptz_test"),
     ];
     
     // Check if we need to run a stdlib test
@@ -337,6 +338,7 @@ pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
         "web_vibez_test" => stdlib_test::test_web_vibez(),
         "rizztemplate_test" => stdlib_test::test_rizztemplate(),
         "quick_test_test" => stdlib_test::test_quick_test(),
+        "cryptz_test" => stdlib_test::test_cryptz(),
         _ => Err(error::Error::from_str(&format!(
             "Unknown stdlib test: {}",
             test_name

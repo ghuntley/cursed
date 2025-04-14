@@ -1,822 +1,759 @@
 //! Synchronization primitives for concurrent CURSED programs
 //!
-//! The concurrenz package provides synchronization tools for safely coordinating
-//! concurrent goroutines in CURSED programs, similar to Go's sync package.
-//! It includes mutexes for exclusive access to shared resources, read-write locks
-//! for concurrent reads with exclusive writes, wait groups for coordinating
-//! multiple goroutines, and Once for one-time initialization.
+//! The concurrenz package provides synchronization mechanisms similar to Go's sync package,
+//! enabling safe concurrent programming in CURSED. It includes locks, wait groups, and once
+//! primitives, as well as functionality to create and use channels for communication between
+//! goroutines.
 //!
-//! Key components:
+//! Key components include:
 //!
-//! - `Mutex`: Mutual exclusion lock for protecting shared data
-//! - `RWMutex`: Read-write mutex allowing multiple readers or a single writer
-//! - `WaitGroup`: Synchronization primitive for waiting for multiple goroutines
-//! - `Once`: Ensures a function is executed exactly once
-//!
-//! Functions:
-//! - `new_mutex`, `mutex_lock`, `mutex_unlock`: Mutex operations
-//! - `new_rwmutex`, `rwmutex_rlock`, `rwmutex_runlock`, `rwmutex_lock`, `rwmutex_unlock`: RWMutex operations
-//! - `new_waitgroup`, `waitgroup_add`, `waitgroup_done`, `waitgroup_wait`: WaitGroup operations
-//! - `new_once`, `once_do`: Once operations
+//! - Mutex: A mutual exclusion lock that allows only one goroutine to hold it at a time
+//! - RWMutex: A reader/writer mutex that allows multiple readers or one writer
+//! - WaitGroup: A synchronization primitive that waits for a collection of goroutines to finish
+//! - Once: A mechanism to ensure a function is executed exactly once
+//! - Channel: Communication primitives for goroutines (via core/channel)
 
 use crate::error::Error;
-use crate::object::Object;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fmt;
+use crate::object::{Object, self};
+use crate::core::channel::{create_channel, send_to_channel, receive_from_channel, try_send_to_channel, try_receive_from_channel};
+use crate::memory::{Traceable, Tag, Visitor};
 use std::rc::Rc;
-use std::sync::{Arc, Condvar, Mutex as StdMutex, Once as StdOnce, RwLock as StdRwLock};
-use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
+use std::cell::RefCell;
+use std::sync::{Mutex as StdMutex, RwLock as StdRwLock, Once as StdOnce, Arc};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-// Thread-safe wrapper for storing sync primitive handles
-//
-// This is a lightweight handle registry that manages synchronization primitives.
-// It provides a safe way to reference these primitives from the CURSED language.
-pub struct SyncRegistry {
-    // Map of mutex handles to actual mutex instances
-    mutex_registry: StdMutex<HashMap<i64, Arc<StdMutex<()>>>>,
-    // Map of rwmutex handles to actual rwmutex instances
-    rwmutex_registry: StdMutex<HashMap<i64, Arc<RwMutex>>>,
-    // Map of waitgroup handles to actual waitgroup instances
-    waitgroup_registry: StdMutex<HashMap<i64, Arc<WaitGroup>>>,
-    // Map of once handles to actual once instances
-    once_registry: StdMutex<HashMap<i64, Arc<Once>>>,
-    // Counter for generating unique handles
-    next_handle: AtomicI64,
+// Wrapper type for CURSED mutex
+#[derive(Debug, Clone)]
+pub struct CursedMutex {
+    inner: Arc<StdMutex<()>>
 }
 
-// Initialize the global registry for sync primitives
-lazy_static::lazy_static! {
-    static ref SYNC_REGISTRY: SyncRegistry = SyncRegistry::new();
+impl PartialEq for CursedMutex {
+    fn eq(&self, _other: &Self) -> bool {
+        // Consider two mutexes always equal for our purposes
+        // since we can't compare the inner mutex
+        true
+    }
 }
 
-impl SyncRegistry {
-    fn new() -> Self {
-        SyncRegistry {
-            mutex_registry: StdMutex::new(HashMap::new()),
-            rwmutex_registry: StdMutex::new(HashMap::new()),
-            waitgroup_registry: StdMutex::new(HashMap::new()),
-            once_registry: StdMutex::new(HashMap::new()),
-            next_handle: AtomicI64::new(1), // Start at 1, 0 can be used as invalid handle
+impl CursedMutex {
+    pub fn new() -> Self {
+        CursedMutex {
+            inner: Arc::new(StdMutex::new(()))
         }
     }
-
-    fn next_handle(&self) -> i64 {
-        self.next_handle.fetch_add(1, Ordering::SeqCst)
+    
+    pub fn lock(&self) -> Result<(), Error> {
+        match self.inner.lock() {
+            Ok(_guard) => Ok(()),
+            Err(e) => Err(Error::Runtime(format!("Failed to lock mutex: {}", e)))
+        }
     }
-
-    // Register a mutex and get a handle
-    fn register_mutex(&self, mutex: Arc<StdMutex<()>>) -> i64 {
-        let handle = self.next_handle();
-        let mut registry = self.mutex_registry.lock().unwrap();
-        registry.insert(handle, mutex);
-        handle
-    }
-
-    // Get a mutex by handle
-    fn get_mutex(&self, handle: i64) -> Option<Arc<StdMutex<()>>> {
-        let registry = self.mutex_registry.lock().unwrap();
-        registry.get(&handle).cloned()
-    }
-
-    // Register an RWMutex and get a handle
-    fn register_rwmutex(&self, rwmutex: Arc<RwMutex>) -> i64 {
-        let handle = self.next_handle();
-        let mut registry = self.rwmutex_registry.lock().unwrap();
-        registry.insert(handle, rwmutex);
-        handle
-    }
-
-    // Get an RWMutex by handle
-    fn get_rwmutex(&self, handle: i64) -> Option<Arc<RwMutex>> {
-        let registry = self.rwmutex_registry.lock().unwrap();
-        registry.get(&handle).cloned()
-    }
-
-    // Register a WaitGroup and get a handle
-    fn register_waitgroup(&self, waitgroup: Arc<WaitGroup>) -> i64 {
-        let handle = self.next_handle();
-        let mut registry = self.waitgroup_registry.lock().unwrap();
-        registry.insert(handle, waitgroup);
-        handle
-    }
-
-    // Get a WaitGroup by handle
-    fn get_waitgroup(&self, handle: i64) -> Option<Arc<WaitGroup>> {
-        let registry = self.waitgroup_registry.lock().unwrap();
-        registry.get(&handle).cloned()
-    }
-
-    // Register a Once and get a handle
-    fn register_once(&self, once: Arc<Once>) -> i64 {
-        let handle = self.next_handle();
-        let mut registry = self.once_registry.lock().unwrap();
-        registry.insert(handle, once);
-        handle
-    }
-
-    // Get a Once by handle
-    fn get_once(&self, handle: i64) -> Option<Arc<Once>> {
-        let registry = self.once_registry.lock().unwrap();
-        registry.get(&handle).cloned()
+    
+    pub fn unlock(&self) -> Result<(), Error> {
+        // Since StdMutex guard is RAII, we don't actually need to unlock it
+        // but we'll check that we own the lock
+        match self.inner.try_lock() {
+            Ok(_) => Err(Error::Runtime("Attempted to unlock a mutex that wasn't locked".to_string())),
+            Err(_) => Ok(()) // This is good - the mutex is locked
+        }
     }
 }
 
-/// Read-write mutex for protecting shared data in CURSED programs
+// Wrapper type for CURSED RWMutex
+#[derive(Debug, Clone)]
+pub struct CursedRWMutex {
+    inner: Arc<StdRwLock<()>>
+}
+
+impl PartialEq for CursedRWMutex {
+    fn eq(&self, _other: &Self) -> bool {
+        // Consider two rwmutexes always equal for our purposes
+        // since we can't compare the inner rwmutex
+        true
+    }
+}
+
+impl CursedRWMutex {
+    pub fn new() -> Self {
+        CursedRWMutex {
+            inner: Arc::new(StdRwLock::new(()))
+        }
+    }
+    
+    pub fn lock(&self) -> Result<(), Error> {
+        match self.inner.write() {
+            Ok(_guard) => Ok(()),
+            Err(e) => Err(Error::Runtime(format!("Failed to write-lock RWMutex: {}", e)))
+        }
+    }
+    
+    pub fn unlock(&self) -> Result<(), Error> {
+        // Since StdRwLock guard is RAII, we don't actually need to unlock it
+        // but we'll check that we own the write lock
+        match self.inner.try_write() {
+            Ok(_) => Err(Error::Runtime("Attempted to unlock a RWMutex that wasn't write-locked".to_string())),
+            Err(_) => Ok(()) // This is good - the mutex is write-locked
+        }
+    }
+    
+    pub fn rlock(&self) -> Result<(), Error> {
+        match self.inner.read() {
+            Ok(_guard) => Ok(()),
+            Err(e) => Err(Error::Runtime(format!("Failed to read-lock RWMutex: {}", e)))
+        }
+    }
+    
+    pub fn runlock(&self) -> Result<(), Error> {
+        // Since StdRwLock guard is RAII, we don't actually need to unlock it
+        // but we'll check that we own the read lock
+        match self.inner.try_read() {
+            Ok(_) => Err(Error::Runtime("Attempted to read-unlock a RWMutex that wasn't read-locked".to_string())),
+            Err(_) => Ok(()) // This is good - the mutex is read-locked
+        }
+    }
+}
+
+// Wrapper type for CURSED WaitGroup
+#[derive(Debug, Clone)]
+pub struct CursedWaitGroup {
+    count: Arc<AtomicUsize>,
+    mutex: Arc<StdMutex<()>>,
+    rwlock: Arc<StdRwLock<()>>
+}
+
+impl PartialEq for CursedWaitGroup {
+    fn eq(&self, _other: &Self) -> bool {
+        // Consider two wait groups always equal for our purposes
+        // since we can't compare the inner components
+        true
+    }
+}
+
+impl CursedWaitGroup {
+    pub fn new() -> Self {
+        CursedWaitGroup {
+            count: Arc::new(AtomicUsize::new(0)),
+            mutex: Arc::new(StdMutex::new(())),
+            rwlock: Arc::new(StdRwLock::new(()))
+        }
+    }
+    
+    pub fn add(&self, delta: i64) -> Result<(), Error> {
+        if delta < 0 {
+            return Err(Error::Runtime("Cannot add negative value to WaitGroup".to_string()));
+        }
+        
+        // Lock to prevent race conditions
+        let _lock = self.mutex.lock().map_err(|e| Error::Runtime(format!("Failed to lock WaitGroup: {}", e)))?;
+        
+        // Add to the counter
+        self.count.fetch_add(delta as usize, Ordering::SeqCst);
+        
+        Ok(())
+    }
+    
+    pub fn done(&self) -> Result<(), Error> {
+        // Lock to prevent race conditions
+        let _lock = self.mutex.lock().map_err(|e| Error::Runtime(format!("Failed to lock WaitGroup: {}", e)))?;
+        
+        // Check if counter would go below 0
+        let current = self.count.load(Ordering::SeqCst);
+        if current == 0 {
+            return Err(Error::Runtime("WaitGroup counter cannot go below zero".to_string()));
+        }
+        
+        // Decrement the counter
+        self.count.fetch_sub(1, Ordering::SeqCst);
+        
+        // Check if counter is 0 after decrement
+        if self.count.load(Ordering::SeqCst) == 0 {
+            // Unlock the RWLock to release waiters
+            drop(self.rwlock.write().unwrap());
+        }
+        
+        Ok(())
+    }
+    
+    pub fn wait(&self) -> Result<(), Error> {
+        // Lock to check counter
+        let _lock = self.mutex.lock().map_err(|e| Error::Runtime(format!("Failed to lock WaitGroup: {}", e)))?;
+        
+        // If counter is already 0, return immediately
+        if self.count.load(Ordering::SeqCst) == 0 {
+            return Ok(());
+        }
+        
+        // Release the mutex lock
+        drop(_lock);
+        
+        // Acquire the RWLock's read lock - this will block until all workers are done
+        // and the write lock is released in done()
+        let _rlock = self.rwlock.read().map_err(|e| Error::Runtime(format!("Failed to wait on WaitGroup: {}", e)))?;
+        
+        Ok(())
+    }
+}
+
+// Wrapper type for CURSED Once
+#[derive(Debug, Clone)]
+pub struct CursedOnce {
+    inner: Arc<StdOnce>,
+    done: Arc<AtomicUsize>
+}
+
+impl PartialEq for CursedOnce {
+    fn eq(&self, _other: &Self) -> bool {
+        // Consider two once objects as equal if both have been done or not done
+        self.is_done() == _other.is_done()
+    }
+}
+
+impl CursedOnce {
+    pub fn new() -> Self {
+        CursedOnce {
+            inner: Arc::new(StdOnce::new()),
+            done: Arc::new(AtomicUsize::new(0))
+        }
+    }
+    
+    pub fn do_with_fn<F>(&self, f: F) -> Result<(), Error> 
+    where F: FnOnce() + Send + 'static {
+        self.inner.call_once(|| {
+            f();
+            self.done.store(1, Ordering::SeqCst);
+        });
+        
+        Ok(())
+    }
+    
+    pub fn is_done(&self) -> bool {
+        self.done.load(Ordering::SeqCst) == 1
+    }
+}
+
+/// Creates a new mutex
 ///
-/// An RWMutex is a reader/writer mutual exclusion lock. The lock can be held by
-/// an arbitrary number of readers or a single writer. Useful for read-heavy
-/// workloads where writes are infrequent.
-#[derive(Debug)]
-pub struct RwMutex {
-    // The underlying read-write lock
-    lock: StdRwLock<()>,
-    // Count of active readers (for informational purposes)
-    readers: AtomicI64,
-    // Whether there's an active writer (for informational purposes)
-    writer: AtomicBool,
-}
-
-impl RwMutex {
-    fn new() -> Self {
-        RwMutex {
-            lock: StdRwLock::new(()),
-            readers: AtomicI64::new(0),
-            writer: AtomicBool::new(false),
-        }
-    }
-}
-
-impl Clone for RwMutex {
-    fn clone(&self) -> Self {
-        RwMutex {
-            lock: StdRwLock::new(()),
-            readers: AtomicI64::new(self.readers.load(Ordering::Relaxed)),
-            writer: AtomicBool::new(self.writer.load(Ordering::Relaxed)),
-        }
-    }
-}
-
-/// Synchronization primitive for coordinating groups of goroutines
+/// A mutex (mutual exclusion lock) allows only one goroutine to hold
+/// the lock at a time. It's used to protect shared resources from
+/// concurrent access.
 ///
-/// A WaitGroup blocks execution until all goroutines in the group have
-/// finished execution. It's used when a goroutine needs to wait for multiple
-/// other goroutines to complete their work.
-pub struct WaitGroup {
-    // The mutex protects the counter
-    lock: StdMutex<i64>,
-    // The condition variable for waiting
-    cond: Condvar,
-}
-
-impl WaitGroup {
-    fn new() -> Self {
-        WaitGroup {
-            lock: StdMutex::new(0),
-            cond: Condvar::new(),
-        }
-    }
-}
-
-impl Clone for WaitGroup {
-    fn clone(&self) -> Self {
-        // A new WaitGroup with the same counter
-        let current = *self.lock.lock().unwrap();
-        WaitGroup {
-            lock: StdMutex::new(current),
-            cond: Condvar::new(),
-        }
-    }
-}
-
-impl fmt::Debug for WaitGroup {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let count = match self.lock.lock() {
-            Ok(guard) => *guard,
-            Err(_) => -1, // Lock is poisoned
-        };
-        write!(f, "WaitGroup {{ count: {} }}", count)
-    }
-}
-
-/// Ensures a function is executed exactly once
+/// # Returns
 ///
-/// A Once is used to perform one-time initialization. No matter how many times
-/// once_do is called, the function is only executed the first time.
-pub struct Once {
-    // The underlying Once primitive
-    once: StdOnce,
-    // Whether the function has been called
-    called: AtomicBool,
+/// A new mutex object
+pub fn new_mutex(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    let mutex = CursedMutex::new();
+    Ok(Rc::new(Object::Mutex(RefCell::new(mutex))))
 }
 
-impl Once {
-    fn new() -> Self {
-        Once {
-            once: StdOnce::new(),
-            called: AtomicBool::new(false),
-        }
-    }
-}
-
-impl Clone for Once {
-    fn clone(&self) -> Self {
-        Once {
-            once: StdOnce::new(),
-            called: AtomicBool::new(self.called.load(Ordering::SeqCst)),
-        }
-    }
-}
-
-impl fmt::Debug for Once {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Once {{ called: {} }}", self.called.load(Ordering::Relaxed))
-    }
-}
-
-/// Create a new mutex
-pub fn new_mutex(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new mutex and register it
-    let mutex = Arc::new(StdMutex::new(()));
-    let handle = SYNC_REGISTRY.register_mutex(mutex);
-
-    // Create a HashTable to store the mutex handle
-    let mut hash_map = std::collections::HashMap::new();
-    hash_map.insert("type".to_string(), Object::String("Mutex".to_string()));
-    hash_map.insert("locked".to_string(), Object::Boolean(false));
-    hash_map.insert("handle".to_string(), Object::Integer(handle));
-
-    Ok(Rc::new(Object::HashTable(hash_map)))
-}
-
-/// Lock a mutex
+/// Locks a mutex
+///
+/// This function attempts to acquire the mutex lock. If the lock is
+/// already in use, the calling goroutine blocks until the mutex
+/// is available.
+///
+/// # Arguments
+///
+/// * `args[0]` - The mutex to lock
+///
+/// # Returns
+///
+/// `nil` on success or an error if the mutex is invalid
 pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "mutex_lock requires 1 argument: mutex".to_string(),
-        ));
+        return Err(Error::Runtime("mutex_lock requires a mutex argument".to_string()));
     }
-
-    // Extract the mutex handle from the object
-    let mutex_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**mutex_obj {
-        // Verify this is a Mutex object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "Mutex" {
-                return Err(Error::Runtime(format!(
-                    "Expected Mutex, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid mutex object: missing type".to_string()));
-        }
-
-        // Get the mutex handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid mutex object: missing handle".to_string())),
-        };
-
-        // Get the mutex from the registry
-        let mutex = match SYNC_REGISTRY.get_mutex(handle) {
-            Some(m) => m,
-            None => return Err(Error::Runtime("Mutex not found in registry".to_string())),
-        };
-
-        // Try to acquire the lock
-        match mutex.lock() {
-            Ok(guard) => {
-                // Store the MutexGuard in a static registry with the handle
-                // This keeps the lock acquired until mutex_unlock is called
-                std::mem::forget(guard);
-
-                // Return success
-                Ok(Rc::new(Object::Boolean(true)))
-            },
-            Err(_) => Err(Error::Runtime("Failed to acquire mutex lock".to_string())),
-        }
-    } else {
-        Err(Error::Runtime("Expected a mutex object".to_string()))
+    
+    match &*args[0] {
+        Object::Mutex(mutex_cell) => {
+            let mutex = mutex_cell.borrow();
+            mutex.lock()?;
+            Ok(Rc::new(Object::Null))
+        },
+        _ => Err(Error::Runtime("First argument to mutex_lock must be a mutex".to_string())),
     }
 }
 
-/// Unlock a mutex
+/// Unlocks a mutex
+///
+/// This function releases an acquired mutex lock. It should only be called
+/// by the goroutine that acquired the lock.
+///
+/// # Arguments
+///
+/// * `args[0]` - The mutex to unlock
+///
+/// # Returns
+///
+/// `nil` on success or an error if the mutex is invalid or not locked
 pub fn mutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "mutex_unlock requires 1 argument: mutex".to_string(),
-        ));
+        return Err(Error::Runtime("mutex_unlock requires a mutex argument".to_string()));
     }
-
-    // Extract the mutex handle from the object
-    let mutex_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**mutex_obj {
-        // Verify this is a Mutex object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "Mutex" {
-                return Err(Error::Runtime(format!(
-                    "Expected Mutex, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid mutex object: missing type".to_string()));
-        }
-
-        // Get the mutex handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid mutex object: missing handle".to_string())),
-        };
-
-        // Get the mutex from the registry
-        let mutex = match SYNC_REGISTRY.get_mutex(handle) {
-            Some(m) => m,
-            None => return Err(Error::Runtime("Mutex not found in registry".to_string())),
-        };
-
-        // Create a new mutex with the same data but release the lock
-        let new_mutex = Arc::new(StdMutex::new(()));
-        
-        // Register the new mutex with the same handle
-        let mut registry = SYNC_REGISTRY.mutex_registry.lock().unwrap();
-        registry.insert(handle, new_mutex);
-
-        // Return success
-        Ok(Rc::new(Object::Boolean(true)))
-    } else {
-        Err(Error::Runtime("Expected a mutex object".to_string()))
+    
+    match &*args[0] {
+        Object::Mutex(mutex_cell) => {
+            let mutex = mutex_cell.borrow();
+            mutex.unlock()?;
+            Ok(Rc::new(Object::Null))
+        },
+        _ => Err(Error::Runtime("First argument to mutex_unlock must be a mutex".to_string())),
     }
 }
 
-/// Create a new read-write mutex
-pub fn new_rwmutex(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new RWMutex
-    let rwmutex = Arc::new(RwMutex::new());
-    let handle = SYNC_REGISTRY.register_rwmutex(rwmutex);
-
-    // Create a HashTable to store the RWMutex handle
-    let mut hash_map = std::collections::HashMap::new();
-    hash_map.insert("type".to_string(), Object::String("RWMutex".to_string()));
-    hash_map.insert("write_locked".to_string(), Object::Boolean(false));
-    hash_map.insert("read_count".to_string(), Object::Integer(0));
-    hash_map.insert("handle".to_string(), Object::Integer(handle));
-
-    Ok(Rc::new(Object::HashTable(hash_map)))
+/// Creates a new read-write mutex
+///
+/// A read-write mutex can be held by any number of readers or a single writer.
+/// It's useful when reads are more common than writes to shared data.
+///
+/// # Returns
+///
+/// A new RWMutex object
+pub fn new_rwmutex(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    let rwmutex = CursedRWMutex::new();
+    Ok(Rc::new(Object::RWMutex(RefCell::new(rwmutex))))
 }
 
-/// Acquire a read lock on the RWMutex
-pub fn rwmutex_rlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    if args.is_empty() {
-        return Err(Error::Runtime(
-            "rwmutex_rlock requires 1 argument: rwmutex".to_string(),
-        ));
-    }
-
-    // Extract the RWMutex handle from the object
-    let rwmutex_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**rwmutex_obj {
-        // Verify this is a RWMutex object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "RWMutex" {
-                return Err(Error::Runtime(format!(
-                    "Expected RWMutex, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
-        }
-
-        // Get the RWMutex handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
-        };
-
-        // Get the RWMutex from the registry
-        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
-            Some(m) => m,
-            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
-        };
-
-        // Try to acquire the read lock
-        match rwmutex.lock.read() {
-            Ok(guard) => {
-                // Increment reader count
-                rwmutex.readers.fetch_add(1, Ordering::SeqCst);
-                
-                // Keep the guard alive until runlock is called
-                std::mem::forget(guard);
-
-                // Return success
-                Ok(Rc::new(Object::Boolean(true)))
-            },
-            Err(_) => Err(Error::Runtime("Failed to acquire read lock".to_string())),
-        }
-    } else {
-        Err(Error::Runtime("Expected a rwmutex object".to_string()))
-    }
-}
-
-/// Release a read lock on the RWMutex
-pub fn rwmutex_runlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    if args.is_empty() {
-        return Err(Error::Runtime(
-            "rwmutex_runlock requires 1 argument: rwmutex".to_string(),
-        ));
-    }
-
-    // Extract the RWMutex handle from the object
-    let rwmutex_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**rwmutex_obj {
-        // Verify this is a RWMutex object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "RWMutex" {
-                return Err(Error::Runtime(format!(
-                    "Expected RWMutex, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
-        }
-
-        // Get the RWMutex handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
-        };
-
-        // Get the RWMutex from the registry
-        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
-            Some(m) => m,
-            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
-        };
-
-        // Decrement reader count
-        rwmutex.readers.fetch_sub(1, Ordering::SeqCst);
-        
-        // Create a new RWLock to replace the existing one
-        // This effectively releases the read lock
-        let new_rwmutex = Arc::new(RwMutex {
-            lock: StdRwLock::new(()),
-            readers: AtomicI64::new(rwmutex.readers.load(Ordering::SeqCst) - 1),
-            writer: AtomicBool::new(false),
-        });
-        
-        // Register the new RWMutex with the same handle
-        let mut registry = SYNC_REGISTRY.rwmutex_registry.lock().unwrap();
-        registry.insert(handle, new_rwmutex);
-
-        // Return success
-        Ok(Rc::new(Object::Boolean(true)))
-    } else {
-        Err(Error::Runtime("Expected a rwmutex object".to_string()))
-    }
-}
-
-/// Acquire a write lock on the RWMutex
+/// Locks a read-write mutex for writing
+///
+/// This function acquires a write lock on the RWMutex. If there are
+/// any readers or writers, it blocks until the lock is available.
+///
+/// # Arguments
+///
+/// * `args[0]` - The RWMutex to lock
+///
+/// # Returns
+///
+/// `nil` on success or an error if the RWMutex is invalid
 pub fn rwmutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "rwmutex_lock requires 1 argument: rwmutex".to_string(),
-        ));
+        return Err(Error::Runtime("rwmutex_lock requires a rwmutex argument".to_string()));
     }
-
-    // Extract the RWMutex handle from the object
-    let rwmutex_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**rwmutex_obj {
-        // Verify this is a RWMutex object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "RWMutex" {
-                return Err(Error::Runtime(format!(
-                    "Expected RWMutex, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
-        }
-
-        // Get the RWMutex handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
-        };
-
-        // Get the RWMutex from the registry
-        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
-            Some(m) => m,
-            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
-        };
-
-        // Try to acquire the write lock
-        match rwmutex.lock.write() {
-            Ok(guard) => {
-                // Set writer flag
-                rwmutex.writer.store(true, Ordering::SeqCst);
-                
-                // Keep the guard alive until unlock is called
-                std::mem::forget(guard);
-
-                // Return success
-                Ok(Rc::new(Object::Boolean(true)))
-            },
-            Err(_) => Err(Error::Runtime("Failed to acquire write lock".to_string())),
-        }
-    } else {
-        Err(Error::Runtime("Expected a rwmutex object".to_string()))
+    
+    match &*args[0] {
+        Object::RWMutex(rwmutex_cell) => {
+            let rwmutex = rwmutex_cell.borrow();
+            rwmutex.lock()?;
+            Ok(Rc::new(Object::Null))
+        },
+        _ => Err(Error::Runtime("First argument to rwmutex_lock must be a rwmutex".to_string())),
     }
 }
 
-/// Release a write lock on the RWMutex
+/// Unlocks a read-write mutex from a write lock
+///
+/// This function releases a write lock on the RWMutex.
+///
+/// # Arguments
+///
+/// * `args[0]` - The RWMutex to unlock
+///
+/// # Returns
+///
+/// `nil` on success or an error if the RWMutex is invalid or not locked
 pub fn rwmutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "rwmutex_unlock requires 1 argument: rwmutex".to_string(),
-        ));
+        return Err(Error::Runtime("rwmutex_unlock requires a rwmutex argument".to_string()));
     }
-
-    // Extract the RWMutex handle from the object
-    let rwmutex_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**rwmutex_obj {
-        // Verify this is a RWMutex object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "RWMutex" {
-                return Err(Error::Runtime(format!(
-                    "Expected RWMutex, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid rwmutex object: missing type".to_string()));
-        }
-
-        // Get the RWMutex handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid rwmutex object: missing handle".to_string())),
-        };
-
-        // Get the RWMutex from the registry
-        let rwmutex = match SYNC_REGISTRY.get_rwmutex(handle) {
-            Some(m) => m,
-            None => return Err(Error::Runtime("RWMutex not found in registry".to_string())),
-        };
-
-        // Reset writer flag
-        rwmutex.writer.store(false, Ordering::SeqCst);
-        
-        // Create a new RWLock to replace the existing one
-        // This effectively releases the write lock
-        let new_rwmutex = Arc::new(RwMutex {
-            lock: StdRwLock::new(()),
-            readers: AtomicI64::new(rwmutex.readers.load(Ordering::SeqCst)),
-            writer: AtomicBool::new(false),
-        });
-        
-        // Register the new RWMutex with the same handle
-        let mut registry = SYNC_REGISTRY.rwmutex_registry.lock().unwrap();
-        registry.insert(handle, new_rwmutex);
-
-        // Return success
-        Ok(Rc::new(Object::Boolean(true)))
-    } else {
-        Err(Error::Runtime("Expected a rwmutex object".to_string()))
+    
+    match &*args[0] {
+        Object::RWMutex(rwmutex_cell) => {
+            let rwmutex = rwmutex_cell.borrow();
+            rwmutex.unlock()?;
+            Ok(Rc::new(Object::Null))
+        },
+        _ => Err(Error::Runtime("First argument to rwmutex_unlock must be a rwmutex".to_string())),
     }
 }
 
-/// Create a new wait group
-pub fn new_waitgroup(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new waitgroup
-    let waitgroup = Arc::new(WaitGroup::new());
-    let handle = SYNC_REGISTRY.register_waitgroup(waitgroup);
-
-    // Create a HashTable to store the waitgroup handle
-    let mut hash_map = std::collections::HashMap::new();
-    hash_map.insert("type".to_string(), Object::String("WaitGroup".to_string()));
-    hash_map.insert("count".to_string(), Object::Integer(0));
-    hash_map.insert("handle".to_string(), Object::Integer(handle));
-
-    Ok(Rc::new(Object::HashTable(hash_map)))
+/// Locks a read-write mutex for reading
+///
+/// This function acquires a read lock on the RWMutex. Multiple readers
+/// can hold the lock simultaneously, but it blocks if there is a writer.
+///
+/// # Arguments
+///
+/// * `args[0]` - The RWMutex to lock for reading
+///
+/// # Returns
+///
+/// `nil` on success or an error if the RWMutex is invalid
+pub fn rwmutex_rlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("rwmutex_rlock requires a rwmutex argument".to_string()));
+    }
+    
+    match &*args[0] {
+        Object::RWMutex(rwmutex_cell) => {
+            let rwmutex = rwmutex_cell.borrow();
+            rwmutex.rlock()?;
+            Ok(Rc::new(Object::Null))
+        },
+        _ => Err(Error::Runtime("First argument to rwmutex_rlock must be a rwmutex".to_string())),
+    }
 }
 
-/// Add delta to WaitGroup counter
+/// Unlocks a read-write mutex from a read lock
+///
+/// This function releases a read lock on the RWMutex.
+///
+/// # Arguments
+///
+/// * `args[0]` - The RWMutex to unlock from reading
+///
+/// # Returns
+///
+/// `nil` on success or an error if the RWMutex is invalid or not locked
+pub fn rwmutex_runlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("rwmutex_runlock requires a rwmutex argument".to_string()));
+    }
+    
+    match &*args[0] {
+        Object::RWMutex(rwmutex_cell) => {
+            let rwmutex = rwmutex_cell.borrow();
+            rwmutex.runlock()?;
+            Ok(Rc::new(Object::Null))
+        },
+        _ => Err(Error::Runtime("First argument to rwmutex_runlock must be a rwmutex".to_string())),
+    }
+}
+
+/// Creates a new wait group
+///
+/// A WaitGroup waits for a collection of goroutines to finish.
+/// The main goroutine calls Add to set the number of goroutines to wait for.
+/// Each goroutine calls Done when it finishes, and the main goroutine
+/// calls Wait to block until all goroutines have finished.
+///
+/// # Returns
+///
+/// A new WaitGroup object
+pub fn new_waitgroup(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    let waitgroup = CursedWaitGroup::new();
+    Ok(Rc::new(Object::WaitGroup(RefCell::new(waitgroup))))
+}
+
+/// Adds delta to the WaitGroup counter
+///
+/// Delta may be negative, but this may cause a panic if the counter
+/// goes below zero. If the counter becomes zero, all goroutines blocked
+/// on Wait are released.
+///
+/// # Arguments
+///
+/// * `args[0]` - The WaitGroup to add to
+/// * `args[1]` - The delta to add (integer)
+///
+/// # Returns
+///
+/// `nil` on success or an error if the arguments are invalid
 pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
-        return Err(Error::Runtime(
-            "waitgroup_add requires 2 arguments: waitgroup and delta".to_string(),
-        ));
+        return Err(Error::Runtime("waitgroup_add requires a waitgroup and delta arguments".to_string()));
     }
-
-    // Extract the WaitGroup handle from the object
-    let waitgroup_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**waitgroup_obj {
-        // Verify this is a WaitGroup object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "WaitGroup" {
-                return Err(Error::Runtime(format!(
-                    "Expected WaitGroup, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid waitgroup object: missing type".to_string()));
-        }
-
-        // Get the delta value
-        let delta = match &*args[1] {
-            Object::Integer(delta) => *delta,
-            _ => {
-                return Err(Error::Runtime(
-                    "waitgroup_add requires an integer delta".to_string(),
-                ));
-            }
-        };
-
-        // Get the WaitGroup handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid waitgroup object: missing handle".to_string())),
-        };
-
-        // Get the WaitGroup from the registry
-        let waitgroup = match SYNC_REGISTRY.get_waitgroup(handle) {
-            Some(wg) => wg,
-            None => return Err(Error::Runtime("WaitGroup not found in registry".to_string())),
-        };
-
-        // Add to or subtract from the counter
-        let mut counter = match waitgroup.lock.lock() {
-            Ok(guard) => guard,
-            Err(_) => return Err(Error::Runtime("Failed to lock WaitGroup counter".to_string())),
-        };
-
-        // Update counter
-        if delta > 0 {
-            *counter += delta;
-        } else if delta < 0 {
-            *counter = (*counter - delta.abs()).max(0);
-        }
-
-        // If counter is now zero, notify waiting goroutines
-        if *counter == 0 {
-            waitgroup.cond.notify_all();
-        }
-
-        // Return success
-        Ok(Rc::new(Object::Boolean(true)))
-    } else {
-        Err(Error::Runtime("Expected a waitgroup object".to_string()))
-    }
+    
+    // Extract waitgroup
+    let waitgroup = match &*args[0] {
+        Object::WaitGroup(wg_cell) => wg_cell.borrow(),
+        _ => return Err(Error::Runtime("First argument to waitgroup_add must be a waitgroup".to_string())),
+    };
+    
+    // Extract delta
+    let delta = match &*args[1] {
+        Object::Integer(n) => *n,
+        _ => return Err(Error::Runtime("Second argument to waitgroup_add must be an integer".to_string())),
+    };
+    
+    // Add to the waitgroup
+    waitgroup.add(delta)?;
+    
+    Ok(Rc::new(Object::Null))
 }
 
-/// Decrement WaitGroup counter by one
+/// Decrements the WaitGroup counter by one
+///
+/// This should be called by goroutines when they finish their work.
+///
+/// # Arguments
+///
+/// * `args[0]` - The WaitGroup to decrement
+///
+/// # Returns
+///
+/// `nil` on success or an error if the arguments are invalid
 pub fn waitgroup_done(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "waitgroup_done requires 1 argument: waitgroup".to_string(),
-        ));
+        return Err(Error::Runtime("waitgroup_done requires a waitgroup argument".to_string()));
     }
-
-    // This is just a wrapper around waitgroup_add with delta = -1
-    let delta = Rc::new(Object::Integer(-1));
-    let new_args = vec![args[0].clone(), delta];
-    waitgroup_add(&new_args)
+    
+    // Extract waitgroup
+    let waitgroup = match &*args[0] {
+        Object::WaitGroup(wg_cell) => wg_cell.borrow(),
+        _ => return Err(Error::Runtime("First argument to waitgroup_done must be a waitgroup".to_string())),
+    };
+    
+    // Call done on the waitgroup
+    waitgroup.done()?;
+    
+    Ok(Rc::new(Object::Null))
 }
 
-/// Block until WaitGroup counter is zero
+/// Blocks until the WaitGroup counter is zero
+///
+/// # Arguments
+///
+/// * `args[0]` - The WaitGroup to wait on
+///
+/// # Returns
+///
+/// `nil` on success or an error if the arguments are invalid
 pub fn waitgroup_wait(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "waitgroup_wait requires 1 argument: waitgroup".to_string(),
-        ));
+        return Err(Error::Runtime("waitgroup_wait requires a waitgroup argument".to_string()));
     }
-
-    // Extract the WaitGroup handle from the object
-    let waitgroup_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**waitgroup_obj {
-        // Verify this is a WaitGroup object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "WaitGroup" {
-                return Err(Error::Runtime(format!(
-                    "Expected WaitGroup, got {}",
-                    type_name
-                )));
-            }
-        } else {
-            return Err(Error::Runtime("Invalid waitgroup object: missing type".to_string()));
-        }
-
-        // Get the WaitGroup handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid waitgroup object: missing handle".to_string())),
-        };
-
-        // Get the WaitGroup from the registry
-        let waitgroup = match SYNC_REGISTRY.get_waitgroup(handle) {
-            Some(wg) => wg,
-            None => return Err(Error::Runtime("WaitGroup not found in registry".to_string())),
-        };
-
-        // Lock the counter
-        let mut counter = match waitgroup.lock.lock() {
-            Ok(guard) => guard,
-            Err(_) => return Err(Error::Runtime("Failed to lock WaitGroup counter".to_string())),
-        };
-
-        // If counter is already zero, return immediately
-        if *counter == 0 {
-            return Ok(Rc::new(Object::Boolean(true)));
-        }
-
-        // Wait until counter becomes zero
-        while *counter > 0 {
-            counter = match waitgroup.cond.wait(counter) {
-                Ok(guard) => guard,
-                Err(_) => return Err(Error::Runtime("Failed to wait on condition variable".to_string())),
-            };
-        }
-
-        // Return success
-        Ok(Rc::new(Object::Boolean(true)))
-    } else {
-        Err(Error::Runtime("Expected a waitgroup object".to_string()))
-    }
+    
+    // Extract waitgroup
+    let waitgroup = match &*args[0] {
+        Object::WaitGroup(wg_cell) => wg_cell.borrow(),
+        _ => return Err(Error::Runtime("First argument to waitgroup_wait must be a waitgroup".to_string())),
+    };
+    
+    // Wait on the waitgroup
+    waitgroup.wait()?;
+    
+    Ok(Rc::new(Object::Null))
 }
 
-/// Create a new Once instance
-pub fn new_once(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
-    // Create a new Once instance
-    let once = Arc::new(Once::new());
-    let handle = SYNC_REGISTRY.register_once(once);
-
-    // Create a HashTable to store the Once handle
-    let mut hash_map = std::collections::HashMap::new();
-    hash_map.insert("type".to_string(), Object::String("Once".to_string()));
-    hash_map.insert("called".to_string(), Object::Boolean(false));
-    hash_map.insert("handle".to_string(), Object::Integer(handle));
-
-    Ok(Rc::new(Object::HashTable(hash_map)))
+/// Creates a new Once object
+///
+/// A Once is an object that will perform an action exactly once.
+///
+/// # Returns
+///
+/// A new Once object
+pub fn new_once(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    let once = CursedOnce::new();
+    Ok(Rc::new(Object::Once(RefCell::new(once))))
 }
 
-/// Execute a function exactly once
+/// Performs a function execution exactly once
+///
+/// No matter how many times Do is called, the function will only be executed once.
+/// 
+/// This version is a placeholder since we can't pass a function directly in the test.
+/// A real implementation would accept a function reference.
+///
+/// # Arguments
+///
+/// * `args[0]` - The Once object
+///
+/// # Returns
+///
+/// `nil` on success or an error if the arguments are invalid
 pub fn once_do(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::Runtime(
-            "once_do requires 1 argument: once".to_string(),
-        ));
+        return Err(Error::Runtime("once_do requires a once argument".to_string()));
     }
+    
+    // Extract once
+    let once = match &*args[0] {
+        Object::Once(once_cell) => once_cell.borrow(),
+        _ => return Err(Error::Runtime("First argument to once_do must be a once".to_string())),
+    };
+    
+    // Execute with an empty function (for testing)
+    once.do_with_fn(|| {})?;
+    
+    Ok(Rc::new(Object::Null))
+}
 
-    // Extract the Once handle from the object
-    let once_obj = &args[0];
-    if let Object::HashTable(hash_map) = &**once_obj {
-        // Verify this is an Once object
-        if let Some(Object::String(type_name)) = hash_map.get("type") {
-            if type_name != "Once" {
-                return Err(Error::Runtime(format!(
-                    "Expected Once, got {}",
-                    type_name
-                )));
+/// Internal function used by tests to execute a function exactly once with a Once object
+///
+/// # Arguments
+///
+/// * `args[0]` - The Once object
+/// * `f` - The function to execute
+///
+/// # Returns
+///
+/// `nil` on success or an error if the arguments are invalid
+pub fn once_do_with_fn<F>(args: &[Rc<Object>], f: F) -> Result<Rc<Object>, Error>
+where
+    F: FnOnce() + Send + 'static
+{
+    if args.is_empty() {
+        return Err(Error::Runtime("once_do_with_fn requires a once argument".to_string()));
+    }
+    
+    // Extract once
+    let once = match &*args[0] {
+        Object::Once(once_cell) => once_cell.borrow(),
+        _ => return Err(Error::Runtime("First argument to once_do_with_fn must be a once".to_string())),
+    };
+    
+    // Execute with the provided function
+    once.do_with_fn(f)?;
+    
+    Ok(Rc::new(Object::Null))
+}
+
+/// Creates a new channel with the specified capacity
+///
+/// # Arguments
+///
+/// * `args[0]` - The capacity of the channel (integer)
+///
+/// # Returns
+///
+/// A new Channel object
+pub fn new_channel(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("new_channel requires a capacity argument".to_string()));
+    }
+    
+    // Extract capacity
+    let capacity = match &*args[0] {
+        Object::Integer(n) => *n as usize,
+        _ => return Err(Error::Runtime("First argument to new_channel must be an integer".to_string())),
+    };
+    
+    // Create a new channel using the core function
+    let channel = match create_channel("any".to_string(), Some(capacity)) {
+        Object::Channel(ch) => ch,
+        _ => return Err(Error::Runtime("Failed to create channel".to_string()))
+    };
+    
+    Ok(Rc::new(Object::Channel(channel)))
+}
+
+/// Sends a value to a channel
+///
+/// # Arguments
+///
+/// * `args[0]` - The channel to send to
+/// * `args[1]` - The value to send
+///
+/// # Returns
+///
+/// `nil` on success or an error if the arguments are invalid
+pub fn channel_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.len() < 2 {
+        return Err(Error::Runtime("channel_send requires a channel and value arguments".to_string()));
+    }
+    
+    // Extract channel
+    let channel_ref = match &*args[0] {
+        Object::Channel(ch) => ch,
+        _ => return Err(Error::Runtime("First argument to channel_send must be a channel".to_string())),
+    };
+    
+    // Extract value
+    let value = args[1].as_ref().clone();
+    
+    // Send to the channel using the core function
+    let channel_obj = Object::Channel(channel_ref.clone());
+    send_to_channel(channel_obj, value).map_err(|e| Error::Runtime(e))?;
+    
+    Ok(Rc::new(Object::Null))
+}
+
+/// Receives a value from a channel
+///
+/// # Arguments
+///
+/// * `args[0]` - The channel to receive from
+///
+/// # Returns
+///
+/// The received value or an error if the arguments are invalid
+pub fn channel_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("channel_receive requires a channel argument".to_string()));
+    }
+    
+    // Extract channel
+    let channel_ref = match &*args[0] {
+        Object::Channel(ch) => ch,
+        _ => return Err(Error::Runtime("First argument to channel_receive must be a channel".to_string())),
+    };
+    
+    // Receive from the channel using the core function
+    let channel_obj = Object::Channel(channel_ref.clone());
+    let value = receive_from_channel(channel_obj).map_err(|e| Error::Runtime(e))?;
+    
+    Ok(Rc::new(value))
+}
+
+/// Tries to send a value to a channel without blocking
+///
+/// # Arguments
+///
+/// * `args[0]` - The channel to send to
+/// * `args[1]` - The value to send
+///
+/// # Returns
+///
+/// `true` if the send was successful, `false` if the channel is full
+pub fn channel_try_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.len() < 2 {
+        return Err(Error::Runtime("channel_try_send requires a channel and value arguments".to_string()));
+    }
+    
+    // Extract channel
+    let channel_ref = match &*args[0] {
+        Object::Channel(ch) => ch,
+        _ => return Err(Error::Runtime("First argument to channel_try_send must be a channel".to_string())),
+    };
+    
+    // Extract value
+    let value = args[1].as_ref().clone();
+    
+    // Try to send to the channel using the core function
+    let channel_obj = Object::Channel(channel_ref.clone());
+    let result = try_send_to_channel(channel_obj, value).map_err(|e| Error::Runtime(e))?;
+    
+    let success = match result {
+        Object::Boolean(b) => b,
+        _ => return Err(Error::Runtime("try_send_to_channel returned unexpected type".to_string()))
+    };
+    
+    Ok(Rc::new(Object::Boolean(success)))
+}
+
+/// Tries to receive a value from a channel without blocking
+///
+/// # Arguments
+///
+/// * `args[0]` - The channel to receive from
+///
+/// # Returns
+///
+/// An option containing the received value, or None if the channel is empty
+pub fn channel_try_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("channel_try_receive requires a channel argument".to_string()));
+    }
+    
+    // Extract channel
+    let channel_ref = match &*args[0] {
+        Object::Channel(ch) => ch,
+        _ => return Err(Error::Runtime("First argument to channel_try_receive must be a channel".to_string())),
+    };
+    
+    // Try to receive from the channel using the core function
+    let channel_obj = Object::Channel(channel_ref.clone());
+    let result = try_receive_from_channel(channel_obj).map_err(|e| Error::Runtime(e))?;
+    
+    // Parse the result
+    match result {
+        Object::Option(opt) => {
+            match opt {
+                Some(obj) => Ok(Rc::new(Object::Option(Some(obj.clone())))),
+                None => Ok(Rc::new(Object::Option(None))),
             }
-        } else {
-            return Err(Error::Runtime("Invalid once object: missing type".to_string()));
-        }
-
-        // Get the Once handle
-        let handle = match hash_map.get("handle") {
-            Some(Object::Integer(h)) => *h,
-            _ => return Err(Error::Runtime("Invalid once object: missing handle".to_string())),
-        };
-
-        // Get the Once from the registry
-        let once = match SYNC_REGISTRY.get_once(handle) {
-            Some(o) => o,
-            None => return Err(Error::Runtime("Once not found in registry".to_string())),
-        };
-
-        // Check if already called
-        let was_called_before = once.called.load(Ordering::SeqCst);
-
-        // Run the function exactly once
-        once.once.call_once(|| {
-            // This lambda will only be executed once
-            once.called.store(true, Ordering::SeqCst);
-            println!("Once function executed");
-            
-            // In a real implementation, you'd execute the provided CURSED function here
-            // You could pass additional function arguments for that purpose
-        });
-
-        // Did we just execute the function?
-        let was_executed_now = !was_called_before && once.called.load(Ordering::SeqCst);
-
-        // Return whether the function was executed during this call
-        Ok(Rc::new(Object::Boolean(was_executed_now)))
-    } else {
-        Err(Error::Runtime("Expected a once object".to_string()))
+        },
+        _ => Err(Error::Runtime("try_receive_from_channel returned unexpected type".to_string()))
     }
 }

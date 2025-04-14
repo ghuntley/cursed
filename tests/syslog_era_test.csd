@@ -1,64 +1,43 @@
-vibe test_syslog_era
+vibe syslog_era_test
 
-yeet "syslog_era"
-yeet "vibez"
-yeet "vibe_life"
+import "vibez"
+import "syslog_era"
 
+// Test the syslog_era package
 slay main() {
     vibez.spill("Testing syslog_era package")
     
-    // Test constants
-    vibez.spill("Syslog facility constants:")
-    vibez.spillf("  KERNEL = %d\n", syslog_era.Kernel)
-    vibez.spillf("  USER_LEVEL = %d\n", syslog_era.UserLevel)
-    vibez.spillf("  LOCAL0 = %d\n", syslog_era.Local0)
-    vibez.spillf("  LOCAL7 = %d\n", syslog_era.Local7)
+    // Create a new syslog writer with specified facility
+    writer := syslog_era.new("syslog_test_app", syslog_era.LOG_USER)
     
-    vibez.spill("Syslog severity constants:")
-    vibez.spillf("  EMERG = %d\n", syslog_era.Emerg)
-    vibez.spillf("  ALERT = %d\n", syslog_era.Alert)
-    vibez.spillf("  INFO = %d\n", syslog_era.Info)
-    vibez.spillf("  DEBUG = %d\n", syslog_era.Debug)
+    // Test sending messages with different priority levels
+    syslog_era.debug(writer, "This is a debug message")
+    syslog_era.info(writer, "This is an info message")
+    syslog_era.warning(writer, "This is a warning message")
+    syslog_era.error(writer, "This is an error message")
+    syslog_era.crit(writer, "This is a critical message")
+    syslog_era.alert(writer, "This is an alert message")
+    syslog_era.emerg(writer, "This is an emergency message")
     
-    // Test Writer mock (without actual server connection)
-    test_writer_mock()
+    // Test log function with custom priority
+    syslog_era.log(writer, syslog_era.LOG_INFO, "Custom log message")
     
-    // Comment out this test unless you have a syslog server running
-    // test_actual_connection()
+    // Test sending formatted message
+    syslog_era.log_formatted(writer, syslog_era.LOG_WARNING, "Warning: %s at %d", "Disk space low", 85)
     
-    vibez.spill("All tests completed successfully!")
-}
-
-// Test the Writer interface without connecting to a real server
-slay test_writer_mock() {
-    vibez.spill("Testing Writer interface (mock)...")
+    // Test operations with local syslog
+    local := syslog_era.new_local("local_test_app", syslog_era.LOG_LOCAL0)
+    syslog_era.info(local, "Message to local syslog")
     
-    // You would need an actual syslog server to test with
-    // For testing, comment out the real connection attempt and use mocks
-    // This demonstrates the API without requiring an actual server
+    // Test getting facility name and priority name
+    facility_name := syslog_era.get_facility_name(syslog_era.LOG_LOCAL7)
+    priority_name := syslog_era.get_priority_name(syslog_era.LOG_CRIT)
+    vibez.spill("Facility LOCAL7 name:", facility_name)
+    vibez.spill("Priority CRIT name:", priority_name)
     
-    vibez.spill("✓ Writer API structure verified")
-}
-
-// Only run this if you have a syslog server available
-slay test_actual_connection() {
-    vibez.spill("Attempting to connect to local syslog server...")
+    // Test closing the writer
+    closed := syslog_era.close(writer)
+    vibez.spill("Writer closed:", closed)
     
-    // This would try to connect to a real syslog server
-    sus writer, err := syslog_era.dial("udp", "localhost:514", 
-                             syslog_era.Local0 | syslog_era.Info, 
-                             "cursed_test")
-    
-    yolo err != cap {
-        vibez.spill("❌ Could not connect to syslog server: ", err)
-        yolo
-    }
-    
-    later writer.close()
-    
-    writer.info("This is a test message from CURSED syslog_era package")
-    writer.warning("This is a warning message")
-    writer.err("This is an error message")
-    
-    vibez.spill("✓ Successfully sent messages to syslog server")
+    vibez.spill("Test completed")
 }

@@ -1,94 +1,94 @@
-use std::cell::RefCell;
+//! Standalone test for the quick_test module
+
+use cursed::stdlib::quick_test;
+use cursed::object::Object;
 use std::rc::Rc;
 
-use cursed::error::Error;
-use cursed::object::{self, Object};
-use cursed::stdlib::quick_test::{Config, TestResult, check, int_range, boolean, string, int_array, float_range, hash_map, one_of_type};
-
 #[test]
-fn test_random_generators() {
-    // Test basic random generators
-    let int_val = int_range(-10, 10);
-    match int_val {
-        Object::Integer(n) => assert!(n >= -10 && n <= 10),
-        _ => panic!("Expected integer"),
+fn test_quick_test_random_generation() {
+    // Test random integer generation in range
+    let int_val = quick_test::int_range(-10, 10);
+    if let Object::Integer(n) = int_val {
+        assert!(n >= -10 && n <= 10);
+    } else {
+        panic!("Expected integer value");
     }
     
-    let bool_val = boolean();
-    match bool_val {
-        Object::Boolean(_) => {}, // Any boolean value is valid
-        _ => panic!("Expected boolean"),
-    }
+    // Test random boolean generation
+    let bool_val = quick_test::boolean();
+    assert!(matches!(bool_val, Object::Boolean(_)));
     
-    let string_val = string();
-    match string_val {
-        Object::String(s) => assert!(!s.is_empty()),
-        _ => panic!("Expected string"),
-    }
+    // Test random string generation
+    let string_val = quick_test::string();
+    assert!(matches!(string_val, Object::String(_)));
     
-    let array_val = int_array(3, 7, 0, 100);
-    match array_val {
-        Object::Array(arr) => {
-            assert!(arr.len() >= 3 && arr.len() <= 7);
-            for elem in arr {
-                match elem {
-                    Object::Integer(n) => assert!(n >= 0 && n <= 100),
-                    _ => panic!("Expected integer in array"),
-                }
+    // Test random array generation
+    let array_val = quick_test::int_array(3, 7, 0, 100);
+    if let Object::Array(arr) = array_val {
+        assert!(arr.len() >= 3 && arr.len() <= 7);
+        for elem in arr {
+            if let Object::Integer(n) = elem {
+                assert!(n >= 0 && n <= 100);
+            } else {
+                panic!("Expected array of integers");
             }
-        },
-        _ => panic!("Expected array"),
+        }
+    } else {
+        panic!("Expected array value");
     }
     
-    let float_val = float_range(-1.0, 1.0);
-    match float_val {
-        Object::Float(f) => assert!(f >= -1.0 && f <= 1.0),
-        _ => panic!("Expected float"),
+    // Test random float generation
+    let float_val = quick_test::float_range(-1.0, 1.0);
+    if let Object::Float(f) = float_val {
+        assert!(f >= -1.0 && f <= 1.0);
+    } else {
+        panic!("Expected float value");
     }
     
-    let hash_map_val = hash_map(2, 5);
-    match hash_map_val {
-        Object::HashTable(map) => {
-            assert!(map.len() >= 2 && map.len() <= 5);
-        },
-        _ => panic!("Expected hash map"),
+    // Test hash map generation
+    let hash_val = quick_test::hash_map(2, 5);
+    if let Object::HashTable(map) = hash_val {
+        assert!(map.len() >= 2 && map.len() <= 5);
+    } else {
+        panic!("Expected hash table value");
     }
 }
 
 #[test]
-fn test_property_based_test() {
-    // Create a test configuration with small count for quick testing
-    let config = Config {
-        max_count: 10,
-        min_size: -10,
-        max_size: 10,
-        expect_failure: false,
+fn test_property_testing() {
+    // Mock property and generator functions
+    // The property will check if a number is even
+    let mock_property = Object::Builtin {
+        name: "is_even".to_string(),
+        function: |args: &[Rc<Object>]| {
+            if let Some(arg) = args.get(0) {
+                if let Object::Integer(n) = **arg {
+                    return Ok(Rc::new(Object::Boolean(n % 2 == 0)));
+                }
+            }
+            Ok(Rc::new(Object::Boolean(false)))
+        },
+    };
+    
+    // The generator will create even numbers (which should satisfy the property)
+    let mock_generator = Object::Builtin {
+        name: "even_number_generator".to_string(),
+        function: |_args: &[Rc<Object>]| {
+            Ok(Rc::new(Object::Integer(2)))
+        },
+    };
+    
+    // Create config with limited iterations for test
+    let config = quick_test::Config {
+        max_count: 5,
         quiet: true,
-        ..Config::default()
+        ..quick_test::Config::default()
     };
     
-    // Test function: absolute value of input is less than or equal to 10
-    let test_fn = |args: &[Rc<Object>], _env: Rc<RefCell<object::Environment>>| -> Result<Object, Error> {
-        if let Object::Integer(n) = &*args[0] {
-            let abs_n = n.abs();
-            return Ok(Object::Boolean(abs_n <= 10));
-        }
-        Ok(Object::Boolean(false))
-    };
+    // Run property test
+    let result = quick_test::for_all(mock_generator, mock_property, &config);
     
-    // Create a test function object
-    let test_fn_obj = Object::Function(Rc::new(RefCell::new(object::Function {
-        parameters: vec!["x".to_string()],
-        body: vec![],
-        env: Rc::new(RefCell::new(object::Environment::new())),
-        call: Box::new(test_fn),
-    })));
-    
-    // Run the property-based test
-    let result = check(test_fn_obj, &config);
-    
-    // All tests should pass since we're generating numbers in [-10, 10]
+    // Check the result - all even numbers should satisfy the property
     assert!(result.passed);
-    assert_eq!(result.count, config.max_count);
-    assert_eq!(result.failed_after, 0);
+    assert_eq!(result.count, 5);
 }

@@ -1,207 +1,205 @@
-use std::rc::Rc;
+use cursed::stdlib::quick_test::*;
 use cursed::object::Object;
-use cursed::prelude::*;
-use cursed::ast::expr;
-use cursed::parser::Parser;
-use cursed::core::interpreter::Interpreter;
+use std::rc::Rc;
+use std::cell::RefCell;
+
+/// Tests for the enhanced features of the quick_test module
 
 #[test]
-fn test_generators() {
-    let code = r#"
-    vibe main
-
-    slay main() {
-        fr Test enhanced generators
-        test_combined_generators()
-        test_one_of_generators()
-        test_specific_type_generators()
-    }
-
-    slay test_combined_generators() {
-        fr Test combined generators
-        
-        fr Combine int_range and boolean generators
-        gen_func := func(size) {
-            num := quick_test.int_range(-size, size)
-            flag := quick_test.boolean()
-            return [num, flag]
-        }
-        
-        vibecheck i := 0; i < 5; i++ {
-            value := quick_test.Generate(null, 10, gen_func)
-            vibez.spill("Combined value:", value)
-            
-            fr Verify value is an array with 2 elements
-            fr First element should be an integer, second a boolean
-            if len(value) != 2 {
-                vibez.spill("Error: Expected array of length 2, got", len(value))
-                return
-            }
-            
-            if typeof(value[0]) != "integer" {
-                vibez.spill("Error: Expected integer, got", typeof(value[0]))
-                return
-            }
-            
-            if typeof(value[1]) != "boolean" {
-                vibez.spill("Error: Expected boolean, got", typeof(value[1]))
-                return
-            }
-        }
-        
-        vibez.spill("Combined generators test passed")
+fn test_state_machine() {
+    // Simple counter model for testing the StateMachine
+    #[derive(Debug, Clone)]
+    struct Counter {
+        value: i64
     }
     
-    slay test_one_of_generators() {
-        fr Test OneOf generator
-        values := ["one", "two", "three", "four", "five"]
-        one_of_gen := quick_test.OneOf(values)
-        
-        vibecheck i := 0; i < 10; i++ {
-            value := quick_test.Generate(null, 0, one_of_gen)
-            vibez.spill("OneOf value:", value)
-            
-            fr Verify value is one of the provided options
-            found := false
-            vibecheck j := 0; j < len(values); j++ {
-                if value == values[j] {
-                    found = true
-                    break
-                }
-            }
-            
-            if !found {
-                vibez.spill("Error: Generated value not in provided options")
-                return
-            }
+    impl Counter {
+        fn new() -> Self {
+            Counter { value: 0 }
         }
         
-        vibez.spill("OneOf generator test passed")
+        fn increment(&mut self) {
+            self.value += 1;
+        }
+        
+        fn reset(&mut self) {
+            self.value = 0;
+        }
+        
+        fn double(&mut self) {
+            self.value *= 2;
+        }
     }
     
-    slay test_specific_type_generators() {
-        fr Test the specific type generators
-        
-        fr Test Int8 generator
-        vibez.spill("\nTesting Int8 generator:")
-        int8_gen := quick_test.Int8()
-        vibecheck i := 0; i < 5; i++ {
-            value := quick_test.Generate(null, 10, int8_gen)
-            vibez.spill(value)
-            
-            fr Verify value is an integer in the Int8 range
-            if typeof(value) != "integer" {
-                vibez.spill("Error: Expected integer, got", typeof(value))
-                return
-            }
-            
-            if value < -128 || value > 127 {
-                vibez.spill("Error: Value outside Int8 range:", value)
-                return
-            }
-        }
-        
-        fr Test Int16 generator
-        vibez.spill("\nTesting Int16 generator:")
-        int16_gen := quick_test.Int16()
-        vibecheck i := 0; i < 5; i++ {
-            value := quick_test.Generate(null, 10, int16_gen)
-            vibez.spill(value)
-            
-            fr Verify value is an integer in the Int16 range
-            if typeof(value) != "integer" {
-                vibez.spill("Error: Expected integer, got", typeof(value))
-                return
-            }
-            
-            if value < -32768 || value > 32767 {
-                vibez.spill("Error: Value outside Int16 range:", value)
-                return
-            }
-        }
-        
-        vibez.spill("Specific type generators test passed")
-    }
-    "#;
-
-    let mut parser = Parser::new(code);
-    let program = parser.parse_program().unwrap();
-    let mut interpreter = Interpreter::new(program);
-    interpreter.run().unwrap();
+    // Create a state machine for the counter
+    let counter = Rc::new(RefCell::new(Counter::new()));
+    let machine = StateMachine::new(counter.clone());
+    
+    // Add increment action
+    machine.add_action("increment", 
+        Box::new(move |state: &Rc<RefCell<Counter>>| {
+            state.borrow_mut().increment();
+            true // Action was successful
+        }),
+        Box::new(|_: &Rc<RefCell<Counter>>| true) // No precondition
+    );
+    
+    // Add reset action
+    machine.add_action("reset", 
+        Box::new(move |state: &Rc<RefCell<Counter>>| {
+            state.borrow_mut().reset();
+            true // Action was successful
+        }),
+        Box::new(|state: &Rc<RefCell<Counter>>| {
+            state.borrow().value > 0 // Only reset if counter is greater than 0
+        })
+    );
+    
+    // Add double action
+    machine.add_action("double", 
+        Box::new(move |state: &Rc<RefCell<Counter>>| {
+            state.borrow_mut().double();
+            true // Action was successful
+        }),
+        Box::new(|state: &Rc<RefCell<Counter>>| {
+            state.borrow().value > 0 // Only double if counter is greater than 0
+        })
+    );
+    
+    // Run the state machine
+    let config = Config::default();
+    let result = machine.run(&config);
+    
+    assert!(result.passed);
+    assert!(result.count > 0);
 }
 
 #[test]
-fn test_check_property() {
-    let code = r#"
-    vibe main
-
-    slay main() {
-        fr Test CheckProperty function
-        test_simple_property()
-        test_complex_property()
+fn test_combine_generators() {
+    // Test the Combine generator that lets us create complex data structures
+    
+    #[derive(Debug, Clone, PartialEq)]
+    struct Person {
+        name: String,
+        age: i64,
     }
+    
+    // Create generators for the name and age
+    let name_gen = string_of_n(1, 20);
+    let age_gen = int_range_gen(0, 120);
+    
+    // Combine them into a Person generator
+    let person_gen = combine(
+        vec![name_gen, age_gen],
+        Box::new(|values| {
+            if values.len() != 2 {
+                return Object::Null;
+            }
+            
+            let name = match &values[0] {
+                Object::String(s) => s.clone(),
+                _ => return Object::Null,
+            };
+            
+            let age = match &values[1] {
+                Object::Integer(i) => *i,
+                _ => return Object::Null,
+            };
+            
+            // Wrap the Person in an Object (this is simplified - in real implementation
+            // we'd need a better way to store custom types)
+            let person = Person { name, age };
+            
+            // For testing purposes, we'll just return the components
+            let mut map = std::collections::HashMap::new();
+            map.insert("name".to_string(), Object::String(person.name));
+            map.insert("age".to_string(), Object::Integer(person.age));
+            Object::HashTable(map)
+        })
+    );
+    
+    // Create a property that checks the generated Person
+    let property = |obj: Object| -> bool {
+        match obj {
+            Object::HashTable(map) => {
+                // Check that we have name and age
+                if !map.contains_key("name") || !map.contains_key("age") {
+                    return false;
+                }
+                
+                // Check that name is not empty
+                match &map["name"] {
+                    Object::String(s) => {
+                        if s.is_empty() {
+                            return false;
+                        }
+                    },
+                    _ => return false,
+                }
+                
+                // Check that age is within range
+                match map["age"] {
+                    Object::Integer(i) => {
+                        if i < 0 || i > 120 {
+                            return false;
+                        }
+                    },
+                    _ => return false,
+                }
+                
+                true
+            },
+            _ => false,
+        }
+    };
+    
+    let mut rand = Rand::new(42); // Fixed seed for reproducibility
+    let size = 100;
+    
+    for _ in 0..100 {
+        let value = person_gen.generate(&mut rand, size);
+        assert!(property(value), "Generated value did not satisfy the property");
+    }
+}
 
-    slay test_simple_property() {
-        vibez.spill("\nTesting CheckProperty with simple property:")
-        
-        fr Define a property: all numbers divisible by 2 are even
-        property := func(n) {
-            return n % 2 == 0
-        }
-        
-        fr Generate test values: all even numbers
-        generator := func(rand, size) {
-            return (rand.int_range(0, size) * 2)
-        }
-        
-        fr Run the property test
-        config := quick_test.Config{
-            max_count: 50,
-            quiet: false,
-        }
-        
-        result := quick_test.CheckProperty(property, generator, config)
-        vibez.spill("Simple property test result: passed =", result.passed)
-        vibez.spill("Iterations:", result.count)
-        
-        if !result.passed {
-            vibez.spill("Test failed after", result.failed_after, "iterations")
-            vibez.spill("Failing input:", result.failed_value)
+#[test]
+fn test_weighted_generator() {
+    // Test the weighted generator
+    
+    // Create several generators with different weights
+    let small_int_gen = int_range_gen(0, 10); // Small numbers
+    let large_int_gen = int_range_gen(11, 100); // Large numbers
+    
+    // Build a weighted generator with different probabilities
+    let weighted_gen = weighted(vec![
+        (10, small_int_gen), // 10x weight for small numbers
+        (1, large_int_gen),  // 1x weight for large numbers
+    ]);
+    
+    // Test that the distribution is biased toward small numbers
+    let mut rand = Rand::new(42); // Fixed seed for reproducibility
+    let size = 100;
+    
+    let mut small_count = 0;
+    let mut large_count = 0;
+    
+    // Generate 100 values and count the distribution
+    for _ in 0..100 {
+        let value = weighted_gen.generate(&mut rand, size);
+        match value {
+            Object::Integer(i) => {
+                if i <= 10 {
+                    small_count += 1;
+                } else {
+                    large_count += 1;
+                }
+            },
+            _ => panic!("Generated value is not an integer"),
         }
     }
     
-    slay test_complex_property() {
-        vibez.spill("\nTesting CheckProperty with complex property:")
-        
-        fr Define a property: the length of a string is always >= 0
-        property := func(s) {
-            return len(s) >= 0
-        }
-        
-        fr Generate test values: random strings
-        generator := func(rand, size) {
-            length := rand.int_range(0, size)
-            chars := []
-            vibecheck i := 0; i < length; i++ {
-                chars = append(chars, char(rand.int_range(65, 90)))  fr ASCII A-Z
-            }
-            return join("", chars)
-        }
-        
-        fr Run the property test
-        config := quick_test.Config{
-            max_count: 20,
-            quiet: false,
-        }
-        
-        result := quick_test.CheckProperty(property, generator, config)
-        vibez.spill("Complex property test result: passed =", result.passed)
-        vibez.spill("Iterations:", result.count)
-    }
-    "#;
-
-    let mut parser = Parser::new(code);
-    let program = parser.parse_program().unwrap();
-    let mut interpreter = Interpreter::new(program);
-    interpreter.run().unwrap();
+    // We expect small_count to be roughly 10 times larger than large_count,
+    // but since this is random, we'll just check that it's significantly larger
+    assert!(small_count > large_count * 2, 
+            "Expected small numbers to be much more frequent than large ones");
 }

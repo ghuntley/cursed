@@ -9,6 +9,7 @@
 //! - Basic operations: `abs`, `max`, `min`
 //! - Rounding: `ceil`, `floor`, `round`
 //! - Powers: `pow`, `sqrt`
+//! - Trigonometric functions: `sin`, `cos`, `tan`
 //!
 //! Constants:
 //! - `PI`: The mathematical constant π (3.141592...)
@@ -212,6 +213,75 @@ pub fn round(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::Float(f) => Ok(Rc::new(Object::Float(f.round()))),
         _ => Err(Error::Runtime(
             "Argument to round must be a number".to_string(),
+        )),
+    }
+}
+
+/// Calculates the sine of an angle in radians
+///
+/// # Arguments
+///
+/// * `args[0]` - The angle in radians
+///
+/// # Returns
+///
+/// The sine of the angle
+pub fn sin(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("sin requires 1 argument".to_string()));
+    }
+
+    match &*args[0] {
+        Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).sin()))),
+        Object::Float(f) => Ok(Rc::new(Object::Float(f.sin()))),
+        _ => Err(Error::Runtime(
+            "Argument to sin must be a number".to_string(),
+        )),
+    }
+}
+
+/// Calculates the cosine of an angle in radians
+///
+/// # Arguments
+///
+/// * `args[0]` - The angle in radians
+///
+/// # Returns
+///
+/// The cosine of the angle
+pub fn cos(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("cos requires 1 argument".to_string()));
+    }
+
+    match &*args[0] {
+        Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).cos()))),
+        Object::Float(f) => Ok(Rc::new(Object::Float(f.cos()))),
+        _ => Err(Error::Runtime(
+            "Argument to cos must be a number".to_string(),
+        )),
+    }
+}
+
+/// Calculates the tangent of an angle in radians
+///
+/// # Arguments
+///
+/// * `args[0]` - The angle in radians
+///
+/// # Returns
+///
+/// The tangent of the angle
+pub fn tan(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    if args.is_empty() {
+        return Err(Error::Runtime("tan requires 1 argument".to_string()));
+    }
+
+    match &*args[0] {
+        Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).tan()))),
+        Object::Float(f) => Ok(Rc::new(Object::Float(f.tan()))),
+        _ => Err(Error::Runtime(
+            "Argument to tan must be a number".to_string(),
         )),
     }
 }
