@@ -1,6 +1,6 @@
-use crate::object::Object;
+use cursed::object::Object;
 use std::rc::Rc;
-use crate::stdlib;
+use cursed::stdlib;
 
 #[test]
 fn test_is_uppercase() {

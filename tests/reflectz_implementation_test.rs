@@ -48,8 +48,8 @@ fn test_get_field() {
     let person = Rc::new(Object::Struct {
         name: "Person".to_string(),
         fields: vec![
-            ("Name".to_string(), Rc::new(Object::String("John".to_string()))),
-            ("Age".to_string(), Rc::new(Object::Integer(30))),
+            ("Name".to_string(), "John".to_string()),
+            ("Age".to_string(), "30".to_string()),
         ],
     });
     
@@ -66,10 +66,10 @@ fn test_get_field() {
     let age_field = Rc::new(Object::String("Age".to_string()));
     let result = reflectz::get_field(&[person, age_field]).unwrap();
     
-    if let Object::Integer(age) = &*result {
-        assert_eq!(*age, 30, "Age field value doesn't match expected");
+    if let Object::String(age) = &*result {
+        assert_eq!(age, "30", "Age field value doesn't match expected");
     } else {
-        panic!("Expected Integer object for Age field, got {:?}", result);
+        panic!("Expected String object for Age field, got {:?}", result);
     }
 }
 
@@ -79,8 +79,8 @@ fn test_set_field() {
     let person = Rc::new(Object::Struct {
         name: "Person".to_string(),
         fields: vec![
-            ("Name".to_string(), Rc::new(Object::String("John".to_string()))),
-            ("Age".to_string(), Rc::new(Object::Integer(30))),
+            ("Name".to_string(), "John".to_string()),
+            ("Age".to_string(), "30".to_string()),
         ],
     });
     

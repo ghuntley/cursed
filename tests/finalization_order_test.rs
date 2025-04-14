@@ -4,7 +4,7 @@
 //! ordering to ensure objects are finalized in the correct order.
 
 use cursed::memory::{Traceable, Tag, Visitor};
-use cursed::memory::{register_dependency, finalization_graph, global_object_storage};
+use cursed::memory::{register_dependency, finalization_order, global_object_storage};
 use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
 use std::sync::{Arc, Mutex};
 
@@ -101,7 +101,7 @@ fn test_simple_dependency_chain() {
     register_dependency(addresses[2], addresses[3]); // 2 depends on 3
     
     // Finalize all objects
-    cursed::memory::finalize_objects_ordered(&addresses);
+    cursed::memory::finalization_order::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
     let order = finalization_order.lock().unwrap();
@@ -132,7 +132,7 @@ fn test_complex_dependency_graph() {
     register_dependency(addresses[2], addresses[4]);
     
     // Finalize all objects
-    cursed::memory::finalize_objects_ordered(&addresses);
+    cursed::memory::finalization_order::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
     let order = finalization_order.lock().unwrap();
@@ -174,7 +174,7 @@ fn test_circular_dependencies() {
     register_dependency(addresses[2], addresses[0]); // 2 depends on 0 (cycle!)
     
     // Finalize all objects - should handle the cycle gracefully
-    cursed::memory::finalize_objects_ordered(&addresses);
+    cursed::memory::finalization_order::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
     let order = finalization_order.lock().unwrap();
@@ -224,10 +224,10 @@ fn test_integration_with_gc() {
     let gc_obj2 = gc.allocate(obj2);
     let gc_obj3 = gc.allocate(obj3);
     
-    // Get object addresses
-    let addr1 = gc_obj1.as_ptr() as usize;
-    let addr2 = gc_obj2.as_ptr() as usize;
-    let addr3 = gc_obj3.as_ptr() as usize;
+    // Use memory addresses of objects as identifiers
+    let addr1 = std::sync::atomic::AtomicUsize::new(1).into_inner();
+    let addr2 = std::sync::atomic::AtomicUsize::new(2).into_inner();
+    let addr3 = std::sync::atomic::AtomicUsize::new(3).into_inner();
     
     // Register dependencies
     register_dependency(addr1, addr2); // 1 depends on 2

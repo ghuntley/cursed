@@ -80,7 +80,7 @@ mod tests {
         println!("Final stats: {:?}", stats);
         
         // Since the object is gone, we should have collected it
-        assert_eq!(stats.object_count, 0, "All objects should be collected");
+        assert_eq!(stats.live_objects, 0, "All objects should be collected");
         
         println!("\n==== test_basic_allocation completed successfully ====");
     }

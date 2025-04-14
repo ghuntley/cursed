@@ -701,7 +701,7 @@ impl Traceable for Logger {
 static mut DEFAULT_LOGGER: Option<Logger> = None;
 
 /// Create a new logger with the specified handler
-pub fn new(handler: impl Handler) -> Logger {
+pub fn new(handler: impl Handler + 'static) -> Logger {
     Logger::new(Box::new(handler))
 }
 

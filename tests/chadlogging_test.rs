@@ -17,9 +17,9 @@ fn test_basic_logging() {
     let logger = chadlogging::new(handler);
     
     // Log some messages
-    logger.info("server starting", vec!["port", 8080]);
-    logger.warn("disk space low", vec!["percent_free", 15]);
-    logger.error("connection failed", vec!["target", "db", "error", "timeout"]);
+    logger.info("server starting", vec![Object::String("port".to_string()), Object::Integer(8080)]);
+    logger.warn("disk space low", vec![Object::String("percent_free".to_string()), Object::Integer(15)]);
+    logger.error("connection failed", vec![Object::String("target".to_string()), Object::String("db".to_string()), Object::String("error".to_string()), Object::String("timeout".to_string())]);
     
     // Check the output
     let logs = buffer.borrow();
@@ -55,10 +55,10 @@ fn test_with_attributes() {
     let handler = chadlogging::TestHandler::new(buffer.clone());
     
     // Create a logger with attached attributes
-    let logger = chadlogging::new(handler).with(vec!["request_id", "req-123456"]);
+    let logger = chadlogging::new(handler).with(vec![Object::String("request_id".to_string()), Object::String("req-123456".to_string())]);
     
     // Log a message
-    logger.info("processing request", vec!["path", "/api/users"]);
+    logger.info("processing request", vec![Object::String("path".to_string()), Object::String("/api/users".to_string())]);
     
     // Check the output
     let logs = buffer.borrow();
@@ -91,12 +91,12 @@ fn test_groups() {
     
     // Log with a group
     let request_group = chadlogging::group("request", vec![
-        "method", "GET",
-        "path", "/api/users",
-        "status", 200
+        Object::String("method".to_string()), Object::String("GET".to_string()),
+        Object::String("path".to_string()), Object::String("/api/users".to_string()),
+        Object::String("status".to_string()), Object::Integer(200)
     ]);
     
-    logger.info("processed request", vec![request_group, "duration_ms", 45]);
+    logger.info("processed request", vec![request_group, Object::String("duration_ms".to_string()), Object::Integer(45)]);
     
     // Check the output
     let logs = buffer.borrow();
@@ -151,12 +151,12 @@ fn test_level_filtering() {
     let logger = chadlogging::new(handler);
     
     // DEBUG messages should be filtered out
-    logger.debug("debug message", vec![]);
+    logger.debug("debug message", vec![Object::String("dummy".to_string()), Object::String("value".to_string())]);
     
     // INFO and above should be included
-    logger.info("info message", vec![]);
-    logger.warn("warn message", vec![]);
-    logger.error("error message", vec![]);
+    logger.info("info message", vec![Object::String("dummy".to_string()), Object::String("value".to_string())]);
+    logger.warn("warn message", vec![Object::String("dummy".to_string()), Object::String("value".to_string())]);
+    logger.error("error message", vec![Object::String("dummy".to_string()), Object::String("value".to_string())]);
     
     // Check the output
     let logs = buffer.borrow();
@@ -184,7 +184,7 @@ fn test_json_handler() {
     let logger = chadlogging::new(handler);
     
     // Log a message with attributes
-    logger.info("server starting", vec!["port", 8080, "env", "production"]);
+    logger.info("server starting", vec!["port".into(), Object::Integer(8080), "env".into(), "production".into()]);
     
     // Check the output
     // Skip this test for now until we implement the full JSON handler

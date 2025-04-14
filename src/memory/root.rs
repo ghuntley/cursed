@@ -283,7 +283,7 @@ impl RootScopeGuard {
         let timeout = std::time::Duration::from_secs(1);
         
         match crate::memory::deadlock_detector::try_mutex_with_timeout(&ROOT_MANAGER, timeout, &lock_context) {
-            Some(mut manager) => {
+            Some(manager) => {
                 println!("[{}ms] RootScopeGuard::new Successfully acquired ROOT_MANAGER lock", now);
                 manager.push_scope(scope);
                 println!("[{}ms] RootScopeGuard::new Successfully pushed scope", now);
@@ -312,7 +312,7 @@ impl Drop for RootScopeGuard {
         let timeout = std::time::Duration::from_secs(1);
         
         match crate::memory::deadlock_detector::try_mutex_with_timeout(&ROOT_MANAGER, timeout, &lock_context) {
-            Some(mut manager) => {
+            Some(manager) => {
                 if let Some(scope) = manager.pop_scope() {
                     // The scope will clean up its roots when dropped
                     println!("[{}ms] RootScopeGuard::drop Successfully popped and will clean up scope", now);

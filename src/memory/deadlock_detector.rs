@@ -15,6 +15,20 @@ pub fn try_read_with_timeout<'a, T>(
 ) -> Option<RwLockReadGuard<'a, T>> {
     let start = Instant::now();
     
+    // Special fast path for thread-safe code to avoid deadlocks
+    if context.contains("thread_safe") || context.contains("ThreadSafe") {
+        match lock.try_read() {
+            Ok(guard) => {
+                println!("[LOCK] Acquired read lock immediately for thread-safe operation in {}", context);
+                return Some(guard);
+            },
+            Err(_) => {
+                println!("[LOCK] ⚠️ Failed to acquire read lock immediately for thread-safe operation in {}", context);
+                return None; // Fail immediately instead of retrying and potentially deadlocking
+            }
+        }
+    }
+    
     // Try a bunch of times with small sleeps in between
     let max_attempts = 100;
     let sleep_duration = timeout / max_attempts;
@@ -50,6 +64,20 @@ pub fn try_write_with_timeout<'a, T>(
     context: &str
 ) -> Option<RwLockWriteGuard<'a, T>> {
     let start = Instant::now();
+    
+    // Special fast path for thread-safe code to avoid deadlocks
+    if context.contains("thread_safe") || context.contains("ThreadSafe") {
+        match lock.try_write() {
+            Ok(guard) => {
+                println!("[LOCK] Acquired write lock immediately for thread-safe operation in {}", context);
+                return Some(guard);
+            },
+            Err(_) => {
+                println!("[LOCK] ⚠️ Failed to acquire write lock immediately for thread-safe operation in {}", context);
+                return None; // Fail immediately instead of retrying and potentially deadlocking
+            }
+        }
+    }
     
     // Try a bunch of times with small sleeps in between
     let max_attempts = 100;

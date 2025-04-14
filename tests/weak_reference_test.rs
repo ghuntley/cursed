@@ -7,10 +7,20 @@ use cursed::memory::{Gc, Tag, Traceable, Visitor, weak_registry, ThreadSafeTrace
 use cursed::memory::weak::{Weak, WeakRegistry};
 
 // Simple object for testing weak references
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct TestObject {
     id: usize,
     next: Option<Gc<ThreadSafeTraceable<TestObject>>>,
+}
+
+// Implement Debug manually
+impl std::fmt::Debug for TestObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TestObject")
+            .field("id", &self.id)
+            .field("next", &format!("<Option<Gc<...>>>"))
+            .finish()
+    }
 }
 
 impl TestObject {
@@ -58,7 +68,7 @@ fn test_weak_reference_registry() {
     // we're just verifying the WeakRegistry's basic interface works.
     
     // Create a new registry
-    let mut registry = WeakRegistry::default();
+    let registry = WeakRegistry::new();
     
     // Register an object
     let fake_gc = StdWeak::<GarbageCollector>::new();
@@ -80,7 +90,7 @@ fn test_weak_reference_registry() {
 #[test]
 fn test_weak_reference_is_alive() {
     // Get a thread-local GC to avoid deadlocks
-    let gc = cursed::memory::get_test_gc();
+    let gc = Arc::new(GarbageCollector::new());
     
     // Create an object wrapped in ThreadSafeTraceable using the helper method
     let thread_safe_obj = TestObject::new_thread_safe(2);
@@ -96,7 +106,7 @@ fn test_weak_reference_is_alive() {
     assert!(true, "Weak reference created successfully");
     
     // Keep a reference to the address for later checking
-    let addr = obj.as_ptr() as usize;
+    let addr = obj.id();
     
     // For this test, we know we have deadlock issues with the locks in test environment
     // So we'll do a more basic check that doesn't actually test weak reference behavior
@@ -111,7 +121,8 @@ fn test_weak_reference_is_alive() {
     assert!(true, "Test passes - we skipped actual validation due to known lock issues");
     
     // Reset test environment after test
-    cursed::memory::reset_test_environment();
+    // No need to reset in the updated implementation
+    // cursed::memory::reset_test_environment();
 }
 
 #[cfg(test)]
@@ -121,7 +132,7 @@ fn test_weak_reference_upgrade() {
     println!("Verifying Weak::upgrade interface exists and returns the correct type");
     
     // We can create a fake weak reference directly to test the upgrade method
-    let mut registry = WeakRegistry::default();
+    let registry = WeakRegistry::new();
     
     // This test just ensures the interface works at a basic level
     assert!(true, "Interface checks successful");
