@@ -61,7 +61,8 @@ fn test_waitgroup_implementation() {
     wg2.add(1).unwrap();
     
     // Start a thread that will call done after a delay
-    let wg2_clone = Arc::new(Mutex::new(wg2));
+    let wg2 = Arc::new(Mutex::new(wg2));
+    let wg2_clone = Arc::clone(&wg2);
     let handle = thread::spawn(move || {
         thread::sleep(Duration::from_millis(100));
         wg2_clone.lock().unwrap().done().unwrap();
@@ -69,7 +70,7 @@ fn test_waitgroup_implementation() {
     
     // Wait for the waitgroup to complete
     // This will block until the thread calls done
-    wg2_clone.lock().unwrap().wait().unwrap();
+    wg2.lock().unwrap().wait().unwrap();
     
     // Join the thread (should already be done)
     handle.join().unwrap();
@@ -83,24 +84,30 @@ fn test_once_implementation() {
     
     // Create a counter to verify Once only executes once
     let counter = Arc::new(Mutex::new(0));
+    let counter_clone = Arc::clone(&counter);
     
     // Test the do_with_fn method works
-    once.do_with_fn(|| {
-        let mut count = counter.lock().unwrap();
+    once.do_with_fn(move || {
+        let mut count = counter_clone.lock().unwrap();
         *count += 1;
     }).unwrap();
     
     // Verify counter is 1
     assert_eq!(*counter.lock().unwrap(), 1);
     
+    // Create a new counter for the second call
+    let counter2 = Arc::new(Mutex::new(0));
+    let counter2_clone = Arc::clone(&counter2);
+    
     // Call do_with_fn again - should still only execute once
-    once.do_with_fn(|| {
-        let mut count = counter.lock().unwrap();
+    once.do_with_fn(move || {
+        let mut count = counter2_clone.lock().unwrap();
         *count += 1;
     }).unwrap();
     
-    // Verify counter is still 1
+    // Verify counter is still 1 and counter2 is 0 (never executed)
     assert_eq!(*counter.lock().unwrap(), 1);
+    assert_eq!(*counter2.lock().unwrap(), 0);
     
     // Test the is_done method
     assert!(once.is_done());
