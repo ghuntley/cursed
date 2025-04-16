@@ -18,20 +18,27 @@ pub fn try_read_with_timeout<'a, T: ?Sized>(
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let start = Instant::now();
     
-    // Try acquiring the lock repeatedly until timeout
+    // Try acquiring the lock repeatedly until timeout, with increasing backoff
+    let mut attempt_count = 0;
     while start.elapsed() < timeout {
         match lock.try_read() {
             Ok(guard) => {
                 if let Some(ctx) = context {
-                    println!("Lock acquired (read) for context: {}", ctx);
+                    println!("Lock acquired (read) for context: {} after {} attempts", ctx, attempt_count);
                 }
                 return Some(guard);
             },
             Err(_) => {
-                std::thread::yield_now();
+                attempt_count += 1;
+                
+                // Exponential backoff with a max delay of 50ms
+                let backoff_ms = std::cmp::min(1 << std::cmp::min(attempt_count / 10, 5), 50);
+                std::thread::sleep(std::time::Duration::from_millis(backoff_ms));
+                
                 // Log on every tenth attempt to avoid log spam
-                if start.elapsed().as_millis() % 100 == 0 && context.is_some() {
-                    println!("Still waiting for read lock: {}", context.unwrap());
+                if attempt_count % 10 == 0 && context.is_some() {
+                    println!("Still waiting for read lock: {} (attempt: {}, elapsed: {}ms)", 
+                             context.unwrap(), attempt_count, start.elapsed().as_millis());
                 }
             },
         }
@@ -52,20 +59,27 @@ pub fn try_write_with_timeout<'a, T: ?Sized>(
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let start = Instant::now();
     
-    // Try acquiring the lock repeatedly until timeout
+    // Try acquiring the lock repeatedly until timeout, with increasing backoff
+    let mut attempt_count = 0;
     while start.elapsed() < timeout {
         match lock.try_write() {
             Ok(guard) => {
                 if let Some(ctx) = context {
-                    println!("Lock acquired (write) for context: {}", ctx);
+                    println!("Lock acquired (write) for context: {} after {} attempts", ctx, attempt_count);
                 }
                 return Some(guard);
             },
             Err(_) => {
-                std::thread::yield_now();
+                attempt_count += 1;
+                
+                // Exponential backoff with a max delay of 50ms
+                let backoff_ms = std::cmp::min(1 << std::cmp::min(attempt_count / 10, 5), 50);
+                std::thread::sleep(std::time::Duration::from_millis(backoff_ms));
+                
                 // Log on every tenth attempt to avoid log spam
-                if start.elapsed().as_millis() % 100 == 0 && context.is_some() {
-                    println!("Still waiting for write lock: {}", context.unwrap());
+                if attempt_count % 10 == 0 && context.is_some() {
+                    println!("Still waiting for write lock: {} (attempt: {}, elapsed: {}ms)", 
+                             context.unwrap(), attempt_count, start.elapsed().as_millis());
                 }
             },
         }
@@ -86,20 +100,27 @@ pub fn try_lock_with_timeout<'a, T: ?Sized>(
     let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let start = Instant::now();
     
-    // Try acquiring the lock repeatedly until timeout
+    // Try acquiring the lock repeatedly until timeout, with increasing backoff
+    let mut attempt_count = 0;
     while start.elapsed() < timeout {
         match mutex.try_lock() {
             Ok(guard) => {
                 if let Some(ctx) = context {
-                    println!("Lock acquired (mutex) for context: {}", ctx);
+                    println!("Lock acquired (mutex) for context: {} after {} attempts", ctx, attempt_count);
                 }
                 return Some(guard);
             },
             Err(_) => {
-                std::thread::yield_now();
+                attempt_count += 1;
+                
+                // Exponential backoff with a max delay of 50ms
+                let backoff_ms = std::cmp::min(1 << std::cmp::min(attempt_count / 10, 5), 50);
+                std::thread::sleep(std::time::Duration::from_millis(backoff_ms));
+                
                 // Log on every tenth attempt to avoid log spam
-                if start.elapsed().as_millis() % 100 == 0 && context.is_some() {
-                    println!("Still waiting for mutex lock: {}", context.unwrap());
+                if attempt_count % 10 == 0 && context.is_some() {
+                    println!("Still waiting for mutex lock: {} (attempt: {}, elapsed: {}ms)", 
+                             context.unwrap(), attempt_count, start.elapsed().as_millis());
                 }
             },
         }

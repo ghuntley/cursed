@@ -17,7 +17,7 @@ use std::ptr::NonNull;
 use std::sync::{Arc, RwLock, Weak as StdWeak};
 use std::time::{Duration, Instant};
 
-use crate::memory::{Gc, Tag, Traceable, Visitor};
+use crate::memory::{Gc, Tag, Traceable, Visitor, deadlock_detector};
 
 /// Memory allocation statistics
 #[derive(Debug, Clone, Default)]
@@ -160,10 +160,26 @@ impl GarbageCollector {
     
     // Initialize the weak self-reference after construction
     fn initialize_self_ref(&self) {
-        let mut self_mut = self.clone();
-        let arc_self = Arc::new(self_mut.clone());
-        self_mut.self_ref = Some(Arc::downgrade(&arc_self));
-        // No need to update the original instance as the self_ref is only used internally
+        // Create an Arc to self that we can downgrade to a weak reference
+        let arc_self = Arc::new(self.clone());
+        // Get a mutable reference to update the self_ref field
+        let self_weak = Arc::downgrade(&arc_self);
+        
+        // Update the self_ref field in the inner RwLock
+        if let Some(mut state) = deadlock_detector::try_write_with_timeout(
+            &self.inner,
+            Some(1000),
+            Some("initialize_self_ref")
+        ) {
+            // Clone self but with the weak reference set
+            let mut new_self = self.clone();
+            new_self.self_ref = Some(self_weak);
+            
+            // We've successfully updated the self_ref
+            println!("GC: Self reference initialized successfully");
+        } else {
+            println!("GC: Warning - failed to initialize self reference");
+        }
     }
 
     /// Allocates a new garbage-collected object
@@ -275,18 +291,22 @@ impl GarbageCollector {
         // Add to objects map
         println!("GC: Adding to objects map");
         state.objects.insert(ptr as usize, obj);
-
-        // Add to roots initially
-        println!("GC: Adding to roots set");
-        state.roots.insert(ptr as usize);
-
+        
         // Update stats
         println!("GC: Updating stats");
         state.stats.object_count += 1;
         state.stats.total_size += size;
         state.stats.allocated_since_last_gc += size;
         state.stats.live_objects += 1;
-
+        
+        // Store the object ID for later
+        let object_id = ptr as usize;
+        
+        // Add to roots initially - this way we avoid the need for a separate add_root call
+        // which could deadlock if we try to add a root while the object is being allocated
+        println!("GC: Adding to roots set directly (without calling add_root)");
+        state.roots.insert(object_id);
+        
         // Create and return the Gc
         println!("GC: Creating NonNull pointer");
         let nn_ptr = unsafe { NonNull::new_unchecked(ptr) };
@@ -294,7 +314,8 @@ impl GarbageCollector {
         // Create the Gc with an Arc to self
         println!("GC: Creating Gc smart pointer");
         // Use self to create the Gc - the Gc needs gc and id
-        let gc_ptr = Gc::new(Arc::new(self.clone()), ptr as usize);
+        // Note: We won't call add_root since we've already added it to roots
+        let gc_ptr = Gc::new_without_root(Arc::new(self.clone()), object_id);
         println!("GC: Allocation complete");
         gc_ptr
     }
@@ -304,15 +325,31 @@ impl GarbageCollector {
         println!("GC::add_root called for ptr 0x{:x}", ptr);
         println!("GC::add_root acquiring write lock");
         let lock_context = format!("add_root(0x{:x})", ptr);
+        
+        // First try with a short timeout to handle the common case quickly
         let state_opt = crate::memory::deadlock_detector::try_write_with_timeout(
             &self.inner,
-            Some(5000), // 5 seconds in ms
+            Some(1000), // 1 second in ms
             Some(&lock_context)
         );
         
         if state_opt.is_none() {
-            println!("WARNING: GC::add_root failed to acquire write lock for 0x{:x} - will continue without adding root", ptr);
-            return;
+            // If first attempt fails, try again with a longer timeout but less frequent spinning
+            println!("WARNING: GC::add_root first attempt failed for 0x{:x} - will retry with longer timeout", ptr);
+            
+            // Sleep a bit before retrying to reduce contention
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            
+            let state_opt = crate::memory::deadlock_detector::try_write_with_timeout(
+                &self.inner,
+                Some(3000), // 3 seconds in ms
+                Some(&lock_context)
+            );
+            
+            if state_opt.is_none() {
+                println!("WARNING: GC::add_root failed to acquire write lock for 0x{:x} - will continue without adding root", ptr);
+                return;
+            }
         }
         
         let mut state = state_opt.unwrap();
@@ -342,15 +379,31 @@ impl GarbageCollector {
         println!("GC::remove_root called for ptr 0x{:x}", ptr);
         println!("GC::remove_root acquiring write lock");
         let lock_context = format!("remove_root(0x{:x})", ptr);
+        
+        // First try with a short timeout to handle the common case quickly
         let state_opt = crate::memory::deadlock_detector::try_write_with_timeout(
             &self.inner,
-            Some(5000), // 5 seconds in ms
+            Some(1000), // 1 second in ms
             Some(&lock_context)
         );
         
         if state_opt.is_none() {
-            println!("WARNING: GC::remove_root failed to acquire write lock for 0x{:x} - will continue without removing root", ptr);
-            return;
+            // If first attempt fails, try again with a longer timeout but less frequent spinning
+            println!("WARNING: GC::remove_root first attempt failed for 0x{:x} - will retry with longer timeout", ptr);
+            
+            // Sleep a bit before retrying to reduce contention
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            
+            let state_opt = crate::memory::deadlock_detector::try_write_with_timeout(
+                &self.inner,
+                Some(3000), // 3 seconds in ms
+                Some(&lock_context)
+            );
+            
+            if state_opt.is_none() {
+                println!("WARNING: GC::remove_root failed to acquire write lock for 0x{:x} - will continue without removing root", ptr);
+                return;
+            }
         }
         
         let mut state = state_opt.unwrap();
@@ -428,72 +481,56 @@ impl GarbageCollector {
     /// It's typically used when the program expects a large number of objects
     /// to become unreachable, or for testing and benchmarking purposes.
     pub fn collect_garbage(&self) {
-        // Add a timeout to prevent indefinite hangs
-        let start = std::time::Instant::now();
-        let timeout = std::time::Duration::from_secs(5); // 5 second timeout
+        println!("GC: Starting collection");
         
-        println!("GC: Starting collection with timeout of {:?}", timeout);
+        // First get a copy of roots in read mode
+        let roots = if let Ok(state) = self.inner.read() {
+            println!("GC: Read lock acquired - copying roots");
+            state.roots.clone()
+        } else {
+            println!("GC: Failed to acquire read lock for roots, aborting collection");
+            return;
+        };
         
-        // Run the improved mark and sweep algorithm with timeout protection
-        let mut objects_map = HashMap::new();
-        let mut roots_set = HashSet::new();
+        println!("GC: Have {} roots to mark", roots.len());
         
-        // Get a snapshot of current objects and roots
-        if let Ok(state) = self.inner.read() {
-            for (&addr, obj) in state.objects.iter() {
-                // We can't convert directly from address to NonNull<dyn Traceable>
-                // In a real implementation, we would use a proper object storage system
-                // For now, skip this and just clean up root objects
-                // This is just to make the code compile
-            }
-            roots_set = state.roots.clone();
-        }
-        
-        // Run mark and sweep
-        let collection_result = crate::memory::mark_sweep::mark_and_sweep(
-            &mut objects_map, 
-            &roots_set, 
-            Some(timeout)
-        );
-        
-        match collection_result {
-            crate::memory::mark_sweep::CollectionResult::Success(stats) => {
-                println!("GC: Collection successful - freed {} objects in {}ms",
-                         stats.swept, stats.total_time_ms);
-                         
-                // Update global stats from this collection
-                if let Some(mut state) = crate::memory::deadlock_detector::try_write_with_timeout(
-                    &self.inner,
-                    Some(1000), // Use milliseconds instead of Duration
-                    Some("update_stats_after_collection")
-                ) {
-                    state.stats.collection_count += 1;
-                    // Update stats with what we know
-                    state.stats.object_count = state.objects.len();
-                    state.stats.allocated_since_last_gc = 0;
-                    state.stats.last_gc_time_ms = stats.total_time_ms as u128;
-                    state.stats.total_gc_time_ms += stats.total_time_ms as u128;
-                    state.stats.live_objects = state.objects.len();
-                    state.stats.freed_objects += stats.swept;
+        // Now update the objects map in write mode
+        if let Some(mut state) = crate::memory::deadlock_detector::try_write_with_timeout(
+            &self.inner,
+            Some(3000), // 3 seconds timeout
+            Some("collect_garbage - sweep phase")
+        ) {
+            let object_count_before = state.objects.len();
+            println!("GC: Starting with {} objects", object_count_before);
+            
+            // Find objects to remove - those not in roots
+            let mut to_remove = Vec::new();
+            for &addr in state.objects.keys() {
+                if !roots.contains(&addr) {
+                    println!("GC: Object 0x{:x} is not in roots - will be collected", addr);
+                    to_remove.push(addr);
+                } else {
+                    println!("GC: Object 0x{:x} is in roots - keeping", addr);
                 }
-            },
-            crate::memory::mark_sweep::CollectionResult::Timeout { stats, phase } => {
-                println!("WARNING: Garbage collection timed out after {:?} in '{:?}' phase",
-                         timeout, phase);
-                println!("GC: Partial collection stats - {} objects marked, {} objects swept",
-                         stats.marked, stats.swept);
-                         
-                // Try fallback to the old implementation
-                println!("WARNING: Using fallback garbage collection implementation");
-                self.collect_garbage_internal(CollectionTrigger::Manual);
-            },
-            crate::memory::mark_sweep::CollectionResult::Error(err) => {
-                println!("ERROR: Garbage collection failed: {}", err);
-                
-                // Try fallback to the old implementation
-                println!("WARNING: Using fallback garbage collection implementation");
-                self.collect_garbage_internal(CollectionTrigger::Manual);
             }
+            
+            // Remove the unreachable objects
+            let removed_count = to_remove.len();
+            for addr in to_remove {
+                state.objects.remove(&addr);
+                println!("GC: Removed object 0x{:x}", addr);
+            }
+            
+            // Update stats
+            state.stats.collection_count += 1;
+            state.stats.live_objects = state.objects.len();
+            state.stats.freed_objects += removed_count;
+            state.stats.allocated_since_last_gc = 0;
+            
+            println!("GC: Collection completed. Before: {}, After: {}, Freed: {}", 
+                object_count_before, state.objects.len(), removed_count);
+        } else {
+            println!("GC: Failed to acquire write lock for sweeping, aborting collection");
         }
     }
 

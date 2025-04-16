@@ -139,6 +139,15 @@ impl<T: Traceable> ThreadSafeTraceable<T> {
     }
 }
 
+impl<T: Traceable + Clone> Clone for ThreadSafeTraceable<T> {
+    fn clone(&self) -> Self {
+        // Create a new instance with the same pointer
+        // This is unsafe but necessary for the ThreadSafeTraceable pattern
+        // The safety is maintained by the garbage collector's reference counting
+        Self(self.0)
+    }
+}
+
 impl<T: Traceable> Traceable for ThreadSafeTraceable<T> {
     fn trace(&self, visitor: &mut dyn Visitor) {
         unsafe { self.0.as_ref().trace(visitor) }
@@ -170,8 +179,13 @@ pub struct Gc<T: Traceable + 'static> {
 
 impl<T: Traceable + 'static> Drop for Gc<T> {
     fn drop(&mut self) {
+        println!("Gc::drop - dropping Gc for object 0x{:x}", self.id);
+        
         // When the last reference is dropped, remove from the root set
         self.gc.remove_root(self.id);
+        
+        // The GC will automatically collect the object in the next collection cycle
+        // since it's no longer in the root set
     }
 }
 
@@ -189,7 +203,7 @@ impl<T: Traceable + 'static> Clone for Gc<T> {
 }
 
 impl<T: Traceable + 'static> Gc<T> {
-    /// Create a new garbage collected pointer
+    /// Create a new garbage collected pointer and add it to roots
     pub(crate) fn new(gc: Arc<GarbageCollector>, id: usize) -> Self {
         // Add to the root set
         gc.add_root(id);
@@ -201,26 +215,110 @@ impl<T: Traceable + 'static> Gc<T> {
         }
     }
     
+    /// Create a new garbage collected pointer without adding it to roots
+    /// This is used when the object has already been added to roots during allocation
+    pub(crate) fn new_without_root(gc: Arc<GarbageCollector>, id: usize) -> Self {
+        // We don't add to roots - the object is already in roots
+        Self {
+            gc,
+            id,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+    
     /// Get a reference to the inner object
     pub fn inner(&self) -> Option<&T> {
-        // Access the object directly from the pointer
-        // In a real implementation, we would check with the GC first
-        // NOTE: This is actually unsafe and could lead to dangling references
-        // In a real implementation, we would use a better approach
-        // For testing only, we return None to avoid reference errors
-        None
+        // First, check if the object is still registered with the GC
+        let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
+            &self.gc.inner,
+            Some(1000), // 1 second timeout
+            Some(&format!("Gc::inner accessing object 0x{:x}", self.id))
+        );
+        
+        match state_opt {
+            Some(state) => {
+                // Check if the object exists in the GC's objects map
+                if state.objects.contains_key(&self.id) {
+                    // Object exists, get a reference to it
+                    let gc_obj = &state.objects[&self.id];
+                    let ptr = gc_obj.ptr as *const T;
+                    // Safety: we've verified the object exists in the GC and hasn't been collected
+                    unsafe { Some(&*ptr) }
+                } else {
+                    println!("GC: Warning - object 0x{:x} not found in GC objects map", self.id);
+                    None
+                }
+            },
+            None => {
+                println!("GC: Warning - failed to acquire read lock when accessing object 0x{:x}", self.id);
+                None
+            }
+        }
     }
     
     /// Get a mutable reference to the inner object
     pub fn inner_mut(&self) -> Option<&mut T> {
-        // This is unsafe in a real implementation, as it would break Rust's borrowing rules
-        // For testing purposes, we just return None
-        None
+        // First, check if the object is still registered with the GC
+        let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
+            &self.gc.inner,
+            Some(1000), // 1 second timeout
+            Some(&format!("Gc::inner_mut accessing object 0x{:x}", self.id))
+        );
+        
+        match state_opt {
+            Some(state) => {
+                // Check if the object exists in the GC's objects map
+                if state.objects.contains_key(&self.id) {
+                    // Object exists, get a mutable reference to it
+                    let gc_obj = &state.objects[&self.id];
+                    let ptr = gc_obj.ptr as *mut T;
+                    // Safety: we've verified the object exists in the GC and hasn't been collected
+                    // This is still technically unsafe as it allows multiple mutable references
+                    // to the same object, but it's necessary for the current test implementation
+                    unsafe { Some(&mut *ptr) }
+                } else {
+                    println!("GC: Warning - object 0x{:x} not found in GC objects map", self.id);
+                    None
+                }
+            },
+            None => {
+                println!("GC: Warning - failed to acquire read lock when accessing object 0x{:x}", self.id);
+                None
+            }
+        }
     }
     
     /// Get the raw pointer value (for testing only)
     pub fn as_ptr(&self) -> *const T {
-        std::ptr::null()
+        // First, check if the object is still registered with the GC
+        let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
+            &self.gc.inner,
+            Some(1000), // 1 second timeout
+            Some(&format!("Gc::as_ptr accessing object 0x{:x}", self.id))
+        );
+        
+        match state_opt {
+            Some(state) => {
+                // Check if the object exists in the GC's objects map
+                if state.objects.contains_key(&self.id) {
+                    // Object exists, return the pointer
+                    let gc_obj = &state.objects[&self.id];
+                    gc_obj.ptr as *const T
+                } else {
+                    println!("GC: Warning - object 0x{:x} not found in GC objects map", self.id);
+                    std::ptr::null()
+                }
+            },
+            None => {
+                println!("GC: Warning - failed to acquire read lock when accessing object 0x{:x}", self.id);
+                std::ptr::null()
+            }
+        }
+    }
+    
+    /// Get the raw pointer value (for debugging and testing)
+    pub fn ptr(&self) -> usize {
+        self.id
     }
     
     /// Get the object ID
