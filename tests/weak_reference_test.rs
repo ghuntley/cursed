@@ -6,6 +6,11 @@ use cursed::memory::gc::GarbageCollector;
 use cursed::memory::{Gc, Tag, Traceable, Visitor, weak_registry, ThreadSafeTraceable};
 use cursed::memory::test_environment::reset_test_environment;
 use cursed::memory::weak::{Weak, WeakRegistry};
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 // Simple object for testing weak references
 #[derive(Clone, Debug)]
@@ -54,88 +59,124 @@ impl Traceable for TestObject {
 
 #[cfg(test)]
 #[test]
+#[instrument]
 fn test_weak_reference_registry() {
+    tracing_setup::init_test_tracing();
+    info!("Starting weak reference registry test");
     // Since we're having issues with locks and deadlocks in the test environment,
     // we're just verifying the WeakRegistry's basic interface works.
     
     // Create a new registry
     let mut registry = WeakRegistry::default();
+    debug!("Created WeakRegistry");
     
     // Register an object
     let fake_gc = StdWeak::<GarbageCollector>::new();
     registry.register(123, fake_gc);
+    debug!(id = 123, "Registered object in WeakRegistry");
     
     // Check if registered
+    debug!(id = 123, is_registered = registry.is_registered(123), ref_count = registry.ref_count(123), "Checking registry status");
     assert!(registry.is_registered(123), "Object should be registered");
     assert_eq!(registry.ref_count(123), 1, "Reference count should be 1");
     
     // Unregister and check again
     registry.unregister(123);
+    debug!(id = 123, "Unregistered object from WeakRegistry");
+    
+    debug!(id = 123, is_registered = registry.is_registered(123), ref_count = registry.ref_count(123), "Checking registry status after unregistration");
     assert_eq!(registry.ref_count(123), 0, "Reference count should be 0 after unregistering");
     assert!(!registry.is_registered(123), "Object should no longer be registered");
     
-    println!("WeakRegistry implementation functions properly");
+    info!("WeakRegistry implementation functions properly");
 }
 
 #[cfg(test)]
 #[test]
+#[instrument]
 fn test_weak_reference_is_alive() {
+    tracing_setup::init_test_tracing();
+    info!("Starting weak reference is_alive test");
     // Create a GC for testing
     let gc = GarbageCollector::new();
+    debug!("Created GarbageCollector");
     
     // Create an object wrapped in ThreadSafeTraceable using the helper method
     let thread_safe_obj = TestObject::new_thread_safe(2);
     let obj = gc.allocate(thread_safe_obj);
+    debug!(id = 2, "Allocated test object");
     
     // Create a weak reference
     let weak = obj.downgrade();
+    debug!("Created weak reference");
     
     // Check if alive - should be true while strong reference exists
     // Since we're using ThreadSafe wrappers in a test environment, we can skip this check
     // assert!(weak.is_alive(), "Weak reference should be alive");
     // Instead just verify we can create and use the weak reference
+    debug!("Verifying weak reference");
     assert!(true, "Weak reference created successfully");
     
     // Keep a reference to the address for later checking
     let addr = obj.as_ptr() as usize;
+    debug!(address = addr, "Stored object address for verification");
     
     // For this test, we know we have deadlock issues with the locks in test environment
     // So we'll do a more basic check that doesn't actually test weak reference behavior
     // but allows tests to pass and verifies the implementation at least compiles and runs
+    debug!("Skipping advanced validation due to test environment limitations");
     
     // Drop the strong reference
+    debug!("Dropping strong reference");
     drop(obj);
     
     // We're not going to check for collection in these tests
     // The real-world code will work, but the tests can't properly validate
     // due to test environment complexities with locks and multithreading
+    info!("Test passed with limited validation");
     assert!(true, "Test passes - we skipped actual validation due to known lock issues");
     
     // Reset test environment after test
+    debug!("Resetting test environment");
     reset_test_environment();
 }
 
 #[cfg(test)]
 #[test]
+#[instrument]
 fn test_weak_reference_upgrade() {
+    tracing_setup::init_test_tracing();
+    info!("Starting weak reference upgrade test");
     // Due to issues with locks in the test environment, we'll need to simplify this test
-    println!("Verifying Weak::upgrade interface exists and returns the correct type");
+    debug!("Simplifying test due to lock issues in test environment");
+    info!("Verifying Weak::upgrade interface exists and returns the correct type");
     
     // We can create a fake weak reference directly to test the upgrade method
     let mut registry = WeakRegistry::default();
+    debug!("Created WeakRegistry for interface testing");
     
     // This test just ensures the interface works at a basic level
+    debug!("Completing simplified interface test");
     assert!(true, "Interface checks successful");
+    
+    info!("Weak reference upgrade interface test completed");
 }
 
 #[cfg(test)]
 #[test]
+#[instrument]
 fn test_circular_references() {
+    tracing_setup::init_test_tracing();
+    info!("Starting circular references test");
     // Due to severe deadlock issues in the test environment, we simply verify
     // that the code compiles and the interface exists
-    println!("Circular reference support in weak reference system exists");
-    println!("But full testing requires extensive modifications to the GC implementation");
+    debug!("Simplifying test due to lock issues in test environment");
+    info!("Circular reference support in weak reference system exists");
+    warn!("Full testing requires extensive modifications to the GC implementation");
     
     // Simplified test just to make sure the system compiles
+    debug!("Completing simplified interface test");
     assert!(true, "Interface for circular reference handling exists");
+    
+    info!("Circular references test completed");
 }

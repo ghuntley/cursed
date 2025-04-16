@@ -5,6 +5,7 @@ use crate::lexer::utils::{is_digit, is_hex_digit, is_letter, is_octal_digit};
 
 impl<'a> Lexer<'a> {
     /// Read an identifier
+    #[tracing::instrument(skip(self), fields(position = self.position, line = self.line, column = self.column), level = "debug")]
     pub fn read_identifier(&mut self) -> String {
         let position = self.position;
         let mut allow_dot = false; // Initially don't allow dots
@@ -31,6 +32,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Read a number (integer or float)
+    #[tracing::instrument(skip(self), fields(position = self.position, line = self.line, column = self.column), level = "debug")]
     pub fn read_number(&mut self) -> Result<Token, Error> {
         let position = self.position;
         let mut is_float = false;

@@ -9,9 +9,17 @@ use inkwell::context::Context;
 use inkwell::module::Linkage;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 #[test]
+#[instrument]
 fn test_simple_jit() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
+    info!("Starting simple JIT test");
     // A very simple test program
     let input = r#"
     slay main() {
@@ -28,10 +36,11 @@ fn test_simple_jit() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
+        error!(errors = ?parser.errors(), "Parser errors encountered");
         panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string());
+    debug!(ast = %program.string(), "Parsed AST structure");
 
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -59,10 +68,10 @@ fn test_simple_jit() -> Result<(), Error> {
     // Return the value from main
     code_gen.builder().build_return(Some(&x_value)).unwrap();
 
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -72,7 +81,7 @@ fn test_simple_jit() -> Result<(), Error> {
 
     // Define and map the 'puts' function
     extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
+        info!(value = val, "puts function called");
         0
     }
 
@@ -92,10 +101,13 @@ fn test_simple_jit() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        debug!(result = result, "Main function execution completed");
         
         // Test should return 42
+        debug!(expected = 42, actual = result, "Verifying test result");
         assert_eq!(result, 42, "Simple test failed: returned {}", result);
+        
+        info!("Simple JIT test completed successfully");
     }
 
     Ok(())

@@ -348,19 +348,27 @@ impl Error {
     }
 
     /// Create a runtime error from a string
+    #[tracing::instrument(level = "debug")]
     pub fn from_str(message: &str) -> Self {
+        tracing::error!(message = message, "Runtime error created");
         Error::Runtime(message.to_string())
     }
 
     /// Create a memory error
+    #[tracing::instrument(skip(message), level = "debug")]
     pub fn memory<T: Into<String>>(message: T) -> Self {
-        Error::Memory(message.into())
+        let msg = message.into();
+        tracing::error!(message = %msg, "Memory error created");
+        Error::Memory(msg)
     }
 
     /// Create a syntax error
+    #[tracing::instrument(skip(message, location), fields(line = location.line, column = location.column), level = "debug")]
     pub fn syntax<T: Into<String>>(message: T, location: SourceLocation) -> Self {
+        let msg = message.into();
+        tracing::error!(message = %msg, line = location.line, column = location.column, "Syntax error created");
         Error::Syntax {
-            message: message.into(),
+            message: msg,
             location,
         }
     }

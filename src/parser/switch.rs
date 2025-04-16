@@ -17,11 +17,7 @@ use super::parser::Parser;
 use super::precedence::Precedence;
 
 impl<'a> Parser<'a> {
-    // Debugging helper for switch statements
-    fn debug_token_state(&self, message: &str) {
-        println!("DEBUG [{}]: Current token: {:?}, Peek token: {:?}", 
-                 message, self.current_token, self.peek_token);
-    }
+
     /// Parse a switch statement (vibe_check in CURSED)
     ///
     /// This parses a switch statement with the following form:
@@ -73,7 +69,7 @@ impl<'a> Parser<'a> {
         let mut default = None;
 
         while !self.current_token_is(Token::RBrace) && !self.current_token_is(Token::Eof) {
-            self.debug_token_state("In switch case loop");
+
             // For each case, we'll directly parse the token
             if self.current_token_is(Token::Mood) {
                 // Push case clause context
@@ -104,7 +100,7 @@ impl<'a> Parser<'a> {
                 
                 // Expect colon after expressions
                 if !self.current_token_is(Token::Colon) && !self.peek_token_is(Token::Colon) {
-                    self.debug_token_state("Missing colon after case expression");
+
                     // Pop contexts before returning error
                     self.pop_context(); // Pop case clause
                     self.pop_context(); // Pop switch body

@@ -28,6 +28,7 @@ pub trait VecExt<T> {
 }
 
 impl<T> VecExt<T> for Vec<T> {
+    #[tracing::instrument(skip(self, other), fields(count = other.len()), level = "trace")]
     fn push_all(&mut self, other: &[T])
     where
         T: Clone,
@@ -116,6 +117,7 @@ impl StrExt for char {
 }
 
 // Helper functions for string manipulation
+#[tracing::instrument(skip(s), fields(str_len = s.len()), level = "trace")]
 pub fn str_chars(s: &str) -> Chars<'_> {
     s.chars()
 }
@@ -127,11 +129,15 @@ pub trait RefCellSymbolTableExt {
 }
 
 impl RefCellSymbolTableExt for RefCell<SymbolTable> {
+    #[tracing::instrument(skip(self), level = "trace")]
     fn borrow(&self) -> Ref<'_, SymbolTable> {
+        tracing::trace!("Borrowing symbol table");
         RefCell::borrow(self)
     }
 
+    #[tracing::instrument(skip(self), level = "trace")]
     fn borrow_mut(&self) -> RefMut<'_, SymbolTable> {
+        tracing::trace!("Borrowing symbol table mutably");
         RefCell::borrow_mut(self)
     }
 }

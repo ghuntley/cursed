@@ -265,7 +265,9 @@ impl TypeChecker {
     // For now, directly access the struct_methods_map field
 
     /// Check the types in a program
+    #[tracing::instrument(skip(self, program), level = "info")]
     pub fn check_program(&mut self, program: &Program) -> Result<(), Error> {
+        tracing::debug!(statements_count = program.statements.len(), "Starting type checking");
         // First pass: collect all type definitions
         self.collect_type_definitions(program)?;
 

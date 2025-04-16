@@ -297,7 +297,7 @@ fr fr Common hooks
 slay NewSamplingHook(interval normie) LogHook
 slay NewRateLimitHook(rate int, duration time.Duration) LogHook
 slay NewContextEnricherHook() LogHook
-slay NewPanicHook(level Level) LogHook
+slay NewShookHook(level Level) LogHook
 slay NewMetricsHook(reporter MetricsReporter) LogHook
 ```
 

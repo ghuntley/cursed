@@ -50,8 +50,11 @@ pub fn init_goroutine_manager() {
 ///
 /// The active goroutine count is used by `wait_for_goroutines` to determine
 /// when all concurrent work has completed.
+#[tracing::instrument(level = "debug")]
 pub fn register_goroutine() {
-    ACTIVE_GOROUTINES.fetch_add(1, Ordering::SeqCst);
+    let prev_count = ACTIVE_GOROUTINES.fetch_add(1, Ordering::SeqCst);
+    let new_count = prev_count + 1;
+    tracing::info!(previous_count = prev_count, new_count = new_count, "Goroutine registered");
 }
 
 /// Marks a goroutine as completed in the runtime system.
@@ -62,8 +65,11 @@ pub fn register_goroutine() {
 ///
 /// Paired with `register_goroutine`, this function allows the runtime to track
 /// the number of goroutines currently executing.
+#[tracing::instrument(level = "debug")]
 pub fn finish_goroutine() {
-    ACTIVE_GOROUTINES.fetch_sub(1, Ordering::SeqCst);
+    let prev_count = ACTIVE_GOROUTINES.fetch_sub(1, Ordering::SeqCst);
+    let new_count = prev_count - 1;
+    tracing::info!(previous_count = prev_count, new_count = new_count, "Goroutine finished");
 }
 
 /// Waits for all goroutines to complete with a specified timeout.
@@ -84,16 +90,30 @@ pub fn finish_goroutine() {
 ///
 /// The number of goroutines still running when the function returns. A return value
 /// of zero indicates that all goroutines completed successfully.
+#[tracing::instrument(fields(timeout_ms = timeout_ms), level = "debug")]
 pub fn wait_for_goroutines(timeout_ms: u64) -> usize {
     // Simple implementation with timeout
+    tracing::info!(timeout_ms = timeout_ms, "Waiting for goroutines to complete");
     let start = std::time::Instant::now();
     let timeout = std::time::Duration::from_millis(timeout_ms);
 
     loop {
         let count = ACTIVE_GOROUTINES.load(Ordering::SeqCst);
-        if count == 0 || start.elapsed() > timeout {
+        let elapsed = start.elapsed();
+        
+        if count == 0 {
+            tracing::info!("All goroutines completed");
+            return count;
+        } else if elapsed > timeout {
+            tracing::warn!(active_goroutines = count, elapsed_ms = ?elapsed.as_millis(), "Timeout waiting for goroutines");
             return count;
         }
+        
+        // Only log every 100ms to avoid excessive logging
+        if elapsed.as_millis() % 100 < 10 {
+            tracing::debug!(active_goroutines = count, elapsed_ms = ?elapsed.as_millis(), "Still waiting for goroutines");
+        }
+        
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }
@@ -268,8 +288,10 @@ impl<'ctx> JitCompiler<'ctx> {
     /// # Returns
     ///
     /// Result<(), Error> - Success or an error if mapping fails
+    #[tracing::instrument(skip(self), level = "debug")]
     pub fn map_functions(&mut self) -> Result<(), Error> {
         if self.functions_mapped {
+            tracing::debug!("Functions already mapped, skipping");
             return Ok(());
         }
         
@@ -292,8 +314,10 @@ impl<'ctx> JitCompiler<'ctx> {
     /// # Returns
     ///
     /// Result<i32, Error> - The return value from main or an error
+    #[tracing::instrument(skip(self), level = "info")]
     pub fn execute(&mut self) -> Result<i32, Error> {
         // Map external functions first
+        tracing::debug!("Starting JIT execution process");
         self.map_functions()?;
         
         // Debug info about module functions

@@ -7,9 +7,16 @@ use cursed::prelude::*;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
+use tracing::{debug, error, info, instrument, span, Level};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 #[test]
+#[instrument]  // Instrument test function
 fn test_jit_map_basic() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
     // Test basic map operations
     let input = r#"
     vibe test
@@ -42,10 +49,10 @@ fn test_jit_map_basic() -> Result<(), Error> {
     // Compile the program
     code_gen.compile_program(&program)?;
 
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -55,7 +62,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
 
     // Define and map the 'puts' function
     extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
+        info!(value = val, "PUTS called with value");
         0
     }
     
@@ -75,9 +82,10 @@ fn test_jit_map_basic() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        info!(return_value = result, "Main function execution completed");
 
         // Test should return 0 for success - in this test yolo 0 is at the end
+        debug!(expected = 0, actual = result, "Verifying test return value");
         assert_eq!(result, 0, "Map basic test failed: returned {}", result);
     }
 
@@ -86,7 +94,9 @@ fn test_jit_map_basic() -> Result<(), Error> {
 
 #[test]
 #[ignore = "Map support not fully implemented"]
+#[instrument]  // Instrument test function
 fn test_jit_map_mutation() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
     // Test map mutation operations
     let input = r#"
     vibe test;
@@ -129,10 +139,10 @@ fn test_jit_map_mutation() -> Result<(), Error> {
     // Compile the program
     code_gen.compile_program(&program)?;
 
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging at debug level
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -142,7 +152,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 
     // Define and map the 'puts' function
     extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
+        info!(value = val, "PUTS called with value");
         0
     }
     
@@ -162,9 +172,10 @@ fn test_jit_map_mutation() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        info!(return_value = result, "Main function execution completed");
 
         // Test should return 1 for success if mutation worked
+        debug!(expected = 1, actual = result, "Verifying test return value");
         assert_eq!(result, 1, "Map mutation test failed: returned {}", result);
     }
 
@@ -173,7 +184,9 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 
 #[test]
 #[ignore = "Map support not fully implemented"]
+#[instrument]  // Instrument test function
 fn test_jit_map_missing_key() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
     // Test map with missing key
     let input = r#"
     vibe test;
@@ -215,10 +228,10 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
     // Compile the program
     code_gen.compile_program(&program)?;
 
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging at debug level
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -228,7 +241,7 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
 
     // Define and map the 'puts' function
     extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("puts: {}", val);
+        info!(value = val, "PUTS called with value");
         0
     }
     
@@ -248,9 +261,10 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        info!(return_value = result, "Main function execution completed");
 
         // Test should return 1 for success (key doesn't exist)
+        debug!(expected = 1, actual = result, "Verifying test return value");
         assert_eq!(result, 1, "Map missing key test failed: returned {}", result);
     }
 

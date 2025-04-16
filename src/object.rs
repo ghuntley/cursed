@@ -647,6 +647,7 @@ use std::sync::Arc;
 use std::sync::{Condvar, Mutex};
 
 impl Channel {
+    #[tracing::instrument(fields(element_type = ?element_type, buffer_size = buffer_size), level = "debug")]
     pub fn new(element_type: String, buffer_size: usize) -> Self {
         Self {
             element_type,
@@ -664,9 +665,11 @@ impl Channel {
     ///
     /// For unbuffered channels (buffer_size = 0):
     /// - Always returns Ok as we don't implement true blocking in this version
+    #[tracing::instrument(skip(self, value), fields(channel_type = ?self.element_type, buffer_size = self.buffer_size, buffer_len = self.buffer.len(), closed = self.closed), level = "debug")]
     pub fn send(&mut self, value: Object) -> Result<(), Error> {
         // Check if channel is closed
         if self.closed {
+            tracing::warn!("Attempted to send on closed channel");
             return Err(Error::Runtime("send on closed channel".to_string()));
         }
 
@@ -1167,12 +1170,15 @@ impl Object {
     }
 
     /// Create a new channel object
+    #[tracing::instrument(fields(element_type = ?element_type, buffer_size = buffer_size), level = "debug")]
     pub fn new_channel(element_type: String, buffer_size: usize) -> Self {
         let channel = Channel::new(element_type, buffer_size);
+        tracing::debug!("Created new channel object");
         Object::Channel(Rc::new(RefCell::new(channel)))
     }
 
     /// Send a value to a channel
+    #[tracing::instrument(skip(self, value), fields(self_type = ?self.type_name(), value_type = ?value.type_name()), level = "debug")]
     pub fn channel_send(&self, value: Object) -> Result<(), Error> {
         match self {
             Object::Channel(channel) => channel.borrow_mut().send(value),

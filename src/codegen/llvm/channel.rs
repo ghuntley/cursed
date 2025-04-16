@@ -6,7 +6,9 @@ use super::context::LlvmCodeGenerator;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Compile a channel creation expression
+    #[tracing::instrument(skip(self, channel_expr), fields(element_type = ?channel_expr.element_type.string(), has_capacity = channel_expr.capacity.is_some()), level = "debug")]
     pub fn compile_channel_creation(&mut self, channel_expr: &ChannelExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        tracing::info!("Compiling channel creation");
         // Import the create_channel function from core::channel
         self.init_channel_helpers();
         
@@ -54,7 +56,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Compile a send expression (either blocking or non-blocking)
+    #[tracing::instrument(skip(self, send_expr), fields(non_blocking = send_expr.non_blocking), level = "debug")]
     pub fn compile_send_expression(&mut self, send_expr: &SendExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        tracing::info!(non_blocking = send_expr.non_blocking, "Compiling channel send operation");
         // Import the send_to_channel function
         self.init_channel_helpers();
         
@@ -140,7 +144,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Compile a receive expression (either blocking or non-blocking)
+    #[tracing::instrument(skip(self, recv_expr), fields(non_blocking = recv_expr.non_blocking), level = "debug")]
     pub fn compile_receive_expression(&mut self, recv_expr: &ReceiveExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        tracing::info!(non_blocking = recv_expr.non_blocking, "Compiling channel receive operation");
         // Import the receive_from_channel function
         self.init_channel_helpers();
         

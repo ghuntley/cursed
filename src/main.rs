@@ -6,6 +6,8 @@
 use std::env;
 use std::process;
 use std::path::Path;
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::{fmt, EnvFilter};
 
 // Import our custom mainpatch module
 mod main_patch;
@@ -20,6 +22,8 @@ static INITIALIZE: std::sync::Once = std::sync::Once::new();
 /// - File path: Executes the file
 /// - Special options: Handles debug, help, version, etc.
 fn main() {
+    // Initialize tracing
+    cursed::init_tracing();
     // Initialize Vector2D type methods
     INITIALIZE.call_once(|| {
         // Register Vector2D methods with the registry
@@ -129,9 +133,11 @@ fn main() {
 
     // Handle errors
     if let Err(e) = result {
+        error!(error = ?e, "Program execution failed");
         eprintln!("Error: {}", e);
         process::exit(1);
     }
+    info!("Program executed successfully");
 }
 
 /// Prints usage information for the CURSED CLI

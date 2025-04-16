@@ -2,8 +2,16 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 
+// Import tracing setup
+#[path = "tracing_setup.rs"]
+#[macro_use]
+pub mod tracing_setup;
+use tracing::{debug, error, info, trace, warn};
+
 /// Runs a CURSED file through the compiler and returns the output and exit status
+#[tracing::instrument(level = "debug")]
 fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
+    debug!("Running CURSED file: {}", file_path);
     let output = Command::new("devenv")
         .args(&["shell", "./target/debug/cursed", file_path])
         .output()?;
@@ -13,25 +21,43 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
 
     // Combine stdout and stderr for debugging
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
+    
+    let success = output.status.success();
+    if success {
+        debug!("Command executed successfully");
+    } else {
+        warn!(status = ?output.status, "Command execution failed");
+    }
 
     // Return the combined output and success status
-    Ok((combined_output, output.status.success()))
+    Ok((combined_output, success))
 }
 
 /// Tests JIT execution of a minimal program
 #[test]
 fn test_jit_minimal() {
+    // Initialize tracing for this test
+    tracing_setup::init_test_tracing();
     let test_file = "tests/minimal_test.csd";
+    info!(file = test_file, "Testing JIT execution of minimal program");
+    
     assert!(
         Path::new(test_file).exists(),
         "Test file not found: {}",
         test_file
     );
+    debug!("Test file exists");
 
-    let (output, success) = run_cursed_file(test_file).expect("Failed to run CURSED compiler");
+    let result = run_cursed_file(test_file);
+    if let Err(err) = &result {
+        error!(error = ?err, "Failed to run CURSED compiler");
+    }
+    let (output, success) = result.expect("Failed to run CURSED compiler");
 
     // Just verify the program can be compiled and run without checking specific output
     assert!(success, "Execution failed. Output:\n{}", output);
-
-    println!("Successfully executed minimal JIT test");
+    
+    if success {
+        info!("Successfully executed minimal JIT test");
+    }
 }

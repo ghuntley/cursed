@@ -50,6 +50,7 @@ impl<'a> Parser<'a> {
     }
     
     /// Parse an expression with the given precedence
+    #[tracing::instrument(skip(self), fields(token = ?self.current_token, precedence = ?precedence), level = "debug")]
     pub(super) fn parse_expression(
         &mut self,
         precedence: Precedence,

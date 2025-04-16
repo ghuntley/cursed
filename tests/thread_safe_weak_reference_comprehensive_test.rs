@@ -4,7 +4,13 @@ use std::sync::{Arc, RwLock, Mutex};
 use std::thread;
 use std::time::Duration;
 use cursed::memory::{Tag, Traceable, Visitor, ThreadSafeVisitor, GarbageCollector, ThreadSafeGc, ThreadSafeWeak};
-use cursed::memory::weak_registry::{WeakRegistry, GlobalWeakRegistry};
+use cursed::memory::weak::WeakRegistry;
+use cursed::memory::weak_registry::GlobalWeakRegistry;
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 // Test object that is thread-safe
 #[derive(Debug, Clone)]
@@ -42,9 +48,9 @@ impl Traceable for ThreadSafeTestObject {
     fn trace(&self, visitor: &mut dyn Visitor) {
         // Trace the next pointer if it exists
         if let Some(next) = &*self.next.lock().unwrap() {
-            // For testing purposes, we'll just print a message instead of actually tracing
+            // For testing purposes, we'll just log a message instead of actually tracing
             // In a real implementation, we'd need a way to check if the visitor is thread-safe
-            println!("Would trace ThreadSafeGc reference with id={}", next.id());
+            trace!(reference_id = %next.id(), "Would trace ThreadSafeGc reference");
         }
     }
 
@@ -62,63 +68,89 @@ unsafe impl Send for ThreadSafeTestObject {}
 unsafe impl Sync for ThreadSafeTestObject {}
 
 #[test]
+#[instrument]
 fn test_thread_safe_weak_reference_basic() {
+    tracing_setup::init_test_tracing();
+    info!("Starting basic thread-safe weak reference test");
     // Create a garbage collector
     let gc = Arc::new(GarbageCollector::new());
     
     // Create a thread-safe object and wrap it in ThreadSafeGc
     let obj = ThreadSafeTestObject::new(42);
+    debug!("Created thread-safe test object with value=42");
     let gc_obj = gc.allocate_thread_safe(obj);
+    debug!("Allocated object in thread-safe GC");
     
     // Create a weak reference
     let weak_ref = gc_obj.downgrade();
+    debug!("Created weak reference from strong reference");
     
     // Verify we can upgrade the weak reference
     let upgraded = weak_ref.upgrade().expect("Should be able to upgrade weak reference");
-    assert_eq!(upgraded.inner().unwrap().get_value(), 42);
+    debug!(value = upgraded.inner().unwrap().get_value(), "Upgraded weak reference and retrieved value");
+    assert_eq!(upgraded.inner().unwrap().get_value(), 42, "Value should be 42");
     
     // Modify the object through the upgraded reference
     upgraded.inner().unwrap().set_value(100);
+    debug!(new_value = 100, "Modified object value through upgraded reference");
     
     // Verify the original sees the change
-    assert_eq!(gc_obj.inner().unwrap().get_value(), 100);
+    debug!(original_value = gc_obj.inner().unwrap().get_value(), "Checking original reference value");
+    assert_eq!(gc_obj.inner().unwrap().get_value(), 100, "Original reference should see the modified value");
     
     // Create another weak reference
     let another_weak = upgraded.downgrade();
+    debug!("Created another weak reference");
     
     // Clean up the strong references
+    debug!("Dropping strong references");
     drop(gc_obj);
     drop(upgraded);
     
     // Force a garbage collection
+    debug!("Running garbage collection");
     gc.collect_garbage();
     
     // The weak references should no longer upgrade
+    debug!(upgrades = weak_ref.upgrade().is_some(), "Checking if weak reference can be upgraded");
     assert!(weak_ref.upgrade().is_none(), "Weak reference should not upgrade after object is collected");
+    debug!(upgrades = another_weak.upgrade().is_some(), "Checking if another weak reference can be upgraded");
     assert!(another_weak.upgrade().is_none(), "Another weak reference should not upgrade after object is collected");
+    
+    info!("Basic thread-safe weak reference test completed successfully");
 }
 
 #[test]
+#[instrument]
 fn test_thread_safe_weak_reference_across_threads() {
+    tracing_setup::init_test_tracing();
+    info!("Starting thread-safe weak reference across threads test");
     // Create a garbage collector
     let gc = Arc::new(GarbageCollector::new());
+    debug!("Created garbage collector");
     
     // Create a thread-safe object and wrap it in ThreadSafeGc
     let obj = ThreadSafeTestObject::new(42);
     let gc_obj = gc.allocate_thread_safe(obj);
+    debug!("Created thread-safe object with value=42");
     
     // Create a weak reference to pass to another thread
     let weak_ref = gc_obj.downgrade();
+    debug!("Created weak reference for thread usage");
     
     // Spawn a thread that uses the weak reference
     let thread_weak = weak_ref.clone();
+    debug!("Spawning worker thread with cloned weak reference");
     let thread_handle = thread::spawn(move || {
+        // This would be a different logger, in a different thread
         // Try to upgrade the weak reference
         match thread_weak.upgrade() {
             Some(strong_ref) => {
                 // Successfully upgraded
                 let value = strong_ref.inner().unwrap().get_value();
-                assert_eq!(value, 42);
+                // In a real system, would use thread-local tracing setup
+                // Here we just use the thread's assert
+                assert_eq!(value, 42, "Thread value should be 42");
                 
                 // Modify the value
                 strong_ref.inner().unwrap().set_value(200);
@@ -132,24 +164,37 @@ fn test_thread_safe_weak_reference_across_threads() {
     });
     
     // Wait for the thread to complete
+    debug!("Waiting for worker thread to complete");
     let thread_succeeded = thread_handle.join().unwrap();
+    debug!(succeeded = thread_succeeded, "Thread execution result");
     assert!(thread_succeeded, "Thread should have successfully upgraded the weak reference");
     
     // Verify the value was changed by the thread
-    assert_eq!(gc_obj.inner().unwrap().get_value(), 200);
+    let modified_value = gc_obj.inner().unwrap().get_value();
+    debug!(value = modified_value, expected = 200, "Checking value modified by thread");
+    assert_eq!(modified_value, 200, "Value should have been changed to 200 by the thread");
     
     // Clean up
+    debug!("Dropping strong reference");
     drop(gc_obj);
     
     // Force a garbage collection
+    debug!("Running garbage collection");
     gc.collect_garbage();
     
     // The weak reference should no longer upgrade
-    assert!(weak_ref.upgrade().is_none(), "Weak reference should not upgrade after object is collected");
+    let can_upgrade = weak_ref.upgrade().is_some();
+    debug!(can_upgrade = can_upgrade, "Checking if weak reference can be upgraded after collection");
+    assert!(!can_upgrade, "Weak reference should not upgrade after object is collected");
+    
+    info!("Thread-safe weak reference across threads test completed successfully");
 }
 
 #[test]
+#[instrument]
 fn test_thread_safe_weak_reference_circular() {
+    tracing_setup::init_test_tracing();
+    info!("Starting thread-safe weak reference circular test");
     // Create a garbage collector
     let gc = Arc::new(GarbageCollector::new());
     
@@ -184,7 +229,10 @@ fn test_thread_safe_weak_reference_circular() {
 }
 
 #[test]
+#[instrument]
 fn test_thread_safe_weak_reference_multiple_threads() {
+    tracing_setup::init_test_tracing();
+    info!("Starting thread-safe weak reference multiple threads test");
     // Create a garbage collector
     let gc = Arc::new(GarbageCollector::new());
     
@@ -238,7 +286,10 @@ fn test_thread_safe_weak_reference_multiple_threads() {
 }
 
 #[test]
+#[instrument]
 fn test_thread_safe_weak_reference_concurrent_operations() {
+    tracing_setup::init_test_tracing();
+    info!("Starting thread-safe weak reference concurrent operations test");
     // Create a garbage collector
     let gc = Arc::new(GarbageCollector::new());
     

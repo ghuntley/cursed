@@ -49,6 +49,7 @@ pub mod quick_test; // Property-based testing module
 pub mod quick_test_generators; // Generators for property-based testing
 pub mod chadlogging; // Structured logging (log/slog equivalent)
 pub mod is_uppercase; // Character classification functions
+pub mod generator; // Generator trait for property-based testing
 
 // Re-export for convenient access
 pub use concurrenz::*;
@@ -84,6 +85,8 @@ pub use chadlogging::{Logger, Handler, Record, Attr, TextHandler, JSONHandler,
                     debug, info, warn, error, group, new, default};
 // Character classification exports
 pub use is_uppercase::{is_uppercase, is_lowercase, is_digit, is_alpha, to_uppercase, to_lowercase};
+// Generator trait exports
+pub use generator::{Generator, RandGen, clone_generator, prepare_generator_object, register_generators, value, one_of};
 // Core built-in exports
 pub use core::{lit, normie, thicc, snack, meal, tea, len, cap, append, make, panic, recover};
 // Re-export core::new with a different name to avoid conflict with chadlogging::new

@@ -183,9 +183,9 @@ slay (s *Scanner) ErrorCount() int
   })
   ```
 
-- **Error Recovery**: Advanced tea recovery strategies
+- **Error Unbothered**: Advanced tea unbothered strategies
   ```csd
-  scanner.SetErrorRecovery(token_vibe.SynchronizeToNextLine)
+  scanner.SetErrorUnbothered(token_vibe.SynchronizeToNextLine)
   ```
 
 - **Scanner Factory**: Create scanners for specific languages

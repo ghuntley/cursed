@@ -54,6 +54,7 @@ pub enum CollectionResult {
 }
 
 /// Perform a mark-and-sweep garbage collection cycle
+#[tracing::instrument(skip(objects, root_set), fields(objects_count = objects.len(), roots_count = root_set.len(), has_timeout = timeout.is_some()), level = "debug")]
 pub fn mark_and_sweep(
     objects: &mut HashMap<usize, NonNull<dyn Traceable>>,
     root_set: &HashSet<usize>,
@@ -330,6 +331,7 @@ pub enum IncrementalResult {
 }
 
 /// Perform an incremental mark-and-sweep step
+#[tracing::instrument(skip(objects, root_set), fields(objects_count = objects.len(), roots_count = root_set.len(), max_objects = max_objects), level = "debug")]
 pub fn incremental_mark_and_sweep(
     objects: &mut HashMap<usize, NonNull<dyn Traceable>>,
     root_set: &HashSet<usize>,

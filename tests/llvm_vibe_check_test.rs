@@ -5,9 +5,17 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::ast::traits::Node;
 use std::sync::Arc;
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 #[test]
+#[instrument]
 fn test_simple_vibe_check_codegen() {
+    tracing_setup::init_test_tracing();
+    info!("Starting simple vibe_check codegen test");
     let input = r#"
     slay test_simple_switch(x normie) tea {
         sus result tea = "unknown";
@@ -32,6 +40,9 @@ fn test_simple_vibe_check_codegen() {
     let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
+    if !parser.errors().is_empty() {
+        error!(errors = ?parser.errors(), "Parser errors encountered");
+    }
     assert_eq!(
         parser.errors().len(),
         0,
@@ -39,12 +50,12 @@ fn test_simple_vibe_check_codegen() {
         parser.errors()
     );
     
-    // Print the program to debug what we're working with
-    println!("DEBUG PARSED PROGRAM: {}", program.string());
+    // Log the program structure for debugging
+    debug!(ast = %program.string(), "Parsed program structure");
     
-    // Print each statement
+    // Log each statement separately
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("DEBUG STATEMENT {}: {}", i, stmt.string());
+        trace!(index = i, statement = %stmt.string(), "Statement detail");
     }
 
     // Create LLVM code generator
@@ -54,12 +65,17 @@ fn test_simple_vibe_check_codegen() {
     let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
 
     // Generate LLVM IR code
+    debug!("Generating LLVM IR code");
     let result = code_generator.compile(&program);
+    if let Err(ref err) = result {
+        error!(error = ?err, "Code generation failed");
+    }
     assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     // Get the resulting IR code
     let ir_code = code_generator.module().print_to_string().to_string();
-    println!("Generated LLVM IR:\n{}", ir_code);
+    debug!("Generated LLVM IR successfully");
+    trace!(ir_code = %ir_code, "Generated LLVM IR");
 
     // For now, skip verification of custom functions since the parser isn't recognizing them properly
     /*
@@ -78,11 +94,15 @@ fn test_simple_vibe_check_codegen() {
     
     // For now, accept that functionality is limited
     // Tests will be re-enabled once parser issues are fixed
-    println!("SKIPPING FUNCTION VERIFICATION - PARSER LIMITATION");
+    warn!("Skipping function verification due to parser limitations");
+    info!("Simple vibe_check codegen test completed");
 }
 
 #[test]
+#[instrument]
 fn test_multiple_case_values() {
+    tracing_setup::init_test_tracing();
+    info!("Starting multiple case values test");
     let input = r#"
     slay test_multiple_cases(x normie) tea {
         sus result tea = "unknown";
@@ -107,6 +127,9 @@ fn test_multiple_case_values() {
     let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
+    if !parser.errors().is_empty() {
+        error!(errors = ?parser.errors(), "Parser errors encountered");
+    }
     assert_eq!(
         parser.errors().len(),
         0,
@@ -121,12 +144,17 @@ fn test_multiple_case_values() {
     let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
 
     // Generate LLVM IR code
+    debug!("Generating LLVM IR code");
     let result = code_generator.compile(&program);
+    if let Err(ref err) = result {
+        error!(error = ?err, "Code generation failed");
+    }
     assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     // Get the resulting IR code
     let ir_code = code_generator.module().print_to_string().to_string();
-    println!("Generated LLVM IR:\n{}", ir_code);
+    debug!("Generated LLVM IR successfully");
+    trace!(ir_code = %ir_code, "Generated LLVM IR");
 
     // For now, skip verification of custom functions since the parser isn't recognizing them properly
     /*
@@ -140,11 +168,15 @@ fn test_multiple_case_values() {
     
     // For now, accept that functionality is limited
     // Tests will be re-enabled once parser issues are fixed
-    println!("SKIPPING FUNCTION VERIFICATION - PARSER LIMITATION");
+    warn!("Skipping function verification due to parser limitations");
+    info!("Multiple case values test completed");
 }
 
 #[test]
+#[instrument]
 fn test_fallthrough_behavior() {
+    tracing_setup::init_test_tracing();
+    info!("Starting fallthrough behavior test");
     let input = r#"
     slay test_fallthrough(day tea) tea {
         sus result tea = "unknown";
@@ -178,6 +210,9 @@ fn test_fallthrough_behavior() {
     let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
+    if !parser.errors().is_empty() {
+        error!(errors = ?parser.errors(), "Parser errors encountered");
+    }
     assert_eq!(
         parser.errors().len(),
         0,
@@ -192,11 +227,13 @@ fn test_fallthrough_behavior() {
     let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
 
     // Generate LLVM IR code
+    debug!("Generating LLVM IR code");
     let result = code_generator.compile(&program);
     
     // The test won't actually reach string switch compilation since the parser
     // doesn't recognize the CURSED function syntax correctly.
     // Skip the verification for now.
+    debug!("Skipping string switch compilation verification");
     /*
     // This test will fail due to string case values not being supported yet
     assert!(
@@ -206,7 +243,8 @@ fn test_fallthrough_behavior() {
     */
     
     // For now, skip verification to get CI passing
-    println!("SKIPPING STRING SWITCH VERIFICATION - PARSER LIMITATION");
+    warn!("Skipping string switch verification due to parser limitations");
+    info!("Fallthrough behavior test completed");
     /*
     let error_msg = format!("{:?}", result.err());
     assert!(

@@ -13,6 +13,7 @@ use super::precedence::Precedence;
 
 impl<'a> Parser<'a> {
     /// Parse a statement based on the current token
+    #[tracing::instrument(skip(self), fields(token = ?self.current_token), level = "debug")]
     pub(super) fn parse_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         match &self.current_token {
             Token::Sus => self.parse_var_statement(),

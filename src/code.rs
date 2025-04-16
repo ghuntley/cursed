@@ -8,7 +8,9 @@ pub struct Code {
 
 impl Code {
     /// Create a new code object
+    #[tracing::instrument(level = "debug")]
     pub fn new() -> Self {
+        tracing::debug!("Creating new Code object");
         Code {
             instructions: Vec::new(),
         }

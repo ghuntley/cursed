@@ -120,10 +120,10 @@ fr fr Type assertions
 slay AssertType(t *VibeTest, expectedType, value interface{}, message tea)
 slay AssertImplements(t *VibeTest, interfaceObj, value interface{}, message tea)
 
-fr fr Panic assertions
-slay AssertPanics(t *VibeTest, fn func(), message tea)
-slay AssertPanicsWithValue(t *VibeTest, value interface{}, fn func(), message tea)
-slay AssertNoPanic(t *VibeTest, fn func(), message tea)
+fr fr Shook assertions
+slay AssertShooks(t *VibeTest, fn func(), message tea)
+slay AssertShooksWithValue(t *VibeTest, value interface{}, fn func(), message tea)
+slay AssertNoShook(t *VibeTest, fn func(), message tea)
 ```
 
 ## Test Fixtures

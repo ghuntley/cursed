@@ -78,10 +78,10 @@ fn test_finalization_order_with_object_storage() {
         finalization_order: finalization_order.clone(),
     };
     
-    // Store objects
-    let addr0 = storage.store(obj0);
-    let addr1 = storage.store(obj1);
-    let addr2 = storage.store(obj2);
+    // Store objects using the helper function
+    let addr0 = cursed::memory::store(obj0);
+    let addr1 = cursed::memory::store(obj1);
+    let addr2 = cursed::memory::store(obj2);
     
     // Register dependencies
     register_dependency(addr0, addr1); // 0 depends on 1
@@ -120,7 +120,7 @@ fn test_finalization_order_with_object_storage() {
     assert!(seen_2, "Object 2 should be finalized");
     
     // Objects should not be in storage anymore
-    assert!(!storage.contains(addr0), "Object 0 should be removed from storage");
-    assert!(!storage.contains(addr1), "Object 1 should be removed from storage");
-    assert!(!storage.contains(addr2), "Object 2 should be removed from storage");
+    assert!(!cursed::memory::contains(addr0), "Object 0 should be removed from storage");
+    assert!(!cursed::memory::contains(addr1), "Object 1 should be removed from storage");
+    assert!(!cursed::memory::contains(addr2), "Object 2 should be removed from storage");
 }

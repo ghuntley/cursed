@@ -186,7 +186,9 @@ impl<'a> Preprocessor<'a> {
     }
 
     /// Processes the token stream and returns the preprocessed tokens
+    #[tracing::instrument(skip(self), level = "debug")]
     pub fn process(&mut self) -> Result<TokenStream, Error> {
+        tracing::debug!("Starting token preprocessing");
         // Main processing loop - lex tokens and combine as needed
         loop {
             let token_result = self.lexer.next_token();
@@ -221,6 +223,7 @@ impl<'a> Preprocessor<'a> {
     }
 
     /// Processes the token buffer to identify and handle generic syntax
+    #[tracing::instrument(skip(self), fields(buffer_size = self.token_buffer.len()), level = "trace")]
     fn process_buffer(&mut self) -> Result<(), Error> {
         // Need at least 3 tokens to detect a generic pattern (identifier, LBracket, ...)
         if self.token_buffer.len() < 3 {
@@ -239,6 +242,7 @@ impl<'a> Preprocessor<'a> {
         // If we couldn't match any pattern and the buffer is getting large, start flushing
         if self.token_buffer.len() > 10 {
             let (token, location) = self.token_buffer.remove(0);
+            tracing::trace!(token = ?token, line = location.line, column = location.column, "Flushing token from buffer");
             self.token_stream.add_token(token, location);
         }
         

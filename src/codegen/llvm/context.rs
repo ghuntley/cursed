@@ -141,11 +141,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Compiles the program into LLVM IR.
+    #[tracing::instrument(skip(self, program), fields(package_name = ?self.current_package_name), level = "info")]
     pub fn compile(&mut self, program: &Program) -> Result<(), String> {
+        tracing::debug!(statements_count = program.statements.len(), "Starting compilation");
         self.compile_program(program)
     }
     
     /// Alias for compile to maintain backward compatibility
+    #[tracing::instrument(skip(self, program), level = "debug")]
     pub fn compile_program(&mut self, program: &Program) -> Result<(), String> {
         // Initialize string helpers and standard library functions
         self.init_string_helpers();
@@ -344,6 +347,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Internal implementation to avoid duplicates
+    #[tracing::instrument(skip(self, stmt), level = "debug")]
     pub fn compile_statement_internal(&mut self, stmt: &dyn Statement) -> Result<(), String> {
         use super::statement::StatementCompilation;
         use super::expression::ExpressionCompilation;

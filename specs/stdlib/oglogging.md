@@ -52,8 +52,8 @@ LstdFlags     fr fr Default flags: Ldate | Ltime
 - `spillf(format tea, args ...collab{})` - Print formatted tea
 - `fatal(args ...collab{})` - Print args and exit with code 1
 - `fatalf(format tea, args ...collab{})` - Print formatted tea and exit
-- `panic(args ...collab{})` - Print args and trigger panic
-- `panicf(format tea, args ...collab{})` - Print formatted tea and trigger panic
+- `shook(args ...collab{})` - Print args and trigger shook
+- `shookf(format tea, args ...collab{})` - Print formatted tea and trigger shook
 - `setFlags(flag thicc)` - Set output flags
 - `setOutput(w dropz.Writer)` - Set output destination
 - `setPrefix(prefix tea)` - Set output prefix
@@ -65,8 +65,8 @@ LstdFlags     fr fr Default flags: Ldate | Ltime
 - `(l *Logger) spillf(format tea, args ...collab{})` - Print formatted tea
 - `(l *Logger) fatal(args ...collab{})` - Print args and exit with code 1
 - `(l *Logger) fatalf(format tea, args ...collab{})` - Print formatted tea and exit
-- `(l *Logger) panic(args ...collab{})` - Print args and trigger panic
-- `(l *Logger) panicf(format tea, args ...collab{})` - Print formatted tea and trigger panic
+- `(l *Logger) shook(args ...collab{})` - Print args and trigger shook
+- `(l *Logger) shookf(format tea, args ...collab{})` - Print formatted tea and trigger shook
 - `(l *Logger) output(calldepth thicc, s tea) tea` - Low-level output method
 - `(l *Logger) setFlags(flag thicc)` - Set output flags
 - `(l *Logger) setOutput(w dropz.Writer)` - Set output destination
@@ -101,7 +101,7 @@ yeet "dropz"
 slay main() {
     sus logFile, err := dropz.create("app.log")
     yolo err != cap {
-        panic("failed to open log file")
+        shook("failed to open log file")
     }
     later logFile.close()
     

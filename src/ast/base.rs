@@ -18,6 +18,7 @@ pub struct Program {
 }
 
 impl Node for Program {
+    #[tracing::instrument(skip(self), fields(statements_count = self.statements.len()), level = "trace")]
     fn token_literal(&self) -> String {
         if !self.statements.is_empty() {
             self.statements[0].token_literal()
@@ -26,6 +27,7 @@ impl Node for Program {
         }
     }
 
+    #[tracing::instrument(skip(self), fields(statements_count = self.statements.len()), level = "trace")]
     fn string(&self) -> String {
         let mut out = String::new();
         for stmt in &self.statements {

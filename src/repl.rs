@@ -22,8 +22,9 @@ Type 'exit' or 'quit' to exit the REPL, 'help' for commands.
 "#;
 
 /// Start the REPL interactive mode
+#[tracing::instrument(level = "info")]
 pub fn start_repl() -> Result<(), Error> {
-    info!("Starting REPL interactive mode");
+    tracing::info!("Starting REPL interactive mode");
     println!("{}", REPL_HEADER);
 
     // Initialize the REPL history
@@ -134,10 +135,12 @@ pub fn start_repl() -> Result<(), Error> {
                                         .get_function::<unsafe extern "C" fn()>("main")
                                     {
                                         Ok(main_fn) => {
+                                            tracing::info!("REPL executing main function");
                                             println!("📌 Function 'main' found, executing...");
                                             println!("--- Execution Output ---");
                                             main_fn.call();
                                             println!("------------------------");
+                                            tracing::info!("REPL execution completed successfully");
                                             println!("✅ Execution completed successfully");
                                         }
                                         Err(e) => {
@@ -155,6 +158,7 @@ pub fn start_repl() -> Result<(), Error> {
                         }
                     }
                     Err(e) => {
+                        tracing::error!(error = ?e, "REPL compilation failed");
                         eprintln!("❌ Compilation failed: {}", e);
                         continue;
                     }

@@ -29,10 +29,12 @@ pub trait ExpressionCompilation<'ctx> {
 }
 
 impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
+    #[tracing::instrument(skip(self, expr), fields(expr_type = std::any::type_name_of_val(expr), expr_str = expr.string()), level = "debug")]
     fn compile_expression(&mut self, expr: &dyn Expression) -> Result<BasicValueEnum<'ctx>, Error> {
         // Try to handle specific expression types
         let any = expr.as_any();
         
+        tracing::debug!("Compiling expression");
         println!("DEBUG Expression Compilation: Type={}, String={}", 
                  std::any::type_name_of_val(expr), expr.string());
         

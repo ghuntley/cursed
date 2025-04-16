@@ -35,17 +35,28 @@ pub const E: f64 = std::f64::consts::E;
 /// # Returns
 ///
 /// Result<Rc<Object>, Error> - The absolute value result or an error
+#[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
 pub fn abs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
+        tracing::warn!("abs called without arguments");
         return Err(Error::Runtime("abs requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Integer(i.abs()))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.abs()))),
-        _ => Err(Error::Runtime(
-            "Argument to abs must be a number".to_string(),
-        )),
+        Object::Integer(i) => {
+            tracing::debug!(value = i, absolute = i.abs(), "Integer abs");
+            Ok(Rc::new(Object::Integer(i.abs())))
+        },
+        Object::Float(f) => {
+            tracing::debug!(value = f, absolute = f.abs(), "Float abs");
+            Ok(Rc::new(Object::Float(f.abs())))
+        },
+        _ => {
+            tracing::warn!(type_name = args[0].type_name(), "Invalid type for abs");
+            Err(Error::Runtime(
+                "Argument to abs must be a number".to_string(),
+            ))
+        },
     }
 }
 

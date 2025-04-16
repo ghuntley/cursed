@@ -14,6 +14,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     /// Create a new lexer for the provided input
+    #[tracing::instrument(skip(input), level = "debug")]
     pub fn new(input: &'a str) -> Self {
         let mut lexer = Lexer {
             input,
@@ -145,6 +146,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Get the next token
+    #[tracing::instrument(skip(self), fields(position = self.position, line = self.line, column = self.column), level = "trace")]
     pub fn next_token(&mut self) -> Result<Token, Error> {
         self.skip_whitespace();
 

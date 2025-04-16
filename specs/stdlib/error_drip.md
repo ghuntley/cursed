@@ -211,14 +211,14 @@ slay FormatErrorWithOptions(err tea, opts FormatOptions) tea
 ## Error Handling Utilities
 
 ```
-fr fr Try executes a function and yolos an tea if it panics
+fr fr Try executes a function and yolos an tea if it shooks
 slay Try(fn func() tea) (err tea)
 
-fr fr Must panics if err is not cap
+fr fr Must shooks if err is not cap
 slay Must(err tea)
 
-fr fr Recover turns a panic into an tea
-slay Recover(fn func()) (err tea)
+fr fr Unbothered turns a shook into an tea
+slay Unbothered(fn func()) (err tea)
 
 fr fr Check checks if err is not cap, and if so, adds source context and yolos it
 slay Check(err tea) tea
@@ -326,16 +326,16 @@ if err != cap {
 }
 
 fr fr Error recovery
-err = tea_drip.Recover(func() {
-    fr fr Code that might panic
+err = tea_drip.Unbothered(func() {
+    fr fr Code that might shook
     if x == 0 {
-        panic("division by zero")
+        shook("division by zero")
     }
     result = 10 / x
 })
 
 if err != cap {
-    vibez.spill("Recovered from panic:", err)
+    vibez.spill("Unbothered from shook:", err)
 }
 
 fr fr GenZ-styled tea handling
