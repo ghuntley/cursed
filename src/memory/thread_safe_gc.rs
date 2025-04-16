@@ -6,6 +6,7 @@
 use std::ptr::NonNull;
 use std::sync::{Arc, Mutex, Weak as StdWeak};
 use std::marker::PhantomData;
+use tracing::{debug, error, info, trace};
 use std::collections::HashMap;
 
 use crate::memory::{Gc, GarbageCollector, Traceable, Visitor, Tag};
@@ -64,8 +65,9 @@ impl<T: Traceable + Send + Sync + 'static> ThreadSafeGc<T> {
         unsafe {
             // First check if the object is still alive according to the GC
             if !self.gc.is_alive(self.id) {
-                println!("ThreadSafeGc::inner - Object 0x{:x} is not alive according to GC", self.id);
-                return None;
+                // This object isn't in the root set but might still be reachable through other objects
+                // Instead of immediately returning None, continue to check global storage
+                debug!("ThreadSafeGc::inner - Object 0x{:x} not in root set, checking global storage", self.id);
             }
             
             // Get a reference to the global storage
@@ -83,14 +85,14 @@ impl<T: Traceable + Send + Sync + 'static> ThreadSafeGc<T> {
                     if let Some(obj) = obj_ref {
                         let raw_ptr = obj as *const T;
                         // Return a reference with the appropriate lifetime
-                        println!("ThreadSafeGc::inner - Successfully retrieved object 0x{:x}", self.id);
+                        debug!("ThreadSafeGc::inner - Successfully retrieved object 0x{:x}", self.id);
                         return Some(&*raw_ptr);
                     }
                 }
             }
             
             // Object not found or couldn't acquire lock
-            println!("ThreadSafeGc::inner - Failed to get object 0x{:x} from global storage", self.id);
+            debug!("ThreadSafeGc::inner - Failed to get object 0x{:x} from global storage", self.id);
             None
         }
     }
