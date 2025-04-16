@@ -22,7 +22,6 @@ impl<'ctx> IfExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         tracing::debug!("Compiling if expression");
         
         // Get the current function
-        println!("DEBUG: Current function: {:?}", self.current_function());
         
         // First check if we already have a current function
         let function = if let Some(f) = self.current_function() {
@@ -153,17 +152,102 @@ impl<'ctx> IfExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Create a PHI node to merge the results
         // Get the type for the PHI node, using the same type for both branches
-        let phi_type = then_value.get_type();
-        println!("DEBUG: then_value type: {:?}, else_value type: {:?}", phi_type, else_value.get_type());
+        let then_type = then_value.get_type();
+        let else_type = else_value.get_type();
+        tracing::debug!("PHI node types - then: {:?}, else: {:?}", then_type, else_type);
+        
+        // Ensure that both branches produce values of compatible types
+        // If they don't match exactly, we may need to perform type conversions
+        let phi_type = if then_type == else_type {
+            then_type
+        } else {
+            // Handle common type conversion cases
+            match (then_value, else_value) {
+                // Convert integer types if necessary
+                (then, else_val) if then.is_int_value() && else_val.is_int_value() => {
+                    let then_int = then.into_int_value();
+                    let else_int = else_val.into_int_value();
+                    
+                    // Choose the wider type for the PHI node
+                    let then_width = then_int.get_type().get_bit_width();
+                    let else_width = else_int.get_type().get_bit_width();
+                    
+                    if then_width >= else_width {
+                        then_type
+                    } else {
+                        else_type
+                    }
+                },
+                // Handle other type conversion cases as needed
+                // For now, default to the then_type if no conversion is defined
+                _ => {
+                    tracing::warn!("Branch types don't match: {:?} vs {:?}", then_type, else_type);
+                    then_type
+                }
+            }
+        };
         
         let phi = self.builder().build_phi(phi_type, "if_result")
             .map_err(|e| Error::from_str(&format!("Failed to build phi node: {}", e)))?;
         
-        // Set up incoming values for the PHI node
-        phi.add_incoming(&[(&then_value, then_end_block), (&else_value, else_end_block)]);
+        // Set up incoming values for the PHI node - we may need to convert types first
+        // If the types don't match the phi_type, we need to insert conversion instructions
+        let (then_value_converted, else_value_converted) = if then_type == else_type {
+            // Same types, no conversion needed
+            (then_value, else_value)
+        } else {
+            // Different types, may need conversion
+            match (then_value, else_value) {
+                // Convert integer types if necessary
+                (then, else_val) if then.is_int_value() && else_val.is_int_value() => {
+                    let then_int = then.into_int_value();
+                    let else_int = else_val.into_int_value();
+                    
+                    // Determine which value needs conversion and convert it
+                    let (then_conv, else_conv) = if phi_type == then_type {
+                        // Convert else to match then
+                        let builder_pos = self.builder().get_insert_block().unwrap();
+                        self.builder().position_at_end(else_end_block);
+                        let else_extended = if then_int.get_type().get_bit_width() > else_int.get_type().get_bit_width() {
+                            // Sign extend or zero extend based on signedness (assuming signed here)
+                            self.builder().build_int_s_extend(else_int, then_int.get_type(), "extend")
+                                .map_err(|e| Error::from_str(&format!("Failed to extend integer: {}", e)))?    
+                        } else {
+                            // Truncate
+                            self.builder().build_int_truncate(else_int, then_int.get_type(), "trunc")
+                                .map_err(|e| Error::from_str(&format!("Failed to truncate integer: {}", e)))?    
+                        };
+                        self.builder().position_at_end(builder_pos);
+                        (then.into(), else_extended.into())
+                    } else {
+                        // Convert then to match else
+                        let builder_pos = self.builder().get_insert_block().unwrap();
+                        self.builder().position_at_end(then_end_block);
+                        let then_extended = if else_int.get_type().get_bit_width() > then_int.get_type().get_bit_width() {
+                            // Sign extend or zero extend based on signedness (assuming signed here)
+                            self.builder().build_int_s_extend(then_int, else_int.get_type(), "extend")
+                                .map_err(|e| Error::from_str(&format!("Failed to extend integer: {}", e)))?    
+                        } else {
+                            // Truncate
+                            self.builder().build_int_truncate(then_int, else_int.get_type(), "trunc")
+                                .map_err(|e| Error::from_str(&format!("Failed to truncate integer: {}", e)))?    
+                        };
+                        self.builder().position_at_end(builder_pos);
+                        (then_extended.into(), else_val.into())
+                    };
+                    (then_conv, else_conv)
+                },
+                // Handle float conversions if needed
+                // ... (similar logic for other types)
+                // If no conversion is needed or possible, use as-is
+                _ => (then_value, else_value),
+            }
+        };
+        
+        phi.add_incoming(&[(&then_value_converted, then_end_block), (&else_value_converted, else_end_block)]);
         
         // Important: returning a BasicValueEnum that we know is valid
-        println!("DEBUG: PHI value: {:?}", phi.as_basic_value());
+        tracing::debug!("PHI value: {:?}", phi.as_basic_value());
         
         Ok(phi.as_basic_value())
     }
