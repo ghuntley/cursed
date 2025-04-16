@@ -10,38 +10,97 @@
 //! between goroutines is managed through channels.
 
 use crate::error::Error;
-use crate::object::{Callable, Object};
-// Commented out temporarily due to missing functions
-// use crate::core::thread_safe_goroutine;
+use crate::object::{Object};
+use crate::object_thread_safe::{ThreadSafeObject, ThreadSafeCallable, ThreadSafeValue};
+use crate::core::thread_safe_goroutine;
 use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-/// Launches a new goroutine that executes the given function with arguments
+/// Launches a new goroutine that executes the given function
 ///
-/// This function creates a new concurrent execution context (goroutine) that runs
-/// the specified callable object with the provided arguments. The goroutine executes
-/// concurrently with the calling code, allowing for parallel execution.
+/// This is a simplified version that just runs the provided function in a new thread.
+/// It doesn't attempt to use the regular Object system which isn't thread-safe.
+/// For concurrent code, use the thread-safe version instead.
 ///
 /// # Arguments
 ///
-/// * `callable` - The function or closure to execute in the goroutine
-/// * `args` - The arguments to pass to the callable
+/// * `function` - Closure to execute in the goroutine
 ///
 /// # Returns
 ///
 /// Result<Object, Error> - Ok(Null) if goroutine was launched successfully, Error otherwise
-#[tracing::instrument(skip(callable, args), fields(args_count = args.len()), level = "info")]
-pub fn launch_goroutine(callable: &Object, args: Vec<Object>) -> Result<Object, Error> {
-    // Simplified placeholder implementation
-    // This will be replaced with a proper implementation in the future
-    tracing::debug!("Launching new goroutine");
+#[tracing::instrument(skip(function), level = "info")]
+pub fn launch_goroutine_fn<F>(function: F) -> Result<Object, Error> 
+where 
+    F: FnOnce() + Send + 'static
+{
+    tracing::debug!("Launching new goroutine from function");
+    
+    // Spawn a new thread to execute the function
     thread::spawn(move || {
-        // Just create a goroutine that does nothing for now
         tracing::info!("Goroutine started");
-        println!("Launched goroutine (placeholder)");
+        function();
+        tracing::debug!("Goroutine completed");
     });
 
+    Ok(Object::Null)
+}
+
+/// Launches a new goroutine with a simple function and integer argument
+///
+/// This is a simplified version for the CURSED interpreter that doesn't try
+/// to send complex non-thread-safe objects between threads.
+///
+/// # Arguments
+///
+/// * `name` - Name of the function to execute
+/// * `arg` - Simple integer argument to pass
+///
+/// # Returns
+///
+/// Result<Object, Error> - Ok(Null) if goroutine was launched successfully, Error otherwise
+#[tracing::instrument(skip(name, arg), level = "info")]
+pub fn launch_simple_goroutine(name: &str, arg: i64) -> Result<Object, Error> {
+    tracing::debug!("Launching simple goroutine: {}", name);
+    
+    // Clone the name for the new thread
+    let name_clone = name.to_string();
+    
+    // Spawn a new thread to execute the function
+    thread::spawn(move || {
+        tracing::info!("Simple goroutine started: {}", name_clone);
+        tracing::debug!("With argument: {}", arg);
+        
+        // In a real implementation, we would look up the function by name
+        // and execute it with the provided arguments
+        
+        tracing::debug!("Simple goroutine completed");
+    });
+
+    Ok(Object::Null)
+}
+
+/// Launches a goroutine with a thread-safe callable object
+///
+/// This is a more advanced version that uses the thread-safe
+/// object system to execute the callable. This ensures proper synchronization
+/// and memory safety when goroutines interact with shared state.
+///
+/// # Arguments
+///
+/// * `callable` - The thread-safe callable to execute
+/// * `args` - The thread-safe arguments to pass to the callable
+///
+/// # Returns
+///
+/// Result<Object, Error> - Ok(Null) if goroutine was launched successfully, Error otherwise
+pub fn launch_thread_safe_goroutine(
+    callable: Arc<dyn ThreadSafeCallable>,
+    args: Vec<ThreadSafeObject>,
+) -> Result<Object, Error> {
+    // Use the thread_safe_goroutine module to run the goroutine
+    thread_safe_goroutine::run_goroutine(callable, args)?;
     Ok(Object::Null)
 }
 
@@ -53,5 +112,15 @@ pub fn sleep(seconds: f64) -> Result<Object, Error> {
     let millis = (seconds * 1000.0) as u64;
     tracing::debug!(millis = millis, "Sleeping goroutine");
     thread::sleep(Duration::from_millis(millis));
+    Ok(Object::Null)
+}
+
+/// Wait for all goroutines to complete
+///
+/// This is a convenience function that waits for all goroutines to complete
+/// before returning. This is useful for testing and synchronization.
+pub fn wait_all_goroutines(timeout_ms: u64) -> Result<Object, Error> {
+    // Use the thread_safe_goroutine module to wait for all goroutines
+    thread_safe_goroutine::wait_all_goroutines(timeout_ms)?;
     Ok(Object::Null)
 }
