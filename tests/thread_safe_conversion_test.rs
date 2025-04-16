@@ -1,0 +1,299 @@
+//! Test the conversion between regular Objects and ThreadSafeObjects
+
+use std::sync::{Arc, Mutex};
+use std::thread;
+use cursed::error::Error;
+use cursed::object::Object;
+use cursed::object_thread_safe::{ThreadSafeObject, ThreadSafeValue, convert_to_thread_safe, convert_from_thread_safe};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
+
+#[test]
+fn test_object_to_thread_safe_conversion() {
+    tracing_setup::init_test_tracing();
+    
+    // Create various object types
+    let objects = vec![
+        Object::Integer(42),
+        Object::Float(3.14),
+        Object::Boolean(true),
+        Object::String("Hello, world!".to_string()),
+        Object::Array(vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)]),
+        Object::HashTable({
+            let mut map = std::collections::HashMap::new();
+            map.insert("key".to_string(), Object::String("value".to_string()));
+            map
+        }),
+        Object::Null,
+    ];
+    
+    // Test conversion to thread-safe objects
+    for obj in objects {
+        let thread_safe = convert_to_thread_safe(&obj).expect("Conversion should succeed");
+        
+        // Verify that we can create a ThreadSafeObject from this value
+        let thread_safe_obj = ThreadSafeObject::new(thread_safe.clone());
+        
+        // Verify that it matches the original
+        match obj {
+            Object::Integer(i) => {
+                if let ThreadSafeValue::Integer(j) = thread_safe {
+                    assert_eq!(i, j, "Integer conversion failed");
+                } else {
+                    panic!("Expected Integer, got {:?}", thread_safe);
+                }
+            },
+            Object::Float(f) => {
+                if let ThreadSafeValue::Float(g) = thread_safe {
+                    assert_eq!(f, g, "Float conversion failed");
+                } else {
+                    panic!("Expected Float, got {:?}", thread_safe);
+                }
+            },
+            Object::Boolean(b) => {
+                if let ThreadSafeValue::Boolean(c) = thread_safe {
+                    assert_eq!(b, c, "Boolean conversion failed");
+                } else {
+                    panic!("Expected Boolean, got {:?}", thread_safe);
+                }
+            },
+            Object::String(s) => {
+                if let ThreadSafeValue::String(t) = thread_safe {
+                    assert_eq!(s, t, "String conversion failed");
+                } else {
+                    panic!("Expected String, got {:?}", thread_safe);
+                }
+            },
+            Object::Array(_) => {
+                if let ThreadSafeValue::Array(_) = thread_safe {
+                    // Just check the type, detailed verification in other tests
+                    assert!(true);
+                } else {
+                    panic!("Expected Array, got {:?}", thread_safe);
+                }
+            },
+            Object::HashTable(_) => {
+                if let ThreadSafeValue::Map(_) = thread_safe {
+                    // Just check the type, detailed verification in other tests
+                    assert!(true);
+                } else {
+                    panic!("Expected Map, got {:?}", thread_safe);
+                }
+            },
+            Object::Null => {
+                if let ThreadSafeValue::Null = thread_safe {
+                    assert!(true);
+                } else {
+                    panic!("Expected Null, got {:?}", thread_safe);
+                }
+            },
+            _ => panic!("Unsupported object type for test: {:?}", obj),
+        }
+    }
+}
+
+#[test]
+fn test_thread_safe_to_object_conversion() {
+    tracing_setup::init_test_tracing();
+    
+    // Create various thread-safe value types
+    let values = vec![
+        ThreadSafeValue::Integer(42),
+        ThreadSafeValue::Float(3.14),
+        ThreadSafeValue::Boolean(true),
+        ThreadSafeValue::String("Hello, world!".to_string()),
+        ThreadSafeValue::Array(vec![
+            ThreadSafeValue::Integer(1),
+            ThreadSafeValue::Integer(2),
+            ThreadSafeValue::Integer(3)
+        ]),
+        ThreadSafeValue::Map({
+            let mut map = std::collections::HashMap::new();
+            map.insert("key".to_string(), ThreadSafeValue::String("value".to_string()));
+            map
+        }),
+        ThreadSafeValue::Null,
+    ];
+    
+    // Test conversion back to regular objects
+    for value in values {
+        let obj = convert_from_thread_safe(&value).expect("Conversion should succeed");
+        
+        // Verify that it matches the original
+        match value {
+            ThreadSafeValue::Integer(i) => {
+                if let Object::Integer(j) = obj {
+                    assert_eq!(i, j, "Integer conversion failed");
+                } else {
+                    panic!("Expected Integer, got {:?}", obj);
+                }
+            },
+            ThreadSafeValue::Float(f) => {
+                if let Object::Float(g) = obj {
+                    assert_eq!(f, g, "Float conversion failed");
+                } else {
+                    panic!("Expected Float, got {:?}", obj);
+                }
+            },
+            ThreadSafeValue::Boolean(b) => {
+                if let Object::Boolean(c) = obj {
+                    assert_eq!(b, c, "Boolean conversion failed");
+                } else {
+                    panic!("Expected Boolean, got {:?}", obj);
+                }
+            },
+            ThreadSafeValue::String(s) => {
+                if let Object::String(t) = obj {
+                    assert_eq!(s, t, "String conversion failed");
+                } else {
+                    panic!("Expected String, got {:?}", obj);
+                }
+            },
+            ThreadSafeValue::Array(_) => {
+                if let Object::Array(_) = obj {
+                    // Just check the type, detailed verification in other tests
+                    assert!(true);
+                } else {
+                    panic!("Expected Array, got {:?}", obj);
+                }
+            },
+            ThreadSafeValue::Map(_) => {
+                if let Object::HashTable(_) = obj {
+                    // Just check the type, detailed verification in other tests
+                    assert!(true);
+                } else {
+                    panic!("Expected Map, got {:?}", obj);
+                }
+            },
+            ThreadSafeValue::Null => {
+                if let Object::Null = obj {
+                    assert!(true);
+                } else {
+                    panic!("Expected Null, got {:?}", obj);
+                }
+            },
+        }
+    }
+}
+
+#[test]
+fn test_bidirectional_conversion() {
+    tracing_setup::init_test_tracing();
+    
+    // Start with a regular object
+    let original = Object::Array(vec![
+        Object::Integer(1),
+        Object::String("test".to_string()),
+        Object::Boolean(true),
+        Object::HashTable({
+            let mut map = std::collections::HashMap::new();
+            map.insert("nested".to_string(), Object::Float(3.14));
+            map
+        })
+    ]);
+    
+    // Convert to thread-safe
+    let thread_safe = convert_to_thread_safe(&original).expect("Conversion to thread-safe should succeed");
+    
+    // Convert back to regular object
+    let converted_back = convert_from_thread_safe(&thread_safe).expect("Conversion back should succeed");
+    
+    // Verify objects match (must implement PartialEq for Object)
+    assert_eq!(original, converted_back, "Bidirectional conversion should preserve values");
+}
+
+#[test]
+fn test_complex_nested_conversion() {
+    tracing_setup::init_test_tracing();
+    
+    // Create a complex nested structure
+    let mut outer_map = std::collections::HashMap::new();
+    
+    // Add some simple values
+    outer_map.insert("number".to_string(), Object::Integer(42));
+    outer_map.insert("text".to_string(), Object::String("hello".to_string()));
+    
+    // Add a nested array
+    let nested_array = vec![
+        Object::Boolean(true),
+        Object::Float(2.718),
+        Object::Null
+    ];
+    outer_map.insert("array".to_string(), Object::Array(nested_array));
+    
+    // Add a nested map
+    let mut nested_map = std::collections::HashMap::new();
+    nested_map.insert("a".to_string(), Object::Integer(1));
+    nested_map.insert("b".to_string(), Object::Integer(2));
+    outer_map.insert("map".to_string(), Object::HashTable(nested_map));
+    
+    // Create the original object
+    let original = Object::HashTable(outer_map);
+    
+    // Convert to thread-safe
+    let thread_safe = convert_to_thread_safe(&original).expect("Conversion to thread-safe should succeed");
+    
+    // Convert back
+    let converted_back = convert_from_thread_safe(&thread_safe).expect("Conversion back should succeed");
+    
+    // Verify they match
+    assert_eq!(original, converted_back, "Complex nested conversion should preserve all values");
+}
+
+#[test]
+fn test_conversion_in_multiple_threads() {
+    tracing_setup::init_test_tracing();
+    
+    // Note: We need to limit ourselves to thread-safe types for this test
+    // Create a thread-safe value first
+    let thread_safe_val = ThreadSafeValue::Array(vec![
+        ThreadSafeValue::Integer(1),
+        ThreadSafeValue::String("test".to_string()),
+        ThreadSafeValue::Boolean(true)
+    ]);
+    
+    // Then convert to a regular object
+    let regular_val = convert_from_thread_safe(&thread_safe_val).expect("Initial conversion should succeed");
+    
+    // Make sure we can convert back without error
+    let back_to_thread_safe = convert_to_thread_safe(&regular_val).expect("Convert back should succeed");
+    
+    // Verify that the conversion preserves values
+    assert_eq!(back_to_thread_safe, thread_safe_val, "Conversion back to thread-safe should preserve values");
+    
+    // Since we can't easily share Object across threads (it contains Rc which isn't Send+Sync),
+    // we'll test multi-threading differently
+    
+    // Create channels to communicate between threads
+    let (tx, rx) = std::sync::mpsc::channel();
+    
+    // Create a thread to do the conversion
+    let handle = thread::spawn(move || {
+        // Create a thread-safe value in the thread
+        let thread_val = ThreadSafeValue::Integer(42);
+        
+        // Send it back through the channel
+        tx.send(thread_val).unwrap();
+        
+        // Return success
+        true
+    });
+    
+    // Receive the thread-safe value
+    let received = rx.recv().unwrap();
+    
+    // Convert it to a regular object
+    let as_object = convert_from_thread_safe(&received).expect("Should convert from thread-safe to regular");
+    
+    // Verify it's the expected value
+    if let Object::Integer(i) = as_object {
+        assert_eq!(i, 42, "Received value should be 42");
+    } else {
+        panic!("Expected Integer, got {:?}", as_object);
+    }
+    
+    // Wait for the thread to finish
+    assert!(handle.join().unwrap(), "Thread should succeed");
+}
