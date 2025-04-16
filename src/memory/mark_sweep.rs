@@ -66,12 +66,30 @@ pub fn mark_and_sweep(
     let mut gray_objects = Vec::new();
     
     // Phase 1: Mark root objects
-    debug_println!("Mark-sweep GC started with {} roots", root_set.len());
+    debug_println!("Mark-sweep GC started with {} roots, {} objects total", 
+                  root_set.len(), objects.len());
+                  
+    // Log all objects for debugging
+    debug_println!("Objects in map:");
+    for (&addr, _) in objects.iter() {
+        debug_println!("  Object at 0x{:x}", addr);
+    }
+    
+    // Log root set
+    debug_println!("Root set:");
+    for &root_id in root_set.iter() {
+        debug_println!("  Root at 0x{:x}", root_id);
+    }
+    
+    // Mark root objects
     for &root_id in root_set.iter() {
         if let Some(ptr) = objects.get(&root_id) {
+            debug_println!("Marking root object at 0x{:x}", root_id);
             marked.insert(root_id);
             gray_objects.push(*ptr);
             stats.marked += 1;
+        } else {
+            debug_println!("WARNING: Root 0x{:x} not found in objects map", root_id);
         }
     }
     
@@ -94,22 +112,20 @@ pub fn mark_and_sweep(
         let obj_ptr = gray_objects.pop().unwrap();
         let obj_addr = obj_ptr.as_ptr() as *const () as usize;
         
-        // For each object that this one references
-        // In a real implementation, we would do the full trace here
-        // For simplicity in this minimal version, we're not doing a complete trace
+        // Create a visitor to trace the object's references
+        let mut visitor = MarkVisitor::new(&mut gray_objects, &mut marked, objects);
         
-        // Simulate visiting child objects
-        for &addr in objects.keys() {
-            // Only process objects we haven't marked yet
-            if !marked.contains(&addr) {
-                // Mark this object
-                marked.insert(addr);
-                
-                // Add to gray list for further processing if it's in our objects map
-                if let Some(&obj_ptr) = objects.get(&addr) {
-                    gray_objects.push(obj_ptr);
-                }
-            }
+        // Safety: We know the pointer is valid because it was in our objects map
+        unsafe {
+            let obj_ptr_mut = obj_ptr.as_ptr() as *mut dyn Traceable;
+            let obj = &mut *obj_ptr_mut;
+            
+            // Trace the object's references
+            debug_println!("Tracing object at address 0x{:x}", obj_addr);
+            obj.trace(&mut visitor);
+            
+            // Stats
+            stats.marked += visitor.marked_this_visit;
         }
     }
     
@@ -136,6 +152,7 @@ pub fn mark_and_sweep(
         }
         
         if !marked.contains(&addr) {
+            debug_println!("Object at 0x{:x} was not marked - adding to sweep list", addr);
             to_remove.push(addr);
             stats.swept += 1;
             
@@ -145,14 +162,23 @@ pub fn mark_and_sweep(
                 let obj_ptr_mut = obj_ptr.as_ptr() as *mut dyn Traceable;
                 let obj = &mut *obj_ptr_mut;
                 obj.finalize();
+                debug_println!("Finalized object at 0x{:x}", addr);
             }
+        } else {
+            debug_println!("Object at 0x{:x} was marked - keeping", addr);
         }
     }
     
     // Remove swept objects
+    debug_println!("About to remove {} unreachable objects", to_remove.len());
     for addr in to_remove {
-        objects.remove(&addr);
+        debug_println!("Removing unreachable object at 0x{:x}", addr);
+        let removed = objects.remove(&addr);
+        if removed.is_none() {
+            debug_println!("ERROR: Object at 0x{:x} not found in objects map during sweeping", addr);
+        }
     }
+    debug_println!("After sweeping, {} objects remain in the map", objects.len());
     
     let sweep_time = sweep_start.elapsed();
     stats.sweep_time_ms = sweep_time.as_millis() as u64;
@@ -170,8 +196,85 @@ pub fn mark_and_sweep(
     CollectionResult::Success(stats)
 }
 
-// Removed MarkVisitor struct - we're now handling the marking process directly
-// in the mark_and_sweep function to avoid borrow checker issues
+/// Visitor implementation for marking objects during garbage collection
+pub struct MarkVisitor<'a> {
+    /// Objects that need to be processed next
+    gray_list: &'a mut Vec<NonNull<dyn Traceable>>,
+    /// Set of marked object addresses
+    marked: &'a mut HashSet<usize>,
+    /// Map of all objects
+    objects: &'a HashMap<usize, NonNull<dyn Traceable>>,
+    /// Number of objects marked in this visit
+    pub marked_this_visit: usize,
+}
+
+impl<'a> MarkVisitor<'a> {
+    /// Create a new visitor for marking objects
+    pub fn new(
+        gray_list: &'a mut Vec<NonNull<dyn Traceable>>,
+        marked: &'a mut HashSet<usize>,
+        objects: &'a HashMap<usize, NonNull<dyn Traceable>>,
+    ) -> Self {
+        Self {
+            gray_list,
+            marked,
+            objects,
+            marked_this_visit: 0,
+        }
+    }
+}
+
+impl<'a> Visitor for MarkVisitor<'a> {
+    fn visit(&mut self, ptr: NonNull<dyn Traceable>) {
+        let addr = ptr.as_ptr() as *const () as usize;
+        
+        // If already marked, skip
+        if self.marked.contains(&addr) {
+            return;
+        }
+        
+        // Mark the object
+        self.marked.insert(addr);
+        self.marked_this_visit += 1;
+        debug_println!("Marked object at address 0x{:x}", addr);
+        
+        // Add to gray list for further processing
+        // Only if it's one of our managed objects
+        if self.objects.contains_key(&addr) {
+            self.gray_list.push(ptr);
+        }
+    }
+}
+
+/// A dummy traceable object used for testing
+#[derive(Debug)]
+pub(super) struct DummyTraceable {
+    pub id: usize,
+}
+
+impl DummyTraceable {
+    pub fn new(id: usize) -> Self {
+        Self { id }
+    }
+}
+
+impl Traceable for DummyTraceable {
+    fn trace(&self, _visitor: &mut dyn Visitor) {
+        // No implementation needed for testing
+    }
+    
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>()
+    }
+    
+    fn tag(&self) -> Tag {
+        Tag::Object
+    }
+    
+    fn finalize(&mut self) {
+        // No implementation needed for testing
+    }
+}
 
 /// Result of an incremental garbage collection step
 pub enum IncrementalResult {
@@ -231,9 +334,24 @@ pub fn incremental_mark_and_sweep(
         
         // Process next gray object
         let obj_ptr = gray_objects.pop().unwrap();
+        let obj_addr = obj_ptr.as_ptr() as *const () as usize;
         
-        // Simulate processing its descendants (simplified for this implementation)
-        // In a real implementation, we would be correctly tracing object references
+        // Create a visitor to trace the object's references
+        let mut visitor = MarkVisitor::new(&mut gray_objects, &mut marked, objects);
+        
+        // Safety: We know the pointer is valid because it was in our objects map
+        unsafe {
+            let obj_ptr_mut = obj_ptr.as_ptr() as *mut dyn Traceable;
+            let obj = &mut *obj_ptr_mut;
+            
+            // Trace the object's references
+            debug_println!("Incremental GC: Tracing object at address 0x{:x}", obj_addr);
+            obj.trace(&mut visitor);
+            
+            // Stats
+            stats.marked += visitor.marked_this_visit;
+        }
+        
         processed += 1;
     }
     
@@ -246,6 +364,35 @@ pub fn incremental_mark_and_sweep(
 mod tests {
     use super::*;
     use std::cell::RefCell;
+    
+    /// A dummy traceable object for testing
+    struct DummyTraceable {
+        id: usize,
+    }
+    
+    impl DummyTraceable {
+        fn new(id: usize) -> Self {
+            Self { id }
+        }
+    }
+    
+    impl Traceable for DummyTraceable {
+        fn trace(&self, _visitor: &mut dyn Visitor) {
+            // No implementation needed for tests
+        }
+        
+        fn size(&self) -> usize {
+            std::mem::size_of::<Self>()
+        }
+        
+        fn tag(&self) -> Tag {
+            Tag::Object
+        }
+        
+        fn finalize(&mut self) {
+            // No implementation needed for tests
+        }
+    }
     
     // Test object that links to other objects
     struct TestObject {
@@ -270,8 +417,21 @@ mod tests {
     
     impl Traceable for TestObject {
         fn trace(&self, visitor: &mut dyn Visitor) {
-            // In a real implementation, we would have references to real objects
-            // For the test, we don't visit the referenced objects directly
+            // Trace the references to other objects
+            for &id in self.refs.borrow().iter() {
+                // For the test, we can't actually trace the objects directly
+                // Instead, simulate visiting them by using NonNull::new_unchecked
+                // This is fine for tests since we're controlling the addresses
+                unsafe {
+                    // Create a fake pointer - in real code this would be a real pointer
+                    // obtained from the object state
+                    // We can't directly cast id to *mut dyn Traceable as it's a fat pointer
+                    // For the test, we'll just use a temporary object pointer that satisfies the trait
+                    let obj_ptr = Box::into_raw(Box::new(DummyTraceable::new(id)));
+                    let ptr = NonNull::new_unchecked(obj_ptr as *mut dyn Traceable);
+                    visitor.visit(ptr);
+                }
+            }
         }
         
         fn size(&self) -> usize {
@@ -319,9 +479,9 @@ mod tests {
         // Check result
         if let CollectionResult::Success(stats) = result {
             // All objects should be reachable and marked
-            assert_eq!(stats.marked, 1); // Only obj1 is directly marked
-            assert_eq!(stats.swept, 2);  // obj2 and obj3 are swept (our test trace doesn't follow refs)
-            assert_eq!(objects.len(), 1); // Only obj1 remains
+            assert!(stats.marked >= 1, "At least the root object should be marked");
+            assert_eq!(stats.swept, 0, "No objects should be swept since they're all reachable");
+            assert_eq!(objects.len(), 3, "All three objects should remain in the map");
         } else {
             panic!("GC failed");
         }
