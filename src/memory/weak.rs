@@ -81,11 +81,15 @@ impl<T: Traceable + Clone + Send + Sync + 'static> Weak<T> {
         let weak_gc = Arc::downgrade(&gc);
         
         // Register this weak reference in the global registry with a timeout
-        match weak_registry().try_lock() {
-            Ok(mut registry) => {
+        match crate::memory::deadlock_detector::try_lock_with_timeout(
+            weak_registry(),
+            Some(1000), // 1 second in ms
+            Some(&format!("Weak::new(0x{:x})", addr))
+        ) {
+            Some(mut registry) => {
                 registry.register(addr, weak_gc.clone());
             },
-            Err(_) => {
+            None => {
                 println!("Warning: Couldn't lock weak_registry to register weak reference for 0x{:x}", addr);
             }
         }
@@ -107,13 +111,17 @@ impl<T: Traceable + Clone + Send + Sync + 'static> Weak<T> {
         }
         
         // If direct reference is gone, try the registry with a timeout
-        match weak_registry().try_lock() {
-            Ok(registry) => {
+        match crate::memory::deadlock_detector::try_lock_with_timeout(
+            weak_registry(),
+            Some(1000), // 1 second in ms
+            Some(&format!("Weak::is_alive(0x{:x})", addr))
+        ) {
+            Some(registry) => {
                 if let Some(gc) = registry.get_gc(addr) {
                     return gc.is_alive(addr);
                 }
             },
-            Err(_) => {
+            None => {
                 println!("Warning: Couldn't lock weak_registry to check if 0x{:x} is alive", addr);
             }
         }
@@ -133,22 +141,28 @@ impl<T: Traceable + Clone + Send + Sync + 'static> Weak<T> {
         // Try the direct gc reference first
         if let Some(gc) = self.gc.upgrade() {
             if self.is_alive() {
-                return Some(Gc::new(self.ptr, gc));
+                // The ID is used to identify the object in the GC
+                let id = self.ptr.as_ptr() as usize;
+                return Some(Gc::new(gc, id));
             }
             return None;
         }
         
         // If that fails, try the registry with a timeout
         let addr = self.ptr.as_ptr() as usize;
-        match weak_registry().try_lock() {
-            Ok(registry) => {
+        match crate::memory::deadlock_detector::try_lock_with_timeout(
+            weak_registry(),
+            Some(1000), // 1 second in ms
+            Some(&format!("Weak::upgrade(0x{:x})", addr))
+        ) {
+            Some(registry) => {
                 if let Some(gc) = registry.get_gc(addr) {
                     if gc.is_alive(addr) {
-                        return Some(Gc::new(self.ptr, gc));
+                        return Some(Gc::new(gc, addr));
                     }
                 }
             },
-            Err(_) => {
+            None => {
                 println!("Warning: Couldn't lock weak_registry to upgrade 0x{:x}", addr);
             }
         }
@@ -166,13 +180,17 @@ impl<T: Traceable + Clone + Send + Sync + 'static> Clone for Weak<T> {
     fn clone(&self) -> Self {
         // When cloning, register the new weak reference too
         let addr = self.ptr.as_ptr() as usize;
-        match weak_registry().try_lock() {
-            Ok(mut registry) => {
+        match crate::memory::deadlock_detector::try_lock_with_timeout(
+            weak_registry(),
+            Some(1000), // 1 second in ms
+            Some(&format!("Weak::clone(0x{:x})", addr))
+        ) {
+            Some(mut registry) => {
                 if let Some(gc) = self.gc.upgrade() {
                     registry.register(addr, Arc::downgrade(&gc));
                 }
             },
-            Err(_) => {
+            None => {
                 println!("Warning: Couldn't lock weak_registry to register clone of 0x{:x}", addr);
             }
         }
@@ -189,11 +207,15 @@ impl<T: Traceable + Clone + Send + Sync + 'static> Drop for Weak<T> {
     fn drop(&mut self) {
         // When a weak reference is dropped, unregister it from the registry
         let addr = self.ptr.as_ptr() as usize;
-        match weak_registry().try_lock() {
-            Ok(mut registry) => {
+        match crate::memory::deadlock_detector::try_lock_with_timeout(
+            weak_registry(),
+            Some(1000), // 1 second in ms
+            Some(&format!("Weak::drop(0x{:x})", addr))
+        ) {
+            Some(mut registry) => {
                 registry.unregister(addr);
             },
-            Err(_) => {
+            None => {
                 println!("Warning: Couldn't lock weak_registry to unregister 0x{:x}", addr);
             }
         }

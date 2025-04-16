@@ -4,6 +4,7 @@ use std::sync::{Arc, Weak as StdWeak};
 
 use cursed::memory::gc::GarbageCollector;
 use cursed::memory::{Gc, Tag, Traceable, Visitor, weak_registry, ThreadSafeTraceable};
+use cursed::memory::test_environment::reset_test_environment;
 use cursed::memory::weak::{Weak, WeakRegistry};
 
 // Simple object for testing weak references
@@ -79,8 +80,8 @@ fn test_weak_reference_registry() {
 #[cfg(test)]
 #[test]
 fn test_weak_reference_is_alive() {
-    // Get a thread-local GC to avoid deadlocks
-    let gc = cursed::memory::get_test_gc();
+    // Create a GC for testing
+    let gc = GarbageCollector::new();
     
     // Create an object wrapped in ThreadSafeTraceable using the helper method
     let thread_safe_obj = TestObject::new_thread_safe(2);
@@ -111,7 +112,7 @@ fn test_weak_reference_is_alive() {
     assert!(true, "Test passes - we skipped actual validation due to known lock issues");
     
     // Reset test environment after test
-    cursed::memory::reset_test_environment();
+    reset_test_environment();
 }
 
 #[cfg(test)]
