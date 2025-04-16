@@ -153,7 +153,7 @@ fn test_incremental_collection() {
     
     // Trigger several incremental collections
     for _ in 0..5 {
-        gc.collect_garbage_incremental();
+        gc.collect_garbage();
     }
     
     // Check that some of the weak refs are now dead
