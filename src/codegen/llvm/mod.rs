@@ -63,6 +63,14 @@ pub use self::pointer_ops::PointerOperations;  // Updated to use the new standar
 pub use self::basic_expressions::BasicExpressionOperations;
 pub use self::function_monomorphization::FunctionMonomorphization;
 pub use self::struct_monomorphization::StructMonomorphization;
+pub use self::property_access::PropertyAccessCompilation;
+pub use self::assignment::AssignmentCompilation;
+pub use self::break_statement::BreakStatementCompilation;
+pub use self::continue_statement::ContinueStatementCompilation;
+pub use self::import_statement::ImportStatementCompilation;
+pub use self::later_statement::LaterStatementCompilation;
+pub use self::switch_statement::SwitchStatementCompilation;
+// pub use self::if_expression::IfExpressionCompilation;  // Disabled
 
 // Module declarations
 mod context;         // Main LlvmCodeGenerator implementation
@@ -88,6 +96,14 @@ mod intrinsics;      // Standard library intrinsics
 mod break_continue;  // Break and continue statement handling
 mod control_flow;    // Control flow statements
 mod concurrency;     // Goroutine and channel operations
+mod property_access; // Property access expressions (obj.field)
+mod assignment;      // Assignment expressions (a = b)
+mod break_statement; // Break statement implementation
+mod continue_statement; // Continue statement implementation
+mod import_statement; // Import statement implementation
+mod later_statement; // Later (defer) statement implementation
+mod switch_statement; // Switch statement implementation
+// mod if_expression;   // If expression implementation - disabled
 // Disable dynamic dispatch until it's fully implemented
 // mod dynamic_dispatch; // Dynamic dispatch for interfaces
 
