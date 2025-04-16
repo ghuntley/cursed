@@ -15,6 +15,7 @@ use super::pointer_ops::PointerOperations;
 use super::basic_expressions::BasicExpressionOperations;
 use super::function_monomorphization::FunctionMonomorphization;
 use super::variables::VariableHandling;
+use super::if_expression::IfExpressionCompilation;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -65,8 +66,10 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             return self.compile_dot_expression(dot_expr);
         }
         
-        // // Handle if expressions - not yet implemented
-        // Currently no IfExpression type in the codebase
+        // Handle if expressions
+        if let Some(if_expr) = any.downcast_ref::<crate::ast::expressions::if_expression::IfExpression>() {
+            return self.compile_if_expression(if_expr);
+        }
         
         // Handle assignment expressions
         if let Some(assign_expr) = any.downcast_ref::<crate::ast::expressions::AssignmentExpression>() {
