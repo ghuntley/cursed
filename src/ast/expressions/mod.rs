@@ -22,6 +22,7 @@ pub mod concurrency;
 pub mod dot_expression;
 pub mod generics;
 pub mod identifiers;
+pub mod if_expression;
 pub mod literals;
 pub mod operators;
 pub mod special;
@@ -41,4 +42,5 @@ pub use special::{AssignmentExpression, BeLikeExpression, DefaultCase};
 // Specific imports from generics to avoid conflicts
 pub use dot_expression::DotExpression;
 pub use generics::TypeReference;
+pub use if_expression::IfExpression;
 pub use types::TypeConversionExpression;

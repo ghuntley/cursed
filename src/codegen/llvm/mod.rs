@@ -47,6 +47,9 @@
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
 pub use self::binary_compiler::BinaryCompiler;
+
+// Re-export binary compiler types
+pub use self::binary_compiler::DebugInfoLevel;
 // Disable dynamic dispatch until it's fully implemented
 // pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 
@@ -70,7 +73,7 @@ pub use self::continue_statement::ContinueStatementCompilation;
 pub use self::import_statement::ImportStatementCompilation;
 pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
-// pub use self::if_expression::IfExpressionCompilation;  // Disabled
+pub use self::if_expression::IfExpressionCompilation;
 
 // Module declarations
 mod context;         // Main LlvmCodeGenerator implementation
@@ -103,7 +106,7 @@ mod continue_statement; // Continue statement implementation
 mod import_statement; // Import statement implementation
 mod later_statement; // Later (defer) statement implementation
 mod switch_statement; // Switch statement implementation
-// mod if_expression;   // If expression implementation - disabled
+mod if_expression;   // If expression implementation
 // Disable dynamic dispatch until it's fully implemented
 // mod dynamic_dispatch; // Dynamic dispatch for interfaces
 
