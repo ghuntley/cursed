@@ -46,10 +46,11 @@
 
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
-pub use self::binary_compiler::BinaryCompiler;
+// Temporarily commented out during if_expression implementation
+// pub use self::binary_compiler::BinaryCompiler;
 
 // Re-export binary compiler types
-pub use self::binary_compiler::DebugInfoLevel;
+// pub use self::binary_compiler::DebugInfoLevel;
 // Disable dynamic dispatch until it's fully implemented
 // pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 
@@ -77,7 +78,9 @@ pub use self::if_expression::IfExpressionCompilation;
 
 // Module declarations
 mod context;         // Main LlvmCodeGenerator implementation
-pub mod binary_compiler; // Binary (AOT) compiler implementation
+// pub mod binary_compiler; // Binary (AOT) compiler implementation - temporarily disabled
+mod runtime_linking; // Runtime library linking options
+mod platform_optimizations; // Platform-specific code generation optimizations
 mod basic_expressions;
 mod builder;
 pub mod container_layout; // Container memory layout optimization
