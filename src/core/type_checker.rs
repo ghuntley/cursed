@@ -279,40 +279,349 @@ impl TypeChecker {
 
     /// Collect all type definitions from the program
     fn collect_type_definitions(&mut self, program: &Program) -> Result<(), Error> {
-        // In a real implementation, this would:
-        // 1. Find and validate all be_like statements for squads and collabs
-        // 2. Register structs, interfaces, and their fields/methods
-        // 3. Build the symbol table for type checking
-
-        // For now, this is a placeholder
+        tracing::info!("Collecting type definitions from program");
+        
+        // Process each statement in the program
+        for statement in &program.statements {
+            // Try to downcast to various statement types that define types
+            if let Some(squad_stmt) = statement.as_any().downcast_ref::<crate::ast::SquadStatement>() {
+                // Process struct definition
+                self.register_struct_from_statement(squad_stmt)?;
+            } else if let Some(collab_stmt) = statement.as_any().downcast_ref::<crate::ast::CollabStatement>() {
+                // Process interface definition
+                self.register_interface_from_statement(collab_stmt)?;
+            }
+            // Add more statement types as needed
+        }
+        
+        tracing::info!("Finished collecting type definitions");
+        Ok(())
+    }
+    
+    /// Register a struct from a SquadStatement
+    fn register_struct_from_statement(&mut self, squad_stmt: &crate::ast::SquadStatement) -> Result<(), Error> {
+        let struct_name = squad_stmt.name.value.clone();
+        
+        // Extract type parameters
+        let type_params: Vec<String> = squad_stmt.type_parameters
+            .iter()
+            .map(|param| param.value.clone())
+            .collect();
+            
+        // Process fields
+        let mut fields = HashMap::new();
+        for field in &squad_stmt.fields {
+            // In a real implementation, we would extract the field type
+            // For now, just use Unknown type as a placeholder
+            fields.insert(field.name.value.clone(), Type::Unknown);
+        }
+        
+        // Register the struct
+        self.register_struct(&struct_name, fields, type_params);
+        tracing::debug!(struct_name = struct_name, "Registered struct");
+        
+        Ok(())
+    }
+    
+    /// Register an interface from a CollabStatement
+    fn register_interface_from_statement(&mut self, collab_stmt: &crate::ast::CollabStatement) -> Result<(), Error> {
+        let interface_name = collab_stmt.name.value.clone();
+        
+        // Extract type parameters
+        let type_params: Vec<String> = collab_stmt.type_parameters
+            .iter()
+            .map(|param| param.value.clone())
+            .collect();
+            
+        // Process methods
+        let mut methods = Vec::new();
+        for method in &collab_stmt.methods {
+            let method_name = method.name.value.clone();
+            
+            // Extract parameter types
+            let param_types: Vec<Type> = method.parameters
+                .iter()
+                .map(|_| Type::Unknown) // Placeholder: in reality we would extract actual types
+                .collect();
+                
+            // Extract return type
+            let return_type = method.return_type.as_ref().map(|_| Type::Unknown);
+            
+            methods.push((method_name, param_types, return_type));
+        }
+        
+        // Register the interface
+        self.register_interface(&interface_name, methods, type_params);
+        tracing::debug!(interface_name = interface_name, "Registered interface");
+        
         Ok(())
     }
 
     /// Check the types of all statements
+    #[tracing::instrument(skip(self, statements), level = "debug")]
     fn check_statements(
         &mut self,
         statements: &[Box<dyn crate::ast::Statement>],
     ) -> Result<(), Error> {
-        // In a real implementation, this would:
-        // 1. Check each statement type (var declarations, assignments, etc.)
-        // 2. Call check_expression for any expressions
-        // 3. Verify type compatibility
-
-        // For now, this is a placeholder
+        tracing::debug!("Checking types for {} statements", statements.len());
+        
+        // Iterate through each statement
+        for (i, statement) in statements.iter().enumerate() {
+            tracing::trace!("Processing statement {}", i);
+            
+            // Check different statement types
+            if let Some(let_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::LetStatement>() {
+                // Handle variable declarations
+                self.check_let_statement(let_stmt)?;
+            } else if let Some(expr_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::ExpressionStatement>() {
+                // Handle expression statements
+                if let Some(expr) = &expr_stmt.expression {
+                    self.check_expression(expr.as_ref())?;
+                }
+            } else if let Some(return_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::declarations::ReturnStatement>() {
+                // Handle return statements
+                if let Some(return_value) = &return_stmt.return_value {
+                    self.check_expression(return_value.as_ref())?;
+                }
+            } else if let Some(block_stmt) = statement.as_any().downcast_ref::<crate::ast::statements::block::BlockStatement>() {
+                // Recursively check block statements
+                self.check_statements(&block_stmt.statements)?;
+            } else if let Some(if_stmt) = statement.as_any().downcast_ref::<crate::ast::control_flow::conditionals::IfStatement>() {
+                // Check condition and blocks
+                self.check_expression(if_stmt.condition.as_ref())?;
+                
+                // Handle consequence block
+                let block_stmt = if_stmt.consequence.as_ref();
+                self.check_statements(&block_stmt.statements)?;
+                
+                // Handle alternative block if it exists
+                if let Some(alt_block) = &if_stmt.alternative {
+                    self.check_statements(&alt_block.statements)?;
+                }
+            }
+            // Add more statement types as needed
+        }
+        
+        Ok(())
+    }
+    
+    /// Check a let statement for type correctness
+    fn check_let_statement(&mut self, let_stmt: &crate::ast::statements::declarations::LetStatement) -> Result<(), Error> {
+        let var_name = let_stmt.name.value.clone();
+        
+        // Infer the type from the value if present
+        let var_type = if let Some(value_expr) = &let_stmt.value {
+            let expr_type = self.check_expression(value_expr.as_ref())?;
+            
+            // If there's an explicit type annotation, verify compatibility
+            if let Some(type_annotation) = &let_stmt.type_annotation {
+                // In a real implementation, we would extract the type from annotation
+                // and verify compatibility with the value's type
+                
+                // For now, just use the expression's type
+                expr_type
+            } else {
+                expr_type
+            }
+        } else if let Some(type_annotation) = &let_stmt.type_annotation {
+            // If no value but has type annotation, use the annotation type
+            // In a real implementation, we would extract the type from annotation
+            Type::Unknown
+        } else {
+            // If no value and no type annotation, error
+            return Err(Error::from_str(
+                &format!("Variable '{}' has no type annotation or initial value", var_name)
+            ));
+        };
+        
+        // Register the variable type
+        self.type_map.insert(var_name.clone(), var_type.clone());
+        tracing::debug!(variable = var_name, type_str = var_type.to_string(), "Registered variable type");
+        
         Ok(())
     }
 
     /// Check the type of an expression
+    #[tracing::instrument(skip(self, expr), level = "debug")]
     fn check_expression(&mut self, expr: &dyn crate::ast::Expression) -> Result<Type, Error> {
-        // This would determine the type of any expression based on:
-        // 1. Literal types (int, float, string, etc.)
-        // 2. Variable references (lookup in type_map)
-        // 3. Binary operations (check operand compatibility)
-        // 4. Function calls (check parameter types)
-        // 5. Etc.
-
-        // For now, placeholder: return unknown type
-        Ok(Type::Unknown)
+        // Handle different expression types based on their concrete types
+        
+        // Check for literals
+        if let Some(int_lit) = expr.as_any().downcast_ref::<crate::ast::expressions::IntegerLiteral>() {
+            return Ok(Type::Normie); // Integer literals default to normie
+        } else if let Some(float_lit) = expr.as_any().downcast_ref::<crate::ast::expressions::FloatLiteral>() {
+            return Ok(Type::Snack); // Float literals default to snack
+        } else if let Some(string_lit) = expr.as_any().downcast_ref::<crate::ast::expressions::StringLiteral>() {
+            return Ok(Type::Tea); // String literals are tea type
+        } else if let Some(bool_lit) = expr.as_any().downcast_ref::<crate::ast::expressions::BooleanLiteral>() {
+            return Ok(Type::Lit); // Boolean literals are lit type
+        // Character literals implementation would be here if the type existed
+        // For now, we'll skip this check
+        }
+        
+        // Check for variables
+        if let Some(ident) = expr.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
+            let var_name = &ident.value;
+            
+            // Look up the variable type
+            if let Some(var_type) = self.get_type(var_name) {
+                return Ok(var_type);
+            } else {
+                // If not a variable, check if it's a type name
+                return Ok(Type::new_basic(var_name));
+            }
+        }
+        
+        // Check for array literals
+        if let Some(array_lit) = expr.as_any().downcast_ref::<crate::ast::expressions::ArrayLiteral>() {
+            if array_lit.elements.is_empty() {
+                // Empty array - can't determine element type
+                return Ok(Type::Array(Box::new(Type::Unknown), 0));
+            }
+            
+            // Infer type from first element and ensure all elements have the same type
+            let first_elem = &array_lit.elements[0];
+            let elem_type = self.check_expression(first_elem.as_ref())?;
+            
+            // Check that all elements have the same type
+            for elem in &array_lit.elements[1..] {
+                let this_type = self.check_expression(elem.as_ref())?;
+                if this_type != elem_type {
+                    return Err(Error::from_str("Array elements must have the same type"));
+                }
+            }
+            
+            return Ok(Type::Array(Box::new(elem_type), array_lit.elements.len()));
+        }
+        
+        // Check for prefix expressions
+        if let Some(prefix) = expr.as_any().downcast_ref::<crate::ast::expressions::PrefixExpression>() {
+            let right_type = self.check_expression(prefix.right.as_ref())?;
+            
+            match prefix.operator.as_str() {
+                "!" => {
+                    // Logical NOT - operand must be lit (boolean)
+                    if right_type == Type::Lit {
+                        return Ok(Type::Lit);
+                    } else {
+                        return Err(Error::from_str("Logical NOT requires boolean operand"));
+                    }
+                },
+                "-" => {
+                    // Negation - operand must be numeric
+                    match right_type {
+                        Type::Smol | Type::Mid | Type::Normie | Type::Thicc | 
+                        Type::Snack | Type::Meal | Type::Extra => {
+                            return Ok(right_type); // Result has same type as operand
+                        },
+                        _ => return Err(Error::from_str("Arithmetic negation requires numeric operand")),
+                    }
+                },
+                "@" => {
+                    // Pointer dereference - operand must be a pointer
+                    if let Type::Pointer(target_type) = right_type {
+                        return Ok(*target_type);
+                    } else {
+                        return Err(Error::from_str("Cannot dereference non-pointer type"));
+                    }
+                },
+                _ => return Err(Error::from_str(&format!("Unknown prefix operator: {}", prefix.operator))),
+            }
+        }
+        
+        // Check for infix expressions (binary operations)
+        if let Some(infix) = expr.as_any().downcast_ref::<crate::ast::expressions::InfixExpression>() {
+            let left_type = self.check_expression(infix.left.as_ref())?;
+            let right_type = self.check_expression(infix.right.as_ref())?;
+            
+            match infix.operator.as_str() {
+                // Arithmetic operators
+                "+" | "-" | "*" | "/" | "%" => {
+                    // Both operands must be numeric and compatible
+                    self.check_numeric_operation(left_type, right_type, &infix.operator)
+                },
+                
+                // Comparison operators
+                "==" | "!=" | "<" | ">" | "<=" | ">=" => {
+                    // Result is always a boolean, but operands must be comparable
+                    self.check_comparison_operation(left_type, right_type, &infix.operator)?;
+                    Ok(Type::Lit)
+                },
+                
+                // Logical operators
+                "&&" | "||" => {
+                    // Both operands must be boolean
+                    if left_type == Type::Lit && right_type == Type::Lit {
+                        Ok(Type::Lit)
+                    } else {
+                        Err(Error::from_str("Logical operators require boolean operands"))
+                    }
+                },
+                
+                _ => Err(Error::from_str(&format!("Unknown infix operator: {}", infix.operator))),
+            }
+        } else {
+            // For expression types we don't handle yet, return Unknown
+            tracing::warn!("Unknown expression type, returning Unknown");
+            Ok(Type::Unknown)
+        }
+    }
+    
+    /// Check if a numeric operation is valid and determine result type
+    fn check_numeric_operation(&self, left: Type, right: Type, operator: &str) -> Result<Type, Error> {
+        // Define numeric types
+        let numeric_types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc, 
+                             Type::Snack, Type::Meal, Type::Extra];
+                             
+        if !numeric_types.contains(&left) || !numeric_types.contains(&right) {
+            return Err(Error::from_str("Arithmetic operations require numeric operands"));
+        }
+        
+        // Special case for string concatenation with +
+        if operator == "+" && (left == Type::Tea || right == Type::Tea) {
+            if left == Type::Tea && right == Type::Tea {
+                return Ok(Type::Tea);
+            } else {
+                return Err(Error::from_str("String concatenation requires both operands to be strings"));
+            }
+        }
+        
+        // Regular numeric operations - determine result type
+        // For simplicity, use the "wider" of the two types
+        match (left, right) {
+            (Type::Extra, _) | (_, Type::Extra) => Ok(Type::Extra),
+            (Type::Meal, _) | (_, Type::Meal) => Ok(Type::Meal),
+            (Type::Snack, _) | (_, Type::Snack) => Ok(Type::Snack),
+            (Type::Thicc, _) | (_, Type::Thicc) => Ok(Type::Thicc),
+            (Type::Normie, _) | (_, Type::Normie) => Ok(Type::Normie),
+            (Type::Mid, _) | (_, Type::Mid) => Ok(Type::Mid),
+            (Type::Smol, Type::Smol) => Ok(Type::Smol),
+            _ => Ok(Type::Unknown), // This case should not be reached
+        }
+    }
+    
+    /// Check if a comparison operation is valid
+    fn check_comparison_operation(&self, left: Type, right: Type, operator: &str) -> Result<(), Error> {
+        // Equality operators can compare any two values of the same type
+        if (operator == "==" || operator == "!=") && left == right {
+            return Ok(());
+        }
+        
+        // Ordering operators require comparable types
+        if operator == "<" || operator == ">" || operator == "<=" || operator == ">=" {
+            // Define comparable types: numeric types and strings
+            let comparable_types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc, 
+                                    Type::Snack, Type::Meal, Type::Tea];
+                                    
+            if comparable_types.contains(&left) && left == right {
+                return Ok(());
+            } else {
+                return Err(Error::from_str("Ordering comparison requires comparable operands of the same type"));
+            }
+        }
+        
+        // If we get here, the comparison is not valid
+        Err(Error::from_str("Invalid comparison between incompatible types"))
     }
 
     /// Register a struct type
