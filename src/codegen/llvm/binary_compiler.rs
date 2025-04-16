@@ -16,6 +16,8 @@
 use crate::ast::Program;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::Error;
+use crate::codegen::llvm::runtime_linking;
+use crate::codegen::llvm::platform_optimizations;
 
 use inkwell::context::Context;
 use inkwell::module::Module;
@@ -28,6 +30,14 @@ use inkwell::OptimizationLevel;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Once;
+
+// Use modules
+use super::debug_info;
+use super::cross_compilation;
+use super::size_optimization;
+use super::optimize_module;
+use super::runtime_linking;
+use super::platform_optimizations;
 
 /// Debug information level for compiled binaries
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,8 +68,11 @@ pub struct BinaryCompiler<'ctx> {
     /// Path to the CURSED runtime library
     runtime_lib_path: Option<PathBuf>,
     
-    /// Whether to link with the standard library
-    enable_stdlib: bool,
+    /// Runtime linking options
+    runtime_linking_options: runtime_linking::RuntimeLinkingOptions,
+    
+    /// Platform-specific optimization settings
+    platform_optimization_settings: platform_optimizations::PlatformOptimizationSettings,
     
     /// Optimization level for LLVM passes
     optimization_level: OptimizationLevel,
@@ -101,7 +114,8 @@ impl<'ctx> BinaryCompiler<'ctx> {
             context,
             module_name: module_name.to_string(),
             runtime_lib_path: None,
-            enable_stdlib: false,
+            runtime_linking_options: runtime_linking::RuntimeLinkingOptions::new(),
+            platform_optimization_settings: platform_optimizations::PlatformOptimizationSettings::default(),
             optimization_level: OptimizationLevel::Default,
             code_generator: None,
             optimize_for_size: false,
@@ -134,7 +148,83 @@ impl<'ctx> BinaryCompiler<'ctx> {
     ///
     /// Reference to self for method chaining
     pub fn enable_stdlib_linking(&mut self, enable: bool) -> &mut Self {
-        self.enable_stdlib = enable;
+        self.runtime_linking_options.enable_stdlib(enable);
+        self
+    }
+    
+    /// Gets a mutable reference to the runtime linking options.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the runtime linking options
+    pub fn runtime_linking_options_mut(&mut self) -> &mut runtime_linking::RuntimeLinkingOptions {
+        &mut self.runtime_linking_options
+    }
+    
+    /// Gets a mutable reference to the platform optimization settings.
+    ///
+    /// # Returns
+    ///
+    /// A mutable reference to the platform optimization settings
+    pub fn platform_optimization_settings_mut(&mut self) -> &mut platform_optimizations::PlatformOptimizationSettings {
+        &mut self.platform_optimization_settings
+    }
+
+    /// Sets the target CPU for code generation.
+    ///
+    /// # Arguments
+    ///
+    /// * `cpu_name` - The target CPU name
+    ///
+    /// # Returns
+    ///
+    /// Reference to self for method chaining
+    pub fn set_target_cpu(&mut self, cpu_name: &str) -> &mut Self {
+        self.platform_optimization_settings.with_cpu_name(cpu_name);
+        self
+    }
+
+    /// Sets the CPU features for code generation.
+    ///
+    /// # Arguments
+    ///
+    /// * `features` - The CPU features string (comma-separated)
+    ///
+    /// # Returns
+    ///
+    /// Reference to self for method chaining
+    pub fn set_cpu_features(&mut self, features: &str) -> &mut Self {
+        self.platform_optimization_settings.with_cpu_features(features);
+        self
+    }
+
+    /// Adds a system library to link with.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the system library
+    ///
+    /// # Returns
+    ///
+    /// Reference to self for method chaining
+    pub fn add_system_library(&mut self, name: &str) -> &mut Self {
+        self.runtime_linking_options.add_system_library(name);
+        self
+    }
+
+    /// Adds a custom library to link with.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The name of the library
+    /// * `path` - The path to the library file
+    /// * `link_type` - Whether to link statically or dynamically
+    ///
+    /// # Returns
+    ///
+    /// Reference to self for method chaining
+    pub fn add_custom_library<P: AsRef<Path>>(&mut self, name: &str, path: P, link_type: runtime_linking::LibraryLinkType) -> &mut Self {
+        self.runtime_linking_options.add_custom_library(name, path, link_type);
         self
     }
     
@@ -442,8 +532,14 @@ impl<'ctx> BinaryCompiler<'ctx> {
     fn generate_object_file(&self, module: &Module<'ctx>, output_path: &Path) -> Result<(), Error> {
         tracing::debug!("Generating object file at: {:?}", output_path);
         
-        // Run optimization passes
+        // Run standard optimization passes
         self.optimize_module(module)?;
+        
+        // Apply platform-specific optimizations
+        platform_optimizations::apply_platform_optimizations(
+            module,
+            &self.platform_optimization_settings
+        )?;
         
         // Get the target triple - either custom or default
         let target_triple = if let Some(triple) = &self.target_triple {
@@ -458,12 +554,18 @@ impl<'ctx> BinaryCompiler<'ctx> {
         let target = Target::from_triple(&target_triple)
             .map_err(|e| Error::from_str(&format!("Failed to get target from triple: {}", e)))?;
         
-        // Create a target machine
+        // Get CPU name and features from platform optimization settings
+        let cpu_name = self.platform_optimization_settings.get_cpu_name();
+        let cpu_features = self.platform_optimization_settings.get_cpu_features();
+        
+        tracing::debug!("Using CPU: {} with features: {}", cpu_name, cpu_features);
+        
+        // Create a target machine with platform-specific settings
         let target_machine = target
             .create_target_machine(
                 &target_triple,
-                &TargetMachine::get_host_cpu_name().to_string(),
-                &TargetMachine::get_host_cpu_features().to_string(),
+                &cpu_name,
+                &cpu_features,
                 self.optimization_level,
                 RelocMode::Default,
                 CodeModel::Default,
@@ -553,16 +655,9 @@ impl<'ctx> BinaryCompiler<'ctx> {
             cmd.arg("-g");
         }
         
-        // Add standard library if enabled
-        if self.enable_stdlib {
-            // Link with system libraries that our stdlib might need
-            cmd.arg("-lm"); // Math library
-            
-            #[cfg(target_os = "linux")]
-            {
-                cmd.arg("-ldl"); // Dynamic loading
-                cmd.arg("-lpthread"); // POSIX threads
-            }
+        // Add all linker arguments from runtime linking options
+        for arg in self.runtime_linking_options.get_linker_args() {
+            cmd.arg(arg);
         }
         
         // Add optimization flags
