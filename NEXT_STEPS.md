@@ -75,21 +75,41 @@ Implement proper memory management:
 - Memory allocation/deallocation
 - Reference counting (if needed)
 
+### 6. Binary Compiler Enhancements
+
+Further enhance the binary compiler implementation:
+
+- Debug information generation with source mapping
+- Cross-compilation support for different target platforms
+- Size optimization passes for smaller binaries
+- Custom runtime library linking options
+- Platform-specific code generation optimizations
+
 ## Testing Strategy
 
 1. **Unit Tests**:
    - Write unit tests for each module/function
    - Test edge cases for each operation
    - Test error handling
+   - Verify each component behaves correctly in isolation
 
 2. **Integration Tests**:
    - End-to-end tests for code generation
    - Test all language features working together
    - Compare generated LLVM IR to expected output
+   - Validate binary output matches expected behavior
 
 3. **Compatibility Tests**:
    - Ensure all existing code works with the refactored implementation
    - Run all existing tests
+   - Verify backward compatibility with older CURSED code
+
+4. **Binary Compilation Tests**:
+   - Test compilation across different optimization levels
+   - Verify executables work correctly on different platforms
+   - Test standard library linking and integration
+   - Compare binary sizes and performance metrics
+   - Test debug information generation and usability
 
 ## Integration Steps
 
@@ -103,17 +123,29 @@ Implement proper memory management:
    - Test each statement type separately
    - Integrate with existing code
 
-3. **Full Compatibility Testing**:
+3. **Binary Compiler Integration**:
+   - Enhance binary compiler to work with all newly refactored modules
+   - Implement debug information generation for better debugging experience
+   - Add cross-compilation support for different target platforms
+   - Optimize the binary size and performance with advanced LLVM passes
+   - Create comprehensive end-to-end tests for the binary compilation pipeline
+
+4. **Full Compatibility Testing**:
    - Run all existing tests to ensure compatibility
    - Fix any issues found
+   - Verify binary compiler produces correct executables for all language features
 
-4. **Performance Benchmarking**:
+5. **Performance Benchmarking**:
    - Benchmark the refactored implementation vs. the original
+   - Compare JIT vs AOT binary compilation performance
+   - Measure memory usage and compilation time across different optimization levels
    - Address any performance regressions
 
-5. **Documentation**:
+6. **Documentation**:
    - Update documentation to reflect the new structure
    - Document all new public APIs
+   - Create user guide for binary compilation features
+   - Add examples of how to use the binary compiler with different options
 
 ## Specific Implementation Details
 
@@ -192,10 +224,118 @@ pub fn compile_property_access(
 }
 ```
 
+## Binary Compiler Implementation Details
+
+The binary compiler integration needs to be enhanced to support all language features, including:
+
+```rust
+pub fn optimize_binary_for_size(&mut self, module: &Module<'ctx>) -> Result<(), Error> {
+    // Apply size optimization passes
+    let pm_builder = PassManagerBuilder::create();
+    pm_builder.set_optimization_level(3);  // Highest optimization
+    pm_builder.set_size_level(2);          // Optimize aggressively for size
+    
+    // Create and configure function pass manager
+    let fpm = PassManager::create(module);
+    pm_builder.populate_function_pass_manager(&fpm);
+    fpm.add_instruction_combiner_pass();
+    fpm.add_aggressive_dce_pass();         // Aggressive dead code elimination
+    fpm.add_global_dce_pass();             // Global dead code elimination
+    fpm.add_constant_propagation_pass();   // Constant propagation
+    fpm.run_on(module);
+    
+    // Create and configure module pass manager
+    let mpm = PassManager::create(module);
+    pm_builder.populate_module_pass_manager(&mpm);
+    mpm.add_strip_dead_prototypes_pass();  // Remove unused function declarations
+    mpm.add_global_optimizer_pass();       // Optimize globals
+    mpm.run_on(module);
+    
+    Ok(())
+}
+
+pub fn generate_debug_info(&mut self, module: &Module<'ctx>, debug_level: DebugLevel) -> Result<(), Error> {
+    // Configure debug information based on level
+    match debug_level {
+        DebugLevel::None => {
+            // No debug info, strip all metadata
+            module.strip_module_debug_info();
+        },
+        DebugLevel::LineInfo => {
+            // Include just line number information
+            let di_builder = DIBuilder::new(module);
+            // Configure minimal debug info with line tables only
+            // ...
+        },
+        DebugLevel::Full => {
+            // Full debug information including variables and types
+            let di_builder = DIBuilder::new(module);
+            // Configure full debug info
+            // ...
+        }
+    }
+    
+    Ok(())
+}
+
+pub fn enable_cross_compilation(&mut self, target_triple: &str) -> Result<(), Error> {
+    // Configure target-specific options
+    let target = Target::from_triple(target_triple)?;
+    let target_machine = target.create_target_machine(
+        &TargetTriple::create(target_triple),
+        &TargetMachine::get_host_cpu_name().to_string(),
+        &TargetMachine::get_host_cpu_features().to_string(),
+        self.optimization_level,
+        RelocMode::Default,
+        CodeModel::Default,
+    )?;
+    
+    // Set data layout and triple for the module
+    self.code_generator.module().set_data_layout(&target_machine.get_target_data().get_data_layout());
+    self.code_generator.module().set_triple(&TargetTriple::create(target_triple));
+    
+    Ok(())
+}
+```
+
+## Timeline and Milestones
+
+To track progress on the refactoring and binary compiler integration, we propose the following milestones:
+
+1. **Milestone 1: Core Expression Support** (2 weeks)
+   - Complete implementation of all expression types
+   - Unit tests for each expression type
+   - Verify compatibility with existing code
+
+2. **Milestone 2: Statement and Control Flow** (3 weeks)
+   - Implement all statement types
+   - Add support for break/continue in loops
+   - Implement switch/case statements
+   - Comprehensive test suite for all control flow constructs
+
+3. **Milestone 3: Type System Enhancements** (2 weeks)
+   - Add generic type support
+   - Implement interface type checking
+   - Add type inference capabilities
+
+4. **Milestone 4: Binary Compiler Enhancements** (3 weeks)
+   - Add debug information generation
+   - Implement cross-compilation support
+   - Optimize binary size and performance
+   - Create end-to-end tests for binary compilation
+
+5. **Milestone 5: Final Integration and Documentation** (2 weeks)
+   - Complete compatibility testing
+   - Performance benchmarking
+   - Documentation updates
+   - User guide and examples
+
 ## Conclusion
 
 This refactoring is a significant undertaking that will improve the maintainability and extensibility of the LLVM code generator. By breaking it down into smaller, focused modules, we make it easier to understand, test, and extend.
 
-The next immediate steps are to implement the expression operations, as these are the core building blocks for all other functionality. After that, implement the remaining statement operations and control flow structures.
+With the addition of the binary compiler, CURSED now supports both JIT execution for development and AOT compilation for production deployment. This dual-mode compilation approach provides flexibility for different use cases while maintaining a consistent code generation pipeline.
 
-Testing at each step is crucial to ensure compatibility with existing code and to catch regressions early.
+The next immediate steps are to implement the expression operations, as these are the core building blocks for all other functionality. After that, implement the remaining statement operations and control flow structures, followed by binary compiler enhancements.
+
+Testing at each step is crucial to ensure compatibility with existing code and to catch regressions early. The test-driven development approach we've used for binary compiler implementation should be continued for all other components.
