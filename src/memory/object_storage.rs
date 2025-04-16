@@ -123,6 +123,11 @@ impl ObjectStorage {
         })
     }
     
+    /// Get a dyn Traceable by ID for use in cycle detection
+    pub fn get_dyn_traceable(&self, id: usize) -> Option<NonNull<dyn Traceable>> {
+        self.objects.get(&id).map(|wrapper| wrapper.object())
+    }
+    
     /// Get the storage wrapper for an object by ID
     pub fn get_wrapper(&self, id: usize) -> Option<&StorageWrapper> {
         self.objects.get(&id)

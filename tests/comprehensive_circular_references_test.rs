@@ -8,8 +8,7 @@
 //! - Nested cycles (A -> B -> A and B -> C -> B)
 //! - Mixed reachable and unreachable cycles
 
-use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -30,36 +29,42 @@ mod tracing_setup {
 #[derive(Clone, Debug)]
 struct CircNode {
     id: usize,
-    // We use a RefCell for interior mutability - makes it easier to create cycles
-    references: RefCell<Vec<Option<Gc<CircNode>>>>,
+    // Use Arc+RwLock/Mutex for thread-safe interior mutability with Clone support
+    references: Arc<RwLock<Vec<Option<Gc<CircNode>>>>>,
     // Flag to track if this node was finalized during collection
-    was_finalized: RefCell<bool>,
+    was_finalized: Arc<Mutex<bool>>,
 }
 
 impl CircNode {
     fn new(id: usize) -> Self {
         Self {
             id,
-            references: RefCell::new(Vec::new()),
-            was_finalized: RefCell::new(false),
+            references: Arc::new(RwLock::new(Vec::new())),
+            was_finalized: Arc::new(Mutex::new(false)),
         }
     }
     
     fn add_reference(&self, other: Gc<CircNode>) {
-        self.references.borrow_mut().push(Some(other));
+        self.references.write().unwrap().push(Some(other));
+    }
+    
+    // Return a copy of our references for verification
+    fn get_references(&self) -> Vec<Option<Gc<CircNode>>> {
+        self.references.read().unwrap().clone()
     }
     
     fn was_finalized(&self) -> bool {
-        *self.was_finalized.borrow()
+        *self.was_finalized.lock().unwrap()
     }
     
     fn reference_count(&self) -> usize {
-        self.references.borrow().len()
+        self.references.read().unwrap().len()
     }
     
     fn get_reference(&self, index: usize) -> Option<Gc<CircNode>> {
-        if index < self.references.borrow().len() {
-            self.references.borrow()[index].clone()
+        let refs = self.references.read().unwrap();
+        if index < refs.len() {
+            refs[index].clone()
         } else {
             None
         }
@@ -94,7 +99,8 @@ impl Traceable for CircNode {
         trace!(id = self.id, "Tracing CircNode");
         
         // Trace all references
-        for (i, ref_opt) in self.references.borrow().iter().enumerate() {
+        let refs = self.references.read().unwrap();
+        for (i, ref_opt) in refs.iter().enumerate() {
             if let Some(node_ref) = ref_opt {
                 trace!(id = self.id, ref_idx = i, "CircNode has a reference to trace");
                 if let Some(inner) = node_ref.inner() {
@@ -126,7 +132,9 @@ impl Traceable for CircNode {
     
     fn finalize(&mut self) {
         info!(id = self.id, "Finalizing CircNode");
-        *self.was_finalized.borrow_mut() = true;
+        if let Ok(mut finalized) = self.was_finalized.lock() {
+            *finalized = true;
+        }
     }
 }
 

@@ -21,6 +21,7 @@ The garbage collector testing now includes:
 6. **Weak Reference Registry**: Global registry for maintaining GC connections after strong references are dropped
 7. **Mark-Sweep Improvements**: Enhanced mark-and-sweep algorithm with tri-color marking for better cycle detection
 8. **Thread-Safe Implementation**: Added thread-safe wrappers for pointers and traceable objects to ensure Send and Sync compliance
+9. **Cycle Detection Fixed**: Improved mark-and-sweep algorithm to properly handle circular references using a visitor pattern
 
 ### Standard Library Testing
 
