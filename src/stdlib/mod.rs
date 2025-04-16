@@ -46,6 +46,7 @@ pub mod vibez; // Printf-style functions (fmt equivalent)
 pub mod web_vibez; // HTTP client and server (net/http equivalent)
 pub mod syslog_era; // Syslog client functionality (log/syslog equivalent)
 pub mod quick_test; // Property-based testing module
+pub mod quick_test_generators; // Generators for property-based testing
 pub mod chadlogging; // Structured logging (log/slog equivalent)
 pub mod is_uppercase; // Character classification functions
 
@@ -74,6 +75,9 @@ pub use quick_test::{Config, TestResult, Rand, StateMachine, check, int_range, b
 float_range, hash_map, one_of_type, for_all, string_with_length, combine, weighted,
 string_of, string_of_n_from, complex128, struct_of, alpha_numeric, slice_of, slice_of_n,
 NO_SHRINK, DEFAULT_SHRINK, FULL_SHRINK, SMART_SHRINK};
+// Quick test generators exports
+pub use quick_test_generators::{string_of_n, int_range_gen, combine as combine_gen, 
+StateMachineImpl, RandImpl, weighted as weighted_gen};
 // Chadlogging module exports
 pub use chadlogging::{Logger, Handler, Record, Attr, TextHandler, JSONHandler,
                     LEVEL_DEBUG, LEVEL_INFO, LEVEL_WARN, LEVEL_ERROR,
