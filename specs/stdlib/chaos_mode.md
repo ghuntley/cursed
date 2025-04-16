@@ -33,7 +33,7 @@ fr fr Controls the fraction of memory that should be used for garbage collection
 slay SetMaxHeap(maxHeap uint64) uint64
 ```
 
-### Stack and Panic Management
+### Stack and Shook Management
 
 ```
 fr fr Returns a formatted stack trace of the goroutine that calls it

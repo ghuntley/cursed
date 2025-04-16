@@ -8,9 +8,17 @@ use cursed::ast::traits::Node;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 #[test]
+#[instrument]
 fn test_jit_array_basic() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
+    info!("Starting JIT array basic test");
     // Test basic array operations
     let input = r#"
     vibe array_test
@@ -28,10 +36,11 @@ fn test_jit_array_basic() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
+        error!(errors = ?parser.errors(), "Parser errors encountered");
         panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string());
+    debug!(ast = %program.string(), "Parsed AST structure");
     
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -86,10 +95,10 @@ fn test_jit_array_basic() -> Result<(), Error> {
     code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
     code_gen.builder().build_return(Some(&zero)).unwrap();
     
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -101,7 +110,7 @@ fn test_jit_array_basic() -> Result<(), Error> {
     extern "C" fn spill_impl(message_ptr: *const i8) {
         use std::ffi::CStr;
         let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
-        println!("vibez.spill: {}", message);
+        info!(message = %message, "spill function called");
     }
     
     // Add the mapping for the 'vibez.spill' function
@@ -120,17 +129,23 @@ fn test_jit_array_basic() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        debug!(result = result, "Main function execution completed");
 
         // Test should return 1 for success
+        debug!(expected = 1, actual = result, "Verifying test result");
         assert_eq!(result, 1, "Array basic test failed: returned {}", result);
+        
+        info!("JIT array basic test completed successfully");
     }
 
     Ok(())
 }
 
 #[test]
+#[instrument]
 fn test_jit_array_mutation() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
+    info!("Starting JIT array mutation test");
     // Test array mutation
     let input = r#"
     vibe array_test
@@ -151,7 +166,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
         panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string());
+    debug!(ast = %program.string(), "Parsed AST structure");
     
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -205,10 +220,10 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
     code_gen.builder().build_return(Some(&zero)).unwrap();
     
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -220,7 +235,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     extern "C" fn spill_impl(message_ptr: *const i8) {
         use std::ffi::CStr;
         let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
-        println!("vibez.spill: {}", message);
+        info!(message = %message, "spill function called");
     }
     
     // Add the mapping for the 'vibez.spill' function
@@ -239,17 +254,23 @@ fn test_jit_array_mutation() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        debug!(result = result, "Main function execution completed");
 
         // Test should return 1 for success
+        debug!(expected = 1, actual = result, "Verifying test result");
         assert_eq!(result, 1, "Array mutation test failed: returned {}", result);
+        
+        info!("JIT array mutation test completed successfully");
     }
 
     Ok(())
 }
 
 #[test]
+#[instrument]
 fn test_jit_array_mixed_types() -> Result<(), Error> {
+    tracing_setup::init_test_tracing();
+    info!("Starting JIT array mixed types test");
     // Test array with mixed type elements
     let input = r#"
     vibe array_test
@@ -271,7 +292,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
         panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string());
+    debug!(ast = %program.string(), "Parsed AST structure");
     
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -337,10 +358,10 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
     code_gen.builder().build_return(Some(&zero)).unwrap();
     
-    // Print the generated LLVM IR for debugging
-    println!("--- Generated LLVM IR ---");
-    println!("{}", code_gen.module().print_to_string().to_string());
-    println!("-------------------------");
+    // Log the generated LLVM IR for debugging
+    debug!("--- Generated LLVM IR ---");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!("-------------------------");
 
     // Create JIT execution engine
     let execution_engine = code_gen
@@ -352,7 +373,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     extern "C" fn spill_impl(message_ptr: *const i8) {
         use std::ffi::CStr;
         let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
-        println!("vibez.spill: {}", message);
+        info!(message = %message, "spill function called");
     }
     
     // Add the mapping for the 'vibez.spill' function
@@ -371,14 +392,17 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
             .map_err(|e| Error::from_str(&format!("Failed to get main function: {}", e)))?;
 
         let result = main_fn.call();
-        println!("Main function returned: {}", result);
+        debug!(result = result, "Main function execution completed");
 
         // Test should return 1 for success
+        debug!(expected = 1, actual = result, "Verifying test result");
         assert_eq!(
             result, 1,
             "Array mixed types test failed: returned {}",
             result
         );
+        
+        info!("JIT array mixed types test completed successfully");
     }
 
     Ok(())

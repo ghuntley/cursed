@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 /// Check if a value is truthy
+#[tracing::instrument(skip(obj), fields(obj_type = ?obj.type_name()), level = "trace")]
 pub fn is_truthy(obj: &Object) -> bool {
     match obj {
         Object::Boolean(b) => *b,
@@ -15,6 +16,7 @@ pub fn is_truthy(obj: &Object) -> bool {
 }
 
 /// Check if two objects are equal
+#[tracing::instrument(skip(left, right), fields(left_type = ?left.type_name(), right_type = ?right.type_name()), level = "trace")]
 pub fn objects_equal(left: &Object, right: &Object) -> bool {
     match (left, right) {
         (Object::Integer(l), Object::Integer(r)) => l == r,
@@ -26,6 +28,7 @@ pub fn objects_equal(left: &Object, right: &Object) -> bool {
 }
 
 /// Create a cached string
+#[tracing::instrument(skip(value), fields(value_len = value.len()), level = "trace")]
 pub fn new_string(value: &str) -> Rc<Object> {
     thread_local! {
         static STRING_CACHE: RefCell<HashMap<String, Rc<Object>>> = RefCell::new(HashMap::new());
@@ -34,8 +37,10 @@ pub fn new_string(value: &str) -> Rc<Object> {
     STRING_CACHE.with(|cache| {
         let mut cache = cache.borrow_mut();
         if let Some(cached) = cache.get(value) {
+            tracing::trace!("String cache hit");
             cached.clone()
         } else {
+            tracing::trace!("String cache miss, creating new string");
             let s = Rc::new(Object::String(value.to_string()));
             cache.insert(value.to_string(), s.clone());
             s

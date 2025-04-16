@@ -9,6 +9,12 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use std::any::Any;
 use std::path::PathBuf;
+use tracing::{debug, error, info};
+
+// Import the common test utilities
+#[path = "common.rs"]
+#[allow(unused_imports)]
+mod common;
 
 // StringLiteral needs to be reimplemented for our tests
 #[derive(Debug)]
@@ -37,6 +43,9 @@ impl Node for TestStringLiteral {
 
 #[test]
 fn test_string_comparison() {
+    // Initialize tracing for this test
+    common::tracing::setup();
+    info!("Testing string comparison in LLVM codegen");
     // Create a new LLVM context and module for testing
     let context = inkwell::context::Context::create();
     let module_name = "string_comparison_test";
@@ -78,30 +87,47 @@ fn test_string_comparison() {
         .unwrap();
 
     // Verify module - this ensures our LLVM IR is well-formed
-    assert!(code_generator.module().verify().is_ok());
+    let verify_result = code_generator.module().verify();
+    if let Err(err) = &verify_result {
+        error!(error = ?err, "LLVM module verification failed");
+    }
+    assert!(verify_result.is_ok(), "LLVM module verification failed");
+    debug!("LLVM module verified successfully");
 
     // Get the generated IR code and make sure it contains the expected function calls
     let ir_code = code_generator.module().print_to_string().to_string();
-    assert!(
-        ir_code.contains("@strcmp"),
-        "IR should contain strcmp function"
-    );
-    assert!(
-        ir_code.contains("@string_0"),
-        "IR should contain string constants"
-    );
-    assert!(
-        ir_code.contains("@string_1"),
-        "IR should contain string constants"
-    );
-    assert!(
-        ir_code.contains("@string_2"),
-        "IR should contain string constants"
-    );
+    
+    let contains_strcmp = ir_code.contains("@strcmp");
+    if !contains_strcmp {
+        error!("IR missing strcmp function");
+    }
+    assert!(contains_strcmp, "IR should contain strcmp function");
+    
+    let has_string0 = ir_code.contains("@string_0");
+    let has_string1 = ir_code.contains("@string_1");
+    let has_string2 = ir_code.contains("@string_2");
+    
+    if !has_string0 || !has_string1 || !has_string2 {
+        error!(
+            missing_string0 = !has_string0,
+            missing_string1 = !has_string1,
+            missing_string2 = !has_string2,
+            "IR missing expected string constants"
+        );
+    }
+    
+    assert!(has_string0, "IR should contain string_0 constant");
+    assert!(has_string1, "IR should contain string_1 constant");
+    assert!(has_string2, "IR should contain string_2 constant");
+    
+    info!("String comparison test completed successfully");
 }
 
 #[test]
 fn test_string_literal_evaluation() {
+    // Initialize tracing for this test
+    common::tracing::setup();
+    info!("Testing string literal evaluation in LLVM codegen");
     // Create a new LLVM context and module for testing
     let context = inkwell::context::Context::create();
     let module_name = "string_eval_test";
@@ -131,14 +157,24 @@ fn test_string_literal_evaluation() {
     code_generator.builder().build_return(Some(&str_ptr)).unwrap();
 
     // Verify module - this ensures our LLVM IR is well-formed
-    assert!(code_generator.module().verify().is_ok());
+    let verify_result = code_generator.module().verify();
+    if let Err(err) = &verify_result {
+        error!(error = ?err, "LLVM module verification failed");
+    }
+    assert!(verify_result.is_ok(), "LLVM module verification failed");
+    debug!("LLVM module verified successfully");
 
     // Get the generated IR code and make sure it contains the expected string content
     let ir_code = code_generator.module().print_to_string().to_string();
-    assert!(
-        ir_code.contains("hello world"),
-        "IR should contain the string literal content"
-    );
+    
+    let contains_str = ir_code.contains("hello world");
+    if !contains_str {
+        error!("IR missing expected string literal content");
+    }
+    
+    assert!(contains_str, "IR should contain the string literal content");
+    
+    info!("String literal evaluation test completed successfully");
 }
 
 // Create a dummy SwitchStatement for testing
@@ -229,6 +265,9 @@ impl Node for DummyBreakStatement {
 #[test]
 #[ignore]
 fn test_string_switch_compilation() {
+    // Initialize tracing for this test
+    common::tracing::setup();
+    info!("Testing string switch compilation in LLVM codegen");
     // Create a function for testing our string switch compilation
     let context = inkwell::context::Context::create();
     let module_name = "test_string_switch";
@@ -280,7 +319,7 @@ fn test_string_switch_compilation() {
     // NOTE: The compile_string_switch_statement function signature has changed - it now requires a real SwitchStatement
     // For now, we'll skip this test and document it as needing a fix
     // TODO: Fix this test to use a real AST SwitchStatement instance
-    println!("Skipping string switch compilation test - needs update for new API");
+    debug!("Skipping string switch compilation test - needs update for new API");
     /*
     // Attempt to compile the string switch
     let result = code_generator.compile_string_switch_statement(&switch_stmt, day_str);
@@ -291,15 +330,37 @@ fn test_string_switch_compilation() {
     code_generator.builder().build_return(None).unwrap();
     
     // Verify the module to ensure the IR is valid
-    assert!(code_generator.module().verify().is_ok(), "Invalid LLVM module");
+    let verify_result = code_generator.module().verify();
+    if let Err(err) = &verify_result {
+        error!(error = ?err, "LLVM module verification failed");
+    }
+    assert!(verify_result.is_ok(), "Invalid LLVM module");
+    debug!("LLVM module verified successfully");
     
     // Get the generated IR code
     let ir_code = code_generator.module().print_to_string().to_string();
     
     // Verify that strcmp is used in the IR
-    assert!(ir_code.contains("@strcmp"), "strcmp not found in IR");
+    let has_strcmp = ir_code.contains("@strcmp");
+    if !has_strcmp {
+        error!("IR missing strcmp function");
+    }
+    assert!(has_strcmp, "strcmp not found in IR");
     
     // Verify that we have basic blocks for cases and default
-    assert!(ir_code.contains("switch.case"), "Case blocks not found in IR");
-    assert!(ir_code.contains("switch.default"), "Default block not found in IR");
+    let has_case_blocks = ir_code.contains("switch.case");
+    let has_default_block = ir_code.contains("switch.default");
+    
+    if !has_case_blocks || !has_default_block {
+        error!(
+            missing_case_blocks = !has_case_blocks,
+            missing_default_block = !has_default_block,
+            "IR missing expected switch blocks"
+        );
+    }
+    
+    assert!(has_case_blocks, "Case blocks not found in IR");
+    assert!(has_default_block, "Default block not found in IR");
+    
+    info!("String switch compilation test completed");
 }

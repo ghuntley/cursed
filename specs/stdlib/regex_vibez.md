@@ -13,9 +13,9 @@ be_like VibePattern squad {}
 
 fr fr Consquadors
 slay Compile(expr tea) (*VibePattern, tea)
-slay MustCompile(expr tea) *VibePattern fr fr Panics on tea
+slay MustCompile(expr tea) *VibePattern fr fr Shooks on tea
 slay CompilePOSIX(expr tea) (*VibePattern, tea)
-slay MustCompilePOSIX(expr tea) *VibePattern fr fr Panics on tea
+slay MustCompilePOSIX(expr tea) *VibePattern fr fr Shooks on tea
 ```
 
 ## Matching Methods

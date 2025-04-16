@@ -15,6 +15,7 @@ unused_variables = "allow"
 dead_code = "allow"
 unused_assignments = "allow"
 unused_unsafe = "allow"
+unused_mut = "allow"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -50,6 +51,10 @@ parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
 # Glob pattern matching
 glob = "0.3"    # For file path pattern matching
+
+# Structured logging
+tracing = "0.1"  # Structured logging framework
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation
 
 # We removed reqwest dependency since we're using mock HTTP responses only
 

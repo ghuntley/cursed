@@ -18,13 +18,14 @@ pub struct Memory {
     next_gc: usize,
     /// Configuration: GC after this many allocations
     gc_threshold: usize,
-    /// Debug mode, prints GC information
-    debug: bool,
+
 }
 
 impl Memory {
     /// Create a new memory manager
+    #[tracing::instrument(level = "debug")]
     pub fn new() -> Self {
+        tracing::debug!("Creating new Memory manager");
         let gc_threshold = 1000; // Default threshold
         Self {
             objects: Vec::new(),
@@ -32,23 +33,21 @@ impl Memory {
             allocation_count: 0,
             next_gc: gc_threshold,
             gc_threshold,
-            debug: false,
+
         }
     }
     
     /// Create a new memory manager with custom garbage collection threshold
+    #[tracing::instrument(level = "debug")]
     pub fn with_gc_threshold(threshold: usize) -> Self {
+        tracing::debug!(threshold = threshold, "Creating Memory manager with custom GC threshold");
         let mut mem = Self::new();
         mem.gc_threshold = threshold;
         mem.next_gc = threshold;
         mem
     }
     
-    /// Enable debug mode for GC operations
-    pub fn with_debug(mut self, debug: bool) -> Self {
-        self.debug = debug;
-        self
-    }
+
     
     /// Allocate a new object in memory
     pub fn allocate(&mut self, obj: Object) -> Rc<RefCell<Object>> {
@@ -76,11 +75,10 @@ impl Memory {
     }
     
     /// Mark and sweep garbage collection
+    #[tracing::instrument(skip(self), fields(object_count = self.objects.len(), roots_count = self.roots.len()), level = "info")]
     pub fn collect_garbage(&mut self) {
-        if self.debug {
-            println!("Starting garbage collection...");
-            println!("Objects before GC: {}", self.objects.len());
-        }
+        tracing::info!("Starting garbage collection");
+
         
         // Mark phase: mark all reachable objects
         let mut marked = HashMap::new();
@@ -96,10 +94,10 @@ impl Memory {
         self.allocation_count = 0;
         self.next_gc = self.objects.len() + self.gc_threshold;
         
-        if self.debug {
-            println!("Objects after GC: {}", self.objects.len());
-            println!("Next GC at {} allocations", self.next_gc);
-        }
+        let remaining_objects = self.objects.len();
+        tracing::info!(remaining_objects = remaining_objects, next_gc_at = self.next_gc, "Garbage collection completed");
+        
+
     }
     
     /// Mark all objects reachable from roots

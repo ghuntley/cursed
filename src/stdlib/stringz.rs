@@ -24,8 +24,10 @@ use std::rc::Rc;
 /// # Returns
 ///
 /// An integer representing the number of characters in the string
+#[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
 pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() != 1 {
+        tracing::warn!(provided = args.len(), "Wrong number of arguments to len");
         return Err(Error::new(
             "ArgumentError",
             format!("len takes exactly 1 argument, got {}", args.len()),
@@ -35,14 +37,20 @@ pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     let s = match &*args[0] {
         Object::String(s) => s,
-        _ => return Err(Error::new(
-            "TypeError", 
-            format!("len requires a string, got {}", args[0].type_name()),
-            None,
-        )),
+        _ => {
+            let type_name = args[0].type_name();
+            tracing::warn!(actual_type = type_name, "Type error in len function");
+            return Err(Error::new(
+                "TypeError", 
+                format!("len requires a string, got {}", type_name),
+                None,
+            ));
+        },
     };
 
-    Ok(Rc::new(Object::Integer(s.chars().count() as i64)))
+    let char_count = s.chars().count() as i64;
+    tracing::debug!(string = %s, char_count = char_count, "Computed string length");
+    Ok(Rc::new(Object::Integer(char_count)))
 }
 
 /// Checks if a string contains a substring

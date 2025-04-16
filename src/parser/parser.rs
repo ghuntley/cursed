@@ -44,7 +44,8 @@ impl<'a> Parser<'a> {
     /// # Returns
     ///
     /// A Result containing the new Parser instance or an Error if token reading fails
-    pub fn new(lexer: &'a mut Lexer<'a>) -> Result<Self, Error> {
+    #[tracing::instrument(skip(lexer), level = "debug")]
+pub fn new(lexer: &'a mut Lexer<'a>) -> Result<Self, Error> {
         let mut parser = Parser {
             lexer,
             current_token: Token::Eof,
@@ -122,6 +123,7 @@ impl<'a> Parser<'a> {
     /// # Returns
     ///
     /// Result<Program, Error> - The parsed program AST or an error
+    #[tracing::instrument(skip(self), fields(token = ?self.current_token), level = "debug")]
     pub fn parse_program(&mut self) -> Result<Program, Error> {
         let mut program = Program {
             statements: Vec::new(),
@@ -130,7 +132,7 @@ impl<'a> Parser<'a> {
         while !self.current_token_is(Token::Eof) {
             match self.parse_statement() {
                 Ok(stmt) => program.statements.push(stmt),
-                Err(e) => self.errors.push(e),
+                Err(e) => self.log_error(e),
             }
 
             // Advance to the next statement
@@ -191,7 +193,7 @@ impl<'a> Parser<'a> {
                 source_line: String::new(),
             };
             let error = Error::new("Parser", &msg, Some(location));
-            self.errors.push(error.clone());
+            self.log_error(error.clone());
             Err(error)
         }
     }
@@ -253,6 +255,12 @@ impl<'a> Parser<'a> {
     /// A slice of Error objects representing parsing errors
     pub fn errors(&self) -> &[Error] {
         &self.errors
+    }
+    
+    #[tracing::instrument(skip(self), level = "debug")]
+    fn log_error(&mut self, error: Error) {
+        tracing::error!(error = ?error, "Parser error encountered");
+        self.errors.push(error);
     }
 
     /// Creates an error with the current source location

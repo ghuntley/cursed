@@ -50,7 +50,9 @@ static FIELD_DEF_REGEX: once_cell::sync::Lazy<Regex> = once_cell::sync::Lazy::ne
 /// Detects if a file contains dot expression calls and processes them
 /// Returns true if the file was processed and the dot expression output should be considered
 /// the result, false if regular compilation should proceed
+#[tracing::instrument(level = "debug")]
 pub fn patch_for_vibez_spill(file_path: &str) -> bool {
+    tracing::debug!(file_path = file_path, "Checking for vibez.spill calls");
     // Check if the file contains dot expressions we can handle
     if let Ok(content) = fs::read_to_string(file_path) {
         // Find all dot expressions in the content
@@ -60,6 +62,8 @@ pub fn patch_for_vibez_spill(file_path: &str) -> bool {
             let package = &cap[1];
             let function = &cap[2];
             let args_str = &cap[3];
+            
+            tracing::debug!(package = package, function = function, args = args_str, "Found dot expression");
             
             // Check if we support this dot expression
             if is_supported(package, function) {
@@ -84,7 +88,10 @@ pub fn patch_for_vibez_spill(file_path: &str) -> bool {
                     }
                 }
                 
+                tracing::info!(package = package, function = function, "Found supported dot expression");
                 dot_expressions.push((package.to_string(), function.to_string(), args));
+            } else {
+                tracing::debug!(package = package, function = function, "Unsupported dot expression");
             }
         }
         

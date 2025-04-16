@@ -71,6 +71,7 @@ impl ObjectStorage {
     }
     
     /// Store an object and return its ID
+    #[tracing::instrument(skip(self, object), fields(type_name = std::any::type_name::<T>()), level = "debug")]
     pub fn store<T: Traceable + 'static>(&mut self, object: Box<T>) -> usize {
         let id = self.next_id;
         self.next_id += 1;
@@ -83,11 +84,14 @@ impl ObjectStorage {
         let wrapper = StorageWrapper::new(nn_ptr);
         self.objects.insert(id, wrapper);
         
-        debug_println!("Stored object with ID {} (type: {:?})", id, unsafe { nn_ptr.as_ref().tag() });
+        let tag = unsafe { nn_ptr.as_ref().tag() };
+        tracing::debug!(id = id, tag = ?tag, "Stored object");
+        debug_println!("Stored object with ID {} (type: {:?})", id, tag);
         id
     }
     
     /// Store an object at a specific ID (used for consistency with GC)
+    #[tracing::instrument(skip(self, object), fields(id = id, type_name = std::any::type_name::<T>()), level = "debug")]
     pub fn store_at_id<T: Traceable + 'static>(&mut self, object: Box<T>, id: usize) -> usize {
         // Convert to raw pointer
         let raw_ptr = Box::into_raw(object);
@@ -142,7 +146,9 @@ impl ObjectStorage {
     }
     
     /// Remove an object
+    #[tracing::instrument(skip(self), fields(id = id), level = "debug")]
     pub fn remove(&mut self, id: usize) -> Option<NonNull<dyn Traceable>> {
+        tracing::debug!(id = id, "Removing object from storage");
         self.objects.remove(&id).map(|wrapper| wrapper.object())
     }
     

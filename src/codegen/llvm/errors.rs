@@ -29,6 +29,41 @@ pub enum LlvmCodegenError {
 }
 
 impl LlvmCodegenError {
+    /// Create a new undefined variable error
+    #[tracing::instrument(level = "error")]
+    pub fn undefined_variable(name: &str) -> Self {
+        tracing::error!(variable = name, "Undefined variable error");
+        Self::UndefinedVariable(name.to_string())
+    }
+    
+    /// Create a new undefined function error
+    #[tracing::instrument(level = "error")]
+    pub fn undefined_function(name: &str) -> Self {
+        tracing::error!(function = name, "Undefined function error");
+        Self::UndefinedFunction(name.to_string())
+    }
+    
+    /// Create a new undefined type error
+    #[tracing::instrument(level = "error")]
+    pub fn undefined_type(name: &str) -> Self {
+        tracing::error!(type_name = name, "Undefined type error");
+        Self::UndefinedType(name.to_string())
+    }
+    
+    /// Create a new import error
+    #[tracing::instrument(level = "error")]
+    pub fn import_error(msg: &str) -> Self {
+        tracing::error!(message = msg, "Import error");
+        Self::ImportError(msg.to_string())
+    }
+    
+    /// Create a new generic error
+    #[tracing::instrument(level = "error")]
+    pub fn generic(msg: &str) -> Self {
+        tracing::error!(message = msg, "LLVM codegen error");
+        Self::GenericError(msg.to_string())
+    }
+    
     /// Convert the error to a user-friendly message
     pub fn to_string(&self) -> String {
         match self {

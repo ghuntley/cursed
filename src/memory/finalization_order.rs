@@ -97,8 +97,8 @@ pub fn calculate_finalization_order(objects: &HashMap<usize, HashSet<usize>>) ->
         }
     }
     
-    // We want objects without dependencies to be finalized first, so reverse the result
-    result.reverse();
+    // Objects with dependencies should be finalized first, so we don't need to reverse
+    // the topological order
     result
 }
 

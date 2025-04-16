@@ -46,8 +46,8 @@ Functions:
 - `len(v T)` - Length of tea, array, slice, map, or channel
 - `make(T, size ...normie)` - Create slice, map, or channel
 - `new(T)` - Create pointer to zero value of type
-- `panic(v collab{})` - Cause panic with value
-- `recover()` - Recover from panic
+- `shook(v collab{})` - Cause panic with value
+- `unbothered()` - Recover from panic
 
 ### `dropz` (io)
 
@@ -254,13 +254,13 @@ slay main() {
     
     data, err := json_tea.Marshal(p)
     lowkey err != cap {
-        panic(err)
+        shook(err)
     }
     
     sus p2 Person
     err = json_tea.Unmarshal(data, &p2)
     lowkey err != cap {
-        panic(err)
+        shook(err)
     }
 }
 ```

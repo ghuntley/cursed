@@ -44,7 +44,7 @@ be_like ThatFiles squad {}
 
 fr fr Methods
 slay (f ThatFiles) Get(name tea) (ThatFile, lit)
-slay (f ThatFiles) GetMust(name tea) ThatFile fr fr Panics if not found
+slay (f ThatFiles) GetMust(name tea) ThatFile fr fr Shooks if not found
 slay (f ThatFiles) Names() []tea
 slay (f ThatFiles) List() []ThatFile
 slay (f ThatFiles) Count() int

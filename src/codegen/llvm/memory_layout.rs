@@ -27,12 +27,15 @@ pub struct MemoryLayoutManager<'a, 'ctx> {
 
 impl<'a, 'ctx> MemoryLayoutManager<'a, 'ctx> {
     /// Create a new memory layout manager
+    #[tracing::instrument(skip(generator), level = "debug")]
     pub fn new(generator: &'a LlvmCodeGenerator<'ctx>) -> Self {
+        tracing::debug!("Creating memory layout manager");
         Self { generator }
     }
 }
 
 impl<'a, 'ctx> MemoryLayout<'ctx> for MemoryLayoutManager<'a, 'ctx> {
+    #[tracing::instrument(skip(self, ty), fields(type_kind = ?ty), level = "trace")]
     fn get_type_size(&self, ty: &BasicTypeEnum<'ctx>) -> u64 {
         // Use the data layout to get the size
         // For simplicity, we'll just return a fixed size based on the type

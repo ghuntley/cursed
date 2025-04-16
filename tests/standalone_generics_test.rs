@@ -1,16 +1,22 @@
 // Note: This is a standalone test that doesn't rely on the full compiler infrastructure
+use tracing::{debug, error, info};
+
+// Import the common test utilities
+#[path = "common.rs"]
+#[allow(unused_imports)]
+mod common;
 
 #[test]
 fn test_generic_parsing() {
+    // Initialize tracing for this test
+    common::tracing::setup();
+    info!("Testing generic syntax parsing");
     let generic_struct = r#"be_like Box[T] squad {
     value T
 }
 "#;
 
-    println!(
-        "Generic struct definition parsed successfully: {}",
-        generic_struct
-    );
+    debug!(generic_struct = generic_struct, "Generic struct definition parsed successfully");
     assert!(true, "Generic parsing verified manually");
 
     let generic_function = r#"slay identity[T](x T) T {
@@ -18,15 +24,17 @@ fn test_generic_parsing() {
 }
 "#;
 
-    println!(
-        "Generic function definition parsed successfully: {}",
-        generic_function
-    );
+    debug!(generic_function = generic_function, "Generic function definition parsed successfully");
     assert!(true, "Generic function parsing verified manually");
+    
+    info!("Generic syntax parsing test completed successfully");
 }
 
 #[test]
 fn test_generic_types() {
+    // Initialize tracing for this test
+    common::tracing::setup();
+    info!("Testing generic type system");
     // Define a simple generic type system
     #[derive(Debug, Clone, PartialEq)]
     enum Type {
@@ -47,6 +55,12 @@ fn test_generic_types() {
     );
 
     // Test type equality
+    let types_equal = box_int == box_t;
+    if types_equal {
+        error!("Box[normie] should not equal Box[T]");
+    } else {
+        debug!("Box[normie] correctly doesn't equal Box[T]");
+    }
     assert_ne!(box_int, box_t, "Box[normie] should not equal Box[T]");
 
     // Test type substitution - need to use recursive function with 'let rec'
@@ -62,10 +76,22 @@ fn test_generic_types() {
     }
 
     let box_t_instantiated = t_to_normie(&box_t);
+    
+    let types_equal_after_subst = box_t_instantiated == box_int;
+    if !types_equal_after_subst {
+        error!(
+            box_t_instantiated = ?box_t_instantiated,
+            box_int = ?box_int,
+            "After substitution, Box[T] does not equal Box[normie]"
+        );
+    } else {
+        debug!("After substitution, Box[T] correctly equals Box[normie]");
+    }
+    
     assert_eq!(
         box_t_instantiated, box_int,
         "After substitution, Box[T] should equal Box[normie]"
     );
 
-    println!("Generic type system works correctly");
+    info!("Generic type system test completed successfully");
 }

@@ -30,10 +30,12 @@ pub trait StatementCompilation<'ctx> {
 
 impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
     /// Compile a statement to LLVM IR
+    #[tracing::instrument(skip(self, stmt), fields(stmt_str = stmt.string()), level = "debug")]
     fn compile_statement(
         &mut self, 
         stmt: &dyn Statement
     ) -> Result<(), Error> {
+        tracing::debug!("Compiling statement");
         println!("DEBUG STMT: Compiling statement: {}", stmt.string());
         // We need to handle the statement compilation directly here instead of
         // calling back to compile_statement_internal to avoid circular references

@@ -4,6 +4,11 @@ use std::sync::Arc;
 
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 // Node with explicit cycle tracking for testing
 #[derive(Clone, Debug)]
@@ -25,7 +30,7 @@ impl CyclicNode {
     // Method to verify finalization
     fn finalize(&mut self) {
         self.finalized = true;
-        println!("CyclicNode id={} finalized", self.id);
+        debug!(node_id = self.id, "CyclicNode finalized");
     }
 }
 
@@ -55,7 +60,10 @@ impl Traceable for CyclicNode {
 }
 
 #[test]
+#[instrument]
 fn test_cycle_detection() {
+    tracing_setup::init_test_tracing();
+    info!("Starting cycle detection test");
     // Create a garbage collector
     let gc = Arc::new(GarbageCollector::new());
     
@@ -84,7 +92,8 @@ fn test_cycle_detection() {
     // This is a known limitation of the current implementation
     
     let initial_stats = gc.stats();
-    println!("Initial stats: {:?}", initial_stats);
+    debug!(stats = ?initial_stats, "Initial memory statistics");
+    debug!(object_count = initial_stats.object_count, expected_min = 3, "Checking initial object count");
     assert!(initial_stats.object_count >= 3, "Should have at least 3 objects");
     
     // Drop all strong references
@@ -104,14 +113,18 @@ fn test_cycle_detection() {
     
     // Check final stats
     let final_stats = gc.stats();
-    println!("Final stats: {:?}", final_stats);
-    println!("Circular reference detection is implemented, but collection is still");
-    println!("in progress. The GC now properly tracks object references but still");
-    println!("needs a full weak reference system that maintains the GC connection.");    
+    debug!(stats = ?final_stats, "Final memory statistics");
+    info!("Circular reference detection is implemented, but collection is still in progress");
+    info!("The GC now properly tracks object references but still needs a full weak reference system");
+    
+    info!("Cycle detection test completed");    
 }
 
 #[test]
+#[instrument]
 fn test_incremental_collection() {
+    tracing_setup::init_test_tracing();
+    info!("Starting incremental collection test");
     // Create a garbage collector with incremental collection enabled
     let gc = Arc::new(GarbageCollector::with_options(cursed::memory::gc::GcOptions {
         initial_heap_size: 4096,
@@ -165,12 +178,15 @@ fn test_incremental_collection() {
     }
     
     // Not all nodes will be collected due to incremental nature
-    println!("Alive nodes after incremental collection: {}/{}", alive_count, weak_refs.len());
+    debug!(alive = alive_count, total = weak_refs.len(), "Nodes remaining after incremental collection");
     
     // Now do a full collection to clean up everything
+    info!("Performing full garbage collection");
     gc.collect_garbage();
     
     // Check final stats
     let final_stats = gc.stats();
-    println!("Final stats after full collection: {:?}", final_stats);
+    debug!(stats = ?final_stats, "Final memory statistics after full collection");
+    
+    info!("Incremental collection test completed");
 }

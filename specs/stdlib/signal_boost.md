@@ -156,7 +156,7 @@ slay IgnoreAction(sig BoostSignal) lit
 slay ExitAction(sig BoostSignal) lit
 slay ExitWithCodeAction(code normie) SignalAction
 slay LogAction(logger *sus_log.SusLogger) SignalAction
-slay PanicAction(sig BoostSignal) lit
+slay ShookAction(sig BoostSignal) lit
 slay ChainActions(actions ...SignalAction) SignalAction
 ```
 

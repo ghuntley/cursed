@@ -37,6 +37,8 @@
 
 use std::fs;
 use std::io::{self, Read}; // Keep io import for run_stdin
+use tracing::{debug, error, info, trace, warn};
+use tracing_subscriber::{fmt, EnvFilter};
 
 // Re-export the AST module with the new structure
 pub mod ast;
@@ -269,15 +271,36 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 pub const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
+/// Initialize the tracing subscriber for structured logging
+pub fn init_tracing() {
+    // Only initialize once
+    static TRACING_INITIALIZED: std::sync::Once = std::sync::Once::new();
+    
+    TRACING_INITIALIZED.call_once(|| {
+        // Set up the subscriber with a default info level
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+            .init();
+            
+        debug!("Tracing initialized for CURSED language");
+    });
+}
+
 /// Run the CURSED Read-Eval-Print Loop (REPL).
 ///
 pub fn run_repl() -> Result<(), Error> {
+    // Initialize tracing
+    init_tracing();
     println!("Welcome to the CURSED REPL! Type '.exit' or press Ctrl+D to exit.");
     crate::repl::start_repl()
 }
 
 /// Run a CURSED program from a file
+#[tracing::instrument(level = "info")]
 pub fn run_file(filename: &str) -> Result<(), Error> {
+    // Initialize tracing
+    init_tracing();
+    debug!("Running file: {}", filename);
     // Special case for stdlib tests
     // Map file names to test names
     let test_mappings = [
@@ -347,6 +370,7 @@ pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
 }
 
 // Make internal helper public for now (consider a dedicated public fn later)
+#[tracing::instrument(skip(input), fields(file_path = ?file_path, input_size = input.len()), level = "debug")]
 pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> Result<(), Error> {
     println!("📝 Processing file: {:?}", file_path);
     println!("📦 Input size: {} bytes", input.len());
@@ -359,13 +383,15 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     let program = parser.parse_program()?;
 
     if !parser.errors().is_empty() {
-        println!("❌ Parser found {} errors", parser.errors().len());
+        let errors_count = parser.errors().len();
         let errors_str = parser
             .errors()
             .iter()
             .map(|e| e.to_string())
             .collect::<Vec<String>>()
             .join("\n");
+        error!(errors_count, errors = ?errors_str, "Parser found errors");
+        println!("❌ Parser found {} errors", errors_count);
         return Err(Error::from_str(&format!("Parser errors:\n{}", errors_str)));
     }
 
@@ -408,6 +434,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     println!("🔧 Compiling to LLVM IR...");
     let compile_result = code_gen.compile(&program);
     if let Err(ref e) = compile_result {
+        error!(error = ?e, "Compilation failed");
         println!("❌ Compilation failed: {}", e);
         return Err(Error::from_str(&format!("CodeGen error: {}", e)));
     }
@@ -476,13 +503,16 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
             // Wait for any goroutines to complete (100ms timeout)
             let remaining = codegen::jit::wait_for_goroutines(100);
             if remaining > 0 {
+                info!(goroutines = remaining, "Program completed with running goroutines");
                 println!("Note: {} goroutines still running", remaining);
             }
             println!("------------------------");
+            info!(result = ?result, "Program execution completed successfully");
             println!("✅ Execution completed successfully with return value: {}", result);
         }
         Err(e) => {
             println!("------------------------");
+            error!(error = ?e, "JIT execution failed");
             println!("❌ JIT execution failed: {}", e);
             return Err(e);
         }

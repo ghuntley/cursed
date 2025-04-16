@@ -16,6 +16,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Check if a value is a string (i8* pointer)
+    #[tracing::instrument(skip(self, value), fields(value_kind = ?value.get_type()), level = "trace")]
     pub fn is_string_value(&self, value: BasicValueEnum<'ctx>) -> bool {
         if !value.is_pointer_value() {
             return false;
@@ -30,6 +31,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Check if a type is a string type (i8*)
+    #[tracing::instrument(skip(self, ty), fields(type_kind = ?ty), level = "trace")]
     pub fn is_string_type(&self, ty: BasicTypeEnum<'ctx>) -> bool {
         if !ty.is_pointer_type() {
             return false;

@@ -31,6 +31,7 @@ use std::rc::Rc;
 ///
 /// An array of integers representing the file bytes, or an error if the file
 /// cannot be read
+#[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
 pub fn read_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
@@ -47,6 +48,7 @@ pub fn read_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
+    tracing::debug!(path = %path, "Reading file");
     match fs::read(&path) {
         Ok(bytes) => {
             let byte_objects: Vec<Object> = bytes
@@ -89,6 +91,7 @@ pub fn read_file_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Write a byte array to a file
+#[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
 pub fn write_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(

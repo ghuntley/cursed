@@ -31,11 +31,14 @@ use std::time::Duration;
 /// # Returns
 ///
 /// Result<Object, Error> - Ok(Null) if goroutine was launched successfully, Error otherwise
+#[tracing::instrument(skip(callable, args), fields(args_count = args.len()), level = "info")]
 pub fn launch_goroutine(callable: &Object, args: Vec<Object>) -> Result<Object, Error> {
     // Simplified placeholder implementation
     // This will be replaced with a proper implementation in the future
+    tracing::debug!("Launching new goroutine");
     thread::spawn(move || {
         // Just create a goroutine that does nothing for now
+        tracing::info!("Goroutine started");
         println!("Launched goroutine (placeholder)");
     });
 
@@ -44,9 +47,11 @@ pub fn launch_goroutine(callable: &Object, args: Vec<Object>) -> Result<Object, 
 
 /// Sleep for the specified number of seconds
 /// This is a utility function for goroutine testing
+#[tracing::instrument(fields(seconds = seconds), level = "debug")]
 pub fn sleep(seconds: f64) -> Result<Object, Error> {
     // Simple sleep implementation
     let millis = (seconds * 1000.0) as u64;
+    tracing::debug!(millis = millis, "Sleeping goroutine");
     thread::sleep(Duration::from_millis(millis));
     Ok(Object::Null)
 }

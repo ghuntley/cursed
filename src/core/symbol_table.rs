@@ -76,6 +76,7 @@ impl SymbolTable {
     }
 
     /// Define a new symbol in this scope
+    #[tracing::instrument(skip(self), fields(symbol_name = name), level = "debug")]
     pub fn define(&mut self, name: &str, type_name: Option<&str>) -> Symbol {
         let symbol = Symbol {
             name: name.to_string(),
@@ -91,6 +92,7 @@ impl SymbolTable {
     }
 
     /// Look up a symbol by name
+    #[tracing::instrument(skip(self), fields(symbol_name = name), level = "debug")]
     pub fn resolve(&self, name: &str) -> Option<Symbol> {
         if let Some(symbol) = self.symbols.get(name) {
             return Some(symbol.clone());

@@ -2,9 +2,17 @@ use cursed::ast;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
+use tracing::{debug, error, info, instrument, trace, warn};
+
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 #[test]
+#[instrument]
 fn test_parse_generic_struct() {
+    tracing_setup::init_test_tracing();
+    info!("Starting generic struct parsing test");
     let input = r#"vibe test
 
 be_like Box[T] squad {
@@ -16,14 +24,17 @@ be_like Box[T] squad {
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
-    // Print each statement for debugging
-    println!("Total statements: {}", program.statements.len());
+    // Log each statement for debugging
+    debug!(total_statements = program.statements.len(), "Statement count");
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("Statement {}: {}", i, stmt.string());
-        // Try to figure out what kind of statement it is
-        println!("  - Is PackageStatement: {}", stmt.as_any().is::<ast::statements::declarations::PackageStatement>());
-        println!("  - Is SquadStatement: {}", stmt.as_any().is::<ast::SquadStatement>());
-        println!("  - Is ExpressionStatement: {}", stmt.as_any().is::<ast::statements::expressions::ExpressionStatement>());
+        debug!(
+            statement_index = i,
+            statement = %stmt.string(),
+            is_package = stmt.as_any().is::<ast::statements::declarations::PackageStatement>(),
+            is_squad = stmt.as_any().is::<ast::SquadStatement>(),
+            is_expression = stmt.as_any().is::<ast::statements::expressions::ExpressionStatement>(),
+            "Statement info"
+        );
     }
     
     // For now, we accept that the parser generates more statements than we want.
@@ -36,7 +47,7 @@ be_like Box[T] squad {
     //
     // For now we're testing that the proper AST nodes are generated, even if they're not
     // optimally structured.
-    println!("Note: Expected 2 statements, but got {} statements", program.statements.len());
+    debug!(expected = 2, actual = program.statements.len(), "Statement count mismatch");
 
     // Check the struct declaration
     // We need to find the SquadStatement, which might be at index 1, 3, or it might not exist at all
@@ -52,7 +63,7 @@ be_like Box[T] squad {
         // Manual creation of SquadStatement for testing
         // The parser is correctly parsing the input, but not creating a SquadStatement
         // This is a temporary solution until the parser is updated
-        println!("No SquadStatement found, creating one manually for testing");
+        info!("No SquadStatement found, creating one manually for testing");
         
         // Create a dummy struct statement
         &ast::SquadStatement {
@@ -103,10 +114,15 @@ be_like Box[T] squad {
         squad_stmt.fields[0].type_name.value, "T",
         "Field type should be 'T'"
     );
+    
+    info!("Generic struct parsing test completed successfully");
 }
 
 #[test]
+#[instrument]
 fn test_parse_generic_function() {
+    tracing_setup::init_test_tracing();
+    info!("Starting generic function parsing test");
     let input = r#"vibe test
 
 slay foo[T](x normie) T {
@@ -119,20 +135,23 @@ slay foo[T](x normie) T {
 
     let program = parser.parse_program().unwrap();
     
-    // Print each statement for debugging
-    println!("Total statements: {}", program.statements.len());
+    // Log each statement for debugging
+    debug!(total_statements = program.statements.len(), "Statement count");
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("Statement {}: {}", i, stmt.string());
-        // Try to figure out what kind of statement it is
-        println!("  - Is PackageStatement: {}", stmt.as_any().is::<ast::statements::declarations::PackageStatement>());
-        println!("  - Is FunctionStatement: {}", stmt.as_any().is::<ast::FunctionStatement>());
-        println!("  - Is ExpressionStatement: {}", stmt.as_any().is::<ast::statements::expressions::ExpressionStatement>());
+        debug!(
+            statement_index = i,
+            statement = %stmt.string(),
+            is_package = stmt.as_any().is::<ast::statements::declarations::PackageStatement>(),
+            is_function = stmt.as_any().is::<ast::FunctionStatement>(),
+            is_expression = stmt.as_any().is::<ast::statements::expressions::ExpressionStatement>(),
+            "Statement info"
+        );
     }
     
     // For now, we accept that the parser generates more statements than we want.
     // The statements should logically represent a package declaration and a function declaration,
     // but the implementation currently parses it differently.
-    println!("Note: Expected 2 statements, but got {} statements", program.statements.len());
+    debug!(expected = 2, actual = program.statements.len(), "Statement count mismatch");
     
     // Find the statement that contains our function declaration or create one
     let func_stmt_index = program.statements.iter().position(|stmt| {
@@ -213,7 +232,7 @@ slay foo[T](x normie) T {
             panic!("Function statement is not a valid type");
         }
     } else {
-        println!("No function statement found, creating a dummy one for testing");
+        info!("No function statement found, creating a dummy one for testing");
         // Create a dummy function statement with expected values
         // This is just for test verification purposes
         let dummy_function = ast::FunctionStatement {
@@ -259,10 +278,15 @@ slay foo[T](x normie) T {
             assert!(ret.string().contains(return_type), "Return type should be '{}'", return_type);
         }
     }
+    
+    info!("Generic function parsing test completed successfully");
 }
 
 #[test]
+#[instrument]
 fn test_parse_generic_instantiation() {
+    tracing_setup::init_test_tracing();
+    info!("Starting generic instantiation parsing test");
     let input = r#"vibe test
 
 sus box_int = Box[normie]{value: 42}
@@ -272,20 +296,23 @@ sus box_int = Box[normie]{value: 42}
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
-    // Print each statement for debugging
-    println!("Total statements: {}", program.statements.len());
+    // Log each statement for debugging
+    debug!(total_statements = program.statements.len(), "Statement count");
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("Statement {}: {}", i, stmt.string());
-        // Try to figure out what kind of statement it is
-        println!("  - Is PackageStatement: {}", stmt.as_any().is::<ast::statements::declarations::PackageStatement>());
-        println!("  - Is LetStatement: {}", stmt.as_any().is::<ast::statements::declarations::LetStatement>());
-        println!("  - Is ExpressionStatement: {}", stmt.as_any().is::<ast::statements::expressions::ExpressionStatement>());
+        debug!(
+            statement_index = i,
+            statement = %stmt.string(),
+            is_package = stmt.as_any().is::<ast::statements::declarations::PackageStatement>(),
+            is_let = stmt.as_any().is::<ast::statements::declarations::LetStatement>(),
+            is_expression = stmt.as_any().is::<ast::statements::expressions::ExpressionStatement>(),
+            "Statement info"
+        );
     }
 
     // For now, we accept that the parser generates more statements than we want.
     // The statements should logically represent a package declaration and a let statement,
     // but the implementation currently parses it differently.
-    println!("Note: Expected 2 statements, but got {} statements", program.statements.len());
+    debug!(expected = 2, actual = program.statements.len(), "Statement count mismatch");
     
     // Expected values for our assertions
     let var_name = "box_int";
@@ -326,7 +353,7 @@ sus box_int = Box[normie]{value: 42}
             } else {
                 // If not a BeLikeExpression directly, it may be represented differently by the parser
                 // We'll manually create a be_like expression for testing purposes
-                println!("Value is not a BeLikeExpression, creating a dummy one for testing");
+                info!("Value is not a BeLikeExpression, creating a dummy one for testing");
                 
                 // Run assertions on a dummy BeLikeExpression
                 let dummy_be_like = ast::BeLikeExpression {
@@ -356,7 +383,7 @@ sus box_int = Box[normie]{value: 42}
         }
     } else {
         // No LetStatement found, create a dummy one for testing
-        println!("No LetStatement found, creating a dummy one for testing");
+        info!("No LetStatement found, creating a dummy one for testing");
         
         // Create a dummy let statement with a BeLikeExpression
         let dummy_let = ast::statements::declarations::LetStatement {
@@ -395,10 +422,15 @@ sus box_int = Box[normie]{value: 42}
             }
         }
     }
+    
+    info!("Generic instantiation parsing test completed successfully");
 }
 
 #[test]
+#[instrument]
 fn test_parse_generic_function_call() {
+    tracing_setup::init_test_tracing();
+    info!("Starting generic function call parsing test");
     let input = r#"vibe test
 
 sus result = identity[normie](42)
@@ -410,8 +442,8 @@ sus result = identity[normie](42)
 
     // Should have a package declaration and a let statement
     // The parser currently generates 4 statements, but we only care about the package statement and the let statement
-    // Let's just print a note that we're getting more statements than expected
-    println!("Note: Expected 2 statements, but got {} statements", program.statements.len());
+    // Log a note that we're getting more statements than expected
+    debug!(expected = 2, actual = program.statements.len(), "Statement count mismatch");
 
     // Check the let statement
     // Find the LetStatement, should be one of the statements
@@ -473,10 +505,12 @@ sus result = identity[normie](42)
         }
     } else {
         // No LetStatement found
-        println!("ERROR: No LetStatement found in the program, ignoring test");
+        error!("No LetStatement found in the program, ignoring test");
         }
     } else {
         // No LetStatement found by position
-        println!("ERROR: No LetStatement found by position, ignoring test");
+        error!("No LetStatement found by position, ignoring test");
     }
+    
+    info!("Generic function call parsing test completed");
 }

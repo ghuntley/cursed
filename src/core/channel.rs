@@ -29,12 +29,15 @@ use std::rc::Rc;
 /// # Returns
 ///
 /// A new Channel object
+#[tracing::instrument(fields(element_type = ?element_type, buffer_size = ?buffer_size), level = "debug")]
 pub fn create_channel(element_type: String, buffer_size: Option<usize>) -> Object {
     let capacity = buffer_size.unwrap_or(0);
+    tracing::debug!(capacity = capacity, "Creating channel");
     Object::new_channel(element_type, capacity)
 }
 
 /// Send a value on a channel
+#[tracing::instrument(skip(channel, value), fields(channel_type = ?channel.type_name(), value_type = ?value.type_name()), level = "debug")]
 pub fn send_to_channel(channel: Object, value: Object) -> Result<Object, String> {
     match channel {
         Object::Channel(channel_ref) => {

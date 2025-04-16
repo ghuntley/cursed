@@ -94,6 +94,7 @@ impl DotRegistry {
     }
     
     /// Register a handler for a dot expression
+    #[tracing::instrument(skip(self, handler), fields(package = ?package, function = ?function), level = "debug")]
     pub fn register_handler(&mut self, package: &str, function: &str, handler: DotHandlerFn) {
         let package_handlers = self.handlers.entry(package.to_string())
             .or_insert_with(HashMap::new);
@@ -196,6 +197,7 @@ impl DotRegistry {
     }
     
     /// Execute a dot expression with the given arguments
+    #[tracing::instrument(skip(self), fields(package = ?package, function = ?function, args_count = args.len()), level = "debug")]
     pub fn execute(&self, package: &str, function: &str, args: Vec<String>) -> Result<String, Error> {
         if let Some(handler) = self.get_handler(package, function) {
             handler(args)

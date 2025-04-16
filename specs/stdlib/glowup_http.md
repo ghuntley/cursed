@@ -197,7 +197,7 @@ slay (r *VibeResponse) Bytes() ([]byte, tea) fr fr Body as bytes
 be_like MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
 slay LoggingMiddleware(next HandlerFunc) HandlerFunc
-slay RecoveryMiddleware(next HandlerFunc) HandlerFunc
+slay UnbotheredMiddleware(next HandlerFunc) HandlerFunc
 slay CORSMiddleware(next HandlerFunc) HandlerFunc
 slay RateLimitMiddleware(rps normie) MiddlewareFunc
 slay JWTAuthMiddleware(secret tea) MiddlewareFunc
@@ -233,7 +233,7 @@ router := glowup_http.NewVibeRouter()
 
 fr fr Add some middleware
 router.UseMiddleware(glowup_http.LoggingMiddleware)
-router.UseMiddleware(glowup_http.RecoveryMiddleware)
+router.UseMiddleware(glowup_http.UnbotheredMiddleware)
 
 fr fr Handle routes
 router.GET("/", func(w glowup_http.ResponderVibe, r *glowup_http.VibeRequest) {
