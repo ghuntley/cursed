@@ -1,4 +1,6 @@
 use cursed::stdlib::quick_test::*;
+use cursed::stdlib::quick_test_generators::*;
+use cursed::stdlib::{combine_gen, weighted_gen};
 use cursed::object::Object;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -33,7 +35,7 @@ fn test_state_machine() {
     
     // Create a state machine for the counter
     let counter = Rc::new(RefCell::new(Counter::new()));
-    let machine = StateMachine::new(counter.clone());
+    let mut machine = StateMachineImpl::new(counter.clone());
     
     // Add increment action
     machine.add_action("increment", 
@@ -89,8 +91,11 @@ fn test_combine_generators() {
     let age_gen = int_range_gen(0, 120);
     
     // Combine them into a Person generator
-    let person_gen = combine(
-        vec![name_gen, age_gen],
+    // Use Box::new to erase the specific generator types
+    let name_boxed: Box<dyn Fn() -> Rc<Object>> = Box::new(name_gen);
+    let age_boxed: Box<dyn Fn() -> Rc<Object>> = Box::new(age_gen);
+    let person_gen = combine_gen(
+        vec![name_boxed, age_boxed],
         Box::new(|values| {
             if values.len() != 2 {
                 return Object::Null;
@@ -153,11 +158,11 @@ fn test_combine_generators() {
         }
     };
     
-    let mut rand = Rand::new(42); // Fixed seed for reproducibility
+    let mut rand = RandImpl::new(42); // Fixed seed for reproducibility
     let size = 100;
     
     for _ in 0..100 {
-        let value = person_gen.generate(&mut rand, size);
+        let value = person_gen();
         assert!(property(value), "Generated value did not satisfy the property");
     }
 }
@@ -171,13 +176,31 @@ fn test_weighted_generator() {
     let large_int_gen = int_range_gen(11, 100); // Large numbers
     
     // Build a weighted generator with different probabilities
-    let weighted_gen = weighted(vec![
-        (10, small_int_gen), // 10x weight for small numbers
-        (1, large_int_gen),  // 1x weight for large numbers
+    let small_boxed: Box<dyn Fn() -> Object> = Box::new(move || {
+        match small_int_gen() {
+            rc => match &*rc {
+                Object::Integer(i) => Object::Integer(*i),
+                _ => Object::Null,
+            }
+        }
+    });
+    
+    let large_boxed: Box<dyn Fn() -> Object> = Box::new(move || {
+        match large_int_gen() {
+            rc => match &*rc {
+                Object::Integer(i) => Object::Integer(*i),
+                _ => Object::Null,
+            }
+        }
+    });
+    
+    let weighted_gen = weighted_gen(vec![
+        (10, small_boxed), // 10x weight for small numbers
+        (1, large_boxed),  // 1x weight for large numbers
     ]);
     
     // Test that the distribution is biased toward small numbers
-    let mut rand = Rand::new(42); // Fixed seed for reproducibility
+    let mut rand = RandImpl::new(42); // Fixed seed for reproducibility
     let size = 100;
     
     let mut small_count = 0;
@@ -185,7 +208,7 @@ fn test_weighted_generator() {
     
     // Generate 100 values and count the distribution
     for _ in 0..100 {
-        let value = weighted_gen.generate(&mut rand, size);
+        let value = weighted_gen();
         match value {
             Object::Integer(i) => {
                 if i <= 10 {
