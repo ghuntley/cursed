@@ -4,6 +4,7 @@
 - Build: `make build` or `cargo build`
 - Test: `make test` or `cargo test`
 - Single test: `cargo test test_name` or `cargo test -- --test jit_integration_tests`
+- Ignored tests: `cargo test -- --ignored` or `cargo test -- --ignored --test gc_improved_test`
 - Lint: `make lint` or `cargo clippy -- -D warnings`
 - Format check: `make fmt` or `cargo fmt -- --check`
 - Format fix: `make fmt-fix` or `cargo fmt`
@@ -81,3 +82,16 @@ fn my_test() {
   - `error!` - Test failures with context
 - Include relevant test data in structured fields rather than string interpolation
 - For failures, log detailed context before assertions: `error!(expected = ?expected, actual = ?actual)`
+
+## Memory Management Notes
+
+### Circular Reference Handling
+The garbage collector (GC) has been enhanced with proper cycle detection to handle circular references. The cycle detection mechanism works by:
+
+1. Starting from root objects (those directly referenced by the program)
+2. Using a visitor pattern to recursively trace through all object references
+3. Maintaining a set of "reachable" objects during the mark phase
+4. Properly handling cycles when an object refers back to an already visited object
+5. Sweeping (collecting) all objects that weren't marked as reachable
+
+This prevents memory leaks when objects reference each other in cycles but are no longer reachable from the root set.

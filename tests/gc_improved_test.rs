@@ -1,6 +1,6 @@
 //! Improved test for circular reference handling in the garbage collector
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Mutex};
 
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
@@ -16,42 +16,67 @@ mod tracing_setup {
     }
 }
 
-// Simple struct that holds a reference to another GC-managed object
+// Thread-safe struct that holds a reference to another GC-managed object
 #[derive(Clone, Debug)]
 struct CircularNode {
     id: usize,
-    next: Option<Gc<CircularNode>>,
+    next: Arc<RwLock<Option<Gc<CircularNode>>>>,
+    was_finalized: Arc<Mutex<bool>>,
 }
 
 impl CircularNode {
     fn new(id: usize) -> Self {
-        Self { id, next: None }
+        Self { 
+            id, 
+            next: Arc::new(RwLock::new(None)),
+            was_finalized: Arc::new(Mutex::new(false))
+        }
     }
     
     fn set_next(&mut self, next: Gc<CircularNode>) {
-        self.next = Some(next);
+        if let Ok(mut lock) = self.next.write() {
+            *lock = Some(next);
+        } else {
+            error!(id = self.id, "Failed to acquire write lock on next");
+        }
+    }
+
+    fn get_next(&self) -> Option<Gc<CircularNode>> {
+        if let Ok(lock) = self.next.read() {
+            lock.clone()
+        } else {
+            error!(id = self.id, "Failed to acquire read lock on next");
+            None
+        }
+    }
+
+    fn was_finalized(&self) -> bool {
+        if let Ok(lock) = self.was_finalized.lock() {
+            *lock
+        } else {
+            error!(id = self.id, "Failed to acquire lock on was_finalized");
+            false
+        }
     }
 }
 
 impl Traceable for CircularNode {
     fn trace(&self, visitor: &mut dyn Visitor) {
         trace!(id = self.id, "Tracing CircularNode");
-        if let Some(next) = &self.next {
-            trace!(id = self.id, "CircularNode has a next reference to trace");
-            if let Some(inner) = next.inner() {
-                trace!("Got inner pointer for next reference");
-                unsafe {
-                    let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CircularNode);
-                    trace!(pointer = ?ptr, "Visiting next pointer");
-                    visitor.visit(ptr);
-                    trace!("Next reference visit completed");
-                }
+        
+        if let Ok(next_lock) = self.next.read() {
+            if let Some(next) = &*next_lock {
+                trace!(id = self.id, "CircularNode has a next reference to trace");
+                // Use the object ID for the visitor to detect cycles
+                visitor.visit_ptr(next.id(), Tag::Object);
+                trace!("Next reference visit completed");
             } else {
-                error!(id = self.id, "Could not get inner pointer for next reference");
+                trace!(id = self.id, "CircularNode has no next references");
             }
         } else {
-            trace!(id = self.id, "CircularNode has no next references");
+            error!(id = self.id, "Failed to acquire read lock on next during trace");
         }
+        
         trace!(id = self.id, "Finished tracing CircularNode");
     }
     
@@ -61,6 +86,15 @@ impl Traceable for CircularNode {
     
     fn tag(&self) -> Tag {
         Tag::Object
+    }
+    
+    fn finalize(&mut self) {
+        info!(id = self.id, "Finalizing CircularNode");
+        if let Ok(mut finalized) = self.was_finalized.lock() {
+            *finalized = true;
+        } else {
+            error!(id = self.id, "Failed to set finalized flag during finalization");
+        }
     }
 }
 
@@ -87,18 +121,30 @@ fn test_circular_references_simplified() {
     // Create a circular reference
     debug!("Creating circular reference node1 -> node2");
     {
-        let inner1 = node1.inner_mut().unwrap();
-        debug!(id = inner1.id, "Got mutable reference to node1");
-        inner1.set_next(node2.clone());
-        debug!("Set node1.next = node2");
+        if let Some(inner1) = node1.inner_mut() {
+            debug!(id = inner1.id, "Got mutable reference to node1");
+            inner1.set_next(node2.clone());
+            debug!("Set node1.next = node2");
+            
+            // Verify reference was set correctly
+            assert!(inner1.get_next().is_some(), "Node1 should have a reference to node2");
+        } else {
+            panic!("Failed to get mutable reference to node1");
+        }
     }
     
     debug!("Creating circular reference node2 -> node1");
     {
-        let inner2 = node2.inner_mut().unwrap();
-        debug!(id = inner2.id, "Got mutable reference to node2");
-        inner2.set_next(node1.clone());
-        debug!("Set node2.next = node1");
+        if let Some(inner2) = node2.inner_mut() {
+            debug!(id = inner2.id, "Got mutable reference to node2");
+            inner2.set_next(node1.clone());
+            debug!("Set node2.next = node1");
+            
+            // Verify reference was set correctly
+            assert!(inner2.get_next().is_some(), "Node2 should have a reference to node1");
+        } else {
+            panic!("Failed to get mutable reference to node2");
+        }
     }
     
     // Get initial stats
@@ -112,6 +158,12 @@ fn test_circular_references_simplified() {
     let weak_node1 = node1.downgrade();
     debug!(weak_ref = ?weak_node1, "Created weak reference");
     assert!(weak_node1.is_alive(), "Weak reference should be alive");
+    
+    // Create a weak reference to node2 as well
+    debug!("Creating weak reference to node2");
+    let weak_node2 = node2.downgrade();
+    debug!(weak_ref = ?weak_node2, "Created weak reference");
+    assert!(weak_node2.is_alive(), "Weak reference should be alive");
     
     // Drop the strong references
     info!("Dropping strong references");
@@ -127,14 +179,20 @@ fn test_circular_references_simplified() {
     gc.collect_garbage();
     debug!("Garbage collection completed");
     
-    // Check if the weak reference is still alive
+    // Give GC a moment to finish any background work
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    
+    // Check if the weak references are still alive
     info!("Checking weak references");
-    debug!("Checking if weak reference is still alive");
-    let weak_alive = weak_node1.is_alive();
-    debug!(alive = weak_alive, "Weak reference alive status");
+    debug!("Checking if weak references are still alive");
+    let weak1_alive = weak_node1.is_alive();
+    let weak2_alive = weak_node2.is_alive();
+    debug!(weak1_alive = weak1_alive, weak2_alive = weak2_alive, "Weak references alive status");
+    
     // Note: This will fail if the GC can't properly handle circular references
     // If this test fails, it needs further improvement of the GC
-    assert!(!weak_alive, "Objects should be collected despite circular references");
+    assert!(!weak1_alive, "Node1 should be collected despite circular references");
+    assert!(!weak2_alive, "Node2 should be collected despite circular references");
     
     // Get final stats - they should show fewer objects
     info!("Checking final stats");
@@ -179,21 +237,39 @@ fn test_multiple_circular_references() {
     // Create a circular structure: 1 -> 2 -> 3 -> 1
     debug!("Creating circular references between nodes");
     {
-        let inner1 = node1.inner_mut().unwrap();
-        debug!(from = 1, to = 2, "Setting node link");
-        inner1.set_next(node2.clone());
+        if let Some(inner1) = node1.inner_mut() {
+            debug!(from = 1, to = 2, "Setting node link");
+            inner1.set_next(node2.clone());
+            
+            // Verify the reference was set correctly
+            assert!(inner1.get_next().is_some(), "Node 1 should have a reference to Node 2");
+        } else {
+            panic!("Failed to get mutable reference to node1");
+        }
     }
     
     {
-        let inner2 = node2.inner_mut().unwrap();
-        debug!(from = 2, to = 3, "Setting node link");
-        inner2.set_next(node3.clone());
+        if let Some(inner2) = node2.inner_mut() {
+            debug!(from = 2, to = 3, "Setting node link");
+            inner2.set_next(node3.clone());
+            
+            // Verify the reference was set correctly
+            assert!(inner2.get_next().is_some(), "Node 2 should have a reference to Node 3");
+        } else {
+            panic!("Failed to get mutable reference to node2");
+        }
     }
     
     {
-        let inner3 = node3.inner_mut().unwrap();
-        debug!(from = 3, to = 1, "Setting node link");
-        inner3.set_next(node1.clone());
+        if let Some(inner3) = node3.inner_mut() {
+            debug!(from = 3, to = 1, "Setting node link");
+            inner3.set_next(node1.clone());
+            
+            // Verify the reference was set correctly
+            assert!(inner3.get_next().is_some(), "Node 3 should have a reference to Node 1");
+        } else {
+            panic!("Failed to get mutable reference to node3");
+        }
     }
     debug!("Completed creating circular structure: 1 -> 2 -> 3 -> 1");
     
@@ -221,6 +297,9 @@ fn test_multiple_circular_references() {
     info!("Running garbage collection");
     gc.collect_garbage();
     debug!("Garbage collection completed");
+    
+    // Give GC a moment to finish any background work
+    std::thread::sleep(std::time::Duration::from_millis(50));
     
     // Verify all objects have been collected
     info!("Verifying objects have been collected");
@@ -285,17 +364,28 @@ fn test_incremental_gc_with_circular_refs() {
         if i > 0 {
             // Connect to previous node
             let prev_node = nodes.last().unwrap();
-            let inner = new_node.inner_mut().unwrap();
-            inner.set_next(prev_node.clone());
-            trace!(from = i, to = i-1, "Created link between nodes");
-            
-            // Every 10th node, create an additional circular reference
-            if i % 10 == 0 && i >= 20 {
-                let target_idx = (i / 2) as usize;
-                let mut prev_clone = prev_node.clone();
-                let inner = prev_clone.inner_mut().unwrap();
-                inner.set_next(nodes[target_idx].clone());
-                debug!(from = i-1, to = target_idx, "Created additional circular reference");
+            if let Some(inner) = new_node.inner_mut() {
+                inner.set_next(prev_node.clone());
+                trace!(from = i, to = i-1, "Created link between nodes");
+                
+                // Verify the reference was set
+                assert!(inner.get_next().is_some(), "Node {i} should have a reference to previous node");
+                
+                // Every 10th node, create an additional circular reference
+                if i % 10 == 0 && i >= 20 {
+                    let target_idx = (i / 2) as usize;
+                    let mut prev_clone = prev_node.clone();
+                    if let Some(prev_inner) = prev_clone.inner_mut() {
+                        prev_inner.set_next(nodes[target_idx].clone());
+                        debug!(from = i-1, to = target_idx, "Created additional circular reference");
+                        
+                        // Verify the additional reference was set
+                        assert!(prev_inner.get_next().is_some(), 
+                                "Node {} should have a reference to node {}", i-1, target_idx);
+                    }
+                }
+            } else {
+                panic!("Failed to get inner reference for node {}", i);
             }
         }
         
@@ -328,8 +418,13 @@ fn test_incremental_gc_with_circular_refs() {
     for i in 0..5 {
         debug!(collection_number = i + 1, "Running collection");
         gc.collect_garbage();
+        // Give GC a moment to process between collections
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
     debug!("Completed all incremental collections");
+    
+    // Give GC additional time to finish any pending work
+    std::thread::sleep(std::time::Duration::from_millis(50));
     
     // Verify all weak references are no longer alive
     info!("Verifying all objects have been collected");
