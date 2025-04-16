@@ -35,6 +35,8 @@ pub struct ImportedPackageInfo<'ctx> {
 
 /// Manages the state for LLVM Intermediate Representation generation.
 pub struct LlvmCodeGenerator<'ctx> {
+    // Later (defer) statement support
+    pub defer_blocks: std::collections::HashMap<inkwell::values::FunctionValue<'ctx>, inkwell::basic_block::BasicBlock<'ctx>>,
     pub(crate) context: &'ctx Context,
     pub(crate) module: Module<'ctx>,
     pub(crate) builder: Builder<'ctx>,
@@ -73,6 +75,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let current_package_name = module_name.to_string(); 
 
         LlvmCodeGenerator {
+            defer_blocks: HashMap::new(),
             context,
             module,
             builder,

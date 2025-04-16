@@ -65,6 +65,16 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             return self.compile_dot_expression(dot_expr);
         }
         
+        // // Handle if expressions - not yet implemented
+        // Currently no IfExpression type in the codebase
+        
+        // Handle assignment expressions
+        if let Some(assign_expr) = any.downcast_ref::<crate::ast::expressions::AssignmentExpression>() {
+            let result = self.compile_assignment_expr(assign_expr)?
+                .ok_or_else(|| Error::from_str("Assignment failed"))?;
+            return Ok(result);
+        }
+        
         // Fall back to basic expressions (literals, arithmetic operations)
         self.compile_basic_expression(expr)
     }
