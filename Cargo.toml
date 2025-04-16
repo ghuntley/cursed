@@ -58,6 +58,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscribe
 
 # We removed reqwest dependency since we're using mock HTTP responses only
 
+[features]
+# Enable binary compilation support
+binary_compiler = []
+
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking
 pretty_assertions = "1.4"  # For nicer test output
@@ -91,5 +95,3 @@ debug = true  # Full debug info
 name = "jit_integration_tests"
 path = "tests/jit_integration_tests.rs"
 harness = true
-
-# Test configuration removed
