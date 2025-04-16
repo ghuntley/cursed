@@ -16,7 +16,7 @@ use std::marker::PhantomData;
 use std::ptr::NonNull;
 use std::sync::{Arc, RwLock, Weak as StdWeak};
 use std::time::{Duration, Instant};
-use tracing::{debug, error, info, trace, warn};
+use tracing::{debug, error, info, trace, warn, instrument};
 
 use crate::memory::{Gc, Tag, Traceable, Visitor, deadlock_detector};
 
@@ -576,15 +576,18 @@ impl GarbageCollector {
                        thread_name.contains("comprehensive_circular_references_test") ||
                        thread_name.contains("gc_circular_reference_test") {
                         // In circular reference tests, we need to trace through the object graph
-                        debug!("Running collection for circular reference test");
+                        info!("Running collection for circular reference test");
                         
                         // Trace through the object graph to find all reachable objects
                         let mut reachable = HashSet::new();
+                        debug!(count = roots.len(), "Starting with root set");
                         for &root in &roots {
                             reachable.insert(root);
+                            trace!(root = format!("0x{:x}", root), "Added root to reachable set");
                             // Trace references from this root recursively
                             self.trace_all_references(root, &mut reachable);
                         }
+                        debug!(count = reachable.len(), "Found total reachable objects");
                         
                         // Now update our to_remove list to only include objects that aren't reachable
                         to_remove.clear();
@@ -592,6 +595,8 @@ impl GarbageCollector {
                             if !reachable.contains(&addr) {
                                 debug!(addr = format!("{:#x}", addr), "Object not reachable - will be collected");
                                 to_remove.push(addr);
+                            } else {
+                                trace!(addr = format!("{:#x}", addr), "Object is reachable - keeping");
                             }
                         }
                     }
@@ -739,23 +744,24 @@ impl GarbageCollector {
             state.stats.total_size -= freed_size;
             state.stats.allocated_since_last_gc = 0;
             
+            // Force explicit logging of object count changes for debugging
+            info!(initial_count = object_addresses.len(), final_count = state.objects.len(), freed = freed_count, "Object count changed after collection");
+            
             let elapsed = start_time.elapsed();
-            println!("GC: Collection took {} ms", elapsed.as_millis());
+            info!(duration_ms = elapsed.as_millis(), "Collection completed");
             state.stats.last_gc_time_ms = elapsed.as_millis();
             state.stats.total_gc_time_ms += elapsed.as_millis();
             
             // Log remaining objects
-            println!("GC: {} objects remain after collection", state.objects.len());
+            debug!(remaining = state.objects.len(), "Objects remaining after collection");
             if state.options.verbose {
                 for (addr, obj) in state.objects.iter() {
-                    println!("GC:   0x{:x} - Type: {:?}, Size: {}, Generation: {}", 
-                            addr, obj.tag, obj.size, obj.generation);
+                    trace!(addr = format!("0x{:x}", addr), tag = ?obj.tag, size = obj.size, gen = obj.generation, "Remaining object details");
                 }
             }
             
             state.collection_in_progress = false;
-            println!("GC: Collection complete - removed {} objects, kept {}", 
-                     freed_count, state.objects.len());
+            info!(removed = freed_count, kept = state.objects.len(), "Collection complete");
 
             // Verbose logs if enabled
             if state.options.verbose {
@@ -805,8 +811,9 @@ impl GarbageCollector {
     }
     
     // More comprehensive tracing function for circular reference tests
+    #[instrument(skip(self, reachable), fields(obj_id = ?format!("0x{:x}", object_id)))]
     fn trace_all_references(&self, object_id: usize, reachable: &mut HashSet<usize>) {
-        trace!(id = object_id, "Tracing all references from object");
+        trace!(id = format!("0x{:x}", object_id), "Tracing all references from object");
         
         // Get the object from global storage to find all references
         let storage = crate::memory::object_storage::global_object_storage();
@@ -825,13 +832,16 @@ impl GarbageCollector {
                     }
                     
                     fn visit_ptr(&mut self, ptr: usize, _tag: Tag) {
-                        trace!(ptr = ptr, "Visitor found reference");
+                        trace!(ptr = format!("0x{:x}", ptr), "Visitor found reference");
                         if !self.reachable.contains(&ptr) {
                             // We found a new reachable object
                             self.reachable.insert(ptr);
+                            trace!(ptr = format!("0x{:x}", ptr), count = self.reachable.len(), "Added object to reachable set");
                             
                             // Recursively trace its references
                             self.gc.trace_all_references(ptr, self.reachable);
+                        } else {
+                            trace!(ptr = format!("0x{:x}", ptr), "Object already in reachable set");
                         }
                     }
                 }
@@ -847,8 +857,20 @@ impl GarbageCollector {
     }
 
     /// Get current memory statistics
+    #[instrument(skip(self), fields(object_count = ?self.inner.read().map(|s| s.objects.len())))]  
     pub fn stats(&self) -> MemoryStats {
+        debug!("Getting current stats");
         let state = self.inner.read().unwrap();
+        debug!(objects_map_count = state.objects.len(), stats_object_count = state.stats.object_count, "Object counts");
+        
+        // Ensure stats are consistent with actual object count
+        if state.stats.object_count != state.objects.len() {
+            warn!(map_count = state.objects.len(), stats_count = state.stats.object_count, "Stats out of sync! Returning correct count based on objects map");
+            let mut updated_stats = state.stats.clone();
+            updated_stats.object_count = state.objects.len();
+            return updated_stats;
+        }
+        
         state.stats.clone()
     }
 
