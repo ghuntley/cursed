@@ -39,12 +39,6 @@ Implemented comprehensive tests for the standard library:
 - **String Switch Testing**: Verification of string-based switch statement compilation
 - **Dot Expression Testing**: End-to-end testing of package function calls
 
-### Future Work
-
-- Add performance benchmarks for garbage collection
-- Implement test coverage reporting
-- Refine tracing and instrumentation for all memory operations
-
 ### Thread-Safe Memory Management
 
 To support concurrent goroutines and multithreaded execution, a thread-safe object system has been implemented:
@@ -183,12 +177,6 @@ Implemented tests cover:
 - Detection of method signature mismatches
 - Example usage in complex interface hierarchies
 
-### Future Work
-
-- Implement full dynamic dispatch in LLVM code generation
-- Support for interface embedding (composition)
-- Runtime type checking and type assertions
-
 ## Core Type System Improvements
 
 - [x] Implemented proper type-expression conversion for generic instantiation
@@ -215,8 +203,29 @@ Implemented tests cover:
 - Type checking for complex nested expressions
 - Validation of operation type compatibility
 
-### Future Work
+## Incomplete Features and Required Work
 
-- Complete type inference for all expression types
-- More sophisticated type promotion rules for mixed-type operations
-- Implement complete generics constraint checking
+- [ ] **Parser Issues**: REPL parser implementation is incomplete - "only token display is functional"
+- [ ] **AST Implementations**: Some AST implementations for Node, Expression, and Statement might be incomplete
+- [x] **Memory Management**: Implemented thread-safe object system for concurrent operations and garbage collection
+- [ ] **Standard Library**: Several stdlib functions are marked as not implemented:
+  - ParseFiles and ParseGlob in rizztemplate
+  - Some string helpers initialization
+- [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
+- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints
+- [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete
+
+## Next Steps
+
+- Continue optimizing the thread-safe object and garbage collection implementation
+- Finish implementing the REPL parser for a better development experience
+- Implement the remaining standard library functions, especially in rizztemplate and stringz packages
+- Enhance code generation for concurrency primitives, focusing on function extraction from call expressions
+- Improve type system to fully support generic constraints and complete type inference for all expressions
+- Add support for interface embedding (composition) in the type system
+- Implement full dynamic dispatch in LLVM code generation for interfaces
+- Complete the implementation of control flow statements, particularly switch statements and range clauses
+- Add performance benchmarks for garbage collection to identify optimization opportunities
+- Implement test coverage reporting to identify areas needing more testing
+- Create more advanced tracing and instrumentation for memory operations
+- Add runtime type checking and type assertions for interfaces
