@@ -39,7 +39,7 @@ The `expression.rs` module has been implemented with:
 - ✅ `compile_identifier`: Load values from variables
 - ✅ `compile_prefix_expression`: Unary operations like !x, -x
 - ✅ `compile_infix_expression`: Binary operations like x + y, x < y
-- ❌ `compile_if_expression`: Conditional expressions (skeleton created but not fully implemented)
+- ✅ `compile_if_expression`: Conditional expressions (fully implemented with type checking and conversion)
 - ✅ `compile_property_access`: Access struct fields
 - ✅ `compile_assignment`: Variable assignment operations
 
