@@ -638,22 +638,216 @@ impl GenericInstantiator {
     // In a full implementation, these would handle the conversion between the AST's
     // expression types and the type system's Type enum
 
-    /// Placeholder for converting an Expression to a Type
-    /// In a real implementation, this would analyze the expression and extract its type
-    fn expression_to_type(_expr: &dyn crate::ast::Expression) -> Result<Type, Error> {
-        // For now, return a placeholder type
+    /// Converts an Expression to a Type by analyzing the expression
+    pub fn expression_to_type(&self, expr: &dyn crate::ast::Expression) -> Result<Type, Error> {
+        // Handle different expression types
+        if let Some(identifier) = expr.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
+            // Convert identifier to type
+            return Ok(Type::new_basic(&identifier.value));
+        } else if let Some(string_literal) = expr.as_any().downcast_ref::<crate::ast::expressions::StringLiteral>() {
+            // String literals represent the tea type
+            return Ok(Type::Tea);
+        } else if let Some(int_literal) = expr.as_any().downcast_ref::<crate::ast::expressions::IntegerLiteral>() {
+            // Integer literals default to normie
+            return Ok(Type::Normie);
+        } else if let Some(float_literal) = expr.as_any().downcast_ref::<crate::ast::expressions::FloatLiteral>() {
+            // Float literals default to snack
+            return Ok(Type::Snack);
+        } else if let Some(bool_literal) = expr.as_any().downcast_ref::<crate::ast::expressions::BooleanLiteral>() {
+            // Boolean literals are lit type
+            return Ok(Type::Lit);
+        } else if let Some(array_literal) = expr.as_any().downcast_ref::<crate::ast::expressions::ArrayLiteral>() {
+            // For array literals, try to determine element type from first element
+            if !array_literal.elements.is_empty() {
+                if let Some(first_elem) = array_literal.elements.first() {
+                    let elem_type = self.expression_to_type(first_elem.as_ref())?;
+                    return Ok(Type::Array(Box::new(elem_type), array_literal.elements.len()));
+                }
+            }
+            // Default to unknown element type if array is empty
+            return Ok(Type::Array(Box::new(Type::Unknown), 0));
+        }
+        
+        // For other expression types, we need more context or default to Unknown
         Ok(Type::Unknown)
     }
 
-    /// Placeholder for converting a Type to an Expression
-    /// In a real implementation, this would create the appropriate expression
+    /// Converts a Type to an Expression by creating the appropriate expression
     /// that represents the given type
-    fn type_to_expression(_typ: &Type) -> Result<Box<dyn crate::ast::Expression>, Error> {
-        // This would need to handle all cases of Type and create appropriate expressions
-        // For now we'll just return an error to indicate it's not fully implemented
-        Err(Error::from_str(
-            "Type to expression conversion not fully implemented",
-        ))
+    pub fn type_to_expression(&self, typ: &Type) -> Result<Box<dyn crate::ast::Expression>, Error> {
+        // Convert the type to the appropriate expression
+        match typ {
+            Type::Lit => {
+                // Create an identifier for lit (boolean) type
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "lit".to_string(),
+                }))
+            }
+            Type::Smol => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "smol".to_string(),
+                }))
+            }
+            Type::Mid => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "mid".to_string(),
+                }))
+            }
+            Type::Normie => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "normie".to_string(),
+                }))
+            }
+            Type::Thicc => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "thicc".to_string(),
+                }))
+            }
+            Type::Snack => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "snack".to_string(),
+                }))
+            }
+            Type::Meal => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "meal".to_string(),
+                }))
+            }
+            Type::Tea => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "tea".to_string(),
+                }))
+            }
+            Type::Sip => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "sip".to_string(),
+                }))
+            }
+            Type::Byte => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "byte".to_string(),
+                }))
+            }
+            Type::Rune => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "rune".to_string(),
+                }))
+            }
+            Type::Extra => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "extra".to_string(),
+                }))
+            }
+            Type::Named(name) => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: name.clone(),
+                }))
+            }
+            Type::TypeParam(name) => {
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: name.clone(),
+                }))
+            }
+            Type::Array(elem_type, size) => {
+                // Create an identifier representing array type syntax
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("[{}]{}", size, elem_type.to_string()),
+                }))
+            }
+            Type::Slice(elem_type) => {
+                // Create an identifier representing slice type syntax
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("][]{}", elem_type.to_string()),
+                }))
+            }
+            Type::Map(key_type, value_type) => {
+                // Create an identifier representing map type syntax
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("tea[{}]{}", key_type.to_string(), value_type.to_string()),
+                }))
+            }
+            Type::Pointer(target_type) => {
+                // Create an identifier representing pointer type syntax
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("@{}", target_type.to_string()),
+                }))
+            }
+            Type::Function(param_types, return_type) => {
+                // Create an identifier representing function type syntax
+                let param_types_str = param_types
+                    .iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("slay({}) {}", param_types_str, return_type.to_string()),
+                }))
+            }
+            Type::Channel(elem_type) => {
+                // Create an identifier representing channel type syntax
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("dm<{}>", elem_type.to_string()),
+                }))
+            }
+            Type::Struct(name, type_args) if !type_args.is_empty() => {
+                // Create an identifier representing generic struct type syntax
+                let type_args_str = type_args
+                    .iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("{name}[{type_args_str}]"),
+                }))
+            }
+            Type::Interface(name, type_args) if !type_args.is_empty() => {
+                // Create an identifier representing generic interface type syntax
+                let type_args_str = type_args
+                    .iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("{name}[{type_args_str}]"),
+                }))
+            }
+            Type::Struct(name, _) | Type::Interface(name, _) => {
+                // Create an identifier for non-generic struct/interface
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: name.clone(),
+                }))
+            }
+            Type::Unknown => {
+                // Create an identifier for unknown type
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: "unknown".to_string(),
+                }))
+            }
+        }
     }
 }
 
