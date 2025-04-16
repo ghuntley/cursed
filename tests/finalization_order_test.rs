@@ -4,7 +4,8 @@
 //! ordering to ensure objects are finalized in the correct order.
 
 use cursed::memory::{Traceable, Tag, Visitor};
-use cursed::memory::{register_dependency, finalization_graph, global_object_storage};
+use cursed::memory::{register_dependency, global_object_storage, store};
+use cursed::memory::finalization_order::FinalizationGraph;
 use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
 use std::sync::{Arc, Mutex};
 
@@ -74,7 +75,7 @@ fn create_dependent_objects(count: usize) -> (Vec<usize>, Arc<Mutex<Vec<usize>>>
             dependencies: Vec::new(),
         };
         
-        let addr = storage.store(obj);
+        let addr = cursed::memory::store(obj);
         addresses.push(addr);
     }
     

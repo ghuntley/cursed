@@ -1,221 +1,242 @@
-//! Object storage system for Traceable objects
+//! Object storage system for the garbage collector
 //!
-//! This module provides a way to store and access Traceable objects directly,
-//! which is essential for proper finalization during garbage collection.
-//! The storage system maintains a mapping between object addresses and the
-//! actual object instances, allowing direct access when needed.
+//! This module provides a central storage system for objects managed by the garbage collector,
+//! with support for storing dependencies between objects for improved finalization ordering.
 
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock, Mutex};
-use std::any::{Any, TypeId};
-use std::marker::PhantomData;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, RwLock};
 use std::ptr::NonNull;
-use std::cell::UnsafeCell;
+use std::any::Any;
+use once_cell::sync::Lazy;
 
 use crate::memory::{Traceable, Tag};
+use crate::debug_println;
 
-/// Storage for Traceable objects that allows direct access for finalization
+/// A wrapper around an object that can be stored in the object storage
 #[derive(Debug)]
-pub struct ObjectStorage {
-    // Map of object addresses to TypeErasedObjects
-    objects: RwLock<HashMap<usize, TypeErasedObject>>,
+pub struct StorageWrapper {
+    /// The actual object data
+    object: NonNull<dyn Traceable>,
+    /// Object dependencies (for finalization ordering)
+    dependencies: HashSet<usize>,
 }
 
-/// A type-erased object that can be stored in the ObjectStorage
-pub struct TypeErasedObject {
-    // The actual object data as Any
-    data: Box<dyn Any + Send + Sync>,
-    // The type ID of the object
-    type_id: TypeId,
-    // The tag of the object
-    tag: Tag,
-    // Reference to finalization function - can't impl Debug for functions
-    finalize_fn: Option<Box<dyn Fn(&mut dyn Any) + Send + Sync>>,
-}
+// Implement Send and Sync for StorageWrapper
+// This is needed because NonNull<dyn Traceable> is not Send or Sync by default
+// This is safe because we control access through the RwLock
+unsafe impl Send for StorageWrapper {}
+unsafe impl Sync for StorageWrapper {}
 
-// Manual Debug impl since we can't derive it for function pointers
-impl std::fmt::Debug for TypeErasedObject {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TypeErasedObject")
-            .field("type_id", &self.type_id)
-            .field("tag", &self.tag)
-            .field("has_finalizer", &self.finalize_fn.is_some())
-            .finish()
-    }
-}
-
-impl ObjectStorage {
-    /// Create a new object storage
-    pub fn new() -> Self {
+impl StorageWrapper {
+    /// Create a new wrapper around an object
+    pub fn new(object: NonNull<dyn Traceable>) -> Self {
         Self {
-            objects: RwLock::new(HashMap::new()),
+            object,
+            dependencies: HashSet::new(),
         }
     }
     
-    /// Store an object and get its address
-    pub fn store<T: Traceable + Clone + Send + Sync + 'static>(&self, obj: T) -> usize {
-        // Get finalize function
-        let finalize_fn = Box::new(|any_obj: &mut dyn Any| {
-            if let Some(typed_obj) = any_obj.downcast_mut::<T>() {
-                typed_obj.finalize();
-            }
-        });
-        
-        // Box the object
-        let boxed = Box::new(obj);
-        
-        // Get the raw pointer and address
-        let ptr = Box::into_raw(boxed);
-        let addr = ptr as usize;
-        
-        // Create type-erased object
-        let type_erased = TypeErasedObject {
-            data: unsafe { Box::from_raw(ptr as *mut T) as Box<dyn Any + Send + Sync> },
-            type_id: TypeId::of::<T>(),
-            tag: unsafe { (*ptr).tag() },
-            finalize_fn: Some(finalize_fn),
-        };
-        
-        // Store the type-erased object
-        let mut objects = self.objects.write().unwrap();
-        objects.insert(addr, type_erased);
-        
-        addr
+    /// Get the wrapped object
+    pub fn object(&self) -> NonNull<dyn Traceable> {
+        self.object
     }
     
-    /// Get a reference to an object by address
-    pub fn get<T: 'static>(&self, addr: usize) -> Option<&T> {
-        let objects = self.objects.read().unwrap();
+    /// Add a dependency on another object
+    pub fn add_dependency(&mut self, id: usize) {
+        self.dependencies.insert(id);
+    }
+    
+    /// Get the object's dependencies
+    pub fn dependencies(&self) -> &HashSet<usize> {
+        &self.dependencies
+    }
+}
+
+/// Central storage for all garbage-collected objects
+#[derive(Debug, Default)]
+pub struct ObjectStorage {
+    /// Map of object ID to storage wrapper
+    objects: HashMap<usize, StorageWrapper>,
+    /// Counter for generating unique object IDs
+    next_id: usize,
+}
+
+impl ObjectStorage {
+    /// Create a new, empty object storage
+    pub fn new() -> Self {
+        Self {
+            objects: HashMap::new(),
+            next_id: 1, // Start at 1, reserve 0 for null/invalid
+        }
+    }
+    
+    /// Store an object and return its ID
+    pub fn store<T: Traceable + 'static>(&mut self, object: Box<T>) -> usize {
+        let id = self.next_id;
+        self.next_id += 1;
         
-        objects.get(&addr).and_then(|obj| {
-            if obj.type_id == TypeId::of::<T>() {
-                // Safe to cast since we checked the type ID
-                let any_ref = &obj.data;
-                unsafe {
-                    let raw_ptr = any_ref as *const dyn Any as *const T;
-                    Some(&*raw_ptr)
-                }
-            } else {
-                None
+        // Convert to raw pointer
+        let raw_ptr = Box::into_raw(object);
+        let nn_ptr = unsafe { NonNull::new_unchecked(raw_ptr as *mut dyn Traceable) };
+        
+        // Create wrapper and store
+        let wrapper = StorageWrapper::new(nn_ptr);
+        self.objects.insert(id, wrapper);
+        
+        debug_println!("Stored object with ID {} (type: {:?})", id, unsafe { nn_ptr.as_ref().tag() });
+        id
+    }
+    
+    /// Get an object by ID
+    pub fn get<T: Traceable + 'static>(&self, id: usize) -> Option<&T> {
+        self.objects.get(&id).map(|wrapper| {
+            let traceable_ptr = wrapper.object();
+            unsafe {
+                // This is unsafe but needed to cast from the trait object to the concrete type
+                // In a production implementation, we would use proper type information
+                let obj = traceable_ptr.as_ptr() as *const T;
+                &*obj
             }
         })
     }
     
-    /// Get a mutable reference to an object by address
-    pub fn get_mut<T: 'static>(&self, addr: usize) -> Option<&mut T> {
-        let objects = self.objects.write().unwrap();
+    /// Check if an object exists
+    pub fn contains(&self, id: usize) -> bool {
+        self.objects.contains_key(&id)
+    }
+    
+    /// Remove an object
+    pub fn remove(&mut self, id: usize) -> Option<NonNull<dyn Traceable>> {
+        self.objects.remove(&id).map(|wrapper| wrapper.object())
+    }
+    
+    /// Add a dependency between objects
+    pub fn add_dependency(&mut self, from_id: usize, to_id: usize) {
+        if let Some(wrapper) = self.objects.get_mut(&from_id) {
+            wrapper.add_dependency(to_id);
+        }
+    }
+    
+    /// Get all object IDs
+    pub fn all_ids(&self) -> Vec<usize> {
+        self.objects.keys().copied().collect()
+    }
+    
+    /// Get number of stored objects
+    pub fn object_count(&self) -> usize {
+        self.objects.len()
+    }
+}
+
+/// Trait extension to allow Any downcasting for Traceable objects
+trait TraceableAsAny {
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl<T: Traceable + 'static> TraceableAsAny for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+/// Global object storage for the garbage collector
+static GLOBAL_OBJECT_STORAGE: Lazy<RwLock<ObjectStorage>> = 
+    Lazy::new(|| RwLock::new(ObjectStorage::new()));
+
+/// Get the global object storage
+pub fn global_object_storage() -> &'static RwLock<ObjectStorage> {
+    &GLOBAL_OBJECT_STORAGE
+}
+
+/// Helper function to store an object in the global storage (test only)
+pub fn store<T: Traceable + 'static>(obj: T) -> usize {
+    if let Ok(mut storage) = GLOBAL_OBJECT_STORAGE.write() {
+        storage.store(Box::new(obj))
+    } else {
+        panic!("Failed to acquire write lock on global object storage")
+    }
+}
+
+/// Helper function to check if an object exists in the global storage (test only)
+pub fn contains(id: usize) -> bool {
+    if let Ok(storage) = GLOBAL_OBJECT_STORAGE.read() {
+        storage.contains(id)
+    } else {
+        false
+    }
+}
+
+/// Register a dependency between two objects (for finalization ordering)
+pub fn register_dependency(from_id: usize, to_id: usize) {
+    if let Ok(mut storage) = GLOBAL_OBJECT_STORAGE.write() {
+        storage.add_dependency(from_id, to_id);
+    } else {
+        debug_println!("Warning: Could not register dependency from {} to {}", from_id, to_id);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[derive(Debug)]
+    struct TestObject {
+        value: i32,
+    }
+    
+    impl TestObject {
+        fn new(value: i32) -> Self {
+            Self { value }
+        }
+    }
+    
+    impl Traceable for TestObject {
+        fn trace(&self, _visitor: &mut dyn crate::memory::Visitor) {
+            // No references to trace
+        }
         
-        if let Some(obj) = objects.get(&addr) {
-            if obj.type_id == TypeId::of::<T>() {
-                // Safe to cast since we checked the type ID
-                // This is UB because we're getting a mutable reference through an immutable one
-                // A proper implementation would use a different approach, like RwLock per object
-                // or UnsafeCell
-                let any_ref = &obj.data as *const Box<dyn Any + Send + Sync> as *mut Box<dyn Any + Send + Sync>;
-                unsafe {
-                    let raw_ptr = (*any_ref).as_mut() as *mut dyn Any as *mut T;
-                    Some(&mut *raw_ptr)
-                }
-            } else {
-                None
-            }
-        } else {
-            None
+        fn size(&self) -> usize {
+            std::mem::size_of::<Self>()
         }
-    }
-    
-    /// Remove an object from storage and finalize it
-    pub fn remove_and_finalize(&self, addr: usize) -> bool {
-        let mut objects = self.objects.write().unwrap();
         
-        if let Some(mut obj) = objects.remove(&addr) {
-            // Call finalize function if it exists
-            if let Some(finalize_fn) = &obj.finalize_fn {
-                finalize_fn(obj.data.as_mut());
-            }
-            
-            true
-        } else {
-            false
+        fn tag(&self) -> Tag {
+            Tag::Object
         }
     }
     
-    /// Check if an object exists in storage
-    pub fn contains(&self, addr: usize) -> bool {
-        let objects = self.objects.read().unwrap();
-        objects.contains_key(&addr)
-    }
-    
-    /// Get the total number of objects in storage
-    pub fn len(&self) -> usize {
-        let objects = self.objects.read().unwrap();
-        objects.len()
-    }
-    
-    /// Check if the storage is empty
-    pub fn is_empty(&self) -> bool {
-        let objects = self.objects.read().unwrap();
-        objects.is_empty()
-    }
-    
-    /// Clear all objects from storage
-    pub fn clear(&self) {
-        let mut objects = self.objects.write().unwrap();
-        // Finalize all objects before clearing
-        for (_, mut obj) in objects.drain() {
-            if let Some(finalize_fn) = &obj.finalize_fn {
-                finalize_fn(obj.data.as_mut());
-            }
+    #[test]
+    fn test_object_storage_basic() {
+        let mut storage = ObjectStorage::new();
+        
+        // Store an object
+        let obj1 = Box::new(TestObject::new(42));
+        let id1 = storage.store(obj1);
+        
+        // Store another object
+        let obj2 = Box::new(TestObject::new(100));
+        let id2 = storage.store(obj2);
+        
+        // Check we can retrieve them
+        let retrieved1 = storage.get::<TestObject>(id1).unwrap();
+        let retrieved2 = storage.get::<TestObject>(id2).unwrap();
+        
+        assert_eq!(retrieved1.value, 42);
+        assert_eq!(retrieved2.value, 100);
+        
+        // Add a dependency
+        storage.add_dependency(id1, id2);
+        
+        // Check dependency
+        let wrapper1 = storage.objects.get(&id1).unwrap();
+        assert!(wrapper1.dependencies().contains(&id2));
+        
+        // Clean up
+        let ptr1 = storage.remove(id1).unwrap();
+        let ptr2 = storage.remove(id2).unwrap();
+        
+        unsafe {
+            let _boxed1 = Box::from_raw(ptr1.as_ptr().cast::<TestObject>());
+            let _boxed2 = Box::from_raw(ptr2.as_ptr().cast::<TestObject>());
         }
-    }
-}
-
-/// Global object storage singleton
-pub fn global_object_storage() -> &'static ObjectStorage {
-    static STORAGE: once_cell::sync::Lazy<ObjectStorage> = 
-        once_cell::sync::Lazy::new(|| ObjectStorage::new());
-    &STORAGE
-}
-
-/// A wrapper for accessing objects in storage
-#[derive(Debug, Clone)]
-pub struct StorageWrapper<T: Traceable + Clone + Send + Sync + 'static> {
-    // Address of the object in storage
-    addr: usize,
-    // Phantom data to keep track of the type
-    _marker: PhantomData<T>,
-}
-
-impl<T: Traceable + Clone + Send + Sync + 'static> StorageWrapper<T> {
-    /// Create a new wrapper for an object
-    pub fn new(obj: T) -> Self {
-        let addr = global_object_storage().store(obj);
-        Self {
-            addr,
-            _marker: PhantomData,
-        }
-    }
-    
-    /// Get the object's address
-    pub fn address(&self) -> usize {
-        self.addr
-    }
-    
-    /// Get a reference to the object
-    pub fn get(&self) -> Option<&T> {
-        global_object_storage().get(self.addr)
-    }
-    
-    /// Get a mutable reference to the object
-    pub fn get_mut(&self) -> Option<&mut T> {
-        global_object_storage().get_mut(self.addr)
-    }
-}
-
-impl<T: Traceable + Clone + Send + Sync + 'static> Drop for StorageWrapper<T> {
-    fn drop(&mut self) {
-        // When the wrapper is dropped, remove the object from storage and finalize it
-        // This is just for cleanup - the actual memory management is handled by the GC
-        // global_object_storage().remove_and_finalize(self.addr);
     }
 }

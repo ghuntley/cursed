@@ -1,116 +1,163 @@
-//! Deadlock detection utilities for lock acquisition
+//! Deadlock detection and prevention utilities
 //!
-//! This module provides utilities to detect and report potential deadlocks
-//! when acquiring locks. It helps diagnose issues with lock contention and
-//! recursive locking that might lead to program hangs.
+//! This module provides utilities to prevent deadlocks when waiting for locks
+//! particularly important in the garbage collector to avoid blocking operations.
 
-use std::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-/// Try to acquire a read lock with deadlock detection
-pub fn try_read_with_timeout<'a, T>(
+/// Default timeout for lock operations (500ms)
+const DEFAULT_TIMEOUT_MS: u64 = 500;
+
+/// Try to acquire a read lock with timeout to prevent deadlocks
+pub fn try_read_with_timeout<'a, T: ?Sized>(
     lock: &'a RwLock<T>,
-    timeout: Duration,
-    context: &str
+    timeout_ms: Option<u64>,
+    context: Option<&str>
 ) -> Option<RwLockReadGuard<'a, T>> {
+    let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let start = Instant::now();
     
-    // Try a bunch of times with small sleeps in between
-    let max_attempts = 100;
-    let sleep_duration = timeout / max_attempts;
-    
-    for attempt in 1..=max_attempts {
+    // Try acquiring the lock repeatedly until timeout
+    while start.elapsed() < timeout {
         match lock.try_read() {
             Ok(guard) => {
-                println!("[LOCK] Acquired read lock after {} attempts ({:?}) in {}", 
-                         attempt, start.elapsed(), context);
+                if let Some(ctx) = context {
+                    println!("Lock acquired (read) for context: {}", ctx);
+                }
                 return Some(guard);
             },
             Err(_) => {
-                // Sleep a bit before trying again
-                std::thread::sleep(sleep_duration);
-                
-                // If we're approaching timeout, report potential deadlock
-                if start.elapsed() > timeout * 9 / 10 {
-                    println!("[LOCK] ⚠️ Potential deadlock detected acquiring read lock in {}", context);
-                    println!("[LOCK] Stack trace: {:#?}", std::backtrace::Backtrace::capture());
+                std::thread::yield_now();
+                // Log on every tenth attempt to avoid log spam
+                if start.elapsed().as_millis() % 100 == 0 && context.is_some() {
+                    println!("Still waiting for read lock: {}", context.unwrap());
                 }
-            }
+            },
         }
     }
     
-    println!("[LOCK] ❌ Failed to acquire read lock after {:?} in {}", timeout, context);
+    if let Some(ctx) = context {
+        println!("Failed to acquire read lock for context: {}", ctx);
+    }
     None
 }
 
-/// Try to acquire a write lock with deadlock detection
-pub fn try_write_with_timeout<'a, T>(
+/// Try to acquire a write lock with timeout to prevent deadlocks
+pub fn try_write_with_timeout<'a, T: ?Sized>(
     lock: &'a RwLock<T>,
-    timeout: Duration,
-    context: &str
+    timeout_ms: Option<u64>,
+    context: Option<&str>
 ) -> Option<RwLockWriteGuard<'a, T>> {
+    let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let start = Instant::now();
     
-    // Try a bunch of times with small sleeps in between
-    let max_attempts = 100;
-    let sleep_duration = timeout / max_attempts;
-    
-    for attempt in 1..=max_attempts {
+    // Try acquiring the lock repeatedly until timeout
+    while start.elapsed() < timeout {
         match lock.try_write() {
             Ok(guard) => {
-                println!("[LOCK] Acquired write lock after {} attempts ({:?}) in {}", 
-                         attempt, start.elapsed(), context);
+                if let Some(ctx) = context {
+                    println!("Lock acquired (write) for context: {}", ctx);
+                }
                 return Some(guard);
             },
             Err(_) => {
-                // Sleep a bit before trying again
-                std::thread::sleep(sleep_duration);
-                
-                // If we're approaching timeout, report potential deadlock
-                if start.elapsed() > timeout * 9 / 10 {
-                    println!("[LOCK] ⚠️ Potential deadlock detected acquiring write lock in {}", context);
-                    println!("[LOCK] Stack trace: {:#?}", std::backtrace::Backtrace::capture());
+                std::thread::yield_now();
+                // Log on every tenth attempt to avoid log spam
+                if start.elapsed().as_millis() % 100 == 0 && context.is_some() {
+                    println!("Still waiting for write lock: {}", context.unwrap());
                 }
-            }
+            },
         }
     }
     
-    println!("[LOCK] ❌ Failed to acquire write lock after {:?} in {}", timeout, context);
+    if let Some(ctx) = context {
+        println!("Failed to acquire write lock for context: {}", ctx);
+    }
     None
 }
 
-/// Try to acquire a mutex with deadlock detection
-pub fn try_mutex_with_timeout<'a, T>(
-    lock: &'a Mutex<T>,
-    timeout: Duration,
-    context: &str
+/// Try to acquire a mutex lock with timeout to prevent deadlocks
+pub fn try_lock_with_timeout<'a, T: ?Sized>(
+    mutex: &'a Mutex<T>,
+    timeout_ms: Option<u64>,
+    context: Option<&str>
 ) -> Option<MutexGuard<'a, T>> {
+    let timeout = Duration::from_millis(timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS));
     let start = Instant::now();
     
-    // Try a bunch of times with small sleeps in between
-    let max_attempts = 100;
-    let sleep_duration = timeout / max_attempts;
-    
-    for attempt in 1..=max_attempts {
-        match lock.try_lock() {
+    // Try acquiring the lock repeatedly until timeout
+    while start.elapsed() < timeout {
+        match mutex.try_lock() {
             Ok(guard) => {
-                println!("[LOCK] Acquired mutex after {} attempts ({:?}) in {}", 
-                         attempt, start.elapsed(), context);
+                if let Some(ctx) = context {
+                    println!("Lock acquired (mutex) for context: {}", ctx);
+                }
                 return Some(guard);
             },
             Err(_) => {
-                // Sleep a bit before trying again
-                std::thread::sleep(sleep_duration);
-                
-                // If we're approaching timeout, report potential deadlock
-                if start.elapsed() > timeout * 9 / 10 {
-                    println!("[LOCK] ⚠️ Potential deadlock detected acquiring mutex in {}", context);
-                    println!("[LOCK] Stack trace: {:#?}", std::backtrace::Backtrace::capture());
+                std::thread::yield_now();
+                // Log on every tenth attempt to avoid log spam
+                if start.elapsed().as_millis() % 100 == 0 && context.is_some() {
+                    println!("Still waiting for mutex lock: {}", context.unwrap());
                 }
-            }
+            },
         }
     }
     
-    println!("[LOCK] ❌ Failed to acquire mutex after {:?} in {}", timeout, context);
+    if let Some(ctx) = context {
+        println!("Failed to acquire mutex lock for context: {}", ctx);
+    }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, RwLock};
+    use std::thread;
+    
+    #[test]
+    fn test_lock_timeout() {
+        let lock = RwLock::new(42);
+        
+        // Acquire write lock in another thread and hold it
+        let write_lock = lock.write().unwrap();
+        
+        // Try to acquire read lock with timeout in this thread
+        let result = try_read_with_timeout(&lock, Some(100), Some("test_lock_timeout"));
+        
+        // Should timeout
+        assert!(result.is_none());
+        
+        // Drop the write lock
+        drop(write_lock);
+        
+        // Now we should be able to acquire read lock
+        let result = try_read_with_timeout(&lock, Some(100), Some("test_lock_timeout_after_drop"));
+        assert!(result.is_some());
+        assert_eq!(*result.unwrap(), 42);
+    }
+    
+    #[test]
+    fn test_mutex_timeout() {
+        let mutex = Mutex::new(42);
+        
+        // Acquire lock in another thread and hold it
+        let lock = mutex.lock().unwrap();
+        
+        // Try to acquire lock with timeout in this thread
+        let result = try_lock_with_timeout(&mutex, Some(100), Some("test_mutex_timeout"));
+        
+        // Should timeout
+        assert!(result.is_none());
+        
+        // Drop the lock
+        drop(lock);
+        
+        // Now we should be able to acquire lock
+        let result = try_lock_with_timeout(&mutex, Some(100), Some("test_mutex_timeout_after_drop"));
+        assert!(result.is_some());
+        assert_eq!(*result.unwrap(), 42);
+    }
 }
