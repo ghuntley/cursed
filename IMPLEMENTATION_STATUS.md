@@ -213,7 +213,7 @@ Implemented tests cover:
   - Some string helpers initialization
 - [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
 - [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints
-- [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete
+- [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete (if expressions now fully implemented)
 
 ## Binary Compilation Support
 
@@ -288,6 +288,7 @@ Implemented tests cover:
    - `property_access.rs`: Struct field access expressions
    - `assignment.rs`: Variable assignment operations
    - `struct_type.rs`: Struct type handling and instantiation
+   - `if_expression.rs`: Conditional expression handling with type conversion
    - `binary_compiler.rs`: AOT compilation to native executables
 
 2. **Expression Support**: Implemented compilation for various expression types:
@@ -296,6 +297,7 @@ Implemented tests cover:
    - Comparison operations (equals, not equals, greater than, less than)
    - Variable references and variable assignment
    - Struct field access (object.property)
+   - Conditional expressions (if-else) with proper branch type handling
 
 3. **Statement Support**: Implemented compilation for control flow statements:
    - Break and continue statements for loops
