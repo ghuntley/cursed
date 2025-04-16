@@ -87,6 +87,25 @@ impl ObjectStorage {
         id
     }
     
+    /// Store an object at a specific ID (used for consistency with GC)
+    pub fn store_at_id<T: Traceable + 'static>(&mut self, object: Box<T>, id: usize) -> usize {
+        // Convert to raw pointer
+        let raw_ptr = Box::into_raw(object);
+        let nn_ptr = unsafe { NonNull::new_unchecked(raw_ptr as *mut dyn Traceable) };
+        
+        // Create wrapper and store at the specified ID
+        let wrapper = StorageWrapper::new(nn_ptr);
+        self.objects.insert(id, wrapper);
+        
+        // Update next_id if necessary to avoid future collisions
+        if id >= self.next_id {
+            self.next_id = id + 1;
+        }
+        
+        debug_println!("Stored object at specified ID {} (type: {:?})", id, unsafe { nn_ptr.as_ref().tag() });
+        id
+    }
+    
     /// Get an object by ID
     pub fn get<T: Traceable + 'static>(&self, id: usize) -> Option<&T> {
         self.objects.get(&id).map(|wrapper| {
@@ -94,6 +113,23 @@ impl ObjectStorage {
             unsafe {
                 // This is unsafe but needed to cast from the trait object to the concrete type
                 // In a production implementation, we would use proper type information
+                let obj = traceable_ptr.as_ptr() as *const T;
+                &*obj
+            }
+        })
+    }
+    
+    /// Get the storage wrapper for an object by ID
+    pub fn get_wrapper(&self, id: usize) -> Option<&StorageWrapper> {
+        self.objects.get(&id)
+    }
+    
+    /// Get a reference to a traceable object by ID (needed for thread-safe GC)
+    pub fn get_traceable_ref<T: Traceable + 'static>(&self, id: usize) -> Option<&T> {
+        self.objects.get(&id).map(|wrapper| {
+            let traceable_ptr = wrapper.object();
+            unsafe {
+                // This is unsafe but needed to cast from the trait object to the concrete type
                 let obj = traceable_ptr.as_ptr() as *const T;
                 &*obj
             }

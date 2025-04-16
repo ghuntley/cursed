@@ -244,6 +244,46 @@ impl<'a> Visitor for MarkVisitor<'a> {
             self.gray_list.push(ptr);
         }
     }
+    
+    // Implementation for visit_ptr which handles marking by ID
+    fn visit_ptr(&mut self, addr: usize, tag: Tag) {
+        // If already marked, skip
+        if self.marked.contains(&addr) {
+            return;
+        }
+        
+        // Check if we have this object in our map
+        if let Some(ptr) = self.objects.get(&addr) {
+            // Mark the object
+            self.marked.insert(addr);
+            self.marked_this_visit += 1;
+            debug_println!("Marked object with ID 0x{:x}", addr);
+            
+            // Add to gray list for processing
+            self.gray_list.push(*ptr);
+        } else {
+            // Try to look up the object in global object storage as a fallback
+            // This is essential for handling objects accessed through ThreadSafeGc
+            let storage = crate::memory::object_storage::global_object_storage();
+            if let Ok(storage_lock) = storage.read() {
+                if storage_lock.contains(addr) {
+                    debug_println!("Found object with ID 0x{:x} in global storage", addr);
+                    // The object is in global storage but not in our objects map
+                    // We'll mark it anyway so it doesn't get collected prematurely
+                    self.marked.insert(addr);
+                    self.marked_this_visit += 1;
+                    
+                    // We can't add it to the gray list because we don't have a pointer to it
+                    // This is a limitation that could cause issues with circular references
+                    // but at least we won't collect objects that are still reachable
+                } else {
+                    debug_println!("Warning: Attempted to mark unknown object with ID 0x{:x}", addr);
+                }
+            } else {
+                debug_println!("Warning: Failed to acquire read lock on global storage when marking object 0x{:x}", addr);
+            }
+        }
+    }
 }
 
 /// A dummy traceable object used for testing
@@ -419,18 +459,10 @@ mod tests {
         fn trace(&self, visitor: &mut dyn Visitor) {
             // Trace the references to other objects
             for &id in self.refs.borrow().iter() {
-                // For the test, we can't actually trace the objects directly
-                // Instead, simulate visiting them by using NonNull::new_unchecked
-                // This is fine for tests since we're controlling the addresses
-                unsafe {
-                    // Create a fake pointer - in real code this would be a real pointer
-                    // obtained from the object state
-                    // We can't directly cast id to *mut dyn Traceable as it's a fat pointer
-                    // For the test, we'll just use a temporary object pointer that satisfies the trait
-                    let obj_ptr = Box::into_raw(Box::new(DummyTraceable::new(id)));
-                    let ptr = NonNull::new_unchecked(obj_ptr as *mut dyn Traceable);
-                    visitor.visit(ptr);
-                }
+                // In this test, we're using the numeric ID as both the 'id' of the object
+                // and also as the key in the objects map. So we can just use visitor's visit_ptr
+                // which will cause the GC to look up the object by ID.
+                visitor.visit_ptr(id, Tag::Object);
             }
         }
         
@@ -460,6 +492,8 @@ mod tests {
         // Link them
         obj1.add_ref(2);
         obj2.add_ref(3);
+        // Create a circular reference to make sure all objects get traced
+        obj3.add_ref(1);
         
         // Convert to raw pointers and add to objects map
         let obj1_ptr = unsafe { NonNull::new_unchecked(Box::into_raw(obj1) as *mut dyn Traceable) };
@@ -478,8 +512,10 @@ mod tests {
         
         // Check result
         if let CollectionResult::Success(stats) = result {
-            // All objects should be reachable and marked
-            assert!(stats.marked >= 1, "At least the root object should be marked");
+            // The marked_sweep GC properly marks reachable objects but still sweeps the unreachable ones
+            // This is actually the correct behavior - we just need to adjust our test expectations
+            // Since obj1 links to obj2 and obj2 links to obj3, we expect them all to be marked/traced
+            assert!(stats.marked >= 3, "All three objects should be marked");
             assert_eq!(stats.swept, 0, "No objects should be swept since they're all reachable");
             assert_eq!(objects.len(), 3, "All three objects should remain in the map");
         } else {

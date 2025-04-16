@@ -196,18 +196,71 @@ impl GarbageCollector {
     ///
     /// A garbage-collected smart pointer (Gc<T>) to the allocated object
     pub fn allocate<T: Traceable + Clone + Send + Sync + 'static>(&self, value: T) -> Gc<T> {
-        self.allocate_internal(value)
+        println!("GC: Allocating object of type {}", std::any::type_name::<T>());
+        
+        // Box the value first to get a stable pointer that we'll use consistently as the ID
+        let boxed = Box::new(value.clone());
+        let ptr = Box::into_raw(boxed);
+        let obj_id = ptr as usize;
+        
+        // Store the object in the global object storage with the chosen ID
+        let storage = crate::memory::object_storage::global_object_storage();
+        if let Ok(mut storage_lock) = storage.write() {
+            // Store the object with the specific ID we chose
+            storage_lock.store_at_id(Box::new(value.clone()), obj_id);
+            println!("GC: Stored object in global storage with ID: {}", obj_id);
+        } else {
+            println!("GC: Failed to lock storage for storing object");
+        }
+        
+        // Create a new box for the GC's internal tracking
+        // We'll tell it to use our pre-selected ID for consistency
+        let gc_ptr = self.allocate_internal_with_id(value, obj_id);
+        
+        // Return the GC pointer
+        gc_ptr
     }
     
     /// Allocates a new thread-safe garbage-collected object
     pub fn allocate_thread_safe<T: Traceable + Clone + Send + Sync + 'static>(&self, value: T) -> crate::memory::ThreadSafeGc<T> {
-        let gc_ptr = self.allocate_internal(value);
-        // Convert to thread-safe GC pointer
-        crate::memory::ThreadSafeGc::new(Arc::new(self.clone()), gc_ptr.id())
+        println!("GC: Allocating thread-safe object of type {}", std::any::type_name::<T>());
+        
+        // Box the value first to get a stable pointer that we'll use consistently as the ID
+        let boxed = Box::new(value.clone());
+        let ptr = Box::into_raw(boxed);
+        let obj_id = ptr as usize;
+        
+        // Store the object in the global object storage with the chosen ID
+        let storage = crate::memory::object_storage::global_object_storage();
+        if let Ok(mut storage_lock) = storage.write() {
+            // Store the object with the specific ID we chose
+            storage_lock.store_at_id(Box::new(value.clone()), obj_id);
+            println!("GC: Stored thread-safe object in global storage with ID: {}", obj_id);
+        } else {
+            println!("GC: Failed to lock storage for storing thread-safe object");
+        }
+        
+        // Allocate the object through the GC as well to ensure proper tracking
+        // We'll tell it to use our pre-selected ID for consistency
+        let _gc_ptr = self.allocate_internal_with_id(value, obj_id);
+        
+        // Create and return the thread-safe GC pointer
+        crate::memory::ThreadSafeGc::new(Arc::new(self.clone()), obj_id)
     }
     
     // Internal implementation of allocate to avoid code duplication
     fn allocate_internal<T: Traceable + Clone + Send + Sync + 'static>(&self, value: T) -> Gc<T> {
+        // Generate a new ID by creating a box and using its address
+        let boxed = Box::new(value.clone());
+        let ptr = Box::into_raw(boxed);
+        let obj_id = ptr as usize;
+        
+        // Use the common implementation with this generated ID
+        self.allocate_internal_with_id(value, obj_id)
+    }
+    
+    // Internal implementation of allocate with a pre-determined ID
+    fn allocate_internal_with_id<T: Traceable + Clone + Send + Sync + 'static>(&self, value: T, obj_id: usize) -> Gc<T> {
         println!("GC: Starting allocation of {}", std::any::type_name::<T>());
         
         println!("GC: Acquiring write lock on GC state");
@@ -246,28 +299,13 @@ impl GarbageCollector {
         println!("GC: Acquired write lock successfully");
         println!("GC: Proceeding with allocation");
 
-        // Store the object in the global object storage for direct access during finalization
-        println!("GC: Storing object in global storage");
-        let storage = crate::memory::object_storage::global_object_storage();
-        
-        // First create a clone for the storage system
-        let storage_value = value.clone();
-        
-        // Store the object and get its address
-        let addr = if let Ok(mut storage_lock) = storage.write() {
-            storage_lock.store(Box::new(storage_value))
-        } else {
-            println!("Failed to lock storage for storing object");
-            0 // Invalid address
-        };
-        
         // For simplicity, we're still using Box<T> and raw pointers for the GC tracking
-        println!("GC: Boxing value");
+        println!("GC: Boxing value for internal tracking");
         let boxed = Box::new(value);
         let ptr = Box::into_raw(boxed);
         let type_id = TypeId::of::<T>();
         let size = std::mem::size_of::<T>();
-        println!("GC: Allocated at address 0x{:x}, size: {}", ptr as usize, size);
+        println!("GC: Using object ID: 0x{:x}, size: {}", obj_id, size);
 
         // Record type name for debugging
         println!("GC: Recording type information");
@@ -280,7 +318,7 @@ impl GarbageCollector {
         // Create GC object
         println!("GC: Creating GC tracking object");
         let obj = GcObject {
-            ptr: ptr as usize,
+            ptr: obj_id, // Use the provided ID instead of the pointer address
             size,
             type_id,
             tag: unsafe { (*ptr).tag() },
@@ -290,7 +328,7 @@ impl GarbageCollector {
 
         // Add to objects map
         println!("GC: Adding to objects map");
-        state.objects.insert(ptr as usize, obj);
+        state.objects.insert(obj_id, obj);
         
         // Update stats
         println!("GC: Updating stats");
@@ -299,13 +337,10 @@ impl GarbageCollector {
         state.stats.allocated_since_last_gc += size;
         state.stats.live_objects += 1;
         
-        // Store the object ID for later
-        let object_id = ptr as usize;
-        
         // Add to roots initially - this way we avoid the need for a separate add_root call
         // which could deadlock if we try to add a root while the object is being allocated
         println!("GC: Adding to roots set directly (without calling add_root)");
-        state.roots.insert(object_id);
+        state.roots.insert(obj_id);
         
         // Create and return the Gc
         println!("GC: Creating NonNull pointer");
@@ -315,7 +350,7 @@ impl GarbageCollector {
         println!("GC: Creating Gc smart pointer");
         // Use self to create the Gc - the Gc needs gc and id
         // Note: We won't call add_root since we've already added it to roots
-        let gc_ptr = Gc::new_without_root(Arc::new(self.clone()), object_id);
+        let gc_ptr = Gc::new_without_root(Arc::new(self.clone()), obj_id);
         println!("GC: Allocation complete");
         gc_ptr
     }
@@ -534,97 +569,191 @@ impl GarbageCollector {
         }
     }
 
-    // Internal implementation of garbage collection
+    // Internal implementation of garbage collection with full circular reference handling
     fn collect_garbage_internal(&self, trigger: CollectionTrigger) {
         println!("GC: Starting garbage collection: trigger={:?}", trigger);
         println!("GC: Current state: {:?}", self.stats());
         
-        // Special case for test_circular_references and test_no_memory_leaks
-        // This is a simplified implementation purely to fix the tests
-        // In a real implementation, we would properly handle circular references
-        // with a full mark-and-sweep algorithm
+        let start_time = Instant::now();
         
-        // Get a snapshot of the current objects
-        println!("GC: Acquiring write lock on state");
-        let mut state = self.inner.write().unwrap();
-        println!("GC: Acquired write lock on state");
+        // First, get a copy of the root set and the full set of objects without holding a write lock
+        let (root_addresses, object_addresses, objects_map) = {
+            println!("GC: Acquiring read lock to get objects and roots");
+            if let Ok(state) = self.inner.read() {
+                // Copy all the data we need for the mark phase
+                let roots = state.roots.clone();
+                let all_objects_addresses: Vec<usize> = state.objects.keys().cloned().collect();
+                
+                // Create a map from object ID to NonNull pointer for the mark phase
+                let mut objects_map: HashMap<usize, NonNull<dyn Traceable>> = HashMap::new();
+                for (&id, obj) in &state.objects {
+                    // We need to convert from GcObject to a NonNull<dyn Traceable>
+                    // For this example, we'll read from global object storage
+                    let storage = crate::memory::object_storage::global_object_storage();
+                    if let Ok(storage_lock) = storage.read() {
+                        if storage_lock.contains(id) {
+                            // The object exists in storage, so we can trace it
+                            // In a full implementation, we'd use a visitor pattern here
+                            println!("GC: Found object 0x{:x} in global storage", id);
+                            
+                            // Leave objects_map empty for now - we'll handle tracing later
+                        }
+                    }
+                }
+                
+                println!("GC: Found {} objects, {} roots", all_objects_addresses.len(), roots.len());
+                (roots, all_objects_addresses, objects_map)
+            } else {
+                println!("GC: Failed to acquire read lock for root set, aborting collection");
+                return;
+            }
+        };
         
-        let object_addresses: Vec<usize> = state.objects.keys().cloned().collect();
-        println!("GC: Found {} objects to examine", object_addresses.len());
+        // Mark phase: Identify all reachable objects using our improved mark-sweep
+        println!("GC: Starting mark phase");
+        let mut reachable_objects = HashSet::new();
         
-        let root_addresses: Vec<usize> = state.roots.iter().cloned().collect();
-        println!("GC: Found {} root objects to preserve", root_addresses.len());
+        // Add all roots to the reachable set
+        for &root_id in &root_addresses {
+            reachable_objects.insert(root_id);
+            println!("GC: Marked root object 0x{:x}", root_id);
+            
+            // Trace references from this root
+            self.trace_references(root_id, &mut reachable_objects);
+        }
         
-        // Skip circular reference detection and just free everything that's not a root
+        println!("GC: Mark phase complete - {} objects reachable", reachable_objects.len());
+        
+        // Sweep phase: Remove unreachable objects
+        println!("GC: Starting sweep phase");
         let mut freed_count = 0;
         let mut freed_size = 0;
         
-        println!("GC: Using special test-only implementation");
-        println!("GC: Current objects: {}, roots: {}", object_addresses.len(), root_addresses.len());
-        
-        // Check each object - if it's not in roots, remove it
-        println!("GC: Sweeping non-root objects");
-        for addr in &object_addresses {
-            println!("GC: Examining object at 0x{:x}", addr);
-            if !root_addresses.contains(addr) {
-                // Object is not a root, so it can be collected
-                println!("GC: Object 0x{:x} is not a root - collecting it", addr);
-                if let Some(obj) = state.objects.get(addr) {
-                    freed_size += obj.size;
-                    println!("GC: Object size: {} bytes, tag: {:?}", obj.size, obj.tag);
+        // Now acquire the write lock for the sweep phase
+        println!("GC: Acquiring write lock for sweep phase");
+        if let Some(mut state) = crate::memory::deadlock_detector::try_write_with_timeout(
+            &self.inner,
+            Some(5000), // 5 seconds timeout
+            Some("collect_garbage_internal - sweep phase")
+        ) {
+            println!("GC: Acquired write lock successfully");
+            
+            // Process each object - if it's not in the reachable set, remove it
+            for addr in &object_addresses {
+                if !reachable_objects.contains(addr) {
+                    println!("GC: Object 0x{:x} is unreachable - will be collected", addr);
+                    
+                    // Get object info before removing it
+                    if let Some(obj) = state.objects.get(addr) {
+                        freed_size += obj.size;
+                        println!("GC: Object size: {} bytes, tag: {:?}", obj.size, obj.tag);
+                        
+                        // Need to finalize the object before removing it
+                        // In a full implementation, we'd call the finalize method on the object
+                        // For this example implementation, we'll try to find it in global storage
+                        let storage = crate::memory::object_storage::global_object_storage();
+                        if let Ok(mut storage_lock) = storage.write() {
+                            if storage_lock.contains(*addr) {
+                                println!("GC: Finalizing object 0x{:x}", addr);
+                                // Remove from global storage
+                                if let Some(ptr) = storage_lock.remove(*addr) {
+                                    // Finalize the object
+                                    unsafe {
+                                        let obj_ptr_mut = ptr.as_ptr() as *mut dyn Traceable;
+                                        let obj = &mut *obj_ptr_mut;
+                                        obj.finalize();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Remove from the GC's object map
+                    let removed = state.objects.remove(addr);
+                    if removed.is_some() {
+                        freed_count += 1;
+                        println!("GC: Successfully removed object at 0x{:x}", addr);
+                    } else {
+                        println!("GC: Failed to remove object at 0x{:x} - not found", addr);
+                    }
                 } else {
-                    println!("GC: Warning - object not found in map despite being in keys");
+                    println!("GC: Keeping reachable object at 0x{:x}", addr);
                 }
-                
-                let removed = state.objects.remove(addr);
-                if removed.is_some() {
-                    freed_count += 1;
-                    println!("GC: Successfully removed object at 0x{:x}", addr);
-                } else {
-                    println!("GC: Failed to remove object at 0x{:x} - not found", addr);
-                }
-            } else {
-                println!("GC: Keeping root object at 0x{:x}", addr);
             }
-        }
-        
-        // Update stats
-        println!("GC: Updating collection statistics");
-        state.stats.collection_count += 1;
-        state.stats.total_collected += freed_size;
-        state.stats.object_count = state.objects.len();
-        state.stats.live_objects = state.objects.len();
-        state.stats.freed_objects += freed_count;
-        state.stats.total_size -= freed_size;
-        state.stats.allocated_since_last_gc = 0;
-        
-        let start_time = Instant::now();
-        let elapsed = start_time.elapsed();
-        println!("GC: Collection took {} ms", elapsed.as_millis());
-        state.stats.last_gc_time_ms = elapsed.as_millis();
-        state.stats.total_gc_time_ms += elapsed.as_millis();
-        
-        // Log all remaining objects after collection
-        println!("GC: Remaining objects after collection:");
-        for (addr, obj) in state.objects.iter() {
-            println!("GC:   0x{:x} - Type: {:?}, Size: {}, Generation: {}", 
-                    addr, obj.tag, obj.size, obj.generation);
-        }
-        
-        state.collection_in_progress = false;
-        println!("GC: Collection complete - removed {} objects, kept {}", 
-                 freed_count, state.objects.len());
+            
+            // Update statistics
+            println!("GC: Updating collection statistics");
+            state.stats.collection_count += 1;
+            state.stats.total_collected += freed_size;
+            state.stats.object_count = state.objects.len();
+            state.stats.live_objects = state.objects.len();
+            state.stats.freed_objects += freed_count;
+            state.stats.total_size -= freed_size;
+            state.stats.allocated_since_last_gc = 0;
+            
+            let elapsed = start_time.elapsed();
+            println!("GC: Collection took {} ms", elapsed.as_millis());
+            state.stats.last_gc_time_ms = elapsed.as_millis();
+            state.stats.total_gc_time_ms += elapsed.as_millis();
+            
+            // Log remaining objects
+            println!("GC: {} objects remain after collection", state.objects.len());
+            if state.options.verbose {
+                for (addr, obj) in state.objects.iter() {
+                    println!("GC:   0x{:x} - Type: {:?}, Size: {}, Generation: {}", 
+                            addr, obj.tag, obj.size, obj.generation);
+                }
+            }
+            
+            state.collection_in_progress = false;
+            println!("GC: Collection complete - removed {} objects, kept {}", 
+                     freed_count, state.objects.len());
 
-        // Verbose logs if enabled
-        if state.options.verbose {
-            state.debug_logs.push(format!(
-                "Garbage collection completed: removed {} objects, freed {} bytes",
-                freed_count,
-                freed_size
-            ));
+            // Verbose logs if enabled
+            if state.options.verbose {
+                state.debug_logs.push(format!(
+                    "Garbage collection completed: removed {} objects, freed {} bytes",
+                    freed_count,
+                    freed_size
+                ));
+            }
+        } else {
+            println!("GC: Failed to acquire write lock for sweeping, aborting collection");
         }
         
         println!("GC: Collection finished successfully");
+    }
+    
+    // Helper method to trace references from an object
+    fn trace_references(&self, object_id: usize, reachable: &mut HashSet<usize>) {
+        println!("GC: Tracing references from object 0x{:x}", object_id);
+        
+        // Get the object from global storage
+        let storage = crate::memory::object_storage::global_object_storage();
+        if let Ok(storage_lock) = storage.read() {
+            if storage_lock.contains(object_id) {
+                // We need to find all the references from this object
+                // In a full implementation, we would use a visitor pattern here
+                // For this simplified implementation, we'll just check for dependencies
+                
+                // Get the object's dependencies from global storage
+                // This is a simplification - in a real implementation we would trace references
+                // using the Traceable trait's trace method
+                let object_wrapper = storage_lock.get_wrapper(object_id);
+                if let Some(wrapper) = object_wrapper {
+                    for &dep_id in wrapper.dependencies() {
+                        if !reachable.contains(&dep_id) {
+                            // This is a newly discovered reachable object
+                            println!("GC: Found new reachable object 0x{:x} from 0x{:x}", dep_id, object_id);
+                            reachable.insert(dep_id);
+                            
+                            // Recursively trace its references
+                            self.trace_references(dep_id, reachable);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Get current memory statistics
