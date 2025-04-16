@@ -11,12 +11,20 @@ fn test_finalization_graph() {
     let mut graph = FinalizationGraph::new();
     
     // Set up dependencies: 0 -> 1 -> 2 -> 3
-    graph.add_dependency(0, 1); // 0 depends on 1
-    graph.add_dependency(1, 2); // 1 depends on 2
-    graph.add_dependency(2, 3); // 2 depends on 3
+    // Using FinalizationGraph = HashMap<usize, HashSet<usize>>
+    // Add entries for all objects
+    graph.insert(0, HashSet::new());
+    graph.insert(1, HashSet::new());
+    graph.insert(2, HashSet::new());
+    graph.insert(3, HashSet::new());
+    
+    // Update with dependencies
+    graph.get_mut(&0).unwrap().insert(1); // 0 depends on 1
+    graph.get_mut(&1).unwrap().insert(2); // 1 depends on 2
+    graph.get_mut(&2).unwrap().insert(3); // 2 depends on 3
     
     // Get the finalization order
-    let order = graph.finalization_order();
+    let order = cursed::memory::calculate_finalization_order(&graph);
     
     // Order should have all objects
     assert_eq!(order.len(), 4, "All objects should be in the finalization order");
@@ -27,10 +35,10 @@ fn test_finalization_graph() {
     assert_eq!(order, expected_order, "Finalization order should be correct");
     
     // Remove object 2
-    graph.remove_object(2);
+    graph.remove(&2);
     
     // Get the new finalization order
-    let order = graph.finalization_order();
+    let order = cursed::memory::calculate_finalization_order(&graph);
     
     // Order should have the remaining objects
     assert_eq!(order.len(), 3, "Should have 3 objects after removal");
@@ -44,19 +52,26 @@ fn test_complex_dependencies() {
     // Create a more complex dependency graph
     let mut graph = FinalizationGraph::new();
     
+    // Add entries for all objects
+    graph.insert(0, HashSet::new());
+    graph.insert(1, HashSet::new());
+    graph.insert(2, HashSet::new());
+    graph.insert(3, HashSet::new());
+    graph.insert(4, HashSet::new());
+    
     // 0 depends on 1 and 2
-    graph.add_dependency(0, 1);
-    graph.add_dependency(0, 2);
+    graph.get_mut(&0).unwrap().insert(1);
+    graph.get_mut(&0).unwrap().insert(2);
     
     // 1 depends on 3
-    graph.add_dependency(1, 3);
+    graph.get_mut(&1).unwrap().insert(3);
     
     // 2 depends on 3 and 4
-    graph.add_dependency(2, 3);
-    graph.add_dependency(2, 4);
+    graph.get_mut(&2).unwrap().insert(3);
+    graph.get_mut(&2).unwrap().insert(4);
     
     // Get the finalization order
-    let order = graph.finalization_order();
+    let order = cursed::memory::calculate_finalization_order(&graph);
     
     // Order should have all 5 objects
     assert_eq!(order.len(), 5, "All 5 objects should be in the finalization order");
@@ -86,13 +101,18 @@ fn test_cycle_handling() {
     // Create a graph with a cycle
     let mut graph = FinalizationGraph::new();
     
+    // Add entries for all objects
+    graph.insert(0, HashSet::new());
+    graph.insert(1, HashSet::new());
+    graph.insert(2, HashSet::new());
+    
     // 0 -> 1 -> 2 -> 0 (cycle)
-    graph.add_dependency(0, 1);
-    graph.add_dependency(1, 2);
-    graph.add_dependency(2, 0);
+    graph.get_mut(&0).unwrap().insert(1);
+    graph.get_mut(&1).unwrap().insert(2);
+    graph.get_mut(&2).unwrap().insert(0);
     
     // Get the finalization order - should work despite the cycle
-    let order = graph.finalization_order();
+    let order = cursed::memory::calculate_finalization_order(&graph);
     
     // Order should have all 3 objects
     assert_eq!(order.len(), 3, "All 3 objects should be in the finalization order");
