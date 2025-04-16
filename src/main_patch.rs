@@ -14,12 +14,12 @@ use cursed::stdlib::dot_registry::{execute_dot, is_supported, get_packages, get_
 
 /// Regular expression to find dot expressions: package.function("arguments")
 static DOT_EXPR_REGEX: once_cell::sync::Lazy<Regex> = once_cell::sync::Lazy::new(|| {
-    Regex::new(r"([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)").unwrap()
+    Regex::new(r"([a-zA-Z_][a-zA-Z0-9_]*)\.([ a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)").unwrap()
 });
 
 /// Regular expression to find method calls on user-defined types: object.method("arguments")
 static METHOD_CALL_REGEX: once_cell::sync::Lazy<Regex> = once_cell::sync::Lazy::new(|| {
-    Regex::new(r"([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)").unwrap()
+    Regex::new(r"([a-zA-Z_][a-zA-Z0-9_]*)\.([ a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)").unwrap()
 });
 
 /// Regular expression to extract string arguments: "string"

@@ -30,6 +30,11 @@
 //! 2. Functionality is added through trait implementations
 //! 3. The main `mod.rs` re-exports the core types for external use
 //!
+//! ## Binary Compilation
+//!
+//! The `binary_compiler.rs` module provides Ahead-Of-Time (AOT) compilation to native
+//! executable binaries, handling the entire process from LLVM IR generation to linking.
+//!
 //! ## Compatibility
 //!
 //! For backward compatibility, the `generator.rs` module re-exports 
@@ -41,6 +46,7 @@
 
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
+pub use self::binary_compiler::BinaryCompiler;
 // Disable dynamic dispatch until it's fully implemented
 // pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 
@@ -60,6 +66,7 @@ pub use self::struct_monomorphization::StructMonomorphization;
 
 // Module declarations
 mod context;         // Main LlvmCodeGenerator implementation
+pub mod binary_compiler; // Binary (AOT) compiler implementation
 mod basic_expressions;
 mod builder;
 pub mod container_layout; // Container memory layout optimization
