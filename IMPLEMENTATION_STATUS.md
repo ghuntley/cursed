@@ -63,6 +63,7 @@ To support concurrent goroutines and multithreaded execution, a thread-safe obje
 3. **Finalization Ordering**: Objects are finalized in dependency order to prevent use-after-free issues
 4. **Cycle Detection**: The finalization system properly handles circular dependencies
 5. **Thread Safety**: Both systems are implemented in a thread-safe manner with appropriate locking
+6. **Improved Finalization Ordering**: Enhanced finalization_order implementation to respect object dependencies during garbage collection and properly finalize objects in dependency order
 6. **Cross-Thread Memory Management**: Added ThreadSafePointer and ThreadSafeTraceable wrappers to allow safely sharing objects between threads
 
 ## Property-Based Testing Module

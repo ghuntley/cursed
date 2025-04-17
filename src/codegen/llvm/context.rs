@@ -58,6 +58,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) mono_manager: crate::codegen::monomorphization::MonomorphizationManager,
     // LLVM-specific monomorphization manager (for compatibility with API refactor)
     pub(crate) llvm_mono_manager: self::monomorphization::MonomorphizationManager,
+    // Interface manager for dynamic dispatch
+    pub(crate) interface_manager: Option<crate::codegen::llvm::dynamic_dispatch::InterfaceManager<'ctx>>,
     // GC metadata for struct types: Maps struct names to their traceable field indices
     pub(crate) gc_metadata: HashMap<String, Vec<(usize, String)>>,
     // Counter for string literals
@@ -93,6 +95,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             constants: HashSet::new(),
             mono_manager: crate::codegen::monomorphization::MonomorphizationManager::new(),
             llvm_mono_manager: self::monomorphization::MonomorphizationManager::new(),
+            interface_manager: None, // Will be initialized when needed
             gc_metadata: HashMap::new(),
             string_literal_counter: 0,
             loop_exit_blocks: Vec::new(),
@@ -650,4 +653,3 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
 }
 
-// Import of other module implementations is done in respective files

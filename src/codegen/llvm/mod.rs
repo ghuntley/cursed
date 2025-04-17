@@ -51,8 +51,9 @@ pub use self::binary_compiler::BinaryCompiler;
 
 // Re-export binary compiler types
 pub use self::binary_compiler::DebugInfoLevel;
-// Disable dynamic dispatch until it's fully implemented
-// pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
+// Interface implementation and dynamic dispatch
+pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
+pub use self::interface_implementation::InterfaceImplementation;
 
 // Re-export traits for module functionality
 pub use self::container_layout::{ContainerLayout, ContainerLayoutExtension, ContainerLayoutManager};
@@ -119,8 +120,9 @@ mod later_statement; // Later (defer) statement implementation
 mod switch_statement; // Switch statement implementation
 mod if_expression;   // If expression implementation
 pub mod struct_field_inference; // Struct field type inference
-// Disable dynamic dispatch until it's fully implemented
-// mod dynamic_dispatch; // Dynamic dispatch for interfaces
+// Dynamic dispatch for interfaces
+mod dynamic_dispatch;
+mod interface_implementation; // Interface implementation for code generator
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
 /// 

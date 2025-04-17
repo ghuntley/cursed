@@ -41,12 +41,12 @@ fn test_struct_field_type_inference() {
     
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{").token_literal().token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         struct_name: struct_name.to_string(),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x").token_literal().token_literal(),
+                    token: Token::new(TokenType::Identifier, "x").token_literal(),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
@@ -135,7 +135,7 @@ fn test_nested_struct_type_inference() {
     
     // Create a nested struct literal 
     let top_left = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         struct_name: point_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -162,7 +162,7 @@ fn test_nested_struct_type_inference() {
     };
     
     let bottom_right = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         struct_name: point_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -189,7 +189,7 @@ fn test_nested_struct_type_inference() {
     };
     
     let rect_literal = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         struct_name: rect_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -250,7 +250,7 @@ fn test_struct_field_incompatible_types() {
     
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         struct_name: person_name.to_string(),
         fields: vec![
             KeyValuePair {

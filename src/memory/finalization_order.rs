@@ -19,20 +19,31 @@ pub fn finalize_objects_ordered(addresses: &[usize]) {
         
         for &addr in addresses {
             if storage_lock.contains(addr) {
-                // Get the dependencies for this object
-                // In a real implementation we would have direct access
-                // For this minimal implementation, assume no dependencies
-                dependencies.insert(addr, HashSet::new());
+                // Get the dependencies for this object from the storage wrapper
+                if let Some(wrapper) = storage_lock.get_wrapper(addr) {
+                    // Clone the dependencies to build our graph
+                    dependencies.insert(addr, wrapper.dependencies().clone());
+                } else {
+                    dependencies.insert(addr, HashSet::new());
+                }
             }
         }
         
         // Calculate the order
         let order = calculate_finalization_order(&dependencies);
         
-        // Remove objects in the correct order
+        // Finalize and remove objects in the correct order
         for addr in order {
             if addresses.contains(&addr) {
-                storage_lock.remove(addr);
+                if let Some(obj_ptr) = storage_lock.remove(addr) {
+                    // Call finalize on the object
+                    unsafe {
+                        // Safety: We're ensuring the pointer is valid by checking against
+                        // the storage, and we have exclusive access via the write lock
+                        let traceable = obj_ptr.as_ptr().as_mut().unwrap();
+                        traceable.finalize();
+                    }
+                }
             }
         }
     }

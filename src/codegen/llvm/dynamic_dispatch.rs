@@ -13,14 +13,14 @@
 use crate::code::Code;
 use crate::error::Error;
 use inkwell::types::{BasicTypeEnum, FunctionType, PointerType, StructType};
-use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
+use inkwell::values::{BasicValueEnum, BasicValue, FunctionValue, PointerValue, BasicMetadataValueEnum};
 use inkwell::AddressSpace;
-use inkwell::IntPredicate;
+use inkwell::context::Context;
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::type_checker::Type as CursedType;
-use std::fmt;
 
 /// Structure of an interface value
 ///
@@ -162,45 +162,65 @@ impl<'ctx> InterfaceManager<'ctx> {
     /// Register an interface with the manager
     pub fn register_interface(
         &mut self,
-        generator: &LlvmCodeGenerator<'ctx>,
+        context: &'ctx Context,
         interface_name: &str,
         methods: Vec<(String, Vec<CursedType>, Option<CursedType>)>,
+        type_params: Vec<String>,
     ) -> Result<(), Error> {
-        // Parse type parameters from interface name if it's generic
-        let (base_name, type_params) = Self::parse_generic_name(interface_name);
-        
-        // Create LLVM function types for each method
+        // Convert CursedType params and return types to LLVM types
         let mut llvm_methods = Vec::new();
         let mut method_signatures = Vec::new();
 
         for (method_name, param_types, return_type) in methods {
-            // Convert CURSED types to LLVM types
+            // Convert parameter types to LLVM types
             let mut llvm_param_types = Vec::new();
             let mut param_type_values = Vec::new();
             
-            for param_type in param_types {
-                let llvm_type = generator.convert_type_to_llvm_type(&param_type)?;
+            // For each parameter type, get the corresponding LLVM type
+            for param_type in &param_types {
+                // Convert CursedType to LLVM type - simplified for now
+                let llvm_type = match param_type {
+                    CursedType::Tea => context.i8_type().ptr_type(AddressSpace::default()).into(),
+                    CursedType::Normie => context.i32_type().into(),
+                    CursedType::Lit => context.bool_type().into(),
+                    CursedType::Meal => context.f64_type().into(),
+                    // Handle other types as needed - simplified for now
+                    _ => context.i8_type().ptr_type(AddressSpace::default()).into(),
+                };
+                
                 llvm_param_types.push(llvm_type);
-                param_type_values.push(llvm_type.into_basic_type_enum());
+                param_type_values.push(llvm_type);
             }
 
-            // Convert return type
+            // Convert return type to LLVM type if present
             let llvm_return_type = match &return_type {
-                Some(ret_type) => Some(generator.convert_type_to_llvm_type(ret_type)?),
+                Some(ret_type) => {
+                    // Convert CursedType to LLVM type - simplified for now
+                    let ret_llvm_type = match ret_type {
+                        CursedType::Tea => context.i8_type().ptr_type(AddressSpace::default()).into(),
+                        CursedType::Normie => context.i32_type().into(),
+                        CursedType::Lit => context.bool_type().into(), 
+                        CursedType::Meal => context.f64_type().into(),
+                        // Handle other types as needed - simplified for now
+                        _ => context.i8_type().ptr_type(AddressSpace::default()).into(),
+                    };
+                    Some(ret_llvm_type)
+                },
                 None => None,
             };
 
-            // Create function type
-            let fn_type = match llvm_return_type {
-                Some(ret_type) => generator.context.function_type(
-                    ret_type.into_basic_type_enum(),
-                    &llvm_param_types.as_slice(),
-                    false,
-                ),
-                None => generator.context.void_type().fn_type(
-                    &llvm_param_types.as_slice(),
-                    false,
-                ),
+            // Create function type using the appropriate LLVM API
+            let fn_type = if let Some(ret_type) = llvm_return_type {
+                match ret_type {
+                    BasicTypeEnum::IntType(int_type) => int_type.fn_type(&llvm_param_types, false),
+                    BasicTypeEnum::FloatType(float_type) => float_type.fn_type(&llvm_param_types, false),
+                    BasicTypeEnum::PointerType(ptr_type) => ptr_type.fn_type(&llvm_param_types, false),
+                    BasicTypeEnum::StructType(struct_type) => struct_type.fn_type(&llvm_param_types, false),
+                    BasicTypeEnum::ArrayType(array_type) => array_type.fn_type(&llvm_param_types, false),
+                    BasicTypeEnum::VectorType(vector_type) => vector_type.fn_type(&llvm_param_types, false),
+                }
+            } else {
+                context.void_type().fn_type(&llvm_param_types, false)
             };
 
             llvm_methods.push((method_name.clone(), fn_type, llvm_return_type));
@@ -209,18 +229,18 @@ impl<'ctx> InterfaceManager<'ctx> {
             let method_signature = MethodSignature {
                 name: method_name.clone(),
                 function_type: fn_type,
-                return_type: llvm_return_type.map(|t| t.into_basic_type_enum()),
-                param_types: param_type_values,
+                return_type: llvm_return_type,
+                param_types: param_type_values.into_iter().map(|t| t.try_into().unwrap()).collect(),
             };
             
             method_signatures.push(method_signature);
         }
 
-        // Create interface structure: { data_ptr, vtable_ptr, type_id_ptr }
-        let interface_type = generator.context.struct_type(
+        // Create interface structure: { data_ptr, vtable_ptr }
+        let interface_type = context.struct_type(
             &[
-                generator.context.i8_type().ptr_type(AddressSpace::default()).into(), // data pointer
-                generator.context.i8_type().ptr_type(AddressSpace::default()).into(), // vtable pointer
+                context.i8_type().ptr_type(AddressSpace::default()).into(), // data pointer
+                context.i8_type().ptr_type(AddressSpace::default()).into(), // vtable pointer
             ],
             false,
         );
@@ -241,7 +261,7 @@ impl<'ctx> InterfaceManager<'ctx> {
             })
             .collect();
 
-        let vtable_type = generator.context.struct_type(&vtable_fields, false);
+        let vtable_type = context.struct_type(&vtable_fields, false);
 
         let mut method_indices = HashMap::new();
         for (i, (method_name, _, _)) in llvm_methods.iter().enumerate() {
@@ -275,7 +295,8 @@ impl<'ctx> InterfaceManager<'ctx> {
     /// Create a vtable for a type that implements an interface
     pub fn create_vtable_for_implementation(
         &mut self,
-        generator: &LlvmCodeGenerator<'ctx>,
+        context: &'ctx Context,
+        module: &inkwell::module::Module<'ctx>,
         interface_name: &str,
         implementing_type: &CursedType,
         implementation_methods: HashMap<String, FunctionValue<'ctx>>,
@@ -315,12 +336,35 @@ impl<'ctx> InterfaceManager<'ctx> {
 
         // Create a global constant for the vtable
         let type_name = match implementing_type {
-            CursedType::Struct(name, type_args) => name,
+            CursedType::Struct(name, _) => name,
             _ => return Err(Error::from_str("Only structs can implement interfaces")),
         };
 
-        // Create type info for runtime type identification
-        let type_info = self.register_type_info(implementing_type);
+        // Extract the implementing type name (we've already checked it's a struct earlier)
+        let type_name = match implementing_type {
+            CursedType::Struct(name, _) => name,
+            _ => return Err(Error::from_str("Only structs can implement interfaces")),
+        };
+        
+        // Create a TypeInfo manually since we can't borrow self mutably here
+        let type_id = format!("type_{}", self.next_type_id);
+        self.next_type_id += 1;
+        
+        let type_args: Vec<String> = match implementing_type {
+            CursedType::Struct(_, type_args) => type_args.iter()
+                .map(|arg| arg.to_string())
+                .collect(),
+            _ => Vec::new(),
+        };
+        
+        let type_info = TypeInfo {
+            type_id: type_id.clone(),
+            type_name: type_name.clone(),
+            type_args,
+        };
+        
+        // Register in the type info map
+        self.type_info_map.insert(type_id, type_info.clone());
         
         // Extract interface type arguments if it's generic
         let (base_interface_name, interface_type_args) = Self::parse_generic_name(interface_name);
@@ -328,13 +372,13 @@ impl<'ctx> InterfaceManager<'ctx> {
         // Create the vtable name, including type arguments for generic interfaces
         let vtable_name = format!("vtable.{}.{}", interface_name, type_name);
         
-        let vtable_const = generator.module.add_global(
+        let vtable_const = module.add_global(
             vtable.vtable_type,
             Some(AddressSpace::default()),
             &vtable_name,
         );
 
-        let vtable_struct = generator.context.const_struct(&vtable_values, false);
+        let vtable_struct = context.const_struct(&vtable_values, false);
         vtable_const.set_initializer(&vtable_struct);
         vtable_const.set_constant(true);
         vtable_const.set_linkage(inkwell::module::Linkage::Private);
@@ -389,7 +433,8 @@ impl<'ctx> InterfaceManager<'ctx> {
     /// Create an interface value from a concrete type
     pub fn create_interface_value(
         &self,
-        generator: &LlvmCodeGenerator<'ctx>,
+        context: &'ctx Context,
+        builder: &inkwell::builder::Builder<'ctx>,
         value: PointerValue<'ctx>,
         value_type: &CursedType,
         interface_name: &str,
@@ -420,75 +465,63 @@ impl<'ctx> InterfaceManager<'ctx> {
         };
 
         // Allocate memory for the interface value
-        let interface_ptr = generator.builder.build_alloca(
+        let interface_ptr = builder.build_alloca(
             interface.interface_type,
             "interface_value",
-        );
+        ).map_err(|e| Error::from_str(&format!("Failed to allocate interface value: {}", e)))?;
 
-        // Set the data pointer (first field)
-        let data_ptr_ptr = generator.builder.build_struct_gep(
-            interface_ptr,
-            0,
-            "data_ptr_ptr",
-        )?;
-
-        // Cast the value pointer to i8*
-        let value_i8_ptr = generator.builder.build_bitcast(
+        // Cast value pointer to i8*
+        let value_i8_ptr = builder.build_bitcast(
             value,
-            generator.context.i8_type().ptr_type(AddressSpace::default()),
+            context.i8_type().ptr_type(AddressSpace::default()),
             "value_i8_ptr",
-        ).into_pointer_value();
+        ).expect("Failed to cast value to i8*").into_pointer_value();
 
-        generator.builder.build_store(data_ptr_ptr, value_i8_ptr);
+        // Get data pointer pointer (first field)
+        let data_ptr_ptr = unsafe {
+            builder.build_struct_gep(
+                interface.interface_type,
+                interface_ptr, 
+                0, 
+                "data_ptr_ptr"
+            )
+        }.map_err(|e| Error::from_str(&format!("Failed to get data pointer: {}", e)))?;
+        builder.build_store(data_ptr_ptr, value_i8_ptr)
+            .map_err(|e| Error::from_str(&format!("Failed to store data pointer: {}", e)))?;
 
-        // Set the vtable pointer (second field)
-        let vtable_ptr_ptr = generator.builder.build_struct_gep(
-            interface_ptr,
-            1,
-            "vtable_ptr_ptr",
-        )?;
-
-        // Cast the vtable global to i8*
-        let vtable_i8_ptr = generator.builder.build_bitcast(
+        // Cast vtable global to i8*
+        let vtable_i8_ptr = builder.build_bitcast(
             vtable_impl.vtable_global,
-            generator.context.i8_type().ptr_type(AddressSpace::default()),
+            context.i8_type().ptr_type(AddressSpace::default()),
             "vtable_i8_ptr",
-        ).into_pointer_value();
+        ).expect("Failed to cast vtable global to i8*").into_pointer_value();
 
-        generator.builder.build_store(vtable_ptr_ptr, vtable_i8_ptr);
+        // Get vtable pointer pointer (second field)
+        let vtable_ptr_ptr = unsafe {
+            builder.build_struct_gep(
+                interface.interface_type,
+                interface_ptr, 
+                1, 
+                "vtable_ptr_ptr"
+            )
+        }.map_err(|e| Error::from_str(&format!("Failed to get vtable pointer: {}", e)))?;
+        builder.build_store(vtable_ptr_ptr, vtable_i8_ptr)
+            .map_err(|e| Error::from_str(&format!("Failed to store vtable pointer: {}", e)))?;
         
         // Add debug info about the interface implementation
-        tracing::debug!(
-            interface = interface_name,
-            implementing_type = vtable_impl.runtime_type_info.to_string(),
-            "Created interface value"
+        tracing::debug!("Created interface value for {} implementing {}", 
+            vtable_impl.runtime_type_info.to_string(), 
+            interface_name
         );
 
         Ok(interface_ptr)
     }
     
-    /// Get runtime type information for an interface value
-    pub fn get_interface_type_info(
-        &self,
-        generator: &LlvmCodeGenerator<'ctx>,
-        interface_ptr: PointerValue<'ctx>,
-        interface_name: &str,
-    ) -> Result<TypeInfo, Error> {
-        // This would normally involve runtime checks, but for now we'll just retrieve it from the vtable
-        // In a full implementation, we might store the type ID in the interface value or read it from the vtable
-        
-        // For demonstration purposes, let's just return a placeholder TypeInfo object
-        Ok(TypeInfo {
-            type_id: "dynamic".to_string(),
-            type_name: "DynamicType".to_string(),
-            type_args: Vec::new(),
-        })
-    }
-
     /// Call a method on an interface value (dynamic dispatch)
     pub fn call_interface_method(
         &self,
-        generator: &LlvmCodeGenerator<'ctx>,
+        context: &'ctx Context,
+        builder: &inkwell::builder::Builder<'ctx>,
         interface_ptr: PointerValue<'ctx>,
         interface_name: &str,
         method_name: &str,
@@ -530,112 +563,152 @@ impl<'ctx> InterfaceManager<'ctx> {
                 interface_name
             ))),
         };
-        
-        // Also get the function type from the interface methods for compatibility
-        let (_, fn_type, _) = match interface.methods.get(method_index) {
-            Some(method) => method,
-            None => return Err(Error::from_str(&format!(
-                "Method index out of bounds for interface: {}", 
-                interface_name
-            ))),
-        };
 
         // Load the data pointer from the interface value
-        let data_ptr_ptr = generator.builder.build_struct_gep(
-            interface_ptr,
-            0,
-            "data_ptr_ptr",
-        )?;
-
-        let data_ptr = generator.builder.build_load(
-            data_ptr_ptr,
-            "data_ptr",
-        ).into_pointer_value();
+        let data_ptr_ptr = unsafe {
+            builder.build_struct_gep(
+                interface.interface_type,
+                interface_ptr, 
+                0, 
+                "data_ptr_ptr"
+            )
+        }.map_err(|e| Error::from_str(&format!("Failed to get data pointer: {}", e)))?;
+        
+        // Get element type for data pointer
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
+        
+        let data_ptr = builder
+            .build_load(i8_ptr_type, data_ptr_ptr, "data_ptr")
+            .map_err(|e| Error::from_str(&format!("Failed to load data pointer: {}", e)))?;
+        
+        let data_ptr = data_ptr.into_pointer_value();
 
         // Load the vtable pointer from the interface value
-        let vtable_ptr_ptr = generator.builder.build_struct_gep(
-            interface_ptr,
-            1,
-            "vtable_ptr_ptr",
-        )?;
-
-        let vtable_ptr = generator.builder.build_load(
-            vtable_ptr_ptr,
-            "vtable_ptr",
-        ).into_pointer_value();
+        let vtable_ptr_ptr = unsafe {
+            builder.build_struct_gep(
+                interface.interface_type,
+                interface_ptr, 
+                1, 
+                "vtable_ptr_ptr"
+            )
+        }.map_err(|e| Error::from_str(&format!("Failed to get vtable pointer: {}", e)))?;
+        
+        // Get element type for vtable pointer
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
+        
+        let vtable_ptr = builder
+            .build_load(i8_ptr_type, vtable_ptr_ptr, "vtable_ptr")
+            .map_err(|e| Error::from_str(&format!("Failed to load vtable pointer: {}", e)))?;
+            
+        let vtable_ptr = vtable_ptr.into_pointer_value();
 
         // Cast the vtable pointer to the correct type
-        let typed_vtable_ptr = generator.builder.build_bitcast(
-            vtable_ptr,
-            vtable.vtable_type.ptr_type(AddressSpace::default()),
-            "typed_vtable_ptr",
-        ).into_pointer_value();
+        let typed_vtable_ptr = builder
+            .build_bitcast(
+                vtable_ptr,
+                vtable.vtable_type.ptr_type(AddressSpace::default()),
+                "typed_vtable_ptr",
+            )
+            .expect("Failed to cast vtable pointer")
+            .into_pointer_value();
 
-        // Load the function pointer from the vtable
-        let fn_ptr_ptr = generator.builder.build_struct_gep(
-            typed_vtable_ptr,
-            method_index as u32,
-            "fn_ptr_ptr",
-        )?;
-
-        let fn_ptr = generator.builder.build_load(
-            fn_ptr_ptr,
-            "fn_ptr",
-        ).into_pointer_value();
+        // Get the function pointer from the vtable
+        let fn_ptr_ptr = unsafe {
+            builder.build_struct_gep(
+                vtable.vtable_type,
+                typed_vtable_ptr, 
+                method_index as u32, 
+                "fn_ptr_ptr"
+            )
+        }.map_err(|e| Error::from_str(&format!("Failed to get function pointer: {}", e)))?;
+        
+        // Get the method signature function type pointer for correct loading
+        let fn_ptr_type = method_signature.function_type.ptr_type(AddressSpace::default());
+        
+        let fn_ptr = builder
+            .build_load(fn_ptr_type, fn_ptr_ptr, "fn_ptr")
+            .map_err(|e| Error::from_str(&format!("Failed to load function pointer: {}", e)))?;
+            
+        let fn_ptr = fn_ptr.into_pointer_value();
 
         // Cast the function pointer to the correct function type
-        let fn_ptr_typed = generator.builder.build_bitcast(
-            fn_ptr,
-            method_signature.function_type.ptr_type(AddressSpace::default()),
-            "fn_ptr_typed",
-        ).into_pointer_value();
+        let fn_ptr_typed = builder
+            .build_bitcast(
+                fn_ptr,
+                method_signature.function_type.ptr_type(AddressSpace::default()),
+                "fn_ptr_typed",
+            )
+            .expect("Failed to cast function pointer")
+            .into_pointer_value();
 
-        // Create a new array of arguments with the data pointer as the first argument (this pointer)
+        // Create a new array of arguments with the data pointer as the first argument (self pointer)
         let mut real_args = vec![data_ptr.into()];
         real_args.extend_from_slice(args);
 
+        // Convert BasicValueEnum to BasicMetadataValueEnum for the arguments
+        let metadata_args: Vec<_> = real_args.iter().map(|arg| {
+            (*arg).into()
+        }).collect();
+
         // Add tracing for debugging dynamic dispatch calls
-        tracing::trace!(
-            interface = interface_name,
-            method = method_name,
-            arg_count = real_args.len(),
-            "Dynamic dispatch method call"
-        );
+        tracing::debug!("Calling interface method {} on {}", method_name, interface_name);
 
         // Call the function through the function pointer
-        let call_result = generator.builder.build_call(
+        let call_site = builder.build_indirect_call(
             method_signature.function_type,
             fn_ptr_typed,
-            &real_args,
-            "interface_call",
-        );
+            &metadata_args,
+            "interface_call"
+        ).map_err(|e| Error::from_str(&format!("Failed to call interface method: {}", e)))?;
 
         // Return the result if the function has a return type
-        Ok(call_result.try_as_basic_value().left())
+        Ok(call_site.try_as_basic_value().left())
     }
     
-    /// Check if a value implements an interface at runtime
+    /// Check if a value implements an interface at runtime (for type assertions)
     pub fn check_instance_of(
         &self,
-        generator: &LlvmCodeGenerator<'ctx>,
-        interface_ptr: PointerValue<'ctx>,
-        interface_name: &str,
+        context: &'ctx Context,
+        builder: &inkwell::builder::Builder<'ctx>,
+        interface_value: PointerValue<'ctx>,
+        target_type_name: &str,
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // In a real implementation, this would check the runtime type information
-        // For now, we'll generate code that always returns true if the interface exists
+        // Load the vtable pointer from the interface value
+        let vtable_ptr_ptr = unsafe {
+            // Assuming interface value is { data_ptr, vtable_ptr }
+            let interface_type = context.struct_type(&[
+                context.i8_type().ptr_type(AddressSpace::default()).into(),
+                context.i8_type().ptr_type(AddressSpace::default()).into()
+            ], false);
+            
+            builder.build_struct_gep(
+                interface_type,
+                interface_value, 
+                1, 
+                "vtable_ptr_ptr"
+            )
+        }.map_err(|e| Error::from_str(&format!("Failed to get vtable pointer: {}", e)))?;
         
-        // First, make sure the interface exists
-        if !self.interfaces.contains_key(interface_name) {
-            return Err(Error::from_str(&format!(
-                "Unknown interface: {}", 
-                interface_name
-            )));
-        }
+        // Get element type for vtable pointer
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
         
-        // Build a constant boolean true value
-        let bool_type = generator.context.bool_type();
-        let true_val = bool_type.const_int(1, false);
+        let vtable_ptr = builder
+            .build_load(i8_ptr_type, vtable_ptr_ptr, "vtable_ptr")
+            .map_err(|e| Error::from_str(&format!("Failed to load vtable pointer: {}", e)))?;
+            
+        let vtable_ptr = vtable_ptr.into_pointer_value();
         
-        Ok(true_val.into())
+        // In a real implementation, we'd check a type ID field in the vtable
+        // or load runtime type info, but for now we'll use a simple approach.
+        
+        // Check all vtable implementations to see if any match our target type
+        let matches = self.vtable_impls.iter().any(|((_, impl_type_name), _)| {
+            impl_type_name == target_type_name
+        });
+        
+        // Create a boolean result
+        let result = context.bool_type().const_int(if matches { 1 } else { 0 }, false);
+        
+        Ok(result.into())
     }
 }
