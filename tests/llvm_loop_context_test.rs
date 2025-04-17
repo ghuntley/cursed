@@ -1,5 +1,6 @@
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::control_flow::ControlFlowCompilation;
+// use cursed::codegen::llvm::control_flow::ControlFlowCompilation; // Module is private
+use cursed::codegen::llvm::LoopContext;
 use cursed::error::Error;
 use inkwell::context::Context;
 use std::path::PathBuf;
@@ -43,7 +44,12 @@ fn test_loop_context_management() {
     generator.builder().position_at_end(current_block);
     
     // Push the loop context with separate blocks
-    generator.push_loop_context(block2, block1);
+    let loop_context = LoopContext {
+        name: "test_loop".to_string(),
+        break_block: block2,
+        continue_block: block1,
+    };
+    generator.push_loop_context(loop_context);
 
     // Verify we have a loop context
     let loop_context = generator.current_loop_context();

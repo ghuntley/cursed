@@ -46,7 +46,7 @@
 
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
-// Temporarily commented out during if_expression implementation
+// Re-export binary compiler - commented out until refactoring is complete
 // pub use self::binary_compiler::BinaryCompiler;
 
 // Re-export binary compiler types

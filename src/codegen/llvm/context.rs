@@ -64,6 +64,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) string_literal_counter: usize,
     // Loop exit blocks (legacy support)
     pub(crate) loop_exit_blocks: Vec<BasicBlock<'ctx>>,
+    // Default integer type to use
+    pub(crate) default_integer_type: Option<inkwell::types::IntType<'ctx>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -94,6 +96,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             gc_metadata: HashMap::new(),
             string_literal_counter: 0,
             loop_exit_blocks: Vec::new(),
+            default_integer_type: None,
         }
     }
     
@@ -634,6 +637,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Getter for module (used in tests)
     pub fn get_module(&self) -> &Module<'ctx> {
         &self.module
+    }
+    
+    /// Set the default integer type to use for integer literals and variables
+    pub fn set_default_integer_type(&mut self, int_type: inkwell::types::IntType<'ctx>) {
+        self.default_integer_type = Some(int_type);
+    }
+    
+    /// Get the default integer type, or i64 if none is set
+    pub fn get_default_integer_type(&self) -> inkwell::types::IntType<'ctx> {
+        self.default_integer_type.unwrap_or_else(|| self.context.i64_type())
     }
 }
 

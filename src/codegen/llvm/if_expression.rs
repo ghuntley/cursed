@@ -38,14 +38,21 @@ impl<'ctx> IfExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Ensure the condition is a boolean value
         let condition_value = if condition.is_int_value() {
-            // For non-boolean integers, compare with zero to get a boolean
-            let zero = self.context().i32_type().const_int(0, false);
-            self.builder().build_int_compare(
-                inkwell::IntPredicate::NE,
-                condition.into_int_value(),
-                zero,
-                "if_cond"
-            ).map_err(|e| Error::from_str(&format!("Failed to build condition comparison: {}", e)))?
+            let int_value = condition.into_int_value();
+            // Check if it's already an i1 (boolean)
+            if int_value.get_type().get_bit_width() == 1 {
+                int_value
+            } else {
+                // For non-boolean integers, compare with zero to get a boolean
+                let zero = int_value.get_type().const_zero();
+                self.builder().build_int_compare(
+                    inkwell::IntPredicate::NE,
+                    int_value,
+                    zero,
+                    "if_cond"
+                ).map_err(|e| Error::from_str(&format!("Failed to build condition comparison: {}", e)))?        
+            }
+        
         } else {
             return Err(Error::from_str("If condition must be a boolean or integer value"));
         };
@@ -178,6 +185,20 @@ impl<'ctx> IfExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                         else_type
                     }
                 },
+                // Convert between integer and float (use float)
+                (then, else_val) if then.is_int_value() && else_val.is_float_value() => {
+                    tracing::debug!("Converting int to float for mixed types");
+                    else_type
+                },
+                (then, else_val) if then.is_float_value() && else_val.is_int_value() => {
+                    tracing::debug!("Converting int to float for mixed types");
+                    then_type
+                },
+                // Incompatible types (e.g., string and int) can't be merged
+                (then, else_val) if (then.is_pointer_value() && (else_val.is_int_value() || else_val.is_float_value())) ||
+                               ((then.is_int_value() || then.is_float_value()) && else_val.is_pointer_value()) => {
+                    return Err(Error::from_str("Cannot merge incompatible branch types (string and numeric)"));
+                },
                 // Handle other type conversion cases as needed
                 // For now, default to the then_type if no conversion is defined
                 _ => {
@@ -237,8 +258,28 @@ impl<'ctx> IfExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                     };
                     (then_conv, else_conv)
                 },
-                // Handle float conversions if needed
-                // ... (similar logic for other types)
+                // Convert between int and float
+                (then, else_val) if then.is_int_value() && else_val.is_float_value() => {
+                    // Convert int to float
+                    let then_int = then.into_int_value();
+                    let builder_pos = self.builder().get_insert_block().unwrap();
+                    self.builder().position_at_end(then_end_block);
+                    let then_float = self.builder().build_signed_int_to_float(then_int, else_val.get_type().into_float_type(), "int_to_float")
+                        .map_err(|e| Error::from_str(&format!("Failed to convert integer to float: {}", e)))?;
+                    self.builder().position_at_end(builder_pos);
+                    (then_float.into(), else_val.into())
+                },
+                (then, else_val) if then.is_float_value() && else_val.is_int_value() => {
+                    // Convert int to float
+                    let else_int = else_val.into_int_value();
+                    let builder_pos = self.builder().get_insert_block().unwrap();
+                    self.builder().position_at_end(else_end_block);
+                    let else_float = self.builder().build_signed_int_to_float(else_int, then.get_type().into_float_type(), "int_to_float")
+                        .map_err(|e| Error::from_str(&format!("Failed to convert integer to float: {}", e)))?;
+                    self.builder().position_at_end(builder_pos);
+                    (then.into(), else_float.into())
+                },
+                // Handle other conversions
                 // If no conversion is needed or possible, use as-is
                 _ => (then_value, else_value),
             }
