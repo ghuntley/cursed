@@ -19,6 +19,7 @@ pub mod calls;
 pub mod channel;
 pub mod collections;
 pub mod concurrency;
+pub mod constraint;
 pub mod dot_expression;
 pub mod generics;
 pub mod identifiers;

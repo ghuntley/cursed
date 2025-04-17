@@ -3,10 +3,10 @@
 //! This module provides improved type parameter substitution, constraint checking,
 //! and generic struct implementations.
 
-use inkwell::types::BasicTypeEnum;
+use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::values::FunctionValue;
-use crate::ast::expressions::constraint::TypeConstraint;
-use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
+use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement, GenericConstraint};
+use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::type_checker::Type;
 use crate::error::Error;
@@ -56,7 +56,7 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         // the interface by looking up in a type registry or interface implementation table
         
         // For now, we'll implement a simplified version based on known types:
-        match concrete_type {
+        let implements = match concrete_type {
             // Primitive types and their supported interfaces
             Type::Normie | Type::Smol | Type::Mid | Type::Thicc => {
                 // Integer types implement Comparable, Numeric, Hashable
@@ -84,14 +84,16 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                 // In a real implementation, we'd check a registry of interface implementations
                 false
             }
-        }
-        .then_some(())
-        .ok_or_else(|| {
-            Error::from_str(&format!(
-                "Type '{}' does not implement interface '{}'",
+        };
+        
+        if implements {
+            Ok(true)
+        } else {
+            Err(Error::from_str(&format!(
+                "Type '{:?}' does not implement interface '{}'",
                 concrete_type, interface_name
-            ))
-        })
+            )))
+        }
     }
     
     fn validate_constraints(
@@ -117,8 +119,8 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Check each constraint
         for constraint in &generic_function.generic_constraints {
-            let param_name = &constraint.type_param.value;
-            let interface_name = &constraint.interface.value;
+            let param_name = &constraint.type_parameter.value;
+            let interface_name = &constraint.trait_name.value;
             
             // Get the concrete type for this parameter
             if let Some(concrete_type) = type_map.get(param_name) {
@@ -177,9 +179,6 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         // Register the struct type in the module
         self.register_struct_type(specialized_name, struct_type);
         
-        // Generate field accessor methods
-        self.generate_field_accessors(generic_struct, specialized_name, type_args)?;
-        
         Ok(())
     }
     
@@ -198,7 +197,7 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // Get the specialized struct type
-        let struct_type = self.lookup_struct_type(specialized_name)
+        let struct_type = self.lookup_specialized_struct_type(specialized_name)
             .ok_or_else(|| Error::from_str(&format!("Struct type not found: {}", specialized_name)))?;
         
         // Create getter and setter methods for each field
@@ -218,7 +217,7 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             
             // Get LLVM types
             let field_llvm_type = self.type_to_llvm_basic(&concrete_field_type)?;
-            let struct_ptr_type = struct_type.ptr_type(inkwell::AddressSpace::Generic);
+            let struct_ptr_type = struct_type.ptr_type(inkwell::AddressSpace::default());
             
             // Create getter function
             let getter_fn_type = field_llvm_type.fn_type(&[struct_ptr_type.into()], false);
@@ -233,11 +232,17 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                 .ok_or_else(|| Error::from_str("Failed to get function parameter"))?;
             
             // Build GEP instruction to get the field pointer
-            let field_ptr = self.builder().build_struct_gep(struct_ptr.into_pointer_value(), i as u32, "field_ptr")
-                .map_err(|e| Error::from_str(&format!("Failed to build GEP: {}", e)))?;
+            let pointer_type = struct_type.ptr_type(inkwell::AddressSpace::default());
+            let field_ptr = unsafe {
+                self.builder().build_struct_gep(pointer_type, struct_ptr.into_pointer_value(), i as u32, "field_ptr")
+                    .map_err(|e| Error::from_str(&format!("Failed to build GEP: {}", e)))?
+            };
             
+            // Create a type reference for the element
+            let elem_type = struct_type.get_field_type_at_index(i as u32).unwrap();
+
             // Load the field value
-            let field_value = self.builder().build_load(field_ptr, "field_value")
+            let field_value = self.builder().build_load(elem_type, field_ptr, "field_value")
                 .map_err(|e| Error::from_str(&format!("Failed to build load: {}", e)))?;
             
             // Return the field value
@@ -262,8 +267,11 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                 .ok_or_else(|| Error::from_str("Failed to get value parameter"))?;
             
             // Build GEP instruction to get the field pointer
-            let field_ptr = self.builder().build_struct_gep(struct_ptr.into_pointer_value(), i as u32, "field_ptr")
-                .map_err(|e| Error::from_str(&format!("Failed to build GEP: {}", e)))?;
+            let pointer_type = struct_type.ptr_type(inkwell::AddressSpace::default());
+            let field_ptr = unsafe {
+                self.builder().build_struct_gep(pointer_type, struct_ptr.into_pointer_value(), i as u32, "field_ptr")
+                    .map_err(|e| Error::from_str(&format!("Failed to build GEP: {}", e)))?
+            };
             
             // Store the new value
             self.builder().build_store(field_ptr, value)
@@ -287,7 +295,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Look up a previously defined struct type
-    fn lookup_struct_type(&self, name: &str) -> Option<inkwell::types::StructType<'ctx>> {
+    fn lookup_specialized_struct_type(&self, name: &str) -> Option<inkwell::types::StructType<'ctx>> {
         // In a real implementation, this would retrieve the struct type from a map
         // For now, just get it from the module
         self.context().get_struct_type(name)
@@ -306,7 +314,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Type::Tea => {
                 // String is represented as a pointer to an array of characters
                 let char_type = self.context().i8_type();
-                Ok(char_type.ptr_type(inkwell::AddressSpace::Generic).into())
+                Ok(char_type.ptr_type(inkwell::AddressSpace::default()).into())
             },
             Type::Byte => Ok(self.context().i8_type().into()),
             Type::Rune | Type::Sip => Ok(self.context().i32_type().into()),
@@ -339,7 +347,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     BasicTypeEnum::ArrayType(array_type) => {
                         // This is a nested array, which might not be directly representable
                         // For simplicity, we'll make it a pointer to the element array type
-                        Ok(array_type.ptr_type(inkwell::AddressSpace::Generic).into())
+                        Ok(array_type.ptr_type(inkwell::AddressSpace::default()).into())
                     },
                     BasicTypeEnum::VectorType(vector_type) => {
                         Ok(vector_type.array_type(*size as u32).into())
@@ -350,12 +358,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // A slice is represented as a struct with a pointer to the data and a length
                 let elem_llvm_type = self.type_to_llvm_basic(elem_type)?;
                 let ptr_type = match elem_llvm_type {
-                    BasicTypeEnum::IntType(t) => t.ptr_type(inkwell::AddressSpace::Generic),
-                    BasicTypeEnum::FloatType(t) => t.ptr_type(inkwell::AddressSpace::Generic),
-                    BasicTypeEnum::PointerType(t) => t.ptr_type(inkwell::AddressSpace::Generic),
-                    BasicTypeEnum::StructType(t) => t.ptr_type(inkwell::AddressSpace::Generic),
-                    BasicTypeEnum::ArrayType(t) => t.ptr_type(inkwell::AddressSpace::Generic),
-                    BasicTypeEnum::VectorType(t) => t.ptr_type(inkwell::AddressSpace::Generic),
+                    BasicTypeEnum::IntType(t) => t.ptr_type(inkwell::AddressSpace::default()),
+                    BasicTypeEnum::FloatType(t) => t.ptr_type(inkwell::AddressSpace::default()),
+                    BasicTypeEnum::PointerType(t) => t.ptr_type(inkwell::AddressSpace::default()),
+                    BasicTypeEnum::StructType(t) => t.ptr_type(inkwell::AddressSpace::default()),
+                    BasicTypeEnum::ArrayType(t) => t.ptr_type(inkwell::AddressSpace::default()),
+                    BasicTypeEnum::VectorType(t) => t.ptr_type(inkwell::AddressSpace::default()),
                 };
                 
                 // Create a struct type for the slice
@@ -372,12 +380,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 
                 // Create a pointer type
                 match target_llvm_type {
-                    BasicTypeEnum::IntType(t) => Ok(t.ptr_type(inkwell::AddressSpace::Generic).into()),
-                    BasicTypeEnum::FloatType(t) => Ok(t.ptr_type(inkwell::AddressSpace::Generic).into()),
-                    BasicTypeEnum::PointerType(t) => Ok(t.ptr_type(inkwell::AddressSpace::Generic).into()),
-                    BasicTypeEnum::StructType(t) => Ok(t.ptr_type(inkwell::AddressSpace::Generic).into()),
-                    BasicTypeEnum::ArrayType(t) => Ok(t.ptr_type(inkwell::AddressSpace::Generic).into()),
-                    BasicTypeEnum::VectorType(t) => Ok(t.ptr_type(inkwell::AddressSpace::Generic).into()),
+                    BasicTypeEnum::IntType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::FloatType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::PointerType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::StructType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::ArrayType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::VectorType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
                 }
             },
             _ => Err(Error::from_str(&format!("Unsupported type: {:?}", typ))),

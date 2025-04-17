@@ -67,8 +67,7 @@ pub use self::pointer_ops::PointerOperations;  // Updated to use the new standar
 pub use self::basic_expressions::BasicExpressionOperations;
 pub use self::function_monomorphization::FunctionMonomorphization;
 pub use self::struct_monomorphization::StructMonomorphization;
-// TODO: Uncomment when enhanced monomorphization is implemented
-// pub use self::enhanced_monomorphization::EnhancedMonomorphization;
+pub use self::enhanced_monomorphization::EnhancedMonomorphization;
 pub use self::property_access::PropertyAccessCompilation;
 pub use self::assignment::AssignmentCompilation;
 pub use self::break_statement::BreakStatementCompilation;
@@ -94,8 +93,7 @@ mod builder;
 pub mod container_layout; // Container memory layout optimization
 mod dot_expressions;  // Dot expression compilation (module.function)
 mod hook_dot_expressions; // Temporary patch for dot expressions
-// TODO: Uncomment when enhanced monomorphization implementation is complete
-// pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint checking
+pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint checking
 mod errors;
 mod expression;
 pub mod function_monomorphization;
