@@ -83,8 +83,9 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
     }
     
     fn compile_integer_literal(&mut self, lit: &IntegerLiteral) -> Result<BasicValueEnum<'ctx>, Error> {
-        let i64_type = self.context().i64_type();
-        Ok(i64_type.const_int(lit.value as u64, false).into())
+        // Use the default integer type if set, otherwise use i64
+        let int_type = self.get_default_integer_type();
+        Ok(int_type.const_int(lit.value as u64, false).into())
     }
     
     fn compile_float_literal(&mut self, lit: &FloatLiteral) -> Result<BasicValueEnum<'ctx>, Error> {

@@ -71,7 +71,7 @@ Implement proper type handling:
 
 - Generic type support
 - Interface implementation
-- Type inference
+- ✅ Type inference for if expressions with compatible types (int/float conversion)
 
 ### 5. Memory Management
 

@@ -212,8 +212,8 @@ Implemented tests cover:
   - ParseFiles and ParseGlob in rizztemplate
   - Some string helpers initialization
 - [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
-- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints
-- [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete (if expressions now fully implemented)
+- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints, but type inference for if expressions is now implemented
+- [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete, but if expressions now fully support type inference and mixing of compatible types
 
 ## Binary Compilation Support
 
