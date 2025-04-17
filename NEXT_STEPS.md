@@ -327,7 +327,7 @@ To track progress on the refactoring and binary compiler integration, we propose
   * ✅ Add error detection for incompatible types (string/int)
   * ✅ Add tests for assignment expression type checking with error handling
   * ✅ Implement type coercion for assignment expressions
-  * Implement type inference for function return values
+  * ✅ Implement type inference for function return values (partially implemented with test cases)
   * Add support for inferring struct field types
   * Implement type inference for map/array literals
 
