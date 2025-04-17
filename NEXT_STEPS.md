@@ -373,9 +373,9 @@ To track progress on the refactoring and binary compiler integration, we propose
   * ✅ Update tests for if expressions with the new API
   * ✅ Create test cases for type inference in if expressions
   * ✅ Add test cases for assignment expression type checking
-  * Complete migration of generic function tests
-  * Add tests for interface dynamic dispatch
-  * Create comprehensive end-to-end tests for the type system
+  * ✅ Complete migration of generic function tests with monomorphization
+  * ✅ Add tests for interface dynamic dispatch (with ignore attribute pending implementation)
+  * ✅ Create comprehensive end-to-end tests for the type system (with ignore attribute pending implementation)
 
 ### Milestone 6: Integration Work
 
