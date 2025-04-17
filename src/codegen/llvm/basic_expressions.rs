@@ -7,13 +7,16 @@ use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
 use inkwell::FloatPredicate;
 
-use crate::ast::traits::Expression;
+use crate::ast::traits::{Expression, Node};
 use crate::ast::expressions::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral};
-use crate::ast::expressions::{InfixExpression, PrefixExpression};
+use crate::ast::expressions::{InfixExpression, PrefixExpression, AssignmentExpression};
+use crate::ast::expressions::identifiers::Identifier;
 use crate::error::Error;
 
 use super::context::LlvmCodeGenerator;
 use super::expression::ExpressionCompilation;
+use super::assignment::AssignmentCompilation;
+use super::variables::VariableHandling;
 
 /// Trait for handling basic expression operations
 pub trait BasicExpressionOperations<'ctx> {
@@ -116,6 +119,65 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         // Compile the left and right expressions
         let left = self.compile_expression(&*expr.left)?;
         let right = self.compile_expression(&*expr.right)?;
+        
+        // Special handling for assignment operator
+        if expr.operator == "=" {
+            // For assignment, we need identifier on the left side
+            if let Some(ident) = expr.left.as_any().downcast_ref::<Identifier>() {
+                // Get the variable's type
+                let var_name = &ident.value;
+                tracing::debug!("Assignment to variable: {}", var_name);
+                
+                // Lookup variable type before evaluating the right side
+                let var_type_opt = self.lookup_variable_type(var_name);
+                
+                // If we found the variable's type, we can attempt type coercion for the assignment
+                if let Some(var_type) = var_type_opt {
+                    tracing::debug!("Variable has type {:?}, value has type {:?}", var_type, right.get_type());
+                    
+                    // Check if types match or need coercion
+                    let store_value = if right.get_type() != var_type {
+                        // Attempt type coercion
+                        match (var_type, right) {
+                            // Int to Float conversion
+                            (t, v) if t.is_float_type() && v.is_int_value() => {
+                                tracing::debug!("Coercing int to float for assignment");
+                                let int_val = v.into_int_value();
+                                let float_val = self.builder()
+                                    .build_signed_int_to_float(int_val, t.into_float_type(), "int_to_float")
+                                    .map_err(|e| Error::from_str(&format!("Failed to convert int to float: {}", e)))?;
+                                float_val.into()
+                            },
+                            // Types are incompatible and we don't have a conversion rule
+                            _ => {
+                                return Err(Error::from_str(&format!(
+                                    "Type mismatch in assignment: variable '{}' is {:?}, value is {:?}",
+                                    var_name, var_type, right.get_type()
+                                )));
+                            }
+                        }
+                    } else {
+                        // No coercion needed
+                        right
+                    };
+                    
+                    // Get the variable's pointer
+                    if let Some(var_ptr) = self.lookup_variable(var_name) {
+                        // Store the value
+                        self.builder().build_store(var_ptr, store_value)
+                            .map_err(|e| Error::from_str(&format!("Failed to store value: {}", e)))?;
+                        
+                        // Return the stored value
+                        return Ok(store_value);
+                    }
+                }
+                
+                // Fall back to regular variable assignment if lookup failed
+                return self.compile_variable_assignment(ident, right);
+            } else {
+                return Err(Error::from_str("Left side of assignment must be an identifier"));
+            }
+        }
         
         // Determine if we're working with integers or floats
         let (left_is_int, right_is_int) = (

@@ -12,6 +12,7 @@ use crate::error::Error;
 use super::context::LlvmCodeGenerator;
 use super::expression::ExpressionCompilation;
 use super::property_access::PropertyAccessCompilation;
+use super::variables::VariableHandling;
 
 /// Trait for assignment operation compilation
 pub trait AssignmentCompilation<'ctx> {
@@ -86,13 +87,83 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.variables.get(var_name).map(|(ptr, _)| *ptr)
         });
         
-        // If the variable is found, store the value
+        // If the variable is found, store the value with type conversion if needed
         if let Some(ptr) = var_ptr {
-            self.builder().build_store(ptr, value)
+            // Get the variable's type
+            let var_type = self.lookup_variable_type(var_name)
+                .ok_or_else(|| Error::from_str(&format!("Cannot determine type of variable: {}", var_name)))?;
+            
+            // Get the value's type
+            let value_type = value.get_type();
+            
+            let coerced_value = if var_type == value_type {
+                // No conversion needed for same types
+                value
+            } else {
+                // Try to perform type coercion
+                match (var_type, value) {
+                    // Int to Float conversion
+                    (t, v) if t.is_float_type() && v.is_int_value() => {
+                        tracing::debug!("Coercing integer to float");
+                        let int_val = v.into_int_value();
+                        self.builder()
+                            .build_signed_int_to_float(int_val, t.into_float_type(), "int_to_float")
+                            .map_err(|e| Error::from_str(&format!("Failed to convert integer to float: {}", e)))?
+                            .into()
+                    },
+                    // Float to Int conversion (with potential data loss)
+                    (t, v) if t.is_int_type() && v.is_float_value() => {
+                        tracing::debug!("Coercing float to integer (data loss possible)");
+                        let float_val = v.into_float_value();
+                        self.builder()
+                            .build_float_to_signed_int(float_val, t.into_int_type(), "float_to_int")
+                            .map_err(|e| Error::from_str(&format!("Failed to convert float to integer: {}", e)))?
+                            .into()
+                    },
+                    // Smaller int to larger int (extension)
+                    (t, v) if t.is_int_type() && v.is_int_value() && 
+                              t.into_int_type().get_bit_width() > v.into_int_value().get_type().get_bit_width() => {
+                        tracing::debug!("Extending integer");
+                        let int_val = v.into_int_value();
+                        self.builder()
+                            .build_int_s_extend(int_val, t.into_int_type(), "int_extend")
+                            .map_err(|e| Error::from_str(&format!("Failed to extend integer: {}", e)))?
+                            .into()
+                    },
+                    // Larger int to smaller int (truncation)
+                    (t, v) if t.is_int_type() && v.is_int_value() && 
+                              t.into_int_type().get_bit_width() < v.into_int_value().get_type().get_bit_width() => {
+                        tracing::debug!("Truncating integer");
+                        let int_val = v.into_int_value();
+                        self.builder()
+                            .build_int_truncate(int_val, t.into_int_type(), "int_trunc")
+                            .map_err(|e| Error::from_str(&format!("Failed to truncate integer: {}", e)))?
+                            .into()
+                    },
+                    // Types are incompatible
+                    _ => {
+                        return Err(Error::from_str(&format!(
+                            "Type mismatch in assignment: variable '{}' is {}, but value is {}",
+                            var_name,
+                            if var_type.is_int_type() { "integer" } 
+                            else if var_type.is_float_type() { "float" }
+                            else if var_type.is_pointer_type() { "pointer" }
+                            else { "unknown" },
+                            if value_type.is_int_type() { "integer" } 
+                            else if value_type.is_float_type() { "float" }
+                            else if value_type.is_pointer_type() { "pointer" }
+                            else { "unknown" }
+                        )));
+                    }
+                }
+            };
+            
+            // Store the coerced value
+            self.builder().build_store(ptr, coerced_value)
                 .map_err(|e| Error::from_str(&format!("Failed to store value in variable {}: {}", var_name, e)))?;
                 
             // Assignment expressions in CURSED return the assigned value
-            return Ok(value);
+            return Ok(coerced_value);
         }
         
         // Variable not found

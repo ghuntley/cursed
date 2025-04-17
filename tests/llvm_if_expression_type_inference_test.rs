@@ -89,6 +89,95 @@ fn test_assignment_type_inference() {
 }
 
 #[test]
+fn test_assignment_type_coercion() {
+    let context = Context::create();
+    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_coercion", PathBuf::from("test_assignment_coercion.csd"));
+
+    // Create a function for testing with float return type
+    let f64_type = context.f64_type();
+    let fn_type = f64_type.fn_type(&[], false);
+    let function = generator.module().add_function("test_assignment_coercion", fn_type, None);
+    let entry_block = context.append_basic_block(function, "entry");
+    generator.builder().position_at_end(entry_block);
+    generator.set_current_function(function);
+    
+    // Create a variable with explicit float type annotation
+    let var_name = Identifier {
+        token: Token::new(TokenType::Identifier, "x").token_literal(),
+        value: "x".to_string(),
+    };
+    
+    // Declare a float variable with float type annotation
+    let let_stmt = LetStatement {
+        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        name: var_name.clone(),
+        type_annotation: Some(Token::new(TokenType::Meal, "meal")), // Explicitly float (f64)
+        value: Some(Box::new(FloatLiteral {
+            token: Token::new(TokenType::Float, "0.0").token_literal(),
+            value: 0.0,
+        })),
+    };
+    
+    // Print to help debug
+    println!("DEBUG: Creating variable with type annotation 'meal' (f64)");
+    
+    // Compile the declaration
+    let result = generator.compile_statement(&let_stmt);
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
+    
+    // Now assign an integer value to the float variable - should be coerced
+    let assign_expr = InfixExpression {
+        token: Token::new(TokenType::Assign, "="),
+        left: Box::new(Identifier {
+            token: Token::new(TokenType::Identifier, "x").token_literal(),
+            value: "x".to_string(),
+        }),
+        operator: "=".to_string(),
+        right: Box::new(IntegerLiteral {
+            token: Token::new(TokenType::Int, "42").token_literal(),
+            value: 42,
+        }),
+    };
+    
+    // Compile the assignment expression
+    let assign_result = generator.compile_expression(&assign_expr);
+    
+    // With proper type coercion, this should succeed
+    assert!(assign_result.is_ok(), "Assignment with type coercion failed: {:?}", assign_result.err());
+    
+    // The result should be the coerced integer value (now a float)
+    if let Ok(value) = assign_result {
+        assert!(value.is_float_value(), "Result should be a float value after coercion");
+    }
+    
+    // Add debug print for variable type
+    println!("DEBUG: After assignment, checking variable type");
+    
+    // Load the variable's value to verify it's properly coerced
+    let load_expr = Identifier {
+        token: Token::new(TokenType::Identifier, "x").token_literal(),
+        value: "x".to_string(),
+    };
+    
+    let load_result = generator.compile_expression(&load_expr);
+    assert!(load_result.is_ok(), "Failed to load variable: {:?}", load_result.err());
+    
+    let loaded_value = load_result.unwrap();
+    println!("DEBUG: Loaded value type: {}", 
+             if loaded_value.is_float_value() { "float" } 
+             else if loaded_value.is_int_value() { "integer" } 
+             else { "other" });
+    assert!(loaded_value.is_float_value(), "Loaded value should be a float after coercion");
+    
+    // Return the loaded value and verify the module
+    let ret_val = generator.builder().build_return(Some(&loaded_value));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+}
+
+#[test]
 fn test_if_expression_with_assignment_type_inference() {
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new(&context, "test_if_assignment_inference", PathBuf::from("test_if_assignment_inference.csd"));

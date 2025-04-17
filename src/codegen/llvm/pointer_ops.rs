@@ -124,6 +124,8 @@ impl<'ctx> PointerOperations<'ctx> for LlvmCodeGenerator<'ctx> {
     }
     
     fn load_from_pointer(&mut self, ptr: PointerValue<'ctx>, name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Print debug info about the pointer type
+        println!("DEBUG: Loading from pointer type: {:?}", ptr.get_type());
         // Check for null pointer
         let i8_null = self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
         

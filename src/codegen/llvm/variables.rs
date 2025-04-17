@@ -137,38 +137,96 @@ impl<'ctx> VariableHandling<'ctx> for LlvmCodeGenerator<'ctx> {
         // Get the variable name
         let var_name = &let_stmt.name.value;
         
+        // Check for type annotation
+        let var_type = if let Some(type_token) = &let_stmt.type_annotation {
+            // Determine the variable type from the annotation
+            let type_name = type_token.token_literal();
+            tracing::debug!("Variable {} has explicit type annotation: {}", var_name, type_name);
+            
+            // Map the type name to an LLVM type
+            match type_name.as_str() {
+                "smol" => Some(self.context().i8_type().into()),  // int8
+                "mid" => Some(self.context().i16_type().into()), // int16
+                "normie" => Some(self.context().i32_type().into()), // int32
+                "thicc" => Some(self.context().i64_type().into()), // int64
+                "snack" => Some(self.context().f32_type().into()), // float32
+                "meal" => Some(self.context().f64_type().into()), // float64
+                "lit" => Some(self.context().bool_type().into()), // boolean
+                _ => {
+                    tracing::warn!("Unknown type annotation: {}, defaulting to i32", type_name);
+                    Some(self.context().i32_type().into())
+                }
+            }
+        } else {
+            None
+        };
+        
         // If there's an initializer, compile it
         if let Some(value_expr) = &let_stmt.value {
             // Compile the initializer expression
             use crate::codegen::llvm::expression::ExpressionCompilation;
             let init_value = self.compile_expression(&**value_expr)?;
             
+            // Determine the allocation type - use explicit type if provided, otherwise infer from initializer
+            let alloc_type = var_type.unwrap_or_else(|| init_value.get_type());
+            tracing::debug!("Variable {} allocation type: {:?}", var_name, alloc_type);
+            
             // Create an allocation for the variable
-            let var_type = init_value.get_type();
-            let var_ptr = self.builder().build_alloca(var_type, var_name)
+            let var_ptr = self.builder().build_alloca(alloc_type, var_name)
                 .map_err(|e| Error::from_str(&format!("Failed to allocate variable {}: {}", var_name, e)))?;
             
-            // Store the initializer value in the variable
-            self.store_to_pointer(var_ptr, init_value)?;
+            // Coerce initializer value to the allocation type if needed
+            let store_value = if init_value.get_type() != alloc_type {
+                // Perform type coercion
+                tracing::debug!("Coercing initializer from {:?} to {:?}", init_value.get_type(), alloc_type);
+                match (alloc_type, init_value) {
+                    // Int to Float conversion
+                    (t, v) if t.is_float_type() && v.is_int_value() => {
+                        let int_val = v.into_int_value();
+                        self.builder()
+                            .build_signed_int_to_float(int_val, t.into_float_type(), "int_to_float")
+                            .map_err(|e| Error::from_str(&format!("Failed to convert integer to float: {}", e)))?
+                            .into()
+                    },
+                    // Other conversions can be added here as needed
+                    _ => {
+                        return Err(Error::from_str(&format!(
+                            "Cannot initialize variable '{}' of type {:?} with incompatible value of type {:?}",
+                            var_name, alloc_type, init_value.get_type()
+                        )));
+                    }
+                }
+            } else {
+                // No coercion needed
+                init_value
+            };
+            
+            // Store the value in the variable
+            self.store_to_pointer(var_ptr, store_value)?;
             
             // Add the variable to the current scope
-            self.add_variable_with_type(var_name, var_ptr, var_type)?;
+            self.add_variable_with_type(var_name, var_ptr, alloc_type)?;
             
             return Ok(());
         }
         
-        // For variables without initializers, we use default values
-        // For now, we'll just create a default int variable
-        let i32_type = self.context().i32_type();
-        let var_ptr = self.builder().build_alloca(i32_type, var_name)
+        // For variables without initializers, we use default values based on type annotation
+        let default_type = var_type.unwrap_or_else(|| self.context().i32_type().into());
+        let var_ptr = self.builder().build_alloca(default_type, var_name)
             .map_err(|e| Error::from_str(&format!("Failed to allocate variable {}: {}", var_name, e)))?;
         
-        // Store a default value (0)
-        let default_value = i32_type.const_int(0, false);
-        self.store_to_pointer(var_ptr, default_value.into())?;
+        // Store a default value based on type
+        let default_value = match default_type {
+            t if t.is_int_type() => t.into_int_type().const_zero().into(),
+            t if t.is_float_type() => t.into_float_type().const_zero().into(),
+            t if t.is_pointer_type() => t.into_pointer_type().const_null().into(),
+            _ => self.context().i32_type().const_zero().into()
+        };
+        
+        self.store_to_pointer(var_ptr, default_value)?;
         
         // Add the variable to the current scope
-        self.add_variable_with_type(var_name, var_ptr, i32_type.into())?;
+        self.add_variable_with_type(var_name, var_ptr, default_type)?;
         
         Ok(())
     }
