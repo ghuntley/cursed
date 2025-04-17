@@ -691,45 +691,42 @@ impl GarbageCollector {
         ) {
             println!("GC: Acquired write lock successfully");
             
-            // Process each object - if it's not in the reachable set, remove it
-            for addr in &object_addresses {
-                if !reachable_objects.contains(addr) {
-                    println!("GC: Object 0x{:x} is unreachable - will be collected", addr);
-                    
-                    // Get object info before removing it
-                    if let Some(obj) = state.objects.get(addr) {
-                        freed_size += obj.size;
-                        println!("GC: Object size: {} bytes, tag: {:?}", obj.size, obj.tag);
-                        
-                        // Need to finalize the object before removing it
-                        // In a full implementation, we'd call the finalize method on the object
-                        // For this example implementation, we'll try to find it in global storage
-                        let storage = crate::memory::object_storage::global_object_storage();
-                        if let Ok(mut storage_lock) = storage.write() {
-                            if storage_lock.contains(*addr) {
-                                println!("GC: Finalizing object 0x{:x}", addr);
-                                // Remove from global storage
-                                if let Some(ptr) = storage_lock.remove(*addr) {
-                                    // Finalize the object
-                                    unsafe {
-                                        let obj_ptr_mut = ptr.as_ptr() as *mut dyn Traceable;
-                                        let obj = &mut *obj_ptr_mut;
-                                        obj.finalize();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Remove from the GC's object map
-                    let removed = state.objects.remove(addr);
-                    if removed.is_some() {
-                        freed_count += 1;
-                        println!("GC: Successfully removed object at 0x{:x}", addr);
-                    } else {
-                        println!("GC: Failed to remove object at 0x{:x} - not found", addr);
-                    }
+            // Collect all unreachable objects
+            let unreachable_addrs: Vec<usize> = object_addresses.iter()
+                .filter(|addr| !reachable_objects.contains(*addr))
+                .copied()
+                .collect();
+
+            // Now finalize the unreachable objects in dependency order
+            if !unreachable_addrs.is_empty() {
+                println!("GC: Finalizing {} unreachable objects in dependency order", unreachable_addrs.len());
+                // Use the finalization_order module to finalize in the right order
+                crate::memory::finalize_objects_ordered(&unreachable_addrs);
+            }
+
+            // Now process each object - if it's not in the reachable set, remove it from GC's map
+            for addr in &unreachable_addrs {
+                println!("GC: Object 0x{:x} is unreachable - will be collected", addr);
+                
+                // Get object info before removing it
+                if let Some(obj) = state.objects.get(addr) {
+                    freed_size += obj.size;
+                    println!("GC: Object size: {} bytes, tag: {:?}", obj.size, obj.tag);
+                }
+                
+                // Remove from the GC's object map
+                let removed = state.objects.remove(addr);
+                if removed.is_some() {
+                    freed_count += 1;
+                    println!("GC: Successfully removed object at 0x{:x}", addr);
                 } else {
+                    println!("GC: Failed to remove object at 0x{:x} - not found", addr);
+                }
+            }
+
+            // Process reachable objects (just logging)
+            for addr in &object_addresses {
+                if reachable_objects.contains(addr) {
                     println!("GC: Keeping reachable object at 0x{:x}", addr);
                 }
             }

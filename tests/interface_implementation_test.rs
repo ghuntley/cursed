@@ -31,7 +31,10 @@ fn test_basic_interface_implementation() -> Result<(), Error> {
     
     // For this first implementation, we'll directly set up struct methods map
     // to avoid modifying the TypeChecker API too much at once
-    type_checker.struct_methods_map.insert("Person".to_string(), person_methods);
+    // Updated: Register methods properly using the type checker's API instead of direct insertion
+    for (method_name, param_types, return_type) in person_methods.clone() {
+        type_checker.register_struct_method("Person", &method_name, param_types, return_type)?;
+    }
     
     // Check if Person implements Greeter
     let person_type = Type::Struct("Person".to_string(), Vec::new());
@@ -73,8 +76,10 @@ fn test_generic_interface_implementation() -> Result<(), Error> {
         ("size".to_string(), vec![], Some(Type::Normie)),
     ];
     
-    // Update the struct methods map directly
-    type_checker.struct_methods_map.insert("StringList".to_string(), string_list_methods);
+    // Register methods properly using the type checker's API
+    for (method_name, param_types, return_type) in string_list_methods.clone() {
+        type_checker.register_struct_method("StringList", &method_name, param_types, return_type)?;
+    }
     
     // Check if StringList implements Container<tea>
     let string_list_type = Type::Struct("StringList".to_string(), Vec::new());
@@ -117,7 +122,10 @@ fn test_interface_method_mismatch() -> Result<(), Error> {
         ("is_valid".to_string(), vec![Type::Tea], Some(Type::Lit)),
     ];
     
-    type_checker.struct_methods_map.insert("DataHandler".to_string(), data_handler_methods);
+    // Register methods properly using the type checker's API
+    for (method_name, param_types, return_type) in data_handler_methods.clone() {
+        type_checker.register_struct_method("DataHandler", &method_name, param_types, return_type)?;
+    }
     
     // Check if DataHandler implements Processor (should fail)
     let data_handler_type = Type::Struct("DataHandler".to_string(), Vec::new());

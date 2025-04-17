@@ -2,8 +2,10 @@
 
 use cursed::ast::base::Program;
 use cursed::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
+use cursed::ast::statements::fields::FieldStatement;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::expressions::constraint::TypeConstraint;
+use cursed::ast::declarations::GenericConstraint;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -37,7 +39,7 @@ fn create_constrained_function(
         .enumerate()
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
-            ast::ParameterStatement {
+            cursed::ast::ParameterStatement {
                 token: "IDENT".to_string(),
                 name: Identifier {
                     token: "IDENT".to_string(),
@@ -55,13 +57,13 @@ fn create_constrained_function(
     let generic_constraints = constraints
         .iter()
         .map(|(param, interface)| {
-            TypeConstraint {
+            GenericConstraint {
                 token: "where".to_string(),
-                type_param: Identifier {
+                type_parameter: Identifier {
                     token: "IDENT".to_string(),
                     value: param.to_string(),
                 },
-                interface: Identifier {
+                trait_name: Identifier {
                     token: "IDENT".to_string(),
                     value: interface.to_string(),
                 },
@@ -256,7 +258,7 @@ fn test_generic_struct_field_access() {
             },
         ],
         fields: vec![
-            ast::declarations::FieldStatement {
+            FieldStatement {
                 token: "IDENT".to_string(),
                 name: Identifier {
                     token: "IDENT".to_string(),
@@ -267,7 +269,7 @@ fn test_generic_struct_field_access() {
                     value: "T".to_string(),
                 },
             },
-            ast::declarations::FieldStatement {
+            FieldStatement {
                 token: "IDENT".to_string(),
                 name: Identifier {
                     token: "IDENT".to_string(),
