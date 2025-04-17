@@ -202,6 +202,10 @@ Implemented tests cover:
 - Type to expression conversion with proper syntax preservation 
 - Type checking for complex nested expressions
 - Validation of operation type compatibility
+- Generic function monomorphization with multiple type parameters
+- Cross-module generic function specialization and usage
+- Interface dynamic dispatch tests (currently marked as ignored pending implementation)
+- End-to-end type system tests (currently marked as ignored pending implementation)
 
 ## Incomplete Features and Required Work
 
@@ -212,7 +216,7 @@ Implemented tests cover:
   - ParseFiles and ParseGlob in rizztemplate
   - Some string helpers initialization
 - [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
-- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints, but type inference for if expressions, struct fields, and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added, ready for implementation.
+- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints, but type inference for if expressions, struct fields, and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added, ready for implementation. Comprehensive tests for generic function monomorphization have been added and are passing, while interface dynamic dispatch tests have been added but are pending implementation.
 - [x] **Control Flow**: Switch statement implementation is now complete with support for integer and string-based cases, fallthrough behavior, and default case handling. If expressions fully support type inference and mixing of compatible types. Range clause support remains to be implemented.
 
 ## Binary Compilation Support
