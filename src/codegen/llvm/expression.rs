@@ -114,7 +114,23 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                     // Found the variable in this scope
                     let load_name = format!("{}_load", ident.value);
                     
-                    // Use load_from_pointer from the PointerOperations trait
+                    // Load based on the variable's type if available
+                    if let Some(var_type) = scope.get_variable_type(&ident.value) {
+                        println!("DEBUG: Variable '{}' found in scope with type {:?}", ident.value, var_type);
+                        
+                        // Special handling for float types
+                        if var_type.is_float_type() {
+                            println!("DEBUG: Loading '{}' as float from scope", ident.value);
+                            let float_type = var_type.into_float_type();
+                            let result = self.builder().build_load(float_type, *ptr, &load_name)
+                                .map_err(|e| Error::from_str(&format!("Failed to load float variable {}: {}", ident.value, e)))?;
+                            return Ok(result);
+                        }
+                    } else {
+                        println!("DEBUG: Variable '{}' found in scope but type unknown", ident.value);
+                    }
+                    
+                    // Default to standard pointer load for other types
                     return self.load_from_pointer(*ptr, &load_name);
                 }
             }
@@ -123,10 +139,22 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         // Legacy implementation: look in the flat variables map
         if let Some((ptr, ty)) = self.variables.get(&ident.value) {
             // Found the variable, load its value
+            println!("DEBUG: Variable '{}' found in global map with type {:?}", ident.value, ty);
             let load_name = format!("{}_load", ident.value);
             
-            // Use load_from_pointer from the PointerOperations trait
-            return self.load_from_pointer(*ptr, &load_name);
+            // Create appropriate typed load based on the variable's type
+            let result = if ty.is_float_type() {
+                // Explicitly load as float
+                println!("DEBUG: Loading '{}' as float", ident.value);
+                let float_type = ty.into_float_type();
+                self.builder().build_load(float_type, *ptr, &load_name)
+                    .map_err(|e| Error::from_str(&format!("Failed to load float variable {}: {}", ident.value, e)))?                
+            } else {
+                // Use general load
+                self.load_from_pointer(*ptr, &load_name)?
+            };
+            
+            return Ok(result);
         }
         
         // Check if it's a function (variable can be used as function reference)
