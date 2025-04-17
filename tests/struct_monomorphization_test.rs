@@ -59,7 +59,11 @@ fn test_simple_struct_monomorphization() {
     );
 
     // Create a GenericInstantiator
-    let instantiator = GenericInstantiator::new();
+    let mut instantiator = GenericInstantiator::new();
+    
+    // Add type parameter mappings
+    instantiator.add_type_param("T", Type::Normie);
+    instantiator.add_type_param("U", Type::Tea);
 
     // Create a specialized version of the struct
     let specialized = instantiator.monomorphize_struct(
@@ -91,7 +95,11 @@ fn test_nested_struct_monomorphization() {
     );
 
     // Create a specialized version of the struct
-    let instantiator = GenericInstantiator::new();
+    let mut instantiator = GenericInstantiator::new();
+    
+    // Add type parameter mappings
+    instantiator.add_type_param("T", Type::Normie);
+    instantiator.add_type_param("U", Type::Tea);
     let specialized = instantiator.monomorphize_struct(
         &generic_struct,
         &[Type::Normie],

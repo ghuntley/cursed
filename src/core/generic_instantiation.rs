@@ -554,16 +554,39 @@ impl GenericInstantiator {
             // Get the field's type name
             let field_type_name = field.type_name.string();
             
-            // Parse the field type based on the name
-            let field_type = self.parse_type_from_name(&field_type_name);
+            // Check if this type name refers to a type parameter
+            let field_type = if let Some(concrete_type) = self.type_map.get(&field_type_name) {
+                // This is a direct type parameter reference (e.g., "T")
+                concrete_type.clone()
+            } else {
+                // This could be a more complex type like "List[T]" or a primitive type
+                // Parse the field type based on the name
+                self.parse_type_name_with_params(&field_type_name)?
+            };
             
-            // Apply type parameter substitution
+            // Apply any remaining type parameter substitution for nested generics
             let concrete_field_type = self.instantiate_type(&field_type)?;
             
             // Create a new type expression for the concrete type
+            let concrete_type_name = match &concrete_field_type {
+                Type::Normie => "normie".to_string(),
+                Type::Smol => "smol".to_string(),
+                Type::Mid => "mid".to_string(),
+                Type::Thicc => "thicc".to_string(),
+                Type::Snack => "snack".to_string(),
+                Type::Meal => "meal".to_string(),
+                Type::Tea => "tea".to_string(),
+                Type::Lit => "lit".to_string(),
+                Type::Byte => "byte".to_string(),
+                Type::Rune => "rune".to_string(),
+                Type::Sip => "sip".to_string(),
+                Type::Extra => "extra".to_string(),
+                _ => concrete_field_type.to_string(),
+            };
+
             let concrete_type_expr = ast::expressions::Identifier {
                 token: "IDENT".to_string(),
-                value: concrete_field_type.to_string(),
+                value: concrete_type_name,
             };
             
             // Create a specialized field using the ast::statements::fields::FieldStatement type
@@ -614,6 +637,48 @@ impl GenericInstantiator {
                 }
             }
         }
+    }
+    
+    /// Parse a complex type name that might contain type parameters
+    /// For example: "List[T]", "Map[K, V]", etc.
+    fn parse_type_name_with_params(&self, type_name: &str) -> Result<Type, Error> {
+        // Check if this is a primitive type first
+        let primitive = self.parse_type_from_name(type_name);
+        if !matches!(primitive, Type::Named(_)) {
+            // This is a primitive type, return it directly
+            return Ok(primitive);
+        }
+        
+        // Check if this has generic parameters [T, U, ...]
+        if let Some(bracket_idx) = type_name.find('[') {
+            if let Some(end_bracket_idx) = type_name.rfind(']') {
+                // Extract the base type name and the type parameters
+                let base_name = &type_name[0..bracket_idx];
+                let params_str = &type_name[bracket_idx+1..end_bracket_idx];
+                
+                // Split the parameters string by commas
+                let param_names: Vec<&str> = params_str.split(',').map(|s| s.trim()).collect();
+                
+                // Parse each parameter
+                let mut type_params = Vec::new();
+                for param_name in param_names {
+                    // First check if it's a direct type parameter
+                    if let Some(concrete_type) = self.type_map.get(param_name) {
+                        type_params.push(Box::new(concrete_type.clone()));
+                    } else {
+                        // Otherwise, recursively parse it as a potentially nested type
+                        let param_type = self.parse_type_name_with_params(param_name)?;
+                        type_params.push(Box::new(param_type));
+                    }
+                }
+                
+                // Create a struct or interface type based on the base name
+                return Ok(Type::Struct(base_name.to_string(), type_params));
+            }
+        }
+        
+        // If no special format, just return a named type
+        Ok(Type::Named(type_name.to_string()))
     }
 
     /// Generate a specialized version of a generic interface
