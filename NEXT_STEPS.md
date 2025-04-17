@@ -306,37 +306,88 @@ pub fn enable_cross_compilation(&mut self, target_triple: &str) -> Result<(), Er
 
 ## Timeline and Milestones
 
-To track progress on the refactoring and binary compiler integration, we propose the following milestones:
+To track progress on the refactoring and binary compiler integration, we propose the following updated milestones:
 
-1. **Milestone 1: Core Expression Support** (2 weeks)
-   - Complete implementation of all expression types
-   - Unit tests for each expression type
-   - Verify compatibility with existing code
+### Milestone 1: Type System Improvements
 
-2. **Milestone 2: Statement and Control Flow** (3 weeks)
-   - Implement all statement types
-   - Add support for break/continue in loops
-   - Implement switch/case statements
-   - Comprehensive test suite for all control flow constructs
+* **Complete Generic Type Support**
+  * Create tests for generic function type specialization in LLVM
+  * Implement type parameter substitution in the code generator
+  * Add support for constraint checking during monomorphization
+  * Implement generic struct instantiation with proper field types
 
-3. **Milestone 3: Type System Enhancements** (2 weeks)
-   - Add generic type support
-   - Implement interface type checking
-   - Add type inference capabilities
+* **Interface Implementation**
+  * Create test cases for interface method dispatch
+  * Implement vtable generation for interfaces
+  * Add runtime type information for interface method lookup
+  * Implement interface compatibility checking in the code generator
 
-4. **Milestone 4: Binary Compiler Enhancements** (3 weeks)
-   - ✅ Add debug information generation
-   - ✅ Implement cross-compilation support
-   - ✅ Optimize binary size and performance
-   - Create end-to-end tests for binary compilation
-   - ✅ Add custom runtime library linking options
-   - ✅ Add platform-specific code generation optimizations
+* **Type Inference Extensions**
+  * ✅ Implement type inference for if expressions with mixed types (int/float)
+  * ✅ Add error detection for incompatible types (string/int)
+  * ✅ Add tests for assignment expression type checking with error handling
+  * Implement type coercion for assignment expressions
+  * Implement type inference for function return values
+  * Add support for inferring struct field types
+  * Implement type inference for map/array literals
 
-5. **Milestone 5: Final Integration and Documentation** (2 weeks)
-   - Complete compatibility testing
-   - Performance benchmarking
-   - Documentation updates
-   - User guide and examples
+### Milestone 2: Control Flow Enhancements
+
+* **Switch/Case Implementation**
+  * Complete the stub implementation of switch statements
+  * Add support for string-based switch cases
+  * Implement fallthrough behavior in switch statements
+  * Add default case handling
+
+* **Range Clause Support**
+  * Implement range-based iteration in for loops
+  * Add support for slice/array iteration
+
+### Milestone 3: Memory Management
+
+* **GC Integration with LLVM**
+  * Add appropriate GC calls in generated code
+  * Implement proper reference tracking in LLVM IR
+  * Add finalization order support in generated code
+
+### Milestone 4: Binary Compiler Completion
+
+* **Refactor Binary Compiler Module**
+  * Fix imports and module structure
+  * Re-enable commented exports in mod.rs
+  * Update binary compiler tests
+
+* **Add Missing Features**
+  * ✅ Implement cross-compilation support for different platforms
+  * ✅ Complete debug information generation
+  * ✅ Add custom runtime library linking
+
+### Milestone 5: Documentation and Testing
+
+* **Update API Documentation**
+  * Document the new modular LLVM code generator structure
+  * Add examples for each module
+  * Create API reference for the public interfaces
+
+* **Expand Test Coverage**
+  * ✅ Update tests for if expressions with the new API
+  * ✅ Create test cases for type inference in if expressions
+  * ✅ Add test cases for assignment expression type checking
+  * Complete migration of generic function tests
+  * Add tests for interface dynamic dispatch
+  * Create comprehensive end-to-end tests for the type system
+
+### Milestone 6: Integration Work
+
+* **Integrate Type System with Code Generation**
+  * Ensure type checker runs before code generation
+  * Add error reporting for type mismatches
+  * Implement proper type coercion rules
+  
+* **Concurrency Support**
+  * Complete goroutine implementation in LLVM
+  * Add proper channel support
+  * Implement thread-safe memory operations
 
 ## Conclusion
 
