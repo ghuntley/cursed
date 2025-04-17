@@ -1,178 +1,295 @@
-use cursed::ast;
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
+//! Test for improved generic parameter substitution and constraint checking
 
-#[test]
-#[ignore = "Improved generic params tests need further work"]
-fn test_function_with_multiple_types_generic_parameters() {
-    // Test a function with multiple generic parameters and complex type signatures
-    let input = r#"vibe test
+use cursed::ast::base::Program;
+use cursed::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
+use cursed::ast::expressions::Identifier;
+use cursed::ast::expressions::constraint::TypeConstraint;
+use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::traits::Expression;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::MonomorphizationManager;
+use cursed::core::type_checker::Type;
+use cursed::core::generic_instantiation::GenericInstantiator;
+use cursed::error::Error;
+use inkwell::context::Context;
+use std::path::PathBuf;
 
-slay transform[K][V](collection K, mapper V) tea {
-    sus result tea = "processed"
-    result = mapper(collection)
-    yolo result
-}"
-"#;
+/// Helper function to create a function with constraints
+fn create_constrained_function(
+    name: &str,
+    type_params: Vec<&str>,
+    constraints: Vec<(&str, &str)>, // (param, interface)
+    param_types: Vec<Type>,
+    return_type: Type,
+) -> FunctionStatement {
+    // Create type parameters
+    let type_parameters: Vec<Identifier> = type_params
+        .iter()
+        .map(|param| Identifier {
+            token: "IDENT".to_string(),
+            value: param.to_string(),
+        })
+        .collect();
 
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
-
-    // Should have a package declaration and a function declaration
-    assert_eq!(
-        program.statements.len(),
-        2,
-        "Expected 2 statements, got {}",
-        program.statements.len()
-    );
-
-    // Check that the second statement is a function declaration
-    if let Some(expr_stmt) = program.statements[1]
-        .as_any()
-        .downcast_ref::<ast::ExpressionStatement>()
-    {
-        if let Some(expr) = &expr_stmt.expression {
-            if let Some(assign_expr) = expr.as_any().downcast_ref::<ast::AssignmentExpression>() {
-                // Check function name
-                assert_eq!(
-                    assign_expr.name.value, "transform",
-                    "Function name should be 'transform'"
-                );
-
-                // Check that the value is a function literal
-                if let Some(func_lit) = assign_expr
-                    .value
-                    .as_any()
-                    .downcast_ref::<ast::declarations::FunctionStatement>()
-                {
-                    // Check generic type parameters
-                    assert_eq!(
-                        func_lit.type_parameters.len(),
-                        1,
-                        "Should have 1 type parameter"
-                    );
-                    assert_eq!(
-                        func_lit.type_parameters[0].value, "K",
-                        "Type parameter should be 'K'"
-                    );
-
-                    // Check function parameters
-                    assert_eq!(func_lit.parameters.len(), 2, "Should have 2 parameters");
-                    assert_eq!(
-                        func_lit.parameters[0].name.value, "collection",
-                        "First parameter should be 'collection'"
-                    );
-                    assert_eq!(
-                        func_lit.parameters[1].name.value, "mapper",
-                        "Second parameter should be 'mapper'"
-                    );
-
-                    // Check return type
-                    assert!(func_lit.return_type.is_some(), "Should have a return type");
-                    if let Some(ret_type) = &func_lit.return_type {
-                        // The return type expression structure has changed in the modularized AST
-                        // We can't directly compare value anymore, so we'll use string() instead
-                        assert!(
-                            ret_type.string().contains("tea"),
-                            "Return type should be 'tea'"
-                        );
-                    }
-                } else {
-                    panic!("Value is not a function literal");
-                }
-            } else {
-                panic!("Expression is not an assignment expression");
+    // Create function parameters
+    let parameters = param_types
+        .iter()
+        .enumerate()
+        .map(|(i, param_type)| {
+            let param_name = format!("param{}", i);
+            ast::ParameterStatement {
+                token: "IDENT".to_string(),
+                name: Identifier {
+                    token: "IDENT".to_string(),
+                    value: param_name,
+                },
+                type_name: Box::new(Identifier {
+                    token: "IDENT".to_string(),
+                    value: param_type.to_string(),
+                }),
             }
-        } else {
-            panic!("ExpressionStatement has no expression");
-        }
-    } else {
-        panic!("Second statement is not an ExpressionStatement");
+        })
+        .collect();
+
+    // Create constraints
+    let generic_constraints = constraints
+        .iter()
+        .map(|(param, interface)| {
+            TypeConstraint {
+                token: "where".to_string(),
+                type_param: Identifier {
+                    token: "IDENT".to_string(),
+                    value: param.to_string(),
+                },
+                interface: Identifier {
+                    token: "IDENT".to_string(),
+                    value: interface.to_string(),
+                },
+            }
+        })
+        .collect();
+
+    // Create return type expression
+    let return_type_expr = Box::new(Identifier {
+        token: "IDENT".to_string(),
+        value: return_type.to_string(),
+    }) as Box<dyn Expression>;
+
+    // Create function body (empty for this test)
+    let body = BlockStatement {
+        token: "{".to_string(),
+        statements: Vec::new(),
+    };
+
+    // Create the function statement
+    FunctionStatement {
+        token: "function".to_string(),
+        name: Identifier {
+            token: "IDENT".to_string(),
+            value: name.to_string(),
+        },
+        parameters,
+        body,
+        return_type: Some(return_type_expr),
+        type_parameters,
+        generic_constraints,
     }
 }
 
 #[test]
-#[ignore = "Improved generic params tests need further work"]
-fn test_function_with_nested_generic_parameters() {
-    // Test a function with nested generic parameters
-    let input = r#"vibe test
-
-slay compose[A][B][C](f A, g B) C {
-    yolo f(g("data"))
-}"
-"#;
-
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
-
-    // Should have a package declaration and a function declaration
-    assert_eq!(
-        program.statements.len(),
-        2,
-        "Expected 2 statements, got {}",
-        program.statements.len()
+fn test_type_parameter_substitution_nested() {
+    // Create a generic instantiator
+    let mut instantiator = GenericInstantiator::new();
+    
+    // Test nested types
+    let map_type = Type::Map(
+        Box::new(Type::TypeParam("K".to_string())),
+        Box::new(Type::Slice(Box::new(Type::TypeParam("V".to_string()))))
     );
-
-    // Check that the second statement is a function declaration
-    if let Some(expr_stmt) = program.statements[1]
-        .as_any()
-        .downcast_ref::<ast::ExpressionStatement>()
-    {
-        if let Some(expr) = &expr_stmt.expression {
-            if let Some(assign_expr) = expr.as_any().downcast_ref::<ast::AssignmentExpression>() {
-                // Check function name
-                assert_eq!(
-                    assign_expr.name.value, "compose",
-                    "Function name should be 'compose'"
-                );
-
-                // Check that the value is a function literal
-                if let Some(func_lit) = assign_expr
-                    .value
-                    .as_any()
-                    .downcast_ref::<ast::declarations::FunctionStatement>()
-                {
-                    // Check generic type parameters
-                    assert_eq!(
-                        func_lit.type_parameters.len(),
-                        1,
-                        "Should have 1 type parameter"
-                    );
-                    assert_eq!(
-                        func_lit.type_parameters[0].value, "A",
-                        "Type parameter should be 'A'"
-                    );
-
-                    // Check function parameters
-                    assert_eq!(func_lit.parameters.len(), 2, "Should have 2 parameters");
-                    assert_eq!(
-                        func_lit.parameters[0].name.value, "f",
-                        "First parameter should be 'f'"
-                    );
-                    assert_eq!(
-                        func_lit.parameters[1].name.value, "g",
-                        "Second parameter should be 'g"
-                    );
-
-                    // Check return type
-                    assert!(func_lit.return_type.is_some(), "Should have a return type");
-                    if let Some(ret_type) = &func_lit.return_type {
-                        // The return type expression structure has changed in the modularized AST
-                        // We can't directly compare value anymore, so we'll use string() instead
-                        assert!(ret_type.string().contains("C"), "Return type should be 'C'");
-                    }
-                } else {
-                    panic!("Value is not a function literal");
+    
+    // Add type mappings
+    instantiator.add_type_param("K", Type::Tea);
+    instantiator.add_type_param("V", Type::Normie);
+    
+    // Instantiate the type
+    let concrete_type = instantiator.instantiate_type(&map_type).unwrap();
+    
+    // The result should be Map<Tea, Slice<Normie>>
+    match concrete_type {
+        Type::Map(key_type, value_type) => {
+            assert_eq!(*key_type, Type::Tea);
+            
+            match *value_type {
+                Type::Slice(elem_type) => {
+                    assert_eq!(*elem_type, Type::Normie);
                 }
-            } else {
-                panic!("Expression is not an assignment expression");
+                _ => panic!("Expected Slice type, got {:?}", value_type),
             }
-        } else {
-            panic!("ExpressionStatement has no expression");
         }
-    } else {
-        panic!("Second statement is not an ExpressionStatement");
+        _ => panic!("Expected Map type, got {:?}", concrete_type),
     }
+}
+
+#[test]
+fn test_recursive_generic_type_instantiation() {
+    // Create a generic instantiator
+    let mut instantiator = GenericInstantiator::new();
+    
+    // Define a recursive generic type: Tree<T> = Node with T value and list of Tree<T>
+    let tree_type = Type::Struct(
+        "Tree".to_string(),
+        vec![Box::new(Type::TypeParam("T".to_string()))]
+    );
+    
+    // Create a Tree<Tree<Normie>> type
+    let nested_tree_type = Type::Struct(
+        "Tree".to_string(), 
+        vec![Box::new(tree_type.clone())]
+    );
+    
+    // Add type mappings
+    instantiator.add_type_param("T", Type::Normie);
+    
+    // Instantiate the nested type
+    let concrete_type = instantiator.instantiate_type(&nested_tree_type).unwrap();
+    
+    // The result should be Tree<Tree<Normie>>
+    match concrete_type {
+        Type::Struct(name, type_args) => {
+            assert_eq!(name, "Tree");
+            
+            // Check the inner Tree<Normie>
+            match &*type_args[0] {
+                Type::Struct(inner_name, inner_type_args) => {
+                    assert_eq!(inner_name, "Tree");
+                    assert_eq!(*inner_type_args[0], Type::Normie);
+                }
+                _ => panic!("Expected Struct type, got {:?}", type_args[0]),
+            }
+        }
+        _ => panic!("Expected Struct type, got {:?}", concrete_type),
+    }
+}
+
+#[test]
+#[ignore] // Enable once constraint checking is implemented
+fn test_constraint_checking_during_monomorphization() {
+    // Create a context and code generator
+    let context = Context::create();
+    let file_path = PathBuf::from("test_constraints.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_constraints", file_path);
+    
+    // Create a MonomorphizationManager
+    let mut mono_manager = MonomorphizationManager::new();
+    
+    // Define an interface
+    let comparable_interface = CollabStatement {
+        token: "interface".to_string(),
+        name: Identifier {
+            token: "IDENT".to_string(),
+            value: "Comparable".to_string(),
+        },
+        type_parameters: Vec::new(),
+        methods: Vec::new(), // For this test we don't need actual methods
+    };
+    
+    // Register the interface with the code generator
+    // In a real implementation, we would need to add this interface to a symbol table
+    
+    // Create a constrained generic function
+    let max_function = create_constrained_function(
+        "max",
+        vec!["T"],
+        vec![("T", "Comparable")], // T must implement Comparable
+        vec![Type::TypeParam("T".to_string()), Type::TypeParam("T".to_string())],
+        Type::TypeParam("T".to_string()),
+    );
+    
+    // Valid specialization (Normie implements Comparable)
+    let normie_result = mono_manager.specialize_function(
+        &mut code_gen, 
+        &max_function, 
+        &[Type::Normie]
+    );
+    assert!(normie_result.is_ok());
+    
+    // Invalid specialization (assuming StructType doesn't implement Comparable)
+    let custom_type = Type::Struct("CustomType".to_string(), Vec::new());
+    let custom_result = mono_manager.specialize_function(
+        &mut code_gen, 
+        &max_function, 
+        &[custom_type]
+    );
+    assert!(custom_result.is_err());
+    
+    // Check error message contains constraint information
+    if let Err(err) = custom_result {
+        assert!(err.to_string().contains("Comparable"));
+    }
+}
+
+#[test]
+fn test_generic_struct_field_access() {
+    // Create a context and code generator
+    let context = Context::create();
+    let file_path = PathBuf::from("test_generic_struct.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_generic_struct", file_path);
+    
+    // Create a MonomorphizationManager
+    let mut mono_manager = MonomorphizationManager::new();
+    
+    // Define a generic struct
+    let generic_struct = SquadStatement {
+        token: "struct".to_string(),
+        name: Identifier {
+            token: "IDENT".to_string(),
+            value: "Pair".to_string(),
+        },
+        type_parameters: vec![
+            Identifier {
+                token: "IDENT".to_string(),
+                value: "T".to_string(),
+            },
+            Identifier {
+                token: "IDENT".to_string(),
+                value: "U".to_string(),
+            },
+        ],
+        fields: vec![
+            ast::declarations::FieldStatement {
+                token: "IDENT".to_string(),
+                name: Identifier {
+                    token: "IDENT".to_string(),
+                    value: "first".to_string(),
+                },
+                type_name: Identifier {
+                    token: "IDENT".to_string(),
+                    value: "T".to_string(),
+                },
+            },
+            ast::declarations::FieldStatement {
+                token: "IDENT".to_string(),
+                name: Identifier {
+                    token: "IDENT".to_string(),
+                    value: "second".to_string(),
+                },
+                type_name: Identifier {
+                    token: "IDENT".to_string(),
+                    value: "U".to_string(),
+                },
+            },
+        ],
+    };
+    
+    // Specialize the struct
+    let specialized_name = mono_manager.specialize_struct(
+        &mut code_gen,
+        &generic_struct,
+        &[Type::Normie, Type::Tea]
+    ).unwrap();
+    
+    assert_eq!(specialized_name, "Pair__Normie_Tea");
+    
+    // In a real implementation, we would also verify that field access works correctly
+    // by checking the LLVM IR or executing compiled code, but that's beyond the scope of this test
 }

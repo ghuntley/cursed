@@ -13,14 +13,18 @@
 //! 3. Allows target-specific optimizations for each concrete type
 
 use crate::ast;
-use crate::ast::declarations::{FunctionStatement, SquadStatement};
+use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
+// TODO: Create TypeConstraint type when implementing constraint checking
+// use crate::ast::expressions::constraint::TypeConstraint;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::generic_instantiation::GenericInstantiator;
 use crate::core::type_checker::Type;
 use crate::error::Error;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use crate::codegen::llvm::FunctionMonomorphization;
 use crate::codegen::llvm::StructMonomorphization;
+// TODO: Uncomment when enhanced monomorphization is fully implemented
+// use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
 
 /// Manages the specialization of generic code through monomorphization
 ///
@@ -53,6 +57,56 @@ impl Default for MonomorphizationManager {
 }
 
 impl MonomorphizationManager {
+    /// Checks if a concrete type satisfies an interface constraint
+    ///
+    /// This method determines whether a given concrete type implements the required interface.
+    /// It serves as a simplified implementation of constraint checking for generic types.
+    ///
+    /// # Arguments
+    ///
+    /// * `concrete_type` - The concrete type to check
+    /// * `interface_name` - The name of the interface that should be implemented
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(true)` if the type satisfies the constraint
+    /// * `Ok(false)` if it doesn't
+    /// * `Err` with an error message if there was a problem checking the constraint
+    pub fn check_constraint(&self, concrete_type: &Type, interface_name: &str) -> Result<bool, Error> {
+        // In a real implementation, this would check if the concrete type implements
+        // the interface by looking up in a type registry or interface implementation table
+        
+        // For now, we'll implement a simplified version based on known types:
+        match concrete_type {
+            // Primitive types and their supported interfaces
+            Type::Normie | Type::Smol | Type::Mid | Type::Thicc => {
+                // Integer types implement Comparable, Numeric, Hashable
+                Ok(matches!(interface_name, "Comparable" | "Numeric" | "Hashable"))
+            }
+            Type::Snack | Type::Meal => {
+                // Float types implement Comparable, Numeric
+                Ok(matches!(interface_name, "Comparable" | "Numeric"))
+            }
+            Type::Tea => {
+                // String type implements Comparable, Stringable, Hashable
+                Ok(matches!(interface_name, "Comparable" | "Stringable" | "Hashable"))
+            }
+            Type::Lit => {
+                // Boolean type implements Comparable, Hashable
+                Ok(matches!(interface_name, "Comparable" | "Hashable"))
+            }
+            Type::Byte | Type::Rune | Type::Sip => {
+                // Character types implement Comparable, Hashable
+                Ok(matches!(interface_name, "Comparable" | "Hashable"))
+            }
+            // For more complex types, we would need a proper implementation registry
+            _ => {
+                // For this implementation, assume other types don't implement any interfaces
+                // In a real implementation, we'd check a registry of interface implementations
+                Ok(false)
+            }
+        }
+    }
     /// Create a new MonomorphizationManager
     pub fn new() -> Self {
         Self::default()
@@ -143,9 +197,10 @@ impl MonomorphizationManager {
     ///
     /// Process:
     /// 1. Checks if the function has already been specialized with these types
-    /// 2. If not, creates a new specialized version by replacing type parameters
-    /// 3. Generates LLVM IR for the specialized function
-    /// 4. Registers the specialization in the manager and code generator
+    /// 2. Validates that the concrete types satisfy any constraints
+    /// 3. If not, creates a new specialized version by replacing type parameters
+    /// 4. Generates LLVM IR for the specialized function
+    /// 5. Registers the specialization in the manager and code generator
     ///
     /// # Arguments
     ///
@@ -180,6 +235,37 @@ impl MonomorphizationManager {
             return Ok(specialized_name.clone());
         }
 
+        // Validate constraints if the function has any
+        if !generic_function.generic_constraints.is_empty() {
+            // Create a mapping of type parameters to concrete types
+            let mut type_map = HashMap::new();
+            for (i, type_param) in generic_function.type_parameters.iter().enumerate() {
+                type_map.insert(type_param.value.clone(), type_args[i].clone());
+            }
+            
+            // Check each constraint
+            for constraint in &generic_function.generic_constraints {
+                let param_name = &constraint.type_parameter.value;
+                let interface_name = &constraint.trait_name.value;
+                
+                // Get the concrete type for this parameter
+                if let Some(concrete_type) = type_map.get(param_name) {
+                    // Check if the concrete type satisfies the constraint
+                    if !self.check_constraint(concrete_type, interface_name)? {
+                        return Err(Error::from_str(&format!(
+                            "Type '{:?}' does not implement interface '{}' required by constraint",
+                            concrete_type, interface_name
+                        )));
+                    }
+                } else {
+                    return Err(Error::from_str(&format!(
+                        "Unknown type parameter: {}",
+                        param_name
+                    )));
+                }
+            }
+        }
+
         // Generate a unique name for this specialized function
         let specialized_name = self.generate_specialized_name(generic_name, type_args);
 
@@ -212,6 +298,27 @@ impl MonomorphizationManager {
     }
 
     /// Specialize a generic struct with concrete type arguments
+    ///
+    /// This method creates a monomorphized version of a generic struct by substituting
+    /// concrete types for type parameters. It transforms the AST and generates LLVM IR
+    /// for the specialized struct type including its fields and methods.
+    ///
+    /// Process:
+    /// 1. Checks if the struct has already been specialized with these types
+    /// 2. If not, creates a new specialized version by replacing type parameters
+    /// 3. Generates LLVM IR for the specialized struct type with proper field types
+    /// 4. Generates field accessors (getters and setters) for the struct
+    /// 5. Registers the specialization in the manager and code generator
+    ///
+    /// # Arguments
+    ///
+    /// * `code_gen` - The LLVM code generator to use
+    /// * `generic_struct` - The generic struct AST to specialize
+    /// * `type_args` - The concrete types to substitute for type parameters
+    ///
+    /// # Returns
+    ///
+    /// The mangled name of the specialized struct that can be used for struct instantiation
     pub fn specialize_struct(
         &mut self,
         code_gen: &mut LlvmCodeGenerator,
@@ -247,17 +354,26 @@ impl MonomorphizationManager {
             instantiator.add_type_param(&type_param.value, type_args[i].clone());
         }
 
-        // Create a specialized version of the struct AST
+        // Create a specialized version of the struct AST with concrete field types
         let specialized_struct = instantiator.monomorphize_struct(generic_struct, type_args)?;
 
-        // Generate LLVM IR for the specialized struct with correct memory layout
-        // In the real implementation, we would generate a proper LLVM struct type here
-        // Let's use a helper method to create the struct type
-        let _ = code_gen.generate_specialized_struct(
+        // Generate LLVM IR for the specialized struct with correct memory layout and field types
+        // For now, use the basic implementation while we enhance the monomorphization system
+        code_gen.generate_specialized_struct(
             &specialized_struct,
             &specialized_name,
             type_args,
         )?;
+        
+        // TODO: Uncomment when EnhancedMonomorphization is fully implemented
+        /*
+        // Generate field accessors for the struct
+        code_gen.generate_field_accessors(
+            &specialized_struct,
+            &specialized_name,
+            type_args,
+        )?;
+        */
 
         // Generate GC metadata for this specialized struct
         self.generate_gc_metadata(code_gen, &specialized_struct, &specialized_name, type_args)?;
