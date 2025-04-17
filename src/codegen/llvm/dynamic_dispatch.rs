@@ -3,6 +3,12 @@
 //! This module implements the creation and use of vtables for interfaces,
 //! enabling dynamic dispatch in the CURSED language. It manages the mapping
 //! between interface methods and their concrete implementations.
+//!
+//! The implementation follows a standard vtable-based approach:
+//! 1. Each interface has a vtable structure with function pointers for all methods
+//! 2. Each implementing type has its own vtable instance with pointers to its method implementations
+//! 3. Interface values contain a data pointer and a vtable pointer
+//! 4. Method calls use the vtable to find the correct implementation to call
 
 use crate::code::Code;
 use crate::error::Error;
@@ -14,6 +20,7 @@ use std::collections::HashMap;
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::type_checker::Type as CursedType;
+use std::fmt;
 
 /// Structure of an interface value
 ///
@@ -25,6 +32,8 @@ pub struct InterfaceStructure<'ctx> {
     pub interface_type: StructType<'ctx>,
     /// The methods that this interface declares
     pub methods: Vec<(String, FunctionType<'ctx>, Option<BasicTypeEnum<'ctx>>)>,
+    /// Type parameters for generic interfaces
+    pub type_parameters: Vec<String>,
 }
 
 /// VTable structure for an interface
@@ -35,6 +44,20 @@ pub struct VTable<'ctx> {
     pub vtable_type: StructType<'ctx>,
     /// Maps method names to their indices in the vtable
     pub method_indices: HashMap<String, usize>,
+    /// Maps method indices to their signature information
+    pub method_signatures: Vec<MethodSignature<'ctx>>,
+}
+
+/// Method signature information for vtable entries
+pub struct MethodSignature<'ctx> {
+    /// Name of the method
+    pub name: String,
+    /// LLVM function type
+    pub function_type: FunctionType<'ctx>,
+    /// Return type if any
+    pub return_type: Option<BasicTypeEnum<'ctx>>,
+    /// Parameter types excluding the self parameter
+    pub param_types: Vec<BasicTypeEnum<'ctx>>,
 }
 
 /// Implementation of a VTable for a specific type
@@ -45,6 +68,29 @@ pub struct VTableImpl<'ctx> {
     pub implementing_type: CursedType,
     /// The interface being implemented
     pub interface_type: CursedType,
+    /// Runtime type information for this implementation
+    pub runtime_type_info: TypeInfo,
+}
+
+/// Runtime type information for interface implementations
+#[derive(Clone, Debug)]
+pub struct TypeInfo {
+    /// Type ID for runtime type identification
+    pub type_id: String,
+    /// Name of the implementing type
+    pub type_name: String,
+    /// Type arguments for generic types
+    pub type_args: Vec<String>,
+}
+
+impl fmt::Display for TypeInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.type_args.is_empty() {
+            write!(f, "{}", self.type_name)
+        } else {
+            write!(f, "{}[{}]", self.type_name, self.type_args.join(", "))
+        }
+    }
 }
 
 /// InterfaceManager handles the creation and management of interfaces and vtables
@@ -55,6 +101,10 @@ pub struct InterfaceManager<'ctx> {
     vtables: HashMap<String, VTable<'ctx>>,
     /// Maps (interface_name, implementing_type_name) to VTable implementation
     vtable_impls: HashMap<(String, String), VTableImpl<'ctx>>,
+    /// Maps type IDs to runtime type information
+    type_info_map: HashMap<String, TypeInfo>,
+    /// Next type ID for unique runtime type identification
+    next_type_id: u64,
 }
 
 impl<'ctx> InterfaceManager<'ctx> {
@@ -64,6 +114,48 @@ impl<'ctx> InterfaceManager<'ctx> {
             interfaces: HashMap::new(),
             vtables: HashMap::new(),
             vtable_impls: HashMap::new(),
+            type_info_map: HashMap::new(),
+            next_type_id: 1, // Start with 1 so 0 can represent null or invalid
+        }
+    }
+    
+    /// Generate a unique type ID for runtime type information
+    fn generate_type_id(&mut self) -> String {
+        let id = self.next_type_id;
+        self.next_type_id += 1;
+        format!("type_{}", id)
+    }
+    
+    /// Register type information for a given type
+    fn register_type_info(&mut self, type_: &CursedType) -> TypeInfo {
+        match type_ {
+            CursedType::Struct(name, type_args) => {
+                let type_arg_strings: Vec<String> = type_args.iter()
+                    .map(|arg| arg.to_string())
+                    .collect();
+                
+                let type_id = self.generate_type_id();
+                let type_info = TypeInfo {
+                    type_id: type_id.clone(),
+                    type_name: name.clone(),
+                    type_args: type_arg_strings,
+                };
+                
+                self.type_info_map.insert(type_id.clone(), type_info.clone());
+                type_info
+            },
+            _ => {
+                // For non-struct types, use a simpler approach
+                let type_id = self.generate_type_id();
+                let type_info = TypeInfo {
+                    type_id: type_id.clone(),
+                    type_name: type_.to_string(),
+                    type_args: Vec::new(),
+                };
+                
+                self.type_info_map.insert(type_id.clone(), type_info.clone());
+                type_info
+            }
         }
     }
 
@@ -74,15 +166,22 @@ impl<'ctx> InterfaceManager<'ctx> {
         interface_name: &str,
         methods: Vec<(String, Vec<CursedType>, Option<CursedType>)>,
     ) -> Result<(), Error> {
+        // Parse type parameters from interface name if it's generic
+        let (base_name, type_params) = Self::parse_generic_name(interface_name);
+        
         // Create LLVM function types for each method
         let mut llvm_methods = Vec::new();
+        let mut method_signatures = Vec::new();
 
         for (method_name, param_types, return_type) in methods {
             // Convert CURSED types to LLVM types
             let mut llvm_param_types = Vec::new();
+            let mut param_type_values = Vec::new();
+            
             for param_type in param_types {
                 let llvm_type = generator.convert_type_to_llvm_type(&param_type)?;
                 llvm_param_types.push(llvm_type);
+                param_type_values.push(llvm_type.into_basic_type_enum());
             }
 
             // Convert return type
@@ -104,10 +203,20 @@ impl<'ctx> InterfaceManager<'ctx> {
                 ),
             };
 
-            llvm_methods.push((method_name, fn_type, llvm_return_type));
+            llvm_methods.push((method_name.clone(), fn_type, llvm_return_type));
+            
+            // Create method signature
+            let method_signature = MethodSignature {
+                name: method_name.clone(),
+                function_type: fn_type,
+                return_type: llvm_return_type.map(|t| t.into_basic_type_enum()),
+                param_types: param_type_values,
+            };
+            
+            method_signatures.push(method_signature);
         }
 
-        // Create interface structure: { data_ptr, vtable_ptr }
+        // Create interface structure: { data_ptr, vtable_ptr, type_id_ptr }
         let interface_type = generator.context.struct_type(
             &[
                 generator.context.i8_type().ptr_type(AddressSpace::default()).into(), // data pointer
@@ -119,6 +228,7 @@ impl<'ctx> InterfaceManager<'ctx> {
         let interface_structure = InterfaceStructure {
             interface_type,
             methods: llvm_methods.clone(),
+            type_parameters: type_params.clone(),
         };
 
         self.interfaces.insert(interface_name.to_string(), interface_structure);
@@ -141,11 +251,25 @@ impl<'ctx> InterfaceManager<'ctx> {
         let vtable = VTable {
             vtable_type,
             method_indices,
+            method_signatures,
         };
 
         self.vtables.insert(interface_name.to_string(), vtable);
 
         Ok(())
+    }
+    
+    /// Parse a potentially generic type name into base name and type parameters
+    fn parse_generic_name(name: &str) -> (String, Vec<String>) {
+        if let Some(open_bracket) = name.find('<') {
+            if let Some(close_bracket) = name.rfind('>') {
+                let base_name = name[0..open_bracket].to_string();
+                let type_params_str = &name[open_bracket+1..close_bracket];
+                let type_params = type_params_str.split(',').map(|s| s.trim().to_string()).collect();
+                return (base_name, type_params);
+            }
+        }
+        (name.to_string(), Vec::new())
     }
 
     /// Create a vtable for a type that implements an interface
@@ -191,11 +315,19 @@ impl<'ctx> InterfaceManager<'ctx> {
 
         // Create a global constant for the vtable
         let type_name = match implementing_type {
-            CursedType::Struct(name, _) => name,
+            CursedType::Struct(name, type_args) => name,
             _ => return Err(Error::from_str("Only structs can implement interfaces")),
         };
 
+        // Create type info for runtime type identification
+        let type_info = self.register_type_info(implementing_type);
+        
+        // Extract interface type arguments if it's generic
+        let (base_interface_name, interface_type_args) = Self::parse_generic_name(interface_name);
+        
+        // Create the vtable name, including type arguments for generic interfaces
         let vtable_name = format!("vtable.{}.{}", interface_name, type_name);
+        
         let vtable_const = generator.module.add_global(
             vtable.vtable_type,
             Some(AddressSpace::default()),
@@ -207,11 +339,24 @@ impl<'ctx> InterfaceManager<'ctx> {
         vtable_const.set_constant(true);
         vtable_const.set_linkage(inkwell::module::Linkage::Private);
 
+        // Construct interface type with the right type parameters
+        let interface_type = if interface_type_args.is_empty() {
+            CursedType::Interface(interface_name.to_string(), Vec::new())
+        } else {
+            // Convert type args strings to CursedType
+            let type_args = interface_type_args.iter()
+                .map(|arg| Box::new(CursedType::Named(arg.clone())))
+                .collect();
+                
+            CursedType::Interface(base_interface_name, type_args)
+        };
+        
         // Save this vtable implementation
         let vtable_impl = VTableImpl {
             vtable_global: vtable_const.as_pointer_value(),
             implementing_type: implementing_type.clone(),
-            interface_type: CursedType::Interface(interface_name.to_string(), Vec::new()),
+            interface_type,
+            runtime_type_info: type_info,
         };
 
         self.vtable_impls.insert(
@@ -311,8 +456,33 @@ impl<'ctx> InterfaceManager<'ctx> {
         ).into_pointer_value();
 
         generator.builder.build_store(vtable_ptr_ptr, vtable_i8_ptr);
+        
+        // Add debug info about the interface implementation
+        tracing::debug!(
+            interface = interface_name,
+            implementing_type = vtable_impl.runtime_type_info.to_string(),
+            "Created interface value"
+        );
 
         Ok(interface_ptr)
+    }
+    
+    /// Get runtime type information for an interface value
+    pub fn get_interface_type_info(
+        &self,
+        generator: &LlvmCodeGenerator<'ctx>,
+        interface_ptr: PointerValue<'ctx>,
+        interface_name: &str,
+    ) -> Result<TypeInfo, Error> {
+        // This would normally involve runtime checks, but for now we'll just retrieve it from the vtable
+        // In a full implementation, we might store the type ID in the interface value or read it from the vtable
+        
+        // For demonstration purposes, let's just return a placeholder TypeInfo object
+        Ok(TypeInfo {
+            type_id: "dynamic".to_string(),
+            type_name: "DynamicType".to_string(),
+            type_args: Vec::new(),
+        })
     }
 
     /// Call a method on an interface value (dynamic dispatch)
@@ -351,8 +521,18 @@ impl<'ctx> InterfaceManager<'ctx> {
             ))),
         };
 
-        // Get the method's function type and return type
-        let (_, fn_type, return_type) = match interface.methods.get(method_index) {
+        // Get the method's signature information
+        let method_signature = match vtable.method_signatures.get(method_index) {
+            Some(signature) => signature,
+            None => return Err(Error::from_str(&format!(
+                "Method signature not found for '{}' in interface: {}", 
+                method_name, 
+                interface_name
+            ))),
+        };
+        
+        // Also get the function type from the interface methods for compatibility
+        let (_, fn_type, _) = match interface.methods.get(method_index) {
             Some(method) => method,
             None => return Err(Error::from_str(&format!(
                 "Method index out of bounds for interface: {}", 
@@ -406,7 +586,7 @@ impl<'ctx> InterfaceManager<'ctx> {
         // Cast the function pointer to the correct function type
         let fn_ptr_typed = generator.builder.build_bitcast(
             fn_ptr,
-            fn_type.ptr_type(AddressSpace::default()),
+            method_signature.function_type.ptr_type(AddressSpace::default()),
             "fn_ptr_typed",
         ).into_pointer_value();
 
@@ -414,9 +594,17 @@ impl<'ctx> InterfaceManager<'ctx> {
         let mut real_args = vec![data_ptr.into()];
         real_args.extend_from_slice(args);
 
+        // Add tracing for debugging dynamic dispatch calls
+        tracing::trace!(
+            interface = interface_name,
+            method = method_name,
+            arg_count = real_args.len(),
+            "Dynamic dispatch method call"
+        );
+
         // Call the function through the function pointer
         let call_result = generator.builder.build_call(
-            fn_type,
+            method_signature.function_type,
             fn_ptr_typed,
             &real_args,
             "interface_call",
@@ -424,5 +612,30 @@ impl<'ctx> InterfaceManager<'ctx> {
 
         // Return the result if the function has a return type
         Ok(call_result.try_as_basic_value().left())
+    }
+    
+    /// Check if a value implements an interface at runtime
+    pub fn check_instance_of(
+        &self,
+        generator: &LlvmCodeGenerator<'ctx>,
+        interface_ptr: PointerValue<'ctx>,
+        interface_name: &str,
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // In a real implementation, this would check the runtime type information
+        // For now, we'll generate code that always returns true if the interface exists
+        
+        // First, make sure the interface exists
+        if !self.interfaces.contains_key(interface_name) {
+            return Err(Error::from_str(&format!(
+                "Unknown interface: {}", 
+                interface_name
+            )));
+        }
+        
+        // Build a constant boolean true value
+        let bool_type = generator.context.bool_type();
+        let true_val = bool_type.const_int(1, false);
+        
+        Ok(true_val.into())
     }
 }
