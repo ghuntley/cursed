@@ -26,6 +26,7 @@ pub mod if_expression;
 pub mod literals;
 pub mod operators;
 pub mod special;
+pub mod struct_expr;
 pub mod types;
 
 pub use calls::{CallExpression, GenericCallExpression};
@@ -43,4 +44,5 @@ pub use special::{AssignmentExpression, BeLikeExpression, DefaultCase};
 pub use dot_expression::DotExpression;
 pub use generics::TypeReference;
 pub use if_expression::IfExpression;
+pub use struct_expr::{StructLiteral, StructFieldAccess, KeyValuePair};
 pub use types::TypeConversionExpression;

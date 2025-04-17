@@ -328,7 +328,7 @@ To track progress on the refactoring and binary compiler integration, we propose
   * ✅ Add tests for assignment expression type checking with error handling
   * ✅ Implement type coercion for assignment expressions
   * ✅ Implement type inference for function return values (partially implemented with test cases)
-  * Add support for inferring struct field types
+  * ✅ Add support for inferring struct field types
   * Implement type inference for map/array literals
 
 ### Milestone 2: Control Flow Enhancements

@@ -17,6 +17,7 @@ use inkwell::values::{BasicValueEnum, PointerValue};
 use std::collections::HashMap;
 use crate::ast::statements::declarations::LetStatement;
 use crate::ast::expressions::Identifier;
+use crate::ast::expressions::struct_expr::StructLiteral;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
 use super::pointer_ops::PointerOperations;
@@ -163,7 +164,21 @@ impl<'ctx> VariableHandling<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // If there's an initializer, compile it
         if let Some(value_expr) = &let_stmt.value {
-            // Compile the initializer expression
+            // Check if this is a struct literal - we need special handling
+            if let Some(struct_literal) = value_expr.as_any().downcast_ref::<crate::ast::expressions::struct_expr::StructLiteral>() {
+                // Use struct field inference to handle struct literals
+                use crate::codegen::llvm::struct_field_inference::StructFieldInference;
+                let struct_ptr = self.compile_struct_literal(struct_literal)?;
+                
+                // Add the struct variable to the current scope
+                let alloc_type = struct_ptr.get_type();
+                let var_ptr = struct_ptr.into_pointer_value();
+                self.add_variable_with_type(var_name, var_ptr, alloc_type)?;
+                
+                return Ok(());
+            }
+            
+            // Regular expression evaluation
             use crate::codegen::llvm::expression::ExpressionCompilation;
             let init_value = self.compile_expression(&**value_expr)?;
             
