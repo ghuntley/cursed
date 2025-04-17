@@ -16,12 +16,9 @@
 use crate::ast::Program;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::Error;
-use crate::codegen::llvm::runtime_linking;
-use crate::codegen::llvm::platform_optimizations;
 
 use inkwell::context::Context;
 use inkwell::module::Module;
-use inkwell::passes::PassManager;
 use inkwell::targets::{    
     CodeModel, FileType, InitializationConfig, RelocMode, Target, TargetMachine, TargetTriple,
 };
