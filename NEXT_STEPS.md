@@ -333,11 +333,11 @@ To track progress on the refactoring and binary compiler integration, we propose
 
 ### Milestone 2: Control Flow Enhancements
 
-* **Switch/Case Implementation**
-  * Complete the stub implementation of switch statements
-  * Add support for string-based switch cases
-  * Implement fallthrough behavior in switch statements
-  * Add default case handling
+* **Switch/Case Implementation** ✅
+  * Complete the stub implementation of switch statements ✅
+  * Add support for string-based switch cases ✅
+  * Implement fallthrough behavior in switch statements ✅
+  * Add default case handling ✅
 
 * **Range Clause Support**
   * Implement range-based iteration in for loops

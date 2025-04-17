@@ -213,7 +213,7 @@ Implemented tests cover:
   - Some string helpers initialization
 - [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
 - [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints, but type inference for if expressions, struct fields, and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added, ready for implementation.
-- [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete, but if expressions now fully support type inference and mixing of compatible types
+- [x] **Control Flow**: Switch statement implementation is now complete with support for integer and string-based cases, fallthrough behavior, and default case handling. If expressions fully support type inference and mixing of compatible types. Range clause support remains to be implemented.
 
 ## Binary Compilation Support
 
@@ -275,7 +275,7 @@ Implemented tests cover:
 - [x] Implemented import statement handling for packages
 - [x] Added proper test infrastructure for LLVM code generation
 - [x] Created binary compiler for AOT compilation
-- [ ] Complete implementation of control flow statements (switch/case)
+- [x] Completed implementation of control flow statements (switch/case)
 - [ ] Add full support for generic types
 - [ ] Implement interface implementation with dynamic dispatch
 - [x] Enhance binary compiler with debug information and cross-compilation
@@ -322,11 +322,11 @@ Implemented tests cover:
 - Continue optimizing the thread-safe object and garbage collection implementation
 - Finish implementing the REPL parser for a better development experience
 - Implement the remaining standard library functions, especially in rizztemplate and stringz packages
-- Complete the LLVM code generator refactoring, focusing on control flow and type system integration
+- Complete the LLVM code generator refactoring, focusing on type system integration (switch/case control flow implementation is now complete)
 - Improve type system to fully support generic constraints and complete type inference for all expressions
 - Add support for interface embedding (composition) in the type system
 - Implement full dynamic dispatch in LLVM code generation for interfaces
-- Complete the implementation of control flow statements, particularly switch statements and range clauses
+- Complete the implementation of control flow statements, particularly range clauses (switch statement implementation is now complete)
 - Enhance binary compilation with better debugging information and cross-compilation support
 - Add performance benchmarks for garbage collection and binary compilation to identify optimization opportunities
 - Implement test coverage reporting to identify areas needing more testing
