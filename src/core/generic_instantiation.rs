@@ -4,6 +4,7 @@ use crate::ast::expressions::{ArrayLiteral, Identifier, StringLiteral};
 use crate::ast::statements::{
     block::BlockStatement,
     declarations::{LetStatement, ReturnStatement},
+    fields,
 };
 use crate::ast::{Expression, Node, Statement};
 use crate::core::type_checker::Type;
@@ -495,6 +496,19 @@ impl GenericInstantiator {
     }
 
     /// Generate a specialized version of a generic struct
+    ///
+    /// This method creates a monomorphized version of a generic struct by substituting
+    /// concrete types for type parameters. It transforms the AST, replacing type
+    /// parameters in field types with concrete types.
+    ///
+    /// # Arguments
+    ///
+    /// * `generic_struct` - The generic struct to monomorphize
+    /// * `type_args` - The concrete types to substitute for type parameters
+    ///
+    /// # Returns
+    ///
+    /// A specialized version of the struct with concrete types
     pub fn monomorphize_struct(
         &self,
         generic_struct: &ast::SquadStatement,
@@ -534,18 +548,72 @@ impl GenericInstantiator {
             value: specialized_name,
         };
 
-        // Create a new struct with a specialized name and no type parameters
+        // Process all fields with concrete types
+        let mut specialized_fields = Vec::new();
+        for field in &generic_struct.fields {
+            // Get the field's type name
+            let field_type_name = field.type_name.string();
+            
+            // Parse the field type based on the name
+            let field_type = self.parse_type_from_name(&field_type_name);
+            
+            // Apply type parameter substitution
+            let concrete_field_type = self.instantiate_type(&field_type)?;
+            
+            // Create a new type expression for the concrete type
+            let concrete_type_expr = ast::expressions::Identifier {
+                token: "IDENT".to_string(),
+                value: concrete_field_type.to_string(),
+            };
+            
+            // Create a specialized field using the ast::statements::fields::FieldStatement type
+            // To avoid direct dependencies, we need to create the field statement through
+            // the appropriate APIs
+            let specialized_field = ast::statements::fields::FieldStatement {
+                token: field.token.clone(),
+                name: field.name.clone(),
+                type_name: concrete_type_expr,
+            };
+            
+            specialized_fields.push(specialized_field);
+        }
+
+        // Create a new struct with a specialized name, no type parameters, and concrete field types
         let specialized_struct = ast::SquadStatement {
             token: generic_struct.token.clone(),
             name: specialized_ident,
             type_parameters: Vec::new(), // No type parameters in specialized version
-            fields: Vec::new(), // In a real implementation, we would process fields with concrete types
+            fields: specialized_fields,  // Fields with concrete types
         };
 
-        // Note: In a complete implementation, we would process and transform each field
-        // with concrete types for any type parameters used in the field's type
-
         Ok(specialized_struct)
+    }
+    
+    /// Parse a type from its string representation
+    fn parse_type_from_name(&self, type_name: &str) -> Type {
+        // Handle primitive types
+        match type_name {
+            "normie" => Type::Normie,
+            "smol" => Type::Smol,
+            "mid" => Type::Mid,
+            "thicc" => Type::Thicc,
+            "snack" => Type::Snack,
+            "meal" => Type::Meal,
+            "tea" => Type::Tea,
+            "lit" => Type::Lit,
+            "byte" => Type::Byte,
+            "rune" | "sip" => Type::Rune,
+            "extra" => Type::Extra,
+            _ => {
+                // Check if this is a type parameter in our map
+                if let Some(concrete_type) = self.type_map.get(type_name) {
+                    concrete_type.clone()
+                } else {
+                    // Handle other complex types or default to Named
+                    Type::Named(type_name.to_string())
+                }
+            }
+        }
     }
 
     /// Generate a specialized version of a generic interface
