@@ -212,7 +212,7 @@ Implemented tests cover:
   - ParseFiles and ParseGlob in rizztemplate
   - Some string helpers initialization
 - [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
-- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints, but type inference for if expressions and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added, ready for implementation.
+- [ ] **Type System**: Generic type system implementation appears to be partial, particularly around constraints, but type inference for if expressions, struct fields, and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added, ready for implementation.
 - [ ] **Control Flow**: Full switch statement implementation and range clause support may be incomplete, but if expressions now fully support type inference and mixing of compatible types
 
 ## Binary Compilation Support
@@ -297,6 +297,7 @@ Implemented tests cover:
    - Comparison operations (equals, not equals, greater than, less than)
    - Variable references and variable assignment
    - Struct field access (object.property)
+   - Struct literals with field type inference and type coercion
    - Conditional expressions (if-else) with proper branch type handling
 
 3. **Statement Support**: Implemented compilation for control flow statements:

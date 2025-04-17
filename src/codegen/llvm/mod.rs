@@ -75,6 +75,8 @@ pub use self::import_statement::ImportStatementCompilation;
 pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
 pub use self::if_expression::IfExpressionCompilation;
+pub use self::struct_field_inference::StructFieldInference;
+
 
 // Module declarations
 mod context;         // Main LlvmCodeGenerator implementation
@@ -110,6 +112,7 @@ mod import_statement; // Import statement implementation
 mod later_statement; // Later (defer) statement implementation
 mod switch_statement; // Switch statement implementation
 mod if_expression;   // If expression implementation
+pub mod struct_field_inference; // Struct field type inference
 // Disable dynamic dispatch until it's fully implemented
 // mod dynamic_dispatch; // Dynamic dispatch for interfaces
 
