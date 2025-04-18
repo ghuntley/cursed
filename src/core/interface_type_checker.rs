@@ -1,58 +1,91 @@
-//! Interface type checking and verification
+//! Interface-specific type checking functionality
 //!
-//! This module provides a comprehensive type checking framework
-//! for interfaces in the CURSED language, verifying that types
-//! correctly implement interfaces and managing the relationship
-//! between interfaces and their implementing types.
+//! This module provides specialized type checking functionality for working with
+//! interfaces, including type conversion checks, interface implementation verification,
+//! and method resolution for interface types.
 
-use crate::core::type_checker::Type;
+use crate::core::type_checker::{Type, TypeChecker};
 use crate::error::Error;
 use std::collections::HashMap;
 
-/// Interface definition with methods and type parameters
-#[derive(Clone, Debug)]
-pub struct InterfaceDefinition {
-    /// Name of the interface
-    pub name: String,
-    /// Methods defined by the interface with parameter types and return type
-    pub methods: Vec<(String, Vec<Type>, Option<Type>)>,
-    /// Type parameters for generic interfaces
-    pub type_parameters: Vec<String>,
+/// Extension trait for TypeChecker to add interface-specific functionality
+pub trait InterfaceTypeChecker {
+    /// Convert a value to an interface type if compatible
+    fn convert_to_interface(
+        &self,
+        value_type: &Type,
+        target_interface: &Type,
+    ) -> Result<Type, Error>;
 }
 
-/// Extension trait for TypeChecker to add interface-specific functionality
-pub trait InterfaceTypeChecking {
-    /// Register an interface with the type checker
-    fn register_interface(
+impl InterfaceTypeChecker for TypeChecker {
+    
+    fn convert_to_interface(&self, value_type: &Type, target_interface: &Type) -> Result<Type, Error> {
+        // Check if the conversion is possible
+        if !self.can_assign_to_interface(value_type, target_interface)? {
+            return Err(Error::from_str(&format!(
+                "Cannot convert {} to interface {}",
+                value_type.to_string(),
+                target_interface.to_string()
+            )));
+        }
+        
+        // The result of the conversion is the target interface type
+        Ok(target_interface.clone())
+    }
+}
+
+/// Interface method call resolver
+pub struct InterfaceMethodResolver {
+    /// Cache of resolved methods for interface types
+    method_cache: HashMap<(String, String), (Vec<Type>, Option<Type>)>,
+}
+
+impl InterfaceMethodResolver {
+    /// Create a new interface method resolver
+    pub fn new() -> Self {
+        Self {
+            method_cache: HashMap::new(),
+        }
+    }
+    
+    /// Resolve a method call on an interface type
+    pub fn resolve_method(
         &mut self,
-        name: &str,
-        methods: Vec<(String, Vec<Type>, Option<Type>)>,
-        type_params: Vec<String>,
-    );
-    
-    /// Check if a type implements an interface
-    fn check_interface_implementation(
-        &self,
-        implementing_type: &Type,
+        type_checker: &TypeChecker,
         interface_type: &Type,
-    ) -> Result<bool, Error>;
+        method_name: &str,
+    ) -> Result<(Vec<Type>, Option<Type>), Error> {
+        // Extract interface name for cache key
+        let interface_name = match interface_type {
+            Type::Interface(name, _) => name.clone(),
+            _ => return Err(Error::from_str("Expected an interface type")),
+        };
+        
+        // Check cache first
+        let cache_key = (interface_name.clone(), method_name.to_string());
+        if let Some(cached_result) = self.method_cache.get(&cache_key) {
+            return Ok(cached_result.clone());
+        }
+        
+        // Resolve the method
+        let method_result = type_checker.resolve_interface_method(interface_type, method_name)?;
+        
+        if let Some(method_sig) = method_result {
+            // Cache the result
+            self.method_cache.insert(cache_key, method_sig.clone());
+            return Ok(method_sig);
+        }
+        
+        Err(Error::from_str(&format!(
+            "Method '{}' not found on interface {}",
+            method_name,
+            interface_name
+        )))
+    }
     
-    /// Get all interfaces implemented by a type
-    fn get_implemented_interfaces(
-        &self,
-        implementing_type: &Type,
-    ) -> Result<Vec<Type>, Error>;
-    
-    /// Verify a type assertion is valid (can convert from one type to another)
-    fn verify_type_assertion(
-        &self,
-        from_type: &Type,
-        to_type: &Type,
-    ) -> Result<bool, Error>;
-    
-    /// Get interface method signatures
-    fn get_interface_methods(
-        &self,
-        interface_name: &str,
-    ) -> Option<Vec<(String, Vec<Type>, Option<Type>)>>;
+    /// Clear the method cache
+    pub fn clear_cache(&mut self) {
+        self.method_cache.clear();
+    }
 }
