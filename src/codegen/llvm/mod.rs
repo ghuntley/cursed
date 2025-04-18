@@ -78,6 +78,8 @@ pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
 pub use self::if_expression::IfExpressionCompilation;
 pub use self::struct_field_inference::StructFieldInference;
+// Will be re-exported in a future PR
+// pub use self::interface_type_integration::InterfaceTypeIntegration;
 
 
 // Module declarations
@@ -123,6 +125,7 @@ pub mod struct_field_inference; // Struct field type inference
 // Dynamic dispatch for interfaces
 mod dynamic_dispatch;
 mod interface_implementation; // Interface implementation for code generator
+mod interface_type_integration; // Integration of type checker with interface implementation
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
 /// 
