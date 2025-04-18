@@ -123,7 +123,7 @@ mod switch_statement; // Switch statement implementation
 mod if_expression;   // If expression implementation
 pub mod struct_field_inference; // Struct field type inference
 // Dynamic dispatch for interfaces
-mod dynamic_dispatch;
+pub mod dynamic_dispatch;
 mod interface_implementation; // Interface implementation for code generator
 mod interface_type_integration; // Integration of type checker with interface implementation
 

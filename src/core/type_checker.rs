@@ -13,6 +13,7 @@
 use crate::ast::base::Program;
 use crate::error::Error;
 use std::collections::HashMap;
+use crate::core::interface_type_checker::InterfaceTypeChecker;
 
 /// Represents a type in the CURSED type system
 ///
@@ -250,9 +251,9 @@ pub struct TypeChecker {
     /// Maps struct names to their field types
     struct_map: HashMap<String, HashMap<String, Type>>,
     /// Maps interface names to their method signatures
-    interface_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
+    pub interface_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
     /// Maps type names to their generic parameters
-    type_params_map: HashMap<String, Vec<String>>,
+    pub type_params_map: HashMap<String, Vec<String>>,
     /// Maps struct names to their method signatures
     pub struct_methods_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
 }
@@ -659,6 +660,7 @@ impl TypeChecker {
     }
 
     /// Check if a type implements an interface
+    #[tracing::instrument(level = "debug", skip(self))]
     pub fn check_interface_implementation(
         &self,
         type_: &Type,
@@ -796,7 +798,7 @@ impl TypeChecker {
     }
 
     /// Check if two types are compatible (for interface implementation)
-    fn types_are_compatible(&self, interface_type: &Type, impl_type: &Type) -> Result<bool, Error> {
+    pub fn types_are_compatible(&self, interface_type: &Type, impl_type: &Type) -> Result<bool, Error> {
         // For simple equality
         if interface_type == impl_type {
             return Ok(true);
@@ -881,8 +883,8 @@ impl TypeChecker {
         Ok(())
     }
     
-    /// Get the methods of a struct (placeholder implementation)
-    fn get_struct_methods(
+    /// Get the methods of a struct
+    pub fn get_struct_methods(
         &self,
         struct_name: &str,
     ) -> Option<Vec<(String, Vec<Type>, Option<Type>)>> {
@@ -914,6 +916,31 @@ impl TypeChecker {
     }
 
 
+    
+    /// Resolve a method on an interface type
+    pub fn resolve_interface_method(
+        &self,
+        interface_type: &Type,
+        method_name: &str,
+    ) -> Result<Option<(Vec<Type>, Option<Type>)>, Error> {
+        // Extract the interface name
+        let interface_name = match interface_type {
+            Type::Interface(name, _) => name,
+            _ => return Err(Error::from_str("Expected an interface type")),
+        };
+        
+        // Look up the interface methods
+        if let Some(methods) = self.interface_map.get(interface_name) {
+            for (name, params, return_type) in methods {
+                if name == method_name {
+                    return Ok(Some((params.clone(), return_type.clone())));
+                }
+            }
+        }
+        
+        // Method not found
+        Ok(None)
+    }
     
     /// Check if a value can be assigned to an interface variable (dynamic dispatch)
     pub fn can_assign_to_interface(&self, value_type: &Type, interface_type: &Type) -> Result<bool, Error> {
