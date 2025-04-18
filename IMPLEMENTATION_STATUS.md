@@ -328,16 +328,34 @@ Implemented tests cover:
 
 ## Next Steps
 
+### 1. Interface Implementation
+
+- Complete type checker integration for interfaces
+- Implement interface type conversion in expressions
+- Generate LLVM code for interface method dispatch using vtable approach
+- Add support for interface type assertions and conversions
+- Implement tests for interface compatibility and method dispatch
+
+### 2. Container Type Inference
+
+- Implement type inference for map literals and operations
+- Add type inference for array/slice literals and operations
+- Support type compatibility checking for collections with different element types
+- Create comprehensive test suite for container type inference
+
+### 3. Range Clause Support
+
+- Implement basic range syntax for numeric ranges
+- Add support for container iteration
+- Implement key-value iteration for maps
+- Create tests for range-based iteration
+
+### 4. General Improvements
+
 - Continue optimizing the thread-safe object and garbage collection implementation
 - Finish implementing the REPL parser for a better development experience
 - Implement the remaining standard library functions, especially in rizztemplate and stringz packages
-- Complete the LLVM code generator refactoring, focusing on type system integration (switch/case control flow implementation is now complete)
-- Improve type system to fully support generic constraints and complete type inference for all expressions
 - Add support for interface embedding (composition) in the type system
-- Implement full dynamic dispatch in LLVM code generation for interfaces
-- Complete the implementation of control flow statements, particularly range clauses (switch statement implementation is now complete)
-- Enhance binary compilation with better debugging information and cross-compilation support
-- Add performance benchmarks for garbage collection and binary compilation to identify optimization opportunities
+- Add performance benchmarks for garbage collection and binary compilation
 - Implement test coverage reporting to identify areas needing more testing
 - Create more advanced tracing and instrumentation for memory operations
-- Add runtime type checking and type assertions for interfaces
