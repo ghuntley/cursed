@@ -405,8 +405,607 @@ With the addition of the binary compiler, CURSED now supports both JIT execution
 The next steps include:
 
 1. ✅ Completing the implementation of complex control flow structures like switch statements
-2. Adding full support for generic types and interfaces (interface dynamic dispatch is now implemented with vtables and runtime type information)
-3. ✅ Completing the remaining binary compiler enhancements like custom runtime library linking
-4. Expanding the test suite to cover all language features
+2. Completing the interface implementation in the type system:
+   - ⬜ Integrate interfaces with type checker for compatibility verification
+   - ⬜ Implement interface type conversion in expressions
+   - ⬜ Generate proper LLVM code for interface method dispatch
+   - ⬜ Add support for interface type assertions and conversions
+
+3. Implement type inference for container types:
+   - ⬜ Type inference for map literals and operations
+   - ⬜ Type inference for array/slice literals and operations
+   - ⬜ Type compatibility checking for collections with different element types
+
+4. Implement range clause support for iteration:
+   - ⬜ Basic range syntax (e.g., `for i := range 10 {...}`)
+   - ⬜ Container iteration (e.g., `for elem := range array {...}`)
+   - ⬜ Key-value iteration (e.g., `for key, value := range map {...}`)
+   
+5. ✅ Completing the remaining binary compiler enhancements like custom runtime library linking
+
+6. Expand the test suite to cover all language features:
+   - ⬜ End-to-end integration tests for interfaces
+   - ⬜ Tests for map/array type inference
+   - ⬜ Tests for range-based iteration
+
+## Implementation Timeline
+
+### Sprint 1 (April 20-30, 2025): Interface Implementation
+- Complete type checker integration for interfaces
+- Implement interface type conversion in expressions
+- Generate LLVM code for interface method dispatch
+- Add tests for interface compatibility and method dispatch
+
+### Sprint 2 (May 1-15, 2025): Container Type Inference
+- Implement type inference for map literals and operations
+- Implement type inference for array/slice literals
+- Add type compatibility checking for collections
+- Create test suite for container type inference
+
+### Sprint 3 (May 16-31, 2025): Range Clause Support
+- Implement basic range syntax for numeric ranges
+- Add support for container iteration
+- Implement key-value iteration for maps
+- Create comprehensive tests for range clauses
+
+### Sprint 4 (June 1-15, 2025): Documentation and Finalization
+- Complete all pending test cases
+- Update documentation to reflect new features
+- Ensure backward compatibility
+- Final performance tuning and benchmarking
+
+## Technical Implementation Details
+
+### 1. Interface Values and Dynamic Dispatch
+
+```rust
+// LLVM structure for interface values
+pub fn create_interface_type(&mut self, name: &str) -> StructType<'ctx> {
+    let context = self.context;
+    let void_ptr_type = self.pointer_type();
+    let vtable_ptr_type = self.pointer_type();
+    
+    // Interface value consists of:
+    // 1. Data pointer: points to actual object
+    // 2. VTable pointer: points to method table
+    let struct_type = context.struct_type(
+        &[void_ptr_type.into(), vtable_ptr_type.into()],
+        false
+    );
+    struct_type.set_name(&format!("interface.{}", name));
+    struct_type
+}
+```
+
+### 2. VTable Structure Generation
+
+```rust
+// Generate VTable for an interface
+pub fn generate_vtable_type(
+    &mut self,
+    interface_id: &str,
+    methods: &[InterfaceMethod]
+) -> StructType<'ctx> {
+    let context = self.context;
+    
+    // Create function pointer types for each method
+    let mut field_types = Vec::new();
+    
+    // Add type info pointer as first field
+    field_types.push(self.pointer_type().into());
+    
+    // Add function pointers for each method
+    for method in methods {
+        let fn_type = self.get_or_create_function_type(
+            &method.signature, None);
+        let fn_ptr_type = fn_type.ptr_type(AddressSpace::default()).into();
+        field_types.push(fn_ptr_type);
+    }
+    
+    // Create vtable struct type
+    let vtable_type = context.struct_type(&field_types, false);
+    vtable_type.set_name(&format!("vtable.{}", interface_id));
+    vtable_type
+}
+```
+
+### 3. Dynamic Method Dispatch
+
+```rust
+// Method call on interface value
+pub fn compile_interface_method_call(
+    &mut self,
+    interface_value: BasicValueEnum<'ctx>,
+    method_index: u32,
+    args: &[BasicValueEnum<'ctx>]
+) -> Result<BasicValueEnum<'ctx>, String> {
+    let builder = self.builder();
+    
+    // Cast interface to struct type
+    let interface_ptr = interface_value.into_pointer_value();
+    
+    // Extract data pointer and vtable pointer
+    let data_ptr = unsafe {
+        builder.build_extract_value(interface_ptr, 0, "data.ptr")?
+            .into_pointer_value()
+    };
+    
+    let vtable_ptr = unsafe {
+        builder.build_extract_value(interface_ptr, 1, "vtable.ptr")?
+            .into_pointer_value()
+    };
+    
+    // Get function pointer from vtable (index + 1 to skip type info)
+    let method_ptr_idx = method_index + 1;
+    let fn_ptr_ptr = unsafe {
+        builder.build_struct_gep(vtable_ptr, method_ptr_idx, "method.ptr.ptr")?
+    };
+    
+    // Load function pointer
+    let fn_ptr = builder.build_load(fn_ptr_ptr, "method.ptr")?;
+    
+    // Create args array with data pointer as first argument
+    let mut call_args = Vec::with_capacity(args.len() + 1);
+    call_args.push(data_ptr.into());
+    call_args.extend_from_slice(args);
+    
+    // Call function through pointer
+    let result = builder.build_call(fn_ptr, &call_args, "method.call")?;
+    
+    // Return function result
+    Ok(result.try_as_basic_value().left().unwrap_or_else(||
+        self.context().const_struct(&[], false).into()))
+}
+```
+
+### 4. Container Type Inference
+
+```rust
+// Infer types for map literals
+pub fn infer_map_literal_type(
+    &mut self,
+    map_lit: &MapLiteral,
+    type_checker: &mut TypeChecker
+) -> Result<Type, String> {
+    if map_lit.pairs.is_empty() {
+        return Err("Cannot infer type for empty map literal".to_string());
+    }
+    
+    // Infer key and value types from first pair
+    let first_pair = &map_lit.pairs[0];
+    let key_type = type_checker.infer_type(&first_pair.key)?;
+    let value_type = type_checker.infer_type(&first_pair.value)?;
+    
+    // Verify that all other pairs have compatible types
+    for pair in &map_lit.pairs[1..] {
+        let pair_key_type = type_checker.infer_type(&pair.key)?;
+        let pair_value_type = type_checker.infer_type(&pair.value)?;
+        
+        if !type_checker.types_are_compatible(&key_type, &pair_key_type) {
+            return Err(format!(
+                "Inconsistent key types in map literal: {:?} and {:?}",
+                key_type, pair_key_type
+            ));
+        }
+        
+        if !type_checker.types_are_compatible(&value_type, &pair_value_type) {
+            return Err(format!(
+                "Inconsistent value types in map literal: {:?} and {:?}",
+                value_type, pair_value_type
+            ));
+        }
+    }
+    
+    // Return map type with inferred key and value types
+    Ok(Type::Map {
+        key_type: Box::new(key_type),
+        value_type: Box::new(value_type),
+    })
+}
+
+// Infer types for array literals
+pub fn infer_array_literal_type(
+    &mut self,
+    array_lit: &ArrayLiteral,
+    type_checker: &mut TypeChecker
+) -> Result<Type, String> {
+    if array_lit.elements.is_empty() {
+        return Err("Cannot infer type for empty array literal".to_string());
+    }
+    
+    // Infer element type from first element
+    let first_elem_type = type_checker.infer_type(&array_lit.elements[0])?;
+    
+    // Verify that all other elements have compatible types
+    for elem in &array_lit.elements[1..] {
+        let elem_type = type_checker.infer_type(elem)?;
+        
+        if !type_checker.types_are_compatible(&first_elem_type, &elem_type) {
+            return Err(format!(
+                "Inconsistent element types in array literal: {:?} and {:?}",
+                first_elem_type, elem_type
+            ));
+        }
+    }
+    
+    // Return array type with inferred element type
+    Ok(Type::Array(Box::new(first_elem_type), array_lit.elements.len() as u64))
+}
+```
+
+### 5. Range Clause Implementation
+
+```rust
+// Compile a range-based for loop
+pub fn compile_range_for_loop(
+    &mut self,
+    iterator_name: &str,
+    start_expr: &Expression,
+    end_expr: &Expression, 
+    body: &BlockStatement
+) -> Result<(), String> {
+    let func = self.current_function().ok_or("No current function")?;
+    let context = self.context;
+    let builder = self.builder();
+    
+    // Create basic blocks for the loop
+    let loop_entry = context.append_basic_block(func, "range.for.entry");
+    let loop_body = context.append_basic_block(func, "range.for.body");
+    let loop_increment = context.append_basic_block(func, "range.for.increment");
+    let loop_exit = context.append_basic_block(func, "range.for.exit");
+    
+    // Compile start and end expressions
+    let start_value = self.compile_expression(start_expr)?
+        .into_int_value();
+    let end_value = self.compile_expression(end_expr)?
+        .into_int_value();
+    
+    // Allocate loop variable
+    let i_ptr = builder.build_alloca(context.i64_type(), iterator_name);
+    
+    // Initialize loop variable with start value
+    builder.build_store(i_ptr, start_value);
+    
+    // Jump to loop entry
+    builder.build_unconditional_branch(loop_entry);
+    
+    // Loop entry: check condition
+    builder.position_at_end(loop_entry);
+    let current_value = builder.build_load(context.i64_type(), i_ptr, "current")?
+        .into_int_value();
+    let condition = builder.build_int_compare(
+        IntPredicate::SLT,
+        current_value,
+        end_value,
+        "loop.condition"
+    );
+    builder.build_conditional_branch(condition, loop_body, loop_exit);
+    
+    // Loop body
+    builder.position_at_end(loop_body);
+    
+    // Push a new scope for the loop body
+    self.enter_scope();
+    
+    // Add variable to current scope
+    self.add_variable(iterator_name, i_ptr);
+    
+    // Track current loop blocks for break/continue
+    let old_loop_exit = self.replace_loop_exit(Some(loop_exit));
+    let old_loop_continue = self.replace_loop_continue(Some(loop_increment));
+    
+    // Compile loop body
+    self.compile_block_statement(body)?;
+    
+    // Restore previous loop blocks
+    self.replace_loop_exit(old_loop_exit);
+    self.replace_loop_continue(old_loop_continue);
+    
+    // Pop the loop body scope
+    self.exit_scope();
+    
+    // Jump to increment if no explicit branch was added
+    if !builder.get_insert_block().unwrap().get_terminator().is_some() {
+        builder.build_unconditional_branch(loop_increment);
+    }
+    
+    // Loop increment
+    builder.position_at_end(loop_increment);
+    let current_value = builder.build_load(context.i64_type(), i_ptr, "current.inc")?
+        .into_int_value();
+    let incremented = builder.build_int_add(
+        current_value,
+        context.i64_type().const_int(1, false),
+        "incremented"
+    );
+    builder.build_store(i_ptr, incremented);
+    builder.build_unconditional_branch(loop_entry);
+    
+    // Loop exit
+    builder.position_at_end(loop_exit);
+    
+    Ok(())
+}
+
+// Compile a container iteration for loop
+pub fn compile_container_for_loop(
+    &mut self,
+    value_name: &str,
+    container_expr: &Expression,
+    body: &BlockStatement
+) -> Result<(), String> {
+    // Similar structure to range for loop, but uses container iteration methods
+    // This will involve calling container.len() and container.get(i) methods
+    // The implementation depends on the container type (array, slice, map)
+    
+    // For example, for arrays/slices:
+    // 1. Get the container length
+    // 2. Create a loop from 0 to length
+    // 3. In each iteration, get the element at current index
+    // 4. Assign to the value_name variable
+    // 5. Execute the loop body
+    
+    // For maps (key-value iteration):
+    // 1. Initialize an iterator for the map
+    // 2. Loop while the iterator has more elements
+    // 3. Get the current key-value pair
+    // 4. Assign to key and value variables
+    // 5. Execute the loop body
+    // 6. Advance the iterator
+    
+    Ok(())
+}
+```
+
+## Test Strategy
+
+### 1. Interface Implementation Tests
+
+```rust
+#[test]
+fn test_interface_dynamic_dispatch() {
+    init_tracing!();
+    
+    // Create struct that implements an interface
+    let input = r#"
+        collab Reader {
+            read(buff tea[]byte, offset lit) lit;
+        }
+        
+        squad FileReader {
+            path tea,
+            position lit
+        }
+        
+        slay (f FileReader) read(buff tea[]byte, offset lit) lit {
+            // Implementation details
+            fr := f
+            return 42
+        }
+        
+        slay main() lit {
+            file := FileReader{path: "test.txt", position: 0}
+            
+            // Create interface value
+            sus reader Reader = file
+            
+            // Call interface method
+            buff := make(tea[]byte, 100)
+            sus n = reader.read(buff, 0)
+            
+            return n
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            // Verify the correct result from interface method call
+            assert_eq!(result.as_i64(), Some(42));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+
+#[test]
+fn test_interface_type_assertion() {
+    init_tracing!();
+    
+    // Test interface type assertion/conversion
+    let input = r#"
+        collab Stringer {
+            toString() tea;
+        }
+        
+        squad Person {
+            name tea,
+            age lit
+        }
+        
+        slay (p Person) toString() tea {
+            return p.name
+        }
+        
+        slay main() tea {
+            sus p = Person{name: "Alice", age: 30}
+            sus s Stringer = p
+            
+            // Type assertion back to Person
+            sus person, ok = s.(Person)
+            
+            lowkey ok {
+                return person.name
+            }
+            
+            return "not ok"
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            assert_eq!(result.as_string(), Some("Alice".to_string()));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+```
+
+### 2. Container Type Inference Tests
+
+```rust
+#[test]
+fn test_map_type_inference() {
+    init_tracing!();
+    
+    // Test map type inference
+    let input = r#"
+        slay main() lit {
+            // Map literal with inferred types
+            sus ages = {"Alice": 30, "Bob": 25, "Charlie": 35}
+            
+            // Verify correct type inference by using the map
+            ages["David"] = 40
+            return ages["Alice"]
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            assert_eq!(result.as_i64(), Some(30));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+
+#[test]
+fn test_array_type_inference() {
+    init_tracing!();
+    
+    // Test array type inference
+    let input = r#"
+        slay main() normie {
+            // Array literal with inferred numeric types
+            sus numbers = [1, 2, 3, 4.5, 5.5]
+            
+            // This should work because all elements are inferred as float
+            sus sum normie = 0.0
+            periodt i := 0; i < 5; i = i + 1 {
+                sum = sum + numbers[i]
+            }
+            
+            return sum
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            assert_eq!(result.as_f64(), Some(16.0));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+```
+
+### 3. Range Clause Tests
+
+```rust
+#[test]
+fn test_range_for_loop() {
+    init_tracing!();
+    
+    // Test range-based for loop
+    let input = r#"
+        slay main() lit {
+            sus sum lit = 0
+            
+            // Range-based for loop
+            periodt i := range 10 {
+                sum = sum + i
+            }
+            
+            return sum  // Should be 0+1+2+...+9 = 45
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            assert_eq!(result.as_i64(), Some(45));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+
+#[test]
+fn test_container_iteration() {
+    init_tracing!();
+    
+    // Test container iteration
+    let input = r#"
+        slay main() lit {
+            sus numbers = [10, 20, 30, 40, 50]
+            sus sum lit = 0
+            
+            // Container iteration
+            periodt num := range numbers {
+                sum = sum + num
+            }
+            
+            return sum  // Should be 10+20+30+40+50 = 150
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            assert_eq!(result.as_i64(), Some(150));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+
+#[test]
+fn test_map_key_value_iteration() {
+    init_tracing!();
+    
+    // Test map key-value iteration
+    let input = r#"
+        slay main() lit {
+            sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
+            sus sum lit = 0
+            
+            // Key-value iteration
+            periodt name, score := range scores {
+                sum = sum + score
+            }
+            
+            return sum  // Should be 95+87+92 = 274
+        }
+    "#;
+    
+    // Compile and run the code
+    match run_jit_test(input) {
+        Ok(result) => {
+            assert_eq!(result.as_i64(), Some(274));
+        },
+        Err(e) => panic!("Failed to run test: {}", e),
+    }
+}
+```
+
+## Conclusion
+
+The refactoring of the LLVM code generator has made significant progress, with many key features already implemented. The next phase will focus on:
+
+1. **Completing Interface Support**: Adding full dynamic dispatch capabilities with vtables and type assertions
+2. **Enhancing Type Inference**: Extending type inference to container types and complex expressions
+3. **Adding Range Clause Support**: Implementing modern iteration constructs for collections and numeric ranges
+
+These features will bring the language closer to full compatibility with the specification, making it more expressive and powerful. The implementation will follow the established pattern of test-driven development, maintaining backward compatibility, and ensuring code quality through comprehensive testing.
+
+Upon completion of these features, the CURSED language will have a robust code generation backend capable of efficiently compiling code for both JIT execution and AOT compilation to native binaries, with proper optimizations and debugging support.
 
 Testing at each step is crucial to ensure compatibility with existing code and to catch regressions early. The test-driven development approach we've used throughout this implementation should be continued for all other components.
