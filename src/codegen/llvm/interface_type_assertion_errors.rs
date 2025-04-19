@@ -13,7 +13,7 @@ use inkwell::module::Module;
 use std::rc::Rc;
 
 use crate::error::Error;
-use crate::error_enhanced::CursedError;
+use crate::error_enhanced::{CursedError, ErrorKind};
 
 /// Type for handling interface type assertion errors
 pub struct TypeAssertionErrorHandler<'ctx> {
@@ -102,7 +102,7 @@ impl<'ctx> TypeAssertionErrorHandler<'ctx> {
             &[
                 error_msg_global.as_pointer_value().into(),
                 expected_type_global.as_pointer_value().into(),
-                actual_type_id,
+                actual_type_id.into(),
                 value_ptr.into(),
                 source_file.as_pointer_value().into(),
                 source_line.into(),
@@ -168,7 +168,7 @@ impl<'ctx> TypeAssertionErrorHandler<'ctx> {
             error_func,
             &[
                 error_global.as_pointer_value().into(),
-                actual_type_id,
+                actual_type_id.into(),
                 source_file.as_pointer_value().into(),
                 source_line.into(),
             ],
@@ -239,7 +239,7 @@ pub extern "C" fn __cursed_create_type_assertion_error(
     
     // Create a error with context information
     let error = CursedError::new(
-        "TypeAssertionError",
+        ErrorKind::TypeAssertion,
         &format!("{} (actual type ID: {:x})", error_msg, actual_type_id),
     )
     .with_context("source_file", source_file)

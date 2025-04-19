@@ -57,6 +57,7 @@ pub enum ErrorKind {
     NotImplemented,
     CodeGen,
     Syntax,
+    TypeAssertion,
 }
 
 impl ErrorKind {
@@ -83,6 +84,7 @@ impl ErrorKind {
             ErrorKind::NotImplemented => "NotImplemented",
             ErrorKind::CodeGen => "CodeGen",
             ErrorKind::Syntax => "Syntax",
+            ErrorKind::TypeAssertion => "TypeAssertion",
         }
     }
 }
@@ -419,6 +421,7 @@ impl From<crate::error::Error> for CursedError {
             crate::error::Error::SystemError(msg) => Self::new(ErrorKind::System, msg),
             crate::error::Error::NotImplemented { message } => Self::new(ErrorKind::NotImplemented, message),
             crate::error::Error::CodeGenError(msg) => Self::new(ErrorKind::CodeGen, msg),
+            crate::error::Error::TypeAssertion(error) => error,
         }
     }
 }

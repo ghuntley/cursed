@@ -130,13 +130,13 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Create the result structure (value and true flag)
         let casted_ptr = self.builder().build_bitcast(
             data_ptr,
-            self.pointer_type(),
+            self.context().i8_type().ptr_type(AddressSpace::default()),
             "casted_ptr"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
         // Pack the result into a tuple structure
         let true_val = self.context().bool_type().const_int(1, false);
-        let success_result = self.build_tuple(vec![casted_ptr.into(), true_val.into()])?;
+        let success_result = self.build_enhanced_tuple(vec![casted_ptr.into(), true_val.into()])?;
         
         // Branch to merge block
         self.builder().build_unconditional_branch(merge_block)
@@ -148,29 +148,25 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Extract type info for error reporting
         let (type_id, value_ptr) = self.extract_type_info(expr_value)?;
         
-        // Create error handler
-        let error_handler = TypeAssertionErrorHandler::new(
-            self.context,
-            self.builder(),
-            self.module(),
-        );
+
+        
+
         
         // Log the error with source information
         let source_location = source_file.and_then(|file| {
             source_line.map(|line| (file, line))
         });
         
-        error_handler.generate_error_logging(
+        // Generate error logging directly
+        self.generate_type_error_logging(
             &type_assertion.type_name,
             type_id,
             value_ptr,
             source_location,
         )?;
         
-        // Return null pointer and false flag
-        let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
-        let false_val = self.context().bool_type().const_int(0, false);
-        let failure_result = self.build_tuple(vec![null_ptr.into(), false_val.into()])?;
+        // Create the failure result by calling our helper method without mutable borrow issues
+        let failure_result = self.build_failure_tuple()?;
         
         // Branch to merge block
         self.builder().build_unconditional_branch(merge_block)
@@ -178,7 +174,7 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Merge block - use phi node to select the appropriate result
         self.builder().position_at_end(merge_block);
-        let result_type = self.tuple_type(vec![self.pointer_type().into(), self.context().bool_type().into()]);
+        let result_type = self.enhanced_tuple_type(vec![self.context().i8_type().ptr_type(AddressSpace::default()).into(), self.context().bool_type().into()]);
         let phi = self.builder().build_phi(
             result_type,
             "assertion_result"
@@ -309,8 +305,117 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
 
 // Extension methods for debugging and optimization
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    // Create a failure tuple for a type assertion that didn't match
+    fn build_failure_tuple(&self) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Create necessary constants
+        let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
+        let false_val = self.context().bool_type().const_int(0, false);
+        
+        // Create tuple type
+        let tuple_type = self.context().struct_type(
+            &[null_ptr.get_type().into(), false_val.get_type().into()],
+            false
+        );
+        
+        // Build the tuple using insert_value operations
+        let mut tuple = tuple_type.const_named_struct(&[]);
+        
+        // Insert the null pointer (data pointer)
+        tuple = self.builder().build_insert_value::<inkwell::values::StructValue<'_>, inkwell::values::PointerValue<'_>>(
+            tuple, 
+            null_ptr, 
+            0, 
+            "failure_ptr_insert"
+        ).map_err(|e| Error::Compilation(e.to_string()))?.into_struct_value();
+        
+        // Insert the false flag (match success flag)
+        tuple = self.builder().build_insert_value::<inkwell::values::StructValue<'_>, inkwell::values::IntValue<'_>>(
+            tuple, 
+            false_val, 
+            1, 
+            "failure_flag_insert"
+        ).map_err(|e| Error::Compilation(e.to_string()))?.into_struct_value();
+        
+        Ok(tuple.into())
+    }
+    // Generate error logging for type assertion failures
+    fn generate_type_error_logging(
+        &self,
+        expected_type: &str,
+        actual_type_id: BasicValueEnum<'ctx>,
+        value_ptr: PointerValue<'ctx>,
+        source_location: Option<(&str, u32)>,
+    ) -> Result<(), Error> {
+        // Create a global string constant for the error message template
+        let error_msg = format!(
+            "Type assertion failed: expected {}, but got %s",
+            expected_type
+        );
+        
+        let error_msg_global = self.builder()
+            .build_global_string_ptr(&error_msg, "type_assertion_error_msg")
+            .map_err(|e| Error::Compilation(e.to_string()))?;
+        
+        // Create string constant for expected type
+        let expected_type_global = self.builder()
+            .build_global_string_ptr(expected_type, "expected_type")
+            .map_err(|e| Error::Compilation(e.to_string()))?;
+            
+        // Find or create external function to log type assertion errors
+        let log_func_type = self.context.void_type().fn_type(
+            &[
+                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // error_msg
+                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // expected_type
+                self.context.i64_type().into(),                                  // actual_type_id
+                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // value_ptr
+                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // source_file
+                self.context.i32_type().into(),                                  // source_line
+            ],
+            false,
+        );
+        
+        let log_func = self.module().add_function(
+            "__cursed_log_type_assertion_error",
+            log_func_type,
+            None,
+        );
+        
+        // Create source location constants
+        let (source_file, source_line) = match source_location {
+            Some((file, line)) => {
+                let file_global = self.builder()
+                    .build_global_string_ptr(file, "source_file")
+                    .map_err(|e| Error::Compilation(e.to_string()))?;
+                let line_const = self.context.i32_type().const_int(line as u64, false);
+                (file_global, line_const)
+            },
+            None => {
+                let file_global = self.builder()
+                    .build_global_string_ptr("<unknown>", "source_file")
+                    .map_err(|e| Error::Compilation(e.to_string()))?;
+                let line_const = self.context.i32_type().const_int(0, false);
+                (file_global, line_const)
+            },
+        };
+        
+        // Call the logging function
+        self.builder().build_call(
+            log_func,
+            &[
+                error_msg_global.as_pointer_value().into(),
+                expected_type_global.as_pointer_value().into(),
+                actual_type_id.into(),
+                value_ptr.into(),
+                source_file.as_pointer_value().into(),
+                source_line.into(),
+            ],
+            "log_assertion_error",
+        ).map_err(|e| Error::Compilation(e.to_string()))?;
+        
+        Ok(())
+    }
     // Build a tuple structure (for returning value and success flag)
-    fn build_tuple(&mut self, values: Vec<BasicValueEnum<'ctx>>) -> Result<BasicValueEnum<'ctx>, Error> {
+    fn build_enhanced_tuple(&mut self, values: Vec<BasicValueEnum<'ctx>>) -> Result<BasicValueEnum<'ctx>, Error> {
         let ctx = self.context();
         let tuple_type = ctx.struct_type(
             &values.iter().map(|v| v.get_type()).collect::<Vec<_>>(),
@@ -328,12 +433,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Get tuple type from a list of element types
-    fn tuple_type(&self, element_types: Vec<BasicTypeEnum<'ctx>>) -> StructType<'ctx> {
+    fn enhanced_tuple_type(&self, element_types: Vec<BasicTypeEnum<'ctx>>) -> StructType<'ctx> {
         self.context().struct_type(&element_types, false)
     }
     
     // Helper for getting pointer type with default address space
-    fn pointer_type(&self) -> inkwell::types::PointerType<'ctx> {
+    fn enhanced_pointer_type(&self) -> inkwell::types::PointerType<'ctx> {
         self.context().i8_type().ptr_type(AddressSpace::default())
     }
     
@@ -351,34 +456,34 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Create debug print function
         let debug_func_type = self.context().void_type().fn_type(
-            &[
-                self.context().i8_type().ptr_type(AddressSpace::default()).into(), // expected type
-                self.context().i64_type().into(),                                  // actual type ID
-                self.context().bool_type().into(),                                 // is match
-            ],
-            false,
+        &[
+        self.context().i8_type().ptr_type(AddressSpace::default()).into(), // expected type
+        self.context().i64_type().into(),                                  // actual type ID
+        self.context().bool_type().into(),                                 // is match
+        ],
+        false,
         );
         
         let debug_func = self.module().add_function(
-            "__cursed_debug_type_check",
-            debug_func_type,
-            None,
+        "__cursed_debug_type_check",
+        debug_func_type,
+        None,
         );
         
         // Create string constant for expected type
         let expected_type_global = self.builder()
-            .build_global_string_ptr(expected_type, "expected_type_debug")
-            .map_err(|e| Error::Compilation(e.to_string()))?;
+        .build_global_string_ptr(expected_type, "expected_type_debug")
+        .map_err(|e| Error::Compilation(e.to_string()))?;
         
         // Call the debug function
         self.builder().build_call(
-            debug_func,
-            &[
-                expected_type_global.as_pointer_value().into(),
-                actual_type_id,
-                is_match,
-            ],
-            "debug_type_check",
+        debug_func,
+        &[
+        expected_type_global.as_pointer_value().into(),
+        actual_type_id.into(),
+        is_match.into(),
+        ],
+        "debug_type_check",
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
         Ok(())
