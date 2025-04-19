@@ -20,7 +20,26 @@
   ];
 
   # https://devenv.sh/languages/
+  languages.c.enable = true;
+  languages.clojure.enable = true;
+  languages.cplusplus.enable = true;
+  languages.dotnet.enable = true;
+  languages.erlang.enable = true;
+  languages.fortran.enable = true;
+  languages.go.enable = true;
+  languages.haskell.enable = true;
+  languages.java.enable = true;
+  languages.javascript.enable = true;
+  languages.kotlin.enable = true;
+  languages.ocaml.enable = true;
+  languages.pascal.enable = true;
+  languages.perl.enable = true;
+  languages.php.enable = true;
+  languages.python.enable = true;
+  languages.ruby.enable = true;
   languages.rust.enable = true;
+  languages.swift.enable = true;
+  languages.zig.enable = true;
 
   env.LLVM_CONFIG_PATH = "${pkgs.llvmPackages_17.llvm}/bin/llvm-config";
   env.LLVM_SYS_170_PREFIX = "${pkgs.llvmPackages_17.libllvm.dev}";

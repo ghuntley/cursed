@@ -1,6 +1,7 @@
 //! Benchmark runner for the CURSED programming language
 
 use cursed::benchmark;
+use cursed::benchmark::language_comparison;
 use cursed::benchmark::BenchmarkReporter;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
@@ -25,6 +26,7 @@ fn main() {
         println!("  standard    - Standard language benchmarks");
         println!("  gc          - Garbage collector benchmarks");
         println!("  concurrency - Concurrency benchmarks");
+        println!("  language    - Language comparison benchmarks");
         println!("  all         - Run all benchmark suites");
         println!("\nOutput formats:");
         println!("  console     - Output to console (default)");
@@ -51,6 +53,10 @@ fn main() {
             let results = benchmark::run_concurrency_suite();
             output_results(&results, output_format, output_file);
         },
+        "language" => {
+            let results = benchmark::run_language_comparison_suite();
+            output_results(&results, output_format, output_file);
+        },
         "all" => {
             println!("Running all benchmark suites...");
             println!("\n=== Standard Benchmarks ===");
@@ -62,10 +68,14 @@ fn main() {
             println!("\n=== Concurrency Benchmarks ===");
             let con_results = benchmark::run_concurrency_suite();
             
+            println!("\n=== Language Comparison Benchmarks ===");
+            let lang_results = benchmark::run_language_comparison_suite();
+            
             // Output all results
             output_results(&std_results, output_format, &format!("{}_standard", output_file));
             output_results(&gc_results, output_format, &format!("{}_gc", output_file));
             output_results(&con_results, output_format, &format!("{}_concurrency", output_file));
+            output_results(&lang_results, output_format, &format!("{}_language", output_file));
         },
         _ => {
             eprintln!("Unknown benchmark suite: {}", suite_name);
