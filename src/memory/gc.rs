@@ -622,8 +622,9 @@ impl GarbageCollector {
         }
     }
 
-    // Internal implementation of garbage collection with full circular reference handling
-    fn collect_garbage_internal(&self, trigger: CollectionTrigger) {
+    // Implementation of garbage collection with full circular reference handling
+    // Made public for use by concurrent garbage collector
+    pub fn collect_garbage_internal(&self, trigger: CollectionTrigger) {
         println!("GC: Starting garbage collection: trigger={:?}", trigger);
         println!("GC: Current state: {:?}", self.stats());
         

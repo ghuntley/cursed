@@ -29,6 +29,7 @@ pub mod finalization_order;
 pub mod test_environment;
 pub mod deadlock_detector;
 pub mod mark_sweep;
+pub mod concurrent_gc;
 
 // Re-exports
 pub use object_storage::{ObjectStorage, StorageWrapper, global_object_storage, register_dependency, store, contains};
@@ -48,6 +49,7 @@ pub use thread_safe_gc::ThreadSafeGc;
 pub use thread_safe_weak::ThreadSafeWeak;
 pub use weak::Weak;
 pub use weak_registry::{GlobalWeakRegistry, global_registry};
+pub use concurrent_gc::ConcurrentGarbageCollector;
 
 // For testing (re-exported)
 pub use test_environment::{reset_test_environment, get_test_gc};
