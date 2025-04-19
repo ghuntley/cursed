@@ -18,7 +18,7 @@ impl<'a> Parser<'a> {
         self.expect_peek(Token::LParen)?;
         
         // Advance to the token after the opening parenthesis
-        self.next_token();
+        let _ = self.next_token();
         
         // Expect and parse the type name
         match &self.current_token {

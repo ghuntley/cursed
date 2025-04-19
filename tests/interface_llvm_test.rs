@@ -120,9 +120,9 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // Return the result
     if let Some(result) = method_result {
-        codegen.builder().build_return(Some(&result));
+        let _ = codegen.builder().build_return(Some(&result));
     } else {
-        codegen.builder().build_return(None);
+        let _ = codegen.builder().build_return(None);
     }
     
     // 8. Test interface type assertion
@@ -161,7 +161,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     let is_true_block = codegen.context().append_basic_block(assertion_function, "is_person");
     let is_false_block = codegen.context().append_basic_block(assertion_function, "not_person");
     
-    codegen.builder().build_conditional_branch(
+    let _ = codegen.builder().build_conditional_branch(
         is_person.into_int_value(),
         is_true_block,
         is_false_block,
@@ -172,10 +172,10 @@ fn test_interface_code_generation() -> Result<(), Error> {
     let success_result = codegen.context().i8_type()
         .ptr_type(inkwell::AddressSpace::default())
         .const_null();
-    codegen.builder().build_return(Some(&success_result));
+    let _ = codegen.builder().build_return(Some(&success_result));
     
     codegen.builder().position_at_end(is_false_block);
-    codegen.builder().build_return(Some(&success_result));
+    let _ = codegen.builder().build_return(Some(&success_result));
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
