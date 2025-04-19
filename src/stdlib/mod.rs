@@ -30,6 +30,7 @@ pub mod concurrenz; // Synchronization primitives (sync equivalent)
 pub mod concurrenz_disabled;
 pub mod cryptz; // Cryptography functions (crypto equivalent)
 pub mod dot_registry; // Dot expression registry for package.function calls
+pub mod error_drip; // Error handling utilities (errors package equivalent)
 pub mod dropz; // I/O primitives (io equivalent)
 pub mod vector2d; // Vector2D type implementation and methods
 pub mod htmlrizzler; // HTML templates (html/template equivalent)
@@ -58,6 +59,7 @@ pub use concurrenz_disabled::*;
 pub use cryptz::*;
 pub use dot_registry::{DOT_REGISTRY, is_supported, execute_dot, get_packages, get_functions};
 pub use dropz::*;
+pub use error_drip::*;
 pub use htmlrizzler::{escape_html, escape_js, escape_url};
 pub use json_tea::*;
 pub use mathz::*;

@@ -46,6 +46,7 @@ pub mod code;
 pub mod codegen;
 pub mod core;
 pub mod error;
+pub mod error_enhanced;
 pub mod helpers;
 pub mod lexer;
 pub mod memory;

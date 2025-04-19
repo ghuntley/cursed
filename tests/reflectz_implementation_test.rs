@@ -5,8 +5,7 @@ use cursed::{
 };
 use std::rc::Rc;
 
-// Temporarily disabled while API is upgraded
-#[cfg(disable_test)]
+// Tests for the reflectz module
 mod tests {
 
 #[test]
