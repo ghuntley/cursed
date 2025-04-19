@@ -203,53 +203,33 @@ impl BenchmarkReporter for CsvReporter {
     fn report(&self, results: &BenchmarkResults) {
         // Create CSV header
         let mut csv = String::new();
-        csv.push_str("Suite,Benchmark,Avg Time (ns),Min Time (ns),Max Time (ns)");
+        csv.push_str("Language,Algorithm,Avg Time (ns),Min Time (ns),Max Time (ns)");
         
-        // Add metric columns to header
-        let mut metric_keys = std::collections::HashSet::new();
-        for result in &results.results {
-            for metric in &result.metrics {
-                metric_keys.insert(format!("{} ({})", metric.name(), metric.unit()));
-            }
-        }
+        // We don't need separate columns for each metric in the simplified format
+        // Just ensure we have the standard columns needed
         
-        let metric_keys: Vec<_> = metric_keys.into_iter().collect();
-        for key in &metric_keys {
-            csv.push_str(&format!(",{}", key));
-        }
+        // No additional columns needed in the simplified format
         csv.push_str("\n");
         
         // Add results
         for result in &results.results {
+            // Split benchmark name into language and algorithm
+            let parts: Vec<&str> = result.name.split('_').collect();
+            let (language, algorithm) = if parts.len() >= 2 {
+                (parts[0].to_string(), parts[1..].join("_"))
+            } else {
+                (result.name.clone(), String::new())
+            };
+            
             csv.push_str(&format!("{},{},{},{},{}",
-                results.suite_name,
-                result.name,
+                language,
+                algorithm,
                 result.avg_time.as_nanos(),
                 result.min_time.as_nanos(),
                 result.max_time.as_nanos()
             ));
             
-            // Add metrics
-            let mut metric_values = std::collections::HashMap::new();
-            for metric in &result.metrics {
-                let key = format!("{} ({})", metric.name(), metric.unit());
-                let value = match metric.value() {
-                    MetricValue::Duration(d) => d.as_nanos().to_string(),
-                    MetricValue::Integer(i) => i.to_string(),
-                    MetricValue::UInteger(u) => u.to_string(),
-                    MetricValue::Float(f) => f.to_string(),
-                    MetricValue::Boolean(b) => b.to_string(),
-                    MetricValue::String(s) => s,
-                };
-                metric_values.insert(key, value);
-            }
-            
-            for key in &metric_keys {
-                csv.push_str(",");
-                if let Some(value) = metric_values.get(key) {
-                    csv.push_str(value);
-                }
-            }
+            // We don't need to add metric values in the simplified format
             
             csv.push_str("\n");
         }

@@ -16,6 +16,8 @@ pub mod harness;
 pub mod metrics;
 pub mod reporters;
 pub mod scenarios;
+pub mod language_comparison;
+pub mod expanded_language_comparison;
 
 // Re-exports
 pub use harness::{Benchmark, BenchmarkSuite, BenchmarkConfig};
@@ -53,6 +55,38 @@ pub fn run_concurrency_suite() -> harness::BenchmarkResults {
     let results = suite.run();
     reporter.report(&results);
     results
+}
+
+/// Run a language comparison benchmark suite
+#[instrument(skip_all, fields(suite_name = "language_comparison"))]
+pub fn run_language_comparison_suite() -> harness::BenchmarkResults {
+    info!("Running language comparison benchmark suite");
+    let suite = language_comparison::language_comparison_suite();
+    let reporter = ConsoleReporter::new();
+    let results = suite.run();
+    reporter.report(&results);
+    results
+}
+
+/// Run an expanded language comparison benchmark suite
+#[instrument(skip_all, fields(suite_name = "expanded_language_comparison"))]
+pub fn run_expanded_language_comparison_suite() -> harness::BenchmarkResults {
+    info!("Running expanded language comparison benchmark suite");
+    let suite = expanded_language_comparison::expanded_language_comparison_suite();
+    let reporter = ConsoleReporter::new();
+    let results = suite.run();
+    reporter.report(&results);
+    results
+}
+
+/// Run a unified language comparison benchmark suite
+#[instrument(skip_all, fields(suite_name = ?suite_type))]
+pub fn run_unified_language_comparison_suite(suite_type: &str) -> harness::BenchmarkResults {
+    match suite_type {
+        "standard" => run_language_comparison_suite(),
+        "expanded" => run_expanded_language_comparison_suite(),
+        _ => panic!("Unknown benchmark suite type: {}", suite_type)
+    }
 }
 
 /// Helper to run a benchmark and return timing information

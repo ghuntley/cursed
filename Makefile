@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-fix clean example jit-test
+.PHONY: build test lint fmt fmt-fix clean example jit-test language-benchmark
 
 build:
 	devenv shell cargo build
@@ -55,3 +55,17 @@ range-test:
 test_preprocessor:
 	devenv shell "cargo build --bin test_preprocessor"
 	devenv shell "./target/debug/test_preprocessor"
+
+# Run language comparison benchmarks for all available languages
+# Usage: make language-benchmark [FORMAT=console|json|csv|markdown] [OUTPUT=filename]
+# Examples:
+#   make language-benchmark                         # Runs benchmarks with console output
+#   make language-benchmark FORMAT=markdown         # Outputs results in markdown format
+#   make language-benchmark OUTPUT=bench_results    # Saves results to bench_results file
+language-benchmark:
+	$(eval FORMAT ?= console)
+	$(eval OUTPUT ?= benchmark_results)
+	@echo "Building CURSED in release mode for accurate benchmarking..."
+	cargo build --release
+	@echo "Running language benchmarks for all available languages..."
+	./target/release/language_benchmark $(FORMAT) $(OUTPUT)
