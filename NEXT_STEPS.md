@@ -56,10 +56,10 @@
 - [ ] Generate documentation from standard library code
 
 ### 5. Performance Optimization
-- [ ] Implement benchmark suite for core language features
+- [x] Implement benchmark suite for core language features
 - [ ] Optimize garbage collector performance for concurrent programs
 - [ ] Profile and improve memory allocations in hot code paths
-- [ ] Add memory usage statistics and reporting
+- [x] Add memory usage statistics and reporting
 - [ ] Create performance comparison with similar languages
 
 ### 6. REPL Improvements

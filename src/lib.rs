@@ -56,6 +56,7 @@ pub mod parser;
 pub mod prelude;
 pub mod repl;
 pub mod stdlib;
+pub mod benchmark;
 pub mod stdlib_test;
 pub mod symbol;
 
