@@ -581,6 +581,29 @@ impl Template {
         }
     }
     
+    /// Creates a new template with the given name
+    /// 
+    /// # Arguments
+    /// 
+    /// * `name` - The name of the template
+    /// 
+    /// # Returns
+    /// 
+    /// A new Template instance with the given name
+    pub fn new_named(name: impl Into<String>) -> Box<Template> {
+        Box::new(Template::new(name))
+    }
+    
+    /// Parses the given text into a template
+    /// 
+    /// # Arguments
+    /// 
+    /// * `text` - The template text to parse
+    /// 
+    /// # Returns
+    /// 
+    /// A Result containing the parsed template or an error
+    #[tracing::instrument(skip(text), level = "debug")]
     pub fn parse(text: impl Into<String>) -> Result<Box<Template>, String> {
         let mut tmpl = Template::new("anonymous");
         tmpl.text = text.into();
@@ -595,6 +618,16 @@ impl Template {
         Ok(Box::new(tmpl))
     }
     
+    /// Parses the given files into a template set
+    /// 
+    /// # Arguments
+    /// 
+    /// * `filenames` - A slice of file paths to parse
+    /// 
+    /// # Returns
+    /// 
+    /// A Result containing the parsed template set or an error
+    #[tracing::instrument(level = "debug")]
     pub fn parse_files(filenames: &[String]) -> Result<Box<Template>, String> {
         let mut tmpl = Template::new("template_set");
         
@@ -606,18 +639,38 @@ impl Template {
             };
             
             // Parse the template
-            let sub_template = match Template::parse(content) {
+            let mut sub_template = match Template::parse(content) {
                 Ok(t) => t,
                 Err(e) => return Err(format!("Error parsing {}: {}", filename, e)),
             };
             
+            // Extract template name from filename
+            let name = std::path::Path::new(filename)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("anonymous")
+                .to_string();
+            
+            // Update the template name
+            sub_template.name = name.clone();
+            
             // Add the template to the set
-            tmpl.templates.insert(filename.clone(), sub_template);
+            tmpl.templates.insert(name, sub_template);
         }
         
         Ok(Box::new(tmpl))
     }
     
+    /// Parses files matching the glob pattern into a template set
+    /// 
+    /// # Arguments
+    /// 
+    /// * `pattern` - A glob pattern matching template files
+    /// 
+    /// # Returns
+    /// 
+    /// A Result containing the parsed template set or an error
+    #[tracing::instrument(level = "debug")]
     pub fn parse_glob(pattern: &str) -> Result<Box<Template>, String> {
         let paths = match glob::glob(pattern) {
             Ok(paths) => paths,
@@ -629,9 +682,24 @@ impl Template {
             .filter_map(|path| path.to_str().map(|s| s.to_string()))
             .collect();
         
+        if filenames.is_empty() {
+            return Err(format!("No files matched pattern: {}", pattern));
+        }
+        
         Template::parse_files(&filenames)
     }
     
+    /// Executes the template with the given data, writing the result to the provided writer
+    /// 
+    /// # Arguments
+    /// 
+    /// * `w` - A writer to write the result to
+    /// * `data` - The data to use for template execution
+    /// 
+    /// # Returns
+    /// 
+    /// A Result indicating success or an error string
+    #[tracing::instrument(skip(self, w, data), level = "debug")]
     pub fn execute<W: Write>(&self, mut w: W, data: Object) -> Result<(), String> {
         // Create execution context with template data
         let context = ExecutionContext {
@@ -642,6 +710,39 @@ impl Template {
         
         // Execute the template
         self.execute_tree(&mut w, &self.tree, &context)
+    }
+    
+    /// Executes a named template with the given data, writing the result to the provided writer
+    /// 
+    /// # Arguments
+    /// 
+    /// * `w` - A writer to write the result to
+    /// * `name` - The name of the template to execute
+    /// * `data` - The data to use for template execution
+    /// 
+    /// # Returns
+    /// 
+    /// A Result indicating success or an error string
+    pub fn execute_template<W: Write>(&self, w: W, name: &str, data: Object) -> Result<(), String> {
+        // Look up the named template
+        match self.lookup(name) {
+            Some(tmpl) => tmpl.execute(w, data),
+            None => Err(format!("Template not found: {}", name)),
+        }
+    }
+    
+    /// Returns a named template from the template set
+    /// 
+    /// # Arguments
+    /// 
+    /// * `name` - The name of the template to look up
+    /// 
+    /// # Returns
+    /// 
+    /// An Option containing the template if found, or None if not found
+    #[tracing::instrument(skip(self), level = "debug")]
+    pub fn lookup(&self, name: &str) -> Option<&Box<Template>> {
+        self.templates.get(name)
     }
     
     fn execute_tree<W: Write>(&self, w: &mut W, tree: &TemplateTree, context: &ExecutionContext) -> Result<(), String> {
@@ -992,13 +1093,7 @@ impl Template {
         Ok(None)
     }
     
-    pub fn execute_template<W: Write>(&self, w: W, name: &str, data: Object) -> Result<(), String> {
-        // Look up the named template
-        match self.templates.get(name) {
-            Some(tmpl) => tmpl.execute(w, data),
-            None => Err(format!("Template not found: {}", name)),
-        }
-    }
+
     
     pub fn funcs(&mut self, funcs: FuncMap) -> &mut Self {
         self.funcs.extend(funcs);
