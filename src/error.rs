@@ -501,7 +501,7 @@ impl Error {
         source_line: Option<u32>,
     ) -> Self {
         let msg = message.into();
-        let mut error = crate::error_enhanced::CursedError::new("TypeAssertionError", &msg)
+        let mut error = crate::error_enhanced::CursedError::new(crate::error_enhanced::ErrorKind::TypeAssertion, &msg)
             .with_context("expected_type", expected_type.to_string());
         
         if let Some(type_id) = actual_type_id {
