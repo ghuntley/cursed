@@ -82,6 +82,10 @@ pub use self::struct_field_inference::StructFieldInference;
 pub use self::type_assertion::InterfaceTypeAssertion;
 // Improved interface type assertions with additional runtime information
 pub use self::interface_type_assertion::ImprovedTypeAssertion;
+// Enhanced interface type assertions with optimized implementation
+pub use self::enhanced_type_assertion::EnhancedTypeAssertion;
+// Type assertion error handling
+pub use self::interface_type_assertion_errors::TypeAssertionErrorHandler;
 // Range clause compilation trait
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::loop_context::*;
@@ -138,6 +142,8 @@ mod interface_implementation; // Interface implementation for code generator
 mod interface_type_integration; // Integration of type checker with interface implementation
 mod type_assertion; // Interface type assertion and conversion
 mod interface_type_assertion; // Improved interface type assertions with additional runtime information
+mod interface_type_assertion_errors; // Enhanced error handling for interface type assertions
+mod enhanced_type_assertion; // Optimized implementation of interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

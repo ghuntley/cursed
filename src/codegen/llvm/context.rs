@@ -68,6 +68,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) loop_exit_blocks: Vec<BasicBlock<'ctx>>,
     // Default integer type to use
     pub(crate) default_integer_type: Option<inkwell::types::IntType<'ctx>>,
+    // Cache for type IDs to improve performance of type assertions
+    pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -98,6 +100,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             interface_manager: None, // Will be initialized when needed
             gc_metadata: HashMap::new(),
             string_literal_counter: 0,
+            type_id_cache: None, // Will be initialized when needed
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
         }

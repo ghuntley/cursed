@@ -152,6 +152,9 @@ pub enum Error {
 
     /// Code generation errors
     CodeGenError(String),
+    
+    /// Type assertion errors
+    TypeAssertion(crate::error_enhanced::CursedError),
 }
 
 /// Utility for creating properly formatted error instances
@@ -289,6 +292,7 @@ impl Clone for Error {
             Error::InvalidOperation(msg) => Error::InvalidOperation(msg.clone()),
             Error::SystemError(msg) => Error::SystemError(msg.clone()),
             Error::CodeGenError(msg) => Error::CodeGenError(msg.clone()),
+            Error::TypeAssertion(error) => Error::TypeAssertion(error.clone()),
         }
     }
 }
@@ -465,6 +469,7 @@ impl Error {
             Error::SystemError(msg) => msg.clone(),
             Error::NotImplemented { message } => message.clone(),
             Error::CodeGenError(msg) => msg.clone(),
+            Error::TypeAssertion(error) => error.message().to_string(),
         }
     }
 
@@ -484,6 +489,43 @@ impl Error {
         Error::NotImplemented {
             message: message.into(),
         }
+    }
+    
+    /// Creates a type assertion error with enhanced context information
+    #[tracing::instrument(skip(message, expected_type, actual_type_id), level = "debug")]
+    pub fn type_assertion<T: Into<String>>(
+        message: T, 
+        expected_type: &str,
+        actual_type_id: Option<u64>,
+        source_file: Option<&str>,
+        source_line: Option<u32>,
+    ) -> Self {
+        let msg = message.into();
+        let mut error = crate::error_enhanced::CursedError::new("TypeAssertionError", &msg)
+            .with_context("expected_type", expected_type.to_string());
+        
+        if let Some(type_id) = actual_type_id {
+            error = error.with_context("actual_type_id", format!("{:x}", type_id));
+        }
+        
+        if let Some(file) = source_file {
+            error = error.with_context("source_file", file.to_string());
+        }
+        
+        if let Some(line) = source_line {
+            error = error.with_context("source_line", line.to_string());
+        }
+        
+        tracing::error!(
+            message = %msg,
+            expected_type = %expected_type,
+            actual_type_id = ?actual_type_id.map(|id| format!("{:x}", id)),
+            source_file = ?source_file,
+            source_line = ?source_line,
+            "Type assertion error created"
+        );
+        
+        Error::TypeAssertion(error)
     }
 }
 
