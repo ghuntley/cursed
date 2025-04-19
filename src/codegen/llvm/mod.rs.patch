@@ -1,0 +1,35 @@
+--- a/src/codegen/llvm/mod.rs
++++ b/src/codegen/llvm/mod.rs
+@@ -80,9 +80,18 @@ pub use self::if_expression::IfExpressionCompilation;
+ pub use self::struct_field_inference::StructFieldInference;
+ // Range clause compilation trait
+ pub use self::range_clause::RangeClauseCompilation;
+-// Fixed implementation will be re-exported here after code review
+-// pub use self::range_clause_fixed::RangeClauseCompilation as RangeClauseCompilationFixed;
+ pub use self::loop_context::*;
++
++// Enhanced range clause implementation with proper error handling
++#[cfg(feature = "enhanced-range")]
++pub use self::range_clause_fixed::RangeClauseCompilationEnhanced;
++
++// Conditionally use the enhanced implementation as the default
++// based on the feature flag
++#[cfg(feature = "enhanced-range")]
++pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as DefaultRangeClauseCompilation;
++#[cfg(not(feature = "enhanced-range"))]
++pub use self::range_clause::RangeClauseCompilation as DefaultRangeClauseCompilation;
++
+ // Will be re-exported in a future PR
+ // pub use self::interface_type_integration::InterfaceTypeIntegration;
+ 
+@@ -119,8 +128,8 @@ mod break_continue;  // Break and continue statement handling
+ mod control_flow;    // Control flow statements
+ // Original range clause implementation (to be preserved for compatibility)
+ mod range_clause;
+-// Fixed implementation will be integrated after code review
+-// mod range_clause_fixed;    // Range-based for loop implementation
++// Enhanced implementation with proper error handling
++mod range_clause_fixed;    // Enhanced range-based for loop implementation
+ mod loop_context;    // Loop context for break/continue management
+ mod concurrency;     // Goroutine and channel operations
+ mod property_access; // Property access expressions (obj.field)

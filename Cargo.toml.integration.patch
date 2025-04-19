@@ -1,0 +1,14 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -61,6 +61,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscrib
+ [features]
+ # Enable binary compilation support
+ binary_compiler = []
++# Enable the enhanced range clause implementation with proper error handling
++enhanced-range = []
++
++# Default features (commented out until fully tested)
++# default = ["binary_compiler", "enhanced-range"]
+ 
+ [dev-dependencies]
+ criterion = "0.5"  # For benchmarking

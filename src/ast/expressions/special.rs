@@ -5,6 +5,7 @@
 //! - Assignment expressions: updating variables (e.g., `x = 5`)
 //! - Struct instantiation expressions: creating struct instances ("be_like" in CURSED)
 //! - Default case expressions: handling the default case in switch statements ("basic" in CURSED)
+//! - Type assertion expressions: checking and converting interface values to concrete types ("value.(Type)")
 //!
 //! These expressions provide important functionality beyond typical operators and literals.
 
@@ -174,3 +175,5 @@ impl Expression for DefaultCase {
         self
     }
 }
+
+// Type assertion moved to a separate module: src/ast/expressions/type_assertion.rs

@@ -48,6 +48,10 @@ example:
 jit-test:
 	devenv shell cargo test jit_integration_full
 
+# Test the fixed range clause implementation
+range-test:
+	devenv shell cargo test range_clause_fixed_test
+
 test_preprocessor:
 	devenv shell "cargo build --bin test_preprocessor"
 	devenv shell "./target/debug/test_preprocessor"

@@ -65,6 +65,32 @@ impl<'a> Lexer<'a> {
     fn peek_sequence(&self, sequence: &str) -> bool {
         peek_sequence(self.input, self.position, self.read_position, sequence)
     }
+    
+    /// Get the current position in the input
+    ///
+    /// This returns a snapshot of the current position information that can be
+    /// used to reset the lexer to a previous state.
+    pub fn position(&self) -> (usize, usize, usize, usize) {
+        (self.position, self.read_position, self.line, self.column)
+    }
+    
+    /// Set the position to a previously saved position
+    ///
+    /// This allows the parser to implement lookahead by saving a position,
+    /// reading ahead, and then restoring the position if necessary.
+    pub fn set_position(&mut self, pos: (usize, usize, usize, usize)) {
+        self.position = pos.0;
+        self.read_position = pos.1;
+        self.line = pos.2;
+        self.column = pos.3;
+        
+        // Update the current character
+        if self.position >= self.input.len() {
+            self.ch = None;
+        } else {
+            self.ch = self.input.chars().nth(self.position);
+        }
+    }
 
     /// Skip whitespace characters and comments
     pub fn skip_whitespace(&mut self) {

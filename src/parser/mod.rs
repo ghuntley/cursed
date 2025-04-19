@@ -25,9 +25,12 @@ mod expressions;
 mod parser;
 mod precedence;
 pub mod preprocessor;
+mod range;
+mod range_expressions;
 mod reference;
 mod statements;
 mod switch;
+mod type_assertion;
 mod types;
 
 #[cfg(test)]

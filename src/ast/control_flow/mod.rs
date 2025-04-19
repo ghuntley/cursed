@@ -8,11 +8,13 @@ pub mod conditionals;
 pub mod deferred;
 pub mod loops;
 pub mod switch;
+pub mod range;
 
 // Re-export types for easier imports
 pub use self::conditionals::{CaseStatement, IfStatement};
 pub use self::deferred::LaterStatement;
 pub use self::loops::{BreakStatement, ContinueStatement, ForStatement, WhileStatement};
 pub use self::switch::{SwitchStatement, SwitchCase};
+pub use self::range::{RangeClause, RangeForStatement};
 
 // Don't need these since they're already exported in the wildcard import above

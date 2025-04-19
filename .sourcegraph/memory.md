@@ -95,3 +95,21 @@ The garbage collector (GC) has been enhanced with proper cycle detection to hand
 5. Sweeping (collecting) all objects that weren't marked as reachable
 
 This prevents memory leaks when objects reference each other in cycles but are no longer reachable from the root set.
+
+## Interface Type Assertion Implementation
+
+We're working on implementing interface type assertions for the language, which allows checking if an interface value is of a concrete type and safely converting between them. The current implementation includes:
+
+1. AST structure in `src/ast/expressions/type_assertion.rs`
+2. Parser support in `src/parser/type_assertion.rs`
+3. LLVM code generation in `src/codegen/llvm/type_assertion.rs`
+
+There are still several issues to fix:
+1. Proper error propagation in the LLVM code generator
+2. Handling LLVM Result types with `?` operator
+3. Integration between AST and code generator
+
+Implementation approach:
+1. First fix parser and AST structures
+2. Then implement basic LLVM code generation
+3. Finally add full runtime type checking

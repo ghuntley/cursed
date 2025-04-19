@@ -1,0 +1,13 @@
+# Patch to add feature flag for enhanced range clause implementation
+
+[features]
+# Enable the enhanced range clause implementation with proper error handling
+enhanced-range = []
+
+# Enable by default (after sufficient testing)
+default = ["enhanced-range"]
+
+# Example usage:
+# cargo build --no-default-features           # Use original implementation
+# cargo build --features enhanced-range       # Use enhanced implementation
+# cargo build                                # Use default (whichever is set)

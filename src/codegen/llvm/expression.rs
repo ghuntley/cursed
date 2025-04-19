@@ -5,7 +5,7 @@
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::traits::Expression;
-use crate::ast::expressions::{Identifier, CallExpression, DotExpression};
+use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion};
 use crate::ast::pointer::types::PointerType;
 use crate::ast::pointer::operations::PointerDereference;
 use crate::error::Error;
@@ -16,6 +16,7 @@ use super::basic_expressions::BasicExpressionOperations;
 use super::function_monomorphization::FunctionMonomorphization;
 use super::variables::VariableHandling;
 use super::if_expression::IfExpressionCompilation;
+use super::type_assertion::InterfaceTypeAssertion;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -64,6 +65,13 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             println!("DEBUG: Found dot expression in compile_expression: {}.{}", 
                      dot_expr.object.string(), dot_expr.property);
             return self.compile_dot_expression(dot_expr);
+        }
+        
+        // Handle type assertion expressions (value.(Type))
+        if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
+            println!("DEBUG: Found type assertion expression: {}.({})", 
+                     type_assertion.expression.string(), type_assertion.type_name);
+            return self.compile_type_assertion(type_assertion);
         }
         
         // Handle if expressions
