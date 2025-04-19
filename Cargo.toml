@@ -49,6 +49,9 @@ serde_json = "1.0"  # JSON serialization/deserialization
 thread_local = "1.1"  # Thread-local storage
 parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
+# Memory profiling
+backtrace = "0.3.69"  # For stack trace capture
+
 # Glob pattern matching
 glob = "0.3"    # For file path pattern matching
 

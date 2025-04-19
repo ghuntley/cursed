@@ -58,7 +58,7 @@
 ### 5. Performance Optimization
 - [x] Implement benchmark suite for core language features
 - [x] Optimize garbage collector performance for concurrent programs
-- [ ] Profile and improve memory allocations in hot code paths
+- [x] Profile and improve memory allocations in hot code paths
 - [x] Add memory usage statistics and reporting
 - [ ] Create performance comparison with similar languages
 - [x] Implement concurrent garbage collection for better performance

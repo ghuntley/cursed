@@ -30,10 +30,12 @@ pub mod test_environment;
 pub mod deadlock_detector;
 pub mod mark_sweep;
 pub mod concurrent_gc;
+pub mod allocation_profiler;
 
 // Re-exports
 pub use object_storage::{ObjectStorage, StorageWrapper, global_object_storage, register_dependency, store, contains};
 pub use finalization_order::{finalize_objects_ordered, calculate_finalization_order};
+pub use allocation_profiler::{global_profiler, enable_profiling, disable_profiling, reset_profiling, print_profiling_report};
 
 // Add a convenience function for working with GC scopes (for tests)
 pub fn with_gc_scope<R>(gc: R) -> R {
