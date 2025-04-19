@@ -448,7 +448,47 @@ impl<'a> Parser<'a> {
     pub(super) fn parse_for_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         let token = self.current_token.clone();
         self.next_token()?; // Advance past 'bestie'
-
+        
+        // Check if this is a range-based for loop
+        // The pattern is: bestie var := flex ... or bestie key, var := flex ...
+        if matches!(self.current_token, Token::Identifier(_)) {
+            // Look ahead to check for := flex pattern
+            let start_position = self.lexer.position();
+            
+            // Check for identifier pattern
+            let mut has_comma = false;
+            self.next_token()?; // Advance past identifier
+            
+            // Check for comma (key, value pattern)
+            if self.current_token_is(Token::Comma) {
+                has_comma = true;
+                self.next_token()?; // Advance past comma
+                
+                // Expect second identifier
+                if !matches!(self.current_token, Token::Identifier(_)) {
+                    // Reset position and try normal for loop
+                    self.lexer.set_position(start_position);
+                } else {
+                    self.next_token()?; // Advance past second identifier
+                }
+            }
+            
+            // Check for := token
+            if self.current_token_is(Token::DeclAssign) {
+                self.next_token()?; // Advance past :=
+                
+                // Check for 'flex' token
+                if self.current_token_is(Token::Flex) {
+                    // Reset position and call the range for parser
+                    self.lexer.set_position(start_position);
+                    return self.parse_range_for_statement().map(|stmt| Box::new(stmt) as Box<dyn Statement>);
+                }
+            }
+            
+            // Reset position if not a range-based for loop
+            self.lexer.set_position(start_position);
+        }
+        
         // Handle different forms of for loops
         let mut init = None;
         let mut condition = None;

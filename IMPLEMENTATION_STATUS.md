@@ -224,8 +224,8 @@ Implemented tests cover:
   - ParseFiles and ParseGlob in rizztemplate
   - Some string helpers initialization
 - [ ] **Code Generation**: Concurrency implementation needs improvements in function extraction from call expression
-- [X] **Type System**: Generic type system implementation has been significantly enhanced with support for type parameter substitution in nested generic types and recursive generic definitions. Type inference for if expressions, struct fields, and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added and implemented. Monomorphization of generic functions with multiple type parameters is now fully working with proper constraint checking and LLVM code generation. Type parameter substitution handles complex nested types, struct fields, and user-defined types. Interface dynamic dispatch mechanism has been implemented with a vtable-based approach supporting runtime type information and generic interfaces.
-- [x] **Control Flow**: Switch statement implementation is now complete with support for integer and string-based cases, fallthrough behavior, and default case handling. If expressions fully support type inference and mixing of compatible types. Range clause support remains to be implemented.
+- [X] **Type System**: Generic type system implementation has been significantly enhanced with support for type parameter substitution in nested generic types and recursive generic definitions. Type inference for if expressions, struct fields, and assignment expressions is now implemented with proper type coercion. Tests for function return type inference have been added and implemented. Monomorphization of generic functions with multiple type parameters is now fully working with proper constraint checking and LLVM code generation. Type parameter substitution handles complex nested types, struct fields, and user-defined types. Interface dynamic dispatch mechanism has been implemented with a vtable-based approach supporting runtime type information and generic interfaces. Interface type assertions are now fully implemented with proper runtime type checking and comprehensive error handling.
+- [x] **Control Flow**: Switch statement implementation is now complete with support for integer and string-based cases, fallthrough behavior, and default case handling. If expressions fully support type inference and mixing of compatible types. Range clause has been significantly improved with proper error handling, comprehensive test coverage, and a more modular implementation.
 
 ## Binary Compilation Support
 
@@ -333,25 +333,27 @@ Implemented tests cover:
 
 ### 1. Interface Implementation
 
-- Complete type checker integration for interfaces
-- Implement interface type conversion in expressions
-- Generate LLVM code for interface method dispatch using vtable approach
-- Add support for interface type assertions and conversions
-- Implement tests for interface compatibility and method dispatch
+- ✅ Complete type checker integration for interfaces
+- ✅ Implement interface type conversion in expressions
+- ✅ Generate LLVM code for interface method dispatch using vtable approach
+- ✅ Add support for interface type assertions and conversions
+- ✅ Implement tests for interface compatibility and method dispatch
 
 ### 2. Container Type Inference
 
-- Implement type inference for map literals and operations
-- Add type inference for array/slice literals and operations
-- Support type compatibility checking for collections with different element types
-- Create comprehensive test suite for container type inference
+- ✅ Implement type inference for map literals and operations
+- ✅ Add type inference for array/slice literals and operations
+- ✅ Support type compatibility checking for collections with different element types
+- ✅ Create comprehensive test suite for container type inference
 
 ### 3. Range Clause Support
 
-- Implement basic range syntax for numeric ranges
-- Add support for container iteration
-- Implement key-value iteration for maps
-- Create tests for range-based iteration
+- ✅ Implement basic range syntax for numeric ranges
+- ✅ Add support for container iteration
+- ✅ Implement key-value iteration for maps
+- ✅ Create tests for range-based iteration
+- ✅ Refactor implementation for better error handling and maintainability
+- ✅ Create a comprehensive test plan for range clauses
 
 ### 4. General Improvements
 

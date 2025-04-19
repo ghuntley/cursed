@@ -253,6 +253,8 @@ impl<'a> Parser<'a> {
             Token::Thicc => self.parse_type_expression("thicc"),
             Token::Smol => self.parse_type_expression("smol"),
             Token::Mid => self.parse_type_expression("mid"),
+            Token::Flex => self.parse_range_expression(),
+            Token::Ellipsis => self.parse_ellipsis_expression(),
             Token::Sus => self.parse_variable_declaration(), // Handle Sus token for variable declarations
             Token::Assign => self.parse_assignment_expression(), // Handle Assign token for assignments
             Token::At => self.parse_pointer_expression(),
@@ -724,7 +726,7 @@ impl<'a> Parser<'a> {
         Err(self.error(&format!("Invalid struct type in instantiation")))
     }
 
-    /// Parse a dot expression (like obj.prop)
+    /// Parse a dot expression (like obj.prop) or a type assertion (obj.(Type))
     fn parse_dot_expression(
         &mut self,
         left: Box<dyn Expression>,
@@ -732,6 +734,12 @@ impl<'a> Parser<'a> {
         let token = self.current_token.clone();
 
         self.next_token()?; // Skip past the '.'
+        
+        // Check if this is a type assertion (value.(Type))
+        if self.current_token_is(Token::LParen) {
+            println!("DEBUG: Found type assertion pattern {}.(", left.string());
+            return self.parse_type_assertion(left);
+        }
 
         if !self.current_token_is(Token::Identifier(String::new())) {
             return Err(self.error("Expected identifier after '.'"));

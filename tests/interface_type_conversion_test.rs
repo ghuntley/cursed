@@ -1,132 +1,378 @@
-//! Test for interface type conversions and method dispatch
+//! Tests for interface type assertions and conversions
+//!
+//! This module tests the ability to assert that an interface value is of a specific
+//! concrete type and to convert an interface value back to a concrete type.
 
-use std::collections::HashMap;
-use cursed::core::type_checker::{Type, TypeChecker};
-// No need for AST expressions
 use cursed::error::Error;
-use inkwell::context::Context;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::dynamic_dispatch::InterfaceManager;
+use crate::common;
 
-#[path = "tracing_setup.rs"]
-mod tracing_setup;
+#[path = "common.rs"]
+mod common;
 
-/// Test fixture to set up a common interface and implementation
-fn setup_interface_types() -> Result<TypeChecker, Error> {
-    let mut type_checker = TypeChecker::new();
+// Simple macro to init tracing in tests
+#[macro_export]
+macro_rules! init_test_tracing {
+    () => {
+        common::tracing::setup();
+    };
+}
+
+#[test]
+fn test_basic_interface_type_assertion() {
+    init_test_tracing!();
     
-    // Register a Printer interface
-    type_checker.register_interface(
-        "Printer",
-        vec![
-            ("print".to_string(), vec![Type::Tea], None),
-            ("get_name".to_string(), vec![], Some(Type::Tea)),
-        ],
-        Vec::new(),
-    );
+    // Test basic type assertion with success case
+    let code = r#"
+        // Define an interface
+        collab Stringer {
+            toString() tea;
+        }
+        
+        // Define a concrete type that implements the interface
+        squad Person {
+            name tea,
+            age lit
+        }
+        
+        // Implement the interface method
+        slay (p Person) toString() tea {
+            return p.name
+        }
+        
+        slay main() tea {
+            // Create a concrete value
+            sus alice = Person{name: "Alice", age: 30}
+            
+            // Assign to interface variable
+            sus stringer Stringer = alice
+            
+            // Type assertion back to concrete type
+            sus person, ok = stringer.(Person)
+            
+            // Check if assertion succeeded
+            lowkey ok {
+                return person.name
+            }
+            
+            return "type assertion failed"
+        }
+    "#;
     
-    // Register ConsoleLogger struct that will implement the interface
-    let logger_fields = HashMap::from([
-        ("name".to_string(), Type::Tea),
-        ("verbose".to_string(), Type::Lit),
-    ]);
-    
-    type_checker.register_struct("ConsoleLogger", logger_fields, Vec::new());
-    
-    // Register methods for ConsoleLogger
-    let logger_methods = vec![
-        ("print".to_string(), vec![Type::Tea], None),
-        ("get_name".to_string(), vec![], Some(Type::Tea)),
-        ("set_verbose".to_string(), vec![Type::Lit], None),
-    ];
-    
-    for (method_name, param_types, return_type) in logger_methods.clone() {
-        type_checker.register_struct_method("ConsoleLogger", &method_name, param_types, return_type)?;
+    match common::run_jit_test(code) {
+        Ok(result) => {
+            assert_eq!(result.as_string(), Some("Alice".to_string()));
+        },
+        Err(e) => panic!("Test failed: {}", e),
     }
-    
-    Ok(type_checker)
 }
 
 #[test]
-fn test_interface_type_conversion() -> Result<(), Error> {
-    tracing_setup::init_test_tracing();
-    tracing::info!("Starting interface type conversion test");
+fn test_interface_type_assertion_failure() {
+    init_test_tracing!();
     
-    let mut type_checker = setup_interface_types()?;
+    // Test type assertion with failure case
+    let code = r#"
+        // Define interfaces
+        collab Stringer {
+            toString() tea;
+        }
+        
+        collab Reader {
+            read(buf tea[]byte) lit;
+        }
+        
+        // Define concrete types
+        squad Person {
+            name tea,
+            age lit
+        }
+        
+        squad File {
+            path tea
+        }
+        
+        // Implement interfaces
+        slay (p Person) toString() tea {
+            return p.name
+        }
+        
+        slay (f File) read(buf tea[]byte) lit {
+            return 42  // Dummy implementation
+        }
+        
+        slay main() tea {
+            // Create a Person value
+            sus alice = Person{name: "Alice", age: 30}
+            
+            // Assign to Stringer interface
+            sus stringer Stringer = alice
+            
+            // Try to assert as File (should fail)
+            sus file, ok = stringer.(File)
+            
+            lowkey ok {
+                return "should not happen"
+            }
+            
+            return "assertion failed as expected"
+        }
+    "#;
     
-    // Test type conversion: ConsoleLogger -> Printer interface
-    let logger_type = Type::Struct("ConsoleLogger".to_string(), Vec::new());
-    let printer_type = Type::Interface("Printer".to_string(), Vec::new());
-    
-    // Check if ConsoleLogger implements Printer
-    let implements = type_checker.check_interface_implementation(&logger_type, &printer_type)?;
-    assert!(implements, "ConsoleLogger should implement Printer interface");
-    
-    // Test assignment compatibility
-    let can_assign = type_checker.can_assign_to_interface(&logger_type, &printer_type)?;
-    assert!(can_assign, "Should be able to assign ConsoleLogger to Printer interface");
-    
-    tracing::info!("Completed interface type conversion test");
-    Ok(())
+    match common::run_jit_test(code) {
+        Ok(result) => {
+            assert_eq!(result.as_string(), Some("assertion failed as expected".to_string()));
+        },
+        Err(e) => panic!("Test failed: {}", e),
+    }
 }
 
 #[test]
-fn test_interface_method_dispatch() -> Result<(), Error> {
-    tracing_setup::init_test_tracing();
-    tracing::info!("Starting interface method dispatch test");
+fn test_multiple_interface_implementations() {
+    init_test_tracing!();
     
-    // Create LLVM context for codegen
-    let context = Context::create();
-    let module = context.create_module("test_module");
-    let builder = context.create_builder();
+    // Test a type that implements multiple interfaces
+    let code = r#"
+        // Define interfaces
+        collab Stringer {
+            toString() tea;
+        }
+        
+        collab Counter {
+            count() lit;
+        }
+        
+        // Define a type that implements both interfaces
+        squad MultiImplementor {
+            name tea,
+            value lit
+        }
+        
+        // Implement both interfaces
+        slay (m MultiImplementor) toString() tea {
+            return m.name
+        }
+        
+        slay (m MultiImplementor) count() lit {
+            return m.value
+        }
+        
+        slay main() lit {
+            // Create a concrete value
+            sus multi = MultiImplementor{name: "Multi", value: 42}
+            
+            // Assign to first interface
+            sus stringer Stringer = multi
+            
+            // Assign to second interface
+            sus counter Counter = multi
+            
+            // Type assertion from first interface
+            sus m1, ok1 = stringer.(MultiImplementor)
+            
+            // Type assertion from second interface
+            sus m2, ok2 = counter.(MultiImplementor)
+            
+            // Verify both assertions work
+            lowkey ok1 && ok2 {
+                return m1.value + m2.value  // Should be 42 + 42 = 84
+            }
+            
+            return 0
+        }
+    "#;
     
-    // Create interface manager
-    let mut interface_manager = InterfaceManager::new();
+    match common::run_jit_test(code) {
+        Ok(result) => {
+            assert_eq!(result.as_i64(), Some(84));
+        },
+        Err(e) => panic!("Test failed: {}", e),
+    }
+}
+
+#[test]
+fn test_interface_type_switch() {
+    init_test_tracing!();
     
-    // Register interface with manager
-    interface_manager.register_interface(
-        &context,
-        "Printer",
-        vec![
-            ("print".to_string(), vec![Type::Tea], None),
-            ("get_name".to_string(), vec![], Some(Type::Tea)),
-        ],
-        Vec::new(),
-    )?;
+    // Test type switch statement for interfaces
+    let code = r#"
+        // Define interface
+        collab Shape {
+            area() normie;
+        }
+        
+        // Define concrete types
+        squad Circle {
+            radius normie
+        }
+        
+        squad Rectangle {
+            width normie,
+            height normie
+        }
+        
+        squad Triangle {
+            base normie,
+            height normie
+        }
+        
+        // Implement interface methods
+        slay (c Circle) area() normie {
+            return 3.14159 * c.radius * c.radius
+        }
+        
+        slay (r Rectangle) area() normie {
+            return r.width * r.height
+        }
+        
+        slay (t Triangle) area() normie {
+            return 0.5 * t.base * t.height
+        }
+        
+        slay getShapeType(shape Shape) tea {
+            // Type switch using multiple type assertions
+            sus _, isCircle = shape.(Circle)
+            sus _, isRectangle = shape.(Rectangle)
+            sus _, isTriangle = shape.(Triangle)
+            
+            lowkey isCircle {
+                return "circle"
+            } elseif isRectangle {
+                return "rectangle"
+            } elseif isTriangle {
+                return "triangle"
+            }
+            
+            return "unknown"
+        }
+        
+        slay main() tea {
+            // Create different shapes
+            sus circle = Circle{radius: 2.0}
+            sus rectangle = Rectangle{width: 3.0, height: 4.0}
+            
+            // Convert to interface values
+            sus shape1 Shape = circle
+            sus shape2 Shape = rectangle
+            
+            // Get types using type assertions
+            sus type1 = getShapeType(shape1)
+            sus type2 = getShapeType(shape2)
+            
+            return type1 + "," + type2  // Should be "circle,rectangle"
+        }
+    "#;
     
-    // Mock the implementation methods
-    let function_type = context.void_type().fn_type(
-        &[context.i8_type().ptr_type(inkwell::AddressSpace::default()).into()],
-        false,
-    );
+    match common::run_jit_test(code) {
+        Ok(result) => {
+            assert_eq!(result.as_string(), Some("circle,rectangle".to_string()));
+        },
+        Err(e) => panic!("Test failed: {}", e),
+    }
+}
+
+#[test]
+fn test_direct_interface_method_call_with_assertion() {
+    init_test_tracing!();
     
-    let print_fn = module.add_function("ConsoleLogger_print", function_type, None);
-    let get_name_fn = module.add_function(
-        "ConsoleLogger_get_name", 
-        context.i8_type().ptr_type(inkwell::AddressSpace::default())
-            .fn_type(&[], false), 
-        None
-    );
+    // Test calling a method on the concrete type after assertion
+    let code = r#"
+        // Define interface
+        collab Animal {
+            makeSound() tea;
+        }
+        
+        // Define concrete type with additional methods
+        squad Dog {
+            name tea,
+            breed tea
+        }
+        
+        // Implement interface method
+        slay (d Dog) makeSound() tea {
+            return "Woof!"
+        }
+        
+        // Additional method on concrete type (not part of interface)
+        slay (d Dog) getBreed() tea {
+            return d.breed
+        }
+        
+        slay main() tea {
+            // Create concrete value
+            sus dog = Dog{name: "Rover", breed: "Golden Retriever"}
+            
+            // Assign to interface
+            sus animal Animal = dog
+            
+            // Interface method call works directly
+            sus sound = animal.makeSound()  // "Woof!"
+            
+            // Need to assert back to concrete type to call non-interface methods
+            sus concreteDog, ok = animal.(Dog)
+            
+            lowkey ok {
+                // Now we can call the additional method
+                sus breed = concreteDog.getBreed()
+                return breed
+            }
+            
+            return "error"
+        }
+    "#;
     
-    // Create a mapping of method names to function values
-    let mut implementation_methods = HashMap::new();
-    implementation_methods.insert("print".to_string(), print_fn);
-    implementation_methods.insert("get_name".to_string(), get_name_fn);
+    match common::run_jit_test(code) {
+        Ok(result) => {
+            assert_eq!(result.as_string(), Some("Golden Retriever".to_string()));
+        },
+        Err(e) => panic!("Test failed: {}", e),
+    }
+}
+
+#[test]
+fn test_nil_interface_assertion() {
+    init_test_tracing!();
     
-    // Create vtable for this implementation
-    let logger_type = Type::Struct("ConsoleLogger".to_string(), Vec::new());
-    interface_manager.create_vtable_for_implementation(
-        &context,
-        &module,
-        "Printer",
-        &logger_type,
-        implementation_methods,
-    )?;
+    // Test asserting on a nil interface value
+    let code = r#"
+        // Define interface
+        collab Processor {
+            process(data tea) tea;
+        }
+        
+        // Define concrete type
+        squad DataProcessor {
+            name tea
+        }
+        
+        // Implement interface
+        slay (d DataProcessor) process(data tea) tea {
+            return "Processed: " + data
+        }
+        
+        slay assertNilInterface(p Processor) tea {
+            // Try to assert on potentially nil interface
+            sus processor, ok = p.(DataProcessor)
+            
+            lowkey ok {
+                return "Got processor: " + processor.name
+            }
+            
+            return "nil or wrong type"
+        }
+        
+        slay main() tea {
+            // Create nil interface value
+            sus nilProcessor Processor = nil
+            
+            // Try to assert on nil interface
+            return assertNilInterface(nilProcessor)  // Should be "nil or wrong type"
+        }
+    "#;
     
-    // Verify the vtable was created properly
-    let vtable_impl = interface_manager.get_vtable_impl("Printer", "ConsoleLogger");
-    assert!(vtable_impl.is_some(), "VTable implementation should exist");
-    
-    tracing::info!("Completed interface method dispatch test");
-    Ok(())
+    match common::run_jit_test(code) {
+        Ok(result) => {
+            assert_eq!(result.as_string(), Some("nil or wrong type".to_string()));
+        },
+        Err(e) => panic!("Test failed: {}", e),
+    }
 }

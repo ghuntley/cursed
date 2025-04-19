@@ -584,15 +584,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         self.loop_contexts.push(context);
     }
     
-    /// Pop the current loop context
-    pub fn pop_loop_context(&mut self) -> Option<LoopContext<'ctx>> {
-        self.loop_contexts.pop()
-    }
-    
-    /// Get a reference to the current loop context, if any
-    pub fn current_loop_context(&self) -> Option<&LoopContext<'ctx>> {
-        self.loop_contexts.last()
-    }
+    // Note: pop_loop_context and current_loop_context are moved to loop_context.rs
     
     // Initialize the string helper functions
     // This is a temporary implementation until the real one is added

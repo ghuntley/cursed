@@ -14,6 +14,7 @@
 //! * `declarations`: Declarations (functions, types, variables, constants)
 //! * `pointer`: Pointer-related operations and types
 //! * `traits`: Common interfaces for AST nodes
+//! * `type_assertion`: Interface type assertions and conversions
 
 // Module declarations
 pub mod base;
@@ -24,12 +25,12 @@ pub mod pointer;
 pub mod statement_utils;
 pub mod statements;
 pub mod traits;
-
 // Public re-exports
 pub use base::Program;
 pub use pointer::{PointerDereference, PointerType};
 pub use statement_utils::StatementExtensions;
 pub use traits::{Expression, Node, Statement};
+pub use expressions::TypeAssertion;
 
 // Re-export all AST types for easier imports
 pub use control_flow::*;

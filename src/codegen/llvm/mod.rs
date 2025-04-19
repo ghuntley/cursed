@@ -78,6 +78,13 @@ pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
 pub use self::if_expression::IfExpressionCompilation;
 pub use self::struct_field_inference::StructFieldInference;
+// Interface type assertion trait
+pub use self::type_assertion::InterfaceTypeAssertion;
+// Improved interface type assertions with additional runtime information
+pub use self::interface_type_assertion::ImprovedTypeAssertion;
+// Range clause compilation trait
+pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
+pub use self::loop_context::*;
 // Will be re-exported in a future PR
 // pub use self::interface_type_integration::InterfaceTypeIntegration;
 
@@ -112,6 +119,9 @@ mod variables;
 mod intrinsics;      // Standard library intrinsics
 mod break_continue;  // Break and continue statement handling
 mod control_flow;    // Control flow statements
+// Range clause implementation with proper error handling
+mod range_clause_fixed;
+mod loop_context;    // Loop context for break/continue management
 mod concurrency;     // Goroutine and channel operations
 mod property_access; // Property access expressions (obj.field)
 mod assignment;      // Assignment expressions (a = b)
@@ -126,6 +136,9 @@ pub mod struct_field_inference; // Struct field type inference
 pub mod dynamic_dispatch;
 mod interface_implementation; // Interface implementation for code generator
 mod interface_type_integration; // Integration of type checker with interface implementation
+mod type_assertion; // Interface type assertion and conversion
+mod interface_type_assertion; // Improved interface type assertions with additional runtime information
+// Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
 /// 

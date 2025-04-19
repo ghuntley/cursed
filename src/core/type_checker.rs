@@ -503,6 +503,41 @@ impl TypeChecker {
             return Ok(Type::Array(Box::new(elem_type), array_lit.elements.len()));
         }
         
+        // Check for hash/map literals
+        if let Some(hash_lit) = expr.as_any().downcast_ref::<crate::ast::expressions::collections::HashLiteral>() {
+            if hash_lit.pairs.is_empty() {
+                // Empty map - can't determine key/value types
+                return Ok(Type::Map(Box::new(Type::Unknown), Box::new(Type::Unknown)));
+            }
+            
+            // Infer types from first pair and ensure all pairs have compatible types
+            let first_pair = &hash_lit.pairs[0];
+            let key_type = self.check_expression(first_pair.0.as_ref())?;
+            let value_type = self.check_expression(first_pair.1.as_ref())?;
+            
+            // Check that all keys and values have compatible types
+            for pair in &hash_lit.pairs[1..] {
+                let this_key_type = self.check_expression(pair.0.as_ref())?;
+                let this_value_type = self.check_expression(pair.1.as_ref())?;
+                
+                if !self.types_are_compatible(&key_type, &this_key_type)? {
+                    return Err(Error::from_str(&format!(
+                        "Inconsistent key types in map literal: {:?} and {:?}",
+                        key_type, this_key_type
+                    )));
+                }
+                
+                if !self.types_are_compatible(&value_type, &this_value_type)? {
+                    return Err(Error::from_str(&format!(
+                        "Inconsistent value types in map literal: {:?} and {:?}",
+                        value_type, this_value_type
+                    )));
+                }
+            }
+            
+            return Ok(Type::Map(Box::new(key_type), Box::new(value_type)));
+        }
+        
         // Check for prefix expressions
         if let Some(prefix) = expr.as_any().downcast_ref::<crate::ast::expressions::PrefixExpression>() {
             let right_type = self.check_expression(prefix.right.as_ref())?;
