@@ -204,6 +204,12 @@ impl GarbageCollector {
         let ptr = Box::into_raw(boxed);
         let obj_id = ptr as usize;
         
+        // Record the allocation in the profiler
+        let size = std::mem::size_of::<T>();
+        let location = std::panic::Location::caller().to_string();
+        let profiler = crate::memory::allocation_profiler::global_profiler();
+        profiler.record_allocation::<T>(size, Some(location));
+        
         // Store the object in the global object storage with the chosen ID
         let storage = crate::memory::object_storage::global_object_storage();
         if let Ok(mut storage_lock) = storage.write() {
@@ -230,6 +236,12 @@ impl GarbageCollector {
         let boxed = Box::new(value.clone());
         let ptr = Box::into_raw(boxed);
         let obj_id = ptr as usize;
+        
+        // Record the allocation in the profiler
+        let size = std::mem::size_of::<T>();
+        let location = std::panic::Location::caller().to_string();
+        let profiler = crate::memory::allocation_profiler::global_profiler();
+        profiler.record_allocation::<T>(size, Some(location));
         
         // Store the object in the global object storage with the chosen ID
         let storage = crate::memory::object_storage::global_object_storage();
