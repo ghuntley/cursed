@@ -4,16 +4,13 @@
 //! focusing on edge cases and specific scenarios required by the test plan.
 
 use cursed::error::Error;
-use cursed::ast::BoxedStatement;
-use crate::common;
-
 // Import test setup and common utilities
 #[path = "common.rs"]
 mod common;
 
-// Import macro for test tracing
-#[macro_use]
-extern crate common;
+// Import test tracing macro via path include
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 // Import range clause test helpers
 #[path = "range_clause_test_helper.rs"]
@@ -38,7 +35,7 @@ fn test_enhanced_numeric_range() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(45), "Basic numeric range should sum to 45");
         },
@@ -65,7 +62,7 @@ fn test_enhanced_range_with_bounds() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(95), "Range with bounds should sum to 95");
         },
@@ -92,7 +89,7 @@ fn test_enhanced_range_with_step() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(40), "Range with step should sum to 40");
         },
@@ -119,7 +116,7 @@ fn test_enhanced_negative_step_range() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(50), "Range with negative step should sum to 50");
         },
@@ -149,7 +146,7 @@ fn test_enhanced_empty_range() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(0), "Empty range should not execute any iterations");
         },
@@ -176,7 +173,7 @@ fn test_enhanced_large_range() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(10), "Large range should execute exactly 10 iterations");
         },
@@ -203,7 +200,7 @@ fn test_enhanced_negative_bounds_range() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(-40), "Range with negative bounds should sum to -40");
         },
@@ -230,7 +227,7 @@ fn test_enhanced_array_iteration() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(375000), "Array iteration should produce product 375000");
         },
@@ -257,7 +254,7 @@ fn test_enhanced_mixed_type_array() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_f64(), Some(76.0), "Mixed type array iteration should sum to 76.0");
         },
@@ -289,7 +286,7 @@ fn test_enhanced_nested_range_loops() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(99), "Nested range loops should sum to 99");
         },
@@ -318,7 +315,7 @@ fn test_enhanced_map_key_iteration() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(3), "Map key iteration should count 3 keys");
         },
@@ -346,7 +343,7 @@ fn test_enhanced_map_key_value_iteration() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(60), "Map key-value iteration should sum to 60");
         },
@@ -383,7 +380,7 @@ fn test_enhanced_break_continue_combined() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(42), "Break/continue combined loop should sum to 42");
         },
@@ -411,7 +408,7 @@ fn test_enhanced_range_variable_scoping() {
         }
     "#;
     
-    match common::run_jit_test(input) {
+    match helper::run_jit_test(input) {
         Ok(result) => {
             assert_eq!(result.as_i64(), Some(42), "Variable scoping should preserve outer value");
         },

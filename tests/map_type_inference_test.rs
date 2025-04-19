@@ -21,7 +21,7 @@ fn test_map_type_inference(input: &str) -> Result<Type, Error> {
     
     // Parse the code
     let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
     
     // The test input should have a single expression statement with a map literal
@@ -34,7 +34,9 @@ fn test_map_type_inference(input: &str) -> Result<Type, Error> {
             let mut type_checker = TypeChecker::new();
             
             // Infer the type of the expression
-            type_checker.check_expression(expr.as_ref())
+            // Use the publicly available method to infer types
+            type_checker.infer_type(expr.as_ref())
+                .map(|_| ())
         } else {
             Err(Error::from_str("No expression in statement"))
         }
@@ -95,7 +97,7 @@ fn test_mixed_key_types_map_literal() {
     // This should fail because key types are inconsistent
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.message.contains("Inconsistent key types"));
+        assert!(err.to_string().contains("Inconsistent key types"));
     }
 }
 
@@ -106,6 +108,6 @@ fn test_mixed_value_types_map_literal() {
     // This should fail because value types are inconsistent
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.message.contains("Inconsistent value types"));
+        assert!(err.to_string().contains("Inconsistent value types"));
     }
 }
