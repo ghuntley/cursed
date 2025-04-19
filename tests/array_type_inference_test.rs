@@ -21,7 +21,7 @@ fn test_array_type_inference(input: &str) -> Result<Type, Error> {
     
     // Parse the code
     let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
     
     // The test input should have a single expression statement with an array literal
@@ -34,7 +34,9 @@ fn test_array_type_inference(input: &str) -> Result<Type, Error> {
             let mut type_checker = TypeChecker::new();
             
             // Infer the type of the expression
-            type_checker.check_expression(expr.as_ref())
+            // Use the publicly available method to infer types
+            type_checker.infer_type(expr.as_ref())
+                .map(|_| ())
         } else {
             Err(Error::from_str("No expression in statement"))
         }
@@ -80,8 +82,8 @@ fn test_mixed_numeric_array_literal() {
     // This should fail because normie and snack are not compatible
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.message.contains("must have the same type"), 
-               "Error message '{}' should mention incompatible types", err.message);
+        assert!(err.to_string().contains("must have the same type"), 
+               "Error message '{}' should mention incompatible types", err.to_string());
     }
 }
 
@@ -107,7 +109,7 @@ fn test_mixed_types_array_literal() {
     // This should fail because int and string are not compatible
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.message.contains("must have the same type"), 
-               "Error message '{}' should mention incompatible types", err.message);
+        assert!(err.to_string().contains("must have the same type"), 
+               "Error message '{}' should mention incompatible types", err.to_string());
     }
 }
