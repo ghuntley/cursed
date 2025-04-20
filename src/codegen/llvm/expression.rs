@@ -18,8 +18,6 @@ use super::variables::VariableHandling;
 use super::if_expression::IfExpressionCompilation;
 use super::type_assertion::InterfaceTypeAssertion;
 use super::interface_type_assertion_errors::TypeAssertionErrorHandler;
-use super::enhanced_type_assertion::EnhancedTypeAssertion;
-use super::type_assertion_chaining::TypeAssertionChaining;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -71,20 +69,13 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // Handle type assertion expressions (value.(Type))
-if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
-        println!("DEBUG: Found type assertion expression: {}.({})", 
-        type_assertion.expression.string(), type_assertion.type_name);
-        
-        // Check if this is part of a type assertion chain
-    if self.is_type_assertion_chain(expr) {
-        let chain = self.extract_type_assertion_chain(expr);
-        println!("DEBUG: Found type assertion chain with {} assertions", chain.len());
-        return self.compile_type_assertion_chain(&chain);
-    }
-    
-    // Use the enhanced type assertion implementation with full runtime checking
-    return self.compile_enhanced_type_assertion(type_assertion);
-}
+        if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
+            println!("DEBUG: Found type assertion expression: {}.({})", 
+                     type_assertion.expression.string(), type_assertion.type_name);
+            
+            // Call our implementation
+            return self.compile_type_assertion(type_assertion);
+        }
         
         // Handle if expressions
         if let Some(if_expr) = any.downcast_ref::<crate::ast::expressions::if_expression::IfExpression>() {
