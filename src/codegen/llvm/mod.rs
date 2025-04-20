@@ -86,8 +86,8 @@ pub use self::interface_type_assertion::ImprovedTypeAssertion;
 pub use self::enhanced_type_assertion::EnhancedTypeAssertion;
 // Type assertion error handling
 pub use self::interface_type_assertion_errors::TypeAssertionErrorHandler;
-// Runtime type assertions with comprehensive error handling
-pub use self::interface_type_assertion_runtime::RuntimeTypeAssertion;
+// Full runtime type checking for type assertions
+pub use self::type_assertion_runtime_check::RuntimeTypeChecker;
 // Range clause compilation trait
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::loop_context::*;
@@ -146,7 +146,7 @@ mod type_assertion; // Interface type assertion and conversion
 mod interface_type_assertion; // Improved interface type assertions with additional runtime information
 mod interface_type_assertion_errors; // Enhanced error handling for interface type assertions
 mod enhanced_type_assertion; // Optimized implementation of interface type assertions
-mod interface_type_assertion_runtime; // Runtime type assertions with comprehensive error handling
+mod type_assertion_runtime_check; // Full runtime type checking for interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

@@ -18,7 +18,7 @@ use super::variables::VariableHandling;
 use super::if_expression::IfExpressionCompilation;
 use super::type_assertion::InterfaceTypeAssertion;
 use super::interface_type_assertion_errors::TypeAssertionErrorHandler;
-use super::interface_type_assertion_runtime::RuntimeTypeAssertion;
+use super::type_assertion_runtime_check::RuntimeTypeChecker;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -70,12 +70,12 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // Handle type assertion expressions (value.(Type))
-if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
-        println!("DEBUG: Found type assertion expression: {}.({})", 
-        type_assertion.expression.string(), type_assertion.type_name);
-        // Use the full runtime type checking with comprehensive error handling
-        return self.compile_runtime_type_assertion(type_assertion);
-}
+        if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
+            println!("DEBUG: Found type assertion expression: {}.({})", 
+                     type_assertion.expression.string(), type_assertion.type_name);
+            // Use the full runtime type checking implementation
+            return self.compile_type_assertion_with_runtime_check(type_assertion);
+        }
         
         // Handle if expressions
         if let Some(if_expr) = any.downcast_ref::<crate::ast::expressions::if_expression::IfExpression>() {
