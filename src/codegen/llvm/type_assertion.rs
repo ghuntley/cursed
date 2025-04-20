@@ -229,6 +229,7 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         Ok(data_ptr.into_pointer_value())
     }
+    
 }
 
 // Helper methods extension

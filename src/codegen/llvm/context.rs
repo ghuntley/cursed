@@ -69,8 +69,7 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Default integer type to use
     pub(crate) default_integer_type: Option<inkwell::types::IntType<'ctx>>,
     // Cache for type IDs to improve performance of type assertions
-    // Type ID cache for enhanced type assertions (to be implemented)
-    pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<std::collections::HashMap<String, u64>>>>,
+    pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
