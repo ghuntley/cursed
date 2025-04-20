@@ -1,253 +1,511 @@
-//! Enhanced error handling for interface type assertions
-//!
-//! This module provides specialized error handling and reporting for
-//! interface type assertions, including runtime type information and
-//! detailed error messages to help diagnose assertion failures.
-
 use inkwell::builder::Builder;
 use inkwell::context::Context;
-use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
-use inkwell::AddressSpace;
 use inkwell::module::Module;
+use inkwell::types::{BasicTypeEnum, StructType};
+use inkwell::values::{BasicValueEnum, PointerValue};
+use inkwell::IntPredicate;
+use inkwell::basic_block::BasicBlock;
+use inkwell::AddressSpace;
 
-use std::rc::Rc;
-
+use crate::ast::expressions::TypeAssertion;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::error::Error;
-use crate::error_enhanced::{CursedError, ErrorKind};
 
-/// Type for handling interface type assertion errors
-pub struct TypeAssertionErrorHandler<'ctx> {
-    context: &'ctx Context,
-    builder: &'ctx Builder<'ctx>,
-    module: &'ctx Module<'ctx>,
+use tracing::{debug, error, info, instrument, span, warn, Level};
+
+/// Trait for implementing interface type assertions in LLVM with proper error propagation
+pub trait TypeAssertionErrorHandler<'ctx> {
+    /// Compile a type assertion expression, returning both the converted value and a success flag
+    /// with proper error propagation
+    fn compile_type_assertion_with_errors(
+        &mut self,
+        type_assertion: &TypeAssertion
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Check if an interface value is of a specific concrete type
+    /// This function propagates errors correctly
+    fn check_instance_of_with_errors(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        target_type_name: &str
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Get the type ID from an interface value's vtable
+    /// This function handles errors properly
+    fn get_interface_type_id_safe(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Extract the data pointer from an interface value with proper error handling
+    fn extract_interface_data_ptr_safe(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>
+    ) -> Result<PointerValue<'ctx>, Error>;
 }
 
-impl<'ctx> TypeAssertionErrorHandler<'ctx> {
-    /// Create a new type assertion error handler
-    pub fn new(
-        context: &'ctx Context,
-        builder: &'ctx Builder<'ctx>,
-        module: &'ctx Module<'ctx>,
-    ) -> Self {
-        Self {
-            context,
-            builder,
-            module,
-        }
+impl<'ctx> TypeAssertionErrorHandler<'ctx> for LlvmCodeGenerator<'ctx> {
+    #[instrument(skip(self), level = "debug")]
+    fn compile_type_assertion_with_errors(
+        &mut self,
+        type_assertion: &TypeAssertion
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        debug!("Compiling type assertion for type {}", type_assertion.type_name);
+        
+        // Get the current function
+        let current_fn = self.current_function()
+            .ok_or_else(|| Error::Compilation("No current function for type assertion".to_string()))?;
+        
+        // Compile the expression being asserted
+        let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
+        debug!("Compiled expression value: {:?}", expr_value);
+        
+        // Create basic blocks for success and failure paths
+        let success_block = self.context().append_basic_block(current_fn, "type_assert_success");
+        let failure_block = self.context().append_basic_block(current_fn, "type_assert_failure");
+        let merge_block = self.context().append_basic_block(current_fn, "type_assert_merge");
+        
+        // Check if the interface value is of the target type
+        let is_instance = self.check_instance_of_with_errors(expr_value, &type_assertion.type_name)?;
+        
+        // Branch based on the type check result
+        self.builder().build_conditional_branch(
+            is_instance.into_int_value(),
+            success_block,
+            failure_block
+        ).map_err(|e| {
+            error!("Failed to build conditional branch: {}", e);
+            Error::Compilation(format!("Failed to build conditional branch: {}", e))
+        })?;
+        
+        // Success path - extract and cast the data pointer
+        self.builder().position_at_end(success_block);
+        let data_ptr = self.extract_interface_data_ptr_safe(expr_value)?;
+        
+        // Create the result structure (value and true flag)
+        let type_id = self.get_type_id(&type_assertion.type_name).map_err(|e| {
+            error!("Failed to get type ID for {}: {}", type_assertion.type_name, e);
+            Error::Compilation(format!("Failed to get type ID for {}: {}", type_assertion.type_name, e))
+        })?;
+        
+        let casted_ptr = self.builder().build_bitcast(
+            data_ptr,
+            self.pointer_type(),
+            "casted_ptr"
+        ).map_err(|e| {
+            error!("Failed to cast data pointer: {}", e);
+            Error::Compilation(format!("Failed to cast data pointer: {}", e))
+        })?;
+        
+        // Pack the result into a tuple structure
+        let true_val = self.context().bool_type().const_int(1, false);
+        let success_result = self.build_tuple(vec![casted_ptr.into(), true_val.into()])?;
+        
+        // Branch to merge block
+        self.builder().build_unconditional_branch(merge_block)
+            .map_err(|e| {
+                error!("Failed to build branch to merge block: {}", e);
+                Error::Compilation(format!("Failed to build branch to merge block: {}", e))
+            })?;
+        
+        // Failure path - return null pointer and false flag
+        self.builder().position_at_end(failure_block);
+        let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
+        let false_val = self.context().bool_type().const_int(0, false);
+        let failure_result = self.build_tuple(vec![null_ptr.into(), false_val.into()])?;
+        
+        // Branch to merge block
+        self.builder().build_unconditional_branch(merge_block)
+            .map_err(|e| {
+                error!("Failed to build branch from failure block: {}", e);
+                Error::Compilation(format!("Failed to build branch from failure block: {}", e))
+            })?;
+        
+        // Merge block - use phi node to select the appropriate result
+        self.builder().position_at_end(merge_block);
+        
+        // Create the result type (tuple of pointer and bool)
+        let result_type = self.tuple_type(vec![self.pointer_type().into(), self.context().bool_type().into()]);
+        
+        let phi = self.builder().build_phi(
+            result_type,
+            "assertion_result"
+        ).map_err(|e| {
+            error!("Failed to build phi node: {}", e);
+            Error::Compilation(format!("Failed to build phi node: {}", e))
+        })?;
+        
+        phi.add_incoming(&[(
+            &success_result,
+            success_block
+        ), (
+            &failure_result,
+            failure_block
+        )]);
+        
+        debug!("Type assertion compiled successfully");
+        // Return the phi result
+        Ok(phi.as_basic_value())
     }
     
-    /// Generate code to log a type assertion error at runtime
-    pub fn generate_error_logging(
-        &self,
-        expected_type: &str,
-        actual_type_id: BasicValueEnum<'ctx>,
-        value_ptr: PointerValue<'ctx>,
-        source_location: Option<(&str, u32)>,
-    ) -> Result<(), Error> {
-        // Create a global string constant for the error message template
-        let error_msg = format!(
-            "Type assertion failed: expected {}, but got %s",
-            expected_type
-        );
+    #[instrument(skip(self, interface_value), level = "debug")]
+    fn check_instance_of_with_errors(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        target_type_name: &str
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        debug!("Checking if value is instance of {}", target_type_name);
         
-        let error_msg_global = self.builder
-            .build_global_string_ptr(&error_msg, "type_assertion_error_msg")
-            .map_err(|e| Error::Compilation(e.to_string()))?;
+        // Get the type ID from the interface value's vtable
+        let actual_type_id = self.get_interface_type_id_safe(interface_value)?;
         
-        // Create string constant for expected type
-        let expected_type_global = self.builder
-            .build_global_string_ptr(expected_type, "expected_type")
-            .map_err(|e| Error::Compilation(e.to_string()))?;
+        // Get the expected type ID for the target type
+        let expected_type_id = self.get_type_id(target_type_name).map_err(|e| {
+            error!("Failed to get type ID for {}: {}", target_type_name, e);
+            Error::Compilation(format!("Failed to get type ID for {}: {}", target_type_name, e))
+        })?;
+        
+        // Compare the type IDs
+        let result = self.builder().build_int_compare(
+            IntPredicate::EQ,
+            actual_type_id.into_int_value(),
+            expected_type_id.into_int_value(),
+            "is_instance_of"
+        ).map_err(|e| {
+            error!("Failed to compare type IDs: {}", e);
+            Error::Compilation(format!("Failed to compare type IDs: {}", e))
+        })?;
+        
+        debug!("Instance check completed");
+        Ok(result.into())
+    }
+    
+    #[instrument(skip(self, interface_value), level = "debug")]
+    fn get_interface_type_id_safe(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        debug!("Getting type ID from interface value");
+        
+        // First, check if the interface value is null
+        let is_null = if interface_value.is_pointer_value() {
+            let ptr = interface_value.into_pointer_value();
+            let null_check = self.builder().build_is_null(ptr, "is_null_check")
+                .map_err(|e| {
+                    error!("Failed to check if interface pointer is null: {}", e);
+                    Error::Compilation(format!("Failed to check if interface pointer is null: {}", e))
+                })?;
             
-        // Find or create external function to log type assertion errors
-        let log_func_type = self.context.void_type().fn_type(
-            &[
-                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // error_msg
-                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // expected_type
-                self.context.i64_type().into(),                                  // actual_type_id
-                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // value_ptr
-                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // source_file
-                self.context.i32_type().into(),                                  // source_line
-            ],
-            false,
-        );
-        
-        let log_func = self.module.add_function(
-            "__cursed_log_type_assertion_error",
-            log_func_type,
-            None,
-        );
-        
-        // Create source location constants
-        let (source_file, source_line) = match source_location {
-            Some((file, line)) => {
-                let file_global = self.builder
-                    .build_global_string_ptr(file, "source_file")
-                    .map_err(|e| Error::Compilation(e.to_string()))?;
-                let line_const = self.context.i32_type().const_int(line as u64, false);
-                (file_global, line_const)
-            },
-            None => {
-                let file_global = self.builder
-                    .build_global_string_ptr("<unknown>", "source_file")
-                    .map_err(|e| Error::Compilation(e.to_string()))?;
-                let line_const = self.context.i32_type().const_int(0, false);
-                (file_global, line_const)
-            },
+            // Create basic blocks for null and non-null paths
+            let current_function = self.current_function()
+                .ok_or_else(|| Error::Compilation("No current function when checking null interface".to_string()))?;
+            
+            let null_block = self.context().append_basic_block(current_function, "null_interface");
+            let non_null_block = self.context().append_basic_block(current_function, "non_null_interface");
+            let continue_block = self.context().append_basic_block(current_function, "continue_interface");
+            
+            // Branch based on null check
+            self.builder().build_conditional_branch(
+                null_check,
+                null_block,
+                non_null_block
+            ).map_err(|e| {
+                error!("Failed to build null check branch: {}", e);
+                Error::Compilation(format!("Failed to build null check branch: {}", e))
+            })?;
+            
+            // Null path - report error
+            self.builder().position_at_end(null_block);
+            
+            // In the null case, we'll return a special type ID that won't match anything
+            let null_type_id = self.context().i64_type().const_int(u64::MAX, false);
+            
+            // Branch to continue block
+            self.builder().build_unconditional_branch(continue_block)
+                .map_err(|e| {
+                    error!("Failed to build branch from null block: {}", e);
+                    Error::Compilation(format!("Failed to build branch from null block: {}", e))
+                })?;
+            
+            // Non-null path
+            self.builder().position_at_end(non_null_block);
+            
+            Some((null_check, null_type_id, null_block, non_null_block, continue_block))
+        } else {
+            None
         };
         
-        // Call the logging function
-        self.builder.build_call(
-            log_func,
-            &[
-                error_msg_global.as_pointer_value().into(),
-                expected_type_global.as_pointer_value().into(),
-                actual_type_id.into(),
-                value_ptr.into(),
-                source_file.as_pointer_value().into(),
-                source_line.into(),
-            ],
-            "log_assertion_error",
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
+        // Interface value is a struct with two fields:
+        // 1. Data pointer
+        // 2. VTable pointer
+        
+        // Extract the vtable pointer
+        let vtable_ptr = if interface_value.is_struct_value() {
+            // Direct interface value - extract vtable pointer field
+            let vtable_field = self.builder().build_extract_value(
+                interface_value.into_struct_value(),
+                1, // Index of vtable pointer
+                "vtable_ptr"
+            ).map_err(|e| {
+                error!("Failed to extract vtable pointer: {}", e);
+                Error::Compilation(format!("Failed to extract vtable pointer: {}", e))
+            })?;
+            
+            // Verify it's a pointer
+            if !vtable_field.is_pointer_value() {
+                error!("Extracted vtable field is not a pointer: {:?}", vtable_field);
+                return Err(Error::Compilation(format!(
+                    "Extracted vtable field is not a pointer: {:?}", vtable_field
+                )));
+            }
+            
+            vtable_field.into_pointer_value()
+        } else if interface_value.is_pointer_value() {
+            // Pointer to interface value - load and extract vtable pointer
+            let loaded = self.builder().build_load(
+                interface_value.get_type(),
+                interface_value.into_pointer_value(),
+                "interface_value"
+            ).map_err(|e| {
+                error!("Failed to load interface value: {}", e);
+                Error::Compilation(format!("Failed to load interface value: {}", e))
+            })?;
+            
+            let vtable_field = self.builder().build_extract_value(
+                loaded.into_struct_value(),
+                1, // Index of vtable pointer
+                "vtable_ptr"
+            ).map_err(|e| {
+                error!("Failed to extract vtable pointer from loaded value: {}", e);
+                Error::Compilation(format!("Failed to extract vtable pointer from loaded value: {}", e))
+            })?;
+            
+            // Verify it's a pointer
+            if !vtable_field.is_pointer_value() {
+                error!("Extracted vtable field from loaded interface is not a pointer: {:?}", vtable_field);
+                return Err(Error::Compilation(format!(
+                    "Extracted vtable field from loaded interface is not a pointer: {:?}", vtable_field
+                )));
+            }
+            
+            vtable_field.into_pointer_value()
+        } else {
+            error!("Invalid interface value type: {:?}", interface_value);
+            return Err(Error::Compilation(format!(
+                "Expected interface value or pointer, got {:?}",
+                interface_value
+            )));
+        };
+        
+        // Check if vtable pointer is null
+        let vtable_null_check = self.builder().build_is_null(vtable_ptr, "vtable_null_check")
+            .map_err(|e| {
+                error!("Failed to check if vtable pointer is null: {}", e);
+                Error::Compilation(format!("Failed to check if vtable pointer is null: {}", e))
+            })?;
+        
+        // Create basic blocks for null and non-null vtable paths
+        let current_function = self.current_function()
+            .ok_or_else(|| Error::Compilation("No current function when checking null vtable".to_string()))?;
+        
+        let vtable_null_block = self.context().append_basic_block(current_function, "null_vtable");
+        let vtable_non_null_block = self.context().append_basic_block(current_function, "non_null_vtable");
+        let vtable_continue_block = self.context().append_basic_block(current_function, "continue_vtable");
+        
+        // Branch based on vtable null check
+        self.builder().build_conditional_branch(
+            vtable_null_check,
+            vtable_null_block,
+            vtable_non_null_block
+        ).map_err(|e| {
+            error!("Failed to build vtable null check branch: {}", e);
+            Error::Compilation(format!("Failed to build vtable null check branch: {}", e))
+        })?;
+        
+        // Null vtable path - report error
+        self.builder().position_at_end(vtable_null_block);
+        
+        // In the null vtable case, we'll return a special type ID that won't match anything
+        let null_vtable_type_id = self.context().i64_type().const_int(u64::MAX - 1, false);
+        
+        // Branch to continue block
+        self.builder().build_unconditional_branch(vtable_continue_block)
+            .map_err(|e| {
+                error!("Failed to build branch from null vtable block: {}", e);
+                Error::Compilation(format!("Failed to build branch from null vtable block: {}", e))
+            })?;
+        
+        // Non-null vtable path
+        self.builder().position_at_end(vtable_non_null_block);
+        
+        // Type ID is the first field in the vtable
+        let type_id_ptr = self.builder().build_struct_gep(
+            // Create and use a dummy struct type since we can't get the pointee type directly
+            self.context.struct_type(&[], false),
+            vtable_ptr,
+            0, // Index of type ID pointer
+            "type_id_ptr"
+        ).map_err(|e| {
+            error!("Failed to get type ID pointer: {}", e);
+            Error::Compilation(format!("Failed to get type ID pointer: {}", e))
+        })?;
+        
+        // Load the type ID
+        let type_id = self.builder().build_load(
+            self.context().i64_type(),
+            type_id_ptr,
+            "type_id"
+        ).map_err(|e| {
+            error!("Failed to load type ID: {}", e);
+            Error::Compilation(format!("Failed to load type ID: {}", e))
+        })?;
+        
+        // Branch to continue block
+        self.builder().build_unconditional_branch(vtable_continue_block)
+            .map_err(|e| {
+                error!("Failed to build branch to vtable continue block: {}", e);
+                Error::Compilation(format!("Failed to build branch to vtable continue block: {}", e))
+            })?;
+        
+        // Continue block - use phi node to select the appropriate type ID
+        self.builder().position_at_end(vtable_continue_block);
+        
+        let vtable_phi = self.builder().build_phi(
+            self.context().i64_type(),
+            "vtable_check_result"
+        ).map_err(|e| {
+            error!("Failed to build vtable phi node: {}", e);
+            Error::Compilation(format!("Failed to build vtable phi node: {}", e))
+        })?;
+        
+        vtable_phi.add_incoming(&[(
+            &null_vtable_type_id,
+            vtable_null_block
+        ), (
+            &type_id,
+            vtable_non_null_block
+        )]);
+        
+        let vtable_result = vtable_phi.as_basic_value();
+        
+        // If we have a null interface check, we need to merge those results too
+        if let Some((_, null_type_id, null_block, _, continue_block)) = is_null {
+            self.builder().position_at_end(continue_block);
+            
+            let final_phi = self.builder().build_phi(
+                self.context().i64_type(),
+                "interface_check_result"
+            ).map_err(|e| {
+                error!("Failed to build interface phi node: {}", e);
+                Error::Compilation(format!("Failed to build interface phi node: {}", e))
+            })?;
+            
+            final_phi.add_incoming(&[(
+                &null_type_id,
+                null_block
+            ), (
+                &vtable_result,
+                vtable_continue_block
+            )]);
+            
+            debug!("Type ID retrieved successfully with null checks");
+            return Ok(final_phi.as_basic_value());
+        }
+        
+        debug!("Type ID retrieved successfully");
+        Ok(vtable_result)
+    }
+    
+    #[instrument(skip(self, interface_value), level = "debug")]
+    fn extract_interface_data_ptr_safe(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>
+    ) -> Result<PointerValue<'ctx>, Error> {
+        debug!("Extracting data pointer from interface value");
+        
+        // Extract the data pointer (first field of interface value)
+        let data_ptr = if interface_value.is_struct_value() {
+            // Direct interface value
+            let data_field = self.builder().build_extract_value(
+                interface_value.into_struct_value(),
+                0, // Index of data pointer
+                "data_ptr"
+            ).map_err(|e| {
+                error!("Failed to extract data pointer: {}", e);
+                Error::Compilation(format!("Failed to extract data pointer: {}", e))
+            })?;
+            
+            // Verify it's a pointer
+            if !data_field.is_pointer_value() {
+                error!("Extracted data field is not a pointer: {:?}", data_field);
+                return Err(Error::Compilation(format!(
+                    "Extracted data field is not a pointer: {:?}", data_field
+                )));
+            }
+            
+            data_field.into_pointer_value()
+        } else if interface_value.is_pointer_value() {
+            // Pointer to interface value
+            let loaded = self.builder().build_load(
+                interface_value.get_type(),
+                interface_value.into_pointer_value(),
+                "interface_value"
+            ).map_err(|e| {
+                error!("Failed to load interface value: {}", e);
+                Error::Compilation(format!("Failed to load interface value: {}", e))
+            })?;
+            
+            let data_field = self.builder().build_extract_value(
+                loaded.into_struct_value(),
+                0, // Index of data pointer
+                "data_ptr"
+            ).map_err(|e| {
+                error!("Failed to extract data pointer from loaded value: {}", e);
+                Error::Compilation(format!("Failed to extract data pointer from loaded value: {}", e))
+            })?;
+            
+            // Verify it's a pointer
+            if !data_field.is_pointer_value() {
+                error!("Extracted data field from loaded interface is not a pointer: {:?}", data_field);
+                return Err(Error::Compilation(format!(
+                    "Extracted data field from loaded interface is not a pointer: {:?}", data_field
+                )));
+            }
+            
+            data_field.into_pointer_value()
+        } else {
+            error!("Invalid interface value type for data extraction: {:?}", interface_value);
+            return Err(Error::Compilation(format!(
+                "Expected interface value or pointer for data extraction, got {:?}",
+                interface_value
+            )));
+        };
+        
+        debug!("Data pointer extracted successfully");
+        Ok(data_ptr)
+    }
+}
+
+// Helper methods extension
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    // Print debug information about a type assertion operation
+    pub fn debug_type_assertion(
+        &self,
+        interface_value: BasicValueEnum<'ctx>,
+        target_type_name: &str,
+        result: BasicValueEnum<'ctx>
+    ) -> Result<(), Error> {
+        // When running with CURSED_DEBUG=1, this would print detailed info
+        // about the type assertion for debugging purposes
+        debug!(
+            "Type assertion: checking if value {:?} is of type {}", 
+            interface_value, 
+            target_type_name
+        );
+        
+        debug!("Type assertion result: {:?}", result);
         
         Ok(())
     }
-    
-    /// Generate code to create and return a runtime error for type assertion failure
-    pub fn generate_error_return(
-        &self,
-        expected_type: &str,
-        actual_type_id: BasicValueEnum<'ctx>,
-        source_location: Option<(&str, u32)>,
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Create error message with type information
-        let error_msg = format!("Type assertion error: expected {}", expected_type);
-        
-        // Create global string constant for the error message
-        let error_global = self.builder
-            .build_global_string_ptr(&error_msg, "type_error_msg")
-            .map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Find or create function to create a type assertion error
-        let error_func_type = self.context.i8_type().ptr_type(AddressSpace::default()).fn_type(
-            &[
-                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // error_msg
-                self.context.i64_type().into(),                                  // actual_type_id
-                self.context.i8_type().ptr_type(AddressSpace::default()).into(), // source_file
-                self.context.i32_type().into(),                                  // source_line
-            ],
-            false,
-        );
-        
-        let error_func = self.module.add_function(
-            "__cursed_create_type_assertion_error",
-            error_func_type,
-            None,
-        );
-        
-        // Create source location constants
-        let (source_file, source_line) = match source_location {
-            Some((file, line)) => {
-                let file_global = self.builder
-                    .build_global_string_ptr(file, "source_file")
-                    .map_err(|e| Error::Compilation(e.to_string()))?;
-                let line_const = self.context.i32_type().const_int(line as u64, false);
-                (file_global, line_const)
-            },
-            None => {
-                let file_global = self.builder
-                    .build_global_string_ptr("<unknown>", "source_file")
-                    .map_err(|e| Error::Compilation(e.to_string()))?;
-                let line_const = self.context.i32_type().const_int(0, false);
-                (file_global, line_const)
-            },
-        };
-        
-        // Call the error creation function
-        let error_result = self.builder.build_call(
-            error_func,
-            &[
-                error_global.as_pointer_value().into(),
-                actual_type_id.into(),
-                source_file.as_pointer_value().into(),
-                source_line.into(),
-            ],
-            "type_assertion_error",
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Return the error pointer
-        Ok(error_result.try_as_basic_value().left().unwrap())
-    }
-}
-
-/// Runtime handler for interface type assertion errors
-#[no_mangle]
-pub extern "C" fn __cursed_log_type_assertion_error(
-    error_msg: *const i8,
-    expected_type: *const i8,
-    actual_type_id: u64,
-    value_ptr: *const u8,
-    source_file: *const i8,
-    source_line: u32,
-) {
-    use std::ffi::CStr;
-    
-    // Convert C strings to Rust strings
-    let error_msg = unsafe {
-        CStr::from_ptr(error_msg).to_string_lossy().into_owned()
-    };
-    let expected_type = unsafe {
-        CStr::from_ptr(expected_type).to_string_lossy().into_owned()
-    };
-    let source_file = unsafe {
-        CStr::from_ptr(source_file).to_string_lossy().into_owned()
-    };
-    
-    // Build the error message with context
-    let message = format!(
-        "{}. Actual type ID: {:x}, Expected: {}",
-        error_msg, actual_type_id, expected_type
-    );
-    
-    // Log the error with source location
-    tracing::error!(
-        error = %message,
-        source_file = %source_file,
-        source_line = source_line,
-        value_address = %format!("{:p}", value_ptr),
-        "Type assertion failed"
-    );
-}
-
-/// Create a runtime error for type assertion failure
-#[no_mangle]
-pub extern "C" fn __cursed_create_type_assertion_error(
-    error_msg: *const i8,
-    actual_type_id: u64,
-    source_file: *const i8,
-    source_line: u32,
-) -> *mut u8 {
-    use std::ffi::CStr;
-    
-    // Convert C strings to Rust strings
-    let error_msg = unsafe {
-        CStr::from_ptr(error_msg).to_string_lossy().into_owned()
-    };
-    let source_file = unsafe {
-        CStr::from_ptr(source_file).to_string_lossy().into_owned()
-    };
-    
-    // Create a error with context information
-    let error = CursedError::new(
-        ErrorKind::TypeAssertion,
-        &format!("{} (actual type ID: {:x})", error_msg, actual_type_id),
-    )
-    .with_context("source_file", source_file)
-    .with_context("source_line", source_line.to_string())
-    .with_context("actual_type_id", format!("{:x}", actual_type_id));
-    
-    // Box the error and leak the box so it can be returned to C
-    // This memory will need to be freed by the runtime
-    let error_box = Box::new(Error::TypeAssertion(error));
-    Box::into_raw(error_box) as *mut u8
 }

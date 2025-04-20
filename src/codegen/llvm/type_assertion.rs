@@ -233,8 +233,9 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
 
 // Helper methods extension
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    // Make these methods public so they can be used by the error propagation implementation
     // Get a type ID for a given type name
-    fn get_type_id(&mut self, type_name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn get_type_id(&mut self, type_name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
         // For now, use a hash of the type name as a simple approximation
         // In a real implementation, this would use proper runtime type information
         let hash = self.hash_type_name(type_name);
@@ -254,7 +255,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Build a tuple structure (for returning value and success flag)
-    fn build_tuple(&mut self, values: Vec<BasicValueEnum<'ctx>>) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn build_tuple(&mut self, values: Vec<BasicValueEnum<'ctx>>) -> Result<BasicValueEnum<'ctx>, Error> {
         let ctx = self.context();
         let tuple_type = ctx.struct_type(
             &values.iter().map(|v| v.get_type()).collect::<Vec<_>>(),
@@ -272,12 +273,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Get tuple type from a list of element types
-    fn tuple_type(&self, element_types: Vec<BasicTypeEnum<'ctx>>) -> StructType<'ctx> {
+    pub fn tuple_type(&self, element_types: Vec<BasicTypeEnum<'ctx>>) -> StructType<'ctx> {
         self.context().struct_type(&element_types, false)
     }
     
     // Helper for getting pointer type with default address space
-    fn pointer_type(&self) -> inkwell::types::PointerType<'ctx> {
+    pub fn pointer_type(&self) -> inkwell::types::PointerType<'ctx> {
         self.context().i8_type().ptr_type(AddressSpace::default())
     }
 }

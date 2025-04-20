@@ -17,6 +17,7 @@ use super::function_monomorphization::FunctionMonomorphization;
 use super::variables::VariableHandling;
 use super::if_expression::IfExpressionCompilation;
 use super::type_assertion::InterfaceTypeAssertion;
+use super::interface_type_assertion_errors::TypeAssertionErrorHandler;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -71,7 +72,8 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
             println!("DEBUG: Found type assertion expression: {}.({})", 
                      type_assertion.expression.string(), type_assertion.type_name);
-            return self.compile_type_assertion(type_assertion);
+            // Use the improved error propagation implementation
+            return self.compile_type_assertion_with_errors(type_assertion);
         }
         
         // Handle if expressions

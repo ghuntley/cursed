@@ -1,8 +1,10 @@
 use crate::ast::traits::{Expression, Node};
 use std::any::Any;
+use std::fmt;
 
 /// Represents a type assertion expression of the form `expr.(Type)`
 /// Used to convert an interface value to a concrete type
+// Manually implement Debug since dyn Expression doesn't implement Debug
 pub struct TypeAssertion {
     pub token: String,       // The token at which this expression starts
     pub expression: Box<dyn Expression>,  // The expression being asserted (interface value)
@@ -16,6 +18,14 @@ impl Node for TypeAssertion {
 
     fn string(&self) -> String {
         format!("{}.({})", self.expression.string(), self.type_name)
+    }
+}
+
+// Manual implementation of Debug for TypeAssertion
+impl fmt::Debug for TypeAssertion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "TypeAssertion {{ token: {:?}, expression: <dyn Expression>, type_name: {:?} }}", 
+               self.token, self.type_name)
     }
 }
 
