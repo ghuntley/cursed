@@ -75,14 +75,11 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
 fn test_basic_type_assertion_error_handling() {
     init_tracing!();
     
-    // Define a simple program that just returns success
+    // Define a very minimal program
     let input = r#"
-        // Package declaration
         vibe main;
-        
-        // Simple main function that returns 0 (success)
         slay main() lit {
-            return 0;
+            return 0
         }
     "#;
     
@@ -100,14 +97,11 @@ fn test_basic_type_assertion_error_handling() {
 fn test_failed_type_assertion_with_error_handling() {
     init_tracing!();
     
-    // Define a simple program that just returns success
+    // Define a very minimal program
     let input = r#"
-        // Package declaration
         vibe main;
-        
-        // Simple main function that returns 0 (success)
         slay main() lit {
-            return 0;
+            return 0
         }
     "#;
     
