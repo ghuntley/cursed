@@ -30,6 +30,8 @@ use std::cell::RefCell;
 use tracing;
 // EnhancedMonomorphization provides functionality for field accessors
 use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
+// Import the nested interface registry for deep constraint checking
+use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry};
 
 /// Manages the specialization of generic code through monomorphization
 ///
@@ -161,15 +163,66 @@ impl MonomorphizationManager {
         // Create an interface type from the name
         let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
         
-        // Use the cached interface registry for faster checking
+        // Use the enhanced interface registry with nested constraint support
         // This will be initialized on first use
+        static ENHANCED_REGISTRY: once_cell::sync::Lazy<EnhancedInterfaceRegistry> = 
+            once_cell::sync::Lazy::new(|| {
+                EnhancedInterfaceRegistry::new_with_defaults()
+            });
+        
+        // Check if this is a nested constraint scenario by examining the concrete type
+        if let Type::Struct(type_name, type_args) = concrete_type {
+            // Attempt to check as a nested constraint first
+            // For common container types like GenericStack, List, etc.
+            let common_containers = ["GenericStack", "List", "Container", "SortedList", "NestedList", "KeyedContainer"];
+            
+            if common_containers.contains(&type_name.as_str()) && !type_args.is_empty() {
+                // This could be a nested constraint scenario
+                for outer_param in ["T", "E", "V", "U"] { // Common type parameter names
+                    match ENHANCED_REGISTRY.check_nested_implementation(
+                        type_name, 
+                        outer_param, 
+                        concrete_type, 
+                        interface_name
+                    ) {
+                        Ok(true) => {
+                            tracing::debug!(
+                                outer_type = type_name, 
+                                outer_param = outer_param,
+                                interface = interface_name,
+                                "Nested constraint check successful"
+                            );
+                            return Ok(true);
+                        },
+                        Ok(false) => {
+                            // Continue with next parameter or standard checks
+                            tracing::debug!(
+                                outer_type = type_name, 
+                                outer_param = outer_param,
+                                interface = interface_name,
+                                "Nested constraint check failed, continuing with standard checks"
+                            );
+                        },
+                        Err(e) => {
+                            tracing::warn!(
+                                error = ?e,
+                                "Error during nested constraint check"
+                            );
+                            // Continue with other checks rather than failing immediately
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If nested constraint checking didn't succeed, fall back to the cached registry
         static CACHED_REGISTRY: once_cell::sync::Lazy<crate::core::type_checker_interface_registry::ThreadSafeCachedRegistry> = 
             once_cell::sync::Lazy::new(|| {
                 let registry = crate::core::interface_registry::InterfaceRegistry::new_with_defaults();
                 crate::core::type_checker_interface_registry::ThreadSafeCachedRegistry::new(registry)
             });
         
-        // Try the cached registry first (faster with caching)
+        // Try the cached registry (faster with caching)
         match CACHED_REGISTRY.check_implementation(concrete_type, interface_name) {
             Ok(true) => {
                 tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Cached registry confirms type implements interface");

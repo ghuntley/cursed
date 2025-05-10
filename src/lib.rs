@@ -65,6 +65,9 @@ pub mod symbol;
 pub use core::interface_registry_cache;
 pub use core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
 
+// Re-export nested interface registry
+pub use core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
+
 // Re-export essential types
 pub use core::symbol_table::Symbol;
 pub use core::symbol_table::SymbolScope;
