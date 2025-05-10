@@ -185,17 +185,85 @@ impl<'ctx> InterfaceImplementation<'ctx> for LlvmCodeGenerator<'ctx> {
         interface_value: PointerValue<'ctx>,
         target_type: &CursedType,
     ) -> Result<PointerValue<'ctx>, Error> {
+        tracing::debug!("Compiling interface type assertion to {:?}", target_type);
+        
         // Extract the target type name
         let type_name = match target_type {
             CursedType::Struct(name, _) => name,
             _ => return Err(Error::from_str("Type assertion target must be a struct type")),
         };
         
+        // Create function blocks for control flow
+        let current_function = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+        let success_block = self.context.append_basic_block(current_function, "type_assert_success");
+        let failure_block = self.context.append_basic_block(current_function, "type_assert_failure");
+        let end_block = self.context.append_basic_block(current_function, "type_assert_end");
+        
+        // First check if the interface value is null
+        let is_null = self.builder.build_is_null(interface_value, "is_interface_null").unwrap();
+        
+        // Create a descriptive error message for null interface
+        let null_interface_msg = self.create_string_constant(
+            &format!("Runtime error: Cannot perform type assertion on null interface value of type {}", type_name)
+        )?;
+        
+        // Handle null interface case
+        let null_check_block = self.context.append_basic_block(current_function, "null_check");
+        self.builder.build_conditional_branch(is_null, failure_block, null_check_block).unwrap();
+        
+        // Continue with type checking if interface is not null
+        self.builder.position_at_end(null_check_block);
+        
         // Check if the interface value is actually of this type
         let is_instance_result = self.check_instance_of(interface_value, type_name)?;
         
-        // TODO: In a more complete implementation, we'd generate runtime checks here
-        // and handle type errors properly, but for now we'll just assume the assertion is valid
+        // Create error message for type mismatch
+        let type_error_msg = self.create_string_constant(
+            &format!("Runtime error: Interface value is not of type {}", type_name)
+        )?;
+        
+        // Branch based on the type check result
+        self.builder.build_conditional_branch(
+            is_instance_result.into_int_value(),
+            success_block,
+            failure_block
+        ).unwrap();
+        
+        // Failure block - log detailed error message and return null
+        self.builder.position_at_end(failure_block);
+        
+        // Log the error - add a call to a runtime logging function if available
+        if let Some(log_fn) = self.module().get_function("runtime_log_error") {
+            // Determine which error message to use based on which block we came from
+            let phi = self.builder.build_phi(
+                self.context.i8_type().ptr_type(AddressSpace::default()),
+                "error_msg"
+            ).unwrap();
+            
+            // Add incoming values from each source block
+            let entry_block = self.builder.get_insert_block().unwrap().get_previous_basic_block().unwrap();
+            let null_check_block = self.builder.get_insert_block().unwrap().get_previous_basic_block().unwrap();
+            
+            phi.add_incoming(&[(&null_interface_msg, entry_block), (&type_error_msg, null_check_block)]);
+            
+            let msg_ptr = phi.as_basic_value().into_pointer_value();
+            self.builder.build_call(
+                log_fn,
+                &[msg_ptr.into()],
+                "log_call"
+            ).unwrap();
+        }
+        
+        // Return null pointer for the target type
+        let null_ptr = self.context.i8_type()
+            .ptr_type(AddressSpace::default())
+            .const_null();
+            
+        // Jump to end block
+        self.builder.build_unconditional_branch(end_block).unwrap();
+        
+        // Success block - extract and cast the data pointer
+        self.builder.position_at_end(success_block);
         
         // Load the data pointer from the interface value (first field)
         let data_ptr_ptr = unsafe {
@@ -221,18 +289,15 @@ impl<'ctx> InterfaceImplementation<'ctx> for LlvmCodeGenerator<'ctx> {
             
         let data_ptr = data_ptr.into_pointer_value();
         
-        // Cast to the target type
-        let target_llvm_type = match target_type {
-            CursedType::Struct(name, _) => {
-                // In a real implementation, we'd look up the struct type in a registry
-                // For now, we'll just create a dummy struct type for demonstration
-                self.context.struct_type(&[], false)
-            },
-            _ => return Err(Error::from_str("Target type for assertion must be a struct")),
-        };
+        // Find or create target LLVM type - create a basic one if not found
+        let target_llvm_type = self.context.struct_type(&[], false);
+        
+        // In a full implementation, we'd look up the struct type in the registry
+        tracing::debug!("Creating struct type for target type: {}", type_name);
         
         let target_ptr_type = target_llvm_type.ptr_type(AddressSpace::default());
         
+        // Cast the data pointer to the target type
         let casted_value = self.builder
             .build_bitcast(
                 data_ptr,
@@ -241,7 +306,52 @@ impl<'ctx> InterfaceImplementation<'ctx> for LlvmCodeGenerator<'ctx> {
             )
             .expect("Failed to cast value")
             .into_pointer_value();
+            
+        // Jump to end block
+        self.builder.build_unconditional_branch(end_block).unwrap();
         
-        Ok(casted_value)
+        // End block - use phi node to select between success and failure results
+        self.builder.position_at_end(end_block);
+        
+        // Create PHI node to select the appropriate result based on the path taken
+        let result_phi = self.builder.build_phi(
+            self.context.i8_type().ptr_type(AddressSpace::default()),
+            "type_assert_result"
+        ).unwrap();
+        
+        // Add the null value from the failure block
+        let failure_block_val = self.builder.get_insert_block().unwrap().get_previous_basic_block().unwrap();
+        result_phi.add_incoming(&[(&null_ptr, failure_block_val)]);
+        
+        // Add the casted value from the success block
+        let success_block_val = failure_block_val.get_previous_basic_block().unwrap();
+        
+        // Cast to generic pointer for phi node compatibility
+        let casted_generic = self.builder
+            .build_bitcast(
+                casted_value,
+                self.context.i8_type().ptr_type(AddressSpace::default()),
+                "casted_generic"
+            )
+            .expect("Failed to cast to generic pointer")
+            .into_pointer_value();
+            
+        result_phi.add_incoming(&[(&casted_generic, success_block_val)]);
+        
+        // Get the result as a pointer value
+        let result_ptr = result_phi.as_basic_value().into_pointer_value();
+        
+        // Cast back to the target type
+        let final_result = self.builder
+            .build_bitcast(
+                result_ptr,
+                target_ptr_type,
+                "final_type_assert_result"
+            )
+            .expect("Failed to cast result to target type")
+            .into_pointer_value();
+            
+        tracing::debug!("Completed interface type assertion");
+        Ok(final_result)
     }
 }
