@@ -62,24 +62,24 @@ pub mod stdlib_test;
 pub mod symbol;
 
 // Re-export cache related modules
-pub use core::interface_registry_cache;
-pub use core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
+pub use crate::core::interface_registry_cache;
+pub use crate::core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
 
 // Re-export nested interface registry
-pub use core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
+pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
 
 // Re-export field accessor implementations
-pub use codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
+pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 
 // Re-export essential types
-pub use core::symbol_table::Symbol;
-pub use core::symbol_table::SymbolScope;
-pub use core::symbol_table::SymbolTable;
-pub use core::CompiledFunction;
+pub use crate::core::symbol_table::Symbol;
+pub use crate::core::symbol_table::SymbolScope;
+pub use crate::core::symbol_table::SymbolTable;
+pub use crate::core::CompiledFunction;
 
 // Re-export specific AST types for convenience
-pub use ast::base::Program;
-pub use ast::traits::{Expression, Node, Statement};
+pub use crate::ast::base::Program;
+pub use crate::ast::traits::{Expression, Node, Statement};
 
 // Foreign function interface for JIT execution
 use crate::object::Object;
