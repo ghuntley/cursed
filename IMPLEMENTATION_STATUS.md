@@ -112,7 +112,8 @@ The codebase contains numerous ignored tests that provide insight into implement
 - Recent progress:
   - ✅ Fixed module reference extraction with a new `get_module_ref()` helper method
   - ✅ Fixed unwrap usage on LLVM types (ArrayType and StructType) with proper `try_into_*_type()` patterns
-  - ✅ Added clone_box implementation for RangeClause
+  - ✅ Added proper clone_box implementation for RangeClause with recursive expression cloning
+  - ❌ Fixed semicolon and LLVM API issues in the enhanced range clause implementation (in progress)
 - Still need to address compilation issues:
   - Need to fix pointer element type access (LLVM API has changed)
   - Need to add clone_box implementation for remaining Expression types

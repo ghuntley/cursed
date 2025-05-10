@@ -791,10 +791,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // For a proper implementation, we would need to copy the struct to a local variable
             // and then access its fields. For now, we'll use a runtime helper function.
             
-            let module = match &self.module {
-                Some(module) => module,
-                None => return Err(Error::Compilation("Module not available".to_string()))
-            };
+            let module = self.get_module_ref()?
             
             // Use our runtime container_get_element function
             let fn_name = "container_get_element";
