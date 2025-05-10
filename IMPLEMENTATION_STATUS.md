@@ -96,12 +96,18 @@ The codebase contains numerous ignored tests that provide insight into implement
 - Implemented incremental collection to reduce GC pauses
 - Fixed tests in `tests/gc_circular_reference_test.rs` to ensure proper memory cleanup
 
-### Container and Range Support (✅ IMPLEMENTED)
-- Range clause implementation has been fixed with proper type checking and error handling
-- Successfully integrated the enhanced range clause implementation in `range_clause_fixed.rs`
-- Added missing trait support for cloning dynamic expressions
-- Fixed various LLVM API usage issues and compiler errors
-- All code now properly compiles and handles interface correctly
+### Container and Range Support (🔄 IN PROGRESS)
+- Range clause implementation has been significantly enhanced with improved container iteration support in `range_clause_fixed.rs`
+- Enhanced implementation includes:
+  - Improved container length detection for arrays, structs, and pointers
+  - Better element type inference from container types including generic type parsing
+  - Proper element access for various container types
+  - Handling for struct-based containers with data pointers
+- Still need to address compilation issues:
+  - Need to fix pointer element type access (LLVM API changes)
+  - Need to fix module reference extraction
+  - Need to update Type enum references
+  - Need to add clone_box implementation for Expression types
 - Tests in `tests/jit_map_test.rs` - map support not fully implemented
 
 ### LLVM Codegen (High Priority)
