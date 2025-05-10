@@ -560,7 +560,9 @@ impl MonomorphizationManager {
         )?;
         
         // Generate field accessors for the struct (getters and setters)
-        // This functionality is integrated from enhanced_monomorphization.rs
+        // This functionality is integrated from the EnhancedMonomorphization trait
+        // which has a more comprehensive implementation for field accessors
+        use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
         code_gen.generate_field_accessors(
             &specialized_struct,
             &specialized_name,
