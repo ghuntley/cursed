@@ -34,15 +34,167 @@ impl<'ctx> StructMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         specialized_name: &str,
         type_args: &[Type],
     ) -> Result<StructType<'ctx>, Error> {
-        // Create a specialized struct type with the given type arguments
+        // Create an opaque struct type initially
         let struct_type = self.context().opaque_struct_type(specialized_name);
         
-        // For this simplified implementation, we'll just create a struct with basic fields
-        // In a real implementation, we would substitute type parameters with concrete types
+        // Build a map between type parameter names and concrete types
+        let mut type_parameter_map = std::collections::HashMap::new();
         
-        println!("Generating specialized struct: {} with {} type args", 
-                specialized_name, type_args.len());
-
+        // Ensure we have the right number of type arguments
+        if generic_struct.type_parameters.len() != type_args.len() {
+            return Err(Error::new(
+                "GNRC-001",
+                format!(
+                    "Type argument count mismatch for {}: expected {}, got {}",
+                    generic_struct.name.value,
+                    generic_struct.type_parameters.len(),
+                    type_args.len()
+                ),
+                None,
+            ));
+        }
+        
+        // Map each type parameter to its concrete type
+        for (i, param) in generic_struct.type_parameters.iter().enumerate() {
+            type_parameter_map.insert(param.value.clone(), type_args[i].clone());
+        }
+        
+        // Create a list of field types by substituting type parameters
+        let mut field_types = Vec::with_capacity(generic_struct.fields.len());
+        let mut traceable_fields = Vec::new();
+        
+        // For each field in the generic struct
+        for (i, field) in generic_struct.fields.iter().enumerate() {
+            let field_type_name = field.type_name.value.clone();
+            
+            // Check if this field's type is a type parameter that needs substitution
+            let concrete_type = if let Some(concrete_type) = type_parameter_map.get(&field_type_name) {
+                // This field has a generic type parameter that needs to be substituted
+                concrete_type.clone()
+            } else {
+                // This field has a concrete type
+                // Convert to our Type enum format
+                match field_type_name.as_str() {
+                    "normie" => Type::Normie,
+                    "thicc" => Type::Thicc,
+                    "snack" => Type::Snack,
+                    "meal" => Type::Meal,
+                    "tea" => Type::Tea,
+                    "lit" => Type::Lit,
+                    "byte" => Type::Byte,
+                    "rune" => Type::Rune,
+                    _ => Type::Struct(field_type_name, Vec::new()), // Non-generic struct type
+                }
+            };
+            
+            // Convert our Type enum to LLVM type
+            let llvm_field_type = match concrete_type {
+                Type::Normie => self.context().i32_type().into(),
+                Type::Thicc => self.context().i64_type().into(),
+                Type::Snack => self.context().f32_type().into(),
+                Type::Meal => self.context().f64_type().into(),
+                Type::Lit => self.context().bool_type().into(),
+                Type::Tea => self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).into(),
+                Type::Byte => self.context().i8_type().into(),
+                Type::Rune => self.context().i32_type().into(),
+                Type::Struct(struct_name, nested_type_args) => {
+                    // Handle nested generic struct types if needed
+                    if nested_type_args.is_empty() {
+                        // Non-generic struct reference
+                        if let Some(nested_struct_type) = self.get_struct_type(&self.current_package_name, &struct_name) {
+                            nested_struct_type.ptr_type(inkwell::AddressSpace::default()).into()
+                        } else {
+                            return Err(Error::new(
+                                "GNRC-002",
+                                format!("Unknown struct type: {}", struct_name),
+                                None,
+                            ));
+                        }
+                    } else {
+                        // Nested generic struct that needs specialization
+                        // First, find the generic struct definition
+                        if let Some(generic_nested_struct) = self.get_generic_struct_info(&struct_name) {
+                            // Recursively specialize the nested struct
+                            let specialized_nested_name = self.mono_manager
+                                .get_specialized_function_name(&struct_name, &nested_type_args.iter().map(|b| (**b).clone()).collect::<Vec<_>>())
+                                .ok_or_else(|| {
+                                    Error::new(
+                                        "GNRC-003",
+                                        format!(
+                                            "Failed to generate specialized name for {} with {:?}",
+                                            struct_name, nested_type_args
+                                        ),
+                                        None,
+                                    )
+                                })?;
+                            
+                            // Check if we've already created this specialized struct
+                            let nested_struct_type = if let Some(existing) = 
+                                self.get_struct_type(&self.current_package_name, &specialized_nested_name) {
+                                existing
+                            } else {
+                                // Generate the specialized struct recursively
+                                let nested_type_args_vec = nested_type_args.iter().map(|b| (**b).clone()).collect::<Vec<_>>();
+                                self.generate_specialized_struct(
+                                    &generic_nested_struct,
+                                    &specialized_nested_name,
+                                    &nested_type_args_vec,
+                                )?
+                            };
+                            
+                            nested_struct_type.ptr_type(inkwell::AddressSpace::default()).into()
+                        } else {
+                            return Err(Error::new(
+                                "GNRC-004",
+                                format!("Unknown generic struct type: {}", struct_name),
+                                None,
+                            ));
+                        }
+                    }
+                },
+                Type::Named(name) => {
+                    // Handle named type - look for a struct with this name
+                    if let Some(nested_struct_type) = self.get_struct_type(&self.current_package_name, &name) {
+                        nested_struct_type.ptr_type(inkwell::AddressSpace::default()).into()
+                    } else {
+                        // For named types not found, default to a pointer to an opaque type
+                        return Err(Error::new(
+                            "GNRC-005",
+                            format!("Unknown named type: {}", name),
+                            None,
+                        ));
+                    }
+                },
+                _ => return Err(Error::new(
+                    "GNRC-006",
+                    format!("Unsupported field type: {:?}", concrete_type),
+                    None,
+                )),
+            };
+            
+            field_types.push(llvm_field_type);
+            
+            // Track which fields need GC tracing (pointers, reference types)
+            match concrete_type {
+                Type::Tea | Type::Struct(_, _) => {
+                    traceable_fields.push((i, field.name.value.clone()));
+                },
+                _ => {}, // Primitive types don't need GC tracing
+            }
+        }
+        
+        // Set the body of the struct with the concrete field types
+        struct_type.set_body(&field_types, false);
+        
+        // Use our helper method to register the struct type in the registry
+        let package_name = self.current_package_name.clone();
+        self.register_struct_type_in_registry(&package_name, specialized_name, struct_type);
+        
+        // Register GC metadata for traceable fields
+        if !traceable_fields.is_empty() {
+            self.register_struct_gc_metadata(specialized_name, traceable_fields)?;
+        }
+        
         Ok(struct_type)
     }
 
@@ -63,5 +215,18 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // This would normally look up the struct in a symbol table
         // For now, return None to indicate no struct was found
         None
+    }
+    
+    /// Register a struct type in the type registry
+    /// This helper method handles the common case of registering a struct type
+    /// in the struct_types map for later retrieval
+    pub fn register_struct_type_in_registry(&mut self, package_name: &str, struct_name: &str, struct_type: StructType<'ctx>) {
+        // Get or create the package entry in the struct_types map
+        let pkg_structs = self.struct_types
+            .entry(package_name.to_string())
+            .or_insert_with(std::collections::HashMap::new);
+            
+        // Insert the struct type into the package entry
+        pkg_structs.insert(struct_name.to_string(), struct_type);
     }
 }
