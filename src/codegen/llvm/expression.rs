@@ -19,6 +19,7 @@ use super::if_expression::IfExpressionCompilation;
 use super::type_assertion::InterfaceTypeAssertion;
 use super::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use super::type_assertion_integration::TypeAssertionIntegration;
+use super::type_assertion_implementation::IntegratedTypeAssertion;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -74,8 +75,8 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             tracing::debug!("Found type assertion expression: {}.({})", 
                      type_assertion.expression.string(), type_assertion.type_name);
             
-            // Use the integrated type assertion implementation with error handling
-            return self.compile_type_assertion_integrated(type_assertion);
+            // Use the fully integrated type assertion implementation with error handling
+            return self.compile_integrated_type_assertion(type_assertion);
         }
         
         // Handle if expressions

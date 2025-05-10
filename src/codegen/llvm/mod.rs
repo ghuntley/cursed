@@ -88,6 +88,7 @@ pub use self::enhanced_type_assertion::EnhancedTypeAssertion;
 pub use self::interface_type_assertion_errors::TypeAssertionErrorHandler;
 // Type assertion integration with main compiler pipeline
 pub use self::type_assertion_integration::TypeAssertionIntegration;
+pub use self::type_assertion_implementation::IntegratedTypeAssertion;
 // Range clause compilation trait
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::loop_context::*;
@@ -145,6 +146,7 @@ mod interface_type_integration; // Integration of type checker with interface im
 mod type_assertion; // Interface type assertion and conversion
 mod interface_type_assertion; // Improved interface type assertions with additional runtime information
 mod interface_type_assertion_errors; // Enhanced error handling for interface type assertions
+mod type_assertion_implementation; // Integrated type assertion implementation
 mod enhanced_type_assertion; // Optimized implementation of interface type assertions
 mod type_assertion_integration; // Integration of type assertions with main compiler pipeline
 // Module already declared above

@@ -21,6 +21,7 @@ use super::function_monomorphization::FunctionMonomorphization;
 use super::variables::VariableHandling;
 use super::expression::ExpressionCompilation;
 use super::dot_expressions::DotExpressionCompilation;
+use super::type_assertion_implementation::IntegratedTypeAssertion;
 
 /// Trait for statement compilation functionality
 pub trait StatementCompilation<'ctx> {
