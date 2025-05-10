@@ -1,115 +1,191 @@
-use inkwell::context::Context;
-use inkwell::module::Module;
-use inkwell::builder::Builder;
-use inkwell::values::BasicValueEnum;
+//! # Integration Test for Interface Registry Visualization
+//!
+//! This module tests the integration of the interface registry visualization system with the
+//! existing codebase, verifying that it properly interacts with the interface type assertion
+//! path visualization enhanced module.
 
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::interface_registry_visualization_integration::InterfaceVisualizationIntegration;
-use cursed::core::interface_registry::InterfaceRegistry;
-use cursed::core::interface_registry_visualization_improved::ImprovedInterfaceRegistryVisualization;
-use cursed::ast::expressions::{TypeAssertion, Expression};
-use cursed::ast::expressions::literal::StringLiteral;
+use std::sync::Once;
+
+// We need to call init_test_tracing only once
+static INIT: Once = Once::new();
+
+#[path = "tracing_setup.rs"]
+pub mod tracing_setup;
+
+// Macro for initializing tracing in tests
+macro_rules! init_tracing {
+    () => {
+        INIT.call_once(|| {
+            tracing_setup::init_test_tracing();
+        });
+    };
+}
+
+// Import required modules
+use cursed::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
 use cursed::error::Error;
-
-// Import the test helpers from common module
-mod common;
-use common::llvm_helpers;
+use inkwell::context::Context;
+use std::path::PathBuf;
 
 #[test]
-fn test_generate_path_visualization() {
-    // Use the helper to create a code generator with proper setup
-    let (ctx, module, builder, code_gen) = llvm_helpers::create_test_code_generator();
+fn test_interface_registry_visualization_integration() {
+    init_tracing!();
     
-    // Setup the interface registry with a test hierarchy
-    setup_test_registry(&code_gen);
+    // Create a new visualization registry
+    let registry = ThreadSafeInterfaceRegistryVisualization::new();
     
-    // Test generating a path visualization
-    let visualization = code_gen.generate_path_visualization("Dog", "Animal").unwrap();
+    // Register test interface relationships
+    registry.register_extension("Animal", "Mammal").unwrap();
+    registry.register_extension("Mammal", "Dog").unwrap();
+    registry.register_extension("Mammal", "Cat").unwrap();
+    registry.register_extension("Animal", "Bird").unwrap();
+    registry.register_extension("Bird", "Eagle").unwrap();
     
-    // Should find a path from Dog to Animal
-    assert!(visualization.is_some());
+    // Test the visualization methods
+    let dot = registry.visualize_hierarchy_dot().unwrap();
+    let ascii = registry.visualize_hierarchy_ascii().unwrap();
     
-    let vis_string = visualization.unwrap();
-    assert!(vis_string.contains("Dog"));
-    assert!(vis_string.contains("Mammal"));
-    assert!(vis_string.contains("Animal"));
+    // Test finding an inheritance path
+    let path = registry.find_inheritance_path("Animal", "Dog").unwrap();
+    assert_eq!(path, vec!["Animal", "Mammal", "Dog"]);
     
-    // No path should exist between unrelated types
-    let visualization = code_gen.generate_path_visualization("Dog", "Bird").unwrap();
-    assert!(visualization.is_none());
-}
-
-#[test]
-fn test_create_enhanced_type_error() {
-    // Use the helper to create a code generator with proper setup
-    let (ctx, module, builder, code_gen) = llvm_helpers::create_test_code_generator();
+    // Test the path visualization methods
+    let path_ascii = registry.visualize_path_ascii(&path).unwrap();
+    let path_dot = registry.visualize_path_dot(&path).unwrap();
     
-    // Setup the interface registry with a test hierarchy
-    setup_test_registry(&code_gen);
+    // Verify that all the visualizations contain the expected content
+    assert!(dot.contains("digraph interface_hierarchy"));
+    assert!(dot.contains("\"Animal\" -> \"Mammal\""));
+    assert!(dot.contains("\"Mammal\" -> \"Dog\""));
     
-    // Test creating an enhanced error message
-    let error_message = code_gen.create_enhanced_type_error(
-        "Dog", "Bird", "test.csd:42"
-    ).unwrap();
+    assert!(ascii.contains("Interface Hierarchy:"));
+    assert!(ascii.contains("Animal"));
+    assert!(ascii.contains("Mammal"));
+    assert!(ascii.contains("Dog"));
     
-    // Error message should include context information
-    assert!(error_message.contains("Dog"));
-    assert!(error_message.contains("Bird"));
-    assert!(error_message.contains("test.csd:42"));
-    assert!(error_message.contains("inheritance path"));
+    assert!(path_ascii.contains("Interface Inheritance Path:"));
+    assert!(path_ascii.contains("[Animal]"));
+    assert!(path_ascii.contains("↓ extends"));
+    assert!(path_ascii.contains("[Mammal]"));
+    assert!(path_ascii.contains("[Dog]"));
     
-    // Test with types that have a valid path
-    let error_message = code_gen.create_enhanced_type_error(
-        "Dog", "Animal", "test.csd:42"
-    ).unwrap();
+    assert!(path_dot.contains("digraph path"));
+    assert!(path_dot.contains("\"Animal\" -> \"Mammal\""));
+    assert!(path_dot.contains("\"Mammal\" -> \"Dog\""));
     
-    // Should include path information
-    assert!(error_message.contains("Dog"));
-    assert!(error_message.contains("Animal"));
-    assert!(error_message.contains("Path"));
-}
-
-// Helper function to set up a test registry with a hierarchy
-fn setup_test_registry(code_gen: &LlvmCodeGenerator) {
-    let registry = code_gen.interface_registry.as_ref().unwrap();
+    // Test cycle detection
+    registry.register_extension("Dog", "Animal").unwrap(); // Create a cycle
+    let cycles = registry.detect_cycles().unwrap();
+    assert!(!cycles.is_empty());
     
-    // Define a test hierarchy
-    // Animal <- Mammal <- Dog
-    //        <- Bird   <- Eagle
-    //        <- Fish   <- Shark
-    // Mammal also implements Pet
-    // Dog also implements Pet
-    
-    // Register interfaces and their extensions
-    registry.register_interface_extension("Dog", "Mammal").unwrap();
-    registry.register_interface_extension("Mammal", "Animal").unwrap();
-    registry.register_interface_extension("Dog", "Pet").unwrap();
-    registry.register_interface_extension("Mammal", "Pet").unwrap();
-    registry.register_interface_extension("Bird", "Animal").unwrap();
-    registry.register_interface_extension("Eagle", "Bird").unwrap();
-    registry.register_interface_extension("Fish", "Animal").unwrap();
-    registry.register_interface_extension("Shark", "Fish").unwrap();
-}
-
-// Add a stub implementation of the llvm_helpers module in case it doesn't exist
-#[cfg(not(exists("tests/common/llvm_helpers.rs")))]  
-mod llvm_helpers_stub {
-    use inkwell::context::Context;
-    use inkwell::module::Module;
-    use inkwell::builder::Builder;
-    use cursed::codegen::llvm::LlvmCodeGenerator;
-    
-    pub fn create_test_code_generator<'ctx>() -> (Context, Module<'ctx>, Builder<'ctx>, LlvmCodeGenerator<'ctx>) {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let builder = context.create_builder();
-        
-        // Create a minimal code generator with interface registry
-        let mut code_gen = LlvmCodeGenerator::new_with_context(context, module, builder);
-        
-        // Initialize with an interface registry
-        code_gen.initialize_interface_registry();
-        
-        (context, module, builder, code_gen)
+    // Verify that at least one cycle contains all the expected interfaces
+    let mut has_cycle = false;
+    for cycle in &cycles {
+        if cycle.contains(&"Animal".to_string()) && 
+           cycle.contains(&"Mammal".to_string()) && 
+           cycle.contains(&"Dog".to_string()) {
+            has_cycle = true;
+            break;
+        }
     }
+    assert!(has_cycle);
+}
+
+#[test]
+fn test_interface_type_assertion_with_visualization() {
+    init_tracing!();
+    
+    // Test code with interface type assertions
+    let input = r#"
+        collab Animal {
+            makeSound() tea;
+        }
+        
+        collab Mammal {
+            makeSound() tea;
+            giveBirth() tea;
+        }
+        
+        collab Dog {
+            makeSound() tea;
+            giveBirth() tea;
+            bark() tea;
+        }
+        
+        squad Canine {
+            name tea,
+            age normie
+        }
+        
+        slay (c Canine) makeSound() tea {
+            yolo "Woof!"
+        }
+        
+        slay (c Canine) giveBirth() tea {
+            yolo "Puppies!"
+        }
+        
+        slay (c Canine) bark() tea {
+            yolo "Bark bark!"
+        }
+        
+        // Function that uses type assertions with improved error messages
+        slay testAnimal(animal Animal) tea {
+            // Try to assert as Dog (should succeed because Canine implements Dog)
+            sus dog, isDog = animal.(Dog)
+            if isDog {
+                yolo "It's a dog: " + dog.bark()
+            }
+            
+            // Assert as Mammal (should succeed)
+            sus mammal, isMammal = animal.(Mammal)
+            if isMammal {
+                yolo "It's a mammal: " + mammal.giveBirth()
+            }
+            
+            // Use the base interface method
+            yolo "Animal sound: " + animal.makeSound()
+        }
+        
+        slay main() tea {
+            sus canine = Canine{name: "Rex", age: 5}
+            
+            // This will work as expected because Canine implements all required methods
+            sus result = testAnimal(canine)
+            
+            yolo result
+        }
+    "#;
+    
+    // Create lexer and parser
+    let mut lexer = Lexer::new(input);
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
+    
+    // Assert no parser errors
+    assert!(parser.errors().is_empty());
+    
+    // Create LLVM context and code generator
+    let context = Context::create();
+    let file_path = PathBuf::from("test_interface_visualization.csd");
+    let mut code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(&context, "main", file_path);
+    
+    // Set up the registry (this would normally be done in the code generator constructor)
+    // but we're doing it explicitly for this test to verify correct integration
+    code_gen.registry_extensions = ThreadSafeInterfaceRegistryVisualization::new();
+    
+    // Compile the program
+    let result = code_gen.compile(&program);
+    assert!(result.is_ok());
+    
+    // Check that the registry now contains the interface relationships
+    let dot = code_gen.interface_registry().visualize_hierarchy_dot().unwrap();
+    
+    // Verify the dot graph contains the expected interfaces
+    assert!(dot.contains("Animal"));
+    assert!(dot.contains("Mammal"));
+    assert!(dot.contains("Dog"));
 }
