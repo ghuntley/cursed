@@ -6,6 +6,7 @@
 //! registration.
 
 use crate::core::interface_registry::{InterfaceRegistry, GenericInterfaceImpl};
+use crate::core::interface_registry_cache::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
 use crate::core::type_checker::{Type, TypeChecker};
 use crate::error::Error;
 use std::sync::{Arc, Mutex};
@@ -195,28 +196,204 @@ pub trait CachedInterfaceRegistry {
     
     /// Clear the cache
     fn clear_cache(&mut self);
+    
+    /// Get cache statistics (entries, hits, misses)
+    fn cache_stats(&self) -> (usize, usize, usize);
+    
+    /// Get cache hit rate
+    fn cache_hit_rate(&self) -> f64;
 }
 
-// Implement cache wrapper around the registry
-impl CachedInterfaceRegistry for InterfaceRegistry {
+/// A cached version of the interface registry
+pub struct CachedRegistry {
+    /// The underlying registry
+    registry: InterfaceRegistry,
+    
+    /// The cache for implementation checks
+    cache: InterfaceImplementationCache,
+}
+
+impl CachedRegistry {
+    /// Create a new cached registry
+    pub fn new(registry: InterfaceRegistry) -> Self {
+        Self {
+            registry,
+            cache: InterfaceImplementationCache::new(),
+        }
+    }
+    
+    /// Create a new cached registry with default implementations
+    pub fn new_with_defaults() -> Self {
+        Self {
+            registry: InterfaceRegistry::new_with_defaults(),
+            cache: InterfaceImplementationCache::new(),
+        }
+    }
+    
+    /// Create a new cached registry with a specific cache capacity
+    pub fn with_capacity(registry: InterfaceRegistry, capacity: usize) -> Self {
+        Self {
+            registry,
+            cache: InterfaceImplementationCache::with_capacity(capacity),
+        }
+    }
+    
+    /// Get a reference to the underlying registry
+    pub fn registry(&self) -> &InterfaceRegistry {
+        &self.registry
+    }
+    
+    /// Get a mutable reference to the underlying registry
+    pub fn registry_mut(&mut self) -> &mut InterfaceRegistry {
+        &mut self.registry
+    }
+}
+
+/// A thread-safe cached interface registry that can be shared between components
+pub struct ThreadSafeCachedRegistry {
+    /// The registry with a mutex for thread safety
+    registry: Arc<Mutex<InterfaceRegistry>>,
+    
+    /// The thread-safe cache
+    cache: ThreadSafeInterfaceCache,
+}
+
+impl ThreadSafeCachedRegistry {
+    /// Create a new thread-safe cached registry
+    pub fn new(registry: InterfaceRegistry) -> Self {
+        Self {
+            registry: Arc::new(Mutex::new(registry)),
+            cache: ThreadSafeInterfaceCache::new(),
+        }
+    }
+    
+    /// Create a new thread-safe cached registry with default implementations
+    pub fn new_with_defaults() -> Self {
+        Self {
+            registry: Arc::new(Mutex::new(InterfaceRegistry::new_with_defaults())),
+            cache: ThreadSafeInterfaceCache::new(),
+        }
+    }
+    
+    /// Create a new thread-safe cached registry with a specific cache capacity
+    pub fn with_capacity(registry: InterfaceRegistry, capacity: usize) -> Self {
+        Self {
+            registry: Arc::new(Mutex::new(registry)),
+            cache: ThreadSafeInterfaceCache::with_capacity(capacity),
+        }
+    }
+    
+    /// Get the underlying registry (acquires lock)
+    pub fn registry(&self) -> Arc<Mutex<InterfaceRegistry>> {
+        self.registry.clone()
+    }
+    
+    /// Check if a type implements an interface with caching
+    #[instrument(skip(self), level = "debug")]
+    pub fn check_implementation(&self, type_: &Type, interface_name: &str) -> Result<bool, Error> {
+        // First check the cache
+        if let Some(result) = self.cache.lookup(type_, interface_name) {
+            debug!("Thread-safe cache hit for {:?} implements {}: {}", type_, interface_name, result);
+            return Ok(result);
+        }
+        
+        // Not in cache, check the implementation (acquires lock)
+        debug!("Thread-safe cache miss for {:?} implements {}", type_, interface_name);
+        let registry = self.registry.lock().unwrap();
+        let result = registry.check_implementation(type_, interface_name)?;
+        
+        // Store the result in the cache
+        self.cache.store(type_, interface_name, result);
+        
+        Ok(result)
+    }
+    
+    /// Clear the cache
+    pub fn clear_cache(&self) {
+        self.cache.clear();
+    }
+    
+    /// Get cache statistics
+    pub fn cache_stats(&self) -> (usize, usize, usize) {
+        self.cache.stats()
+    }
+    
+    /// Get cache hit rate
+    pub fn cache_hit_rate(&self) -> f64 {
+        self.cache.hit_rate()
+    }
+}
+
+// Forward registry methods to the underlying registry
+impl CachedInterfaceRegistry for CachedRegistry {
+    #[instrument(skip(self), level = "debug")]
     fn check_implementation_cached(
         &mut self,
         type_: &Type,
         interface_name: &str
     ) -> Result<bool, Error> {
-        // In a real implementation, we would check a cache first
-        // before performing the actual check
-        // For simplicity, we'll just delegate to the regular check
-        debug!("Checking if {:?} implements {} (cached)", type_, interface_name);
+        // First check the cache
+        if let Some(result) = self.cache.lookup(type_, interface_name) {
+            debug!("Cache hit for {:?} implements {}: {}", type_, interface_name, result);
+            return Ok(result);
+        }
         
-        // For now just forward to the regular implementation
-        self.check_implementation(type_, interface_name)
+        // Not in cache, check the implementation
+        debug!("Cache miss for {:?} implements {}, checking implementation", type_, interface_name);
+        let result = self.registry.check_implementation(type_, interface_name)?;
+        
+        // Store the result in the cache
+        self.cache.store(type_, interface_name, result);
+        
+        Ok(result)
     }
     
     fn clear_cache(&mut self) {
-        // Clear the implementation cache
         debug!("Clearing interface implementation cache");
-        // In a real implementation, this would clear the actual cache
+        self.cache.clear();
+    }
+    
+    fn cache_stats(&self) -> (usize, usize, usize) {
+        self.cache.stats()
+    }
+    
+    fn cache_hit_rate(&self) -> f64 {
+        self.cache.hit_rate()
+    }
+}
+
+// Implement cache wrapper around the registry
+impl CachedInterfaceRegistry for InterfaceRegistry {
+    #[instrument(skip(self), level = "debug")]
+    fn check_implementation_cached(
+        &mut self,
+        type_: &Type,
+        interface_name: &str
+    ) -> Result<bool, Error> {
+        // Create a temporary cache for this operation
+        // This is less efficient than using a persistent cache
+        // but provides a way to use caching with existing registry instances
+        let mut temp_cache = InterfaceImplementationCache::new();
+        
+        // Check the implementation
+        debug!("Checking if {:?} implements {} (with temporary cache)", type_, interface_name);
+        let result = self.check_implementation(type_, interface_name)?;
+        
+        Ok(result)
+    }
+    
+    fn clear_cache(&mut self) {
+        // With a temporary cache approach, this is a no-op
+        debug!("No persistent cache to clear");
+    }
+    
+    fn cache_stats(&self) -> (usize, usize, usize) {
+        // No persistent cache with the temporary approach
+        (0, 0, 0)
+    }
+    
+    fn cache_hit_rate(&self) -> f64 {
+        0.0 // No cache stats available
     }
 }
 

@@ -61,6 +61,10 @@ pub mod benchmark;
 pub mod stdlib_test;
 pub mod symbol;
 
+// Re-export cache related modules
+pub use core::interface_registry_cache;
+pub use core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
+
 // Re-export essential types
 pub use core::symbol_table::Symbol;
 pub use core::symbol_table::SymbolScope;
