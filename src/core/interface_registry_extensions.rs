@@ -1,327 +1,244 @@
-//! Interface Extension Registry
+//! # Interface Registry Extensions
 //!
-//! This module enhances the interface registry with support for interface extensions
-//! and inheritance relationships. It tracks which interfaces extend other interfaces,
-//! allowing for nested interface type assertions and interface hierarchy checks.
+//! This module provides support for tracking interface extension relationships
+//! in the compiler's interface registry. It allows the compiler to determine
+//! if one interface extends another, either directly or indirectly.
+//!
+//! The registry maintains a graph of interface extension relationships and
+//! provides methods to query these relationships efficiently.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, RwLock};
-use tracing::{debug, trace, warn, info, instrument};
+use tracing::{debug, info, trace, warn, instrument};
 
 use crate::error::Error;
-use crate::core::interface_registry::InterfaceRegistry;
 
-/// Extension to the InterfaceRegistry that adds support for interface inheritance
-#[derive(Debug, Default, Clone)]
+/// Tracks interface extension relationships
 pub struct InterfaceExtensionRegistry {
-    /// Maps an interface name to a set of interfaces it directly extends
-    extends: HashMap<String, HashSet<String>>,
+    /// Maps interface names to the set of interfaces they directly extend
+    direct_extensions: HashMap<String, HashSet<String>>,
     
-    /// Maps an interface name to a set of interfaces that directly extend it
-    extended_by: HashMap<String, HashSet<String>>,
+    /// Maps interface names to the set of interfaces they indirectly extend (transitive closure)
+    transitive_extensions: HashMap<String, HashSet<String>>,
     
-    /// Cache of fully resolved interface extension chains
-    extension_cache: HashMap<String, HashSet<String>>,
+    /// Maps interface names to the set of interfaces that directly extend them
+    reverse_extensions: HashMap<String, HashSet<String>>,
 }
 
 impl InterfaceExtensionRegistry {
-    /// Create a new empty interface extension registry
+    /// Creates a new empty interface extension registry
     pub fn new() -> Self {
-        Self {
-            extends: HashMap::new(),
-            extended_by: HashMap::new(),
-            extension_cache: HashMap::new(),
+        InterfaceExtensionRegistry {
+            direct_extensions: HashMap::new(),
+            transitive_extensions: HashMap::new(),
+            reverse_extensions: HashMap::new(),
         }
     }
     
-    /// Register that an interface extends another interface
-    pub fn register_extension(&mut self, interface_name: String, extends_interface: String) {
-        // Record in the extends map
-        self.extends
-            .entry(interface_name.clone())
-            .or_insert_with(HashSet::new)
-            .insert(extends_interface.clone());
+    /// Registers that one interface extends another
+    pub fn register_extension(&mut self, interface: &str, extends: &str) -> Result<(), Error> {
+        trace!("Registering that {} extends {}", interface, extends);
         
-        // Record in the extended_by map
-        self.extended_by
-            .entry(extends_interface)
-            .or_insert_with(HashSet::new)
-            .insert(interface_name);
-        
-        // Clear the cache since we've modified the extension relationships
-        self.extension_cache.clear();
-        
-        debug!("Registered interface extension: {} extends {}", interface_name, extends_interface);
-    }
-    
-    /// Get all interfaces that an interface directly extends
-    pub fn get_direct_extensions(&self, interface_name: &str) -> HashSet<String> {
-        self.extends
-            .get(interface_name)
-            .cloned()
-            .unwrap_or_default()
-    }
-    
-    /// Get all interfaces that directly extend an interface
-    pub fn get_direct_extenders(&self, interface_name: &str) -> HashSet<String> {
-        self.extended_by
-            .get(interface_name)
-            .cloned()
-            .unwrap_or_default()
-    }
-    
-    /// Get all interfaces that an interface extends, directly or indirectly
-    #[instrument(skip(self), level = "debug")]
-    pub fn get_all_extensions(&mut self, interface_name: &str) -> HashSet<String> {
-        // Check if we have a cached result
-        if let Some(cached) = self.extension_cache.get(interface_name) {
-            return cached.clone();
+        // Skip self-extension (not allowed)
+        if interface == extends {
+            return Err(Error::SemanticError(format!(
+                "Interface {} cannot extend itself", interface
+            )));
         }
+        
+        // Update direct extensions mapping
+        self.direct_extensions
+            .entry(interface.to_string())
+            .or_insert_with(HashSet::new)
+            .insert(extends.to_string());
+        
+        // Update reverse extensions mapping
+        self.reverse_extensions
+            .entry(extends.to_string())
+            .or_insert_with(HashSet::new)
+            .insert(interface.to_string());
+        
+        // Clear transitive extensions cache to force recomputation
+        self.transitive_extensions.clear();
+        
+        Ok(())
+    }
+    
+    /// Gets the set of interfaces that a given interface directly extends
+    pub fn get_direct_extensions(&self, interface: &str) -> Option<HashSet<String>> {
+        self.direct_extensions.get(interface).cloned()
+    }
+    
+    /// Gets the set of interfaces that directly extend a given interface
+    pub fn get_direct_implementors(&self, interface: &str) -> Option<HashSet<String>> {
+        self.reverse_extensions.get(interface).cloned()
+    }
+    
+    /// Checks if one interface extends another (directly or indirectly)
+    #[instrument(level = "trace", skip(self))]
+    pub fn does_extend(&mut self, interface: &str, extends: &str) -> bool {
+        trace!("Checking if {} extends {}", interface, extends);
+        
+        // Trivial case: every interface extends itself
+        if interface == extends {
+            return true;
+        }
+        
+        // Check the transitive extensions cache
+        if let Some(extensions) = self.transitive_extensions.get(interface) {
+            if extensions.contains(extends) {
+                return true;
+            }
+        }
+        
+        // If not in cache, compute transitive extensions for this interface
+        let transitive = self.compute_transitive_extensions(interface);
+        
+        // Cache the result
+        self.transitive_extensions.insert(interface.to_string(), transitive.clone());
+        
+        // Check if the target interface is in the transitive set
+        transitive.contains(extends)
+    }
+    
+    /// Computes the transitive closure of interface extensions
+    fn compute_transitive_extensions(&self, interface: &str) -> HashSet<String> {
+        let mut result = HashSet::new();
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
         
         // Start with direct extensions
-        let mut result = self.get_direct_extensions(interface_name);
-        let mut to_process: Vec<String> = result.iter().cloned().collect();
+        if let Some(direct) = self.direct_extensions.get(interface) {
+            for ext in direct {
+                queue.push_back(ext.clone());
+                result.insert(ext.clone());
+                visited.insert(ext.clone());
+            }
+        }
         
-        // Iteratively add all indirect extensions
-        while let Some(current) = to_process.pop() {
-            let direct_extensions = self.get_direct_extensions(&current);
-            
-            for extension in direct_extensions {
-                if !result.contains(&extension) {
-                    result.insert(extension.clone());
-                    to_process.push(extension);
+        // Breadth-first search to find all transitive extensions
+        while let Some(current) = queue.pop_front() {
+            if let Some(next_level) = self.direct_extensions.get(&current) {
+                for ext in next_level {
+                    if !visited.contains(ext) {
+                        queue.push_back(ext.clone());
+                        result.insert(ext.clone());
+                        visited.insert(ext.clone());
+                    }
                 }
             }
         }
         
-        // Cache the result
-        self.extension_cache.insert(interface_name.to_string(), result.clone());
-        
         result
     }
     
-    /// Check if one interface extends another, directly or indirectly
-    pub fn check_extends(&mut self, interface_name: &str, potential_parent: &str) -> bool {
-        // Get all extensions
-        let all_extensions = self.get_all_extensions(interface_name);
-        
-        // Check if the potential parent is among them
-        all_extensions.contains(potential_parent)
-    }
-    
-    /// Populate the registry with common interface extension relationships
-    pub fn populate_with_defaults(&mut self) {
-        // Examples of common interface extension relationships
-        
-        // Reader/Writer hierarchy
-        self.register_extension("BufferedReader".to_string(), "Reader".to_string());
-        self.register_extension("FileReader".to_string(), "Reader".to_string());
-        self.register_extension("NetworkReader".to_string(), "Reader".to_string());
-        
-        self.register_extension("BufferedWriter".to_string(), "Writer".to_string());
-        self.register_extension("FileWriter".to_string(), "Writer".to_string());
-        self.register_extension("NetworkWriter".to_string(), "Writer".to_string());
-        
-        // IO interface that extends both Reader and Writer
-        self.register_extension("IO".to_string(), "Reader".to_string());
-        self.register_extension("IO".to_string(), "Writer".to_string());
-        
-        // Collection hierarchy
-        self.register_extension("List".to_string(), "Collection".to_string());
-        self.register_extension("Set".to_string(), "Collection".to_string());
-        self.register_extension("Map".to_string(), "Collection".to_string());
-        
-        self.register_extension("ArrayList".to_string(), "List".to_string());
-        self.register_extension("LinkedList".to_string(), "List".to_string());
-        
-        self.register_extension("HashSet".to_string(), "Set".to_string());
-        self.register_extension("TreeSet".to_string(), "Set".to_string());
-        
-        self.register_extension("HashMap".to_string(), "Map".to_string());
-        self.register_extension("TreeMap".to_string(), "Map".to_string());
-        
-        // UI component hierarchy
-        self.register_extension("Component".to_string(), "Visible".to_string());
-        self.register_extension("Container".to_string(), "Component".to_string());
-        self.register_extension("Button".to_string(), "Component".to_string());
-        self.register_extension("Panel".to_string(), "Container".to_string());
-        self.register_extension("Frame".to_string(), "Container".to_string());
-        
-        debug!("Populated interface extension registry with default relationships");
-    }
-    
-    /// Get all interfaces registered in the system
+    /// Gets all interfaces in the registry
     pub fn get_all_interfaces(&self) -> HashSet<String> {
         let mut result = HashSet::new();
         
-        // Add all interfaces that extend other interfaces
-        for interface in self.extends.keys() {
-            result.insert(interface.clone());
+        // Add all interfaces from direct_extensions (as keys)
+        for key in self.direct_extensions.keys() {
+            result.insert(key.clone());
         }
         
-        // Add all interfaces that are extended by other interfaces
-        for interface in self.extended_by.keys() {
-            result.insert(interface.clone());
+        // Add all interfaces from direct_extensions (as values)
+        for values in self.direct_extensions.values() {
+            for value in values {
+                result.insert(value.clone());
+            }
+        }
+        
+        // Add all interfaces from reverse_extensions (as keys)
+        for key in self.reverse_extensions.keys() {
+            result.insert(key.clone());
         }
         
         result
     }
-}
-
-/// Extension trait to add interface extension support to InterfaceRegistry
-pub trait InterfaceRegistryExtensions {
-    /// Register that an interface extends another interface
-    fn register_interface_extension(
-        &mut self,
-        interface_name: String,
-        extends_interface: String
-    );
     
-    /// Get all interfaces that an interface extends, directly or indirectly
-    fn get_interface_extensions(&self, interface_name: &str) -> Vec<String>;
-    
-    /// Check if one interface extends another, directly or indirectly
-    fn check_interface_extension(
-        &self,
-        interface_name: &str,
-        potential_parent: &str
-    ) -> bool;
-    
-    /// Get all interfaces registered in the system
-    fn get_all_interfaces(&self) -> Vec<String>;
-}
-
-/// Implementation of InterfaceRegistryExtensions for InterfaceRegistry
-impl InterfaceRegistryExtensions for InterfaceRegistry {
-    fn register_interface_extension(
-        &mut self,
-        interface_name: String,
-        extends_interface: String
-    ) {
-        // Get or create the extension registry
-        let mut extension_registry = self.get_extension_registry_mut();
-        extension_registry.register_extension(interface_name, extends_interface);
-    }
-    
-    fn get_interface_extensions(&self, interface_name: &str) -> Vec<String> {
-        // Get the extension registry
-        let mut extension_registry = self.get_extension_registry_mut();
-        extension_registry.get_all_extensions(interface_name)
-            .into_iter()
-            .collect()
-    }
-    
-    fn check_interface_extension(
-        &self,
-        interface_name: &str,
-        potential_parent: &str
-    ) -> bool {
-        // Get the extension registry
-        let mut extension_registry = self.get_extension_registry_mut();
-        extension_registry.check_extends(interface_name, potential_parent)
-    }
-    
-    fn get_all_interfaces(&self) -> Vec<String> {
-        // Get the extension registry
-        let extension_registry = self.get_extension_registry();
-        extension_registry.get_all_interfaces()
-            .into_iter()
-            .collect()
+    /// Gets the complete extension hierarchy for visualization or debugging
+    pub fn get_extension_hierarchy(&self) -> HashMap<String, HashSet<String>> {
+        self.direct_extensions.clone()
     }
 }
 
-// Helper methods for InterfaceRegistry to work with the extension registry
-impl InterfaceRegistry {
-    /// Get or create the extension registry (mutable)
-    fn get_extension_registry_mut(&self) -> &mut InterfaceExtensionRegistry {
-        // In a real implementation, this would use a mutable field or a thread-safe reference
-        // For testing purposes, we'll use a thread-local storage or a static ONCE_CELL
-        thread_local! {
-            static EXTENSION_REGISTRY: std::cell::RefCell<InterfaceExtensionRegistry> = 
-                std::cell::RefCell::new(InterfaceExtensionRegistry::new());
+/// Thread-safe version of InterfaceExtensionRegistry
+pub struct ThreadSafeInterfaceExtensionRegistry {
+    /// The registry wrapped in a read-write lock
+    registry: Arc<RwLock<InterfaceExtensionRegistry>>,
+}
+
+impl ThreadSafeInterfaceExtensionRegistry {
+    /// Creates a new empty thread-safe interface extension registry
+    pub fn new() -> Self {
+        ThreadSafeInterfaceExtensionRegistry {
+            registry: Arc::new(RwLock::new(InterfaceExtensionRegistry::new())),
         }
-        
-        EXTENSION_REGISTRY.with(|registry| {
-            registry.borrow_mut().deref_mut()
-        })
     }
     
-    /// Get the extension registry (immutable)
-    fn get_extension_registry(&self) -> &InterfaceExtensionRegistry {
-        // Similar to the mutable version, but returns an immutable reference
-        thread_local! {
-            static EXTENSION_REGISTRY: std::cell::RefCell<InterfaceExtensionRegistry> = 
-                std::cell::RefCell::new(InterfaceExtensionRegistry::new());
-        }
+    /// Registers that one interface extends another
+    pub fn register_extension(&self, interface: &str, extends: &str) -> Result<(), Error> {
+        let mut registry = self.registry.write().map_err(|e| {
+            Error::Compilation(format!(
+                "Failed to acquire write lock on interface registry: {}", e
+            ))
+        })?;
         
-        EXTENSION_REGISTRY.with(|registry| {
-            registry.borrow().deref()
-        })
-    }
-}
-
-// Add this trait and implementation for InterfaceRegistry
-use std::ops::{Deref, DerefMut};
-
-impl Deref for InterfaceExtensionRegistry {
-    type Target = InterfaceExtensionRegistry;
-    
-    fn deref(&self) -> &Self::Target {
-        self
-    }
-}
-
-impl DerefMut for InterfaceExtensionRegistry {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_interface_extension_registry() {
-        // Create a new extension registry
-        let mut registry = InterfaceExtensionRegistry::new();
-        
-        // Register some extensions
-        registry.register_extension("ArrayList".to_string(), "List".to_string());
-        registry.register_extension("List".to_string(), "Collection".to_string());
-        
-        // Test direct extensions
-        let list_extensions = registry.get_direct_extensions("List");
-        assert!(list_extensions.contains("Collection"));
-        
-        // Test all extensions
-        let arraylist_extensions = registry.get_all_extensions("ArrayList");
-        assert!(arraylist_extensions.contains("List"));
-        assert!(arraylist_extensions.contains("Collection"));
-        
-        // Test check_extends
-        assert!(registry.check_extends("ArrayList", "Collection"));
-        assert!(registry.check_extends("ArrayList", "List"));
-        assert!(!registry.check_extends("Collection", "ArrayList"));
+        registry.register_extension(interface, extends)
     }
     
-    #[test]
-    fn test_interface_registry_extensions() {
-        // Create a new interface registry
-        let mut registry = InterfaceRegistry::new();
+    /// Gets the set of interfaces that a given interface directly extends
+    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        let registry = self.registry.read().map_err(|e| {
+            Error::Compilation(format!(
+                "Failed to acquire read lock on interface registry: {}", e
+            ))
+        })?;
         
-        // Register some interface extensions
-        registry.register_interface_extension("ArrayList".to_string(), "List".to_string());
-        registry.register_interface_extension("List".to_string(), "Collection".to_string());
+        Ok(registry.get_direct_extensions(interface))
+    }
+    
+    /// Gets the set of interfaces that directly extend a given interface
+    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        let registry = self.registry.read().map_err(|e| {
+            Error::Compilation(format!(
+                "Failed to acquire read lock on interface registry: {}", e
+            ))
+        })?;
         
-        // Test getting extensions
-        let arraylist_extensions = registry.get_interface_extensions("ArrayList");
-        assert!(arraylist_extensions.contains(&"List".to_string()));
-        assert!(arraylist_extensions.contains(&"Collection".to_string()));
+        Ok(registry.get_direct_implementors(interface))
+    }
+    
+    /// Checks if one interface extends another (directly or indirectly)
+    pub fn does_extend(&self, interface: &str, extends: &str) -> Result<bool, Error> {
+        let mut registry = self.registry.write().map_err(|e| {
+            Error::Compilation(format!(
+                "Failed to acquire write lock on interface registry: {}", e
+            ))
+        })?;
         
-        // Test checking extensions
-        assert!(registry.check_interface_extension("ArrayList", "Collection"));
-        assert!(registry.check_interface_extension("ArrayList", "List"));
-        assert!(!registry.check_interface_extension("Collection", "ArrayList"));
+        Ok(registry.does_extend(interface, extends))
+    }
+    
+    /// Gets all interfaces in the registry
+    pub fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+        let registry = self.registry.read().map_err(|e| {
+            Error::Compilation(format!(
+                "Failed to acquire read lock on interface registry: {}", e
+            ))
+        })?;
+        
+        Ok(registry.get_all_interfaces())
+    }
+    
+    /// Gets the complete extension hierarchy for visualization or debugging
+    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
+        let registry = self.registry.read().map_err(|e| {
+            Error::Compilation(format!(
+                "Failed to acquire read lock on interface registry: {}", e
+            ))
+        })?;
+        
+        Ok(registry.get_extension_hierarchy())
     }
 }
