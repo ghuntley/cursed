@@ -78,8 +78,19 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             // Use the fully integrated type assertion implementation with error handling
             // This implementation is provided by the type_assertion_implementation module
             // and includes proper error propagation, null checking, and structured logging
-            let result = self.compile_integrated_type_assertion(type_assertion)?;
-            return Ok(result);
+            match self.compile_integrated_type_assertion(type_assertion) {
+                Ok(result) => {
+                    tracing::debug!("Successfully compiled type assertion for {}", type_assertion.type_name);
+                    return Ok(result);
+                },
+                Err(e) => {
+                    tracing::error!("Failed to compile type assertion for {}: {}", type_assertion.type_name, e);
+                    return Err(Error::Compilation(format!(
+                        "Type assertion compilation failed for {}: {}", 
+                        type_assertion.type_name, e
+                    )));
+                }
+            };
         }
         
         // Handle if expressions
