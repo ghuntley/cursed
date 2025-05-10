@@ -8,6 +8,7 @@ use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
 use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
+use crate::codegen::llvm::lru_field_accessors::LruCachedFieldAccessors;
 use crate::codegen::llvm::struct_monomorphization::StructMonomorphization;
 use crate::core::type_checker::Type;
 use crate::error::Error;
@@ -47,7 +48,8 @@ impl<'ctx> IntegratedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Then, generate the field accessors using our improved implementation directly
         debug!("Using improved field accessors with proper error handling");
-        self.generate_improved_field_accessors(generic_struct, specialized_name, type_args)?;
+        // Use LRU cached field accessors instead of standard improved field accessors
+self.generate_lru_cached_field_accessors(generic_struct, specialized_name, type_args)?;
         
         // Register with interface registry if needed
         // Note: SquadStatement doesn't have interface constraints directly,
