@@ -19,6 +19,8 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use crate::codegen::llvm::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
+use crate::codegen::llvm::interface_type_registry_enhanced::{EnhancedTypeRegistry, RuntimeTypeInfo};
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::core::type_checker::Type as CursedType;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
 use crate::codegen::llvm::expression::ExpressionCompilation;
@@ -95,14 +97,75 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
             }
         }
         
+        // Get the actual type name for improved error messages
+        let expr_type_id = match self.get_interface_type_id(expr_value) {
+            Ok(id) => id,
+            Err(e) => {
+                warn!("Unable to get interface type ID, using fallback error handling: {}", e);
+                // Fall back to standard error handling implementation
+                let result = match TypeAssertionErrorHandler::compile_type_assertion_with_errors(self, type_assertion) {
+                    Ok(val) => val,
+                    Err(e) => {
+                        error!("Type assertion error: {}", e);
+                        return Err(Error::Compilation(format!(
+                            "Type assertion failed for type '{}': {}", 
+                            type_assertion.type_name, e
+                        )));
+                    }
+                };
+                return Ok(result);
+            }
+        };
+        
+        // Use enhanced registry for improved type information
+        let (type_id, type_name) = match self.get_assertion_type_info(expr_value, &type_assertion.type_name) {
+            Ok(info) => info,
+            Err(_) => {
+                // Fall back to standard error handling implementation
+                let result = match TypeAssertionErrorHandler::compile_type_assertion_with_errors(self, type_assertion) {
+                    Ok(val) => val,
+                    Err(e) => {
+                        error!("Type assertion error: {}", e);
+                        return Err(Error::Compilation(format!(
+                            "Type assertion failed for type '{}': {}", 
+                            type_assertion.type_name, e
+                        )));
+                    }
+                };
+                return Ok(result);
+            }
+        };
+        
+        // Log the type information for better debugging
+        info!("Type assertion from {} to {}", type_name, type_assertion.type_name);
+        
         // Use the error-handling implementation which is the most complete
         let result = match TypeAssertionErrorHandler::compile_type_assertion_with_errors(self, type_assertion) {
-            Ok(val) => val,
+            Ok(val) => {
+                // Log successful assertion with enhanced type information
+                if let Ok(()) = self.log_type_assertion_with_info(
+                    expr_type_id,
+                    &type_assertion.type_name,
+                    true // assuming success since we got a result
+                ) {
+                    debug!("Successfully logged type assertion information");
+                }
+                val
+            },
             Err(e) => {
+                // Log failed assertion with enhanced type information
+                if let Ok(()) = self.log_type_assertion_with_info(
+                    expr_type_id,
+                    &type_assertion.type_name,
+                    false // explicit failure
+                ) {
+                    debug!("Logged failed type assertion information");
+                }
+                
                 error!("Type assertion error: {}", e);
                 return Err(Error::Compilation(format!(
-                    "Type assertion failed for type '{}': {}", 
-                    type_assertion.type_name, e
+                    "Type assertion failed: cannot convert {} to {}: {}", 
+                    type_name, type_assertion.type_name, e
                 )));
             }
         };
@@ -176,4 +239,8 @@ pub fn register_type_assertion_implementation() {
     
     // Also register the nested type assertion implementation
     crate::codegen::llvm::interface_type_assertion_nesting::register_nested_type_assertion();
+    
+    // Register the enhanced type registry to initialize built-in types
+    trace!("Registering enhanced type registry");
+    // The registry is initialized automatically when used
 }

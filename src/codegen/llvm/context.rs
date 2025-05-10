@@ -72,7 +72,11 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Cache for type IDs to improve performance of type assertions
     pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
     // Interface type registry for runtime type information
-    pub(crate) interface_type_registry: Option<super::interface_type_registry::InterfaceTypeRegistry<'ctx>>,
+    pub(crate) interface_type_registry: Option<std::sync::Arc<std::sync::RwLock<std::collections::HashMap<String, u64>>>>,
+    // Global arrays for type names in the enhanced type registry 
+    pub(crate) global_type_names: Option<inkwell::values::GlobalValue<'ctx>>,
+    // Global counter for the number of registered types
+    pub(crate) global_type_count: Option<inkwell::values::GlobalValue<'ctx>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -127,7 +131,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
             // Initialize interface type registry
-            interface_type_registry: Some(super::interface_type_registry::InterfaceTypeRegistry::new()),
+            interface_type_registry: Some(std::sync::Arc::new(std::sync::RwLock::new(std::collections::HashMap::new()))),
+            global_type_names: None,
+            global_type_count: None,
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality
