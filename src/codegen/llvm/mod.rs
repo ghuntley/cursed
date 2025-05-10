@@ -101,6 +101,8 @@ pub use self::interface_type_assertion_debugging::{RuntimeTypeAssertionDebugging
 // Type assertion integration with main compiler pipeline
 pub use self::type_assertion_integration::TypeAssertionIntegration;
 pub use self::type_assertion_implementation::IntegratedTypeAssertion;
+// Nesting level tracking for interface type assertions
+pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Range clause compilation trait
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::loop_context::*;
@@ -169,6 +171,7 @@ mod auto_interface_dispatcher; // Automatic code generation for interface method
 mod auto_interface_dispatcher_integration; // Integration of auto interface dispatcher with the compiler
 mod interface_field_accessors; // Integration of improved field accessors with interface system
 mod interface_type_assertion_debugging; // Enhanced runtime debugging for interface type assertions
+mod interface_type_assertion_nesting; // Nesting level tracking for interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
