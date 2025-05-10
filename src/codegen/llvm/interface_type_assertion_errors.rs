@@ -166,23 +166,29 @@ impl<'ctx> TypeAssertionErrorHandler<'ctx> for LlvmCodeGenerator<'ctx> {
             Error::Compilation(format!("Failed to get type ID for {}: {}", target_type_name, e))
         })?;
         
-        // Try to get the actual type name from the registry for better error messages
-        let actual_type_name = if let Some(registry) = &self.interface_type_registry {
-            if actual_type_id.is_int_value() {
-                let id = if let Some(const_val) = actual_type_id.into_int_value().get_zero_extended_constant() {
-                    const_val
+        // Use the enhanced registry for better type information
+        let actual_type_name = match self.get_assertion_type_info(interface_value, target_type_name) {
+            Ok((_, name)) => name,
+            Err(_) => {
+                // Fall back to basic registry lookup if enhanced version fails
+                if let Some(registry) = &self.interface_type_registry {
+                    if actual_type_id.is_int_value() {
+                        let id = if let Some(const_val) = actual_type_id.into_int_value().get_zero_extended_constant() {
+                            const_val
+                        } else {
+                            u64::MAX // Cannot get constant value
+                        };
+                        match registry.get_type_name(id) {
+                            Some(name) => name.clone(),
+                            None => "Unknown".to_string()
+                        }
+                    } else {
+                        "Unknown".to_string()
+                    }
                 } else {
-                    u64::MAX // Cannot get constant value
-                };
-                match registry.get_type_name(id) {
-                    Some(name) => name.clone(),
-                    None => "Unknown".to_string()
+                    "Unknown".to_string()
                 }
-            } else {
-                "Unknown".to_string()
             }
-        } else {
-            "Unknown".to_string()
         };
         
         // Log the type information being compared

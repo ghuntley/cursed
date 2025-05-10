@@ -149,24 +149,43 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
                     true // assuming success since we got a result
                 ) {
                     debug!("Successfully logged type assertion information");
+                } else {
+                    // Fall back to basic logging if enhanced logging fails
+                    debug!("Type assertion succeeded: {} -> {}", type_name, type_assertion.type_name);
                 }
                 val
             },
             Err(e) => {
                 // Log failed assertion with enhanced type information
-                if let Ok(()) = self.log_type_assertion_with_info(
+                let failure_logged = if let Ok(()) = self.log_type_assertion_with_info(
                     expr_type_id,
                     &type_assertion.type_name,
                     false // explicit failure
                 ) {
                     debug!("Logged failed type assertion information");
-                }
+                    true
+                } else {
+                    // Fall back to basic logging if enhanced logging fails
+                    warn!("Type assertion failed: {} -> {}", type_name, type_assertion.type_name);
+                    false
+                };
+                
+                // Create a more informative error message with concrete type names
+                let error_message = if failure_logged {
+                    format!(
+                        "Type assertion failed: cannot convert {} to {}: {}", 
+                        type_name, type_assertion.type_name, e
+                    )
+                } else {
+                    // Generate an even more detailed error message manually
+                    format!(
+                        "Type assertion failed: cannot convert from '{}' to '{}'. Types are incompatible. Error: {}", 
+                        type_name, type_assertion.type_name, e
+                    )
+                };
                 
                 error!("Type assertion error: {}", e);
-                return Err(Error::Compilation(format!(
-                    "Type assertion failed: cannot convert {} to {}: {}", 
-                    type_name, type_assertion.type_name, e
-                )));
+                return Err(Error::Compilation(error_message));
             }
         };
         

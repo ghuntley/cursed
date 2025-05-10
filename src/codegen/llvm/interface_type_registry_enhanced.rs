@@ -18,6 +18,7 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_registry::{InterfaceTypeRegistry, InterfaceTypeRegistryAccess};
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 
 /// Trait for enhanced interface type registry functionality
 pub trait EnhancedTypeRegistry<'ctx> {
@@ -38,6 +39,21 @@ pub trait EnhancedTypeRegistry<'ctx> {
     
     /// Register a type with the enhanced registry including runtime information
     fn register_type_with_runtime_info(&mut self, type_id: u64, type_name: &str) -> Result<(), Error>;
+    
+    /// Log detailed information about a type assertion with human-readable type names
+    fn log_type_assertion_with_info(
+        &self,
+        actual_type_id: BasicValueEnum<'ctx>,
+        expected_type_name: &str,
+        success: bool
+    ) -> Result<(), Error>;
+    
+    /// Get both type ID and human-readable name for an interface value
+    fn get_assertion_type_info(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        expected_type_name: &str
+    ) -> Result<(BasicValueEnum<'ctx>, String), Error>;
 }
 
 impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
@@ -379,10 +395,139 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         debug!("Successfully registered type with runtime info");
         Ok(())
     }
+    
+    #[instrument(skip(self, actual_type_id), level = "debug")]
+    fn log_type_assertion_with_info(
+        &self,
+        actual_type_id: BasicValueEnum<'ctx>,
+        expected_type_name: &str,
+        success: bool
+    ) -> Result<(), Error> {
+        debug!("Logging type assertion with enhanced info");
+        
+        // Get the debug level from environment variables
+        let debug_level = std::env::var("CURSED_TYPE_DEBUG")
+            .or_else(|_| std::env::var("CURSED_DEBUG"))
+            .map(|val| {
+                if val.is_empty() || val == "0" || val.to_lowercase() == "false" {
+                    "none"
+                } else {
+                    val.as_str()
+                }
+            })
+            .unwrap_or("none");
+        
+        // If debugging is disabled, just return
+        if debug_level == "none" {
+            return Ok(());
+        }
+        
+        // Try to extract a constant type ID if available
+        let type_id_val = if actual_type_id.is_int_value() {
+            actual_type_id.into_int_value().get_zero_extended_constant()
+                .unwrap_or(u64::MAX) // Use MAX as a sentinel for unknown
+        } else {
+            u64::MAX // Unknown type ID
+        };
+        
+        // Get the type name from the registry
+        let actual_type_name = match &self.interface_type_registry {
+            Some(registry) => {
+                registry.get_type_name(type_id_val)
+                    .map(|name| name.clone())
+                    .unwrap_or_else(|| String::from("Unknown Type"))
+            },
+            None => String::from("Unknown Type")
+        };
+        
+        // Log the type assertion details with appropriate level based on success
+        if success {
+            if debug_level == "verbose" || debug_level == "standard" {
+                info!(
+                    "Type assertion SUCCESS: Value of type '{}' (ID: {}) asserted to type '{}'", 
+                    actual_type_name, 
+                    type_id_val,
+                    expected_type_name
+                );
+            }
+        } else {
+            // Always log failures regardless of debug level
+            warn!(
+                "Type assertion FAILED: Cannot convert from '{}' (ID: {}) to '{}'. Types are incompatible.", 
+                actual_type_name, 
+                type_id_val,
+                expected_type_name
+            );
+            
+            if debug_level == "verbose" {
+                // Additional debugging information for verbose mode
+                let registry = self.interface_type_registry.as_ref().unwrap();
+                let all_types = registry.all_types();
+                let types_info = all_types.iter()
+                    .map(|(id, name)| format!("{} -> {}", id, name))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                
+                debug!("Available types in registry: [{}]", types_info);
+            }
+        }
+        
+        debug!("Successfully logged type assertion information");
+        Ok(())
+    }
+    
+    #[instrument(skip(self, interface_value), level = "debug")]
+    fn get_assertion_type_info(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        expected_type_name: &str
+    ) -> Result<(BasicValueEnum<'ctx>, String), Error> {
+        debug!("Getting type assertion info for expected type: {}", expected_type_name);
+        
+        // Get the actual type ID from the interface value
+        let type_id = self.get_interface_type_id_safe(interface_value)?;
+        
+        // Try to extract a constant type ID if available
+        let type_id_val = if type_id.is_int_value() {
+            type_id.into_int_value().get_zero_extended_constant()
+                .unwrap_or(u64::MAX) // Use MAX as a sentinel for unknown
+        } else {
+            u64::MAX // Unknown type ID
+        };
+        
+        // Get the type name from the registry
+        let type_name = match &self.interface_type_registry {
+            Some(registry) => {
+                registry.get_type_name(type_id_val)
+                    .map(|name| name.clone())
+                    .unwrap_or_else(|| String::from("Unknown Type"))
+            },
+            None => String::from("Unknown Type")
+        };
+        
+        debug!("Retrieved type info: ID: {}, name: {}", type_id_val, type_name);
+        Ok((type_id, type_name))
+    }
 }
 
 // Helper methods for the enhanced type registry
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Get the type ID from an interface value safely using our enhanced registry
+    #[instrument(skip(self, interface_value), level = "debug")]
+    fn get_interface_type_id_safe(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        debug!("Getting type ID safely from interface value");
+        
+        // Delegate to the error handler implementation for robust error handling
+        let type_id = crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler::get_interface_type_id_safe(
+            self, interface_value
+        )?;
+        
+        debug!("Retrieved type ID safely");
+        Ok(type_id)
+    }
     /// Create an "Unknown Type" string global
     fn create_unknown_type_string(&mut self) -> Result<BasicValueEnum<'ctx>, Error> {
         let unknown_type_str = self.context().const_string("Unknown Type".as_bytes(), true);
