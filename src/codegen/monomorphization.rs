@@ -200,25 +200,57 @@ impl MonomorphizationManager {
         if let Some(type_checker) = &self.type_checker {
             tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Using type checker to verify interface implementation");
             
+            // Get available methods for the concrete type (if possible)
+            let available_methods = match concrete_type {
+                Type::Struct(struct_name, _) => {
+                    type_checker.borrow().get_struct_methods(struct_name)
+                        .map(|methods| methods.keys().cloned().collect::<Vec<_>>())
+                },
+                _ => None
+            };
+            
+            // Get required methods for the interface (if possible)
+            let required_methods = type_checker.borrow().get_interface_methods(interface_name)
+                .map(|methods| methods.keys().cloned().collect::<Vec<_>>());
+            
             match type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type) {
                 Ok(true) => {
                     tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type checker confirms type implements interface");
                     return Ok(true);
                 },
                 Ok(false) => {
-                    tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "Type checker confirms type does not implement interface");
+                    tracing::warn!(
+                        concrete_type = ?concrete_type, 
+                        interface = interface_name, 
+                        available_methods = ?available_methods,
+                        required_methods = ?required_methods,
+                        "Type checker confirms type does not implement interface"
+                    );
                     
-                    return Err(Error::from_str(&format!(
-                        "Type '{:?}' does not implement interface '{}': missing required methods",
-                        concrete_type, interface_name
-                    )));
+                    // Create a detailed error message
+                    let error = crate::core::constraint_error::create_constraint_error(
+                        concrete_type,
+                        interface_name,
+                        None, // No type parameter in direct check
+                        available_methods,
+                        required_methods
+                    );
+                    
+                    return Err(Error::TypeAssertion(error));
                 },
                 Err(e) => {
                     tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error in type checker when checking interface implementation");
-                    return Err(Error::from_str(&format!(
-                        "Type '{:?}' does not implement interface '{}': {}",
-                        concrete_type, interface_name, e
-                    )));
+                    
+                    // Create a detailed error message but include the original error
+                    let error = crate::core::constraint_error::create_constraint_error(
+                        concrete_type,
+                        interface_name,
+                        None,
+                        available_methods,
+                        required_methods
+                    ).with_cause(e);
+                    
+                    return Err(Error::TypeAssertion(error));
                 }
             }
         }
@@ -226,10 +258,17 @@ impl MonomorphizationManager {
         // If we've reached here, neither registry nor type checker confirmed
         // This is a deterministic error - we should treat it as the type not implementing the interface
         tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "No mechanism confirmed interface implementation");
-        Err(Error::from_str(&format!(
-            "Type '{:?}' does not implement interface '{}': no implementation found",
-            concrete_type, interface_name
-        )))
+        
+        // Create a structured error with detailed information
+        let error = crate::core::constraint_error::create_constraint_error(
+            concrete_type,
+            interface_name,
+            None,
+            None,
+            None
+        ).with_context("verification_status", "No verification mechanism available");
+        
+        Err(Error::TypeAssertion(error))
     }
     /// Create a new MonomorphizationManager
     /// 
@@ -383,19 +422,28 @@ impl MonomorphizationManager {
                     match self.check_constraint(concrete_type, interface_name) {
                         Ok(true) => {}, // Constraint satisfied
                         Ok(false) => {
-                            // Convert to proper error for consistency
-                            return Err(Error::from_str(&format!(
-                                "Type parameter '{}' with type '{:?}' does not implement required interface '{}'", 
-                                param_name, concrete_type, interface_name
-                            )));
+                            // Create a detailed error with our new constraint error module
+                            let error = crate::core::constraint_error::create_nested_constraint_error(
+                                generic_name,
+                                param_name,
+                                concrete_type,
+                                interface_name
+                            );
+                            return Err(Error::TypeAssertion(error));
                         }
                         Err(e) => return Err(e),
                     }
                 } else {
-                    return Err(Error::from_str(&format!(
-                        "Unknown type parameter: {}",
-                        param_name
-                    )));
+                    // Create a detailed error for unknown type parameter
+                    let error = crate::error_enhanced::CursedError::new(
+                        crate::error_enhanced::ErrorKind::Type,
+                        format!("Unknown type parameter: '{}' in function '{}'", param_name, generic_name)
+                    )
+                    .with_code("CNST-003")
+                    .with_context("function_name", generic_name.to_string())
+                    .with_context("type_parameter", param_name.to_string());
+                    
+                    return Err(Error::TypeAssertion(error));
                 }
             }
         }
