@@ -61,3 +61,46 @@ fn test_extension_relationships_sample_data() {
     // Reader and FileReader interfaces are registered
     assert!(!relationships.is_empty(), "Expected sample relationships to be generated");
 }
+
+/// Test integration with the real interface extension registry
+#[test]
+fn test_real_registry_integration() {
+    common::tracing::setup();
+    
+    // Create the ThreadSafeInterfaceExtensionRegistry
+    let extension_registry = std::sync::Arc::new(
+        cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
+    );
+    
+    // Create a test registry with the extension registry
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
+    
+    // Register some interface types
+    registry.register_type(1001, "Reader".to_string());
+    registry.register_type(1002, "FileReader".to_string());
+    registry.register_type(1003, "JSONFileReader".to_string());
+    
+    // Add relationship data to the extension registry
+    extension_registry.register_extension("FileReader", "Reader").unwrap();
+    extension_registry.register_extension("JSONFileReader", "FileReader").unwrap();
+    
+    // Get the extension relationships
+    let relationships = registry.get_extension_relationships().unwrap();
+    
+    // Verify the relationships were properly extracted from the registry
+    assert!(!relationships.is_empty(), "Expected relationships from registry");
+    
+    // Check that we have a relationship from FileReader to Reader
+    let file_reader_id = 1002; // The ID we registered
+    let reader_id = 1001; // The ID we registered
+    
+    if let Some(extends) = relationships.get(&file_reader_id) {
+        assert!(extends.contains(&reader_id), "FileReader should extend Reader");
+    } else {
+        panic!("Expected to find FileReader in the relationships");
+    }
+    
+    // Check that FileReader extends Reader using the wrapper method
+    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap();
+    assert!(extension, "FileReader should extend Reader via registry check");
+}

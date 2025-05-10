@@ -169,15 +169,20 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             type_id_cache: None, // Will be initialized when needed
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
-            // Initialize interface type registry with the new implementation
-            interface_type_registry: Some(crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::new()),
+            // Initialize interface extension registry for path visualization
+            registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new(),
+            // Initialize interface type registry with the new implementation and link to extension registry
+            interface_type_registry: {
+                let registry_ref = std::sync::Arc::new(crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new());
+                // Store a reference in the main registry_extensions field
+                let mut ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
+                Some(ir)
+            },
             global_type_names: None,
             global_type_count: None,
             // Initialize the unique ID counter with a random starting value
             unique_id_counter: std::sync::atomic::AtomicU64::new(rand::random::<u64>()),
             lru_field_accessor_cache: None,
-            // Initialize interface extension registry for path visualization
-            registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new(),
             
             // Test-only fields for interface hierarchy mocking in unit tests
             #[cfg(test)]

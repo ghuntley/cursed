@@ -6,7 +6,8 @@
 //! It maintains a registry of type IDs to type names, allowing runtime code
 //! to look up type names from their IDs for more informative error messages.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;
@@ -35,6 +36,9 @@ pub struct InterfaceTypeRegistry<'ctx> {
     
     /// Count of registered types
     type_count: usize,
+    
+    /// Reference to the interface extension registry for checking relationships
+    pub extension_registry: Option<std::sync::Arc<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>>,
 }
 
 impl<'ctx> InterfaceTypeRegistry<'ctx> {
@@ -45,6 +49,18 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
             type_names_global: None,
             type_ids_global: None,
             type_count: 0,
+            extension_registry: None,
+        }
+    }
+    
+    /// Create a new registry with an extension registry
+    pub fn with_extension_registry(extension_registry: std::sync::Arc<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>) -> Self {
+        Self {
+            type_id_to_name: HashMap::new(),
+            type_names_global: None,
+            type_ids_global: None,
+            type_count: 0,
+            extension_registry: Some(extension_registry),
         }
     }
     
