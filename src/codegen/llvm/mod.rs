@@ -129,6 +129,8 @@ pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClaus
 // Map iteration improvements
 pub use self::map_iteration_improvements::MapIterationEnhancements;
 pub use self::loop_context::*;
+// Interface registry visualization integration
+pub use self::interface_registry_visualization_integration::InterfaceVisualizationIntegration;
 // Will be re-exported in a future PR
 // pub use self::interface_type_integration::InterfaceTypeIntegration;
 
@@ -209,6 +211,7 @@ pub mod interface_type_assertion_error_propagation; // Enhanced error propagatio
 pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface type assertions with proper error propagation
 pub mod interface_type_assertion_path_visualization; // Visual debugging tools for interface type assertions
 pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual debugging tools with better error handling
+pub mod interface_registry_visualization_integration; // Integration of interface registry visualization with code generator
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
