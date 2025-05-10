@@ -18,6 +18,7 @@ use super::variables::VariableHandling;
 use super::if_expression::IfExpressionCompilation;
 use super::type_assertion::InterfaceTypeAssertion;
 use super::interface_type_assertion_errors::TypeAssertionErrorHandler;
+use super::type_assertion_integration::TypeAssertionIntegration;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -70,11 +71,11 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Handle type assertion expressions (value.(Type))
         if let Some(type_assertion) = any.downcast_ref::<TypeAssertion>() {
-            println!("DEBUG: Found type assertion expression: {}.({})", 
+            tracing::debug!("Found type assertion expression: {}.({})", 
                      type_assertion.expression.string(), type_assertion.type_name);
             
-            // Call our implementation
-            return self.compile_type_assertion(type_assertion);
+            // Use the integrated type assertion implementation with error handling
+            return self.compile_type_assertion_integrated(type_assertion);
         }
         
         // Handle if expressions
