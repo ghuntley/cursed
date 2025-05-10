@@ -130,16 +130,29 @@ impl<'ctx> InterfaceTypeRegistryAccess<'ctx> for LlvmCodeGenerator<'ctx> {
         let id_global = self.module().add_global(id_array_type, None, "cursed_type_ids");
         id_global.set_linkage(inkwell::module::Linkage::Internal);
         
-        // Create ID array initializer - this would set proper values in a real implementation
-        // For now, we'll create a placeholder zeros array for compatibility
-        let zero = id_type.const_zero();
+        // Create ID array initializer with actual type IDs
+        let id_values: Vec<_> = types.iter()
+            .map(|(id, _)| id_type.const_int(*id, false))
+            .collect();
         
-        // This would be the real implementation for initializing with actual values:
-        // let id_values: Vec<_> = types.iter()
-        //    .map(|(id, _)| id_type.const_int(*id, false))
-        //    .collect();
-        
-        // For this prototype, we'll initialize with all zeros
+        // Use individual values rather than attempting to create a const_array directly
+        // since the API requires ArrayValue which we don't have
+        let id_array_ptr = id_global.as_pointer_value();
+        for (i, val) in id_values.iter().enumerate() {
+            // Create entry block alloca for the value
+            let val_ptr = unsafe {
+                self.builder().build_in_bounds_gep(
+                    id_array_type,
+                    id_array_ptr,
+                    &[self.context().i32_type().const_zero(), self.context().i32_type().const_int(i as u64, false)],
+                    &format!("type_id_{}_ptr", i)
+                ).map_err(|e| Error::codegen(format!("Failed to get GEP for type ID: {}", e)))?
+            };
+            // Store the value
+            self.builder().build_store(val_ptr, *val)
+                .map_err(|e| Error::codegen(format!("Failed to store type ID: {}", e)))?;
+        }
+        // Use zero initializer since we manually populate later
         id_global.set_initializer(&id_array_type.const_zero());
         
         // Create an array of string pointers for the type names
@@ -182,11 +195,31 @@ impl<'ctx> InterfaceTypeRegistryAccess<'ctx> for LlvmCodeGenerator<'ctx> {
         str_global.set_linkage(inkwell::module::Linkage::Internal);
         
         // Create the initializer for the string pointer array
-        // In a real implementation, this would map the pointers to BasicValueEnum
-        // For now, we'll return a placeholder without populating the array
-        // This code requires additional setup not available in this context
-        // let str_array = str_array_type.const_array(&[]);
-        // str_global.set_initializer(&str_array);
+        // Initialize with zeroes first, then store values directly in a similar manner as the ID array
+        str_global.set_initializer(&str_array_type.const_zero());
+        
+        // Get pointer to global array
+        let str_array_ptr = str_global.as_pointer_value();
+        
+        // Store each string pointer in the array
+        for (i, str_ptr) in string_globals.into_iter().enumerate() {
+            // Calculate index for this element
+            let index = self.context().i32_type().const_int(i as u64, false);
+            
+            // Get pointer to array element
+            let elem_ptr = unsafe {
+                self.builder().build_in_bounds_gep(
+                    str_array_type,
+                    str_array_ptr,
+                    &[self.context().i32_type().const_zero(), index],
+                    &format!("str_ptr_{}_ptr", i)
+                ).map_err(|e| Error::codegen(format!("Failed to get pointer to string ptr: {}", e)))?
+            };
+            
+            // Store the string pointer
+            self.builder().build_store(elem_ptr, str_ptr)
+                .map_err(|e| Error::codegen(format!("Failed to store string pointer: {}", e)))?;
+        }
         
         // Store the globals in the registry
         self.interface_type_registry_mut().type_ids_global = Some(id_global);
