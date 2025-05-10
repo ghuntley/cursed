@@ -430,7 +430,17 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     // Create LLVM context and code generator
     println!("🏗️ Setting up LLVM code generation...");
     let context = inkwell::context::Context::create();
+    
+    // Create a type checker instance for interface implementation checking
+    let type_checker = std::rc::Rc::new(std::cell::RefCell::new(crate::core::type_checker::TypeChecker::new()));
+    
+    // Create the code generator
     let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, &package_name, file_path.clone());
+    
+    // Configure monomorphization manager with type checker for proper interface constraint checking
+    let mono_manager = code_gen.get_mono_manager_mut();
+    *mono_manager = crate::codegen::monomorphization::MonomorphizationManager::new()
+        .with_type_checker(type_checker.clone());
 
     // Compile the program
     println!("🔧 Compiling to LLVM IR...");

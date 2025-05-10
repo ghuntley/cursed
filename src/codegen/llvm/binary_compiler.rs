@@ -364,7 +364,18 @@ impl<'ctx> BinaryCompiler<'ctx> {
         
         let module_name = self.module_name.clone();
         let file_path = PathBuf::from("binary_compile.csd"); // Default path for binary compilation
-        let code_gen = LlvmCodeGenerator::new(self.context, &module_name, file_path);
+        
+        // Create a type checker instance for interface implementation checking
+        let type_checker = std::rc::Rc::new(std::cell::RefCell::new(crate::core::type_checker::TypeChecker::new()));
+        
+        // Create the code generator
+        let mut code_gen = LlvmCodeGenerator::new(self.context, &module_name, file_path);
+        
+        // Configure monomorphization manager with type checker for proper interface constraint checking
+        let mono_manager = code_gen.get_mono_manager_mut();
+        *mono_manager = crate::codegen::monomorphization::MonomorphizationManager::new()
+            .with_type_checker(type_checker.clone());
+            
         self.code_generator = Some(code_gen);
         
         Ok(())

@@ -514,6 +514,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         &mut self.builder
     }
     
+    /// Get a mutable reference to the monomorphization manager
+    pub fn get_mono_manager_mut(&mut self) -> &mut crate::codegen::monomorphization::MonomorphizationManager {
+        &mut self.mono_manager
+    }
+    
+    /// Set the monomorphization manager
+    pub fn set_mono_manager(&mut self, manager: crate::codegen::monomorphization::MonomorphizationManager) {
+        self.mono_manager = manager;
+    }
+    
     /// Get the current package name
     pub fn current_package_name(&self) -> &str {
         &self.current_package_name
