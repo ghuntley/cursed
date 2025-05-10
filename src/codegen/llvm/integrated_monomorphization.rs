@@ -8,11 +8,13 @@ use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
 use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
-use crate::codegen::llvm::lru_field_accessors::LruCachedFieldAccessors;
+use crate::codegen::llvm::lru_field_accessors::{LruCachedFieldAccessors, ThreadSafeFieldAccessorLruCache};
 use crate::codegen::llvm::struct_monomorphization::StructMonomorphization;
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+use rand;
 use tracing::{debug, info, warn, error, span, Level};
 
 /// Trait for fully integrated monomorphization
@@ -35,6 +37,9 @@ impl<'ctx> IntegratedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         specialized_name: &str,
         type_args: &[Type],
     ) -> Result<(), Error> {
+        // Ensure the LRU field accessor cache is initialized before any processing
+        self.ensure_lru_field_accessor_cache();
+        
         // First, generate the specialized struct
         // We need to explicitly call the StructMonomorphization trait method
         let _struct_type = crate::codegen::llvm::StructMonomorphization::generate_specialized_struct(
@@ -46,10 +51,19 @@ impl<'ctx> IntegratedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         debug!("Specialized struct created, now generating field accessors");
         
-        // Then, generate the field accessors using our improved implementation directly
-        debug!("Using improved field accessors with proper error handling");
-        // Use LRU cached field accessors instead of standard improved field accessors
-self.generate_lru_cached_field_accessors(generic_struct, specialized_name, type_args)?;
+        // Then, generate the field accessors using our LRU cached implementation
+        debug!("Using LRU cached field accessors for better performance");
+        
+        // Generate field accessors with LRU caching
+        use crate::codegen::llvm::lru_field_accessors::LruCachedFieldAccessors;
+        self.generate_lru_cached_field_accessors(generic_struct, specialized_name, type_args)?;
+        
+        // Log cache statistics periodically
+        if rand::random::<f32>() < 0.05 { // 5% chance to log stats
+            if let Some(stats) = self.get_lru_field_accessor_cache_stats() {
+                info!("Field accessor LRU cache stats: {}", stats);
+            }
+        }
         
         // Register with interface registry if needed
         // Note: SquadStatement doesn't have interface constraints directly,
