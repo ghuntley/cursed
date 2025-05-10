@@ -10,6 +10,7 @@
 //! 3. Integration with the interface implementation system
 //! 4. Consistent return value handling
 //! 5. Support for both success and failure paths
+//! 6. Nesting level tracking for complex interface hierarchies
 
 use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
@@ -17,6 +18,7 @@ use crate::ast::expressions::TypeAssertion;
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
+use crate::codegen::llvm::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 use crate::core::type_checker::Type as CursedType;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
 use crate::codegen::llvm::expression::ExpressionCompilation;
@@ -53,6 +55,17 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         debug!("Compiling integrated type assertion for {}", type_assertion.type_name);
+        
+        // Check if we should use nesting tracking, which is determined by environment variables
+        let use_nesting = std::env::var("CURSED_TYPE_DEBUG")
+            .or_else(|_| std::env::var("CURSED_DEBUG"))
+            .map(|val| !val.is_empty() && val != "0" && val.to_lowercase() != "false")
+            .unwrap_or(false);
+            
+        if use_nesting {
+            // Use the nested type assertion implementation with proper tracking
+            return self.compile_nested_type_assertion(type_assertion, None);
+        }
         
         // First compile the expression being asserted to check for initial errors
         let expr_value = match ExpressionCompilation::compile_expression(self, type_assertion.expression.as_ref()) {
@@ -160,4 +173,7 @@ pub fn register_type_assertion_implementation() {
     // This function is called during LlvmCodeGenerator initialization
     // and ensures that the type assertion implementation is properly registered
     // with the compiler. This enables proper interface type assertions.
+    
+    // Also register the nested type assertion implementation
+    crate::codegen::llvm::interface_type_assertion_nesting::register_nested_type_assertion();
 }
