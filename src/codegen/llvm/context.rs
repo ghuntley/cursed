@@ -63,6 +63,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) llvm_mono_manager: self::monomorphization::MonomorphizationManager,
     // Interface manager for dynamic dispatch
     pub(crate) interface_manager: Option<crate::codegen::llvm::dynamic_dispatch::InterfaceManager<'ctx>>,
+    // Method dispatch cache for optimized interface method calls
+    pub(crate) method_dispatch_cache: Option<crate::codegen::llvm::optimized_dynamic_dispatch::MethodDispatchCache<'ctx>>,
     // GC metadata for struct types: Maps struct names to their traceable field indices
     pub(crate) gc_metadata: HashMap<String, Vec<(usize, String)>>,
     // Counter for string literals
@@ -105,6 +107,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_registry_enhanced::register_enhanced_type_registry();
         // Initialize enhanced type assertions with rich error information
         super::interface_type_assertion_enhanced::register_enhanced_type_assertion();
+        // Initialize optimized dynamic dispatch
+        super::optimized_dynamic_dispatch::register_optimized_dynamic_dispatch();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator
@@ -133,6 +137,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             llvm_mono_manager: self::monomorphization::MonomorphizationManager::new(),
             // Initialize interface manager immediately to avoid dependency issues
             interface_manager: Some(crate::codegen::llvm::dynamic_dispatch::InterfaceManager::new()),
+            // Initialize method dispatch cache to None - will be created when needed
+            method_dispatch_cache: None,
             gc_metadata: HashMap::new(),
             string_literal_counter: 0,
             type_id_cache: None, // Will be initialized when needed
