@@ -963,6 +963,7 @@ impl TypeChecker {
     /// # Returns
     ///
     /// * Returns the methods that were registered
+    #[tracing::instrument(level = "debug", skip(self, methods))]
     pub fn register_methods_for_struct(
         &mut self,
         struct_name: &str,
@@ -970,7 +971,23 @@ impl TypeChecker {
     ) -> Vec<(String, Vec<Type>, Option<Type>)> {
         // Add methods to the struct methods map
         self.struct_methods_map.insert(struct_name.to_string(), methods.clone());
-        tracing::debug!("Registered methods for struct {}: {:?}", struct_name, methods);
+        tracing::debug!(method_count = methods.len(), "Registered methods for struct {}", struct_name);
+        
+        // Log individual methods at trace level for detailed debugging
+        for (method_name, params, return_type) in &methods {
+            let return_type_str = match return_type {
+                Some(t) => t.to_string(),
+                None => "void".to_string(),
+            };
+            let param_types_str: Vec<String> = params.iter().map(|t| t.to_string()).collect();
+            tracing::trace!(
+                struct_name = struct_name,
+                method_name = method_name,
+                param_types = ?param_types_str,
+                return_type = return_type_str,
+                "Registered struct method"
+            );
+        }
         methods
     }
 
