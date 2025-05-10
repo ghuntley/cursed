@@ -182,7 +182,7 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
 
         // Create a new scope for the loop variable
         self.push_scope(super::variables::VariableScope::new());
-        self.add_variable(iterator_name, i_ptr)?;
+        self.add_variable_with_type(iterator_name, i_ptr, self.context().i32_type().into())?;
         
         // Set up loop context for break/continue
         let old_loop_exit = self.replace_loop_exit(Some(loop_exit));
@@ -290,7 +290,9 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
 
         // Create a new scope for the loop variable
         self.push_scope(super::variables::VariableScope::new());
-        self.add_variable(value_name, value_ptr)?;
+        // Create a placeholder type for the value variable
+        let dummy_type = crate::core::type_checker::Type::Integer;
+        self.add_variable(value_name, value_ptr, &dummy_type)?;
         
         // Set up loop context for break/continue
         let old_loop_exit = self.replace_loop_exit(Some(loop_exit));
@@ -391,8 +393,10 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
 
         // Create a new scope for the loop variables
         self.push_scope(super::variables::VariableScope::new());
-        self.add_variable(key_name, key_ptr)?;
-        self.add_variable(value_name, value_ptr)?;
+        // Create placeholder types for the key and value variables
+        let dummy_type = crate::core::type_checker::Type::Integer;
+        self.add_variable(key_name, key_ptr, &dummy_type)?;
+        self.add_variable(value_name, value_ptr, &dummy_type)?;
         
         // Set up loop context for break/continue
         let old_loop_exit = self.replace_loop_exit(Some(loop_exit));
@@ -449,7 +453,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // For pointer types (slices, etc.), we need to handle different pointer types
             let ptr_value = container.into_pointer_value();
             let ptr_type = ptr_value.get_type();
-            let element_type = ptr_type.get_pointee_type();
+            let element_type = ptr_type.get_element_type();
             
             if let Some(array_type) = element_type.into_array_type() {
                 // Pointer to an array
@@ -463,9 +467,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 let struct_value = self.builder.build_load(element_type, struct_ptr, "container_struct")?;
                 
                 // Create or get the length function
-                let module = self.module.clone().ok_or_else(|| {
-                    Error::Compilation("Module not available".to_string())
-                })?;
+                let module = match &self.module {
+                    Some(module) => module,
+                    None => return Err(Error::Compilation("Module not available".to_string()))
+                };
                 
                 // Try to find a length getter function
                 let type_name = if let Some(struct_type) = element_type.into_struct_type() {
@@ -500,9 +505,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             } else {
                 // For simple pointer to element types like strings
                 // Use a runtime helper function to get length
-                let module = self.module.clone().ok_or_else(|| {
-                    Error::Compilation("Module not available".to_string())
-                })?;
+                let module = match &self.module {
+                    Some(module) => module,
+                    None => return Err(Error::Compilation("Module not available".to_string()))
+                };
                 
                 // Get or create a generic container length function
                 let fn_type = self.context.i32_type().fn_type(&[container.get_type().into()], false);
@@ -600,9 +606,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     } else {
                         // Fallback approach for unknown struct layouts
                         debug!("Using fallback for unknown struct layout");
-                        let module = self.module.clone().ok_or_else(|| {
-                            Error::Compilation("Module not available".to_string())
-                        })?;
+                        let module = match &self.module {
+                            Some(module) => module,
+                            None => return Err(Error::Compilation("Module not available".to_string()))
+                        };
                         
                         // Try to find or create a get_element function for this container type
                         let type_name = struct_type.get_name().to_str().unwrap_or("container");

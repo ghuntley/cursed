@@ -360,39 +360,48 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 match (&range_clause.start, &range_clause.step) {
                     (None, None) => {
                         // Simple range: flex 10
-                        tracing::debug!("Compiling simple numeric range");
+                        tracing::debug!("Compiling simple numeric range with end={}", range_clause.end.string());
+                        
                         // Create a new RangeExpression for end-only range
                         let range_expr = RangeExpression::Range {
-                            end: Box::new(range_clause.end.as_any().downcast_ref::<crate::ast::expressions::Identifier>()
-                                .map(|i| crate::ast::expressions::Identifier { value: i.value.clone(), token: i.token.clone() })
-                                .unwrap_or_else(|| crate::ast::expressions::Identifier { value: "10".to_string(), token: "10".to_string() }))
+                            end: range_clause.end.clone_box()
                         };
+                        
                         self.compile_range_for_loop(
                             &range_for.value_var,
                             &range_expr,
                             &range_for.body
                         )
                     },
-                    (Some(_), None) => {
+                    (Some(start), None) => {
                         // Start/end range: flex 5, 10
-                        tracing::debug!("Compiling start/end numeric range");
+                        tracing::debug!("Compiling start/end numeric range with start={}, end={}", 
+                            start.string(), range_clause.end.string());
+                        
                         // Create a new RangeExpression for start+end range
-                        let range_expr = RangeExpression::Range {
-                            end: Box::new(crate::ast::expressions::Identifier { value: "10".to_string(), token: "10".to_string() })
+                        let range_expr = RangeExpression::RangeFromTo {
+                            start: start.clone_box(),
+                            end: range_clause.end.clone_box()
                         };
+                        
                         self.compile_range_for_loop(
                             &range_for.value_var,
                             &range_expr,
                             &range_for.body
                         )
                     },
-                    (Some(_), Some(_)) => {
+                    (Some(start), Some(step)) => {
                         // Start/end/step range: flex 0, 10, 2
-                        tracing::debug!("Compiling start/end/step numeric range");
+                        tracing::debug!("Compiling start/end/step numeric range with start={}, end={}, step={}", 
+                            start.string(), range_clause.end.string(), step.string());
+                        
                         // Create a new RangeExpression for start+end+step range
-                        let range_expr = RangeExpression::Range {
-                            end: Box::new(crate::ast::expressions::Identifier { value: "10".to_string(), token: "10".to_string() })
+                        let range_expr = RangeExpression::RangeFromToStep {
+                            start: start.clone_box(),
+                            end: range_clause.end.clone_box(),
+                            step: step.clone_box()
                         };
+                        
                         self.compile_range_for_loop(
                             &range_for.value_var,
                             &range_expr,
@@ -408,21 +417,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 }
             } else {
                 // Container iteration
-                tracing::debug!("Compiling container iteration");
-                // Box the expression for container iteration
-                let expr_box: Box<dyn Expression> = Box::new(crate::ast::expressions::Identifier {
-                    value: "container".to_string(),
-                    token: "container".to_string()
-                });
+                tracing::debug!("Compiling container iteration with container={}", range_clause.end.string());
                 self.compile_container_for_loop(
                     &range_for.value_var, 
-                    &expr_box, 
+                    &range_clause.end, 
                     &range_for.body
                 )
             }
         } else {
             // Key-value iteration - for maps
-            tracing::debug!("Compiling key-value map iteration");
+            tracing::debug!("Compiling key-value map iteration with map={}", range_for.range.end.string());
             let range_clause = &range_for.range;
             if !range_clause.is_container {
                 return Err(Error::Compilation(
@@ -430,15 +434,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 ));
             }
             
-            // Box the expression for map iteration
-            let expr_box: Box<dyn Expression> = Box::new(crate::ast::expressions::Identifier {
-                value: "map".to_string(),
-                token: "map".to_string()
-            });
             self.compile_map_for_loop(
                 range_for.key_var.as_ref().unwrap(), 
                 &range_for.value_var, 
-                &expr_box, 
+                &range_clause.end, 
                 &range_for.body
             )
         }

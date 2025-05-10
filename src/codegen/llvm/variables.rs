@@ -333,4 +333,25 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     pub fn pop_scope(&mut self) -> Option<VariableScope<'ctx>> {
         self.var_scopes.pop()
     }
+    
+    /// Enter a new scope by creating and pushing a new variable scope
+    pub fn enter_scope(&mut self) {
+        let new_scope = VariableScope::new();
+        self.push_scope(new_scope);
+    }
+    
+    /// Exit the current scope by popping it
+    pub fn exit_scope(&mut self) {
+        self.pop_scope();
+    }
+    
+    /// Add a variable to the current scope with a specific type from the type system
+    pub fn add_variable(&mut self, name: &str, ptr: PointerValue<'ctx>, typ: &crate::core::type_checker::Type) -> Result<(), Error> {
+        // Get the LLVM type from the type system type
+        use crate::codegen::llvm::function_monomorphization::FunctionMonomorphization;
+        let llvm_type = self.type_to_llvm_type(typ)?;
+        
+        // Add the variable to the current scope with the LLVM type
+        self.add_variable_with_type(name, ptr, llvm_type)
+    }
 }

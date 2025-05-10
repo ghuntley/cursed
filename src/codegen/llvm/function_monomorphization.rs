@@ -7,8 +7,14 @@ use inkwell::values::{BasicValueEnum, FunctionValue};
 use inkwell::types::BasicTypeEnum;
 use crate::ast::expressions::CallExpression;
 use crate::ast::declarations::FunctionStatement;
+use crate::ast::statements::ReturnStatement;
 use crate::core::type_checker::Type;
 use crate::error::Error;
+use crate::lexer::{Token, TokenType};
+use crate::ast::Parameter;
+use crate::ast::Block;
+use crate::codegen::llvm::expression::ExpressionCompilation;
+use crate::codegen::llvm::statement::StatementCompilation;
 use super::context::LlvmCodeGenerator;
 use std::collections::HashMap;
 
@@ -30,6 +36,12 @@ pub trait FunctionMonomorphization<'ctx> {
     
     /// Convert a type name to an LLVM type
     fn monomorphization_type_to_llvm_type(&self, type_name: &str) -> Result<BasicTypeEnum<'ctx>, Error>;
+    
+    /// Convert a Type enum to an LLVM type
+    fn type_to_llvm_type(&self, typ: &Type) -> Result<BasicTypeEnum<'ctx>, Error>;
+    
+    /// Create a default value for a given type
+    fn create_default_value_for_type(&self, typ: &Type) -> Result<BasicValueEnum<'ctx>, Error>;
 }
 
 impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
@@ -42,10 +54,10 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         tracing::debug!("Compiling generic call expression for function: {}", function_name);
 
         // 1. Extract type arguments
-        let type_args = if !call_expr.type_args.is_empty() {
+        let type_args = if !call_expr.type_arguments.is_empty() {
             // Convert AST type nodes to Type system types
             let mut type_args = Vec::new();
-            for type_arg in &call_expr.type_args {
+            for type_arg in &call_expr.type_arguments {
                 let type_name = type_arg.string();
                 let arg_type = crate::core::type_checker::Type::new_basic(&type_name);
                 type_args.push(arg_type);
@@ -79,7 +91,7 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             
         // 6. Compile the arguments
         let mut compiled_args = Vec::new();
-        for arg in &call_expr.args {
+        for arg in &call_expr.arguments {
             let compiled_arg = self.compile_expression(arg)?;
             compiled_args.push(compiled_arg);
         }
@@ -114,45 +126,79 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         for (i, type_param) in generic_function.type_parameters.iter().enumerate() {
             if i < type_args.len() {
                 instantiator.add_type_param(&type_param.value, type_args[i].clone());
+                tracing::debug!("Added type parameter mapping: {} -> {:?}", type_param.value, type_args[i]);
             }
         }
         
         // 2. Process function parameters with substituted types
         let mut param_types = Vec::new();
-        for param in &generic_function.params {
+        let mut param_mapping = HashMap::new();
+        
+        for param in &generic_function.parameters {
             // Get the parameter type name
-            let param_type_name = &param.type_name.value;
+            let param_type_name = param.type_name.string();
+            tracing::debug!("Processing parameter: {} with type {}", param.name.value, param_type_name);
             
             // Create a Type from the parameter type name
-            let generic_param_type = Type::Named(param_type_name.clone());
+            // We need to handle both direct type parameter references and complex types
+            // Check if this is a type parameter by trying to instantiate it
+            let generic_param_type = Type::TypeParam(param_type_name.clone());
+            
+            // Try instantiating it - if it fails, it's not a type parameter
+            let maybe_concrete_type = instantiator.instantiate_type(&generic_param_type);
+            
+            // If instantiation failed, this is a named type, not a type parameter
+            let generic_param_type = if maybe_concrete_type.is_err() {
+                Type::Named(param_type_name)
+            } else {
+                generic_param_type 
+            };
             
             // Apply type parameter substitution
             let concrete_param_type = instantiator.instantiate_type(&generic_param_type)?;
+            tracing::debug!("Instantiated parameter type: {:?}", concrete_param_type);
             
             // Convert to LLVM type
-            let llvm_param_type = self.monomorphization_type_to_llvm_type(&concrete_param_type.to_string())?;
+            let llvm_param_type = self.type_to_llvm_type(&concrete_param_type)?;
             param_types.push(llvm_param_type);
+            
+            // Store mapping between parameter name and concrete type for later use
+            param_mapping.insert(param.name.value.clone(), concrete_param_type);
         }
         
         // 3. Process return type with substituted types
         let return_type = if let Some(ret_type) = &generic_function.return_type {
-            // Get the return type name
-            let return_type_name = &ret_type.value;
+            // Get the return type string representation
+            let return_type_name = ret_type.string();
+            tracing::debug!("Processing return type: {}", return_type_name);
             
             // Create a Type from the return type name
-            let generic_return_type = Type::Named(return_type_name.clone());
+            // Handle both direct type parameter references and complex types
+            // Check if this is a type parameter
+            let generic_return_type = Type::TypeParam(return_type_name.clone());
+            
+            // Try instantiating it - if it fails, it's not a type parameter
+            let maybe_concrete_type = instantiator.instantiate_type(&generic_return_type);
+            
+            // If instantiation failed, this is a named type, not a type parameter
+            let generic_return_type = if maybe_concrete_type.is_err() {
+                Type::Named(return_type_name)
+            } else {
+                generic_return_type
+            };
             
             // Apply type parameter substitution
             let concrete_return_type = instantiator.instantiate_type(&generic_return_type)?;
+            tracing::debug!("Instantiated return type: {:?}", concrete_return_type);
             
             // Convert to LLVM type
-            Some(self.monomorphization_type_to_llvm_type(&concrete_return_type.to_string())?)
+            Some((concrete_return_type.clone(), self.type_to_llvm_type(&concrete_return_type)?))
         } else {
             None
         };
         
         // 4. Create the function type
-        let function_type = if let Some(ret_type) = return_type {
+        let function_type = if let Some((_, ret_type)) = &return_type {
             // Function with a return type
             match ret_type {
                 BasicTypeEnum::IntType(t) => t.fn_type(&param_types, false),
@@ -176,9 +222,13 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         // 7. Set insertion point to the basic block
         self.builder().position_at_end(basic_block);
         
-        // 8. Process function parameters and create local variables
-        let mut param_values = HashMap::new();
-        for (i, param) in generic_function.params.iter().enumerate() {
+        // 8. Create a symbol table for the specialized function
+        // This will hold all the local variables including parameters
+        self.enter_scope();
+        
+        // 9. Process function parameters and create local variables
+        let mut param_values = Vec::new();
+        for (i, param) in generic_function.parameters.iter().enumerate() {
             if let Some(param_value) = function.get_nth_param(i as u32) {
                 // Create a local variable to store the parameter
                 let param_name = &param.name.value;
@@ -192,41 +242,106 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                 self.builder().build_store(alloca, param_value)
                     .map_err(|e| Error::from_str(&format!("Failed to store parameter: {}", e)))?;
                 
-                // Save the allocated pointer for this parameter
-                param_values.insert(param_name.clone(), alloca);
+                // Add the parameter to the symbol table
+                self.add_variable(param_name, alloca, &param_mapping[param_name]);
+                
+                // Save the allocated pointer for compilation
+                param_values.push((param_name.clone(), alloca));
+                
+                tracing::debug!("Added parameter {} to symbol table", param_name);
             }
         }
         
-        // TODO: For a complete implementation, we would need to:
-        // 1. Create a new symbol table with the parameter mappings
-        // 2. Use the GenericInstantiator to create a specialized copy of the function body
-        // 3. Compile the specialized function body
+        // 10. Get the specialized function body using the original body
+        // In a full implementation, we would use GenericInstantiator to create a specialized copy
+        let specialized_body = &generic_function.body;
         
-        // For this minimal implementation, we'll just return a default value
-        // based on the function's return type
-        if let Some(ret_type) = return_type {
-            // Return a default value based on the return type
-            let ret_val = match ret_type {
-                BasicTypeEnum::IntType(t) => t.const_zero().into(),
-                BasicTypeEnum::FloatType(t) => t.const_zero().into(),
-                BasicTypeEnum::PointerType(t) => t.const_null().into(),
-                BasicTypeEnum::StructType(_) => {
-                    // For structs, we'd normally create and initialize a struct value
-                    // For this minimal implementation, return null pointer
-                    self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into()
-                },
-                BasicTypeEnum::ArrayType(t) => t.const_zero().into(),
-                BasicTypeEnum::VectorType(t) => t.const_zero().into(),
-            };
-            self.builder().build_return(Some(&ret_val))
-                .map_err(|e| Error::from_str(&format!("Failed to build return: {}", e)))?;
-        } else {
-            // Function returns void
-            self.builder().build_return(None)
-                .map_err(|e| Error::from_str(&format!("Failed to build return: {}", e)))?;
+        // 11. Use our existing statement compiler to compile the function body
+        // This will handle the statements with our substituted types
+        for statement in &specialized_body.statements {
+            // Compile each statement in the function body
+            self.compile_statement(statement.as_ref())?;
         }
         
+        // 12. Handle implicit return if the function body doesn't have an explicit return
+        // Check if the last statement is a return statement
+        let has_explicit_return = specialized_body.statements.last()
+            .map(|stmt| stmt.as_any().downcast_ref::<ReturnStatement>().is_some())
+            .unwrap_or(false);
+        
+        if !has_explicit_return {
+            // There's no explicit return, so we need to add one
+            if let Some((concrete_type, _)) = &return_type {
+                // Return a default value based on the return type
+                let default_value = self.create_default_value_for_type(concrete_type)?;
+                self.builder().build_return(Some(&default_value))
+                    .map_err(|e| Error::from_str(&format!("Failed to build implicit return: {}", e)))?;
+            } else {
+                // Function returns void
+                self.builder().build_return(None)
+                    .map_err(|e| Error::from_str(&format!("Failed to build void return: {}", e)))?;
+            }
+        }
+        
+        // 13. Exit the function scope
+        self.exit_scope();
+        
+        // Verify the function to catch any errors
+        if !function.verify(true) {
+            tracing::error!("Function verification failed");
+            return Err(Error::from_str("Function verification failed"));
+        }
+        
+        tracing::info!("Successfully generated specialized function: {}", specialized_name);
         Ok(function)
+    }
+    
+    /// Create a default value for a given type
+    fn create_default_value_for_type(&self, typ: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
+        match typ {
+            Type::Normie => Ok(self.context().i32_type().const_zero().into()),
+            Type::Smol => Ok(self.context().i8_type().const_zero().into()),
+            Type::Mid => Ok(self.context().i16_type().const_zero().into()),
+            Type::Thicc => Ok(self.context().i64_type().const_zero().into()),
+            Type::Snack => Ok(self.context().f32_type().const_zero().into()),
+            Type::Meal => Ok(self.context().f64_type().const_zero().into()),
+            Type::Lit => Ok(self.context().bool_type().const_zero().into()),
+            Type::Tea => {
+                // Create an empty string
+                let char_ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(char_ptr_type.const_null().into())
+            },
+            Type::Byte => Ok(self.context().i8_type().const_zero().into()),
+            Type::Rune => Ok(self.context().i32_type().const_zero().into()),
+            Type::Sip => Ok(self.context().i32_type().const_zero().into()),
+            Type::Extra => {
+                // Complex number is usually represented as a struct
+                // For simplicity, return a null pointer
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.const_null().into())
+            },
+            Type::Array(_, _) | Type::Slice(_) => {
+                // For arrays and slices, return a null pointer
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.const_null().into())
+            },
+            Type::Map(_, _) | Type::Channel(_) => {
+                // Maps and channels are also pointer types
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.const_null().into())
+            },
+            Type::Struct(_, _) | Type::Interface(_, _) => {
+                // For structs and interfaces, return a null pointer
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.const_null().into())
+            },
+            Type::Pointer(_) => {
+                // For pointers, return null
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.const_null().into())
+            },
+            _ => Err(Error::from_str(&format!("Cannot create default value for type: {:?}", typ))),
+        }
     }
 
     fn monomorphization_type_to_llvm_type(&self, type_name: &str) -> Result<BasicTypeEnum<'ctx>, Error> {
@@ -239,7 +354,103 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             "meal" => Ok(self.context().f64_type().into()),
             "byte" => Ok(self.context().i8_type().into()),
             "rune" => Ok(self.context().i32_type().into()),
+            "tea" => {
+                // String type is a char pointer in LLVM
+                let char_type = self.context().i8_type();
+                Ok(char_type.ptr_type(inkwell::AddressSpace::default()).into())
+            },
+            "lit" => Ok(self.context().bool_type().into()),
+            "sip" => Ok(self.context().i32_type().into()),
             _ => Err(Error::from_str(&format!("Unsupported type: {}", type_name))),
+        }
+    }
+    
+    /// Convert a Type enum to an LLVM type
+    fn type_to_llvm_type(&self, typ: &Type) -> Result<BasicTypeEnum<'ctx>, Error> {
+        match typ {
+            Type::Normie => Ok(self.context().i32_type().into()),
+            Type::Smol => Ok(self.context().i8_type().into()),
+            Type::Mid => Ok(self.context().i16_type().into()),
+            Type::Thicc => Ok(self.context().i64_type().into()),
+            Type::Snack => Ok(self.context().f32_type().into()),
+            Type::Meal => Ok(self.context().f64_type().into()),
+            Type::Lit => Ok(self.context().bool_type().into()),
+            Type::Tea => {
+                // String type is a char pointer in LLVM
+                let char_type = self.context().i8_type();
+                Ok(char_type.ptr_type(inkwell::AddressSpace::default()).into())
+            },
+            Type::Byte => Ok(self.context().i8_type().into()),
+            Type::Rune => Ok(self.context().i32_type().into()),
+            Type::Sip => Ok(self.context().i32_type().into()),
+            Type::Array(elem_type, size) => {
+                // Create an array type with the given element type and size
+                let llvm_elem_type = self.type_to_llvm_type(elem_type)?;
+                match llvm_elem_type {
+                    BasicTypeEnum::IntType(t) => Ok(t.array_type(*size as u32).into()),
+                    BasicTypeEnum::FloatType(t) => Ok(t.array_type(*size as u32).into()),
+                    BasicTypeEnum::PointerType(t) => Ok(t.array_type(*size as u32).into()),
+                    BasicTypeEnum::StructType(t) => Ok(t.array_type(*size as u32).into()),
+                    BasicTypeEnum::ArrayType(t) => Ok(t.array_type(*size as u32).into()),
+                    BasicTypeEnum::VectorType(t) => Ok(t.array_type(*size as u32).into()),
+                }
+            },
+            Type::Slice(elem_type) => {
+                // Slice is a struct with a pointer to elements and a length
+                // For simplicity, we just use a pointer here
+                let llvm_elem_type = self.type_to_llvm_type(elem_type)?;
+                match llvm_elem_type {
+                    BasicTypeEnum::IntType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::FloatType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::PointerType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::StructType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::ArrayType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::VectorType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                }
+            },
+            Type::Pointer(target_type) => {
+                // Convert the target type to LLVM and then make a pointer
+                let llvm_target_type = self.type_to_llvm_type(target_type)?;
+                match llvm_target_type {
+                    BasicTypeEnum::IntType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::FloatType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::PointerType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::StructType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::ArrayType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                    BasicTypeEnum::VectorType(t) => Ok(t.ptr_type(inkwell::AddressSpace::default()).into()),
+                }
+            },
+            Type::Struct(name, _type_args) => {
+                // For now, we create an opaque struct type
+                // In a full implementation, we would look up the struct definition
+                let struct_type = self.context().opaque_struct_type(name);
+                Ok(struct_type.into())
+            },
+            Type::Interface(_, _) => {
+                // Interfaces are implemented as pointers to VTable structs
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.into())
+            },
+            Type::Map(_, _) => {
+                // Maps are implemented as opaque pointer types
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.into())
+            },
+            Type::Channel(_) => {
+                // Channels are implemented as opaque pointer types
+                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
+                Ok(ptr_type.into())
+            },
+            Type::Named(name) => {
+                // Try to convert the name to a built-in type
+                self.monomorphization_type_to_llvm_type(name)
+            },
+            Type::TypeParam(name) => {
+                // This should have been instantiated already, but we'll handle as a fallback
+                tracing::warn!("Type parameter {} encountered that should have been instantiated", name);
+                Ok(self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).into())
+            },
+            _ => Err(Error::from_str(&format!("Unsupported type: {:?}", typ))),
         }
     }
 }
@@ -267,19 +478,33 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     let param_type = Token::new(TokenType::Identifier, "T".to_string(), 0, 0);
                     let return_type = Token::new(TokenType::Identifier, "T".to_string(), 0, 0);
                     
-                    let param = Parameter {
-                        name: param_name,
-                        type_name: param_type,
+                    let param = crate::ast::ParameterStatement {
+                        token: "param".to_string(),
+                        name: Identifier {
+                            token: param_name.value.clone(),
+                            value: param_name.value.clone(),
+                        },
+                        type_name: Box::new(Identifier {
+                            token: param_type.value.clone(),
+                            value: param_type.value.clone(),
+                        }),
                     };
                     
                     let fn_name = Token::new(TokenType::Identifier, "test_generic_fn".to_string(), 0, 0);
                     
                     TEST_FN = Some(FunctionStatement {
+                        token: "slay".to_string(),
                         name: fn_name,
                         type_parameters: vec![type_param],
-                        params: vec![param],
-                        body: Block::new(vec![]),
-                        return_type: Some(return_type),
+                        parameters: vec![param],
+                        body: crate::ast::statements::block::BlockStatement {
+                            token: "{".to_string(),
+                            statements: vec![],
+                        },
+                        return_type: Some(Box::new(Identifier {
+                            token: "T".to_string(),
+                            value: "T".to_string(),
+                        })),
                         generic_constraints: vec![],
                     });
                 }
