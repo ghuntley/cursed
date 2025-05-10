@@ -25,6 +25,7 @@ use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHan
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 use crate::error::Error;
 
 /// Enhanced trait for visualizing interface inheritance paths with improved error propagation
