@@ -75,6 +75,8 @@ pub struct LlvmCodeGenerator<'ctx> {
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new LlvmCodeGenerator instance.
     pub fn new(context: &'ctx Context, module_name: &str, initial_file_path: PathBuf) -> Self {
+        // Initialize type assertion registration
+        super::type_assertion_implementation::register_type_assertion_implementation();
         // Initialize standard functions like puts before creating the generator
         let module = context.create_module(module_name);
         let builder = context.create_builder();
@@ -103,6 +105,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             type_id_cache: None, // Will be initialized when needed
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
+            
+            // Register the integrated type assertion implementation
+            // to ensure proper type assertion functionality
         }
     }
     

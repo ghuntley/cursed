@@ -76,7 +76,10 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                      type_assertion.expression.string(), type_assertion.type_name);
             
             // Use the fully integrated type assertion implementation with error handling
-            return self.compile_integrated_type_assertion(type_assertion);
+            // This implementation is provided by the type_assertion_implementation module
+            // and includes proper error propagation, null checking, and structured logging
+            let result = self.compile_integrated_type_assertion(type_assertion)?;
+            return Ok(result);
         }
         
         // Handle if expressions
