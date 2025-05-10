@@ -29,6 +29,7 @@ mod range;
 mod range_expressions;
 mod reference;
 mod statements;
+mod struct_field_inference;
 mod switch;
 mod type_assertion;
 mod types;
@@ -38,3 +39,4 @@ mod tests;
 
 pub use parser::Parser;
 pub use preprocessor::{Preprocessor, TokenStream};
+pub use struct_field_inference::StructFieldTypeInference;
