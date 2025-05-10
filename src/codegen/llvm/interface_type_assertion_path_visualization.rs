@@ -95,22 +95,32 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Perform BFS to find the shortest path
         while let Some(current) = queue.pop_front() {
             // Get direct extensions from the current interface
-            if let Some(direct_extensions) = self.interface_registry().get_direct_extensions(&current) {
-                for next in direct_extensions {
-                    if !visited.contains(&next) {
-                        visited.insert(next.clone());
-                        queue.push_back(next.clone());
-                        
-                        // Update path
-                        let mut new_path = path_map.get(&current).cloned().unwrap_or_else(|| (None, Vec::new())).1;
-                        new_path.push(next.clone());
-                        path_map.insert(next.clone(), (Some(current.clone()), new_path.clone()));
-                        
-                        // Check if we've reached the target
-                        if &next == target_interface {
-                            return Ok(new_path);
+            match self.interface_registry().get_direct_extensions(&current) {
+                Ok(Some(direct_extensions)) => {
+                    for next in direct_extensions {
+                        if !visited.contains(&next) {
+                            visited.insert(next.clone());
+                            queue.push_back(next.clone());
+                            
+                            // Update path
+                            let mut new_path = path_map.get(&current).cloned().unwrap_or_else(|| (None, Vec::new())).1;
+                            new_path.push(next.clone());
+                            path_map.insert(next.clone(), (Some(current.clone()), new_path.clone()));
+                            
+                            // Check if we've reached the target
+                            if &next == target_interface {
+                                return Ok(new_path);
+                            }
                         }
                     }
+                },
+                Ok(None) => {
+                    // No direct extensions for this interface
+                    trace!("No direct extensions found for {}", current);
+                },
+                Err(e) => {
+                    warn!("Error getting direct extensions for {}: {}", current, e);
+                    // Continue the search with other paths
                 }
             }
         }
@@ -130,7 +140,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         _ = writeln!(dot, "  node [shape=box, style=filled, fillcolor=lightblue];");
         
         // Get the complete hierarchy from the registry
-        if let Ok(hierarchy) = self.interface_registry().get_extension_hierarchy() {
+        match self.interface_registry().get_extension_hierarchy() {
             // Add all nodes first
             let mut all_interfaces = HashSet::new();
             
@@ -232,31 +242,47 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
                     "\nConsider implementing the missing interfaces in the hierarchy."
                 );
             },
-            _ => {
+            Ok(_) => {
                 _ = writeln!(
                     message,
                     "\n\nNo viable inheritance path exists between these interfaces."
                 );
                 
                 // List all interfaces that the source implements
-                if let Ok(Some(implementations)) = self.interface_registry().get_direct_extensions(source_interface) {
-                    if !implementations.is_empty() {
+                match self.interface_registry().get_direct_extensions(source_interface) {
+                    Ok(Some(implementations)) if !implementations.is_empty() => {
                         _ = writeln!(message, "\n'{}' directly extends these interfaces:", source_interface);
-                        for impl_interface in implementations {
+                        for impl_interface in &implementations {
                             _ = writeln!(message, "  - {}", impl_interface);
                         }
+                    },
+                    Ok(_) => {}, // No implementations or empty
+                    Err(e) => {
+                        warn!("Failed to get direct extensions for {}: {}", source_interface, e);
                     }
                 }
                 
                 // List all interfaces that extend the target
-                if let Ok(Some(implementors)) = self.interface_registry().get_direct_implementors(target_interface) {
-                    if !implementors.is_empty() {
+                match self.interface_registry().get_direct_implementors(target_interface) {
+                    Ok(Some(implementors)) if !implementors.is_empty() => {
                         _ = writeln!(message, "\nThese interfaces directly extend '{}':", target_interface);
-                        for impl_interface in implementors {
+                        for impl_interface in &implementors {
                             _ = writeln!(message, "  - {}", impl_interface);
                         }
+                    },
+                    Ok(_) => {}, // No implementors or empty
+                    Err(e) => {
+                        warn!("Failed to get direct implementors for {}: {}", target_interface, e);
                     }
                 }
+            },
+            Err(e) => {
+                warn!("Failed to find alternative paths: {}", e);
+                _ = writeln!(
+                    message,
+                    "\n\nFailed to analyze inheritance paths: {}",
+                    e
+                );
             }
         }
         
@@ -275,7 +301,10 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Get all interfaces
         let all_interfaces = match self.interface_registry().get_all_interfaces() {
             Ok(interfaces) => interfaces,
-            Err(_) => return Ok(Vec::new()),
+            Err(e) => {
+                warn!("Failed to get all interfaces: {}", e);
+                return Ok(Vec::new());
+            },
         };
         
         let mut alternative_paths = Vec::new();
@@ -288,19 +317,31 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
             }
             
             // Try to find a path from source to intermediate
-            if let Ok(path1) = self.find_interface_path(source_interface, &intermediate) {
-                // Try to find a path from intermediate to target
-                if let Ok(path2) = self.find_interface_path(&intermediate, target_interface) {
-                    // Combine paths (remove duplicate intermediate node)
-                    let mut combined_path = path1;
-                    combined_path.extend(path2.into_iter().skip(1));
-                    
-                    alternative_paths.push(combined_path);
-                    
-                    // Limit the number of alternatives
-                    if alternative_paths.len() >= max_alternatives {
-                        break;
+            match self.find_interface_path(source_interface, &intermediate) {
+                Ok(path1) => {
+                    // Try to find a path from intermediate to target
+                    match self.find_interface_path(&intermediate, target_interface) {
+                        Ok(path2) => {
+                            // Combine paths (remove duplicate intermediate node)
+                            let mut combined_path = path1;
+                            combined_path.extend(path2.into_iter().skip(1));
+                            
+                            alternative_paths.push(combined_path);
+                            
+                            // Limit the number of alternatives
+                            if alternative_paths.len() >= max_alternatives {
+                                break;
+                            }
+                        },
+                        Err(e) => {
+                            trace!("No path from {} to {}: {}", intermediate, target_interface, e);
+                            // Continue to next intermediate
+                        }
                     }
+                },
+                Err(e) => {
+                    trace!("No path from {} to {}: {}", source_interface, intermediate, e);
+                    // Continue to next intermediate
                 }
             }
         }
@@ -318,27 +359,32 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Get source location for better error messages
         let source_location = format!("{}", type_assertion.token_literal());
         
-        // For now, we'll just demonstrate the error path enhancement with a placeholder
-        // In a real implementation, this would call the nested interface type assertion implementation
-        let result = Err(Error::Compilation(format!(
-            "Value of type 'SourceType' cannot be asserted as type '{}'",
-            type_assertion.type_name
-        )));
+        // First try to compile using the standard type assertion logic
+        // This uses the TypeAssertionErrorPropagation trait that is already implemented
+        // First try to compile using TypeAssertionErrorPropagation trait
+        // This is implemented via integration with the error propagation system
+        let result = self.compile_type_assertion_with_errors(type_assertion);
         
         // If compilation fails, enhance the error message with path information
         if let Err(Error::Compilation(err_msg)) = &result {
-            // Extract interface names from error message (simplified approach)
-            if let Some(source_type) = extract_source_type_from_error(err_msg) {
-                if let Some(target_type) = extract_target_type_from_error(err_msg) {
+            // Extract interface names from error message
+            if let Some(source_type) = extract_source_type_from_error(&err_msg) {
+                if let Some(target_type) = extract_target_type_from_error(&err_msg) {
                     // Generate enhanced error message with path visualization
-                    let enhanced_msg = self.generate_path_error_message(
+                    match self.generate_path_error_message(
                         &source_type,
                         &target_type,
                         &source_location
-                    )?;
-                    
-                    // Return the enhanced error
-                    return Err(Error::Compilation(enhanced_msg));
+                    ) {
+                        Ok(enhanced_msg) => {
+                            // Return the enhanced error
+                            return Err(Error::Compilation(enhanced_msg));
+                        },
+                        Err(e) => {
+                            // Log the error but continue with the original message
+                            warn!("Failed to generate path error message: {}", e);
+                        }
+                    }
                 }
             }
         }
@@ -350,40 +396,47 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
 
 // Helper methods extension
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Access the interface registry - this method needs to be implemented
-    /// to match the actual registry access pattern in the codebase
+    /// Access the interface registry for visualization
     fn interface_registry(&self) -> &dyn InterfaceRegistryExtensionWithVisualization {
-        // This would return the actual registry in a real implementation
-        // For now, we'll use a placeholder registry
-        &PlaceholderVisualizationRegistry
+        // The interface extension registry is stored in the registry_extensions field
+        // of the LlvmCodeGenerator, which is initialized in the constructor
+        &self.registry_extensions
     }
 }
+
+use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 
 /// Extension trait for interface registry with visualization capabilities
 pub trait InterfaceRegistryExtensionWithVisualization {
     /// Get a map of all interface extension relationships for visualization
     fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error>;
+    
+    /// Get the set of interfaces that a given interface directly extends
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    
+    /// Get the set of interfaces that directly extend a given interface
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    
+    /// Get all interfaces in the registry
+    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error>;
 }
 
-// Placeholder implementation for interface registry extension with visualization
-struct PlaceholderVisualizationRegistry;
-
-impl PlaceholderVisualizationRegistry {
-    fn get_interface_extensions(&self, _interface_name: &str) -> Option<Vec<String>> {
-        // In a real implementation, this would return actual extension information
-        None
+// Implementation for ThreadSafeInterfaceExtensionRegistry
+impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensionRegistry {
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
+        self.get_extension_hierarchy()
     }
     
-    fn get_all_interfaces(&self) -> Vec<String> {
-        // In a real implementation, this would return all registered interfaces
-        Vec::new()
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        self.get_direct_extensions(interface)
     }
-}
-
-impl InterfaceRegistryExtensionWithVisualization for PlaceholderVisualizationRegistry {
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
-        // In a real implementation, this would return the actual extension hierarchy
-        Ok(HashMap::new())
+    
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        self.get_direct_implementors(interface)
+    }
+    
+    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+        self.get_all_interfaces()
     }
 }
 
@@ -412,4 +465,8 @@ fn extract_target_type_from_error(error_msg: &str) -> Option<String> {
 // Helper function to register this module in the compiler
 pub fn register_interface_type_assertion_path_visualization() {
     trace!("Interface type assertion path visualization module registered");
+    // This function is called during compiler initialization to ensure
+    // the path visualization components are properly registered
+    // The actual registration is done by including the trait into the codebase
+    // and implementing it in the LlvmCodeGenerator struct
 }

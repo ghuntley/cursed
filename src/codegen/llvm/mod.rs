@@ -119,6 +119,8 @@ pub use self::interface_type_assertion_enhanced::EnhancedTypeAssertion as Enhanc
 pub use self::type_registry_improved::ImprovedTypeRegistry;
 // Enhanced nested interface type assertions with proper error propagation
 pub use self::interface_type_assertion_nested_enhanced::NestedInterfaceTypeAssertionEnhanced;
+// Interface type assertion path visualization for debugging and developer tooling
+pub use self::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};
@@ -203,6 +205,7 @@ mod type_registry_improved; // Improved type registry with better runtime type i
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
 pub mod interface_type_assertion_error_propagation; // Enhanced error propagation for interface type assertions
 pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface type assertions with proper error propagation
+pub mod interface_type_assertion_path_visualization; // Visual debugging tools for interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

@@ -85,11 +85,24 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) lru_field_accessor_cache: Option<crate::codegen::llvm::lru_field_accessors::ThreadSafeFieldAccessorLruCache>,
     // Counter for generating unique IDs
     pub(crate) unique_id_counter: std::sync::atomic::AtomicU64,
+    // Interface extension registry for path visualization
+    pub(crate) registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry,
+    
+    // Test-only fields for interface hierarchy mocking in unit tests
+    #[cfg(test)]
+    pub test_interface_hierarchy: Option<HashMap<String, HashSet<String>>>,
+    #[cfg(test)]
+    pub test_all_interfaces: Option<HashSet<String>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new LlvmCodeGenerator instance.
     pub fn new(context: &'ctx Context, module_name: &str, initial_file_path: PathBuf) -> Self {
+        Self::with_options(context, module_name, initial_file_path)
+    }
+    
+    /// Creates a new LlvmCodeGenerator instance with custom options.
+    fn with_options(context: &'ctx Context, module_name: &str, initial_file_path: PathBuf) -> Self {
         tracing::debug!("Creating new LlvmCodeGenerator for module {}", module_name);
         // Initialize type assertion registration
         super::type_assertion_implementation::register_type_assertion_implementation();
@@ -114,6 +127,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Initialize LRU cached field accessors
         super::lru_field_accessors::register_lru_field_accessors();
         super::interface_field_accessors_lru::register_interface_field_accessors_lru();
+        // Initialize interface type assertion path visualization
+        super::interface_type_assertion_path_visualization::register_interface_type_assertion_path_visualization();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator
@@ -156,6 +171,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Initialize the unique ID counter with a random starting value
             unique_id_counter: std::sync::atomic::AtomicU64::new(rand::random::<u64>()),
             lru_field_accessor_cache: None,
+            // Initialize interface extension registry for path visualization
+            registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new(),
+            
+            // Test-only fields for interface hierarchy mocking in unit tests
+            #[cfg(test)]
+            test_interface_hierarchy: None,
+            #[cfg(test)]
+            test_all_interfaces: None,
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality
@@ -722,6 +745,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get the default integer type, or i64 if none is set
     pub fn get_default_integer_type(&self) -> inkwell::types::IntType<'ctx> {
         self.default_integer_type.unwrap_or_else(|| self.context.i64_type())
+    }
+}
+
+/// Convenience constructor for testing
+#[cfg(test)]
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Creates a new code generator for testing with module name "test_module".
+    pub fn new_for_test() -> Result<Self, Error> {
+        use std::path::PathBuf;
+        use std::env;
+        
+        let context = Context::create();
+        let target_dir = env::current_dir()?;
+        let file_path = PathBuf::from(format!("{}/test_module.csd", target_dir.to_string_lossy()));
+        Ok(Self::new(&context, "test_module", file_path))
     }
 }
 

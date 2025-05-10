@@ -221,3 +221,65 @@ macro_rules! assert_expr {
         $crate::common::test_expression($expr, $expected).unwrap();
     };
 }
+
+/// Helper functions for interface inheritance path visualization
+pub mod interface_path {
+    use cursed::codegen::llvm::LlvmCodeGenerator;
+    use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+    use cursed::error::Error;
+    use std::collections::{HashMap, HashSet};
+    
+    /// Create a test interface hierarchy and generate a path visualization
+    pub fn create_visualization(
+        interfaces: Vec<(String, Vec<String>)>, // (interface_name, extends)
+        source: &str,
+        target: &str
+    ) -> Result<String, Error> {
+        // Create code generator
+        let mut code_generator = LlvmCodeGenerator::new_for_test()?;
+        
+        // Convert interfaces to the expected format
+        let mut hierarchy = HashMap::new();
+        for (name, extends) in interfaces {
+            let extends_set: HashSet<String> = extends.into_iter().collect();
+            hierarchy.insert(name, extends_set);
+        }
+        
+        // Set up the mock hierarchy
+        #[cfg(test)]
+        code_generator.test_interface_hierarchy = Some(hierarchy.clone());
+        #[cfg(test)]
+        code_generator.test_all_interfaces = Some(hierarchy.keys().cloned().collect());
+        
+        // Find the path
+        let path = code_generator.find_interface_inheritance_path(source, target)?;
+        
+        // Return the path as a string
+        Ok(path.to_string())
+    }
+    
+    /// Generate a DOT graph of an interface hierarchy
+    pub fn generate_dot_graph(
+        interfaces: Vec<(String, Vec<String>)>, // (interface_name, extends)
+        root: Option<&str>
+    ) -> Result<String, Error> {
+        // Create code generator
+        let mut code_generator = LlvmCodeGenerator::new_for_test()?;
+        
+        // Convert interfaces to the expected format
+        let mut hierarchy = HashMap::new();
+        for (name, extends) in interfaces {
+            let extends_set: HashSet<String> = extends.into_iter().collect();
+            hierarchy.insert(name, extends_set);
+        }
+        
+        // Set up the mock hierarchy
+        #[cfg(test)]
+        code_generator.test_interface_hierarchy = Some(hierarchy.clone());
+        #[cfg(test)]
+        code_generator.test_all_interfaces = Some(hierarchy.keys().cloned().collect());
+        
+        // Generate the DOT graph
+        code_generator.generate_dot_graph(root)
+    }
+}
