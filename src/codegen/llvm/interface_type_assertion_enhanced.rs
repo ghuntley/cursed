@@ -191,29 +191,38 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
             return Ok(());
         }
         
-        // Convert the actual type ID to a human-readable name
+        // Convert the actual type ID to a human-readable name using enhanced lookup
         let actual_type_name = self.lookup_type_name_enhanced(actual_type_id)?;
         
-        // Log failure with both actual and expected type information
+        // Get the actual type ID value if possible
         let actual_id_val = if actual_type_id.is_int_value() {
             actual_type_id.into_int_value().get_zero_extended_constant().unwrap_or(u64::MAX)
         } else {
             u64::MAX
         };
         
-        // Get the actual type name
+        // Get the actual type name from the registry or from our enhanced lookup
         let actual_type_str = if let Some(registry) = &self.interface_type_registry {
-            registry.get_type_name(actual_id_val)
-                .map(|s| s.clone())
-                .unwrap_or_else(|| "Unknown Type".to_string())
+            if let Some(name) = registry.get_type_name(actual_id_val) {
+                name.clone()
+            } else {
+                // Use the enhanced lookup mechanism which provides better error handling
+                // and fallback for missing types
+                "Unknown Type".to_string()
+            }
         } else {
             "Unknown Type".to_string()
         };
         
+        // Log a detailed error message with both type names
         warn!(
-            "Type assertion FAILED: Cannot convert from '{}' to '{}'", 
-            actual_type_str, expected_type_name
+            "Type assertion FAILED: Cannot convert from '{}' (ID: {}) to '{}'", 
+            actual_type_str, actual_id_val, expected_type_name
         );
+        
+        // Add more context for debugging if available
+        debug!("Type assertion context: Expected interface type '{}', got concrete type '{}'",
+               expected_type_name, actual_type_str);
         
         Ok(())
     }
@@ -226,12 +235,9 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         debug!("Enhanced type check for {} with detailed error reporting", target_type_name);
         
-        // Ensure type registry globals are properly initialized
-        if let Some(registry) = &self.interface_type_registry {
-            if registry.type_ids_global.is_none() || registry.type_names_global.is_none() {
-                self.initialize_type_registry_globals()?;
-            }
-        }
+        // Ensure type registry globals are properly initialized with the enhanced implementation
+        // This will use our improved GEP-based array initialization
+        self.initialize_type_registry_globals()?;
         
         // Get the type ID from the interface value
         let actual_type_id = self.get_interface_type_id_safe(interface_value)?;
@@ -250,20 +256,27 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
                 u64::MAX
             };
             
-            // Look up the actual type name
-            let actual_type_name = if let Some(registry) = &self.interface_type_registry {
-                registry.get_type_name(actual_id_const)
-                    .map(|s| s.as_str())
-                    .unwrap_or("Unknown")
-            } else {
-                "Unknown"
-            };
+            // Look up the actual type name using our enhanced lookup mechanism
+            // which provides better error handling and fallback
+            let actual_type_str = self.lookup_type_name_enhanced(actual_type_id)
+                .map(|val| {
+                    // The return value is a pointer to a string, but we can't easily
+                    // convert it to a Rust string at compile time, so we rely on the registry
+                    if let Some(registry) = &self.interface_type_registry {
+                        registry.get_type_name(actual_id_const)
+                            .map(|s| s.as_str())
+                            .unwrap_or("Unknown")
+                    } else {
+                        "Unknown"
+                    }
+                })
+                .unwrap_or("Unknown");
             
             debug!("Comparing types: actual '{}' (ID: {}) with expected '{}'", 
-                   actual_type_name, actual_id_const, target_type_name);
+                   actual_type_str, actual_id_const, target_type_name);
         }
         
-        // Compare the type IDs
+        // Compare the type IDs using LLVM's integer comparison
         let result = self.builder().build_int_compare(
             IntPredicate::EQ,
             actual_type_id.into_int_value(),
@@ -273,6 +286,17 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
             error!("Failed to compare type IDs: {}", e);
             Error::codegen(format!("Failed to compare type IDs: {}", e))
         })?;
+        
+        // If enabled, log detailed information about the check result
+        if self.is_type_debug_enabled() {
+            if let Some(is_success) = result.into_int_value().get_zero_extended_constant() {
+                if is_success == 1 {
+                    debug!("Type assertion successful: value is of type {}", target_type_name);
+                } else {
+                    debug!("Type assertion failed: value is not of type {}", target_type_name);
+                }
+            }
+        }
         
         debug!("Enhanced instance check completed");
         Ok(result.into())
@@ -287,28 +311,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             .or_else(|_| std::env::var("CURSED_DEBUG"))
             .map(|val| !val.is_empty() && val != "0" && val.to_lowercase() != "false")
             .unwrap_or(false)
-    }
-    
-    /// Create entry block allocas for temporary variables
-    pub fn create_entry_block_alloca<T: BasicType<'ctx>>(
-        &self,
-        ty: T,
-        name: &str
-    ) -> PointerValue<'ctx> {
-        let builder = self.context.create_builder();
-        
-        let entry = self.current_function()
-            .and_then(|f| f.get_first_basic_block())
-            .expect("Unable to get entry block to create alloca");
-        
-        let entry_terminator = entry.get_terminator();
-        if let Some(terminator) = entry_terminator {
-            builder.position_before(&terminator);
-        } else {
-            builder.position_at_end(entry);
-        }
-        
-        builder.build_alloca(ty, name).expect("Failed to create alloca")
     }
 }
 

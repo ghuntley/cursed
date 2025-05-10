@@ -31,6 +31,7 @@ pub mod special;
 pub mod struct_expr;
 pub mod types;
 pub mod type_assertion;
+pub mod empty;
 
 pub use calls::{CallExpression, GenericCallExpression};
 pub use collections::{ArrayLiteral, HashLiteral, IndexExpression};
@@ -51,3 +52,4 @@ pub use generics::TypeReference;
 pub use if_expression::IfExpression;
 pub use struct_expr::{StructLiteral, StructFieldAccess, KeyValuePair};
 pub use types::TypeConversionExpression;
+pub use empty::Empty;
