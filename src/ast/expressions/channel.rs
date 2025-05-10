@@ -35,6 +35,14 @@ impl Expression for ChannelExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(ChannelExpression {
+            token: self.token.clone(),
+            element_type: self.element_type.clone(),
+            capacity: self.capacity.as_ref().map(|cap| cap.clone_box()),
+        })
+    }
 }
 
 /// A send expression (ch <- value)
@@ -61,6 +69,14 @@ impl Expression for SendExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(SendExpression {
+            token: self.token.clone(),
+            channel: self.channel.clone_box(),
+            value: self.value.clone_box(),
+        })
+    }
 }
 
 /// A receive expression (<-ch)
@@ -86,5 +102,13 @@ impl Expression for ReceiveExpression {
     
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(ReceiveExpression {
+            token: self.token.clone(),
+            channel: self.channel.clone_box(),
+            element_type: self.element_type.clone(),
+        })
     }
 }

@@ -39,3 +39,28 @@ pub enum RangeExpression {
         step: Box<dyn Expression>,
     },
 }
+
+impl Expression for RangeExpression {
+    fn expression_node(&self) {}
+    
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        match self {
+            RangeExpression::Range { end } => Box::new(RangeExpression::Range {
+                end: end.clone_box(),
+            }),
+            RangeExpression::RangeFromTo { start, end } => Box::new(RangeExpression::RangeFromTo {
+                start: start.clone_box(),
+                end: end.clone_box(),
+            }),
+            RangeExpression::RangeFromToStep { start, end, step } => Box::new(RangeExpression::RangeFromToStep {
+                start: start.clone_box(),
+                end: end.clone_box(),
+                step: step.clone_box(),
+            }),
+        }
+    }
+}

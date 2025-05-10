@@ -36,6 +36,15 @@ impl Expression for TypeAssertion {
         self
     }
     
+    // Clone implementation for Expression trait
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(TypeAssertion {
+            token: self.token.clone(),
+            expression: self.expression.clone_box(),
+            type_name: self.type_name.clone(),
+        })
+    }
+    
     // Additional trait implementation for type reflection
     fn node_type(&self) -> &str {
         "TypeAssertion"

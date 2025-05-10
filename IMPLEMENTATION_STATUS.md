@@ -116,7 +116,11 @@ The codebase contains numerous ignored tests that provide insight into implement
   - ❌ Fixed semicolon and LLVM API issues in the enhanced range clause implementation (in progress)
 - Still need to address compilation issues:
   - Need to fix pointer element type access (LLVM API has changed)
-  - Need to add clone_box implementation for remaining Expression types
+  - Need to add clone_box implementation for remaining Expression types (over 20 types still missing implementation)
+  - Added clone_box implementation for RangeExpression
+  - Added clone_box implementation for TypeAssertion
+  - Added clone_box implementation for ChannelExpression, SendExpression, and ReceiveExpression
+  - Added clone_box implementation for StanExpression (goroutines)
   - Need to fix some type mismatches in function calls
 - Tests in `tests/jit_map_test.rs` - map support not fully implemented
 
