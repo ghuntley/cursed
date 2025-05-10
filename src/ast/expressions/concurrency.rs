@@ -30,4 +30,11 @@ impl Expression for StanExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(StanExpression {
+            token: self.token.clone(),
+            expression: self.expression.clone_box(),
+        })
+    }
 }
