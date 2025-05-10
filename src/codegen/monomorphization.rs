@@ -18,13 +18,16 @@ use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatemen
 // use crate::ast::expressions::constraint::TypeConstraint;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::generic_instantiation::GenericInstantiator;
-use crate::core::type_checker::Type;
+use crate::core::type_checker::{Type, TypeChecker};
 use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 use crate::codegen::llvm::FunctionMonomorphization;
 use crate::codegen::llvm::StructMonomorphization;
-// TODO: Uncomment when enhanced monomorphization is fully implemented
-// use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
+use std::rc::Rc;
+use std::cell::RefCell;
+use tracing;
+// EnhancedMonomorphization provides functionality for field accessors
+use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
 
 /// Manages the specialization of generic code through monomorphization
 ///
@@ -45,6 +48,10 @@ pub struct MonomorphizationManager {
     // Maps specialized names to their concrete type arguments
     // This is useful for debugging and error reporting
     specialization_types: HashMap<String, Vec<Type>>,
+    
+    // Reference to the type checker for interface implementation checks
+    // This is optional because it may not be available during construction
+    type_checker: Option<Rc<RefCell<TypeChecker>>>,
 }
 
 impl Default for MonomorphizationManager {
@@ -52,11 +59,17 @@ impl Default for MonomorphizationManager {
         MonomorphizationManager {
             instantiated_functions: HashMap::new(),
             specialization_types: HashMap::new(),
+            type_checker: None,
         }
     }
 }
 
 impl MonomorphizationManager {
+    /// Set the type checker for interface implementation checks
+    pub fn with_type_checker(mut self, type_checker: Rc<RefCell<TypeChecker>>) -> Self {
+        self.type_checker = Some(type_checker);
+        self
+    }
     /// Checks if a concrete type satisfies an interface constraint
     ///
     /// This method determines whether a given concrete type implements the required interface.
@@ -73,38 +86,59 @@ impl MonomorphizationManager {
     /// * `Ok(false)` if it doesn't
     /// * `Err` with an error message if there was a problem checking the constraint
     pub fn check_constraint(&self, concrete_type: &Type, interface_name: &str) -> Result<bool, Error> {
-        // In a real implementation, this would check if the concrete type implements
-        // the interface by looking up in a type registry or interface implementation table
+        // First, try to use the type checker for interface implementation checks if available
+        if let Some(type_checker) = &self.type_checker {
+            // Create an interface type from the name
+            let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
+            
+            // Use the type checker's interface implementation check mechanism
+            return type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type)
+                .map_err(|e| Error::from_str(&format!(
+                    "Type '{:?}' does not implement interface '{}': {}",
+                    concrete_type, interface_name, e
+                )));
+        }
         
-        // For now, we'll implement a simplified version based on known types:
-        match concrete_type {
+        // Fallback to primitive type checks if type checker is not available
+        let implements = match concrete_type {
             // Primitive types and their supported interfaces
             Type::Normie | Type::Smol | Type::Mid | Type::Thicc => {
                 // Integer types implement Comparable, Numeric, Hashable
-                Ok(matches!(interface_name, "Comparable" | "Numeric" | "Hashable"))
+                matches!(interface_name, "Comparable" | "Numeric" | "Hashable")
             }
             Type::Snack | Type::Meal => {
                 // Float types implement Comparable, Numeric
-                Ok(matches!(interface_name, "Comparable" | "Numeric"))
+                matches!(interface_name, "Comparable" | "Numeric")
             }
             Type::Tea => {
                 // String type implements Comparable, Stringable, Hashable
-                Ok(matches!(interface_name, "Comparable" | "Stringable" | "Hashable"))
+                matches!(interface_name, "Comparable" | "Stringable" | "Hashable")
             }
             Type::Lit => {
                 // Boolean type implements Comparable, Hashable
-                Ok(matches!(interface_name, "Comparable" | "Hashable"))
+                matches!(interface_name, "Comparable" | "Hashable")
             }
             Type::Byte | Type::Rune | Type::Sip => {
                 // Character types implement Comparable, Hashable
-                Ok(matches!(interface_name, "Comparable" | "Hashable"))
+                matches!(interface_name, "Comparable" | "Hashable")
             }
             // For more complex types, we would need a proper implementation registry
             _ => {
-                // For this implementation, assume other types don't implement any interfaces
-                // In a real implementation, we'd check a registry of interface implementations
-                Ok(false)
+                // For user-defined types, log a warning that we're falling back to hardcoded checks
+                tracing::warn!("Type checker not available for interface check: '{:?}' implements '{}'", 
+                    concrete_type, interface_name);
+                false
             }
+        };
+        
+        if implements {
+            Ok(true)
+        } else {
+            // Return a proper error rather than Ok(false) for better diagnostics
+            Err(Error::from_str(&format!(
+                "Type '{:?}' does not implement interface '{}'",
+                concrete_type, interface_name
+            )))
         }
     }
     /// Create a new MonomorphizationManager
@@ -251,12 +285,8 @@ impl MonomorphizationManager {
                 // Get the concrete type for this parameter
                 if let Some(concrete_type) = type_map.get(param_name) {
                     // Check if the concrete type satisfies the constraint
-                    if !self.check_constraint(concrete_type, interface_name)? {
-                        return Err(Error::from_str(&format!(
-                            "Type '{:?}' does not implement interface '{}' required by constraint",
-                            concrete_type, interface_name
-                        )));
-                    }
+                    // Our improved check_constraint now returns Err for unsatisfied constraints
+                    self.check_constraint(concrete_type, interface_name)?;
                 } else {
                     return Err(Error::from_str(&format!(
                         "Unknown type parameter: {}",
@@ -358,22 +388,19 @@ impl MonomorphizationManager {
         let specialized_struct = instantiator.monomorphize_struct(generic_struct, type_args)?;
 
         // Generate LLVM IR for the specialized struct with correct memory layout and field types
-        // For now, use the basic implementation while we enhance the monomorphization system
         code_gen.generate_specialized_struct(
             &specialized_struct,
             &specialized_name,
             type_args,
         )?;
         
-        // TODO: Uncomment when EnhancedMonomorphization is fully implemented
-        /*
-        // Generate field accessors for the struct
+        // Generate field accessors for the struct (getters and setters)
+        // This functionality is integrated from enhanced_monomorphization.rs
         code_gen.generate_field_accessors(
             &specialized_struct,
             &specialized_name,
             type_args,
         )?;
-        */
 
         // Generate GC metadata for this specialized struct
         self.generate_gc_metadata(code_gen, &specialized_struct, &specialized_name, type_args)?;
