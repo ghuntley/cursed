@@ -78,6 +78,7 @@ pub use self::function_monomorphization::FunctionMonomorphization;
 pub use self::struct_monomorphization::StructMonomorphization;
 pub use self::enhanced_monomorphization::EnhancedMonomorphization;
 pub use self::integrated_monomorphization::IntegratedMonomorphization;
+pub use self::improved_field_accessors::ImprovedFieldAccessors;
 pub use self::property_access::PropertyAccessCompilation;
 pub use self::assignment::AssignmentCompilation;
 pub use self::break_statement::BreakStatementCompilation;
@@ -121,6 +122,7 @@ mod dot_expressions;  // Dot expression compilation (module.function)
 mod hook_dot_expressions; // Temporary patch for dot expressions
 pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint checking
 pub mod integrated_monomorphization; // Integrated monomorphization system
+pub mod improved_field_accessors; // Improved field accessors with proper error handling
 mod errors;
 mod expression;
 pub mod function_monomorphization;

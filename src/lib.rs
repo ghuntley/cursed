@@ -68,6 +68,9 @@ pub use core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedR
 // Re-export nested interface registry
 pub use core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
 
+// Re-export field accessor implementations
+pub use codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
+
 // Re-export essential types
 pub use core::symbol_table::Symbol;
 pub use core::symbol_table::SymbolScope;
