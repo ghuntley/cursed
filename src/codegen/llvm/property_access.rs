@@ -5,6 +5,7 @@
 //! accesses in the CURSED language.
 
 use inkwell::values::BasicValueEnum;
+use inkwell::types::BasicTypeEnum;
 use crate::ast::expressions::dot_expression::DotExpression;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
@@ -30,18 +31,16 @@ impl<'ctx> PropertyAccessCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         let object_ptr = object_value.into_pointer_value();
-        
-        // Get the element type
-        // Get the object's type to determine how to access properties
-        // In LLVM IR, structs are typically pointer types
         let field_name = &expr.property;
-
-        // Try to look up the struct type and field index from our metadata
-        if let Some(struct_info) = self.lookup_struct_type(object_ptr) {
-            let struct_type = struct_info.0;
+        
+        // Try to determine the struct type from the pointer
+        let result = self.get_struct_type_from_ptr(object_ptr);
+        
+        if let Ok((struct_type, struct_name)) = result {
+            tracing::debug!(struct_name = struct_name, field_name = field_name, "Looking up field in struct");
             
-            // Try to find the field index by name in our metadata
-            if let Ok(field_idx) = self.find_struct_field_index(struct_type, field_name) {
+            // Try to find the field index by name using our improved field registry
+            if let Ok((field_idx, _)) = self.get_field_index(struct_name, field_name) {
                 // Use GEP to get a pointer to the field
                 let indices = [
                     self.context().i32_type().const_int(0, false),
@@ -69,78 +68,163 @@ impl<'ctx> PropertyAccessCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                     &format!("load_{}", field_name)
                 ).map_err(|e| Error::from_str(&format!("Failed to load field: {}", e)))?;
                 
+                tracing::debug!(field_name = field_name, struct_name = struct_name, "Successfully loaded field");
                 return Ok(loaded_value);
+            } else {
+                return Err(Error::from_str(&format!("Field '{}' not found in struct '{}'", field_name, struct_name)));
             }
         }
         
-        // Fallback: For now, return a placeholder int value (for testing)
-        // In a real implementation, we would handle errors better
-        let i32_type = self.context().i32_type();
-        Ok(i32_type.const_int(0, false).into())
+        // If we couldn't determine the struct type or find the field, return a detailed error
+        Err(Error::from_str(&format!("Cannot access property '{}' on expression '{}': unable to determine struct type", 
+                                    field_name, expr.object.string())))
     }
 }
 
 // Extension methods for LlvmCodeGenerator
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Look up the struct type for a given pointer
-    /// Returns the struct type and a reference to the struct info if found
-    pub fn lookup_struct_type(&self, ptr: inkwell::values::PointerValue<'ctx>) 
-        -> Option<(inkwell::types::StructType<'ctx>, String)> {
-        // In a real implementation, we would have a robust way to determine
-        // what struct type a pointer refers to, possibly using LLVM metadata or type registries
+    /// Get the struct type and name from a pointer value
+    /// This method determines what struct a pointer points to based on LLVM type information
+    #[tracing::instrument(skip(self, ptr), level = "debug")]
+    pub fn get_struct_type_from_ptr(&self, ptr: inkwell::values::PointerValue<'ctx>) 
+        -> Result<(inkwell::types::StructType<'ctx>, String), Error> {
+        // Get the element type that this pointer points to
+        let pointee_type = ptr.get_type().get_pointee_type();
         
-        // For now, we'll use a simple heuristic: check if the pointer type is a struct pointer
-        // and look up in our struct_types registry
-        
-        // For testing purposes, create a fake struct type
-        let struct_name = "test_struct";
-        let struct_type = self.context().opaque_struct_type(struct_name);
-        
-        // Set a simple body with one i32 field for testing
-        let i32_type = self.context().i32_type();
-        struct_type.set_body(&[i32_type.into()], false);
-        
-        // Return the type with its name
-        Some((struct_type, struct_name.to_string()))
-    }
-
-    /// Find a field index in a struct type by name
-    /// This is a simplified implementation for demonstration - in a real implementation,
-    /// you would need to maintain a mapping of struct field names to indices or retrieve
-    /// this information from debug metadata.
-    pub fn find_struct_field_index(&self, struct_type: inkwell::types::StructType<'ctx>, field_name: &str) -> Result<u32, Error> {
-        // In a real implementation, you would look up the field index in a struct field registry
-        // For now, we'll use a simplified approach based on debugging information or field name patterns
-        
-        // Get the number of fields in the struct
-        let field_count = struct_type.count_fields();
-        
-        // For this simple test implementation, assume field name "value" maps to index 0
-        if field_name == "value" {
-            return Ok(0); // First field
+        // Check if it's a struct type - we can directly check this from the LLVM type
+        if let Ok(struct_type) = pointee_type.try_into_struct_type() {
+            // Get the struct name from LLVM (if it has one)
+            if let Some(struct_name) = struct_type.get_name() {
+                // Convert from CString to regular String
+                if let Ok(name_str) = struct_name.to_str() {
+                    // Strip any LLVM prefixes if present (like "struct.")
+                    let cleaned_name = if let Some(stripped) = name_str.strip_prefix("struct.") {
+                        stripped.to_string()
+                    } else {
+                        name_str.to_string()
+                    };
+                    
+                    tracing::debug!(struct_name = &cleaned_name, "Found struct type from pointer");
+                    return Ok((struct_type, cleaned_name));
+                }
+            }
+            
+            // If we have a struct type but couldn't get a name, use a generated one
+            let generic_name = format!("anonymous_struct_{}", struct_type.count_fields());
+            tracing::debug!(struct_name = &generic_name, "Anonymous struct type detected");
+            
+            return Ok((struct_type, generic_name));
         }
         
-        // Check if the field name contains a numeric index (e.g., "field_0", "field_1")
-        if let Some(index_str) = field_name.strip_prefix("field_") {
-            if let Ok(index) = index_str.parse::<u32>() {
-                if index < field_count {
-                    return Ok(index);
+        // If we get here, it's not a struct pointer
+        Err(Error::from_str("Pointer does not point to a struct type"))
+    }
+
+    /// Get the field index and type for a given struct and field name
+    /// This uses the struct field registry maintained during compilation
+    #[tracing::instrument(skip(self), level = "debug")]
+    pub fn get_field_index(&self, struct_name: &str, field_name: &str) -> Result<(u32, BasicTypeEnum<'ctx>), Error> {
+        // First, try to look up in our field registry
+        // Search for the struct in all packages, starting with the current one
+        tracing::debug!(struct_name = struct_name, field_name = field_name, "Looking for field in struct");
+        
+        // Look in our struct registry to find the struct type
+        let mut struct_type = None;
+        
+        // Check in current package first
+        if let Some(structs) = self.struct_types.get(&self.current_package_name) {
+            if let Some(st) = structs.get(struct_name) {
+                struct_type = Some(*st);
+            }
+        }
+        
+        // If not found, check all packages
+        if struct_type.is_none() {
+            for (_, structs) in &self.struct_types {
+                if let Some(st) = structs.get(struct_name) {
+                    struct_type = Some(*st);
+                    break;
                 }
             }
         }
         
-        // As a fallback, try to match based on the field name itself
-        // This is only for demonstration - in a real implementation, you would maintain
-        // a proper mapping of field names to indices
-        for i in 0..field_count {
-            // In a real implementation, you would compare to the actual field name
-            // Here we're making an assumption that the field at index i is named based on some pattern
-            if field_name == format!("field_{}", i) {
-                return Ok(i);
+        // If we found the struct type, look for the field
+        if let Some(struct_type) = struct_type {
+            // Get field count to validate access
+            let field_count = struct_type.count_fields();
+            
+            // Check in GC metadata for field name -> index mapping
+            if let Some(gc_fields) = self.gc_metadata.get(struct_name) {
+                for (idx, field_info) in gc_fields.iter() {
+                    if &field_info.1 == field_name {
+                        // Make sure the index is valid
+                        if *idx < field_count as usize {
+                            // Get the field type
+                            if let Some(field_type) = struct_type.get_field_type_at_index(*idx as u32) {
+                                tracing::debug!(field_name = field_name, index = idx, "Found field in gc_metadata");
+                                return Ok((*idx as u32, field_type));
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // If we have debug info for the struct, use that to find the field
+            // This would be populated during struct compilation
+            
+            // As a fallback, scan through AST to find struct definition and field
+            // This would require maintaining a registry of struct definitions
+            
+            // For now, we'll use some heuristics based on common field naming patterns
+            
+            // Common field names to check at specific indices
+            let common_fields = [
+                ("value", 0),
+                ("data", 0),
+                ("length", 1),
+                ("capacity", 2),
+                ("x", 0),
+                ("y", 1),
+                ("z", 2),
+                ("name", 0),
+                ("next", 1),
+                ("prev", 2),
+            ];
+            
+            for (name, idx) in common_fields.iter() {
+                if field_name == *name && (*idx as u32) < field_count {
+                    if let Some(field_type) = struct_type.get_field_type_at_index(*idx as u32) {
+                        tracing::debug!(field_name = field_name, index = idx, "Found field using common field pattern");
+                        return Ok((*idx as u32, field_type));
+                    }
+                }
+            }
+            
+            // Check if field name has pattern like "field_0", "field_1", etc.
+            if let Some(index_str) = field_name.strip_prefix("field_") {
+                if let Ok(index) = index_str.parse::<u32>() {
+                    if index < field_count {
+                        if let Some(field_type) = struct_type.get_field_type_at_index(index) {
+                            tracing::debug!(field_name = field_name, index = index, "Found field by index pattern");
+                            return Ok((index, field_type));
+                        }
+                    }
+                }
+            }
+            
+            // If field name exactly matches position, try that
+            for i in 0..field_count {
+                if field_name == format!("field{}", i) || field_name == i.to_string() {
+                    if let Some(field_type) = struct_type.get_field_type_at_index(i) {
+                        tracing::debug!(field_name = field_name, index = i, "Found field by position");
+                        return Ok((i, field_type));
+                    }
+                }
             }
         }
         
-        Err(Error::from_str(&format!("Field '{}' not found in struct type", field_name)))
+        // If we couldn't find the field, return an error
+        Err(Error::from_str(&format!("Field '{}' not found in struct '{}'", field_name, struct_name)))
     }
     
     /// Compile a property access expression (wrapper function)
