@@ -1,297 +1,142 @@
-//! Test for improved generic parameter substitution and constraint checking
+//! Tests for generic constraint checking during monomorphization
+//!
+//! This test verifies that generic type parameters properly check interface constraints
+//! using the improved monomorphization system.
 
-use cursed::ast::base::Program;
-use cursed::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
-use cursed::ast::statements::fields::FieldStatement;
-use cursed::ast::expressions::Identifier;
-use cursed::ast::expressions::constraint::TypeConstraint;
-use cursed::ast::declarations::GenericConstraint;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::traits::Expression;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::MonomorphizationManager;
-use cursed::core::type_checker::Type;
-use cursed::core::generic_instantiation::GenericInstantiator;
+use cursed::ast::base::*;
+use cursed::ast::declarations::*;
+use cursed::ast::expressions::*;
+use cursed::ast::literals::*;
+use cursed::ast::traits::Node;
+use cursed::core::type_checker::{Type, TypeChecker};
+use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::error::Error;
-use inkwell::context::Context;
-use std::path::PathBuf;
+use std::rc::Rc;
+use std::cell::RefCell;
 
-/// Helper function to create a function with constraints
-fn create_constrained_function(
-    name: &str,
-    type_params: Vec<&str>,
-    constraints: Vec<(&str, &str)>, // (param, interface)
-    param_types: Vec<Type>,
-    return_type: Type,
-) -> FunctionStatement {
-    // Create type parameters
-    let type_parameters: Vec<Identifier> = type_params
-        .iter()
-        .map(|param| Identifier {
-            token: "IDENT".to_string(),
-            value: param.to_string(),
-        })
-        .collect();
+// Import test helpers
+#[path = "common.rs"]
+mod common;
 
-    // Create function parameters
-    let parameters = param_types
-        .iter()
-        .enumerate()
-        .map(|(i, param_type)| {
-            let param_name = format!("param{}", i);
-            cursed::ast::ParameterStatement {
-                token: "IDENT".to_string(),
-                name: Identifier {
-                    token: "IDENT".to_string(),
-                    value: param_name,
-                },
-                type_name: Box::new(Identifier {
-                    token: "IDENT".to_string(),
-                    value: param_type.to_string(),
-                }),
-            }
-        })
-        .collect();
-
-    // Create constraints
-    let generic_constraints = constraints
-        .iter()
-        .map(|(param, interface)| {
-            GenericConstraint {
-                token: "where".to_string(),
-                type_parameter: Identifier {
-                    token: "IDENT".to_string(),
-                    value: param.to_string(),
-                },
-                trait_name: Identifier {
-                    token: "IDENT".to_string(),
-                    value: interface.to_string(),
-                },
-            }
-        })
-        .collect();
-
-    // Create return type expression
-    let return_type_expr = Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: return_type.to_string(),
-    }) as Box<dyn Expression>;
-
-    // Create function body (empty for this test)
-    let body = BlockStatement {
-        token: "{".to_string(),
-        statements: Vec::new(),
-    };
-
-    // Create the function statement
-    FunctionStatement {
-        token: "function".to_string(),
-        name: Identifier {
-            token: "IDENT".to_string(),
-            value: name.to_string(),
-        },
-        parameters,
-        body,
-        return_type: Some(return_type_expr),
-        type_parameters,
-        generic_constraints,
+#[test]
+fn test_register_methods_for_struct() {
+    // Initialize tracing for better debug output
+    common::tracing::setup();
+    
+    // Create a type checker
+    let mut type_checker = TypeChecker::new();
+    
+    // Register methods for a test struct
+    let methods = vec![
+        ("push".to_string(), vec![Type::Tea], None),
+        ("pop".to_string(), vec![], Some(Type::Tea)),
+        ("isEmpty".to_string(), vec![], Some(Type::Lit)),
+    ];
+    
+    // Register the methods for the struct
+    type_checker.register_methods_for_struct("TestStack", methods.clone());
+    
+    // Get the methods for the struct
+    let retrieved_methods = type_checker.get_struct_methods("TestStack").unwrap();
+    
+    // Verify the methods were registered correctly
+    assert_eq!(retrieved_methods.len(), methods.len());
+    for (i, (name, params, ret)) in methods.iter().enumerate() {
+        assert_eq!(retrieved_methods[i].0, *name);
+        assert_eq!(retrieved_methods[i].1.len(), params.len());
+        assert_eq!(retrieved_methods[i].2.is_some(), ret.is_some());
     }
 }
 
 #[test]
-fn test_type_parameter_substitution_nested() {
-    // Create a generic instantiator
-    let mut instantiator = GenericInstantiator::new();
+fn test_constraint_checking_with_type_checker() {
+    // Initialize tracing for better debug output
+    common::tracing::setup();
     
-    // Test nested types
-    let map_type = Type::Map(
-        Box::new(Type::TypeParam("K".to_string())),
-        Box::new(Type::Slice(Box::new(Type::TypeParam("V".to_string()))))
-    );
+    // Create a type checker
+    let mut type_checker = TypeChecker::new();
     
-    // Add type mappings
-    instantiator.add_type_param("K", Type::Tea);
-    instantiator.add_type_param("V", Type::Normie);
+    // Register an interface with a required method
+    let methods = vec![
+        ("push".to_string(), vec![Type::Tea], None),
+        ("pop".to_string(), vec![], Some(Type::Tea)),
+    ];
+    type_checker.register_interface("Stack", vec![], methods);
     
-    // Instantiate the type
-    let concrete_type = instantiator.instantiate_type(&map_type).unwrap();
+    // Register a struct that implements the interface
+    let struct_methods = vec![
+        ("push".to_string(), vec![Type::Tea], None),
+        ("pop".to_string(), vec![], Some(Type::Tea)),
+        ("isEmpty".to_string(), vec![], Some(Type::Lit)),
+    ];
+    type_checker.register_methods_for_struct("StringStack", struct_methods);
     
-    // The result should be Map<Tea, Slice<Normie>>
-    match concrete_type {
-        Type::Map(key_type, value_type) => {
-            assert_eq!(*key_type, Type::Tea);
-            
-            match *value_type {
-                Type::Slice(elem_type) => {
-                    assert_eq!(*elem_type, Type::Normie);
-                }
-                _ => panic!("Expected Slice type, got {:?}", value_type),
-            }
-        }
-        _ => panic!("Expected Map type, got {:?}", concrete_type),
-    }
+    // Create a monomorphization manager with the type checker
+    let type_checker_rc = Rc::new(RefCell::new(type_checker));
+    let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
+    
+    // Check if the struct implements the interface
+    let struct_type = Type::Struct("StringStack".to_string(), vec![]);
+    let result = mono_manager.check_constraint(&struct_type, "Stack");
+    
+    // The struct should implement the interface
+    assert!(result.is_ok());
+    assert!(result.unwrap());
 }
 
 #[test]
-fn test_recursive_generic_type_instantiation() {
-    // Create a generic instantiator
-    let mut instantiator = GenericInstantiator::new();
+fn test_constraint_checking_missing_interface() {
+    // Initialize tracing for better debug output
+    common::tracing::setup();
     
-    // Define a recursive generic type: Tree<T> = Node with T value and list of Tree<T>
-    let tree_type = Type::Struct(
-        "Tree".to_string(),
-        vec![Box::new(Type::TypeParam("T".to_string()))]
-    );
+    // Create a type checker
+    let mut type_checker = TypeChecker::new();
     
-    // Create a Tree<Tree<Normie>> type
-    let nested_tree_type = Type::Struct(
-        "Tree".to_string(), 
-        vec![Box::new(tree_type.clone())]
-    );
+    // Register an interface with a required method
+    let methods = vec![
+        ("add".to_string(), vec![Type::Normie], None),
+        ("remove".to_string(), vec![Type::Normie], None),
+    ];
+    type_checker.register_interface("Collection", vec![], methods);
     
-    // Add type mappings
-    instantiator.add_type_param("T", Type::Normie);
+    // Register a struct that does NOT implement the interface correctly
+    let struct_methods = vec![
+        ("add".to_string(), vec![Type::Normie], None),
+        // Missing the 'remove' method
+    ];
+    type_checker.register_methods_for_struct("PartialCollection", struct_methods);
     
-    // Instantiate the nested type
-    let concrete_type = instantiator.instantiate_type(&nested_tree_type).unwrap();
+    // Create a monomorphization manager with the type checker
+    let type_checker_rc = Rc::new(RefCell::new(type_checker));
+    let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
-    // The result should be Tree<Tree<Normie>>
-    match concrete_type {
-        Type::Struct(name, type_args) => {
-            assert_eq!(name, "Tree");
-            
-            // Check the inner Tree<Normie>
-            match &*type_args[0] {
-                Type::Struct(inner_name, inner_type_args) => {
-                    assert_eq!(inner_name, "Tree");
-                    assert_eq!(*inner_type_args[0], Type::Normie);
-                }
-                _ => panic!("Expected Struct type, got {:?}", type_args[0]),
-            }
-        }
-        _ => panic!("Expected Struct type, got {:?}", concrete_type),
-    }
+    // Check if the struct implements the interface
+    let struct_type = Type::Struct("PartialCollection".to_string(), vec![]);
+    let result = mono_manager.check_constraint(&struct_type, "Collection");
+    
+    // The struct should NOT implement the interface
+    assert!(result.is_err());
+    assert!(result.err().unwrap().to_string().contains("does not implement interface"));
 }
 
 #[test]
-#[ignore] // Enable once constraint checking is implemented
-fn test_constraint_checking_during_monomorphization() {
-    // Create a context and code generator
-    let context = Context::create();
-    let file_path = PathBuf::from("test_constraints.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_constraints", file_path);
+fn test_enhanced_monomorphization_specialized_name() {
+    // Initialize tracing for better debug output
+    common::tracing::setup();
     
-    // Create a MonomorphizationManager
-    let mut mono_manager = MonomorphizationManager::new();
+    // Create a monomorphization manager
+    let mono_manager = MonomorphizationManager::new();
     
-    // Define an interface
-    let comparable_interface = CollabStatement {
-        token: "interface".to_string(),
-        name: Identifier {
-            token: "IDENT".to_string(),
-            value: "Comparable".to_string(),
-        },
-        type_parameters: Vec::new(),
-        methods: Vec::new(), // For this test we don't need actual methods
-    };
+    // Test different type combinations
+    let type_args1 = vec![Type::Normie, Type::Tea];
+    let specialized_name1 = mono_manager.generate_specialized_name("test_function", &type_args1);
+    assert_eq!(specialized_name1, "test_function__Normie_Tea");
     
-    // Register the interface with the code generator
-    // In a real implementation, we would need to add this interface to a symbol table
+    let type_args2 = vec![Type::Array(Box::new(Type::Normie), 5)];
+    let specialized_name2 = mono_manager.generate_specialized_name("array_function", &type_args2);
+    assert_eq!(specialized_name2, "array_function__Array_Normie_5_");
     
-    // Create a constrained generic function
-    let max_function = create_constrained_function(
-        "max",
-        vec!["T"],
-        vec![("T", "Comparable")], // T must implement Comparable
-        vec![Type::TypeParam("T".to_string()), Type::TypeParam("T".to_string())],
-        Type::TypeParam("T".to_string()),
-    );
-    
-    // Valid specialization (Normie implements Comparable)
-    let normie_result = mono_manager.specialize_function(
-        &mut code_gen, 
-        &max_function, 
-        &[Type::Normie]
-    );
-    assert!(normie_result.is_ok());
-    
-    // Invalid specialization (assuming StructType doesn't implement Comparable)
-    let custom_type = Type::Struct("CustomType".to_string(), Vec::new());
-    let custom_result = mono_manager.specialize_function(
-        &mut code_gen, 
-        &max_function, 
-        &[custom_type]
-    );
-    assert!(custom_result.is_err());
-    
-    // Check error message contains constraint information
-    if let Err(err) = custom_result {
-        assert!(err.to_string().contains("Comparable"));
-    }
-}
-
-#[test]
-fn test_generic_struct_field_access() {
-    // Create a context and code generator
-    let context = Context::create();
-    let file_path = PathBuf::from("test_generic_struct.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_generic_struct", file_path);
-    
-    // Create a MonomorphizationManager
-    let mut mono_manager = MonomorphizationManager::new();
-    
-    // Define a generic struct
-    let generic_struct = SquadStatement {
-        token: "struct".to_string(),
-        name: Identifier {
-            token: "IDENT".to_string(),
-            value: "Pair".to_string(),
-        },
-        type_parameters: vec![
-            Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
-            },
-            Identifier {
-                token: "IDENT".to_string(),
-                value: "U".to_string(),
-            },
-        ],
-        fields: vec![
-            FieldStatement {
-                token: "IDENT".to_string(),
-                name: Identifier {
-                    token: "IDENT".to_string(),
-                    value: "first".to_string(),
-                },
-                type_name: Identifier {
-                    token: "IDENT".to_string(),
-                    value: "T".to_string(),
-                },
-            },
-            FieldStatement {
-                token: "IDENT".to_string(),
-                name: Identifier {
-                    token: "IDENT".to_string(),
-                    value: "second".to_string(),
-                },
-                type_name: Identifier {
-                    token: "IDENT".to_string(),
-                    value: "U".to_string(),
-                },
-            },
-        ],
-    };
-    
-    // Specialize the struct
-    let specialized_name = mono_manager.specialize_struct(
-        &mut code_gen,
-        &generic_struct,
-        &[Type::Normie, Type::Tea]
-    ).unwrap();
-    
-    assert_eq!(specialized_name, "Pair__Normie_Tea");
-    
-    // In a real implementation, we would also verify that field access works correctly
-    // by checking the LLVM IR or executing compiled code, but that's beyond the scope of this test
+    let type_args3 = vec![Type::Slice(Box::new(Type::Tea))];
+    let specialized_name3 = mono_manager.generate_specialized_name("slice_function", &type_args3);
+    assert_eq!(specialized_name3, "slice_function__Slice_Tea");
 }

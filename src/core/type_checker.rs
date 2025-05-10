@@ -949,6 +949,30 @@ impl TypeChecker {
             _ => None,
         }
     }
+    
+    /// Register methods for a struct type
+    /// 
+    /// This method allows registering the methods that a struct implements,
+    /// which is necessary for interface implementation checking.
+    ///
+    /// # Arguments
+    ///
+    /// * `struct_name` - The name of the struct type
+    /// * `methods` - A list of methods with their parameter types and return types
+    ///
+    /// # Returns
+    ///
+    /// * Returns the methods that were registered
+    pub fn register_methods_for_struct(
+        &mut self,
+        struct_name: &str,
+        methods: Vec<(String, Vec<Type>, Option<Type>)>
+    ) -> Vec<(String, Vec<Type>, Option<Type>)> {
+        // Add methods to the struct methods map
+        self.struct_methods_map.insert(struct_name.to_string(), methods.clone());
+        tracing::debug!("Registered methods for struct {}: {:?}", struct_name, methods);
+        methods
+    }
 
 
     

@@ -66,7 +66,20 @@ impl Default for MonomorphizationManager {
 
 impl MonomorphizationManager {
     /// Set the type checker for interface implementation checks
+    ///
+    /// This is a critical component that enables proper interface checking during monomorphization.
+    /// Without a type checker, the monomorphization system will fall back to very limited
+    /// hardcoded checks that only work for primitive types.
+    ///
+    /// # Arguments
+    ///
+    /// * `type_checker` - Reference counted type checker for interface checking
+    ///
+    /// # Returns
+    ///
+    /// * Self with type checker configured
     pub fn with_type_checker(mut self, type_checker: Rc<RefCell<TypeChecker>>) -> Self {
+        tracing::info!("Configuring monomorphization manager with type checker");
         self.type_checker = Some(type_checker);
         self
     }
@@ -86,18 +99,31 @@ impl MonomorphizationManager {
     /// * `Ok(false)` if it doesn't
     /// * `Err` with an error message if there was a problem checking the constraint
     pub fn check_constraint(&self, concrete_type: &Type, interface_name: &str) -> Result<bool, Error> {
+        // Create an interface type from the name
+        let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
+        
         // First, try to use the type checker for interface implementation checks if available
         if let Some(type_checker) = &self.type_checker {
-            // Create an interface type from the name
-            let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
-            
             // Use the type checker's interface implementation check mechanism
-            return type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type)
-                .map_err(|e| Error::from_str(&format!(
-                    "Type '{:?}' does not implement interface '{}': {}",
-                    concrete_type, interface_name, e
-                )));
+            match type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type) {
+                Ok(true) => return Ok(true),
+                Ok(false) => {
+                    return Err(Error::from_str(&format!(
+                        "Type '{:?}' does not implement interface '{}'",
+                        concrete_type, interface_name
+                    )));
+                },
+                Err(e) => {
+                    return Err(Error::from_str(&format!(
+                        "Type '{:?}' does not implement interface '{}': {}",
+                        concrete_type, interface_name, e
+                    )));
+                }
+            }
         }
+        
+        // If no type checker is available, use a fallback for primitive types
+        tracing::warn!("No type checker available for interface check, using fallback mechanism");
         
         // Fallback to primitive type checks if type checker is not available
         let implements = match concrete_type {
@@ -122,11 +148,9 @@ impl MonomorphizationManager {
                 // Character types implement Comparable, Hashable
                 matches!(interface_name, "Comparable" | "Hashable")
             }
-            // For more complex types, we would need a proper implementation registry
+            // For more complex types, return an error since we need the type checker
             _ => {
-                // For user-defined types, log a warning that we're falling back to hardcoded checks
-                tracing::warn!("Type checker not available for interface check: '{:?}' implements '{}'", 
-                    concrete_type, interface_name);
+                tracing::error!("Cannot check interface implementation without type checker for type: {:?}", concrete_type);
                 false
             }
         };
@@ -134,7 +158,7 @@ impl MonomorphizationManager {
         if implements {
             Ok(true)
         } else {
-            // Return a proper error rather than Ok(false) for better diagnostics
+            // Return a proper error for better diagnostics
             Err(Error::from_str(&format!(
                 "Type '{:?}' does not implement interface '{}'",
                 concrete_type, interface_name
