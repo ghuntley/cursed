@@ -123,6 +123,10 @@ pub use self::interface_type_assertion_nested_enhanced::NestedInterfaceTypeAsser
 pub use self::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 // Enhanced interface type assertion path visualization with improved error handling
 pub use self::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
+// Simple path finding algorithms for interface inheritance relationships
+pub use self::interface_path_finder_simple::*;
+// Enhanced path finding algorithms for interface inheritance relationships with visualization
+pub use self::interface_path_finder_enhanced::{InterfaceInheritancePath};
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};
@@ -130,7 +134,7 @@ pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClaus
 pub use self::map_iteration_improvements::MapIterationEnhancements;
 pub use self::loop_context::*;
 // Interface registry visualization integration
-pub use self::interface_registry_visualization_integration::InterfaceVisualizationIntegration;
+pub use self::interface_registry_visualization_integration::InterfaceRegistryVisualizationIntegration;
 // Will be re-exported in a future PR
 // pub use self::interface_type_integration::InterfaceTypeIntegration;
 
@@ -213,6 +217,7 @@ pub mod interface_type_assertion_path_visualization; // Visual debugging tools f
 pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual debugging tools with better error handling
 pub mod interface_registry_visualization_integration; // Integration of interface registry visualization with code generator
 pub mod interface_path_finder_simple; // Simple path finding algorithms for interface inheritance relationships
+pub mod interface_path_finder_enhanced; // Enhanced path finding algorithms for interface inheritance relationships with visualization
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
