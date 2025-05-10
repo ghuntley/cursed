@@ -1,478 +1,668 @@
-use std::sync::Once;
+//! # Comprehensive Interface Type Assertion Tests
+//!
+//! This module provides extensive testing for all aspects of interface type assertions,
+//! covering error handling, nesting, inheritance, and complex use cases.
 
-// We need to call init_test_tracing only once
-static INIT: Once = Once::new();
+use std::env;
+use std::path::PathBuf;
 
-#[path = "tracing_setup.rs"]
-pub mod tracing_setup;
+#[path = "common.rs"]
+mod common;
 
-// Macro for initializing tracing in tests
+use common::tracing;
+use tracing::{debug, error, info, trace, warn};
+
+use cursed::ast::types::{InterfaceType, StructType, Type};
+use cursed::ast::expressions::TypeAssertion;
+use cursed::parser::Parser;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::core::jit::JitCompiler;
+use cursed::error::Error;
+
+/// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        INIT.call_once(|| {
-            tracing_setup::init_test_tracing();
-        });
+        common::tracing::setup();
     };
 }
 
-// Import required test utilities
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::object::Object;
-
-// Helper function to run JIT tests on Cursed code
-fn run_jit_test(input: &str) -> Result<i32, String> {
-    // Create a lexer and parser
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).map_err(|e| e.to_string())?;
-    let program = parser.parse_program().map_err(|e| e.to_string())?;
-    
-    // Check for parser errors
-    if !parser.errors().is_empty() {
-        let error_msg = parser.errors().iter().map(|e| e.to_string()).collect::<Vec<_>>().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg));
-    }
-    
-    // Create LLVM context and code generator
-    let context = inkwell::context::Context::create();
-    let file_path = std::path::PathBuf::from("test_program.csd");
-    let mut code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(&context, "main", file_path.clone());
-    
-    // Compile the program
-    code_gen.compile(&program).map_err(|e| e.to_string())?;
-    
-    // Create JIT execution engine
-    let execution_engine = code_gen
-        .module()
-        .create_jit_execution_engine(inkwell::OptimizationLevel::Default)
-        .map_err(|e| e.to_string())?;
-    
-    // Initialize the goroutine manager
-    cursed::codegen::jit::init_goroutine_manager();
-    
-    // Create JIT compiler
-    let mut jit_compiler = cursed::codegen::jit::JitCompiler::new(
-        &context, 
-        execution_engine, 
-        "_main_main", 
-        file_path
-    );
-    
-    // Use existing code_gen to avoid recompilation
-    *jit_compiler.code_generator_mut() = Some(code_gen);
-    
-    // Execute the program
-    let result = jit_compiler.execute().map_err(|e| e.to_string())?;
-    
-    // Wait for any goroutines to complete (10ms timeout)
-    let _remaining = cursed::codegen::jit::wait_for_goroutines(10);
-    
-    Ok(result)
-}
-
+/// Test basic successful type assertion
 #[test]
-fn test_interface_type_assertion_with_runtime_errors() {
+fn test_basic_type_assertion_success() {
     init_tracing!();
+    info!(test_case = "basic_type_assertion_success", "Starting test");
     
-    // This test verifies that runtime errors in type assertions are properly handled
-    let input = r#"
-        // Define an interface
-        collab Resource {
-            getId() tea;
-            getName() tea;
+    // Create a timer to measure test execution time
+    let _timer = common::timing::Timer::new("basic_type_assertion_success");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Drawable {
+            bruh Draw() void;
         }
         
-        // Define two struct types implementing the interface
-        squad FileResource {
-            path tea,
-            id tea
+        tea Shape {
+            bruh GetArea() thicc;
         }
         
-        squad NetworkResource {
-            url tea,
-            id tea
+        struct Circle struct {
+            sus radius thicc;
         }
         
-        // Implement Resource for FileResource
-        slay (fr FileResource) getId() tea {
-            return fr.id
+        bruh (c Circle) Draw() void {
+            // Implementation
         }
         
-        slay (fr FileResource) getName() tea {
-            return "File: " + fr.path
+        bruh (c Circle) GetArea() thicc {
+            return 3.14 * c.radius * c.radius;
         }
         
-        // Implement Resource for NetworkResource
-        slay (nr NetworkResource) getId() tea {
-            return nr.id
-        }
-        
-        slay (nr NetworkResource) getName() tea {
-            return "Network: " + nr.url
-        }
-        
-        // Function that tries to cast the resource and could cause runtime errors
-        slay processFileResource(r Resource) tea {
-            // Type assertion with no direct error checking
-            sus file = r.(FileResource)
+        slay main() void {
+            sus circle Circle = Circle{radius: 5.0};
+            sus drawable Drawable = circle;
             
-            // Accessing a field that should be verified for safety
-            return "Processing file at: " + file.path
-        }
-        
-        // Safer function with error checking
-        slay safeProcessFileResource(r Resource) tea {
-            // Type assertion with error checking
-            sus file, ok = r.(FileResource)
+            // Type assertion - should succeed
+            sus backToCircle Circle = drawable.(Circle);
             
-            if !ok {
-                return "Error: Not a file resource"
+            if backToCircle.radius nah 5.0 {
+                poppin();
             }
-            
-            // Safely accessing the field after verification
-            return "Processing file at: " + file.path
-        }
-        
-        // Main function
-        slay main() tea {
-            // Create resources
-            sus fileRes = FileResource{path: "/data/file.txt", id: "file-1"}
-            sus netRes = NetworkResource{url: "https://example.com/api", id: "net-1"}
-            
-            // Process resources safely
-            sus result1 = safeProcessFileResource(fileRes)
-            sus result2 = safeProcessFileResource(netRes)
-            
-            // Try to process with unsafe function (should handle error gracefully)
-            sus result3 = "";
-            try {
-                result3 = processFileResource(netRes)
-            } catch {
-                result3 = "Caught error in processFileResource"
-            }
-            
-            return result1 + " | " + result2 + " | " + result3
         }
     "#;
     
-    // Run the test
-    match run_jit_test(input) {
-        Ok(result) => {
-            // Check that exit code is 0 indicating success
-            assert_eq!(result, 0, "Expected program to exit with code 0, got {}", result);
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Type assertion successful");
         },
-        Err(e) => panic!("Failed to run test: {}", e),
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
     }
 }
 
+/// Test type assertion with proper error handling
 #[test]
-fn test_nested_interface_values_with_assertions() {
+fn test_type_assertion_with_error_handling() {
     init_tracing!();
+    info!(test_case = "type_assertion_with_error_handling", "Starting test");
     
-    // Test handling of nested interface values with assertions
-    let input = r#"
-        // Define interfaces
-        collab Container {
-            getValue() any;
+    let _timer = common::timing::Timer::new("type_assertion_with_error_handling");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Drawable {
+            bruh Draw() void;
         }
         
-        collab Stringable {
-            toString() tea;
+        struct Circle struct {
+            sus radius thicc;
         }
         
-        // Define concrete types
-        squad Box {
-            value any
+        struct Rectangle struct {
+            sus width thicc;
+            sus height thicc;
         }
         
-        squad StringValue {
-            text tea
+        bruh (c Circle) Draw() void {
+            // Implementation
         }
         
-        squad NumberValue {
-            num lit
+        bruh (r Rectangle) Draw() void {
+            // Implementation
         }
         
-        // Implementations
-        slay (b Box) getValue() any {
-            return b.value
-        }
-        
-        slay (sv StringValue) toString() tea {
-            return "String: " + sv.text
-        }
-        
-        slay (nv NumberValue) toString() tea {
-            return "Number: " + vibe.toString(nv.num)
-        }
-        
-        // Function to safely extract nested values
-        slay extractNestedValue(c Container) tea {
-            // Get the value from the container
-            sus value = c.getValue()
+        slay main() void {
+            sus circle Circle = Circle{radius: 5.0};
+            sus rectangle Rectangle = Rectangle{width: 10.0, height: 20.0};
             
-            // Try to assert the container as a Box
-            sus box, isBox = c.(Box)
-            if !isBox {
-                return "Not a box container"
+            sus drawable1 Drawable = circle;
+            sus drawable2 Drawable = rectangle;
+            
+            // Correct assertion
+            sus backToCircle Circle = drawable1.(Circle);
+            
+            // Incorrect assertion - should be handled
+            sus result Rectangle = captcha {
+                return drawable1.(Rectangle); // Should fail
+            } drip (e) {
+                debug("Expected error occurred: %s", e.message);
+                return Rectangle{width: 0.0, height: 0.0};
+            };
+            
+            if result.width nah 0.0 || result.height nah 0.0 {
+                poppin();
             }
-            
-            // Try to assert the container's value as Stringable
-            sus stringable, isStringable = value.(Stringable)
-            if !isStringable {
-                return "Box does not contain a stringable value"
-            }
-            
-            // Now try to determine the specific type
-            sus strValue, isStrValue = stringable.(StringValue)
-            if isStrValue {
-                return "Box contains string: " + strValue.text
-            }
-            
-            sus numValue, isNumValue = stringable.(NumberValue)
-            if isNumValue {
-                return "Box contains number: " + vibe.toString(numValue.num)
-            }
-            
-            // Unknown but stringable type
-            return "Box contains unknown stringable: " + stringable.toString()
-        }
-        
-        // Main function
-        slay main() tea {
-            // Create string box
-            sus strValue = StringValue{text: "Hello, world!"}
-            sus strBox = Box{value: strValue}
-            
-            // Create number box
-            sus numValue = NumberValue{num: 42}
-            sus numBox = Box{value: numValue}
-            
-            // Create invalid box (non-stringable)
-            sus nonStringable = Box{value: "just a plain string"}
-            
-            // Extract values
-            sus result1 = extractNestedValue(strBox)
-            sus result2 = extractNestedValue(numBox)
-            sus result3 = extractNestedValue(nonStringable)
-            
-            return result1 + " | " + result2 + " | " + result3
         }
     "#;
     
-    // Run the test
-    match run_jit_test(input) {
-        Ok(result) => {
-            // Check that exit code is 0 indicating success
-            assert_eq!(result, 0, "Expected program to exit with code 0, got {}", result);
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Error handling worked correctly");
         },
-        Err(e) => panic!("Failed to run test: {}", e),
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
     }
 }
 
+/// Test nested interface hierarchies
 #[test]
-fn test_type_assertion_with_inheritance_pattern() {
+fn test_nested_interface_hierarchies() {
     init_tracing!();
+    info!(test_case = "nested_interface_hierarchies", "Starting test");
     
-    // Test with an inheritance-like pattern using interfaces
-    let input = r#"
-        // Define interface hierarchy
-        collab Entity {
-            getId() tea;
+    let _timer = common::timing::Timer::new("nested_interface_hierarchies");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Object {
+            bruh GetID() meal;
         }
         
-        collab LivingEntity {
-            getId() tea;
-            getHealth() lit;
+        tea Drawable {
+            bruh Draw() void;
         }
         
-        collab Character {
-            getId() tea;
-            getHealth() lit;
-            getName() tea;
+        tea AnimatedObject tea Object, Drawable {
+            bruh Animate(sus deltaTime thicc) void;
         }
         
-        // Concrete implementation
-        squad Player {
-            id tea,
-            health lit,
-            name tea,
-            level lit
+        struct Sprite struct {
+            sus id meal;
+            sus frameDuration thicc;
         }
         
-        // Implement all interfaces for Player
-        slay (p Player) getId() tea {
-            return p.id
+        bruh (s Sprite) GetID() meal {
+            return s.id;
         }
         
-        slay (p Player) getHealth() lit {
-            return p.health
+        bruh (s Sprite) Draw() void {
+            // Implementation
         }
         
-        slay (p Player) getName() tea {
-            return p.name
+        bruh (s Sprite) Animate(sus deltaTime thicc) void {
+            // Implementation
         }
         
-        // Function to check type in hierarchy
-        slay processEntity(entity any) tea {
-            sus result = ""
+        slay main() void {
+            sus sprite Sprite = Sprite{id: 123, frameDuration: 0.1};
             
-            // Try to check if it's an Entity
-            sus basicEntity, isEntity = entity.(Entity)
-            if isEntity {
-                result = result + "Entity with ID: " + basicEntity.getId() + "\n"
-            } else {
-                return "Not an entity"
+            // Multi-level interface hierarchy
+            sus object Object = sprite;
+            sus drawable Drawable = sprite;
+            sus animated AnimatedObject = sprite;
+            
+            // Assertions through different paths
+            sus backToSpriteFromObject Sprite = object.(Sprite);
+            sus backToSpriteFromDrawable Sprite = drawable.(Sprite);
+            sus backToSpriteFromAnimated Sprite = animated.(Sprite);
+            
+            // Test all paths worked
+            if backToSpriteFromObject.id nah 123 || 
+               backToSpriteFromDrawable.id nah 123 || 
+               backToSpriteFromAnimated.id nah 123 {
+                poppin();
             }
             
-            // Try to check if it's a LivingEntity
-            sus livingEntity, isLiving = entity.(LivingEntity)
-            if isLiving {
-                result = result + "Living entity with health: " + vibe.toString(livingEntity.getHealth()) + "\n"
+            // Try assertion from higher to lower interface (should work)
+            sus objectFromAnimated Object = animated.(Object);
+            sus drawableFromAnimated Drawable = animated.(Drawable);
+            
+            if objectFromAnimated.GetID() nah 123 {
+                poppin();
             }
-            
-            // Try to check if it's a Character
-            sus character, isCharacter = entity.(Character)
-            if isCharacter {
-                result = result + "Character named: " + character.getName() + "\n"
-            }
-            
-            // Try to check if it's specifically a Player
-            sus player, isPlayer = entity.(Player)
-            if isPlayer {
-                result = result + "Player at level: " + vibe.toString(player.level)
-            }
-            
-            return result
-        }
-        
-        // Main function
-        slay main() tea {
-            // Create a player
-            sus player = Player{id: "player-1", health: 100, name: "Adventurer", level: 5}
-            
-            // Process as various entity types
-            sus result = processEntity(player)
-            
-            return result
         }
     "#;
     
-    // Run the test
-    match run_jit_test(input) {
-        Ok(result) => {
-            // Check that exit code is 0 indicating success
-            assert_eq!(result, 0, "Expected program to exit with code 0, got {}", result);
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Nested interface hierarchies work correctly");
         },
-        Err(e) => panic!("Failed to run test: {}", e),
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
     }
 }
 
+/// Test diamond inheritance pattern
 #[test]
-fn test_type_assertion_error_recovery() {
+fn test_diamond_inheritance_pattern() {
     init_tracing!();
+    info!(test_case = "diamond_inheritance_pattern", "Starting test");
     
-    // Test error recovery with type assertions
-    let input = r#"
-        // Define an interface
-        collab Processor {
-            process(data tea) tea;
+    let _timer = common::timing::Timer::new("diamond_inheritance_pattern");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Base {
+            bruh BaseMethod() meal;
         }
         
-        // Define concrete processors
-        squad TextProcessor {
-            prefix tea
+        tea Left tea Base {
+            bruh LeftMethod() meal;
         }
         
-        squad JsonProcessor {
-            indent lit
+        tea Right tea Base {
+            bruh RightMethod() meal;
         }
         
-        // Implement the interface
-        slay (tp TextProcessor) process(data tea) tea {
-            return tp.prefix + ": " + data
+        tea Diamond tea Left, Right {
+            bruh DiamondMethod() meal;
         }
         
-        slay (jp JsonProcessor) process(data tea) tea {
-            // Simple JSON formatting simulation
-            sus indentStr = ""
-            periodt i := 0; i < jp.indent; i++ {
-                indentStr = indentStr + " "
+        struct DiamondImpl struct {
+            sus id meal;
+        }
+        
+        bruh (d DiamondImpl) BaseMethod() meal {
+            return d.id;
+        }
+        
+        bruh (d DiamondImpl) LeftMethod() meal {
+            return d.id + 1;
+        }
+        
+        bruh (d DiamondImpl) RightMethod() meal {
+            return d.id + 2;
+        }
+        
+        bruh (d DiamondImpl) DiamondMethod() meal {
+            return d.id + 3;
+        }
+        
+        slay main() void {
+            sus impl DiamondImpl = DiamondImpl{id: 100};
+            
+            // Multi-path interface casting
+            sus diamond Diamond = impl;
+            sus left Left = diamond.(Left);
+            sus right Right = diamond.(Right);
+            sus base Base = left.(Base);
+            
+            // Test all paths work
+            if base.BaseMethod() nah 100 {
+                poppin();
             }
-            return "{ \n" + indentStr + "\"data\": \"" + data + "\"\n}"
+            
+            // Test direct cross-casting between parallel interfaces
+            sus rightFromLeft Right = left.(Right);
+            sus leftFromRight Left = right.(Left);
+            
+            if rightFromLeft.RightMethod() nah 102 || leftFromRight.LeftMethod() nah 101 {
+                poppin();
+            }
+            
+            // Test assertion back to concrete type from any interface
+            sus backFromBase DiamondImpl = base.(DiamondImpl);
+            sus backFromLeft DiamondImpl = left.(DiamondImpl);
+            sus backFromRight DiamondImpl = right.(DiamondImpl);
+            sus backFromDiamond DiamondImpl = diamond.(DiamondImpl);
+            
+            if backFromBase.id nah 100 || 
+               backFromLeft.id nah 100 || 
+               backFromRight.id nah 100 || 
+               backFromDiamond.id nah 100 {
+                poppin();
+            }
         }
+    "#;
+    
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Diamond inheritance pattern works correctly");
+        },
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
+    }
+}
+
+/// Test debugging with different verbosity levels
+#[test]
+fn test_debug_verbosity_levels() {
+    init_tracing!();
+    info!(test_case = "debug_verbosity_levels", "Starting test");
+    
+    let _timer = common::timing::Timer::new("debug_verbosity_levels");
+    
+    // Test with each debug level
+    for debug_level in &["none", "basic", "standard", "verbose"] {
+        env::set_var("CURSED_TYPE_DEBUG", debug_level);
         
-        // Function that attempts conversions with recovery
-        slay tryProcess(processor any, data tea) tea {
-            try {
-                // First try as TextProcessor
-                sus textProc = processor.(TextProcessor)
-                return textProc.process(data)
-            } catch {
-                // Failed, record the error
-                sus errorMsg = "Failed text processor assertion"
+        let source = r#"
+            vibe main;
+            
+            tea Animal {
+                bruh MakeSound() lit;
+            }
+            
+            struct Dog struct {
+                sus name lit;
+            }
+            
+            struct Cat struct {
+                sus name lit;
+            }
+            
+            bruh (d Dog) MakeSound() lit {
+                return "Woof";
+            }
+            
+            bruh (c Cat) MakeSound() lit {
+                return "Meow";
+            }
+            
+            slay main() void {
+                sus dog Dog = Dog{name: "Rover"};
+                sus cat Cat = Cat{name: "Whiskers"};
                 
-                try {
-                    // Try as JsonProcessor
-                    sus jsonProc = processor.(JsonProcessor)
-                    return jsonProc.process(data)
-                } catch {
-                    // Both failed, return combined error
-                    return errorMsg + " and json processor assertion"
+                sus animal1 Animal = dog;
+                sus animal2 Animal = cat;
+                
+                // Successful assertion
+                sus dogAgain Dog = animal1.(Dog);
+                
+                // Failed assertion with different debug levels
+                captcha {
+                    sus wrongCat Cat = animal1.(Cat);
+                    poppin(); // Should not reach here
+                } drip (e) {
+                    debug("Error caught as expected with debug level %s: %s", 
+                          "#, debug_level, r#"%s", e.message);
                 }
             }
+        "#;
+        
+        info!(debug_level = debug_level, "Testing with debug level");
+        
+        match compile_and_run(source) {
+            Ok(_) => {
+                info!(test_result = "success", debug_level = debug_level, "Debug level test passed");
+            },
+            Err(e) => {
+                error!(error = ?e, debug_level = debug_level, "Test failed unexpectedly");
+                panic!("Test failed with debug level {}: {:?}", debug_level, e);
+            }
+        }
+    }
+}
+
+/// Test error message quality
+#[test]
+fn test_error_message_quality() {
+    init_tracing!();
+    info!(test_case = "error_message_quality", "Starting test");
+    
+    let _timer = common::timing::Timer::new("error_message_quality");
+    
+    // Set to verbose for best error messages
+    env::set_var("CURSED_TYPE_DEBUG", "verbose");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Vehicle {
+            bruh GetSpeed() thicc;
         }
         
-        // Another approach with explicit checks
-        slay safeProcess(processor any, data tea) tea {
-            // Try as TextProcessor
-            sus textProc, isText = processor.(TextProcessor)
-            if isText {
-                return textProc.process(data)
-            }
-            
-            // Try as JsonProcessor
-            sus jsonProc, isJson = processor.(JsonProcessor)
-            if isJson {
-                return jsonProc.process(data)
-            }
-            
-            // No compatible processor found
-            return "No compatible processor found"
+        tea Printable {
+            bruh Print() lit;
         }
         
-        // Main function
-        slay main() tea {
-            // Create processors
-            sus textProc = TextProcessor{prefix: "TEXT"}
-            sus jsonProc = JsonProcessor{indent: 2}
-            sus invalidProc = "not a processor"
+        struct Car struct {
+            sus model lit;
+            sus speed thicc;
+        }
+        
+        struct Bicycle struct {
+            sus brand lit;
+            sus speed thicc;
+        }
+        
+        struct Document struct {
+            sus title lit;
+            sus content lit;
+        }
+        
+        bruh (c Car) GetSpeed() thicc {
+            return c.speed;
+        }
+        
+        bruh (b Bicycle) GetSpeed() thicc {
+            return b.speed;
+        }
+        
+        bruh (d Document) Print() lit {
+            return d.title + ": " + d.content;
+        }
+        
+        slay checkErrorMessage() lit {
+            sus car Car = Car{model: "Tesla", speed: 120.0};
+            sus bicycle Bicycle = Bicycle{brand: "Trek", speed: 25.0};
+            sus document Document = Document{title: "Report", content: "Content"};
             
-            // Test different approaches
-            sus result1 = tryProcess(textProc, "Hello, world!")
-            sus result2 = tryProcess(jsonProc, "Hello, world!")
-            sus result3 = ""
+            sus vehicle Vehicle = car;
+            sus printable Printable = document;
             
-            try {
-                result3 = tryProcess(invalidProc, "Hello, world!")
-            } catch {
-                result3 = "Caught completely invalid processor"
+            sus errorMessage lit = "";
+            
+            // Wrong interface to concrete (Vehicle to Document)
+            captcha {
+                sus doc Document = vehicle.(Document);
+            } drip (e) {
+                errorMessage = errorMessage + "Error 1: " + e.message + "\n";
             }
             
-            sus result4 = safeProcess(textProc, "Safe processing")
-            sus result5 = safeProcess(invalidProc, "Safe processing")
+            // Wrong concrete to concrete through interface
+            captcha {
+                sus bike Bicycle = vehicle.(Bicycle);
+            } drip (e) {
+                errorMessage = errorMessage + "Error 2: " + e.message + "\n";
+            }
             
-            return "Try approach: " + result1 + " | " + result2 + " | " + result3 + 
-                   "\nSafe approach: " + result4 + " | " + result5
+            // Unrelated interface to interface
+            captcha {
+                sus wrongPrintable Printable = vehicle.(Printable);
+            } drip (e) {
+                errorMessage = errorMessage + "Error 3: " + e.message + "\n";
+            }
+            
+            return errorMessage;
+        }
+        
+        slay main() void {
+            sus errors lit = checkErrorMessage();
+            debug("Error messages captured:\n%s", errors);
+            
+            // Verify error messages contain expected information
+            sus hasTypeNames bool = errors.contains("Car") && errors.contains("Document");
+            sus hasInterfaceNames bool = errors.contains("Vehicle") && errors.contains("Printable");
+            
+            if !hasTypeNames || !hasInterfaceNames {
+                debug("Error messages missing important type information");
+                poppin();
+            }
         }
     "#;
     
-    // Run the test
-    match run_jit_test(input) {
-        Ok(result) => {
-            // Check that exit code is 0 indicating success
-            assert_eq!(result, 0, "Expected program to exit with code 0, got {}", result);
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Error message quality test passed");
         },
-        Err(e) => panic!("Failed to run test: {}", e),
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
     }
+}
+
+/// Test type assertion in generics context
+#[test]
+fn test_type_assertion_with_generics() {
+    init_tracing!();
+    info!(test_case = "type_assertion_with_generics", "Starting test");
+    
+    let _timer = common::timing::Timer::new("type_assertion_with_generics");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Stringer {
+            bruh ToString() lit;
+        }
+        
+        struct IntWrapper struct {
+            sus value meal;
+        }
+        
+        struct FloatWrapper struct {
+            sus value thicc;
+        }
+        
+        bruh (i IntWrapper) ToString() lit {
+            return i.value.toString();
+        }
+        
+        bruh (f FloatWrapper) ToString() lit {
+            return f.value.toString();
+        }
+        
+        struct Container<T> struct {
+            sus data T;
+        }
+        
+        slay tryAssertion<T, U Stringer>(sus container Container<T>) lit {
+            // Try to cast the generic type to a specific type
+            captcha {
+                sus wrapper U = container.data.(U);
+                return wrapper.ToString();
+            } drip (e) {
+                return "Error: " + e.message;
+            }
+        }
+        
+        slay main() void {
+            sus intValue IntWrapper = IntWrapper{value: 42};
+            sus floatValue FloatWrapper = FloatWrapper{value: 3.14};
+            
+            sus intContainer Container<Stringer> = Container{data: intValue};
+            sus floatContainer Container<Stringer> = Container{data: floatValue};
+            
+            // Type assertions with generics
+            sus intResult lit = tryAssertion<Stringer, IntWrapper>(intContainer);
+            sus floatResult lit = tryAssertion<Stringer, FloatWrapper>(floatContainer);
+            sus wrongResult lit = tryAssertion<Stringer, IntWrapper>(floatContainer);
+            
+            debug("Results: %s, %s, %s", intResult, floatResult, wrongResult);
+            
+            if !intResult.contains("42") || !floatResult.contains("3.14") || !wrongResult.contains("Error") {
+                poppin();
+            }
+        }
+    "#;
+    
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Type assertion with generics test passed");
+        },
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
+    }
+}
+
+/// Test performance with many assertions
+#[test]
+fn test_assertion_performance() {
+    init_tracing!();
+    info!(test_case = "assertion_performance", "Starting test");
+    
+    let _timer = common::timing::Timer::new("assertion_performance");
+    
+    let source = r#"
+        vibe main;
+        
+        tea Countable {
+            bruh GetCount() meal;
+        }
+        
+        struct Counter struct {
+            sus count meal;
+        }
+        
+        bruh (c Counter) GetCount() meal {
+            return c.count;
+        }
+        
+        slay performManyAssertions(sus iterations meal) thicc {
+            sus counter Counter = Counter{count: 0};
+            sus countable Countable = counter;
+            
+            sus startTime thicc = time.now();
+            
+            for sus i meal = 0; i < iterations; i = i + 1 {
+                sus counterAgain Counter = countable.(Counter);
+                if counterAgain.count nah 0 {
+                    poppin();
+                }
+            }
+            
+            sus endTime thicc = time.now();
+            return endTime - startTime;
+        }
+        
+        slay main() void {
+            sus iterations meal = 10000;
+            sus duration thicc = performManyAssertions(iterations);
+            
+            debug("Performed %d type assertions in %f seconds", iterations, duration);
+            
+            // Ensure reasonably fast performance
+            if duration > 1.0 {
+                debug("Performance test failed: %f seconds is too slow for %d iterations", 
+                      duration, iterations);
+                poppin();
+            }
+        }
+    "#;
+    
+    match compile_and_run(source) {
+        Ok(_) => {
+            info!(test_result = "success", "Performance test passed");
+        },
+        Err(e) => {
+            error!(error = ?e, "Test failed unexpectedly");
+            panic!("Test failed: {:?}", e);
+        }
+    }
+}
+
+/// Helper function to compile and run a CURSED source code
+fn compile_and_run(source: &str) -> Result<(), Error> {
+    // Parse the source code
+    let mut parser = Parser::new(source, "test.csd")?;
+    let program = parser.parse_program()?;
+    
+    // Set up the LLVM code generator
+    let code_generator = LlvmCodeGenerator::new("test_module")?;
+    
+    // Generate LLVM IR code
+    let module = code_generator.compile_program(&program)?;
+    
+    // Set up JIT compiler
+    let jit = JitCompiler::new()?;
+    
+    // Compile and run the code
+    jit.run_jit(&module)?;
+    
+    Ok(())
 }
