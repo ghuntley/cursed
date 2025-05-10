@@ -141,7 +141,7 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
                source_interface, target_interface);
         
         // Find the path between interfaces with proper error propagation
-        let path = self.find_interface_path(source_interface, target_interface)?;
+        let path = self.find_interface_path_simple(source_interface, target_interface)?;
         
         // Generate visualization based on the format
         match format {
@@ -194,6 +194,48 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
                 
                 Ok(result)
             }
+            VisualizationFormat::Json => {
+                // Implement JSON format for machine-readable output
+                let mut result = String::new();
+                
+                writeln!(result, "{{\n  \"path\": [").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                for (i, interface) in path.iter().enumerate() {
+                    if i < path.len() - 1 {
+                        writeln!(result, "    \"{}\",", interface).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                        })?;
+                    } else {
+                        writeln!(result, "    \"{}\"", interface).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                        })?;
+                    }
+                }
+                
+                writeln!(result, "  ],").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                writeln!(result, "  \"source\": \"{}\",", source_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                writeln!(result, "  \"target\": \"{}\",", target_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                writeln!(result, "  \"path_length\": {}", path.len()).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                writeln!(result, "}}").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                Ok(result)
+            }
             _ => {
                 // For unsupported formats, fall back to ASCII with a warning
                 warn!("Unsupported visualization format: {:?}, falling back to ASCII", format);
@@ -225,29 +267,8 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
     ) -> Result<bool, Error> {
         debug!("Checking if {} extends {}", source_interface, target_interface);
         
-        // First check for direct extension with proper error propagation
-        if let Some(extensions) = self.interface_registry().get_direct_extensions(source_interface)? {
-            if extensions.contains(&target_interface.to_string()) {
-                debug!("Direct extension relationship found: {} extends {}", 
-                       source_interface, target_interface);
-                return Ok(true);
-            }
-        }
-        
-        // Then check for indirect extension by finding a path
-        match self.find_interface_path(source_interface, target_interface) {
-            Ok(_) => {
-                debug!("Indirect extension relationship found: {} extends {} indirectly", 
-                       source_interface, target_interface);
-                Ok(true)
-            }
-            Err(_) => {
-                // No path found, not an extension relationship
-                debug!("No extension relationship found between {} and {}", 
-                       source_interface, target_interface);
-                Ok(false)
-            }
-        }
+        // Use the simple relationship checker with proper error propagation
+        self.check_extension_relationship_simple(source_interface, target_interface)
     }
     
     #[instrument(skip(self), level = "debug")]
@@ -313,8 +334,8 @@ Note: The relationship appears to be reversed. '{}' extends '{}', not the other 
             _ => {}
         }
         
-        // Try to visualize alternative paths with proper error handling
-        match self.find_alternative_paths_enhanced(source_interface, target_interface, 3) {
+        // Try to visualize alternative paths with proper error handling using the simple method
+        match self.find_alternative_paths_simple(source_interface, target_interface, 3) {
             Ok(paths) => {
                 if !paths.is_empty() {
                     writeln!(message, "
@@ -365,7 +386,7 @@ No inheritance path exists between these interfaces."
                 }
             },
             Err(e) => {
-                // Handle error in path finding gracefully
+                // Handle error in path finding gracefully with more context
                 writeln!(
                     message,
                     "
@@ -375,6 +396,18 @@ Error finding alternative paths: {}",
                 ).map_err(|e2| {
                     Error::Compilation(format!("Failed to write to error message: {}", e2))
                 })?;
+                
+                // Add suggestion for the reversed relationship case
+                if self.detect_reversed_inheritance(source_interface, target_interface)? {
+                    writeln!(
+                        message,
+                        "
+Note: The relationship appears to be reversed. Consider checking if you meant '({}).{}'.",
+                        target_interface, source_interface
+                    ).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
+                }
                 
                 // Try to provide context about each interface even if path finding failed
                 match self.add_interface_context_to_error_message(
@@ -394,6 +427,19 @@ Error finding alternative paths: {}",
 
 // Extension method to add interface context to error messages
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Detect if the inheritance relationship is reversed
+    fn detect_reversed_inheritance(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+    ) -> Result<bool, Error> {
+        let _span = span!(Level::DEBUG, "detect_reversed_inheritance").entered();
+        debug!("Checking for reversed inheritance between {} and {}", source_interface, target_interface);
+        
+        // Check if target actually extends source (reverse of what was attempted)
+        self.detect_reversed_inheritance_simple(source_interface, target_interface)
+    }
+    
     /// Add detailed context about interfaces to the error message
     fn add_interface_context_to_error_message(
         &self,
