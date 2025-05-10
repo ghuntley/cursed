@@ -45,20 +45,14 @@ impl<'ctx> IntegratedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         debug!("Specialized struct created, now generating field accessors");
         
-        // Then, generate the field accessors
-        // We need to explicitly call the EnhancedMonomorphization trait method
-        // but with improved error handling
-        debug!("Using standard field accessors");
-        crate::codegen::llvm::EnhancedMonomorphization::generate_field_accessors(
+        // Then, generate the field accessors using our improved implementation
+        debug!("Using improved field accessors with proper error handling");
+        crate::codegen::llvm::interface_field_accessors::InterfaceFieldAccessors::install_field_accessors_for_specialized_struct(
             self,
             generic_struct,
             specialized_name,
             type_args,
         )?;
-        
-        // In the future, we can replace this with the improved implementation
-        // once the compilation issues are resolved
-        // TODO: Fix improved_field_accessors implementation and use it here instead
         
         info!("Specialized struct with accessors generated successfully");
         
