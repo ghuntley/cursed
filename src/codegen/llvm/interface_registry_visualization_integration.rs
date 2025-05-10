@@ -1,150 +1,480 @@
 //! # Interface Registry Visualization Integration
 //!
-//! This module integrates the improved interface registry visualization with the LLVM code generator.
-//! It provides methods to use the visualization during type assertions and error reporting.
+//! This module provides a comprehensive integration between the interface registry visualization
+//! system and the LLVM code generator. It connects the enhanced interface type assertion path
+//! visualization system with the interface registry to provide detailed visualization of
+//! interface inheritance relationships and type assertions.
+//!
+//! ## Key Features
+//!
+//! 1. Thread-safe integration with the LLVM code generator
+//! 2. Consistent error propagation with the `?` operator throughout all operations
+//! 3. Multiple visualization formats including ASCII art and DOT graphs
+//! 4. Integration with the existing interface type assertion path visualization system
+//! 5. Comprehensive error handling with rich context in all error messages
 
-use tracing::{debug, error, info, instrument, trace, warn};
-use inkwell::values::BasicValueEnum;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::fmt::{Display, Formatter, Result as FmtResult, Write};
+use std::sync::{Arc, RwLock};
+use tracing::{debug, error, info, instrument, span, trace, warn, Level};
 
-use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::expression::ExpressionCompilation;
-use crate::core::interface_registry_visualization_improved::ImprovedInterfaceRegistryVisualization;
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
+use crate::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::core::interface_registry_visualization::{
+    InterfaceRegistryExtensionWithVisualization, VisualizationFormat, VisualizationOptions,
+};
 use crate::error::Error;
 
-/// Trait for integrating interface registry visualization with code generation
-pub trait InterfaceVisualizationIntegration<'ctx> {
-    /// Compile a type assertion with enhanced error reporting using visualizations
-    fn compile_type_assertion_with_visualization(
-        &mut self,
-        type_assertion: &TypeAssertion
-    ) -> Result<BasicValueEnum<'ctx>, Error>;
-    
-    /// Generate a visual representation of an inheritance path for an error message
-    fn generate_path_visualization(
+/// Provides integration between the LLVM code generator and interface registry visualization system
+pub trait InterfaceRegistryVisualizationIntegration<'ctx> {
+    /// Initialize the interface registry visualization system in the code generator
+    fn initialize_registry_visualization(&mut self) -> Result<(), Error>;
+
+    /// Generate visualization of an interface hierarchy with specified options
+    fn visualize_interface_hierarchy(
         &self,
-        source_type: &str,
-        target_type: &str
-    ) -> Result<Option<String>, Error>;
-    
-    /// Create an enhanced error message with visualization for type assertion failures
-    fn create_enhanced_type_error(
+        format: VisualizationFormat,
+        options: &VisualizationOptions,
+    ) -> Result<String, Error>;
+
+    /// Find and visualize paths between two interfaces with consistent error handling
+    fn find_and_visualize_inheritance_path(
         &self,
-        source_type: &str,
-        target_type: &str,
-        source_location: &str
+        source_interface: &str,
+        target_interface: &str,
+        format: VisualizationFormat,
+    ) -> Result<String, Error>;
+
+    /// Detect and report cycles in interface inheritance relationships
+    fn detect_inheritance_cycles(&self) -> Result<Vec<Vec<String>>, Error>;
+
+    /// Check if an interface extends another interface, directly or indirectly
+    fn check_interface_extension_relationship(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+    ) -> Result<bool, Error>;
+
+    /// Generate enhanced error message for failed type assertions with visualization
+    fn generate_enhanced_assertion_error(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+        source_location: &str,
     ) -> Result<String, Error>;
 }
 
-impl<'ctx> InterfaceVisualizationIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
+impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
     #[instrument(skip(self), level = "debug")]
-    fn compile_type_assertion_with_visualization(
-        &mut self,
-        type_assertion: &TypeAssertion
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        debug!("Compiling type assertion with visualization for: {}", type_assertion.string());
+    fn initialize_registry_visualization(&mut self) -> Result<(), Error> {
+        debug!("Initializing interface registry visualization system");
         
-        // Get source location for better error messages
-        let source_location = format!("{}", type_assertion.token_literal());
-        
-        // Compile the expression being asserted
-        let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
-        
-        // We'll need to determine the source type - for now, use a placeholder
-        // In a real implementation, we would extract this from the expression's type
-        let source_type = "UnknownSource"; // This should be derived from expr_value
-        
-        // Check if there's a valid path between the types
-        let interface_registry = self.interface_registry.as_ref()
-            .ok_or_else(|| Error::Compilation(
-                format!("Interface registry not available for visualization at {}", source_location)
-            ))?;
-        
-        // Attempt to find inheritance paths
-        let paths = interface_registry.find_interface_paths(
-            source_type, 
-            &type_assertion.type_name,
-            1
-        )?;
-        
-        // If no valid path exists, provide enhanced error
-        if paths.is_empty() {
-            // This is where we would use the regular type assertion compilation with enhanced errors
-            let error_message = interface_registry.generate_detailed_error_message(
-                source_type,
-                &type_assertion.type_name,
-                &source_location
-            )?;
-            
-            warn!("Type assertion failed: {}", error_message);
-            
-            // Fall back to normal type assertion compilation
-            self.compile_type_assertion(type_assertion)
-        } else {
-            // A valid path exists, proceed with normal compilation
-            self.compile_type_assertion(type_assertion)
-        }
-    }
-    
-    fn generate_path_visualization(
-        &self,
-        source_type: &str,
-        target_type: &str
-    ) -> Result<Option<String>, Error> {
-        let interface_registry = self.interface_registry.as_ref()
-            .ok_or_else(|| Error::Compilation(
-                format!("Interface registry not available for visualization")
-            ))?;
-        
-        // Attempt to find paths
-        let paths = interface_registry.find_interface_paths(source_type, target_type, 1)?;
-        
-        if paths.is_empty() {
-            return Ok(None);
+        // Check if the registry is already initialized
+        if self.registry_extensions.is_visualization_initialized()? {
+            debug!("Interface registry visualization already initialized");
+            return Ok(());
         }
         
-        // Create a simple ASCII visualization of the path
-        let mut visualization = String::new();
+        // Initialize the visualization system with all known interfaces
+        let interfaces = self.interface_registry().get_all_interfaces()?;
+        debug!("Found {} interfaces to initialize in visualization system", interfaces.len());
         
-        for (i, path) in paths.iter().enumerate() {
-            if i > 0 {
-                visualization.push_str("\n");
-            }
-            
-            visualization.push_str("Path: ");
-            
-            for (j, item) in path.iter().enumerate() {
-                if j > 0 {
-                    visualization.push_str(" → ");
+        // Register all known interface extensions
+        for interface_name in &interfaces {
+            // Get extensions for this interface with proper error propagation
+            if let Some(extensions) = self.interface_registry().get_direct_extensions(interface_name)? {
+                for extension in extensions {
+                    // Register the extension relationship with proper error handling
+                    self.registry_extensions.register_extension(interface_name, &extension)?;
+                    debug!("Registered extension relationship: {} extends {}", interface_name, extension);
                 }
-                visualization.push_str(item);
             }
         }
         
-        Ok(Some(visualization))
+        // Mark the registry as initialized
+        self.registry_extensions.set_visualization_initialized(true)?;
+        debug!("Interface registry visualization system initialized successfully");
+        
+        Ok(())
     }
     
-    fn create_enhanced_type_error(
+    #[instrument(skip(self), level = "debug")]
+    fn visualize_interface_hierarchy(
         &self,
-        source_type: &str,
-        target_type: &str,
-        source_location: &str
+        format: VisualizationFormat,
+        options: &VisualizationOptions,
     ) -> Result<String, Error> {
-        let interface_registry = self.interface_registry.as_ref()
-            .ok_or_else(|| Error::Compilation(
-                format!("Interface registry not available for error enhancement")
-            ))?;
+        debug!("Visualizing interface hierarchy with format: {:?}", format);
         
-        interface_registry.generate_detailed_error_message(
-            source_type,
-            target_type,
-            source_location
-        )
+        // Get the complete hierarchy with proper error propagation
+        let hierarchy = self.interface_registry().get_extension_hierarchy()?;
+        
+        // Generate visualization based on the specified format
+        match format {
+            VisualizationFormat::Ascii => {
+                self.registry_extensions.generate_ascii_tree(&hierarchy, options)
+            }
+            VisualizationFormat::Dot => {
+                self.registry_extensions.generate_dot_graph(&hierarchy, options)
+            }
+            VisualizationFormat::Json => {
+                self.registry_extensions.generate_json_representation(&hierarchy, options)
+            }
+            _ => {
+                // For unsupported formats, fall back to ASCII with a warning
+                warn!("Unsupported visualization format: {:?}, falling back to ASCII", format);
+                self.registry_extensions.generate_ascii_tree(&hierarchy, options)
+            }
+        }
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn find_and_visualize_inheritance_path(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+        format: VisualizationFormat,
+    ) -> Result<String, Error> {
+        debug!("Finding and visualizing inheritance path from {} to {}", 
+               source_interface, target_interface);
+        
+        // Find the path between interfaces with proper error propagation
+        let path = self.find_interface_path(source_interface, target_interface)?;
+        
+        // Generate visualization based on the format
+        match format {
+            VisualizationFormat::Ascii => {
+                let mut result = String::new();
+                
+                writeln!(result, "Interface Inheritance Path:").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                for (i, interface) in path.iter().enumerate() {
+                    if i > 0 {
+                        writeln!(result, "  ↓ extends").map_err(|e| {
+                            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                        })?;
+                    }
+                    writeln!(result, "  [{}]", interface).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                    })?;
+                }
+                
+                Ok(result)
+            }
+            VisualizationFormat::Dot => {
+                let mut result = String::new();
+                
+                writeln!(result, "digraph path {{").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                writeln!(result, "  node [shape=box, style=filled, fillcolor=lightblue];").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                for i in 0..path.len() {
+                    writeln!(result, "  \"{}\" [label=\"{}\"];", path[i], path[i]).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                    })?;
+                    
+                    if i < path.len() - 1 {
+                        writeln!(result, "  \"{}\" -> \"{}\";", path[i], path[i + 1]).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                        })?;
+                    }
+                }
+                
+                writeln!(result, "}}").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
+                
+                Ok(result)
+            }
+            _ => {
+                // For unsupported formats, fall back to ASCII with a warning
+                warn!("Unsupported visualization format: {:?}, falling back to ASCII", format);
+                self.find_and_visualize_inheritance_path(
+                    source_interface, 
+                    target_interface, 
+                    VisualizationFormat::Ascii
+                )
+            }
+        }
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn detect_inheritance_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
+        debug!("Detecting cycles in interface inheritance hierarchy");
+        
+        // Get the complete hierarchy with proper error propagation
+        let hierarchy = self.interface_registry().get_extension_hierarchy()?;
+        
+        // Call the registry's cycle detection with proper error handling
+        self.registry_extensions.detect_cycles(&hierarchy)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn check_interface_extension_relationship(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+    ) -> Result<bool, Error> {
+        debug!("Checking if {} extends {}", source_interface, target_interface);
+        
+        // First check for direct extension with proper error propagation
+        if let Some(extensions) = self.interface_registry().get_direct_extensions(source_interface)? {
+            if extensions.contains(&target_interface.to_string()) {
+                debug!("Direct extension relationship found: {} extends {}", 
+                       source_interface, target_interface);
+                return Ok(true);
+            }
+        }
+        
+        // Then check for indirect extension by finding a path
+        match self.find_interface_path(source_interface, target_interface) {
+            Ok(_) => {
+                debug!("Indirect extension relationship found: {} extends {} indirectly", 
+                       source_interface, target_interface);
+                Ok(true)
+            }
+            Err(_) => {
+                // No path found, not an extension relationship
+                debug!("No extension relationship found between {} and {}", 
+                       source_interface, target_interface);
+                Ok(false)
+            }
+        }
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn generate_enhanced_assertion_error(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+        source_location: &str,
+    ) -> Result<String, Error> {
+        debug!("Generating enhanced assertion error for failed assertion from {} to {}", 
+               source_interface, target_interface);
+        
+        let _span = span!(Level::DEBUG, "generate_enhanced_assertion_error").entered();
+        
+        let mut message = format!(
+            "Type assertion error at {}: Value of type '{}' cannot be asserted as type '{}'",
+            source_location, source_interface, target_interface
+        );
+        
+        // Check if the interfaces exist with proper error handling
+        if !self.interface_registry().interface_exists(source_interface)? {
+            writeln!(message, "
+
+Error: Interface '{}' is not defined in the registry.", 
+                     source_interface).map_err(|e| {
+                Error::Compilation(format!("Failed to write to error message: {}", e))
+            })?;
+            return Ok(message);
+        }
+        
+        if !self.interface_registry().interface_exists(target_interface)? {
+            writeln!(message, "
+
+Error: Interface '{}' is not defined in the registry.", 
+                     target_interface).map_err(|e| {
+                Error::Compilation(format!("Failed to write to error message: {}", e))
+            })?;
+            return Ok(message);
+        }
+        
+        // Check for reversed relationship - common mistake
+        match self.check_interface_extension_relationship(target_interface, source_interface) {
+            Ok(true) => {
+                writeln!(message, "
+
+Note: The relationship appears to be reversed. '{}' extends '{}', not the other way around.",
+                         target_interface, source_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
+                
+                writeln!(message, "Suggestion: Check if you meant to write: value.({}) instead.", 
+                         target_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
+                
+                // Early return with this specific guidance
+                return Ok(message);
+            },
+            Err(e) => {
+                // Log the error but continue
+                warn!("Error checking reversed relationship: {}", e);
+            },
+            _ => {}
+        }
+        
+        // Try to visualize alternative paths with proper error handling
+        match self.find_alternative_paths_enhanced(source_interface, target_interface, 3) {
+            Ok(paths) => {
+                if !paths.is_empty() {
+                    writeln!(message, "
+
+Alternative paths between these interfaces:").map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
+                    
+                    for (i, path) in paths.iter().enumerate() {
+                        writeln!(message, "
+Path {}:", i + 1).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to error message: {}", e))
+                        })?;
+                        
+                        for (j, interface) in path.iter().enumerate() {
+                            if j > 0 {
+                                writeln!(message, "  ↓ extends").map_err(|e| {
+                                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                                })?;
+                            }
+                            writeln!(message, "  [{}]", interface).map_err(|e| {
+                                Error::Compilation(format!("Failed to write to error message: {}", e))
+                            })?;
+                        }
+                    }
+                    
+                    writeln!(
+                        message,
+                        "
+Suggestion: Update the type hierarchy to implement the missing inheritance relationship."
+                    ).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
+                } else {
+                    writeln!(
+                        message,
+                        "
+
+No inheritance path exists between these interfaces."
+                    ).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
+                    
+                    // Provide additional context about each interface
+                    self.add_interface_context_to_error_message(
+                        &mut message, source_interface, target_interface
+                    )?;
+                }
+            },
+            Err(e) => {
+                // Handle error in path finding gracefully
+                writeln!(
+                    message,
+                    "
+
+Error finding alternative paths: {}",
+                    e
+                ).map_err(|e2| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e2))
+                })?;
+                
+                // Try to provide context about each interface even if path finding failed
+                match self.add_interface_context_to_error_message(
+                    &mut message, source_interface, target_interface
+                ) {
+                    Ok(_) => {},
+                    Err(context_error) => {
+                        warn!("Failed to add interface context to error message: {}", context_error);
+                    }
+                }
+            }
+        }
+        
+        Ok(message)
     }
 }
 
-/// Register the interface visualization integration
-pub fn register_interface_visualization_integration() {
-    trace!("Interface visualization integration registered");
+// Extension method to add interface context to error messages
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Add detailed context about interfaces to the error message
+    fn add_interface_context_to_error_message(
+        &self,
+        message: &mut String,
+        source_interface: &str,
+        target_interface: &str,
+    ) -> Result<(), Error> {
+        let _span = span!(Level::DEBUG, "add_interface_context").entered();
+        
+        // Add information about the source interface
+        match self.interface_registry().get_direct_extensions(source_interface) {
+            Ok(Some(extensions)) if !extensions.is_empty() => {
+                writeln!(*message, "
+'{}' directly extends these interfaces:", source_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
+                
+                for extension in &extensions {
+                    writeln!(*message, "  - {}", extension).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
+                }
+            },
+            Ok(_) => {
+                writeln!(*message, "
+'{}' does not extend any interfaces.", source_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
+            },
+            Err(e) => {
+                writeln!(*message, "
+Error retrieving extension information for '{}': {}", 
+                         source_interface, e).map_err(|e2| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e2))
+                })?;
+            }
+        }
+        
+        // Add information about the target interface
+        match self.interface_registry().get_direct_implementors(target_interface) {
+            Ok(Some(implementors)) if !implementors.is_empty() => {
+                writeln!(*message, "
+These interfaces directly extend '{}':", target_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
+                
+                for implementor in &implementors {
+                    writeln!(*message, "  - {}", implementor).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
+                }
+            },
+            Ok(_) => {
+                writeln!(*message, "
+No interfaces directly extend '{}'.", target_interface).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
+            },
+            Err(e) => {
+                writeln!(*message, "
+Error retrieving implementor information for '{}': {}", 
+                         target_interface, e).map_err(|e2| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e2))
+                })?;
+            }
+        }
+        
+        // Add suggestion to fix the issue
+        writeln!(*message, "
+Suggestion: To fix this issue, ensure that '{}' extends '{}' either directly or through another interface.",
+                 source_interface, target_interface).map_err(|e| {
+            Error::Compilation(format!("Failed to write to error message: {}", e))
+        })?;
+        
+        Ok(())
+    }
+}
+
+// Registration function to integrate with the compiler
+pub fn register_interface_registry_visualization_integration() {
+    debug!("Registering interface registry visualization integration");
+    // This function is called during the compiler's initialization
+    // to register this implementation for use throughout the compilation process
 }

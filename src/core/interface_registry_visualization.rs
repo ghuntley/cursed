@@ -20,6 +20,40 @@ use tracing::{debug, info, instrument, trace, warn};
 
 use crate::error::Error;
 
+/// Visualization format options for interface registry
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisualizationFormat {
+    /// ASCII art visualization
+    Ascii,
+    /// DOT graph visualization (for GraphViz)
+    Dot,
+    /// JSON representation
+    Json,
+    /// Plain text representation
+    Text,
+}
+
+/// Options for customizing the visualization output
+#[derive(Debug, Clone)]
+pub struct VisualizationOptions {
+    /// Whether to include cycle information in the visualization
+    pub include_cycles: bool,
+    /// Maximum depth to visualize (None for unlimited)
+    pub max_depth: Option<usize>,
+    /// Whether to include implementation details
+    pub include_details: bool,
+}
+
+impl Default for VisualizationOptions {
+    fn default() -> Self {
+        Self {
+            include_cycles: true,
+            max_depth: None,
+            include_details: true,
+        }
+    }
+}
+
 /// A trait for visualizing interface registry relationships with enhanced error handling.
 pub trait InterfaceRegistryExtensionWithVisualization {
     /// Get the complete extension hierarchy with proper error propagation
@@ -63,6 +97,27 @@ pub trait InterfaceRegistryExtensionWithVisualization {
     
     /// Generate a DOT graph representation of a specific inheritance path
     fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error>;
+    
+    /// Check if an interface exists in the registry
+    fn interface_exists(&self, interface: &str) -> Result<bool, Error>;
+    
+    /// Generate a visualization with the specified format and options
+    fn generate_ascii_tree(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error>;
+    
+    /// Generate a DOT graph with the specified options
+    fn generate_dot_graph(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error>;
+    
+    /// Generate a JSON representation with the specified options
+    fn generate_json_representation(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error>;
+    
+    /// Check if the visualization system is initialized
+    fn is_visualization_initialized(&self) -> Result<bool, Error>;
+    
+    /// Set whether the visualization system is initialized
+    fn set_visualization_initialized(&self, initialized: bool) -> Result<(), Error>;
+    
+    /// Register a new extension relationship between interfaces
+    fn register_extension(&self, source: &str, target: &str) -> Result<(), Error>;
 }
 
 /// A thread-safe implementation of the interface registry visualization
@@ -72,6 +127,8 @@ pub struct ThreadSafeInterfaceRegistryVisualization {
     extensions: Arc<RwLock<HashMap<String, Vec<String>>>>,
     /// The interface implementor registry, stored as a mapping from interface to interfaces that extend it
     implementors: Arc<RwLock<HashMap<String, Vec<String>>>>,
+    /// Flag indicating whether the visualization system is initialized
+    initialized: Arc<RwLock<bool>>,
 }
 
 impl ThreadSafeInterfaceRegistryVisualization {
@@ -80,6 +137,7 @@ impl ThreadSafeInterfaceRegistryVisualization {
         Self {
             extensions: Arc::new(RwLock::new(HashMap::new())),
             implementors: Arc::new(RwLock::new(HashMap::new())),
+            initialized: Arc::new(RwLock::new(false)),
         }
     }
     
@@ -607,6 +665,331 @@ impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceRegistry
         dot.push_str("}\n");
         
         Ok(dot)
+    }
+    
+    #[instrument(level = "debug")]
+    fn interface_exists(&self, interface: &str) -> Result<bool, Error> {
+        debug!("Checking if interface exists: {}", interface);
+        
+        let extensions = self.extensions.read().map_err(|e| {
+            Error::Compilation(format!("Failed to acquire read lock on extensions: {}", e))
+        })?;
+        
+        let implementors = self.implementors.read().map_err(|e| {
+            Error::Compilation(format!("Failed to acquire read lock on implementors: {}", e))
+        })?;
+        
+        // Check if the interface is a key in extensions or implementors
+        Ok(extensions.contains_key(interface) || 
+           implementors.contains_key(interface) ||
+           extensions.values().any(|v| v.contains(&interface.to_string())) ||
+           implementors.values().any(|v| v.contains(&interface.to_string())))
+    }
+    
+    #[instrument(level = "debug", skip(self, hierarchy, options))]
+    fn generate_ascii_tree(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        debug!("Generating ASCII tree visualization");
+        
+        let mut result = String::new();
+        result.push_str("Interface Hierarchy:\n");
+        
+        // Get all interfaces
+        let mut all_interfaces = HashSet::new();
+        
+        // Collect all interfaces from the hierarchy
+        for (source, targets) in hierarchy {
+            all_interfaces.insert(source.clone());
+            for target in targets {
+                all_interfaces.insert(target.clone());
+            }
+        }
+        
+        // Sort interfaces for consistent output
+        let mut sorted_interfaces: Vec<_> = all_interfaces.into_iter().collect();
+        sorted_interfaces.sort();
+        
+        // Find root interfaces (not extended by any other interface)
+        let mut roots = HashSet::new();
+        let mut has_parent = HashSet::new();
+        
+        for (_, targets) in hierarchy {
+            for target in targets {
+                has_parent.insert(target.clone());
+            }
+        }
+        
+        for interface in &sorted_interfaces {
+            if !has_parent.contains(interface) {
+                roots.insert(interface.clone());
+            }
+        }
+        
+        // If no roots found, use all interfaces as roots
+        if roots.is_empty() {
+            roots = sorted_interfaces.into_iter().collect();
+        }
+        
+        let mut sorted_roots: Vec<_> = roots.into_iter().collect();
+        sorted_roots.sort();
+        
+        // Helper function to print the tree recursively
+        fn print_tree(
+            hierarchy: &HashMap<String, Vec<String>>,
+            interface: &str,
+            prefix: &str,
+            is_last: bool,
+            result: &mut String,
+            visited: &mut HashSet<String>,
+            depth: usize,
+            max_depth: Option<usize>,
+            include_cycles: bool,
+        ) -> Result<(), Error> {
+            // Check depth limit
+            if let Some(limit) = max_depth {
+                if depth > limit {
+                    return Ok(());
+                }
+            }
+            
+            // Check for cycles
+            if visited.contains(interface) {
+                if include_cycles {
+                    result.push_str(&format!("{}{} {} (cycle)\n", 
+                                            prefix, 
+                                            if is_last { "└── " } else { "├── " },
+                                            interface));
+                }
+                return Ok(());
+            }
+            
+            // Print current interface
+            result.push_str(&format!("{}{} {}\n", 
+                                    prefix, 
+                                    if is_last { "└── " } else { "├── " },
+                                    interface));
+            
+            // Mark as visited to prevent cycles
+            visited.insert(interface.to_string());
+            
+            // Get direct extensions
+            if let Some(extensions) = hierarchy.get(interface) {
+                let mut sorted_extensions = extensions.clone();
+                sorted_extensions.sort();
+                
+                for (i, extension) in sorted_extensions.iter().enumerate() {
+                    let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+                    let is_last_child = i == sorted_extensions.len() - 1;
+                    
+                    print_tree(
+                        hierarchy,
+                        extension,
+                        &new_prefix,
+                        is_last_child,
+                        result,
+                        visited,
+                        depth + 1,
+                        max_depth,
+                        include_cycles,
+                    )?;
+                }
+            }
+            
+            // Remove from visited to allow the same interface to appear in different branches
+            visited.remove(interface);
+            
+            Ok(())
+        }
+        
+        // Print the tree for each root
+        for (i, root) in sorted_roots.iter().enumerate() {
+            let is_last = i == sorted_roots.len() - 1;
+            let mut visited = HashSet::new();
+            
+            print_tree(
+                hierarchy,
+                root,
+                "",
+                is_last,
+                &mut result,
+                &mut visited,
+                0,
+                options.max_depth,
+                options.include_cycles,
+            )?;
+        }
+        
+        Ok(result)
+    }
+    
+    #[instrument(level = "debug", skip(self, hierarchy, options))]
+    fn generate_dot_graph(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        debug!("Generating DOT graph visualization");
+        
+        let mut dot = String::new();
+        dot.push_str("digraph interface_hierarchy {\n");
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n");
+        
+        // Add nodes for all interfaces
+        let mut all_interfaces = HashSet::new();
+        
+        // Collect all interfaces from the hierarchy
+        for (source, targets) in hierarchy {
+            all_interfaces.insert(source.clone());
+            for target in targets {
+                all_interfaces.insert(target.clone());
+            }
+        }
+        
+        // Add nodes
+        for interface in &all_interfaces {
+            dot.push_str(&format!("  \"{}\" [label=\"{}\"];\n", interface, interface));
+        }
+        
+        // Add edges
+        for (source, targets) in hierarchy {
+            for target in targets {
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", source, target));
+            }
+        }
+        
+        // If include_cycles is enabled, detect and highlight cycles
+        if options.include_cycles {
+            match self.detect_cycles() {
+                Ok(cycles) if !cycles.is_empty() => {
+                    dot.push_str("\n  // Cycles\n");
+                    
+                    for (i, cycle) in cycles.iter().enumerate() {
+                        dot.push_str(&format!("  subgraph cluster_cycle_{} {{\n", i));
+                        dot.push_str("    style=filled;\n");
+                        dot.push_str("    color=lightpink;\n");
+                        dot.push_str(&format!("    label=\"Cycle {}\";\n", i + 1));
+                        
+                        for interface in cycle {
+                            dot.push_str(&format!("    \"{}\";\n", interface));
+                        }
+                        
+                        dot.push_str("  }\n");
+                    }
+                },
+                _ => {}
+            }
+        }
+        
+        dot.push_str("}\n");
+        
+        Ok(dot)
+    }
+    
+    #[instrument(level = "debug", skip(self, hierarchy, options))]
+    fn generate_json_representation(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        debug!("Generating JSON representation");
+        
+        let mut result = String::new();
+        result.push_str("{\n");
+        
+        // Convert hierarchy to JSON
+        result.push_str("  \"interfaces\": {\n");
+        
+        // Get all interfaces
+        let mut all_interfaces = HashSet::new();
+        
+        // Collect all interfaces from the hierarchy
+        for (source, targets) in hierarchy {
+            all_interfaces.insert(source.clone());
+            for target in targets {
+                all_interfaces.insert(target.clone());
+            }
+        }
+        
+        // Sort interfaces for consistent output
+        let mut sorted_interfaces: Vec<_> = all_interfaces.into_iter().collect();
+        sorted_interfaces.sort();
+        
+        for (i, interface) in sorted_interfaces.iter().enumerate() {
+            result.push_str(&format!("    \"{}\": {{\n", interface));
+            
+            // Get extensions
+            result.push_str("      \"extends\": [");
+            
+            if let Some(extensions) = hierarchy.get(interface) {
+                let mut sorted_extensions = extensions.clone();
+                sorted_extensions.sort();
+                
+                for (j, extension) in sorted_extensions.iter().enumerate() {
+                    if j > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&format!("\"{}\"", extension));
+                }
+            }
+            
+            result.push_str("]\n");
+            
+            result.push_str("    }");
+            if i < sorted_interfaces.len() - 1 {
+                result.push_str(",\n");
+            } else {
+                result.push_str("\n");
+            }
+        }
+        
+        result.push_str("  },\n");
+        
+        // Add cycles if enabled
+        if options.include_cycles {
+            result.push_str("  \"cycles\": [");
+            
+            match self.detect_cycles() {
+                Ok(cycles) => {
+                    for (i, cycle) in cycles.iter().enumerate() {
+                        if i > 0 {
+                            result.push_str(", ");
+                        }
+                        result.push_str("[\n");
+                        
+                        for (j, interface) in cycle.iter().enumerate() {
+                            if j > 0 {
+                                result.push_str(", ");
+                            }
+                            result.push_str(&format!("        \"{}\"", interface));
+                        }
+                        
+                        result.push_str("\n      ]");
+                    }
+                },
+                _ => {}
+            }
+            
+            result.push_str("]\n");
+        }
+        
+        result.push_str("}\n");
+        
+        Ok(result)
+    }
+    
+    #[instrument(level = "debug")]
+    fn is_visualization_initialized(&self) -> Result<bool, Error> {
+        debug!("Checking if visualization system is initialized");
+        
+        let initialized = self.initialized.read().map_err(|e| {
+            Error::Compilation(format!("Failed to acquire read lock on initialized flag: {}", e))
+        })?;
+        
+        Ok(*initialized)
+    }
+    
+    #[instrument(level = "debug")]
+    fn set_visualization_initialized(&self, initialized: bool) -> Result<(), Error> {
+        debug!("Setting visualization system initialized to: {}", initialized);
+        
+        let mut init_guard = self.initialized.write().map_err(|e| {
+            Error::Compilation(format!("Failed to acquire write lock on initialized flag: {}", e))
+        })?;
+        
+        *init_guard = initialized;
+        
+        Ok(())
     }
 }
 
