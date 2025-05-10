@@ -20,6 +20,7 @@ pub mod thread_safe_goroutine;
 pub mod interface_type_checker;
 pub mod interface_registry;
 pub mod type_checker;
+pub mod type_checker_interface_registry;
 pub mod type_infer;
 
 /// Runtime representation of a compiled CURSED function

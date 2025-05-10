@@ -13,7 +13,9 @@
 use crate::ast::base::Program;
 use crate::error::Error;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use crate::core::interface_type_checker::InterfaceTypeChecker;
+use crate::core::interface_registry::InterfaceRegistry;
 
 /// Represents a type in the CURSED type system
 ///
@@ -256,6 +258,8 @@ pub struct TypeChecker {
     pub type_params_map: HashMap<String, Vec<String>>,
     /// Maps struct names to their method signatures
     pub struct_methods_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
+    /// Registry of interface implementations
+    pub interface_registry: Arc<Mutex<InterfaceRegistry>>,
 }
 
 impl TypeChecker {
@@ -267,6 +271,7 @@ impl TypeChecker {
             interface_map: HashMap::new(),
             type_params_map: HashMap::new(),
             struct_methods_map: HashMap::new(),
+            interface_registry: Arc::new(Mutex::new(InterfaceRegistry::new_with_defaults())),
         }
     }
     
@@ -712,6 +717,27 @@ impl TypeChecker {
     /// * `Err` - If there was an error during the check
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn check_interface_implementation(
+        &self,
+        type_: &Type,
+        interface: &Type,
+    ) -> Result<bool, Error> {
+        let result = self.check_interface_implementation_internal(type_, interface)?;
+        
+        // If the implementation check passes, register it in the registry
+        if result {
+            if let Type::Interface(interface_name, _) = interface {
+                let registry = self.interface_registry.clone();
+                let mut registry = registry.lock().unwrap();
+                registry.register_implementation(type_.clone(), interface_name.clone());
+                tracing::debug!("Automatically registered {:?} as implementing {}", type_, interface_name);
+            }
+        }
+        
+        Ok(result)
+    }
+    
+    /// Internal implementation of interface checking without registration
+    fn check_interface_implementation_internal(
         &self,
         type_: &Type,
         interface: &Type,
