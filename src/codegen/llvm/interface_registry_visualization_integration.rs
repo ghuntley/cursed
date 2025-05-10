@@ -437,7 +437,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         debug!("Checking for reversed inheritance between {} and {}", source_interface, target_interface);
         
         // Check if target actually extends source (reverse of what was attempted)
-        self.detect_reversed_inheritance_simple(source_interface, target_interface)
+        // Our implementation returns a tuple with (is_reversed, message) so we just return the boolean part
+        match self.detect_reversed_inheritance_simple(source_interface, target_interface) {
+            Ok((is_reversed, _)) => Ok(is_reversed),
+            Err(e) => Err(e)
+        }
     }
     
     /// Add detailed context about interfaces to the error message
