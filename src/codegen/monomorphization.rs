@@ -595,13 +595,23 @@ impl MonomorphizationManager {
         let specialized_struct = instantiator.monomorphize_struct(generic_struct, type_args)?;
 
         // Generate LLVM IR for the specialized struct with correct memory layout and field types
-        // and generate field accessors using the integrated monomorphization system
+        // and generate field accessors using the integrated monomorphization system with LRU caching
         use crate::codegen::llvm::integrated_monomorphization::IntegratedMonomorphization;
+        
+        // This call will use the IntegratedMonomorphization trait to generate both the struct type
+        // and its field accessors with proper LRU caching for optimization
+        tracing::info!("Generating specialized struct '{}' with LRU cached field accessors", specialized_name);
         code_gen.generate_specialized_struct_with_accessors(
             &specialized_struct,
             &specialized_name,
             type_args,
         )?;
+        
+        // Log success with detailed information
+        tracing::debug!(struct_name = %generic_struct.name.value, 
+                     specialized_name = %specialized_name, 
+                     type_args = ?type_args, 
+                     "Successfully generated specialized struct with field accessors");
 
         // Generate GC metadata for this specialized struct
         self.generate_gc_metadata(code_gen, &specialized_struct, &specialized_name, type_args)?;
