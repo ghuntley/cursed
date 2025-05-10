@@ -71,8 +71,14 @@ pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, Enhanc
 // Re-export deep nested interface registry
 pub use crate::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, DeepNestedInterfaceChecking, ConstraintPath};
 
+// Re-export nested generic instantiation
+pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
+
 // Re-export field accessor implementations
 pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
+
+// Re-export nested generic instantiation
+pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
 
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol;

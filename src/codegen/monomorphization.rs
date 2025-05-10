@@ -504,12 +504,13 @@ impl MonomorphizationManager {
         // Generate a unique name for this specialized function
         let specialized_name = self.generate_specialized_name(generic_name, type_args);
 
-        // Create a GenericInstantiator to handle type parameter substitution
-        let mut instantiator = GenericInstantiator::new();
+        // Create a GenericInstantiator with enhanced substitution capabilities
+        let mut instantiator = crate::core::generic_instantiation::GenericInstantiator::new();
 
         // Set up type parameter mappings
         for (i, type_param) in generic_function.type_parameters.iter().enumerate() {
             instantiator.add_type_param(&type_param.value, type_args[i].clone());
+            tracing::debug!("Added type parameter mapping: {} -> {:?}", type_param.value, type_args[i]);
         }
 
         // Create a specialized version of the function AST
@@ -581,12 +582,13 @@ impl MonomorphizationManager {
         // Generate a unique name for this specialized struct
         let specialized_name = self.generate_specialized_name(generic_name, type_args);
 
-        // Create a GenericInstantiator to handle type parameter substitution
-        let mut instantiator = GenericInstantiator::new();
+        // Create a GenericInstantiator with enhanced substitution capabilities
+        let mut instantiator = crate::core::generic_instantiation::GenericInstantiator::new();
 
         // Set up type parameter mappings
         for (i, type_param) in generic_struct.type_parameters.iter().enumerate() {
             instantiator.add_type_param(&type_param.value, type_args[i].clone());
+            tracing::debug!("Added type parameter mapping for struct: {} -> {:?}", type_param.value, type_args[i]);
         }
 
         // Create a specialized version of the struct AST with concrete field types
