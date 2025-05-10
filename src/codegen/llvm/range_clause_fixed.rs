@@ -233,6 +233,9 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<(), Error> {
         debug!("Compiling container for loop with value: {}", value_name);
         
+        // Ensure all required runtime functions are available
+        self.ensure_runtime_container_functions()?;
+        
         // Evaluate container expressions first before borrowing self.builder
         // This eliminates borrow checker conflicts
         let container_value = self.compile_expression(container_expr.as_ref())?;
@@ -344,6 +347,9 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<(), Error> {
         debug!("Compiling map for loop with key: {} and value: {}", key_name, value_name);
         
+        // Ensure all required runtime functions are available
+        self.ensure_runtime_container_functions()?;
+        
         // Evaluate map expression first before borrowing self.builder
         // This eliminates borrow checker conflicts
         let map_value = self.compile_expression(map_expr.as_ref())?;
@@ -438,15 +444,27 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper method to safely get the module reference for the range clause implementation
     #[inline]
     fn get_module_ref(&self) -> Result<&inkwell::module::Module<'ctx>, Error> {
-        self.module()
-            .ok_or_else(|| Error::Compilation("Module not available".to_string()))
+        if let Some(module) = self.module() {
+            Ok(module)
+        } else {
+            Err(Error::Compilation("Module not available".to_string()))
+        }
     }
     
     /// Helper method to get element type from pointer type
     #[inline]
     fn get_pointee_type(&self, ptr_type: inkwell::types::PointerType<'ctx>) -> inkwell::types::BasicTypeEnum<'ctx> {
         // Get the element type of the pointer using the proper LLVM API
-        ptr_type.get_pointee_type() // Use the current API method name
+        use inkwell::types::AnyTypeEnum;
+        match ptr_type.get_element_type() {
+            AnyTypeEnum::ArrayType(t) => t.into(),
+            AnyTypeEnum::FloatType(t) => t.into(),
+            AnyTypeEnum::IntType(t) => t.into(),
+            AnyTypeEnum::PointerType(t) => t.into(),
+            AnyTypeEnum::StructType(t) => t.into(),
+            AnyTypeEnum::VectorType(t) => t.into(),
+            _ => self.context.i32_type().into() // Fallback for unsupported types
+        }
     }
     /// Get the length of a container
     /// Get container length (array size, slice length, etc.)
@@ -470,7 +488,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if element_type.is_array_type() {
                 // Pointer to an array
-                if let Some(array_type) = element_type.as_array_type() {
+                if let BasicTypeEnum::ArrayType(array_type) = element_type {
                     let length = array_type.len();
                     debug!("Pointer to array length: {}", length);
                     Ok(self.context.i32_type().const_int(length as u64, false))
@@ -481,7 +499,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             } else if element_type.is_struct_type() {
                 // For slice-like types which are structs with a length field
                 // Struct types typically have length as field 1 and data pointer as field 0
-                if let Some(struct_type) = element_type.as_struct_type() {
+                if let BasicTypeEnum::StructType(struct_type) = element_type {
                     // Get a pointer to the length field (assuming it's at index 1)
                     let indices = &[
                         self.context.i32_type().const_zero(),
@@ -494,7 +512,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     };
                     
                     // Load the length value
-                    debug!("Loading length field from struct type: {}", struct_type.get_name().to_str().unwrap_or("unnamed"));
+                    let type_name = struct_type.get_name().map_or("unnamed", |n| n.to_str().unwrap_or("unnamed"));
+                    debug!("Loading length field from struct type: {}", type_name);
                     
                     // Determine length field type - default to i32 if we can't determine it
                     let length_field_type = if struct_type.get_field_types().len() > 1 {
@@ -716,30 +735,30 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                         debug!("Using fallback for container with unknown layout");
                         
                         // Try to use a runtime helper function
-                        let module = self.get_module_ref()?
-                    
-                    // Use our runtime container_get_element function
-                    let fn_name = "container_get_element";
-                    
-                    // Create the function signature
-                    let fn_type = self.context.i64_type().fn_type(&[ptr_value.get_type().into(), index.get_type().into()], false);
-                    
-                    // Get or declare the function
-                    let get_elem_fn = module.get_function(fn_name).unwrap_or_else(|| {
+                        let module = self.get_module_ref()?;
+                        
+                        // Use our runtime container_get_element function
+                        let fn_name = "container_get_element";
+                        
+                        // Create the function signature
+                        let fn_type = self.context.i64_type().fn_type(&[ptr_value.get_type().into(), index.get_type().into()], false);
+                        
+                        // Get or declare the function
+                        let get_elem_fn = module.get_function(fn_name).unwrap_or_else(|| {
                         let function = module.add_function(fn_name, fn_type, None);
                         // This ensures the function has external linkage
                         function.set_linkage(inkwell::module::Linkage::External);
                         function
-                    });
-                    
-                    // Call the function to get the element
-                    debug!("Calling get_element function for container");
-                    let call = self.builder.build_call(get_elem_fn, &[ptr_value.into(), index.into()], "get_elem_call")?;
-                    
-                    // Get the return value
-                    call.try_as_basic_value().left().ok_or_else(|| {
-                    Error::Compilation("Failed to get element from container using helper function".to_string())
-                    })
+                        });
+                        
+                        // Call the function to get the element
+                        debug!("Calling get_element function for container");
+                        let call = self.builder.build_call(get_elem_fn, &[ptr_value.into(), index.into()], "get_elem_call")?;
+                        
+                        // Get the return value
+                        call.try_as_basic_value().left().ok_or_else(|| {
+                            Error::Compilation("Failed to get element from container using helper function".to_string())
+                        })
                         }
             } else {
                 debug!("Failed to convert pointee type to struct type");
@@ -783,14 +802,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Direct struct value (not a pointer to a struct)
             let struct_val = container.into_struct_value();
             let struct_type = struct_val.get_type();
-            let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
+            let type_name = struct_type.get_name().map_or("unknown", |n| n.to_str().unwrap_or("unknown"));
             
             debug!("Accessing element from direct struct value: {}", type_name);
             
             // For a proper implementation, we would need to copy the struct to a local variable
             // and then access its fields. For now, we'll use a runtime helper function.
             
-            let module = self.get_module_ref()?
+            let module = self.get_module_ref()?;
             
             // Use our runtime container_get_element function
             let fn_name = "container_get_element";
@@ -855,11 +874,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // For pointers to arrays or other containers
             let ptr_value = container.into_pointer_value();
             let ptr_type = ptr_value.get_type();
-            let pointee_type = ptr_type.get_element_type();
+            let pointee_type = self.get_pointee_type(ptr_type);
             
             if pointee_type.is_array_type() {
                 // Pointer to an array - get the array's element type
-                if let Some(array_type) = pointee_type.as_array_type() {
+                if let BasicTypeEnum::ArrayType(array_type) = pointee_type {
                     let element_type = array_type.get_element_type();
                     debug!("Pointer to array element type extracted");
                     Ok(element_type)
@@ -869,8 +888,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 }
             } else if pointee_type.is_struct_type() {
                 // This is likely a slice or other structured container (e.g., a Slice<T>)
-                if let Some(struct_type) = pointee_type.as_struct_type() {
-                    let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
+                if let BasicTypeEnum::StructType(struct_type) = pointee_type {
+                    let type_name = struct_type.get_name().map_or("unknown", |n| n.to_str().unwrap_or("unknown"));
                     debug!("Determining element type from struct container: {}", type_name);
                     
                     // We have multiple approaches to determine the element type:
@@ -963,7 +982,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             if struct_type.get_field_types().len() > 0 {
                 let first_field_type = struct_type.get_field_types()[0];
                 if first_field_type.is_pointer_type() {
-                    let element_type = first_field_type.into_pointer_type().get_element_type();
+                    let ptr_type = first_field_type.into_pointer_type();
+                    let element_type = ptr_type.get_element_type();
                     debug!("Element type extracted from direct struct's first field");
                     return Ok(element_type);
                 }
@@ -1022,11 +1042,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     fn emit_map_iterator_has_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<IntValue<'ctx>, Error> {
         debug!("Checking if map iterator has next element");
         
-        // Get the module
-        let module = match &self.module {
-            Some(module) => module,
-            None => return Err(Error::Compilation("Module not available".to_string()))
-        };
+        // Get the module reference safely
+        let module = self.get_module_ref()?;
         
         // Use our runtime map_iterator_has_next function
         let fn_name = "map_iterator_has_next";
@@ -1073,11 +1090,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> Result<(), Error> {
         debug!("Getting current key-value pair from map iterator");
         
-        // Get the module
-        let module = match &self.module {
-            Some(module) => module,
-            None => return Err(Error::Compilation("Module not available".to_string()))
-        };
+        // Get the module reference safely
+        let module = self.get_module_ref()?;
         
         // Use our runtime map_iterator_get_current function
         let fn_name = "map_iterator_get_current";
@@ -1127,11 +1141,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     fn emit_map_iterator_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<(), Error> {
         debug!("Advancing map iterator to next element");
         
-        // Get the module
-        let module = match &self.module {
-            Some(module) => module,
-            None => return Err(Error::Compilation("Module not available".to_string()))
-        };
+        // Get the module reference safely
+        let module = self.get_module_ref()?;
         
         // Use our runtime map_iterator_next function
         let fn_name = "map_iterator_next";
@@ -1173,5 +1184,77 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // For now, default to i64 (int type) as common map value type
         Ok(self.context.i64_type().into())
+    }
+
+    /// Helper method to add missing instrument annotation to methods that need it
+    /// and add more robust error handling for container operations
+    #[instrument(skip(self), level = "debug")]
+    fn ensure_runtime_container_functions(&self) -> Result<(), Error> {
+        // Get the module reference safely
+        let module = self.get_module_ref()?;
+        
+        // Ensure our runtime container support functions are available
+        let container_function_names = vec![
+            "container_length",
+            "container_get_element",
+            "string_length",
+            "map_iterator_create",
+            "map_iterator_has_next",
+            "map_iterator_next",
+            "map_iterator_get_current"
+        ];
+        
+        for fn_name in container_function_names {
+            // Check if the function exists, and if not, generate a placeholder
+            if module.get_function(fn_name).is_none() {
+                debug!("Creating placeholder for runtime function: {}", fn_name);
+                
+                // Create appropriate function type based on name
+                let fn_type = match fn_name {
+                    "container_length" | "string_length" => {
+                        // These take a pointer and return an i32
+                        let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        self.context.i32_type().fn_type(&[ptr_type.into()], false)
+                    },
+                    "container_get_element" => {
+                        // Takes a pointer and an index, returns a pointer
+                        let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        let ptr_ret_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        ptr_ret_type.fn_type(&[ptr_type.into(), self.context.i32_type().into()], false)
+                    },
+                    "map_iterator_create" => {
+                        // Takes a map pointer and returns an iterator pointer
+                        let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        let ptr_ret_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        ptr_ret_type.fn_type(&[ptr_type.into()], false)
+                    },
+                    "map_iterator_has_next" => {
+                        // Takes an iterator pointer and returns a boolean (i32)
+                        let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        self.context.i32_type().fn_type(&[ptr_type.into()], false)
+                    },
+                    "map_iterator_next" => {
+                        // Takes an iterator pointer and returns void
+                        let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        self.context.void_type().fn_type(&[ptr_type.into()], false)
+                    },
+                    "map_iterator_get_current" => {
+                        // Takes iterator pointer and two output pointers, returns status i32
+                        let ptr_type = self.context.i8_type().ptr_type(AddressSpace::default());
+                        self.context.i32_type().fn_type(&[ptr_type.into(), ptr_type.into(), ptr_type.into()], false)
+                    },
+                    _ => {
+                        // Default to a simple void function for unknown names
+                        self.context.void_type().fn_type(&[], false)
+                    }
+                };
+                
+                // Add the function to the module with external linkage
+                let function = module.add_function(fn_name, fn_type, None);
+                function.set_linkage(inkwell::module::Linkage::External);
+            }
+        }
+        
+        Ok(())
     }
 }
