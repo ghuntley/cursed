@@ -77,14 +77,10 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             tracing::debug!("Found type assertion expression: {}.({})", 
                      type_assertion.expression.string(), type_assertion.type_name);
             
-            // Use the improved type assertion integration which handles error propagation properly
-            // Get the source location information if available (for better error messages)
-            // In a real implementation, this would extract location from AST
-            let source_loc = Some(format!("<unknown>:0"));
-            
-            // The improved integration automatically selects the appropriate implementation
-            // and correctly propagates errors using the ? operator
-            let result = self.compile_type_assertion_with_propagation(type_assertion, source_loc.as_deref())?;
+            // Use our improved error propagation implementation 
+            use super::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
+            // Use fully qualified syntax to avoid ambiguity
+            let result = TypeAssertionErrorPropagation::compile_type_assertion_with_propagation(self, type_assertion)?;
             
             tracing::debug!("Successfully compiled type assertion for {}", type_assertion.type_name);
             return Ok(result);
