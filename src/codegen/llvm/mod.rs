@@ -107,6 +107,8 @@ pub use self::type_assertion_implementation::IntegratedTypeAssertion;
 pub use self::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 // Enhanced error propagation for interface type assertions
 pub use self::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
+// Improved error propagation system with consistent ? operator usage
+pub use self::interface_type_assertion_error_propagation_improved::ImprovedErrorPropagation;
 // Nesting level tracking for interface type assertions
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information
@@ -214,6 +216,7 @@ mod interface_type_assertion_enhanced; // Enhanced type assertions with rich err
 mod type_registry_improved; // Improved type registry with better runtime type information
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
 pub mod interface_type_assertion_error_propagation; // Enhanced error propagation for interface type assertions
+pub mod interface_type_assertion_error_propagation_improved; // Improved error propagation system with consistent ? operator usage
 pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface type assertions with proper error propagation
 pub mod interface_type_assertion_path_visualization; // Visual debugging tools for interface type assertions
 pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual debugging tools with better error handling
