@@ -212,6 +212,7 @@ pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface t
 pub mod interface_type_assertion_path_visualization; // Visual debugging tools for interface type assertions
 pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual debugging tools with better error handling
 pub mod interface_registry_visualization_integration; // Integration of interface registry visualization with code generator
+pub mod interface_path_finder_simple; // Simple path finding algorithms for interface inheritance relationships
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
