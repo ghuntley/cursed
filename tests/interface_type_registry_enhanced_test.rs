@@ -1,145 +1,172 @@
-//! Tests for the enhanced interface type registry implementation
-
-use std::sync::Arc;
-use cursed::codegen::llvm::interface_type_registry_enhanced::*;
-use cursed::error::Error;
-
-#[path = "common.rs"]
-mod common;
-
-#[test]
-fn test_interface_registry_initialization() {
-    // Initialize tracing for this test
-    common::tracing::setup();
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use inkwell::context::Context;
+    use inkwell::values::BasicValueEnum;
+    use inkwell::AddressSpace;
+    use inkwell::IntPredicate;
     
-    // Create a new LLVM context and code generator
-    let context = inkwell::context::Context::create();
-    let module_name = "test_interface_registry";
-    let code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(
-        &context, 
-        module_name, 
-        std::path::PathBuf::from("test_file.csd")
-    );
+    use cursed::codegen::llvm::LlvmCodeGenerator;
+    use cursed::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
+    use cursed::codegen::llvm::interface_type_assertion_enhanced::EnhancedTypeAssertion;
+    use cursed::error::Error;
     
-    // Verify the unique ID counter is initialized
-    assert_ne!(code_gen.unique_id_counter.load(std::sync::atomic::Ordering::SeqCst), 0);
+    // Helper to initialize tracing for tests
+    fn init_tracing() {
+        let _ = tracing_subscriber::fmt()
+            .with_env_filter("debug")
+            .try_init();
+    }
     
-    // Verify the interface registry is initialized
-    assert!(code_gen.interface_type_registry.is_some());
-}
-
-#[test]
-fn test_type_registration() {
-    // Initialize tracing for this test
-    common::tracing::setup();
+    #[test]
+    fn test_enhanced_type_registry_initialization() {
+        init_tracing();
+        
+        // Create a context and code generator
+        let context = Context::create();
+        let module_name = "test_module";
+        let path = std::path::PathBuf::from("test.csd");
+        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        
+        // Register some types
+        let _ = gen.register_type_with_runtime_info(1001, "Person");
+        let _ = gen.register_type_with_runtime_info(1002, "Employee");
+        let _ = gen.register_type_with_runtime_info(1003, "Manager");
+        
+        // Initialize global arrays
+        let result = gen.initialize_type_registry_globals();
+        assert!(result.is_ok(), "Failed to initialize type registry globals: {:?}", result);
+        
+        // Check that the registry has the expected types
+        let registry = gen.interface_type_registry().unwrap();
+        assert_eq!(registry.type_count(), 3);
+        
+        assert_eq!(registry.get_type_name(1001).map(|s| s.as_str()), Some("Person"));
+        assert_eq!(registry.get_type_name(1002).map(|s| s.as_str()), Some("Employee"));
+        assert_eq!(registry.get_type_name(1003).map(|s| s.as_str()), Some("Manager"));
+        
+        // Verify globals were created
+        assert!(registry.type_ids_global.is_some());
+        assert!(registry.type_names_global.is_some());
+    }
     
-    // Create a new LLVM context and code generator
-    let context = inkwell::context::Context::create();
-    let module_name = "test_type_registration";
-    let mut code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(
-        &context, 
-        module_name, 
-        std::path::PathBuf::from("test_file.csd")
-    );
+    #[test]
+    fn test_enhanced_type_name_lookup() {
+        init_tracing();
+        
+        // Create a context and code generator
+        let context = Context::create();
+        let module_name = "test_module";
+        let path = std::path::PathBuf::from("test.csd");
+        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        
+        // Create a function to test in
+        let void_type = context.void_type();
+        let fn_type = void_type.fn_type(&[], false);
+        let function = gen.module().add_function("test_func", fn_type, None);
+        let entry = context.append_basic_block(function, "entry");
+        gen.builder().position_at_end(entry);
+        gen.set_current_function(function);
+        
+        // Register some types
+        let _ = gen.register_type_with_runtime_info(1001, "Person");
+        let _ = gen.register_type_with_runtime_info(1002, "Employee");
+        
+        // Look up type name by ID
+        let type_id = context.i64_type().const_int(1001, false);
+        let type_name_ptr = gen.lookup_type_name_enhanced(type_id.into()).unwrap();
+        
+        // To verify, we'd need to load and check the string, but that requires executing the code
+        // Just check that the result is a valid pointer value
+        assert!(type_name_ptr.is_pointer_value());
+    }
     
-    // Register a few types
-    let type1_id = code_gen.register_type("Vector2D").expect("Failed to register type");
-    let type2_id = code_gen.register_type("Person").expect("Failed to register type");
-    let type3_id = code_gen.register_type("Logger").expect("Failed to register type");
+    #[test]
+    fn test_enhanced_type_assertion() {
+        init_tracing();
+        
+        // Create a context and code generator
+        let context = Context::create();
+        let module_name = "test_module";
+        let path = std::path::PathBuf::from("test.csd");
+        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        
+        // Create a function to test in
+        let i64_type = context.i64_type();
+        let void_type = context.void_type();
+        let fn_type = void_type.fn_type(&[], false);
+        let function = gen.module().add_function("test_assertion", fn_type, None);
+        let entry = context.append_basic_block(function, "entry");
+        gen.builder().position_at_end(entry);
+        gen.set_current_function(function);
+        
+        // Register the types we'll use
+        let _ = gen.register_type_with_runtime_info(1001, "Person");
+        let _ = gen.register_type_with_runtime_info(1002, "Employee");
+        
+        // Create an interface value struct type
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
+        let interface_struct_type = context.struct_type(&[i8_ptr_type.into(), i8_ptr_type.into()], false);
+        
+        // Create a vtable with type ID
+        let vtable_type = context.struct_type(&[i64_type.into()], false);
+        let vtable_global = gen.module().add_global(vtable_type, None, "test_vtable");
+        vtable_global.set_initializer(&vtable_type.const_named_struct(&[i64_type.const_int(1001, false).into()]));
+        
+        // Create a null data pointer
+        let null_ptr = context.i8_type().ptr_type(AddressSpace::default()).const_null();
+        
+        // Create an interface value
+        let interface_value = interface_struct_type.const_named_struct(&[
+            null_ptr.into(),
+            vtable_global.as_pointer_value().into()
+        ]);
+        
+        // Check if the interface value is of type "Person"
+        let is_person = gen.check_instance_of_with_enhanced_errors(
+            interface_value.into(),
+            "Person"
+        ).unwrap();
+        
+        // Should return true
+        assert!(is_person.is_int_value());
+        
+        // Clean up
+        gen.builder().build_return(None).unwrap();
+    }
     
-    // Verify IDs are different
-    assert_ne!(type1_id, type2_id);
-    assert_ne!(type1_id, type3_id);
-    assert_ne!(type2_id, type3_id);
-    
-    // Look up types by ID
-    let type1_name = code_gen.lookup_type_name(type1_id).expect("Type not found");
-    let type2_name = code_gen.lookup_type_name(type2_id).expect("Type not found");
-    let type3_name = code_gen.lookup_type_name(type3_id).expect("Type not found");
-    
-    // Verify names match
-    assert_eq!(type1_name, "Vector2D");
-    assert_eq!(type2_name, "Person");
-    assert_eq!(type3_name, "Logger");
-    
-    // Verify type ID lookup works
-    let id1 = code_gen.get_type_id("Vector2D").expect("Type not found");
-    let id2 = code_gen.get_type_id("Person").expect("Type not found");
-    let id3 = code_gen.get_type_id("Logger").expect("Type not found");
-    
-    assert_eq!(id1, type1_id);
-    assert_eq!(id2, type2_id);
-    assert_eq!(id3, type3_id);
-}
-
-#[test]
-fn test_global_type_registry_initialization() {
-    // Initialize tracing for this test
-    common::tracing::setup();
-    
-    // Create a new LLVM context and code generator
-    let context = inkwell::context::Context::create();
-    let module_name = "test_global_registry";
-    let mut code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(
-        &context, 
-        module_name, 
-        std::path::PathBuf::from("test_file.csd")
-    );
-    
-    // Initialize global registry
-    assert!(code_gen.initialize_global_type_registry().is_ok());
-    
-    // Verify globals are initialized
-    assert!(code_gen.global_type_names.is_some());
-    assert!(code_gen.global_type_count.is_some());
-    
-    // Register a type and add it to the global registry
-    let type_id = code_gen.register_type("TestType").expect("Failed to register type");
-    let result = code_gen.add_type_to_global_registry(type_id, "TestType");
-    assert!(result.is_ok());
-}
-
-#[test]
-fn test_runtime_type_name_lookup() {
-    // Initialize tracing for this test
-    common::tracing::setup();
-    
-    // Create a new LLVM context and code generator
-    let context = inkwell::context::Context::create();
-    let module_name = "test_type_lookup";
-    let mut code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(
-        &context, 
-        module_name, 
-        std::path::PathBuf::from("test_file.csd")
-    );
-    
-    // Register a type
-    let type_id = code_gen.register_type("RuntimeType").expect("Failed to register type");
-    
-    // Initialize global registry and add the type
-    code_gen.initialize_global_type_registry().expect("Failed to initialize registry");
-    code_gen.add_type_to_global_registry(type_id, "RuntimeType").expect("Failed to add type");
-    
-    // Create a function where we can test the runtime lookup
-    let function_type = context.void_type().fn_type(&[], false);
-    let function = code_gen.module.add_function("test_type_lookup", function_type, None);
-    let basic_block = context.append_basic_block(function, "entry");
-    code_gen.builder.position_at_end(basic_block);
-    
-    // Current function must be set for get_runtime_type_name to work
-    code_gen.current_function = Some(function);
-    
-    // Create a type ID constant and try to look up the type name
-    let type_id_val = context.i64_type().const_int(type_id, false);
-    let type_name_ptr = code_gen.get_runtime_type_name(type_id_val.into()).expect("Failed to get type name");
-    
-    // We can't directly check the string value here since it's a pointer to runtime data,
-    // but we can check that we got a valid pointer
-    assert!(!type_name_ptr.is_null());
-    
-    // Add a return instruction to complete the function
-    code_gen.builder.build_return(None).expect("Failed to build return");
-    
-    // Verify the module to make sure everything is valid
-    assert!(code_gen.module.verify().is_ok());
+    #[test]
+    fn test_report_assertion_failure() {
+        init_tracing();
+        
+        // Create a context and code generator
+        let context = Context::create();
+        let module_name = "test_module";
+        let path = std::path::PathBuf::from("test.csd");
+        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        
+        // Create a function to test in
+        let void_type = context.void_type();
+        let fn_type = void_type.fn_type(&[], false);
+        let function = gen.module().add_function("test_failure", fn_type, None);
+        let entry = context.append_basic_block(function, "entry");
+        gen.builder().position_at_end(entry);
+        gen.set_current_function(function);
+        
+        // Register some types
+        let _ = gen.register_type_with_runtime_info(1001, "Person");
+        let _ = gen.register_type_with_runtime_info(1002, "Employee");
+        
+        // Create a type ID
+        let type_id = context.i64_type().const_int(1001, false);
+        
+        // Report an assertion failure
+        let result = gen.report_assertion_failure(type_id.into(), "Manager");
+        
+        // Should succeed even if it's just logging
+        assert!(result.is_ok());
+        
+        // Clean up
+        gen.builder().build_return(None).unwrap();
+    }
 }

@@ -74,7 +74,7 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Cache for type IDs to improve performance of type assertions
     pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
     // Interface type registry for runtime type information
-    pub(crate) interface_type_registry: Option<std::sync::Arc<std::sync::RwLock<std::collections::HashMap<String, u64>>>>,
+    pub(crate) interface_type_registry: Option<crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry<'ctx>>,
     // Global arrays for type names in the enhanced type registry 
     pub(crate) global_type_names: Option<inkwell::values::GlobalValue<'ctx>>,
     // Global counter for the number of registered types
@@ -101,6 +101,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_assertion_debugging::register_runtime_type_assertion_debugging();
         // Initialize improved type assertion integration with proper error propagation
         super::improved_type_assertion_integration::register_improved_type_assertion_integration();
+        // Initialize enhanced type registry with full runtime type information
+        super::interface_type_registry_enhanced::register_enhanced_type_registry();
+        // Initialize enhanced type assertions with rich error information
+        super::interface_type_assertion_enhanced::register_enhanced_type_assertion();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator
@@ -134,8 +138,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             type_id_cache: None, // Will be initialized when needed
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
-            // Initialize interface type registry
-            interface_type_registry: Some(std::sync::Arc::new(std::sync::RwLock::new(std::collections::HashMap::new()))),
+            // Initialize interface type registry with the new implementation
+            interface_type_registry: Some(crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::new()),
             global_type_names: None,
             global_type_count: None,
             // Initialize the unique ID counter with a random starting value
