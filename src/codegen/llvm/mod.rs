@@ -111,6 +111,8 @@ pub use self::interface_type_assertion_error_propagation::TypeAssertionErrorProp
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information
 pub use self::interface_type_registry::{InterfaceTypeRegistry, InterfaceTypeRegistryAccess};
+// Interface registry extension checking for inheritance verification
+pub use self::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
 // Enhanced interface type registry with full runtime type information
 pub use self::interface_type_registry_enhanced::EnhancedTypeRegistry;
 // Enhanced type assertions with rich type information
@@ -218,6 +220,7 @@ pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual
 pub mod interface_registry_visualization_integration; // Integration of interface registry visualization with code generator
 pub mod interface_path_finder_simple; // Simple path finding algorithms for interface inheritance relationships
 pub mod interface_path_finder_enhanced; // Enhanced path finding algorithms for interface inheritance relationships with visualization
+pub mod interface_registry_extension_checking; // Extension relationship checking for interface inheritance verification
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
