@@ -593,17 +593,9 @@ impl MonomorphizationManager {
         let specialized_struct = instantiator.monomorphize_struct(generic_struct, type_args)?;
 
         // Generate LLVM IR for the specialized struct with correct memory layout and field types
-        code_gen.generate_specialized_struct(
-            &specialized_struct,
-            &specialized_name,
-            type_args,
-        )?;
-        
-        // Generate field accessors for the struct (getters and setters)
-        // This functionality is integrated from the EnhancedMonomorphization trait
-        // which has a more comprehensive implementation for field accessors
-        use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
-        code_gen.generate_field_accessors(
+        // and generate field accessors using the integrated monomorphization system
+        use crate::codegen::llvm::integrated_monomorphization::IntegratedMonomorphization;
+        code_gen.generate_specialized_struct_with_accessors(
             &specialized_struct,
             &specialized_name,
             type_args,

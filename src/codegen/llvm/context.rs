@@ -82,6 +82,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::auto_interface_dispatcher_integration::register_auto_interface_dispatcher_integration();
         // Initialize enhanced dynamic dispatch
         super::enhanced_dynamic_dispatch::register_enhanced_dynamic_dispatch();
+        // Initialize integrated monomorphization
+        super::integrated_monomorphization::register_integrated_monomorphization();
         // Initialize standard functions like puts before creating the generator
         let module = context.create_module(module_name);
         let builder = context.create_builder();

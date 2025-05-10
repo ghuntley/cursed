@@ -7,6 +7,9 @@ use cursed::object::ObjectRef;
 use cursed::parser::Parser;
 use cursed::prelude::JitOptions;
 
+// AST Factory for creating test AST nodes
+pub mod ast_factory;
+
 pub mod tracing {
     use std::sync::Once;
     
