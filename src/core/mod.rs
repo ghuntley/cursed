@@ -15,6 +15,7 @@ pub mod channel;
 pub mod char;
 pub mod generic_instantiation;
 pub mod goroutine;
+pub mod nested_generic_instantiation;
 pub mod symbol_table;
 pub mod thread_safe_goroutine;
 pub mod interface_type_checker;
