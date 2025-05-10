@@ -141,27 +141,33 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         
         // Get the complete hierarchy from the registry
         match self.interface_registry().get_extension_hierarchy() {
-            // Add all nodes first
-            let mut all_interfaces = HashSet::new();
-            
-            // Collect all interface names
-            for (source, targets) in &hierarchy {
-                all_interfaces.insert(source.clone());
-                for target in targets {
-                    all_interfaces.insert(target.clone());
+            Ok(hierarchy) => {
+                // Add all nodes first
+                let mut all_interfaces = HashSet::new();
+                
+                // Collect all interface names
+                for (source, targets) in &hierarchy {
+                    all_interfaces.insert(source.clone());
+                    for target in targets {
+                        all_interfaces.insert(target.clone());
+                    }
                 }
-            }
-            
-            // Add nodes to DOT
-            for interface in &all_interfaces {
-                _ = writeln!(dot, "  \"{}\" [label=\"{}\"];", interface, interface);
-            }
-            
-            // Add edges
-            for (source, targets) in &hierarchy {
-                for target in targets {
-                    _ = writeln!(dot, "  \"{}\" -> \"{}\";", source, target);
+                
+                // Add nodes to DOT
+                for interface in &all_interfaces {
+                    _ = writeln!(dot, "  \"{}\" [label=\"{}\"];", interface, interface);
                 }
+                
+                // Add edges
+                for (source, targets) in &hierarchy {
+                    for target in targets {
+                        _ = writeln!(dot, "  \"{}\" -> \"{}\";", source, target);
+                    }
+                }
+            },
+            Err(e) => {
+                warn!("Failed to get interface hierarchy: {}", e);
+                _ = writeln!(dot, "  \"Error\" [label=\"Failed to get interface hierarchy: {}\", color=red];", e);
             }
         }
         
@@ -392,6 +398,14 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Return the original result (success or original error if we couldn't enhance it)
         result
     }
+
+    /// Helper method to get the type assertion error propagation trait implementation
+    fn compile_type_assertion_with_errors(&mut self, 
+        type_assertion: &TypeAssertion
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Compile using the basic type assertion mechanism
+        self.compile_type_assertion(type_assertion)
+    }
 }
 
 // Helper methods extension
@@ -401,6 +415,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // The interface extension registry is stored in the registry_extensions field
         // of the LlvmCodeGenerator, which is initialized in the constructor
         &self.registry_extensions
+    }
+    
+    /// Access the interface registry with mutable reference for visualization
+    fn interface_registry_mut(&mut self) -> &mut dyn InterfaceRegistryExtensionWithVisualization {
+        // The interface extension registry is stored in the registry_extensions field
+        // of the LlvmCodeGenerator, which is initialized in the constructor
+        &mut self.registry_extensions
     }
 }
 
