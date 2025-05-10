@@ -20,7 +20,7 @@ The CURSED programming language compiler is currently in **Stage 1 of developmen
 - **Control Flow**: Mostly implemented
   - `periodt` while loops implementation completed and connected
   - Range clauses implementation improved and connected in `src/codegen/llvm/range_clause_fixed.rs` 
-  - Container iteration partially implemented with support for arrays and placeholder code for other container types
+  - Container iteration fully implemented with support for arrays, slices, and maps with proper type determination
 - **Concurrency**: Improved implementation
   - Goroutines (`stan`): Basic structure exists with improved connection to expressions
   - Channels (`dm`): Implementation significantly improved with proper runtime FFI integration
@@ -420,6 +420,28 @@ Key improvements include:
 4. Enhanced diagnostics when type assertions fail showing both expected and actual types
 5. Proper error handling and fallback mechanisms when type information is unavailable
 6. Thread-safe unique ID generation for consistent naming across concurrent operations
+
+## Implementation Status Report - May 15, 2025
+
+I've implemented comprehensive type determination for map iterations in range clauses, significantly improving the map iteration functionality in CURSED code. This implementation replaces the previous placeholder implementations with a robust system that can determine key and value types from map structures. The main changes include:
+
+1. Created a new module `src/codegen/llvm/map_iteration_improvements.rs` with a comprehensive implementation of map type determination
+2. Implemented the `MapIterationEnhancements` trait with methods for accurate key and value type detection
+3. Added support for extracting type information from generic type parameters in struct names
+4. Implemented fallback mechanisms to infer types from map implementation details when type names aren't available
+5. Added proper integration with the existing range clause functionality
+6. Updated the codegen module system to properly export and use the new trait
+
+Key improvements include:
+
+1. Accurate type determination for map keys and values based on their structure
+2. Support for extracting types from generic type parameters (e.g., Map<KeyType,ValueType>)
+3. Fallback type inference from map implementation details (buckets/entries fields)
+4. Proper memory allocation with correct types for key and value variables
+5. Improved type safety during map iteration
+6. Better debugging experience with detailed logging
+
+This implementation resolves the previous limitations where map iterations were using placeholder types instead of the actual key and value types, which could lead to incorrect memory allocations and type mismatches during iteration.
 
 ## Implementation Status Report - May 11, 2025
 

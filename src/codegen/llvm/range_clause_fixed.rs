@@ -1164,26 +1164,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Determine the key type for a map
     fn determine_map_key_type_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
-        // This would need to extract key type information from the map type
-        // For actual implementation, would look at map type and return appropriate key type
-        if !map_value.is_pointer_value() {
-            return Err(Error::CodeGenError("Expected map to be a pointer type".to_string()));
-        }
-        
-        // For now, default to i8* (string type) as common map key type
-        Ok(self.context.i8_type().ptr_type(AddressSpace::default()).into())
+        // Use the improved map iteration enhancements functionality
+        use crate::codegen::llvm::map_iteration_improvements::MapIterationEnhancements;
+        self.determine_map_key_type(map_value)
     }
     
     /// Determine the value type for a map
     fn determine_map_value_type_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
-        // This would need to extract value type information from the map type
-        // For actual implementation, would look at map type and return appropriate value type
-        if !map_value.is_pointer_value() {
-            return Err(Error::CodeGenError("Expected map to be a pointer type".to_string()));
-        }
-        
-        // For now, default to i64 (int type) as common map value type
-        Ok(self.context.i64_type().into())
+        // Use the improved map iteration enhancements functionality
+        use crate::codegen::llvm::map_iteration_improvements::MapIterationEnhancements;
+        self.determine_map_value_type(map_value)
     }
 
     /// Helper method to add missing instrument annotation to methods that need it

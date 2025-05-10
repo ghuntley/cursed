@@ -116,6 +116,8 @@ pub use self::type_registry_improved::ImprovedTypeRegistry;
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};
+// Map iteration improvements
+pub use self::map_iteration_improvements::MapIterationEnhancements;
 pub use self::loop_context::*;
 // Will be re-exported in a future PR
 // pub use self::interface_type_integration::InterfaceTypeIntegration;
@@ -156,6 +158,7 @@ mod control_flow;    // Control flow statements
 // Range clause implementation with proper error handling
 mod range_clause_fixed;
 mod range_clause_error_recovery; // Error recovery for range clause operations
+mod map_iteration_improvements; // Improved type determination for map iterations
 mod loop_context;    // Loop context for break/continue management
 mod concurrency;     // Goroutine and channel operations
 mod property_access; // Property access expressions (obj.field)
