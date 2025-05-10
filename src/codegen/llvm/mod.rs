@@ -46,6 +46,10 @@
 
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
+
+// Import type assertion implementation modules
+use type_assertion_implementation::register_type_assertion_implementation;
+
 // Re-export binary compiler
 pub use self::binary_compiler::BinaryCompiler;
 

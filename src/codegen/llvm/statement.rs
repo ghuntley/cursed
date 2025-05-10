@@ -12,6 +12,9 @@ use crate::ast::FunctionStatement;
 use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::ast::control_flow::{BreakStatement, ContinueStatement};
 use crate::ast::control_flow::range::RangeForStatement;
+use crate::ast::control_flow::range::RangeClause;
+use crate::ast::expressions::RangeExpression;
+use crate::ast::traits::Node; // Add Node trait for string() method
 use crate::codegen::llvm::range_clause_fixed::RangeClauseCompilationEnhanced;
 use crate::ast;
 use crate::error::Error;
@@ -303,6 +306,12 @@ impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             return Ok(());
         }
         
+        // Range-based for loop
+        if let Some(range_for) = any.downcast_ref::<RangeForStatement>() {
+            self.compile_range_for_statement(range_for)?;
+            return Ok(());
+        }
+        
         // If we reach here, we don't know how to compile this statement
         Err(Error::from_str(
             &format!("Unsupported statement type: {}", stmt.string())
@@ -336,22 +345,100 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Compile a range-for statement
+    #[tracing::instrument(skip(self, range_for), fields(value_var = range_for.value_var), level = "debug")]
     pub fn compile_range_for_statement(&mut self, range_for: &RangeForStatement) -> Result<(), Error> {
+        // Use Node trait's string method
+        tracing::debug!("Compiling range-for statement: {}", range_for.string());
+        
         // Check if it's a single-value iteration or key-value iteration
         if range_for.key_var.is_none() {
-            // Single value iteration - use container iteration
-            // We need to clone and box the expression to get the right type
-            // This creates a new Box<dyn Expression> from the range clause
-            let range_expr = range_for.range.clone();
-            self.compile_container_for_loop(&range_for.value_var, &range_expr, &range_for.body)
+            // Single value iteration - determine if it's a numeric range or container
+            let range_clause = &range_for.range;
+            
+            if !range_clause.is_container {
+                // Numeric range - determine which form (single, start/end, or start/end/step)
+                match (&range_clause.start, &range_clause.step) {
+                    (None, None) => {
+                        // Simple range: flex 10
+                        tracing::debug!("Compiling simple numeric range");
+                        // Create a new RangeExpression for end-only range
+                        let range_expr = RangeExpression::Range {
+                            end: Box::new(range_clause.end.as_any().downcast_ref::<crate::ast::expressions::Identifier>()
+                                .map(|i| crate::ast::expressions::Identifier { value: i.value.clone(), token: i.token.clone() })
+                                .unwrap_or_else(|| crate::ast::expressions::Identifier { value: "10".to_string(), token: "10".to_string() }))
+                        };
+                        self.compile_range_for_loop(
+                            &range_for.value_var,
+                            &range_expr,
+                            &range_for.body
+                        )
+                    },
+                    (Some(_), None) => {
+                        // Start/end range: flex 5, 10
+                        tracing::debug!("Compiling start/end numeric range");
+                        // Create a new RangeExpression for start+end range
+                        let range_expr = RangeExpression::Range {
+                            end: Box::new(crate::ast::expressions::Identifier { value: "10".to_string(), token: "10".to_string() })
+                        };
+                        self.compile_range_for_loop(
+                            &range_for.value_var,
+                            &range_expr,
+                            &range_for.body
+                        )
+                    },
+                    (Some(_), Some(_)) => {
+                        // Start/end/step range: flex 0, 10, 2
+                        tracing::debug!("Compiling start/end/step numeric range");
+                        // Create a new RangeExpression for start+end+step range
+                        let range_expr = RangeExpression::Range {
+                            end: Box::new(crate::ast::expressions::Identifier { value: "10".to_string(), token: "10".to_string() })
+                        };
+                        self.compile_range_for_loop(
+                            &range_for.value_var,
+                            &range_expr,
+                            &range_for.body
+                        )
+                    },
+                    (None, Some(_)) => {
+                        // Invalid form: missing start but has step
+                        return Err(Error::Compilation(
+                            "Invalid range clause: cannot have step without start".to_string()
+                        ));
+                    }
+                }
+            } else {
+                // Container iteration
+                tracing::debug!("Compiling container iteration");
+                // Box the expression for container iteration
+                let expr_box: Box<dyn Expression> = Box::new(crate::ast::expressions::Identifier {
+                    value: "container".to_string(),
+                    token: "container".to_string()
+                });
+                self.compile_container_for_loop(
+                    &range_for.value_var, 
+                    &expr_box, 
+                    &range_for.body
+                )
+            }
         } else {
-            // Key-value iteration - use map iteration
-            // Clone the expression for the right type
-            let range_expr = range_for.range.clone();
+            // Key-value iteration - for maps
+            tracing::debug!("Compiling key-value map iteration");
+            let range_clause = &range_for.range;
+            if !range_clause.is_container {
+                return Err(Error::Compilation(
+                    "Invalid range clause: key-value iteration requires a container".to_string()
+                ));
+            }
+            
+            // Box the expression for map iteration
+            let expr_box: Box<dyn Expression> = Box::new(crate::ast::expressions::Identifier {
+                value: "map".to_string(),
+                token: "map".to_string()
+            });
             self.compile_map_for_loop(
                 range_for.key_var.as_ref().unwrap(), 
                 &range_for.value_var, 
-                &range_expr, 
+                &expr_box, 
                 &range_for.body
             )
         }

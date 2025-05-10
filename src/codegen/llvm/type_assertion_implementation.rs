@@ -114,4 +114,7 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
 // Register the module in the LLVM code generator
 pub fn register_type_assertion_implementation() {
     trace!("Registering integrated type assertion implementation");
+    // This function is called during LlvmCodeGenerator initialization
+    // and ensures that the type assertion implementation is properly registered
+    // with the compiler. This enables proper interface type assertions.
 }

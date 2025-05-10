@@ -449,7 +449,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // For pointer types (slices, etc.), we need to handle different pointer types
             let ptr_value = container.into_pointer_value();
             let ptr_type = ptr_value.get_type();
-            let element_type = ptr_type.get_element_type();
+            let element_type = ptr_type.get_pointee_type();
             
             if let Some(array_type) = element_type.into_array_type() {
                 // Pointer to an array
