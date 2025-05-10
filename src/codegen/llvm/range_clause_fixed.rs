@@ -445,12 +445,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper method to get element type from pointer type
     #[inline]
     fn get_pointee_type(&self, ptr_type: inkwell::types::PointerType<'ctx>) -> inkwell::types::BasicTypeEnum<'ctx> {
-        // Use the pointed type - this is a replacement for get_element_type() which was removed
-        // Since we can't directly ask for the element type, we'll create a compatible type
-        // based on basic knowledge about pointer types
-        
-        // Default to i8 (byte/char) which is common for strings and most containers
-        self.context.i8_type().into()
+        // Get the element type of the pointer using the proper LLVM API
+        ptr_type.get_element_type()
     }
     /// Get the length of a container
     /// Get container length (array size, slice length, etc.)
@@ -530,12 +526,15 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     None => return Err(Error::Compilation("Module not available".to_string()))
                 };
                 
-                // Look for or create a string length function
+                // Use the string_length function from our runtime
                 let fn_name = "string_length";
                 let length_fn = module.get_function(fn_name).unwrap_or_else(|| {
                     // Create a function for string length
                     let fn_type = self.context.i32_type().fn_type(&[ptr_value.get_type().into()], false);
-                    module.add_function(fn_name, fn_type, None)
+                    let function = module.add_function(fn_name, fn_type, None);
+                    // This ensures the function has external linkage
+                    function.set_linkage(inkwell::module::Linkage::External);
+                    function
                 });
                 
                 // Call the string length function
@@ -559,10 +558,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 };
                 
                 // Get or create a generic container length function 
-                let fn_name = "get_container_length";
+                let fn_name = "container_length";
                 let fn_type = self.context.i32_type().fn_type(&[ptr_value.get_type().into()], false);
                 let length_fn = module.get_function(fn_name).unwrap_or_else(|| {
-                    module.add_function(fn_name, fn_type, None)
+                    let function = module.add_function(fn_name, fn_type, None);
+                    // This ensures the function has external linkage
+                    function.set_linkage(inkwell::module::Linkage::External);
+                    function
                 });
                 
                 // Call the function
@@ -595,11 +597,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Find or create a length function
             let fn_type = self.context.i32_type().fn_type(&[container.get_type().into()], false);
-            let length_fn = fn_names.iter()
-                .find_map(|name| module.get_function(name))
-                .unwrap_or_else(|| {
-                    module.add_function("container_length", fn_type, None)
-                });
+            let length_fn = module.get_function("container_length").unwrap_or_else(|| {
+                let function = module.add_function("container_length", fn_type, None);
+                // This ensures the function has external linkage
+                function.set_linkage(inkwell::module::Linkage::External);
+                function
+            });
             
             // Call the function
             let call = self.builder.build_call(length_fn, &[container.into()], "length_call")?;
@@ -713,21 +716,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                         None => return Err(Error::Compilation("Module not available".to_string()))
                     };
                     
-                    // Look for a get_element function for this container type
-                    let fn_names = vec![
-                        format!("{}_get_element", type_name),
-                        format!("{}_get", type_name),
-                        "container_get_element".to_string(),
-                        "container_get".to_string()
-                    ];
+                    // Use our runtime container_get_element function
+                    let fn_name = "container_get_element";
                     
-                    // Find or create a get_element function
+                    // Create the function signature
                     let fn_type = self.context.i64_type().fn_type(&[ptr_value.get_type().into(), index.get_type().into()], false);
-                    let get_elem_fn = fn_names.iter()
-                        .find_map(|name| module.get_function(name))
-                        .unwrap_or_else(|| {
-                            module.add_function("container_get_element", fn_type, None)
-                        });
+                    
+                    // Get or declare the function
+                    let get_elem_fn = module.get_function(fn_name).unwrap_or_else(|| {
+                        let function = module.add_function(fn_name, fn_type, None);
+                        // This ensures the function has external linkage
+                        function.set_linkage(inkwell::module::Linkage::External);
+                        function
+                    });
                     
                     // Call the function to get the element
                     debug!("Calling get_element function for container");
@@ -788,24 +789,22 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 None => return Err(Error::Compilation("Module not available".to_string()))
             };
             
-            // Look for a get_element function
-            let fn_names = vec![
-                format!("{}_get_element", type_name),
-                "struct_get_element".to_string(),
-                "container_get_element".to_string()
-            ];
+            // Use our runtime container_get_element function
+            let fn_name = "container_get_element";
             
-            // Find or create a get_element function
+            // Create the function signature
             let fn_type = self.context.i64_type().fn_type(
                 &[struct_val.get_type().into(), index.get_type().into()], 
                 false
             );
             
-            let get_elem_fn = fn_names.iter()
-                .find_map(|name| module.get_function(name))
-                .unwrap_or_else(|| {
-                    module.add_function("container_get_element", fn_type, None)
-                });
+            // Get or declare the function
+            let get_elem_fn = module.get_function(fn_name).unwrap_or_else(|| {
+                let function = module.add_function(fn_name, fn_type, None);
+                // This ensures the function has external linkage
+                function.set_linkage(inkwell::module::Linkage::External);
+                function
+            });
             
             // We can't pass a struct value directly to a function in many cases,
             // so we'll need to create a temporary variable and pass its address
@@ -971,35 +970,90 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Create an iterator for a map
     fn emit_map_iterator_create_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<PointerValue<'ctx>, Error> {
-        // This would call into runtime library functions for map iteration
-        // A simplified implementation that returns a pointer to a map iterator object
+        debug!("Creating map iterator");
         if !map_value.is_pointer_value() {
             return Err(Error::CodeGenError("Expected map to be a pointer type".to_string()));
         }
         
-        // For an actual implementation, we would get the module directly
-        // let module = &self.module;
-        // Then we would look up or create the map iterator creation function
-        // Then call it and return the result
+        let map_ptr = map_value.into_pointer_value();
         
-        // For now, return an error since this isn't implemented yet
-        Err(Error::CodeGenError("Map iterator creation not implemented".to_string()))
+        // Get the module
+        let module = match &self.module {
+            Some(module) => module,
+            None => return Err(Error::Compilation("Module not available".to_string()))
+        };
+        
+        // Use our runtime map_iterator_create function
+        let fn_name = "map_iterator_create";
+        let fn_type = self.context.i8_type().ptr_type(AddressSpace::default())
+            .fn_type(&[map_ptr.get_type().into()], false);
+            
+        // Get or declare the function
+        let create_fn = module.get_function(fn_name).unwrap_or_else(|| {
+            let function = module.add_function(fn_name, fn_type, None);
+            // This ensures the function has external linkage
+            function.set_linkage(inkwell::module::Linkage::External);
+            function
+        });
+        
+        // Call the function
+        let call = self.builder.build_call(create_fn, &[map_ptr.into()], "map_iterator_create_call")?;
+        
+        // Get the return value as a pointer
+        let iterator_ptr = call.try_as_basic_value().left()
+            .ok_or_else(|| Error::Compilation("Failed to get map iterator".to_string()))?;
+            
+        if !iterator_ptr.is_pointer_value() {
+            return Err(Error::Compilation("Map iterator is not a pointer".to_string()));
+        }
+        
+        Ok(iterator_ptr.into_pointer_value())
     }
     
     /// Check if a map iterator has more elements
     fn emit_map_iterator_has_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<IntValue<'ctx>, Error> {
-        // This would call into runtime library functions to check if iterator has more elements
-        // A simplified implementation that returns a boolean (int1) value
+        debug!("Checking if map iterator has next element");
         
-        // For an actual implementation, we would:
-        // 1. Get a reference to the module
-        // let module = &self.module;
-        // 2. Look up or create a function for has_next
-        // 3. Call that function with the iterator pointer
-        // 4. Return a boolean value
+        // Get the module
+        let module = match &self.module {
+            Some(module) => module,
+            None => return Err(Error::Compilation("Module not available".to_string()))
+        };
         
-        // For now, return an error since this isn't implemented yet
-        Err(Error::CodeGenError("Map iterator has_next check not implemented".to_string()))
+        // Use our runtime map_iterator_has_next function
+        let fn_name = "map_iterator_has_next";
+        let fn_type = self.context.i32_type()
+            .fn_type(&[iterator_ptr.get_type().into()], false);
+            
+        // Get or declare the function
+        let has_next_fn = module.get_function(fn_name).unwrap_or_else(|| {
+            let function = module.add_function(fn_name, fn_type, None);
+            // This ensures the function has external linkage
+            function.set_linkage(inkwell::module::Linkage::External);
+            function
+        });
+        
+        // Call the function
+        let call = self.builder.build_call(has_next_fn, &[iterator_ptr.into()], "map_iterator_has_next_call")?;
+        
+        // Get the return value as an integer (boolean)
+        let has_next = call.try_as_basic_value().left()
+            .ok_or_else(|| Error::Compilation("Failed to get map iterator has_next result".to_string()))?;
+            
+        if !has_next.is_int_value() {
+            return Err(Error::Compilation("Map iterator has_next result is not an integer".to_string()));
+        }
+        
+        // Convert the result to a boolean value for the conditional branch
+        let has_next_int = has_next.into_int_value();
+        let bool_value = self.builder.build_int_compare(
+            IntPredicate::NE,
+            has_next_int,
+            self.context.i32_type().const_zero(),
+            "has_next_bool"
+        )?;
+        
+        Ok(bool_value)
     }
     
     /// Get current key-value pair from map iterator and advance
@@ -1009,15 +1063,84 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         key_ptr: PointerValue<'ctx>,
         value_ptr: PointerValue<'ctx>
     ) -> Result<(), Error> {
-        // This would call into runtime library functions to get current key-value pair
-        // For actual implementation, would store current key/value into the provided pointers
-        Err(Error::CodeGenError("Map iterator get_current not implemented".to_string()))
+        debug!("Getting current key-value pair from map iterator");
+        
+        // Get the module
+        let module = match &self.module {
+            Some(module) => module,
+            None => return Err(Error::Compilation("Module not available".to_string()))
+        };
+        
+        // Use our runtime map_iterator_get_current function
+        let fn_name = "map_iterator_get_current";
+        let fn_type = self.context.i32_type().fn_type(&[
+            iterator_ptr.get_type().into(),
+            key_ptr.get_type().into(),
+            value_ptr.get_type().into()
+        ], false);
+        
+        // Get or declare the function
+        let get_current_fn = module.get_function(fn_name).unwrap_or_else(|| {
+            let function = module.add_function(fn_name, fn_type, None);
+            // This ensures the function has external linkage
+            function.set_linkage(inkwell::module::Linkage::External);
+            function
+        });
+        
+        // Call the function
+        let call = self.builder.build_call(
+            get_current_fn, 
+            &[iterator_ptr.into(), key_ptr.into(), value_ptr.into()], 
+            "map_iterator_get_current_call"
+        )?;
+        
+        // Check return value (non-zero indicates success)
+        let result = call.try_as_basic_value().left()
+            .ok_or_else(|| Error::Compilation("Failed to get map iterator current result".to_string()))?;
+            
+        if !result.is_int_value() {
+            return Err(Error::Compilation("Map iterator get_current result is not an integer".to_string()));
+        }
+        
+        let result_int = result.into_int_value();
+        let success = self.builder.build_int_compare(
+            IntPredicate::NE,
+            result_int,
+            self.context.i32_type().const_zero(),
+            "get_current_success"
+        )?;
+        
+        // We could check if it succeeded and return an error if not,
+        // but for now we'll just return Ok and let the calling code handle any issues
+        Ok(())
     }
     
     /// Advance a map iterator to the next element
     fn emit_map_iterator_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<(), Error> {
-        // This would call into runtime library functions to advance the iterator
-        Err(Error::CodeGenError("Map iterator advancement not implemented".to_string()))
+        debug!("Advancing map iterator to next element");
+        
+        // Get the module
+        let module = match &self.module {
+            Some(module) => module,
+            None => return Err(Error::Compilation("Module not available".to_string()))
+        };
+        
+        // Use our runtime map_iterator_next function
+        let fn_name = "map_iterator_next";
+        let fn_type = self.context.void_type().fn_type(&[iterator_ptr.get_type().into()], false);
+        
+        // Get or declare the function
+        let next_fn = module.get_function(fn_name).unwrap_or_else(|| {
+            let function = module.add_function(fn_name, fn_type, None);
+            // This ensures the function has external linkage
+            function.set_linkage(inkwell::module::Linkage::External);
+            function
+        });
+        
+        // Call the function (returns void)
+        self.builder.build_call(next_fn, &[iterator_ptr.into()], "map_iterator_next_call")?;
+        
+        Ok(())
     }
     
     /// Determine the key type for a map

@@ -718,60 +718,17 @@ impl<'a> Parser<'a> {
         }
         self.next_token()?; // Advance past '{'
 
-        // Parse struct fields
+        // Parse struct fields with type inference
+        use super::struct_field_inference::StructFieldTypeInference;
         let mut fields = Vec::new();
         while !self.current_token_is(Token::RBrace) && !self.current_token_is(Token::Eof) {
-            // Parse field name
-            if !matches!(self.current_token, Token::Identifier(_)) {
-                self.pop_context();
-                return Err(self.error(&format!(
-                    "Expected field name, got {:?}",
-                    self.current_token
-                )));
-            }
-
-            // Get field name
-            let field_name = match &self.current_token {
-                Token::Identifier(ident) => ast::Identifier {
-                    token: self.current_token.token_literal(),
-                    value: ident.clone(),
-                },
-                _ => unreachable!(),
-            };
-
-            self.next_token()?; // Advance past field name
-
-            // Parse field type
-            if !matches!(self.current_token, Token::Identifier(_)) {
-                self.pop_context();
-                return Err(self.error(&format!(
-                    "Expected field type, got {:?}",
-                    self.current_token
-                )));
-            }
-
-            // Get field type
-            let field_type = match &self.current_token {
-                Token::Identifier(ident) => ast::Identifier {
-                    token: self.current_token.token_literal(),
-                    value: ident.clone(),
-                },
-                _ => unreachable!(),
-            };
-
-            self.next_token()?; // Advance past field type
-
-            // Create field struct
-            let field = ast::statements::fields::FieldStatement {
-                token: "field".to_string(),
-                name: field_name,
-                type_name: field_type,
-            };
+            // Parse field with optional type using inference trait
+            let field = self.parse_struct_field_with_inference()?;
             fields.push(field);
 
             // Expect newline or comma
             if self.current_token_is(Token::Semicolon) {
-                self.next_token()?; // Advance past newline
+                self.next_token()?; // Advance past semicolon
             }
         }
 

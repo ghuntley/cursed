@@ -107,11 +107,13 @@ The codebase contains numerous ignored tests that provide insight into implement
   - Better element type inference from container types including generic type parsing
   - Proper element access for various container types
   - Handling for struct-based containers with data pointers
+  - Added runtime support functions for container operations in `src/runtime/container.rs`
+  - Implementation of map iterator creation, advancement and access functions
 - Still need to address compilation issues:
-  - Need to fix pointer element type access (LLVM API changes)
-  - Need to fix module reference extraction
-  - Need to update Type enum references
-  - Need to add clone_box implementation for Expression types
+  - Need to fix pointer element type access (LLVM API has changed, `get_element_type()` no longer exists)
+  - Need to fix module reference extraction (current pattern causes type mismatch errors)
+  - Need to add clone_box implementation for Expression types (required by trait implementation)
+  - Need to fix unwrap usage on LLVM types (ArrayType and StructType don't have unwrap)
 - Tests in `tests/jit_map_test.rs` - map support not fully implemented
 
 ### LLVM Codegen (High Priority)

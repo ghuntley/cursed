@@ -19,6 +19,7 @@ pub mod symbol_table;
 pub mod thread_safe_goroutine;
 pub mod interface_type_checker;
 pub mod type_checker;
+pub mod type_infer;
 
 /// Runtime representation of a compiled CURSED function
 ///
