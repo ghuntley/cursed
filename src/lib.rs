@@ -81,7 +81,11 @@ pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 pub use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 
 // Re-export nested interface type assertion
-pub use crate::codegen::llvm::interface_type_assertion_nested::NestedInterfaceTypeAssertion;
+// Temporarily commented out due to integration issues
+// pub use crate::codegen::llvm::interface_type_assertion_nested::NestedInterfaceTypeAssertion;
+
+// Export interface type assertion path visualization
+pub use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol;
