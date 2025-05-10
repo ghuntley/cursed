@@ -68,6 +68,9 @@ pub use crate::core::type_checker_interface_registry::{CachedInterfaceRegistry, 
 // Re-export nested interface registry
 pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
 
+// Re-export deep nested interface registry
+pub use crate::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, DeepNestedInterfaceChecking, ConstraintPath};
+
 // Re-export field accessor implementations
 pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 
