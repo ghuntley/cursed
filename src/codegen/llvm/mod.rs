@@ -165,6 +165,7 @@ mod enhanced_dynamic_dispatch; // Enhanced dynamic dispatch with improved error 
 mod integrated_interface_operations; // Unified interface operations system
 mod auto_interface_dispatcher; // Automatic code generation for interface method dispatching
 mod auto_interface_dispatcher_integration; // Integration of auto interface dispatcher with the compiler
+mod interface_field_accessors; // Integration of improved field accessors with interface system
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
@@ -190,4 +191,5 @@ pub use self::container_layout::ContainerKind;
 
 // Import key modules and traits
 pub use string_switch::*;
+pub use interface_field_accessors::InterfaceFieldAccessors;
 // These are already re-exported through self:: in the re-exports section
