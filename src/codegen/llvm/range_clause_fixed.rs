@@ -463,7 +463,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 let struct_value = self.builder.build_load(element_type, struct_ptr, "container_struct")?;
                 
                 // Create or get the length function
-                let module = self.module.as_ref().ok_or_else(|| {
+                let module = self.module.clone().ok_or_else(|| {
                     Error::Compilation("Module not available".to_string())
                 })?;
                 
@@ -491,7 +491,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     });
                 
                 // Call the length function
-                let call = self.builder.build_call(length_fn, &[container], "length_call")?;
+                let call = self.builder.build_call(length_fn, &[container.into()], "length_call")?;
                 
                 // Get the return value
                 call.try_as_basic_value().left()
@@ -500,7 +500,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             } else {
                 // For simple pointer to element types like strings
                 // Use a runtime helper function to get length
-                let module = self.module.as_ref().ok_or_else(|| {
+                let module = self.module.clone().ok_or_else(|| {
                     Error::Compilation("Module not available".to_string())
                 })?;
                 
@@ -511,7 +511,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 });
                 
                 // Call the function
-                let call = self.builder.build_call(length_fn, &[container], "length_call")?;
+                let call = self.builder.build_call(length_fn, &[container.into()], "length_call")?;
                 
                 // Get the return value
                 call.try_as_basic_value().left()
@@ -600,7 +600,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     } else {
                         // Fallback approach for unknown struct layouts
                         debug!("Using fallback for unknown struct layout");
-                        let module = self.module.as_ref().ok_or_else(|| {
+                        let module = self.module.clone().ok_or_else(|| {
                             Error::Compilation("Module not available".to_string())
                         })?;
                         
