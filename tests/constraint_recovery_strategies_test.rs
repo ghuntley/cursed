@@ -1,277 +1,226 @@
-//! Tests for the constraint recovery strategies
+//! Tests for constraint recovery strategies
 
-use cursed::core::constraint_recovery::{ConstraintRecovery, RecoveryConfig, RecoveryStrategy, RecoveryResult};
 use cursed::core::interface_registry::InterfaceRegistry;
+use cursed::core::constraint_recovery::{ConstraintRecovery, ConstraintRecoveryExtension, RecoveryStrategy, ConstraintFailureSeverity};
 use cursed::core::type_checker::Type;
-use std::collections::HashMap;
+use cursed::error::Error;
 
-// Import common test utilities
 #[path = "common.rs"]
 mod common;
 
 #[test]
-fn test_basic_recovery_fail_strategy() {
+fn test_recovery_for_comparable_interface() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure to use the Fail strategy (default)
-    let config = RecoveryConfig::default();
-    registry.set_recovery_config(config);
+    // Create a custom type that doesn't implement Comparable
+    let custom_type = Type::Struct("CustomType".to_string(), vec![]);
     
-    // Test recovery with a type that doesn't implement the interface
-    let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-    let interface_name = "Comparable";
+    // Get recovery context
+    let context = registry.create_recovery_context(&custom_type, "Comparable");
     
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        interface_name,
-        None,
-    );
+    // Verify basic properties
+    assert_eq!(context.failed_type, custom_type);
+    assert_eq!(context.interface_name, "Comparable");
+    assert_eq!(context.severity, ConstraintFailureSeverity::Critical);
     
-    // Should be a Failed result with appropriate error information
-    match result {
-        RecoveryResult::Failed(error) => {
-            assert!(error.message.contains("does not implement interface"));
-            assert!(error.message.contains("TestStruct"));
-            assert!(error.message.contains("Comparable"));
-            
-            // Check for error code
-            assert!(error.code.starts_with("CNST"));
-        },
-        _ => panic!("Expected Failed result"),
-    }
+    // Verify we have alternatives
+    assert!(!context.alternative_types.is_empty());
+    
+    // Check if Tea (String) is among the alternatives
+    let has_tea = context.alternative_types.iter().any(|t| *t == Type::Tea);
+    assert!(has_tea, "Tea (String) should be in the alternatives");
+    
+    // Verify we have missing methods for Comparable
+    assert!(context.missing_methods.contains_key("Compare"));
+    assert!(context.missing_methods.contains_key("Equals"));
+    
+    // Verify we have a recommended strategy
+    assert_eq!(context.recommended_strategy, RecoveryStrategy::GenerateStub);
+    
+    // Verify stub code was generated
+    assert!(context.stub_code.is_some());
+    let stub = context.stub_code.unwrap();
+    assert!(stub.contains("Compare"));
+    assert!(stub.contains("Equals"));
 }
 
 #[test]
-fn test_find_alternative_strategy() {
+fn test_recovery_for_numeric_interface() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure to use the FindAlternative strategy
-    let mut config = RecoveryConfig::default();
-    config.default_strategy = RecoveryStrategy::FindAlternative;
-    registry.set_recovery_config(config);
+    // Create a vector type that doesn't implement Numeric
+    let vector_type = Type::Struct("Vector3D".to_string(), vec![]);
     
-    // Test the FindAlternative strategy with Comparable
-    let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Comparable",
-        None,
-    );
+    // Get recovery context
+    let context = registry.create_recovery_context(&vector_type, "Numeric");
     
-    // Should be an AlternativeType result
-    match result {
-        RecoveryResult::AlternativeType(alt_type) => {
-            // Should suggest one of the standard types that implement Comparable
-            match alt_type {
-                Type::Normie | Type::Thicc | Type::Snack | 
-                Type::Meal | Type::Tea | Type::Lit => {
-                    // These are expected
-                },
-                _ => panic!("Unexpected alternative type: {:?}", alt_type),
-            }
-        },
-        _ => panic!("Expected AlternativeType result"),
-    }
+    // Verify basic properties
+    assert_eq!(context.failed_type, vector_type);
+    assert_eq!(context.interface_name, "Numeric");
+    assert_eq!(context.severity, ConstraintFailureSeverity::Critical);
     
-    // Test with Numeric interface
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Numeric",
-        None,
-    );
+    // Verify we have alternatives
+    assert!(!context.alternative_types.is_empty());
     
-    // Should be an AlternativeType result with a numeric type
-    match result {
-        RecoveryResult::AlternativeType(alt_type) => {
-            // Should suggest one of the standard numeric types
-            match alt_type {
-                Type::Normie | Type::Thicc | Type::Snack | Type::Meal => {
-                    // These are expected
-                },
-                _ => panic!("Unexpected numeric alternative type: {:?}", alt_type),
-            }
-        },
-        _ => panic!("Expected AlternativeType result for Numeric"),
-    }
+    // Check if Normie (Int) is among the alternatives
+    let has_normie = context.alternative_types.iter().any(|t| *t == Type::Normie);
+    assert!(has_normie, "Normie (Int) should be in the alternatives");
+    
+    // Verify we have missing methods for Numeric
+    assert!(context.missing_methods.contains_key("Add"));
+    assert!(context.missing_methods.contains_key("Subtract"));
+    assert!(context.missing_methods.contains_key("Multiply"));
+    assert!(context.missing_methods.contains_key("Divide"));
+    
+    // Verify we have a recommended strategy
+    assert_eq!(context.recommended_strategy, RecoveryStrategy::GenerateStub);
+    
+    // Verify stub code was generated
+    assert!(context.stub_code.is_some());
+    let stub = context.stub_code.unwrap();
+    assert!(stub.contains("Add"));
+    assert!(stub.contains("Subtract"));
+    assert!(stub.contains("Multiply"));
+    assert!(stub.contains("Divide"));
 }
 
 #[test]
-fn test_use_placeholder_strategy() {
+fn test_recovery_for_container_interface() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure to use the UsePlaceholder strategy
-    let mut config = RecoveryConfig::default();
-    config.default_strategy = RecoveryStrategy::UsePlaceholder;
-    registry.set_recovery_config(config);
+    // Create a custom collection that doesn't implement Container
+    let collection_type = Type::Struct("CustomCollection".to_string(), vec![]);
     
-    // Test the UsePlaceholder strategy
-    let concrete_type = Type::Struct("UserData".to_string(), vec![]);
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Hashable",
-        None,
-    );
+    // Check constraint with recovery
+    let result = registry.check_constraint_with_recovery(&collection_type, "Container");
     
-    // Should be a Placeholder result
-    match result {
-        RecoveryResult::Placeholder(code) => {
-            // Check the content of the placeholder implementation
-            assert!(code.contains("AUTO-GENERATED PLACEHOLDER"));
-            assert!(code.contains("UserData"));
-            assert!(code.contains("Hashable"));
-            assert!(code.contains("implementation Hashable for"));
-            assert!(code.contains("placeholder implementation for testing only"));
-        },
-        _ => panic!("Expected Placeholder result"),
-    }
+    // Should fail with recovery context
+    assert!(result.is_err());
+    let context = result.err().unwrap();
+    
+    // Verify basic properties
+    assert_eq!(context.failed_type, collection_type);
+    assert_eq!(context.interface_name, "Container");
+    assert_eq!(context.severity, ConstraintFailureSeverity::Major);
+    
+    // Verify we have alternatives
+    assert!(!context.alternative_types.is_empty());
+    
+    // Verify we have a recommended strategy
+    assert_eq!(context.recommended_strategy, RecoveryStrategy::GeneratePlaceholder);
+    
+    // Verify placeholder code was generated
+    assert!(context.placeholder_code.is_some());
+    let placeholder = context.placeholder_code.unwrap();
+    assert!(placeholder.contains("Size"));
+    assert!(placeholder.contains("CustomCollection"));
 }
 
 #[test]
-fn test_generate_stubs_strategy() {
+fn test_error_message_formatting() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure to use the GenerateStubs strategy
-    let mut config = RecoveryConfig::default();
-    config.default_strategy = RecoveryStrategy::GenerateStubs;
-    registry.set_recovery_config(config);
-    
-    // Test the GenerateStubs strategy
-    let concrete_type = Type::Struct("Config".to_string(), vec![]);
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Serializable",
-        None,
+    // Create an error for a type that doesn't implement Comparable
+    let error = registry.create_constraint_error(
+        &Type::Struct("NonComparable".to_string(), vec![]),
+        "Comparable"
     );
     
-    // Should be a GeneratedStubs result
-    match result {
-        RecoveryResult::GeneratedStubs(code) => {
-            // Check the content of the generated stubs
-            assert!(code.contains("AUTO-GENERATED STUB"));
-            assert!(code.contains("Config"));
-            assert!(code.contains("Serializable"));
-            assert!(code.contains("implementation Serializable for"));
-        },
-        _ => panic!("Expected GeneratedStubs result"),
-    }
+    // Error message should be informative
+    let message = error.message();
+    assert!(message.contains("does not implement interface"));
+    assert!(message.contains("Missing methods"));
+    assert!(message.contains("Alternative types"));
+    assert!(message.contains("Stub implementation"));
+    
+    // Should include method information
+    assert!(message.contains("Compare"));
+    assert!(message.contains("Equals"));
 }
 
 #[test]
-fn test_interface_specific_strategies() {
+fn test_recovery_strategy_recommendation() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure with different strategies for different interfaces
-    let mut interface_strategies = HashMap::new();
-    interface_strategies.insert("Comparable".to_string(), RecoveryStrategy::FindAlternative);
-    interface_strategies.insert("Serializable".to_string(), RecoveryStrategy::GenerateStubs);
-    interface_strategies.insert("Hashable".to_string(), RecoveryStrategy::UsePlaceholder);
+    // For primitive types, suggest alternatives
+    let strategy = registry.recommend_strategy(&Type::Snack, "List");
+    assert_eq!(strategy, RecoveryStrategy::SuggestAlternatives);
     
-    let mut config = RecoveryConfig::default();
-    config.default_strategy = RecoveryStrategy::Fail; // Default is fail
-    config.interface_strategies = interface_strategies;
-    registry.set_recovery_config(config);
-    
-    // Test with a struct type
-    let concrete_type = Type::Struct("User".to_string(), vec![]);
-    
-    // Test Comparable (should use FindAlternative)
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Comparable",
-        None,
+    // For struct types with common interfaces, generate stubs
+    let strategy = registry.recommend_strategy(
+        &Type::Struct("Point".to_string(), vec![]),
+        "Comparable"
     );
-    assert!(matches!(result, RecoveryResult::AlternativeType(_)));
+    assert_eq!(strategy, RecoveryStrategy::GenerateStub);
     
-    // Test Serializable (should use GenerateStubs)
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Serializable",
-        None,
+    // For struct types with Container interface, generate placeholders
+    let strategy = registry.recommend_strategy(
+        &Type::Struct("CustomCollection".to_string(), vec![]),
+        "Container"
     );
-    assert!(matches!(result, RecoveryResult::GeneratedStubs(_)));
-    
-    // Test Hashable (should use UsePlaceholder)
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Hashable",
-        None,
-    );
-    assert!(matches!(result, RecoveryResult::Placeholder(_)));
-    
-    // Test an interface with no specific strategy (should use default Fail)
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Unknown",
-        None,
-    );
-    assert!(matches!(result, RecoveryResult::Failed(_)));
+    assert_eq!(strategy, RecoveryStrategy::GeneratePlaceholder);
 }
 
 #[test]
-fn test_nested_constraint_recovery() {
+fn test_registry_extension_methods() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure to use the GenerateStubs strategy
-    let mut config = RecoveryConfig::default();
-    config.default_strategy = RecoveryStrategy::GenerateStubs;
-    registry.set_recovery_config(config);
+    // Register interface methods
+    let mut custom_methods = std::collections::HashMap::new();
+    custom_methods.insert("CustomMethod".to_string(), "self Custom, param Tea".to_string());
+    registry.register_interface_methods("CustomInterface", custom_methods);
     
-    // Test nested constraint recovery
-    let generic_type_name = "SortedList";
-    let type_param_name = "T";
-    let concrete_arg = Type::Struct("UserType".to_string(), vec![]);
+    // Register recovery strategy
+    registry.register_recovery_strategy("CustomInterface", RecoveryStrategy::GenerateStub);
     
-    let result = registry.recover_from_nested_constraint_failure(
-        generic_type_name,
-        type_param_name,
-        &concrete_arg,
-        "Comparable",
+    // Register alternative implementation
+    registry.register_alternative_for_interface(
+        "CustomInterface",
+        Type::Struct("StandardImpl".to_string(), vec![])
     );
     
-    // Should be a GeneratedStubs result with context about the generic type
-    match result {
-        RecoveryResult::GeneratedStubs(code) => {
-            assert!(code.contains("AUTO-GENERATED STUB"));
-            assert!(code.contains("UserType"));
-            assert!(code.contains("Comparable"));
-            assert!(code.contains("implementation Comparable for"));
-        },
-        _ => panic!("Expected GeneratedStubs result"),
-    }
+    // Verify the alternative was registered
+    let implementers = registry.get_interface_implementers("CustomInterface");
+    assert!(implementers.contains(&Type::Struct("StandardImpl".to_string(), vec![])));
 }
 
 #[test]
-fn test_recovery_disabled() {
+fn test_constraint_check_with_recovery() {
     common::tracing::setup();
     
-    let registry = InterfaceRegistry::new();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Configure with recovery disabled
-    let mut config = RecoveryConfig::default();
-    config.default_strategy = RecoveryStrategy::GenerateStubs; // Would generate stubs if enabled
-    config.enabled = false; // But recovery is disabled
-    registry.set_recovery_config(config);
+    // Check a type that does implement the interface
+    let result = registry.check_constraint_with_recovery(&Type::Normie, "Numeric");
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), true);
     
-    // Test with recovery disabled
-    let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-    let result = registry.recover_from_constraint_failure(
-        &concrete_type,
-        "Comparable",
-        None,
-    );
+    // Check a type that doesn't implement the interface
+    let result = registry.check_constraint_with_recovery(&Type::Lit, "Numeric");
+    assert!(result.is_err());
     
-    // Should be a Failed result even though the strategy is GenerateStubs
-    assert!(matches!(result, RecoveryResult::Failed(_)));
+    // Get the context and verify it has useful information
+    let context = result.err().unwrap();
+    assert_eq!(context.failed_type, Type::Lit);
+    assert_eq!(context.interface_name, "Numeric");
+    assert!(!context.alternative_types.is_empty());
 }

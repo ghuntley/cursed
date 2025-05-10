@@ -12,6 +12,7 @@ use crate::error::Error;
 use std::sync::Arc;
 use tracing::{debug, warn, error, info, trace, instrument};
 use crate::core::async_constraint_checker::AsyncConstraintChecking;
+use crate::core::constraint_recovery::{ConstraintRecovery, ConstraintRecoveryExtension, RecoveryStrategy};
 
 /// Represents a generic interface implementation with type parameters
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -41,6 +42,12 @@ pub struct InterfaceRegistry {
     /// Stores generic interface implementations where the implementing type is generic
     /// Maps interface name to a set of generic implementations
     generic_implementations: HashMap<String, Vec<GenericInterfaceImpl>>,
+    
+    /// Maps interface names to method signatures (method_name -> signature)
+    interface_methods: HashMap<String, HashMap<String, String>>,
+    
+    /// Maps interface names to recovery strategies
+    recovery_strategies: HashMap<String, crate::core::constraint_recovery::RecoveryStrategy>,
 }
 
 impl InterfaceRegistry {
@@ -50,6 +57,8 @@ impl InterfaceRegistry {
             implementations: HashMap::new(),
             implementers: HashMap::new(),
             generic_implementations: HashMap::new(),
+            interface_methods: HashMap::new(),
+            recovery_strategies: HashMap::new(),
         }
     }
     
@@ -342,6 +351,12 @@ impl InterfaceRegistry {
     
     /// Populate the registry with known interface implementations
     pub fn populate_with_defaults(&mut self) {
+        // Populate interface methods
+        self.populate_default_interface_methods();
+        
+        // Populate recovery strategies
+        self.populate_default_recovery_strategies();
+        
         // Primitive numeric types implement Numeric and Comparable
         for numeric_type in [Type::Normie, Type::Thicc, Type::Snack, Type::Meal] {
             self.register_implementation(numeric_type.clone(), "Numeric".to_string());
@@ -433,6 +448,49 @@ impl InterfaceRegistry {
         );
         
         debug!("Populated interface registry with default implementations");
+    }
+    
+    /// Populate the registry with default interface method signatures
+    fn populate_default_interface_methods(&mut self) {
+        // Comparable interface
+        let mut comparable_methods = HashMap::new();
+        comparable_methods.insert("Compare".to_string(), "a Self, b Self".to_string());
+        comparable_methods.insert("Equals".to_string(), "a Self, b Self".to_string());
+        self.interface_methods.insert("Comparable".to_string(), comparable_methods);
+        
+        // Numeric interface
+        let mut numeric_methods = HashMap::new();
+        numeric_methods.insert("Add".to_string(), "a Self, b Self".to_string());
+        numeric_methods.insert("Subtract".to_string(), "a Self, b Self".to_string());
+        numeric_methods.insert("Multiply".to_string(), "a Self, b Self".to_string());
+        numeric_methods.insert("Divide".to_string(), "a Self, b Self".to_string());
+        self.interface_methods.insert("Numeric".to_string(), numeric_methods);
+        
+        // Container interface
+        let mut container_methods = HashMap::new();
+        container_methods.insert("Size".to_string(), "self Self".to_string());
+        container_methods.insert("IsEmpty".to_string(), "self Self".to_string());
+        self.interface_methods.insert("Container".to_string(), container_methods);
+        
+        // List interface
+        let mut list_methods = HashMap::new();
+        list_methods.insert("Get".to_string(), "self Self, index Normie".to_string());
+        list_methods.insert("Set".to_string(), "self Self, index Normie, value T".to_string());
+        list_methods.insert("Append".to_string(), "self Self, value T".to_string());
+        self.interface_methods.insert("List".to_string(), list_methods);
+        
+        debug!("Populated default interface method signatures");
+    }
+    
+    /// Populate the registry with default recovery strategies
+    fn populate_default_recovery_strategies(&mut self) {
+        // Set default recovery strategies for known interfaces
+        self.recovery_strategies.insert("Comparable".to_string(), RecoveryStrategy::GenerateStub);
+        self.recovery_strategies.insert("Numeric".to_string(), RecoveryStrategy::GenerateStub);
+        self.recovery_strategies.insert("Container".to_string(), RecoveryStrategy::GeneratePlaceholder);
+        self.recovery_strategies.insert("List".to_string(), RecoveryStrategy::SuggestAlternatives);
+        
+        debug!("Populated default recovery strategies");
     }
 }
 

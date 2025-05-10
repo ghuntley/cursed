@@ -1,858 +1,607 @@
-//! # Constraint Recovery Strategies
+//! Constraint Recovery Strategies
 //!
-//! This module provides strategies for recovering from constraint failures
-//! in the type system. It allows the compiler to continue processing even
-//! when constraints are not satisfied, providing better error messages and
-//! potentially suggesting fixes or alternatives.
+//! This module provides error recovery strategies for interface constraint failures.
+//! When a type fails to satisfy an interface constraint, these strategies can help
+//! provide better error messages, alternative suggestions, and even placeholder code
+//! generation to improve the developer experience.
 
-use crate::core::constraint_error::{create_constraint_error, create_nested_constraint_error, CONSTRAINT_ERROR_CODE_PREFIX};
-use crate::core::interface_registry::{InterfaceRegistry};
+use crate::core::interface_registry::InterfaceRegistry;
 use crate::core::type_checker::Type;
-use crate::error_enhanced::{CursedError, ErrorKind};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use tracing::{debug, error, info, instrument, warn};
+use crate::error::Error;
+use std::collections::{HashMap, HashSet};
+use tracing::{debug, info, instrument, warn};
 
-/// Types of recovery strategies that can be applied
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// Represents the severity of a constraint failure
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConstraintFailureSeverity {
+    /// Minor - can continue with warnings
+    Minor,
+    /// Major - should be addressed but compilation can continue
+    Major,
+    /// Critical - must be fixed for compilation to succeed
+    Critical,
+}
+
+/// Represents a recovery strategy for constraint failures
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RecoveryStrategy {
-    /// Fail immediately and report the error
-    Fail,
-    
-    /// Attempt to find alternative types that would satisfy the constraint
-    FindAlternative,
-    
-    /// Use a placeholder implementation for testing/development
-    UsePlaceholder,
-    
-    /// Generate a partial implementation with stub methods for missing functionality
-    GenerateStubs,
+    /// Suggest alternative types that would satisfy the constraint
+    SuggestAlternatives,
+    /// Generate placeholder code that satisfies the constraint
+    GeneratePlaceholder,
+    /// Generate stub implementations for the required interface methods
+    GenerateStub,
+    /// Fail immediately with an error
+    FailImmediately,
 }
 
-/// The result of a recovery attempt
+/// A constraint failure recovery context, which contains information about 
+/// the failed constraint and possible recovery strategies
 #[derive(Debug, Clone)]
-pub enum RecoveryResult {
-    /// Recovery failed, with the original error
-    Failed(CursedError),
-    
-    /// Recovery succeeded with an alternative type
-    AlternativeType(Type),
-    
-    /// Recovery succeeded with placeholder implementation
-    Placeholder(String),
-    
-    /// Recovery succeeded with generated stubs
-    GeneratedStubs(String),
+pub struct ConstraintFailureContext {
+    /// The type that failed to satisfy the constraint
+    pub failed_type: Type,
+    /// The interface that the type failed to implement
+    pub interface_name: String,
+    /// The severity of the failure
+    pub severity: ConstraintFailureSeverity,
+    /// Missing method information (method name -> signature)
+    pub missing_methods: HashMap<String, String>,
+    /// Alternative types that would satisfy the constraint
+    pub alternative_types: Vec<Type>,
+    /// Recommended recovery strategy
+    pub recommended_strategy: RecoveryStrategy,
+    /// Placeholder code that could be used (if applicable)
+    pub placeholder_code: Option<String>,
+    /// Stub implementation code that could be used (if applicable)
+    pub stub_code: Option<String>,
 }
 
-/// Configuration for constraint recovery
-#[derive(Debug, Clone)]
-pub struct RecoveryConfig {
-    /// The default strategy to use
-    pub default_strategy: RecoveryStrategy,
-    
-    /// Specific strategies for certain interfaces
-    pub interface_strategies: HashMap<String, RecoveryStrategy>,
-    
-    /// Maximum number of alternative types to check
-    pub max_alternatives: usize,
-    
-    /// Whether to use type similarity for finding alternatives
-    pub use_similarity: bool,
-    
-    /// Whether the recovery system is enabled
-    pub enabled: bool,
-}
-
-impl Default for RecoveryConfig {
-    fn default() -> Self {
+impl ConstraintFailureContext {
+    /// Create a new constraint failure context
+    pub fn new(failed_type: Type, interface_name: String) -> Self {
         Self {
-            default_strategy: RecoveryStrategy::Fail,
-            interface_strategies: HashMap::new(),
-            max_alternatives: 5,
-            use_similarity: true,
-            enabled: true,
-        }
-    }
-}
-
-/// A constraint recovery manager that provides various strategies for
-/// recovering from constraint failures in the type system
-#[derive(Debug)]
-pub struct ConstraintRecoveryManager {
-    /// The configuration for recovery strategies
-    config: Arc<Mutex<RecoveryConfig>>,
-    
-    /// The interface registry to use for checking constraints
-    registry: Arc<InterfaceRegistry>,
-    
-    /// Cache of previously suggested alternatives
-    alternative_cache: Arc<Mutex<HashMap<(Type, String), Vec<Type>>>>,
-    
-    /// Cache of previously generated stubs
-    stub_cache: Arc<Mutex<HashMap<(Type, String), String>>>,
-    
-    /// Statistics for the recovery system
-    stats: Arc<Mutex<RecoveryStats>>,
-}
-
-/// Statistics for the recovery system
-#[derive(Debug, Default)]
-struct RecoveryStats {
-    /// Number of recovery attempts
-    attempts: usize,
-    
-    /// Number of successful recoveries
-    successes: usize,
-    
-    /// Number of failed recoveries
-    failures: usize,
-    
-    /// Breakdown by strategy
-    by_strategy: HashMap<RecoveryStrategy, usize>,
-}
-
-impl ConstraintRecoveryManager {
-    /// Create a new constraint recovery manager
-    pub fn new(registry: Arc<InterfaceRegistry>) -> Self {
-        Self {
-            config: Arc::new(Mutex::new(RecoveryConfig::default())),
-            registry,
-            alternative_cache: Arc::new(Mutex::new(HashMap::new())),
-            stub_cache: Arc::new(Mutex::new(HashMap::new())),
-            stats: Arc::new(Mutex::new(RecoveryStats::default())),
+            failed_type,
+            interface_name,
+            severity: ConstraintFailureSeverity::Major,
+            missing_methods: HashMap::new(),
+            alternative_types: Vec::new(),
+            recommended_strategy: RecoveryStrategy::SuggestAlternatives,
+            placeholder_code: None,
+            stub_code: None,
         }
     }
     
-    /// Set the configuration for recovery strategies
-    pub fn set_config(&self, config: RecoveryConfig) {
-        let mut cfg = self.config.lock().unwrap();
-        *cfg = config;
+    /// Set the severity of the failure
+    pub fn with_severity(mut self, severity: ConstraintFailureSeverity) -> Self {
+        self.severity = severity;
+        self
     }
     
-    /// Get the current configuration
-    pub fn get_config(&self) -> RecoveryConfig {
-        let cfg = self.config.lock().unwrap();
-        cfg.clone()
+    /// Add a missing method
+    pub fn add_missing_method(mut self, method_name: &str, signature: &str) -> Self {
+        self.missing_methods.insert(method_name.to_string(), signature.to_string());
+        self
     }
     
-    /// Get the strategy to use for a specific interface
-    fn get_strategy_for_interface(&self, interface_name: &str) -> RecoveryStrategy {
-        let cfg = self.config.lock().unwrap();
-        
-        // If recovery is disabled, always fail
-        if !cfg.enabled {
-            return RecoveryStrategy::Fail;
-        }
-        
-        // Check for a specific strategy for this interface
-        cfg.interface_strategies
-            .get(interface_name)
-            .copied()
-            .unwrap_or(cfg.default_strategy)
+    /// Add an alternative type
+    pub fn add_alternative_type(mut self, alternative: Type) -> Self {
+        self.alternative_types.push(alternative);
+        self
     }
     
-    /// Update statistics for a recovery attempt
-    fn update_stats(&self, strategy: RecoveryStrategy, success: bool) {
-        let mut stats = self.stats.lock().unwrap();
-        stats.attempts += 1;
-        
-        if success {
-            stats.successes += 1;
-        } else {
-            stats.failures += 1;
-        }
-        
-        // Update strategy count
-        *stats.by_strategy.entry(strategy).or_insert(0) += 1;
+    /// Set the recommended recovery strategy
+    pub fn with_strategy(mut self, strategy: RecoveryStrategy) -> Self {
+        self.recommended_strategy = strategy;
+        self
     }
     
-    /// Get the current statistics
-    pub fn get_stats(&self) -> (usize, usize, usize) {
-        let stats = self.stats.lock().unwrap();
-        (stats.attempts, stats.successes, stats.failures)
+    /// Set the placeholder code
+    pub fn with_placeholder_code(mut self, code: &str) -> Self {
+        self.placeholder_code = Some(code.to_string());
+        self
     }
     
-    /// Attempt to recover from a constraint failure
-    ///
-    /// # Arguments
-    ///
-    /// * `concrete_type` - The concrete type that failed to meet the constraint
-    /// * `interface_name` - The name of the interface constraint that wasn't satisfied
-    /// * `type_param_name` - Optional name of the type parameter for better error context
-    ///
-    /// # Returns
-    ///
-    /// A `RecoveryResult` indicating whether recovery was successful and how
-    #[instrument(skip(self), level = "debug")]
-    pub fn recover_from_constraint_failure(
-        &self,
-        concrete_type: &Type,
-        interface_name: &str,
-        type_param_name: Option<&str>,
-    ) -> RecoveryResult {
-        // Determine the strategy to use
-        let strategy = self.get_strategy_for_interface(interface_name);
-        
-        debug!("Attempting to recover from constraint failure: {:?} does not implement {}", 
-             concrete_type, interface_name);
-        debug!("Using strategy: {:?}", strategy);
-        
-        // For an actual implementation, we would get the interface methods here
-        // In a full implementation, we would call methods like:
-        // self.registry.get_interface_methods(interface_name);
-        // and self.registry.get_type_methods(name)
-        let required_methods = None; // Placeholder
-        let available_methods = None; // Placeholder
-        
-        // Try to recover based on the selected strategy
-        let result = match strategy {
-            RecoveryStrategy::Fail => {
-                // Just fail with a detailed error
-                let error = create_constraint_error(
-                    concrete_type,
-                    interface_name,
-                    type_param_name,
-                    available_methods,
-                    required_methods,
-                );
-                
-                RecoveryResult::Failed(error)
-            },
-            
-            RecoveryStrategy::FindAlternative => {
-                self.find_alternative(concrete_type, interface_name, type_param_name)
-            },
-            
-            RecoveryStrategy::UsePlaceholder => {
-                self.use_placeholder(concrete_type, interface_name, type_param_name)
-            },
-            
-            RecoveryStrategy::GenerateStubs => {
-                self.generate_stubs(concrete_type, interface_name, type_param_name, 
-                                   available_methods, required_methods)
-            },
-        };
-        
-        // Update statistics
-        self.update_stats(strategy, !matches!(result, RecoveryResult::Failed(_)));
-        
-        result
+    /// Set the stub implementation code
+    pub fn with_stub_code(mut self, code: &str) -> Self {
+        self.stub_code = Some(code.to_string());
+        self
     }
     
-    /// Attempt to find an alternative type that satisfies the constraint
-    #[instrument(skip(self), level = "debug")]
-    fn find_alternative(
-        &self,
-        concrete_type: &Type,
-        interface_name: &str,
-        type_param_name: Option<&str>,
-    ) -> RecoveryResult {
-        // Check if we have cached alternatives for this type and interface
-        let cache_key = (concrete_type.clone(), interface_name.to_string());
+    /// Format the context as a user-friendly error message
+    pub fn to_error_message(&self) -> String {
+        let mut message = format!(
+            "Type {:?} does not implement interface '{}'",
+            self.failed_type, self.interface_name
+        );
         
-        // First check the cache
-        let cached = {
-            let cache = self.alternative_cache.lock().unwrap();
-            cache.get(&cache_key).cloned()
-        };
-        
-        if let Some(alternatives) = cached {
-            if !alternatives.is_empty() {
-                debug!("Found cached alternative for {:?} implements {}: {:?}", 
-                     concrete_type, interface_name, alternatives[0]);
-                return RecoveryResult::AlternativeType(alternatives[0].clone());
+        if !self.missing_methods.is_empty() {
+            message.push_str("
+Missing methods:
+");
+            for (method, signature) in &self.missing_methods {
+                message.push_str(&format!("  - {} with signature {}
+", method, signature));
             }
         }
         
-        // Get the configuration
-        let config = self.config.lock().unwrap();
-        let max_alternatives = config.max_alternatives;
-        let use_similarity = config.use_similarity;
-        drop(config);
-        
-        // Find similar types that implement the interface
-        let mut alternatives = Vec::new();
-        
-        // Check standard library types first
-        let stdlib_alternatives = self.find_stdlib_alternatives(interface_name);
-        alternatives.extend(stdlib_alternatives);
-        
-        // If enabled, check similar user-defined types
-        if use_similarity {
-            let similar_alternatives = self.find_similar_types(concrete_type, interface_name);
-            alternatives.extend(similar_alternatives);
+        if !self.alternative_types.is_empty() {
+            message.push_str("
+Alternative types that implement this interface:
+");
+            for alt_type in &self.alternative_types {
+                message.push_str(&format!("  - {:?}
+", alt_type));
+            }
         }
         
-        // Cache the alternatives
-        {
-            let mut cache = self.alternative_cache.lock().unwrap();
-            cache.insert(cache_key, alternatives.clone());
+        if let Some(placeholder) = &self.placeholder_code {
+            message.push_str("
+Placeholder implementation:
+");
+            message.push_str(placeholder);
         }
         
-        // Return the best alternative if any
-        if !alternatives.is_empty() {
-            debug!("Found alternative for {:?} implements {}: {:?}", 
-                 concrete_type, interface_name, alternatives[0]);
-            return RecoveryResult::AlternativeType(alternatives[0].clone());
+        if let Some(stub) = &self.stub_code {
+            message.push_str("
+Stub implementation:
+");
+            message.push_str(stub);
         }
         
-        // No alternatives found, return a failure
-        let error = create_constraint_error(
-            concrete_type,
-            interface_name,
-            type_param_name,
-            None,
-            None,
-        );
-        
-        RecoveryResult::Failed(error)
+        message
     }
     
-    /// Find standard library types that implement the interface
-    fn find_stdlib_alternatives(&self, interface_name: &str) -> Vec<Type> {
-        // This would typically search through the standard library types
-        // that implement the given interface
-        
-        // For now, we'll just provide some common alternatives based on the interface
-        match interface_name {
-            "Comparable" => vec![
-                Type::Normie,  // int
-                Type::Thicc,   // int64
-                Type::Snack,   // float32
-                Type::Meal,    // float64
-                Type::Tea,     // string
-                Type::Lit,     // bool
-            ],
-            "Numeric" => vec![
-                Type::Normie,  // int
-                Type::Thicc,   // int64
-                Type::Snack,   // float32
-                Type::Meal,    // float64
-            ],
-            "Stringable" => vec![
-                Type::Tea,     // string
-            ],
-            _ => Vec::new(),
-        }
+    /// Convert the context to an Error object
+    pub fn to_error(&self) -> Error {
+        Error::new("CNST02", &self.to_error_message(), None)
     }
+}
+
+/// Trait for constraint recovery strategies
+pub trait ConstraintRecovery {
+    /// Create a recovery context for a constraint failure
+    fn create_recovery_context(&self, failed_type: &Type, interface_name: &str) -> ConstraintFailureContext;
     
-    /// Find user-defined types similar to the concrete type that implement the interface
-    fn find_similar_types(&self, concrete_type: &Type, interface_name: &str) -> Vec<Type> {
-        // In a real implementation, this would analyze the codebase to find
-        // similar types (by name, structure, etc.) that implement the interface
-        
-        // For now, we'll just return an empty list
-        Vec::new()
-    }
+    /// Find alternative types that implement the given interface
+    fn find_alternative_types(&self, interface_name: &str, limit: usize) -> Vec<Type>;
     
-    /// Use a placeholder implementation for testing/development
+    /// Generate placeholder code for implementing an interface
+    fn generate_placeholder_code(&self, type_name: &str, interface_name: &str) -> String;
+    
+    /// Generate stub implementation code for an interface
+    fn generate_stub_code(&self, type_name: &str, interface_name: &str) -> String;
+    
+    /// Recommend a recovery strategy based on the constraint failure
+    fn recommend_strategy(
+        &self,
+        failed_type: &Type,
+        interface_name: &str
+    ) -> RecoveryStrategy;
+    
+    /// Create a comprehensive error with recovery information
+    fn create_constraint_error(
+        &self,
+        failed_type: &Type,
+        interface_name: &str
+    ) -> Error;
+    
+    /// Check if recovery is available for this interface
+    fn has_recovery_for_interface(&self, interface_name: &str) -> bool;
+}
+
+/// Extension trait for InterfaceRegistry to add constraint recovery capabilities
+pub trait ConstraintRecoveryExtension: ConstraintRecovery {
+    /// Register method signatures for an interface
+    fn register_interface_methods(
+        &mut self,
+        interface_name: &str,
+        methods: HashMap<String, String>
+    );
+    
+    /// Register recovery strategies for specific interfaces
+    fn register_recovery_strategy(
+        &mut self,
+        interface_name: &str,
+        strategy: RecoveryStrategy
+    );
+    
+    /// Register alternative types for interfaces
+    fn register_alternative_for_interface(
+        &mut self,
+        interface_name: &str,
+        alternative_type: Type
+    );
+}
+
+/// Implementation of ConstraintRecovery for InterfaceRegistry
+impl ConstraintRecovery for InterfaceRegistry {
     #[instrument(skip(self), level = "debug")]
-    fn use_placeholder(
-        &self,
-        concrete_type: &Type,
-        interface_name: &str,
-        type_param_name: Option<&str>,
-    ) -> RecoveryResult {
-        // Generate a placeholder implementation that satisfies the interface
-        // This would be used during development or testing to allow progress
-        // without implementing everything
+    fn create_recovery_context(&self, failed_type: &Type, interface_name: &str) -> ConstraintFailureContext {
+        // Start building the context
+        let mut context = ConstraintFailureContext::new(failed_type.clone(), interface_name.to_string());
         
-        let placeholder_code = format!(
-            "// AUTO-GENERATED PLACEHOLDER IMPLEMENTATION FOR DEVELOPMENT ONLY
-// Type: {:?}
-// Interface: {}
-implementation {} for {:?} {{
-    // This is a placeholder implementation for testing only
-    // TODO: Replace with a proper implementation
-}}
-",
-            concrete_type, interface_name, interface_name, concrete_type
-        );
-        
-        debug!("Generated placeholder implementation for {:?} implements {}", 
-             concrete_type, interface_name);
-        
-        RecoveryResult::Placeholder(placeholder_code)
-    }
-    
-    /// Generate stub implementations for missing methods
-    #[instrument(skip(self, available_methods, required_methods), level = "debug")]
-    fn generate_stubs(
-        &self,
-        concrete_type: &Type,
-        interface_name: &str,
-        type_param_name: Option<&str>,
-        available_methods: Option<Vec<String>>,
-        required_methods: Option<Vec<String>>,
-    ) -> RecoveryResult {
-        // Check the cache first
-        let cache_key = (concrete_type.clone(), interface_name.to_string());
-        
-        let cached = {
-            let cache = self.stub_cache.lock().unwrap();
-            cache.get(&cache_key).cloned()
+        // Determine the severity based on the interface
+        let severity = match interface_name {
+            "Comparable" | "Numeric" => ConstraintFailureSeverity::Critical,
+            "Container" | "List" => ConstraintFailureSeverity::Major,
+            _ => ConstraintFailureSeverity::Minor,
         };
+        context = context.with_severity(severity);
         
-        if let Some(stubs) = cached {
-            debug!("Found cached stubs for {:?} implements {}", 
-                 concrete_type, interface_name);
-            return RecoveryResult::GeneratedStubs(stubs);
+        // Find alternative types
+        let alternatives = self.find_alternative_types(interface_name, 5);
+        for alt in alternatives {
+            context = context.add_alternative_type(alt);
         }
         
-        // Generate stub implementations for missing methods
-        let mut stub_code = format!(
-            "// AUTO-GENERATED STUB IMPLEMENTATION
-// Type: {:?}
-// Interface: {}
-implementation {} for {:?} {{
-",
-            concrete_type, interface_name, interface_name, concrete_type
-        );
+        // Add missing methods based on known interface methods
+        if let Some(methods) = self.get_interface_methods(interface_name) {
+            for (method_name, signature) in methods {
+                context = context.add_missing_method(&method_name, &signature);
+            }
+        }
         
-        // Check which methods are missing
-        let missing_methods = match (required_methods, available_methods) {
-            (Some(required), Some(available)) => {
-                required.into_iter()
-                    .filter(|req| !available.contains(req))
-                    .collect::<Vec<_>>()
-            },
-            (Some(required), None) => required,
-            _ => Vec::new(),
-        };
+        // Recommend a strategy
+        let strategy = self.recommend_strategy(failed_type, interface_name);
+        context = context.with_strategy(strategy.clone());
         
-        // Generate stubs for each missing method
-        for method in &missing_methods {
-            // Parse the method signature to extract name, params, and return type
-            let (name, params, return_type) = parse_method_signature(method);
-            
-            stub_code.push_str(&format!(
-                "    // TODO: Implement this method properly
-    slay {}({}) {} {{
-        todo!()
-    }}
+        // Generate placeholder code if appropriate
+        if strategy == RecoveryStrategy::GeneratePlaceholder {
+            let type_name = match failed_type {
+                Type::Struct(name, _) => name,
+                _ => "UnknownType",
+            };
+            let placeholder = self.generate_placeholder_code(type_name, interface_name);
+            context = context.with_placeholder_code(&placeholder);
+        }
+        
+        // Generate stub code if appropriate
+        if strategy == RecoveryStrategy::GenerateStub {
+            let type_name = match failed_type {
+                Type::Struct(name, _) => name,
+                _ => "UnknownType",
+            };
+            let stub = self.generate_stub_code(type_name, interface_name);
+            context = context.with_stub_code(&stub);
+        }
+        
+        context
+    }
     
+    fn find_alternative_types(&self, interface_name: &str, limit: usize) -> Vec<Type> {
+        // Get implementers from the registry
+        let implementers = self.get_interface_implementers(interface_name);
+        
+        // Filter to standard library types and limit the number
+        let standard_lib_types: Vec<Type> = implementers
+            .into_iter()
+            .filter(|t| match t {
+                Type::Struct(name, _) => name.starts_with("Std") || 
+                                        name == "String" || 
+                                        name == "Array" ||
+                                        name == "List" ||
+                                        name == "Map",
+                _ => true,
+            })
+            .take(limit)
+            .collect();
+        
+        standard_lib_types
+    }
+    
+    fn generate_placeholder_code(&self, type_name: &str, interface_name: &str) -> String {
+        match interface_name {
+            "Comparable" => format!(
+                "slay (a {0}, b {0}) lowkey Lit {{
+    // TODO: Implement comparison
+    bet true;
+}}",
+                type_name
+            ),
+            "Numeric" => format!(
+                "slay (a {0}, b {0}) lowkey {0} {{
+    // TODO: Implement addition
+    bet a;
+}}",
+                type_name
+            ),
+            "Container" => format!(
+                "slay Size(c {0}) lowkey Normie {{
+    // TODO: Implement size calculation
+    bet 0;
+}}",
+                type_name
+            ),
+            _ => format!(
+                "// TODO: Implement {} for {}",
+                interface_name, type_name
+            ),
+        }
+    }
+    
+    fn generate_stub_code(&self, type_name: &str, interface_name: &str) -> String {
+        let mut code = String::new();
+        
+        // Get method signatures for this interface
+        if let Some(methods) = self.get_interface_methods(interface_name) {
+            for (method_name, signature) in methods {
+                code.push_str(&format!(
+                    "// Implementation of {} for {}
 ",
-                name, params, return_type
+                    method_name, type_name
+                ));
+                code.push_str(&format!(
+                    "slay {}({}) {{
+    // TODO: Implement this method
+}}
+
+",
+                    method_name, signature
+                ));
+            }
+        } else {
+            // Generic stub if we don't know the methods
+            code.push_str(&format!(
+                "// TODO: Implement all methods of {} for {}
+",
+                interface_name, type_name
             ));
         }
         
-        // Close the implementation block
-        stub_code.push_str("}");
-        
-        // Cache the generated stubs
-        {
-            let mut cache = self.stub_cache.lock().unwrap();
-            cache.insert(cache_key, stub_code.clone());
-        }
-        
-        debug!("Generated stubs for {:?} implements {} with {} missing methods", 
-             concrete_type, interface_name, missing_methods.len());
-        
-        RecoveryResult::GeneratedStubs(stub_code)
+        code
     }
     
-    /// Recover from a nested constraint failure
-    ///
-    /// This is used when a generic type's type parameter constraints are not satisfied,
-    /// which is a more complex scenario than a simple constraint failure.
-    ///
-    /// # Arguments
-    ///
-    /// * `generic_type_name` - The name of the generic type (e.g., "SortedList")
-    /// * `type_param_name` - The name of the type parameter (e.g., "T")
-    /// * `concrete_arg` - The concrete type argument that failed the constraint
-    /// * `interface_name` - The name of the interface constraint that wasn't satisfied
-    ///
-    /// # Returns
-    ///
-    /// A `RecoveryResult` indicating whether recovery was successful and how
-    #[instrument(skip(self), level = "debug")]
-    pub fn recover_from_nested_constraint_failure(
+    fn recommend_strategy(
         &self,
-        generic_type_name: &str,
-        type_param_name: &str,
-        concrete_arg: &Type,
-        interface_name: &str,
-    ) -> RecoveryResult {
-        // Determine the strategy to use
-        let strategy = self.get_strategy_for_interface(interface_name);
+        failed_type: &Type,
+        interface_name: &str
+    ) -> RecoveryStrategy {
+        // Check if we have a strategy registered for this interface
+        if let Some(strategy) = self.get_recovery_strategy(interface_name) {
+            return strategy.clone();
+        }
         
-        debug!("Attempting to recover from nested constraint failure: {:?} for parameter {} in {} does not implement {}", 
-             concrete_arg, type_param_name, generic_type_name, interface_name);
-        debug!("Using strategy: {:?}", strategy);
-        
-        // Try to recover based on the selected strategy
-        let result = match strategy {
-            RecoveryStrategy::Fail => {
-                // Just fail with a detailed error
-                let error = create_nested_constraint_error(
-                    generic_type_name,
-                    type_param_name,
-                    concrete_arg,
-                    interface_name,
-                );
-                
-                RecoveryResult::Failed(error)
+        // Otherwise, recommend based on the type and interface
+        match failed_type {
+            Type::Struct(_, _) => {
+                // For user-defined types, suggest generating stubs
+                match interface_name {
+                    "Comparable" | "Container" | "Numeric" => RecoveryStrategy::GenerateStub,
+                    _ => RecoveryStrategy::SuggestAlternatives,
+                }
             },
-            
-            RecoveryStrategy::FindAlternative => {
-                // For nested constraints, we delegate to the regular alternative finder
-                // but with additional context
-                self.find_alternative(concrete_arg, interface_name, Some(type_param_name))
-            },
-            
-            RecoveryStrategy::UsePlaceholder => {
-                // For nested constraints, we delegate to the regular placeholder generator
-                // but with additional context
-                self.use_placeholder(concrete_arg, interface_name, Some(type_param_name))
-            },
-            
-            RecoveryStrategy::GenerateStubs => {
-                // For nested constraints, we delegate to the regular stub generator
-                // but with additional context
-                // For an actual implementation, we would get the interface methods here
-                // In a full implementation, we would call methods like:
-                // self.registry.get_interface_methods(interface_name);
-                // and self.registry.get_type_methods(name)
-                let required_methods = None; // Placeholder
-                let available_methods = None; // Placeholder
-                
-                self.generate_stubs(concrete_arg, interface_name, Some(type_param_name),
-                                   available_methods, required_methods)
-            },
-        };
-        
-        // Update statistics
-        self.update_stats(strategy, !matches!(result, RecoveryResult::Failed(_)));
-        
-        result
-    }
-}
-
-/// Parse a method signature to extract the name, parameters, and return type
-///
-/// This is a simple parser that extracts components from a method signature
-/// string like "add(a Normie, b Normie) Normie".
-///
-/// # Arguments
-///
-/// * `signature` - The method signature to parse
-///
-/// # Returns
-///
-/// A tuple of (name, parameters, return_type)
-fn parse_method_signature(signature: &str) -> (String, String, String) {
-    // Find the opening parenthesis to extract the name
-    if let Some(name_end) = signature.find('(') {
-        let name = signature[0..name_end].trim().to_string();
-        
-        // Find the closing parenthesis to extract parameters
-        if let Some(params_end) = signature.find(')') {
-            let params = signature[name_end+1..params_end].trim().to_string();
-            
-            // The return type is everything after the closing parenthesis
-            let return_type = signature[params_end+1..].trim().to_string();
-            
-            return (name, params, return_type);
+            _ => {
+                // For primitive types, suggest alternatives
+                RecoveryStrategy::SuggestAlternatives
+            }
         }
     }
     
-    // Fallback for unparseable signatures
-    (signature.to_string(), "".to_string(), "".to_string())
+    fn create_constraint_error(
+        &self,
+        failed_type: &Type,
+        interface_name: &str
+    ) -> Error {
+        let context = self.create_recovery_context(failed_type, interface_name);
+        context.to_error()
+    }
+    
+    fn has_recovery_for_interface(&self, interface_name: &str) -> bool {
+        // Check if we have methods registered for this interface
+        self.get_interface_methods(interface_name).is_some()
+    }
 }
 
-/// Extension trait for InterfaceRegistry to add recovery capabilities
-pub trait ConstraintRecovery {
-    /// Attempt to recover from a constraint failure
-    fn recover_from_constraint_failure(
-        &self,
-        concrete_type: &Type,
+/// Extension of InterfaceRegistry with recovery capabilities
+impl ConstraintRecoveryExtension for InterfaceRegistry {
+    fn register_interface_methods(
+        &mut self,
         interface_name: &str,
-        type_param_name: Option<&str>,
-    ) -> RecoveryResult;
+        methods: HashMap<String, String>
+    ) {
+        // Store the methods in the interface_methods field
+        self.interface_methods.insert(interface_name.to_string(), methods);
+        
+        debug!(
+            interface = interface_name,
+            method_count = self.interface_methods.get(interface_name).map_or(0, |m| m.len()),
+            "Registered methods for interface"
+        );
+    }
     
-    /// Recover from a nested constraint failure
-    fn recover_from_nested_constraint_failure(
-        &self,
-        generic_type_name: &str,
-        type_param_name: &str,
-        concrete_arg: &Type,
+    fn register_recovery_strategy(
+        &mut self,
         interface_name: &str,
-    ) -> RecoveryResult;
+        strategy: RecoveryStrategy
+    ) {
+        // Store the strategy in the recovery_strategies field
+        self.recovery_strategies.insert(interface_name.to_string(), strategy.clone());
+        
+        debug!(
+            interface = interface_name,
+            strategy = ?strategy,
+            "Registered recovery strategy for interface"
+        );
+    }
     
-    /// Set the recovery configuration
-    fn set_recovery_config(&self, config: RecoveryConfig);
-    
-    /// Get the current recovery configuration
-    fn get_recovery_config(&self) -> RecoveryConfig;
+    fn register_alternative_for_interface(
+        &mut self,
+        interface_name: &str,
+        alternative_type: Type
+    ) {
+        // This is already handled by the regular interface registration
+        self.register_implementation(alternative_type, interface_name.to_string());
+    }
 }
 
-impl ConstraintRecovery for InterfaceRegistry {
-    fn recover_from_constraint_failure(
+// Extension methods for InterfaceRegistry to access the new capabilities
+impl InterfaceRegistry {
+    /// Get the method signatures for an interface
+    pub fn get_interface_methods(&self, interface_name: &str) -> Option<HashMap<String, String>> {
+        // First check if we have methods registered in our field
+        if let Some(methods) = self.interface_methods.get(interface_name) {
+            return Some(methods.clone());
+        }
+        
+        // Fall back to hardcoded values for known interfaces
+        match interface_name {
+            "Comparable" => {
+                let mut methods = HashMap::new();
+                methods.insert("Compare".to_string(), "a Self, b Self".to_string());
+                methods.insert("Equals".to_string(), "a Self, b Self".to_string());
+                Some(methods)
+            },
+            "Numeric" => {
+                let mut methods = HashMap::new();
+                methods.insert("Add".to_string(), "a Self, b Self".to_string());
+                methods.insert("Subtract".to_string(), "a Self, b Self".to_string());
+                methods.insert("Multiply".to_string(), "a Self, b Self".to_string());
+                methods.insert("Divide".to_string(), "a Self, b Self".to_string());
+                Some(methods)
+            },
+            "Container" => {
+                let mut methods = HashMap::new();
+                methods.insert("Size".to_string(), "self Self".to_string());
+                methods.insert("IsEmpty".to_string(), "self Self".to_string());
+                Some(methods)
+            },
+            "List" => {
+                let mut methods = HashMap::new();
+                methods.insert("Get".to_string(), "self Self, index Normie".to_string());
+                methods.insert("Set".to_string(), "self Self, index Normie, value T".to_string());
+                methods.insert("Append".to_string(), "self Self, value T".to_string());
+                Some(methods)
+            },
+            _ => None,
+        }
+    }
+    
+    /// Get the registered recovery strategy for an interface
+    pub fn get_recovery_strategy(&self, interface_name: &str) -> Option<RecoveryStrategy> {
+        // First check if we have a strategy registered in our field
+        if let Some(strategy) = self.recovery_strategies.get(interface_name) {
+            return Some(strategy.clone());
+        }
+        
+        // Fall back to hardcoded values for known interfaces
+        match interface_name {
+            "Comparable" => Some(RecoveryStrategy::GenerateStub),
+            "Numeric" => Some(RecoveryStrategy::GenerateStub),
+            "Container" => Some(RecoveryStrategy::GeneratePlaceholder),
+            "List" => Some(RecoveryStrategy::SuggestAlternatives),
+            _ => None,
+        }
+    }
+    
+    /// Check if a type satisfies an interface constraint, with recovery information
+    pub fn check_constraint_with_recovery(
         &self,
-        concrete_type: &Type,
-        interface_name: &str,
-        type_param_name: Option<&str>,
-    ) -> RecoveryResult {
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(self.clone()));
-        recovery_manager.recover_from_constraint_failure(concrete_type, interface_name, type_param_name)
-    }
-    
-    fn recover_from_nested_constraint_failure(
-        &self,
-        generic_type_name: &str,
-        type_param_name: &str,
-        concrete_arg: &Type,
-        interface_name: &str,
-    ) -> RecoveryResult {
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(self.clone()));
-        recovery_manager.recover_from_nested_constraint_failure(
-            generic_type_name, 
-            type_param_name, 
-            concrete_arg, 
-            interface_name
-        )
-    }
-    
-    fn set_recovery_config(&self, config: RecoveryConfig) {
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(self.clone()));
-        recovery_manager.set_config(config);
-    }
-    
-    fn get_recovery_config(&self) -> RecoveryConfig {
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(self.clone()));
-        recovery_manager.get_config()
+        type_: &Type,
+        interface_name: &str
+    ) -> Result<bool, ConstraintFailureContext> {
+        match self.check_implementation(type_, interface_name) {
+            Ok(true) => Ok(true),
+            Ok(false) => {
+                let context = self.create_recovery_context(type_, interface_name);
+                Err(context)
+            },
+            Err(e) => {
+                // Convert regular error to constraint failure
+                let mut context = self.create_recovery_context(type_, interface_name);
+                warn!("Error checking constraint: {}", e);
+                context = context.with_severity(ConstraintFailureSeverity::Critical);
+                Err(context)
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::type_checker::Type;
-    
-    #[path = "../../tests/common.rs"]
-    mod common;
     
     #[test]
-    fn test_constraint_recovery_fail_strategy() {
-        common::tracing::setup();
-        
-        let registry = InterfaceRegistry::new();
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(registry));
-        
-        // Test the Fail strategy
-        let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-        let interface_name = "Comparable";
-        
-        let result = recovery_manager.recover_from_constraint_failure(
-            &concrete_type,
-            interface_name,
-            None,
-        );
-        
-        // Should be a Failed result
-        match result {
-            RecoveryResult::Failed(error) => {
-                assert!(error.message.contains("does not implement interface"));
-                assert!(error.message.contains("TestStruct"));
-                assert!(error.message.contains("Comparable"));
-            },
-            _ => panic!("Expected Failed result"),
-        }
-    }
-    
-    #[test]
-    fn test_constraint_recovery_find_alternative_strategy() {
-        common::tracing::setup();
-        
-        let registry = InterfaceRegistry::new();
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(registry));
-        
-        // Configure to use the FindAlternative strategy
-        let mut config = RecoveryConfig::default();
-        config.default_strategy = RecoveryStrategy::FindAlternative;
-        recovery_manager.set_config(config);
-        
-        // Test the FindAlternative strategy
-        let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-        let interface_name = "Comparable";
-        
-        let result = recovery_manager.recover_from_constraint_failure(
-            &concrete_type,
-            interface_name,
-            None,
-        );
-        
-        // Should be an AlternativeType result
-        match result {
-            RecoveryResult::AlternativeType(alt_type) => {
-                // For Comparable, we should get one of our standard alternatives
-                match alt_type {
-                    Type::Normie | Type::Thicc | Type::Snack | 
-                    Type::Meal | Type::Tea | Type::Str => {
-                        // These are expected
-                    },
-                    _ => panic!("Unexpected alternative type: {:?}", alt_type),
-                }
-            },
-            _ => panic!("Expected AlternativeType result"),
-        }
-    }
-    
-    #[test]
-    fn test_constraint_recovery_use_placeholder_strategy() {
-        common::tracing::setup();
-        
-        let registry = InterfaceRegistry::new();
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(registry));
-        
-        // Configure to use the UsePlaceholder strategy
-        let mut config = RecoveryConfig::default();
-        config.default_strategy = RecoveryStrategy::UsePlaceholder;
-        recovery_manager.set_config(config);
-        
-        // Test the UsePlaceholder strategy
-        let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-        let interface_name = "Comparable";
-        
-        let result = recovery_manager.recover_from_constraint_failure(
-            &concrete_type,
-            interface_name,
-            None,
-        );
-        
-        // Should be a Placeholder result
-        match result {
-            RecoveryResult::Placeholder(code) => {
-                assert!(code.contains("AUTO-GENERATED PLACEHOLDER"));
-                assert!(code.contains("TestStruct"));
-                assert!(code.contains("Comparable"));
-                assert!(code.contains("implementation Comparable for"));
-            },
-            _ => panic!("Expected Placeholder result"),
-        }
-    }
-    
-    #[test]
-    fn test_constraint_recovery_generate_stubs_strategy() {
-        common::tracing::setup();
-        
-        // Create a registry with some interface methods
+    fn test_constraint_recovery_basic() {
         let mut registry = InterfaceRegistry::new();
-        let methods = vec![
-            "equals(other Tea) Tea".to_string(),
-            "compare(other Tea) Normie".to_string(),
-        ];
-        registry.register_interface("Comparable".to_string(), methods);
+        registry.populate_with_defaults();
         
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(registry));
+        // Test with a type that doesn't implement Comparable
+        let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
         
-        // Configure to use the GenerateStubs strategy
-        let mut config = RecoveryConfig::default();
-        config.default_strategy = RecoveryStrategy::GenerateStubs;
-        recovery_manager.set_config(config);
+        // Get recovery context
+        let context = registry.create_recovery_context(&non_comparable, "Comparable");
         
-        // Test the GenerateStubs strategy
-        let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-        let interface_name = "Comparable";
+        // Verify basic properties
+        assert_eq!(context.failed_type, non_comparable);
+        assert_eq!(context.interface_name, "Comparable");
+        assert_eq!(context.severity, ConstraintFailureSeverity::Critical);
         
-        let result = recovery_manager.recover_from_constraint_failure(
-            &concrete_type,
-            interface_name,
-            None,
-        );
+        // Verify we have alternatives
+        assert!(!context.alternative_types.is_empty());
         
-        // Should be a GeneratedStubs result
-        match result {
-            RecoveryResult::GeneratedStubs(code) => {
-                assert!(code.contains("AUTO-GENERATED STUB"));
-                assert!(code.contains("TestStruct"));
-                assert!(code.contains("Comparable"));
-                assert!(code.contains("implementation Comparable for"));
-                assert!(code.contains("slay equals"));
-                assert!(code.contains("slay compare"));
-                assert!(code.contains("TODO: Implement this method"));
-            },
-            _ => panic!("Expected GeneratedStubs result"),
-        }
+        // Verify we have missing methods
+        assert!(!context.missing_methods.is_empty());
+        
+        // Verify we have a recommended strategy
+        assert_eq!(context.recommended_strategy, RecoveryStrategy::GenerateStub);
     }
     
     #[test]
-    fn test_nested_constraint_recovery() {
-        common::tracing::setup();
-        
-        let registry = InterfaceRegistry::new();
-        let recovery_manager = ConstraintRecoveryManager::new(Arc::new(registry));
-        
-        // Configure to use the GenerateStubs strategy
-        let mut config = RecoveryConfig::default();
-        config.default_strategy = RecoveryStrategy::GenerateStubs;
-        recovery_manager.set_config(config);
-        
-        // Test nested constraint recovery
-        let generic_type_name = "SortedList";
-        let type_param_name = "T";
-        let concrete_arg = Type::Struct("UserType".to_string(), vec![]);
-        let interface_name = "Comparable";
-        
-        let result = recovery_manager.recover_from_nested_constraint_failure(
-            generic_type_name,
-            type_param_name,
-            &concrete_arg,
-            interface_name,
-        );
-        
-        // Should be a GeneratedStubs result
-        match result {
-            RecoveryResult::GeneratedStubs(code) => {
-                assert!(code.contains("AUTO-GENERATED STUB"));
-                assert!(code.contains("UserType"));
-                assert!(code.contains("Comparable"));
-                assert!(code.contains("implementation Comparable for"));
-            },
-            _ => panic!("Expected GeneratedStubs result"),
-        }
-    }
-    
-    #[test]
-    fn test_interface_registry_extension() {
-        common::tracing::setup();
-        
+    fn test_constraint_recovery_with_placeholder() {
         let mut registry = InterfaceRegistry::new();
-        let methods = vec![
-            "equals(other Tea) Tea".to_string(),
-            "compare(other Tea) Normie".to_string(),
-        ];
-        registry.register_interface("Comparable".to_string(), methods);
+        registry.populate_with_defaults();
         
-        // Set up recovery config through the extension trait
-        let mut config = RecoveryConfig::default();
-        config.default_strategy = RecoveryStrategy::UsePlaceholder;
-        registry.set_recovery_config(config);
+        // Test with a type that doesn't implement Container
+        let non_container = Type::Struct("CustomCollection".to_string(), vec![]);
         
-        // Test recovery through the extension trait
-        let concrete_type = Type::Struct("TestStruct".to_string(), vec![]);
-        let interface_name = "Comparable";
+        // Check constraint with recovery
+        let result = registry.check_constraint_with_recovery(&non_container, "Container");
         
-        let result = registry.recover_from_constraint_failure(
-            &concrete_type,
-            interface_name,
-            None,
+        // Should fail
+        assert!(result.is_err());
+        
+        // Get the context
+        let context = result.err().unwrap();
+        
+        // Should have placeholder code
+        assert!(context.placeholder_code.is_some());
+        
+        // Verify the placeholder code contains the type name
+        let placeholder = context.placeholder_code.unwrap();
+        assert!(placeholder.contains("CustomCollection"));
+    }
+    
+    #[test]
+    fn test_stub_generation() {
+        let mut registry = InterfaceRegistry::new();
+        registry.populate_with_defaults();
+        
+        // Generate stub for Numeric interface
+        let stub = registry.generate_stub_code("Vector2D", "Numeric");
+        
+        // Should contain implementations for all Numeric methods
+        assert!(stub.contains("Add"));
+        assert!(stub.contains("Subtract"));
+        assert!(stub.contains("Multiply"));
+        assert!(stub.contains("Divide"));
+    }
+    
+    #[test]
+    fn test_error_message_formatting() {
+        let mut registry = InterfaceRegistry::new();
+        registry.populate_with_defaults();
+        
+        // Create an error for a type that doesn't implement Comparable
+        let error = registry.create_constraint_error(
+            &Type::Struct("NonComparable".to_string(), vec![]),
+            "Comparable"
         );
         
-        // Should be a Placeholder result
-        match result {
-            RecoveryResult::Placeholder(code) => {
-                assert!(code.contains("AUTO-GENERATED PLACEHOLDER"));
-                assert!(code.contains("TestStruct"));
-                assert!(code.contains("Comparable"));
-            },
-            _ => panic!("Expected Placeholder result"),
-        }
-        
-        // Check that we can get the config back
-        let retrieved_config = registry.get_recovery_config();
-        assert_eq!(retrieved_config.default_strategy, RecoveryStrategy::UsePlaceholder);
+        // Error message should be informative
+        let message = error.message();
+        assert!(message.contains("does not implement interface"));
+        assert!(message.contains("Missing methods"));
+        assert!(message.contains("Alternative types"));
     }
 }
