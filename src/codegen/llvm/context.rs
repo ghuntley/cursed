@@ -4,6 +4,8 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicU64;
+use rand;
 
 // LLVM 17 compatible imports
 use inkwell::builder::Builder;
@@ -77,6 +79,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) global_type_names: Option<inkwell::values::GlobalValue<'ctx>>,
     // Global counter for the number of registered types
     pub(crate) global_type_count: Option<inkwell::values::GlobalValue<'ctx>>,
+    // Counter for generating unique IDs
+    pub(crate) unique_id_counter: std::sync::atomic::AtomicU64,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -134,6 +138,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             interface_type_registry: Some(std::sync::Arc::new(std::sync::RwLock::new(std::collections::HashMap::new()))),
             global_type_names: None,
             global_type_count: None,
+            // Initialize the unique ID counter with a random starting value
+            unique_id_counter: std::sync::atomic::AtomicU64::new(rand::random::<u64>()),
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality

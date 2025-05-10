@@ -21,6 +21,8 @@ use inkwell::types::{ArrayType, BasicTypeEnum, PointerType, StructType};
 use inkwell::values::{ArrayValue, BasicValueEnum, GlobalValue, PointerValue};
 use inkwell::IntPredicate;
 
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 
@@ -185,10 +187,26 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
                 "__cursed_type_registry_names"
             );
             
-            // Initialize with null pointers
+            // Initialize the type names array with null pointers
+            // For each position in the array, we'll store a null pointer that will be replaced
+            // when the corresponding type is registered
             let null_ptr = char_ptr_type.const_null();
-            let null_array = string_array_type.const_array(&vec![null_ptr; MAX_TYPE_REGISTRY_SIZE]);
-            type_names_global.set_initializer(&null_array);
+        
+        // Create an array of null pointers as the initial value
+        let mut null_ptrs = Vec::with_capacity(MAX_TYPE_REGISTRY_SIZE);
+        for _ in 0..MAX_TYPE_REGISTRY_SIZE {
+            null_ptrs.push(null_ptr);
+        }
+        
+        // Create a constant array of null pointers
+        // Using the array_type method to create an array of null pointers
+        let null_array_type = char_ptr_type.array_type(MAX_TYPE_REGISTRY_SIZE as u32);
+        
+        // Create an empty struct initializer
+        let null_array = null_array_type.const_array(&vec![null_ptr; MAX_TYPE_REGISTRY_SIZE]);
+        
+        // Set the initializer for the type names array
+        type_names_global.set_initializer(&null_array);
             
             // Create global variable for the number of registered types
             let count_global = module.add_global(
@@ -236,8 +254,11 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
             Error::Compilation("Global type registry count not initialized".to_string())
         })?;
         
-        // Create a global string for the type name
-        let type_name_str = self.create_global_string(type_name, &format!("type_name_{}", type_id))?;
+        // Create a global string for the type name using our enhanced helper method
+        let type_name_str = self.create_global_string_enhanced(
+            type_name,
+            &format!("type_name_{}", type_id)
+        )?;
         
         // Get pointer to the array element at index type_id
         let type_id_ptr = unsafe {
@@ -245,7 +266,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
                 self.context().i8_type().ptr_type(AddressSpace::default()),
                 type_names_global.as_pointer_value(),
                 &[
-                    self.context().i32_type().const_int(0, false),
+                    self.context().i32_type().const_zero(),
                     self.context().i32_type().const_int(type_id, false)
                 ],
                 &format!("type_name_ptr_{}", type_id)
@@ -301,17 +322,22 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
     
     #[instrument(skip(self, type_id), level = "debug")]
     fn get_runtime_type_name(&mut self, type_id: BasicValueEnum<'ctx>) -> Result<PointerValue<'ctx>, Error> {
+        debug!("Getting runtime type name for type ID: {:?}", type_id);
+        
         // Ensure the registry is initialized
         if self.global_type_names.is_none() {
+            debug!("Global type registry not initialized, initializing now");
             self.initialize_global_type_registry()?;
         }
         
         let type_names_array = self.get_global_type_names_array()?;
+        debug!("Got global type names array: {:?}", type_names_array);
         
         // Get pointer to the type name string in the array
         let type_id_int = if type_id.is_int_value() {
             type_id.into_int_value()
         } else {
+            error!("Expected type_id to be an integer value, got {:?}", type_id);
             return Err(Error::Compilation(format!(
                 "Expected type_id to be an integer value, got {:?}",
                 type_id
@@ -404,7 +430,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Null path - use "<unknown>" string
         self.builder().position_at_end(null_block);
-        let unknown_str = self.create_global_string("<unknown>", "unknown_type_name")?;
+        let unknown_str = self.create_global_string_enhanced("<unknown>", "unknown_type_name")?;
         self.builder().build_unconditional_branch(merge_block).map_err(|e| {
             Error::Compilation(format!("Failed to build branch to merge block: {}", e))
         })?;
@@ -438,7 +464,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Invalid ID path - use "<invalid>" string
         self.builder().position_at_end(invalid_id_block);
-        let invalid_str = self.create_global_string("<invalid>", "invalid_type_name")?;
+        let invalid_str = self.create_global_string_enhanced("<invalid>", "invalid_type_name")?;
         self.builder().build_unconditional_branch(continue_block).map_err(|e| {
             Error::Compilation(format!("Failed to build branch to continue block: {}", e))
         })?;
@@ -469,19 +495,26 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         actual_type_id: BasicValueEnum<'ctx>,
         expected_type_name: &str
     ) -> Result<PointerValue<'ctx>, Error> {
+        debug!("Creating type assertion error message for expected type: {}", expected_type_name);
+        
         // Get the actual type name from the registry
         let actual_type_name = self.get_runtime_type_name(actual_type_id)?;
+        debug!("Got actual type name pointer: {:?}", actual_type_name);
         
-        // Create a global string for the expected type
-        let expected_type_str = self.create_global_string(expected_type_name, "expected_type")?;
+        // Create a global string for the expected type with a unique name to avoid conflicts
+        let unique_id = self.generate_unique_id();
+        let expected_type_str = self.create_global_string_enhanced(
+            expected_type_name, 
+            &format!("expected_type_{}", unique_id)
+        )?;
+        debug!("Created expected type string: {:?}", expected_type_str);
         
-        // Calculate the message lengths and required buffer size
         // Format: "Type assertion failed: cannot convert <actual_type> to <expected_type>"
         let prefix = "Type assertion failed: cannot convert ";
         let middle = " to ";
         
-        // Allocate a buffer for the error message
-        let buffer_size = self.context().i32_type().const_int(256, false); // Fixed size buffer for simplicity
+        // Allocate a buffer for the error message with ample size for both type names plus the message
+        let buffer_size = self.context().i32_type().const_int(512, false); // Larger buffer to accommodate most type names
         let buffer = self.builder().build_array_alloca(
             self.context().i8_type(),
             buffer_size,
@@ -489,6 +522,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         ).map_err(|e| {
             Error::Compilation(format!("Failed to allocate error message buffer: {}", e))
         })?;
+        debug!("Allocated error buffer: {:?}", buffer);
         
         // Get runtime function for string formatting
         let sprintf_fn = match self.get_external_function("snprintf", self.context().i32_type(), &[
@@ -499,7 +533,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
             Ok(f) => f,
             Err(_) => {
                 // Fallback if snprintf is not available - create a static error message
-                let static_err = self.create_global_string(
+                let static_err = self.create_global_string_enhanced(
                     &format!("{}{}{}{}", prefix, "<type>", middle, expected_type_name),
                     "static_error"
                 )?;
@@ -508,13 +542,13 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         // Create format string
-        let format_str = self.create_global_string("%s%s%s%s", "error_format")?;
+        let format_str = self.create_global_string_enhanced("%s%s%s%s", "error_format")?;
         
         // Prefix string constant
-        let prefix_str = self.create_global_string(prefix, "error_prefix")?;
+        let prefix_str = self.create_global_string_enhanced(prefix, "error_prefix")?;
         
         // Middle string constant
-        let middle_str = self.create_global_string(middle, "error_middle")?;
+        let middle_str = self.create_global_string_enhanced(middle, "error_middle")?;
         
         // Call sprintf to format the error message
         let _res = self.builder().build_call(
@@ -539,9 +573,19 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Helper method to create a global string constant
+    /// Generate a unique ID for global variable names
     #[instrument(skip(self), level = "debug")]
-    pub fn create_global_string(&self, string: &str, name: &str) -> Result<PointerValue<'ctx>, Error> {
+    pub fn generate_unique_id(&self) -> u64 {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let duration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+        let nanos = duration.as_nanos() as u64;
+        let counter = self.unique_id_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        nanos ^ counter
+    }
+
+    /// Helper method to create a global string constant (enhanced version)
+    #[instrument(skip(self), level = "debug")]
+    pub fn create_global_string_enhanced(&self, string: &str, name: &str) -> Result<PointerValue<'ctx>, Error> {
         let string_const = self.context().const_string(string.as_bytes(), true);
         let global_string = self.module().add_global(
             string_const.get_type(),
@@ -591,7 +635,8 @@ impl<'ctx> RuntimeTypeInfo<'ctx> for LlvmCodeGenerator<'ctx> {
         target_type_name: &str
     ) -> Result<(BasicValueEnum<'ctx>, String), Error> {
         // Get the type ID from the interface value
-        let actual_type_id = match self.get_interface_type_id(interface_value) {
+        // Use safe version of get_interface_type_id
+        let actual_type_id = match self.get_interface_type_id_safe(interface_value) {
             Ok(id) => id,
             Err(e) => {
                 warn!("Failed to get interface type ID: {}", e);
