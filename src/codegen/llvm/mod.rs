@@ -130,7 +130,7 @@ pub use self::interface_type_assertion_path_visualization_enhanced::EnhancedInte
 // Simple path finding algorithms for interface inheritance relationships
 pub use self::interface_path_finder_simple::*;
 // Enhanced path finding algorithms for interface inheritance relationships with visualization
-pub use self::interface_path_finder_enhanced::{InterfaceInheritancePath};
+pub use self::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};

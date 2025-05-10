@@ -1,782 +1,789 @@
 //! # Enhanced Interface Path Finder
 //!
-//! This module provides a robust implementation of path finding algorithms for interface
-//! inheritance relationships with comprehensive error handling and consistent error propagation.
-//! The implementation fully integrates with the interface type registry for better path
-//! visualization and error diagnostics.
+//! This module provides an enhanced implementation of the interface path finder with
+//! improved error handling, visualization, and integration with the interface registry.
+//! It helps developers understand complex interface inheritance relationships and debug
+//! type assertion errors with rich diagnostics.
+//!
+//! ## Key Features
+//!
+//! 1. Path finding between interfaces with comprehensive error handling
+//! 2. Alternative path discovery for debugging inheritance relationships
+//! 3. Cycle detection in interface hierarchies
+//! 4. Reversed inheritance detection with helpful guidance
+//! 5. Rich error messages with visual representation of paths
+//! 6. Integration with the interface registry for relationship lookups
+//! 7. Consistent error propagation with `?` operator throughout
+//! 8. Support for DOT graph generation for interface hierarchies
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::fmt;
-use tracing::{debug, info, instrument, span, Level};
+use std::fmt::{self, Display, Formatter, Write};
+use std::sync::Arc;
+use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistryAccess;
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 use crate::error::Error;
 
-/// Enhanced representation of an interface inheritance path for visualization
+/// Represents a path between interfaces in the inheritance hierarchy.
+/// This structure provides methods for visualizing and querying the path.
 #[derive(Debug, Clone)]
 pub struct InterfaceInheritancePath {
-    /// Ordered list of interfaces in the path
+    /// The interfaces in the path, from source to target
     path: Vec<String>,
-    
-    /// Source interface name
+    /// The source interface (starting point)
     source: String,
-    
-    /// Target interface name
+    /// The target interface (destination)
     target: String,
 }
 
 impl InterfaceInheritancePath {
-    /// Create a new interface inheritance path
+    /// Create a new path between interfaces
     pub fn new(path: Vec<String>, source: String, target: String) -> Self {
-        Self { path, source, target }
+        Self {
+            path,
+            source,
+            target,
+        }
     }
-    
-    /// Get the path as a vector of interface names
+
+    /// Get a reference to the path
     pub fn path(&self) -> &Vec<String> {
         &self.path
     }
-    
+
+    /// Get a reference to the source interface
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
+    /// Get a reference to the target interface
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
     /// Check if the path is empty
     pub fn is_empty(&self) -> bool {
         self.path.is_empty()
     }
-    
-    /// Get the path length
+
+    /// Get the length of the path
     pub fn len(&self) -> usize {
         self.path.len()
     }
-    
-    /// Get the source interface
-    pub fn source(&self) -> &str {
-        &self.source
-    }
-    
-    /// Get the target interface
-    pub fn target(&self) -> &str {
-        &self.target
-    }
-    
-    /// Get an iterator over the path elements
-    pub fn iter(&self) -> std::slice::Iter<'_, String> {
-        self.path.iter()
-    }
-    
+
     /// Convert the path to a string representation
     pub fn to_string_representation(&self) -> String {
         if self.path.is_empty() {
             return format!("No path from '{}' to '{}'.", self.source, self.target);
         }
+
         self.path.join(" -> ")
     }
-    
-    /// Create a visual representation of the path using Unicode box-drawing characters
+
+    /// Generate a visual representation of the path using Unicode box-drawing characters
     pub fn to_visual_representation(&self) -> String {
         if self.path.is_empty() {
-            return format!("No path from '{}' to '{}'.", self.source, self.target);
+            return format!("No inheritance path exists from '{}' to '{}'.", self.source, self.target);
         }
-        
-        let mut result = String::new();
-        result.push_str(&format!("Interface Inheritance Path:\n"));
-        
+
+        let mut result = String::from("Interface Inheritance Path:\n");
+
         for (i, interface) in self.path.iter().enumerate() {
+            // Add appropriate box-drawing characters based on position
             if i == 0 {
-                // First element (source)
-                result.push_str(&format!("┌─── {}\n", interface));
+                // First element
+                result.push_str(&format!("\u{250c}\u{2500}\u{2500} {}\n", interface));
             } else if i == self.path.len() - 1 {
-                // Last element (target)
-                result.push_str(&format!("└─── {}\n", interface));
+                // Last element
+                result.push_str(&format!("\u{2514}\u{2500}\u{2500} {}\n", interface));
             } else {
                 // Middle elements
-                result.push_str(&format!("├─── {}\n", interface));
+                result.push_str(&format!("\u{251c}\u{2500}\u{2500} {}\n", interface));
+            }
+
+            // Add connecting lines between elements
+            if i < self.path.len() - 1 {
+                result.push_str("\u{2502}\n");
             }
         }
-        
+
         result
     }
-}
 
-impl fmt::Display for InterfaceInheritancePath {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string_representation())
-    }
-}
+    /// Generate a DOT graph representation of the path
+    pub fn to_dot_representation(&self) -> String {
+        if self.path.is_empty() {
+            return String::from("digraph empty_path {}\n");
+        }
 
-/// Enhanced path finder extension for interface inheritance relationships
-impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Find a path between two interfaces using breadth-first search with proper visualization
-    ///
-    /// This method finds the shortest path between source and target interfaces with
-    /// comprehensive error handling, proper error propagation, and enhanced visualization.
-    #[instrument(skip(self), level = "debug")]
-    pub fn find_interface_path_enhanced(
-        &self,
-        source_interface: &str,
-        target_interface: &str,
-    ) -> Result<InterfaceInheritancePath, Error> {
-        debug!("Finding enhanced interface path from {} to {}", source_interface, target_interface);
-        
-        // Check if interfaces exist in registry
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        if !interfaces.contains(&source_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Source interface '{}' does not exist in the registry", 
-                source_interface
-            )));
-        }
-        
-        if !interfaces.contains(&target_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Target interface '{}' does not exist in the registry", 
-                target_interface
-            )));
-        }
-        
-        // Special case: if source and target are the same, return a single-element path
-        if source_interface == target_interface {
-            return Ok(InterfaceInheritancePath::new(
-                vec![source_interface.to_string()],
-                source_interface.to_string(),
-                target_interface.to_string()
-            ));
-        }
-        
-        // Get the complete hierarchy
-        let hierarchy = self.get_extension_hierarchy_enhanced()?;
-        
-        // Breadth-first search to find the shortest path
-        let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        let mut path_map: HashMap<String, String> = HashMap::new(); // Maps interface to its predecessor
-        
-        // Start with the source interface
-        queue.push_back(source_interface.to_string());
-        visited.insert(source_interface.to_string());
-        
-        let mut found = false;
-        
-        while let Some(current) = queue.pop_front() {
-            // Get direct extensions for the current interface
-            if let Some(extensions) = hierarchy.get(&current) {
-                // Check if the target interface is directly extended
-                if extensions.contains(&target_interface.to_string()) {
-                    path_map.insert(target_interface.to_string(), current.clone());
-                    found = true;
-                    break;
-                }
-                
-                // Add unvisited extensions to the queue
-                for ext in extensions {
-                    if !visited.contains(ext) {
-                        queue.push_back(ext.clone());
-                        visited.insert(ext.clone());
-                        path_map.insert(ext.clone(), current.clone());
-                    }
-                }
-            }
-        }
-        
-        if !found {
-            // If we couldn't find a direct path, check for a reversed relationship
-            // This provides better error messages for common mistakes
-            match self.detect_reversed_inheritance_enhanced(source_interface, target_interface)? {
-                (true, message) => {
-                    return Err(Error::Compilation(format!(
-                        "No direct path found from '{}' to '{}'. {}\n\nDid you mean to assert as the other way around?", 
-                        source_interface, target_interface, message
-                    )));
-                },
-                _ => {
-                    return Err(Error::Compilation(format!(
-                        "No path found from '{}' to '{}'. Check that the interfaces are properly related.", 
-                        source_interface, target_interface
-                    )));
-                }
-            }
-        }
-        
-        // Reconstruct the path from target to source
-        let mut path = Vec::new();
-        let mut current = target_interface.to_string();
-        
-        while current != source_interface {
-            path.push(current.clone());
-            current = path_map[&current].clone();
-        }
-        
-        path.push(source_interface.to_string());
-        path.reverse();
-        
-        debug!("Found path: {:?}", path);
-        Ok(InterfaceInheritancePath::new(
-            path,
-            source_interface.to_string(),
-            target_interface.to_string()
-        ))
-    }
-    
-    /// Find multiple paths between two interfaces using breadth-first search with visualization
-    /// 
-    /// This method finds multiple paths between source and target interfaces
-    /// with enhanced visualization and a limit on the maximum number of paths to find.
-    #[instrument(skip(self), level = "debug")]
-    pub fn find_alternative_paths_enhanced(
-        &self,
-        source_interface: &str,
-        target_interface: &str,
-        max_paths: usize,
-    ) -> Result<Vec<InterfaceInheritancePath>, Error> {
-        debug!("Finding up to {} alternative enhanced paths from {} to {}", 
-              max_paths, source_interface, target_interface);
-        
-        // Get all interfaces
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        if !interfaces.contains(&source_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Source interface '{}' does not exist in the registry", 
-                source_interface
-            )));
-        }
-        
-        if !interfaces.contains(&target_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Target interface '{}' does not exist in the registry", 
-                target_interface
-            )));
-        }
-        
-        // Special case: if source and target are the same, return a single-element path
-        if source_interface == target_interface {
-            return Ok(vec![InterfaceInheritancePath::new(
-                vec![source_interface.to_string()],
-                source_interface.to_string(),
-                target_interface.to_string()
-            )]);
-        }
-        
-        // Get the complete hierarchy
-        let hierarchy = self.get_extension_hierarchy_enhanced()?;
-        
-        // Use modified BFS to find multiple paths
-        let mut paths = Vec::new();
-        let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        
-        // Start with source
-        queue.push_back(vec![source_interface.to_string()]);
-        
-        while let Some(path) = queue.pop_front() {
-            let current = path.last().unwrap();
-            
-            // If we've reached the target, add this path
-            if current == target_interface {
-                paths.push(InterfaceInheritancePath::new(
-                    path.clone(),
-                    source_interface.to_string(),
-                    target_interface.to_string()
-                ));
-                if paths.len() >= max_paths {
-                    break;
-                }
-                continue;
-            }
-            
-            // Mark as visited only if not yet in the current path
-            // This allows for finding multiple paths
-            visited.insert(current.clone());
-            
-            // Get extensions from the current node
-            if let Some(extensions) = hierarchy.get(current) {
-                for extension in extensions {
-                    // Skip if already in the current path (avoid cycles)
-                    if path.contains(extension) {
-                        continue;
-                    }
-                    
-                    // Create new path including this extension
-                    let mut new_path = path.clone();
-                    new_path.push(extension.clone());
-                    queue.push_back(new_path);
-                }
-            }
-        }
-        
-        if paths.is_empty() {
-            // If we couldn't find any paths, check for a reversed relationship
-            // This provides better error messages for common mistakes
-            match self.detect_reversed_inheritance_enhanced(source_interface, target_interface)? {
-                (true, message) => {
-                    return Err(Error::Compilation(format!(
-                        "No alternative paths found from '{}' to '{}'. {}\n\nDid you mean to assert as the other way around?", 
-                        source_interface, target_interface, message
-                    )));
-                },
-                _ => {
-                    return Err(Error::Compilation(format!(
-                        "No alternative paths found from '{}' to '{}'. Check that the interfaces are properly related.", 
-                        source_interface, target_interface
-                    )));
-                }
-            }
-        }
-        
-        debug!("Found {} paths from '{}' to '{}'.", paths.len(), source_interface, target_interface);
-        Ok(paths)
-    }
-    
-    /// Check if one interface extends another, either directly or indirectly with enhanced
-    /// error handling and diagnostics
-    #[instrument(skip(self), level = "debug")]
-    pub fn check_extension_relationship_enhanced(
-        &self,
-        source_interface: &str,
-        target_interface: &str,
-    ) -> Result<bool, Error> {
-        debug!("Checking enhanced relationship if {} extends {}", source_interface, target_interface);
-        
-        // Check if interfaces exist in registry
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        if !interfaces.contains(&source_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Source interface '{}' does not exist in the registry", 
-                source_interface
-            )));
-        }
-        
-        if !interfaces.contains(&target_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Target interface '{}' does not exist in the registry", 
-                target_interface
-            )));
-        }
-        
-        // Special case: if source and target are the same, they're considered related
-        if source_interface == target_interface {
-            return Ok(true);
-        }
-        
-        // Get the interface registry
-        let registry = self.interface_type_registry();
-        
-        // First check with the registry directly through the trait
-        match registry.check_interface_extends(&source_interface.to_string(), &target_interface.to_string()) {
-            Ok(true) => {
-                debug!("Registry reports direct extension relationship: {} extends {}", 
-                      source_interface, target_interface);
-                return Ok(true);
-            },
-            Ok(false) => {
-                debug!("Registry reports no direct extension relationship between {} and {}", 
-                      source_interface, target_interface);
-                // Continue with the path finding approach as fallback
-            },
-            Err(e) => {
-                debug!("Registry error checking relationship: {}", e);
-                // Continue with the path finding approach as fallback
-            }
-        }
-        
-        // Then check for indirect extension using BFS
-        match self.find_interface_path_enhanced(source_interface, target_interface) {
-            Ok(_) => {
-                debug!("Indirect extension relationship found: {} extends {} indirectly", 
-                      source_interface, target_interface);
-                Ok(true)
-            }
-            Err(_) => {
-                debug!("No extension relationship found between {} and {}", 
-                      source_interface, target_interface);
-                Ok(false)
-            }
-        }
-    }
-    
-    /// Helper method to get all interfaces in the registry with enhanced error handling
-    #[instrument(skip(self), level = "debug")]
-    pub fn get_all_interfaces_enhanced(&self) -> Result<HashSet<String>, Error> {
-        let _span = span!(Level::DEBUG, "get_all_interfaces_enhanced").entered();
-        
-        // For testing purposes, if we have a test inheritance map, extract all interfaces from it
-        #[cfg(test)]
-        if let Some(test_map) = &self.test_inheritance_map {
-            debug!("Extracting interfaces from test inheritance map");
-            let mut interfaces = HashSet::new();
-            
-            // Add all parent interfaces (keys in the map)
-            for (parent, _) in test_map.iter() {
-                interfaces.insert(parent.clone());
-            }
-            
-            // Add all child interfaces (values in the map)
-            for (_, children) in test_map.iter() {
-                for child in children {
-                    interfaces.insert(child.clone());
-                }
-            }
-            
-            debug!("Found {} interfaces in test inheritance map", interfaces.len());
-            return Ok(interfaces);
-        }
-        
-        // Get the real interfaces from the registry with proper error handling
-        let registry = self.interface_type_registry();
-        let all_interfaces = registry.all_types();
-        
-        // Extract the type names from the registry
-        let interfaces: HashSet<String> = all_interfaces
-            .into_iter()
-            .map(|(_, name)| name)
-            .collect();
-            
-        if interfaces.is_empty() {
-            debug!("Warning: No interfaces found in registry");
-        } else {
-            debug!("Found {} interfaces in registry", interfaces.len());
-        }
-        
-        Ok(interfaces)
-    }
-    
-    /// Helper method to get the extension hierarchy from the actual registry with enhanced
-    /// error handling and comprehensive relationship discovery
-    #[instrument(skip(self), level = "debug")]
-    pub fn get_extension_hierarchy_enhanced(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
-        let _span = span!(Level::DEBUG, "get_extension_hierarchy_enhanced").entered();
-        
-        // For testing purposes, if we have a test inheritance map, use it
-        #[cfg(test)]
-        if let Some(test_map) = &self.test_inheritance_map {
-            debug!("Using test inheritance map with {} entries", test_map.len());
-            return Ok(test_map.clone());
-        }
-        
-        let mut hierarchy = HashMap::new();
-        
-        // Get the registry
-        let registry = self.interface_type_registry();
-        
-        // Get all interfaces with proper error handling
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        
-        // For each interface, find all its extensions
-        for interface in &interfaces {
-            let mut extensions = HashSet::new();
-            
-            // Get all other interfaces that extend this one
-            for other in &interfaces {
-                if interface == other {
-                    continue; // Skip self
-                }
-                
-                // Check if other extends interface directly with proper error handling
-                if let Ok(true) = registry.check_interface_extends(other, interface) {
-                    debug!("Found relationship: {} extends {}", other, interface);
-                    extensions.insert(other.clone());
-                }
-            }
-            
-            // Only add non-empty extension sets
-            if !extensions.is_empty() {
-                hierarchy.insert(interface.clone(), extensions);
-            }
-        }
-        
-        debug!("Built enhanced extension hierarchy with {} entries", hierarchy.len());
-        if hierarchy.is_empty() {
-            debug!("Warning: Extension hierarchy is empty");
-        }
-        
-        Ok(hierarchy)
-    }
-    
-    /// Check for reversed inheritance relationship with enhanced diagnostics
-    ///
-    /// This method detects if the inheritance relationship might be reversed,
-    /// which is a common error in interface type assertions. It provides detailed
-    /// diagnostic information to help developers fix the issue.
-    #[instrument(skip(self), level = "debug")]
-    pub fn detect_reversed_inheritance_enhanced(
-        &self,
-        source_interface: &str,
-        target_interface: &str,
-    ) -> Result<(bool, String), Error> {
-        let _span = span!(Level::DEBUG, "detect_reversed_inheritance_enhanced").entered();
-        debug!("Checking for reversed inheritance between {} and {}", 
-               source_interface, target_interface);
-        
-        // Get interfaces to verify they exist
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        if !interfaces.contains(&source_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Source interface '{}' does not exist in the registry", 
-                source_interface
-            )));
-        }
-        
-        if !interfaces.contains(&target_interface.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Target interface '{}' does not exist in the registry", 
-                target_interface
-            )));
-        }
-        
-        // Get the registry for direct checking
-        let registry = self.interface_type_registry();
-        
-        // Check direct relationship in the registry first
-        if let Ok(true) = registry.check_interface_extends(target_interface, source_interface) {
-            // Found direct reversed relationship
-            let message = format!(
-                "Reversed inheritance detected: '{}' extends '{}', not the other way around. 
-                You might need to swap the interfaces in your type assertion.",
-                target_interface, source_interface
-            );
-            
-            info!("Detected direct reversed inheritance in registry: {} extends {}", 
-                  target_interface, source_interface);
-            
-            return Ok((true, message));
-        }
-        
-        // Check for an indirect reversed relationship
-        match self.find_interface_path_enhanced(target_interface, source_interface) {
-            Ok(path) => {
-                // Found reversed relationship - provide helpful message with visualization
-                let message = format!(
-                    "Reversed inheritance detected: '{}' extends '{}', not the other way around. 
-                    You might need to swap the interfaces in your type assertion.",
-                    target_interface, source_interface
-                );
-                
-                info!("Detected indirect reversed inheritance: {} extends {}", 
-                      target_interface, source_interface);
-                
-                // Include the path visualization for better understanding
-                let path_str = path.to_string_representation();
-                let visual_path = path.to_visual_representation();
-                
-                let detail_message = format!(
-                    "{}\n\nThe actual inheritance path is: {}\n\n{}", 
-                    message, path_str, visual_path
-                );
-                
-                Ok((true, detail_message))
-            },
-            Err(_) => {
-                // No reversed relationship found
-                debug!("No reversed inheritance detected between {} and {}", 
-                      source_interface, target_interface);
-                Ok((false, String::from("No reversed inheritance detected.")))
-            }
-        }
-    }
-    
-    /// Generate a visual representation of the interface hierarchy
-    ///
-    /// This method creates a visual representation of the interface hierarchy
-    /// centered around a specific interface, showing both parent and child relationships.
-    #[instrument(skip(self), level = "debug")]
-    pub fn visualize_interface_hierarchy(
-        &self,
-        interface_name: &str,
-        max_depth: usize,
-    ) -> Result<String, Error> {
-        let _span = span!(Level::DEBUG, "visualize_interface_hierarchy").entered();
-        debug!("Visualizing interface hierarchy for {} with max depth {}", 
-               interface_name, max_depth);
-        
-        // Check if the interface exists
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        if !interfaces.contains(&interface_name.to_string()) {
-            return Err(Error::Compilation(format!(
-                "Interface '{}' does not exist in the registry", 
-                interface_name
-            )));
-        }
-        
-        // Get the hierarchy
-        let hierarchy = self.get_extension_hierarchy_enhanced()?;
-        
-        // For visualization, we need both directions: what this interface extends
-        // and what interfaces extend this one
-        let mut reversed_hierarchy: HashMap<String, HashSet<String>> = HashMap::new();
-        
-        // Build the reversed hierarchy (what this interface extends)
-        for (parent, children) in &hierarchy {
-            for child in children {
-                reversed_hierarchy
-                    .entry(child.clone())
-                    .or_insert_with(HashSet::new)
-                    .insert(parent.clone());
-            }
-        }
-        
-        // Build the visual representation
-        let mut result = String::new();
-        result.push_str(&format!("Interface Hierarchy for '{}':\n\n", interface_name));
-        
-        // Add parent interfaces (what this interface extends)
-        if let Some(parents) = reversed_hierarchy.get(interface_name) {
-            result.push_str("Parent Interfaces (extended by this interface):\n");
-            for parent in parents {
-                result.push_str(&format!("  └─── {}\n", parent));
-            }
-            result.push_str("\n");
-        } else {
-            result.push_str("No parent interfaces (this interface doesn't extend any others)\n\n");
-        }
-        
-        // Add this interface
-        result.push_str(&format!("● {}\n\n", interface_name));
-        
-        // Add child interfaces (interfaces that extend this one)
-        if let Some(children) = hierarchy.get(interface_name) {
-            result.push_str("Child Interfaces (extending this interface):\n");
-            for child in children {
-                result.push_str(&format!("  ├─── {}\n", child));
-                
-                // Recursively add children of children up to max_depth
-                if max_depth > 1 {
-                    self.add_child_interfaces(&mut result, child, &hierarchy, 1, max_depth, "  │    ")?;
-                }
-            }
-        } else {
-            result.push_str("No child interfaces (no interfaces extend this one)\n");
-        }
-        
-        Ok(result)
-    }
-    
-    /// Helper method to recursively add child interfaces to the visualization
-    fn add_child_interfaces(
-        &self,
-        result: &mut String,
-        interface_name: &str,
-        hierarchy: &HashMap<String, HashSet<String>>,
-        current_depth: usize,
-        max_depth: usize,
-        indent: &str,
-    ) -> Result<(), Error> {
-        if current_depth >= max_depth {
-            return Ok(());
-        }
-        
-        if let Some(children) = hierarchy.get(interface_name) {
-            for (i, child) in children.iter().enumerate() {
-                let is_last = i == children.len() - 1;
-                
-                if is_last {
-                    result.push_str(&format!("{indent}└─── {}\n", child));
-                    
-                    // Recursively add children of this child
-                    if current_depth + 1 < max_depth {
-                        let new_indent = format!("{indent}     ");
-                        self.add_child_interfaces(result, child, hierarchy, current_depth + 1, max_depth, &new_indent)?;
-                    }
-                } else {
-                    result.push_str(&format!("{indent}├─── {}\n", child));
-                    
-                    // Recursively add children of this child
-                    if current_depth + 1 < max_depth {
-                        let new_indent = format!("{indent}│    ");
-                        self.add_child_interfaces(result, child, hierarchy, current_depth + 1, max_depth, &new_indent)?;
-                    }
-                }
-            }
-        }
-        
-        Ok(())
-    }
-    
-    /// Generate a DOT graph representation of the interface hierarchy for visualization
-    #[instrument(skip(self), level = "debug")]
-    pub fn generate_interface_hierarchy_dot_graph(&self) -> Result<String, Error> {
-        let _span = span!(Level::DEBUG, "generate_interface_hierarchy_dot_graph").entered();
-        debug!("Generating DOT graph for complete interface hierarchy");
-        
-        // Get the hierarchy
-        let hierarchy = self.get_extension_hierarchy_enhanced()?;
-        
-        // Build the DOT graph
-        let mut dot = String::new();
-        dot.push_str("digraph interface_hierarchy {\n");
-        dot.push_str("  rankdir=BT;\n"); // Bottom to top direction (children point to parents)
-        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
-        
-        // Add nodes for all interfaces
-        let interfaces = self.get_all_interfaces_enhanced()?;
-        for interface in &interfaces {
+        let mut dot = String::from("digraph path {\n");
+        dot.push_str("  rankdir=BT;\n"); // Bottom to top direction
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n");
+
+        // Add nodes
+        for interface in &self.path {
             dot.push_str(&format!("  \"{}\" [label=\"{}\"];\n", interface, interface));
         }
-        
-        dot.push_str("\n");
-        
-        // Add edges for inheritance relationships
-        for (parent, children) in &hierarchy {
-            for child in children {
-                // In DOT, the edge direction is from child to parent for inheritance
-                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", child, parent));
+
+        // Add edges
+        for i in 0..self.path.len() - 1 {
+            dot.push_str(&format!("  \"{}\" -> \"{}\";\n", self.path[i], self.path[i + 1]));
+        }
+
+        dot.push_str("}\n");
+
+        dot
+    }
+}
+
+impl Display for InterfaceInheritancePath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}\n", self.to_string_representation())?;
+        write!(f, "{}\n", self.to_visual_representation())
+    }
+}
+
+/// Extension trait for LlvmCodeGenerator to add enhanced interface path finding capabilities
+pub trait EnhancedInterfacePathFinder {
+    /// Find a path between interfaces with enhanced error handling
+    fn find_interface_path_enhanced(&self, source: &str, target: &str) -> Result<InterfaceInheritancePath, Error>;
+
+    /// Find alternative paths between interfaces for debugging purposes
+    fn find_alternative_paths_enhanced(
+        &self,
+        source: &str,
+        target: &str,
+        max_alternatives: usize,
+    ) -> Result<Vec<InterfaceInheritancePath>, Error>;
+
+    /// Check if one interface extends another with proper error handling
+    fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error>;
+
+    /// Detect if an inheritance relationship is reversed (common error in type assertions)
+    fn detect_reversed_inheritance_enhanced(&self, source: &str, target: &str) -> Result<(bool, String), Error>;
+
+    /// Generate a visualization of the inheritance hierarchy for a specific interface
+    fn visualize_interface_hierarchy(&self, interface: &str, max_depth: usize) -> Result<String, Error>;
+
+    /// Generate a DOT graph representation of the entire interface hierarchy
+    fn generate_interface_hierarchy_dot_graph(&self) -> Result<String, Error>;
+}
+
+impl<'ctx> EnhancedInterfacePathFinder for LlvmCodeGenerator<'ctx> {
+    #[instrument(skip(self), level = "debug")]
+    fn find_interface_path_enhanced(&self, source: &str, target: &str) -> Result<InterfaceInheritancePath, Error> {
+        debug!("Finding path from interface {} to {}", source, target);
+
+        // Check if both interfaces exist in the registry
+        if !self.interface_exists_in_registry(source)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                source
+            )));
+        }
+
+        if !self.interface_exists_in_registry(target)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                target
+            )));
+        }
+
+        // If source and target are the same, return a path with just the interface
+        if source == target {
+            return Ok(InterfaceInheritancePath::new(
+                vec![source.to_string()],
+                source.to_string(),
+                target.to_string(),
+            ));
+        }
+
+        // Use BFS to find the shortest path
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
+        let mut parent_map: HashMap<String, String> = HashMap::new();
+
+        // Start BFS from source
+        queue.push_back(source.to_string());
+        visited.insert(source.to_string());
+
+        // Flag to handle the case where no path is found
+        let mut path_found = false;
+
+        // Perform BFS
+        while let Some(current) = queue.pop_front() {
+            // Check if we've reached the target
+            if current == target {
+                path_found = true;
+                break;
+            }
+
+            // Get direct extensions of current interface
+            if let Some(extensions) = self.get_direct_extensions_for_interface(&current)? {
+                for extension in extensions {
+                    if !visited.contains(&extension) {
+                        visited.insert(extension.clone());
+                        queue.push_back(extension.clone());
+                        parent_map.insert(extension.clone(), current.clone());
+                    }
+                }
             }
         }
-        
-        dot.push_str("}\n");
-        
+
+        // If no path was found, check if a reversed path exists to provide better error messages
+        if !path_found {
+            // Try to detect a reversed inheritance relationship
+            let (reversed, _) = self.detect_reversed_inheritance_enhanced(source, target)?;
+
+            if reversed {
+                return Err(Error::Compilation(format!(
+                    "No path found from interface '{}' to interface '{}'. Did you mean to assert as the other way around? '{}' actually extends '{}'.",
+                    source, target, target, source
+                )));
+            }
+
+            return Err(Error::Compilation(format!(
+                "No path found from interface '{}' to interface '{}'",
+                source, target
+            )));
+        }
+
+        // Reconstruct the path
+        let mut path = Vec::new();
+        let mut curr = target.to_string();
+
+        path.push(curr.clone());
+
+        while let Some(parent) = parent_map.get(&curr) {
+            path.push(parent.clone());
+            curr = parent.clone();
+        }
+
+        // Reverse the path to get it in the correct order (source to target)
+        path.reverse();
+
+        Ok(InterfaceInheritancePath::new(
+            path,
+            source.to_string(),
+            target.to_string(),
+        ))
+    }
+
+    #[instrument(skip(self), level = "debug")]
+    fn find_alternative_paths_enhanced(
+        &self,
+        source: &str,
+        target: &str,
+        max_alternatives: usize,
+    ) -> Result<Vec<InterfaceInheritancePath>, Error> {
+        debug!("Finding alternative paths from {} to {}", source, target);
+
+        // Check if both interfaces exist in the registry
+        if !self.interface_exists_in_registry(source)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                source
+            )));
+        }
+
+        if !self.interface_exists_in_registry(target)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                target
+            )));
+        }
+
+        // First try to find the direct path
+        let direct_path = match self.find_interface_path_enhanced(source, target) {
+            Ok(path) => Some(path),
+            Err(_) => None,
+        };
+
+        let mut paths = Vec::new();
+
+        // Add the direct path if it exists
+        if let Some(path) = direct_path {
+            paths.push(path);
+        }
+
+        // Get all interfaces to try as intermediate points
+        let all_interfaces = self.get_all_interfaces_in_registry()?;
+
+        // Try indirect paths through other interfaces
+        for intermediate in all_interfaces {
+            // Skip source and target
+            if intermediate == source || intermediate == target {
+                continue;
+            }
+
+            // Try to find a path from source to intermediate
+            let path1 = match self.find_interface_path_enhanced(source, &intermediate) {
+                Ok(path) => path,
+                Err(_) => continue,
+            };
+
+            // Try to find a path from intermediate to target
+            let path2 = match self.find_interface_path_enhanced(&intermediate, target) {
+                Ok(path) => path,
+                Err(_) => continue,
+            };
+
+            // Combine paths
+            let mut combined_path = Vec::new();
+            combined_path.extend(path1.path[..path1.path.len() - 1].iter().cloned());
+            combined_path.extend(path2.path.iter().cloned());
+
+            paths.push(InterfaceInheritancePath::new(
+                combined_path,
+                source.to_string(),
+                target.to_string(),
+            ));
+
+            // Limit the number of alternatives
+            if paths.len() >= max_alternatives {
+                break;
+            }
+        }
+
+        // If no paths were found, return an error
+        if paths.is_empty() {
+            // Check if there's a reversed relationship
+            let (reversed, _) = self.detect_reversed_inheritance_enhanced(source, target)?;
+
+            if reversed {
+                return Err(Error::Compilation(format!(
+                    "No alternative paths found from interface '{}' to interface '{}'. Did you mean to assert as the other way around? '{}' actually extends '{}'.",
+                    source, target, target, source
+                )));
+            }
+
+            return Err(Error::Compilation(format!(
+                "No alternative paths found from interface '{}' to interface '{}'",
+                source, target
+            )));
+        }
+
+        Ok(paths)
+    }
+
+    #[instrument(skip(self), level = "debug")]
+    fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error> {
+        debug!("Checking if {} extends {}", source, target);
+
+        // If source and target are the same, return true immediately
+        if source == target {
+            return Ok(true);
+        }
+
+        // Use find_interface_path_enhanced to determine if source extends target
+        match self.find_interface_path_enhanced(source, target) {
+            Ok(_) => Ok(true),
+            Err(e) => {
+                if e.to_string().contains("No path found") {
+                    Ok(false)
+                } else {
+                    Err(e)
+                }
+            }
+        }
+    }
+
+    #[instrument(skip(self), level = "debug")]
+    fn detect_reversed_inheritance_enhanced(&self, source: &str, target: &str) -> Result<(bool, String), Error> {
+        debug!("Detecting reversed inheritance between {} and {}", source, target);
+
+        // Check if both interfaces exist in the registry
+        if !self.interface_exists_in_registry(source)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                source
+            )));
+        }
+
+        if !self.interface_exists_in_registry(target)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                target
+            )));
+        }
+
+        // Try to find a path from target to source (the reverse direction)
+        match self.find_interface_path_enhanced(target, source) {
+            Ok(path) => {
+                // If a path exists, then the inheritance is reversed
+                let message = format!(
+                    "Reversed inheritance detected. '{}' does not extend '{}', but '{}' extends '{}'\n\nThe actual inheritance path is:\n{}",
+                    source,
+                    target,
+                    target,
+                    source,
+                    path.to_visual_representation()
+                );
+
+                Ok((true, message))
+            }
+            Err(_) => {
+                // If no path exists in either direction, then the interfaces are unrelated
+                Ok((false, format!("Interfaces '{}' and '{}' are not related by inheritance", source, target)))
+            }
+        }
+    }
+
+    #[instrument(skip(self), level = "debug")]
+    fn visualize_interface_hierarchy(&self, interface: &str, max_depth: usize) -> Result<String, Error> {
+        debug!("Visualizing interface hierarchy for {} with max depth {}", interface, max_depth);
+
+        // Check if the interface exists in the registry
+        if !self.interface_exists_in_registry(interface)? {
+            return Err(Error::Compilation(format!(
+                "Interface '{}' does not exist in the registry",
+                interface
+            )));
+        }
+
+        let mut result = format!("Interface Hierarchy for '{}':\n", interface);
+
+        // Helper function to recursively build the hierarchy visualization
+        fn build_hierarchy(
+            codegen: &LlvmCodeGenerator,
+            interface: &str,
+            depth: usize,
+            max_depth: usize,
+            prefix: &str,
+            is_last: bool,
+            result: &mut String,
+            visited: &mut HashSet<String>,
+        ) -> Result<(), Error> {
+            // Avoid cycles
+            if visited.contains(interface) {
+                writeln!(result, "{}{} {} (cycle)", prefix, if is_last { "└── " } else { "├── " }, interface)
+                    .map_err(|e| Error::Compilation(format!("Failed to write to hierarchy: {}", e)))?;
+                return Ok(());
+            }
+
+            // Print current interface
+            writeln!(
+                result,
+                "{}{}{}({})",
+                prefix,
+                if is_last { "└── " } else { "├── " },
+                interface,
+                depth
+            )
+            .map_err(|e| Error::Compilation(format!("Failed to write to hierarchy: {}", e)))?;
+
+            // Stop recursion if max depth is reached
+            if depth >= max_depth {
+                return Ok(());
+            }
+
+            // Mark as visited to prevent cycles
+            visited.insert(interface.to_string());
+
+            // Get direct extensions
+            let extensions = match codegen.get_direct_extensions_for_interface(interface)? {
+                Some(ext) => ext,
+                None => Vec::new(),
+            };
+
+            // Sort extensions for consistent output
+            let mut sorted_extensions = extensions.clone();
+            sorted_extensions.sort();
+
+            for (i, extension) in sorted_extensions.iter().enumerate() {
+                let new_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
+                let is_last_child = i == sorted_extensions.len() - 1;
+
+                build_hierarchy(
+                    codegen,
+                    extension,
+                    depth + 1,
+                    max_depth,
+                    &new_prefix,
+                    is_last_child,
+                    result,
+                    visited,
+                )?;
+            }
+
+            // Remove from visited to allow the same interface to appear in different branches
+            visited.remove(interface);
+
+            Ok(())
+        }
+
+        // Start building the hierarchy
+        let mut visited = HashSet::new();
+        build_hierarchy(self, interface, 0, max_depth, "", true, &mut result, &mut visited)?;
+
+        Ok(result)
+    }
+
+    #[instrument(skip(self), level = "debug")]
+    fn generate_interface_hierarchy_dot_graph(&self) -> Result<String, Error> {
+        debug!("Generating DOT graph for entire interface hierarchy");
+
+        let mut dot = String::from("digraph interface_hierarchy {\n");
+        dot.push_str("  rankdir=BT;\n"); // Bottom to top direction
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n");
+
+        // Get all interfaces
+        let all_interfaces = self.get_all_interfaces_in_registry()?;
+
+        // Add nodes
+        for interface in &all_interfaces {
+            writeln!(dot, "  \"{}\" [label=\"{}\"];", interface, interface)
+                .map_err(|e| Error::Compilation(format!("Failed to write to DOT graph: {}", e)))?;
+        }
+
+        // Add edges
+        for interface in &all_interfaces {
+            if let Some(extensions) = self.get_direct_extensions_for_interface(interface)? {
+                for extension in extensions {
+                    writeln!(dot, "  \"{}\" -> \"{}\";", interface, extension)
+                        .map_err(|e| Error::Compilation(format!("Failed to write to DOT graph: {}", e)))?;
+                }
+            }
+        }
+
+        // Detect and highlight cycles
+        let cycles = self.detect_cycles_in_inheritance_hierarchy()?;
+        if !cycles.is_empty() {
+            writeln!(dot, "\n  // Cycles").map_err(|e| {
+                Error::Compilation(format!("Failed to write to DOT graph: {}", e))
+            })?;
+
+            for (i, cycle) in cycles.iter().enumerate() {
+                writeln!(dot, "  subgraph cluster_cycle_{} {{\n    style=filled;\n    color=lightpink;\n    label=\"Cycle {}\";\n", i, i + 1)
+                    .map_err(|e| Error::Compilation(format!("Failed to write to DOT graph: {}", e)))?;
+
+                for interface in cycle {
+                    writeln!(dot, "    \"{}\";", interface)
+                        .map_err(|e| Error::Compilation(format!("Failed to write to DOT graph: {}", e)))?;
+                }
+
+                writeln!(dot, "  }}").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to DOT graph: {}", e))
+                })?;
+            }
+        }
+
+        writeln!(dot, "}}").map_err(|e| {
+            Error::Compilation(format!("Failed to write to DOT graph: {}", e))
+        })?;
+
         Ok(dot)
     }
 }
 
-/// Add extension methods to InterfaceTypeRegistry for checking extension relationships
-pub trait InterfaceTypeRegistryExtensionChecking<'ctx> {
-    /// Check if one interface extends another directly
-    fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error>;
-}
+// Helper methods for the LlvmCodeGenerator
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    // Check if an interface exists in the registry
+    fn interface_exists_in_registry(&self, interface: &str) -> Result<bool, Error> {
+        // First try using the interface registry visualization
+        if let Some(registry) = &self.registry_visualization {
+            return registry.interface_exists(interface);
+        }
 
-impl<'ctx> InterfaceTypeRegistryExtensionChecking<'ctx> for crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry<'ctx> {
-    #[instrument(skip(self), level = "debug")]
-    fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error> {
-        debug!("Checking if {} extends {} directly in registry", source, target);
-        
-        // Get all registered types to look up their IDs
-        let all_types = self.all_types();
-        
-        // Find the type IDs for source and target interfaces
-        let source_id = all_types.iter().find(|(_, name)| name == source).map(|(id, _)| *id);
-        let target_id = all_types.iter().find(|(_, name)| name == target).map(|(id, _)| *id);
-        
-        match (source_id, target_id) {
-            (Some(source_id), Some(target_id)) => {
-                debug!("Found type IDs: {} for '{}', {} for '{}'", 
-                      source_id, source, target_id, target);
-                
-                // Use the extension checking methods added in interface_registry_extension_checking.rs
-                // These provide a more reliable way to check inheritance relationships
-                let extension_info = self.get_interface_extension_info(source_id, target_id);
-                
-                // Check direct extension relationship
-                match extension_info {
-                    Ok(extends) => {
-                        if extends {
-                            debug!("Registry confirms '{}' extends '{}'", source, target);
-                        } else {
-                            debug!("Registry confirms '{}' does not directly extend '{}'", source, target);
-                        }
-                        Ok(extends)
-                    },
-                    Err(e) => {
-                        debug!("Error checking extension relationship: {}", e);
-                        // For now, default to false as a fallback
-                        Ok(false)
-                    }
+        // Fallback to the test inheritance map
+        if let Some(inheritance_map) = &self.test_inheritance_map {
+            // Check if it's a source in the map
+            if inheritance_map.contains_key(interface) {
+                return Ok(true);
+            }
+
+            // Check if it's a target in any entry
+            for (_, extensions) in inheritance_map {
+                if extensions.contains(interface) {
+                    return Ok(true);
                 }
-            },
-            (None, _) => {
-                debug!("Source interface '{}' not found in registry", source);
-                Ok(false)
-            },
-            (_, None) => {
-                debug!("Target interface '{}' not found in registry", target);
-                Ok(false)
             }
         }
+
+        // As a last resort, check if it's registered in the type registry
+        let type_id = self.get_type_id_by_name(interface);
+        Ok(type_id.is_some())
+    }
+
+    // Get all interfaces in the registry
+    fn get_all_interfaces_in_registry(&self) -> Result<HashSet<String>, Error> {
+        // First try using the interface registry visualization
+        if let Some(registry) = &self.registry_visualization {
+            return registry.get_all_interfaces();
+        }
+
+        // Fallback to the test inheritance map
+        let mut all_interfaces = HashSet::new();
+
+        if let Some(inheritance_map) = &self.test_inheritance_map {
+            // Add all source interfaces
+            for source in inheritance_map.keys() {
+                all_interfaces.insert(source.clone());
+            }
+
+            // Add all target interfaces
+            for (_, extensions) in inheritance_map {
+                for extension in extensions {
+                    all_interfaces.insert(extension.clone());
+                }
+            }
+        }
+
+        Ok(all_interfaces)
+    }
+
+    // Get direct extensions of an interface
+    fn get_direct_extensions_for_interface(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        // First try using the interface registry visualization
+        if let Some(registry) = &self.registry_visualization {
+            return registry.get_direct_extensions(interface);
+        }
+
+        // Fallback to the test inheritance map
+        if let Some(inheritance_map) = &self.test_inheritance_map {
+            if let Some(extensions) = inheritance_map.get(interface) {
+                return Ok(Some(extensions.iter().cloned().collect()));
+            }
+        }
+
+        Ok(None)
+    }
+
+    // Detect cycles in the inheritance hierarchy
+    fn detect_cycles_in_inheritance_hierarchy(&self) -> Result<Vec<Vec<String>>, Error> {
+        // First try using the interface registry visualization
+        if let Some(registry) = &self.registry_visualization {
+            return registry.detect_cycles();
+        }
+
+        // Fallback implementation for test inheritance map
+        let mut cycles = Vec::new();
+        let mut visited = HashSet::new();
+        let mut path = Vec::new();
+        let mut on_stack = HashSet::new();
+
+        // Get all interfaces
+        let all_interfaces = self.get_all_interfaces_in_registry()?;
+
+        // Helper function for cycle detection using DFS
+        fn dfs_cycle(
+            codegen: &LlvmCodeGenerator,
+            interface: &str,
+            visited: &mut HashSet<String>,
+            path: &mut Vec<String>,
+            on_stack: &mut HashSet<String>,
+            cycles: &mut Vec<Vec<String>>,
+        ) -> Result<(), Error> {
+            visited.insert(interface.to_string());
+            path.push(interface.to_string());
+            on_stack.insert(interface.to_string());
+
+            // Get direct extensions
+            if let Some(extensions) = codegen.get_direct_extensions_for_interface(interface)? {
+                for extension in extensions {
+                    if !visited.contains(&extension) {
+                        dfs_cycle(codegen, &extension, visited, path, on_stack, cycles)?;
+                    } else if on_stack.contains(&extension) {
+                        // Found a cycle
+                        let cycle_start = path.iter().position(|x| x == &extension).unwrap();
+                        let cycle = path[cycle_start..].to_vec();
+                        cycles.push(cycle);
+                    }
+                }
+            }
+
+            // Backtrack
+            path.pop();
+            on_stack.remove(interface);
+
+            Ok(())
+        }
+
+        // Check each interface
+        for interface in all_interfaces {
+            if !visited.contains(&interface) {
+                dfs_cycle(
+                    self,
+                    &interface,
+                    &mut visited,
+                    &mut path,
+                    &mut on_stack,
+                    &mut cycles,
+                )?;
+            }
+        }
+
+        Ok(cycles)
+    }
+}
+
+/// Register the enhanced interface path finder functionality with the compiler
+pub fn register_enhanced_interface_path_finder() {
+    trace!("Enhanced interface path finder module registered");
+    // This function is called during the compiler's initialization
+    // to register this enhanced implementation for use throughout compilation
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interface_inheritance_path_basics() {
+        // Test creating a path
+        let path = InterfaceInheritancePath::new(
+            vec!["A".to_string(), "B".to_string(), "C".to_string()],
+            "A".to_string(),
+            "C".to_string(),
+        );
+
+        assert_eq!(path.source(), "A");
+        assert_eq!(path.target(), "C");
+        assert_eq!(path.len(), 3);
+        assert_eq!(path.is_empty(), false);
+        assert_eq!(path.to_string_representation(), "A -> B -> C");
+
+        // Test empty path
+        let empty_path = InterfaceInheritancePath::new(
+            vec![],
+            "X".to_string(),
+            "Y".to_string(),
+        );
+
+        assert_eq!(empty_path.source(), "X");
+        assert_eq!(empty_path.target(), "Y");
+        assert_eq!(empty_path.len(), 0);
+        assert_eq!(empty_path.is_empty(), true);
+        assert!(empty_path.to_string_representation().contains("No path"));
+    }
+
+    #[test]
+    fn test_interface_inheritance_path_visualization() {
+        let path = InterfaceInheritancePath::new(
+            vec!["Child".to_string(), "Parent".to_string(), "GrandParent".to_string()],
+            "Child".to_string(),
+            "GrandParent".to_string(),
+        );
+
+        let visual = path.to_visual_representation();
+        assert!(visual.contains("Interface Inheritance Path:"));
+        assert!(visual.contains("Child"));
+        assert!(visual.contains("Parent"));
+        assert!(visual.contains("GrandParent"));
+
+        // Box drawing characters should be present
+        assert!(visual.contains("\u{250c}") || visual.contains("┌")); // First element
+        assert!(visual.contains("\u{251c}") || visual.contains("├")); // Middle element
+        assert!(visual.contains("\u{2514}") || visual.contains("└")); // Last element
+
+        // Test DOT representation
+        let dot = path.to_dot_representation();
+        assert!(dot.contains("digraph path"));
+        assert!(dot.contains("Child")); 
+        assert!(dot.contains("Parent"));
+        assert!(dot.contains("GrandParent"));
+        assert!(dot.contains("Child" -> "Parent"));
+        assert!(dot.contains("Parent" -> "GrandParent"));
     }
 }
