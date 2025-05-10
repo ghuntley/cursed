@@ -59,6 +59,9 @@ glob = "0.3"    # For file path pattern matching
 tracing = "0.1"  # Structured logging framework
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation
 
+# System information
+num_cpus = "1.16"  # For detecting CPU cores
+
 # Date and time handling
 chrono = "0.4"   # Date and time utilities
 
@@ -104,4 +107,9 @@ debug = true  # Full debug info
 [[test]]
 name = "jit_integration_tests"
 path = "tests/jit_integration_tests.rs"
+harness = true
+
+[[test]]
+name = "dynamic_worker_sizing_test"
+path = "tests/async_constraint_checker/dynamic_worker_sizing_test.rs"
 harness = true
