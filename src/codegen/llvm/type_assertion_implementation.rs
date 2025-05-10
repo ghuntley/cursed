@@ -19,7 +19,7 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use crate::codegen::llvm::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
-use crate::codegen::llvm::interface_type_registry_enhanced::{EnhancedTypeRegistry, RuntimeTypeInfo};
+use crate::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::core::type_checker::Type as CursedType;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
