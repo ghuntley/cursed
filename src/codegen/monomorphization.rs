@@ -18,6 +18,8 @@ use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatemen
 // use crate::ast::expressions::constraint::TypeConstraint;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::generic_instantiation::GenericInstantiator;
+use once_cell::sync::Lazy;
+use rand;
 use crate::core::type_checker::{Type, TypeChecker};
 use crate::error::Error;
 use std::collections::{HashMap, HashSet};
@@ -41,6 +43,7 @@ use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
 /// - Caching generated specializations to avoid duplicates
 /// - Coordinating the generation of specialized LLVM IR code
 /// - Managing garbage collection metadata for specialized types
+#[derive(Clone)]
 pub struct MonomorphizationManager {
     // Maps (generic_name, concrete_types) to specialized_name
     instantiated_functions: HashMap<String, String>,
@@ -158,21 +161,37 @@ impl MonomorphizationManager {
         // Create an interface type from the name
         let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
         
-        // Get the interface registry for efficient checking
-        let registry = crate::core::interface_registry::InterfaceRegistry::new_with_defaults();
+        // Use the cached interface registry for faster checking
+        // This will be initialized on first use
+        static CACHED_REGISTRY: once_cell::sync::Lazy<crate::core::type_checker_interface_registry::ThreadSafeCachedRegistry> = 
+            once_cell::sync::Lazy::new(|| {
+                let registry = crate::core::interface_registry::InterfaceRegistry::new_with_defaults();
+                crate::core::type_checker_interface_registry::ThreadSafeCachedRegistry::new(registry)
+            });
         
-        // Try the registry first (faster and more deterministic)
-        match registry.check_implementation(concrete_type, interface_name) {
+        // Try the cached registry first (faster with caching)
+        match CACHED_REGISTRY.check_implementation(concrete_type, interface_name) {
             Ok(true) => {
-                tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Registry confirms type implements interface");
+                tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Cached registry confirms type implements interface");
+                
+                // Periodically log cache statistics (every 100 successful lookups)
+                if rand::random::<u8>() < 5 { // ~2% chance to log stats
+                    let (size, hits, misses) = CACHED_REGISTRY.cache_stats();
+                    let hit_rate = CACHED_REGISTRY.cache_hit_rate();
+                    tracing::info!(
+                        "Interface cache stats: size={}, hits={}, misses={}, hit_rate={:.2}%", 
+                        size, hits, misses, hit_rate * 100.0
+                    );
+                }
+                
                 return Ok(true);
             },
             Ok(false) => {
                 // Registry says no, but we'll try type checker as a backup
-                tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Registry says type doesn't implement interface, checking with type checker");
+                tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Cached registry says type doesn't implement interface, checking with type checker");
             },
             Err(e) => {
-                tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error checking interface implementation in registry");
+                tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error checking interface implementation in cached registry");
                 // Continue to type checker fallback
             }
         }

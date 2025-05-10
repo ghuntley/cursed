@@ -500,7 +500,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     pub fn setup_monomorphization_manager(&mut self, type_checker: std::rc::Rc<std::cell::RefCell<crate::core::type_checker::TypeChecker>>) {
         tracing::info!("Setting up monomorphization manager with type checker");
         // Configure the main monomorphization manager with the type checker
-        self.mono_manager = self.mono_manager.with_type_checker(type_checker.clone());
+        self.mono_manager = self.mono_manager.clone().with_type_checker(type_checker.clone());
     }
     
     /// Register metadata for garbage collection of specialized types
