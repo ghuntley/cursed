@@ -10,7 +10,6 @@ use inkwell::context::Context;
 use std::path::PathBuf;
 
 #[test]
-#[ignore = "ExpressionCompilation trait needs to be imported properly and compile_expression method used"]
 fn test_integer_literal_expression() {
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
@@ -45,7 +44,6 @@ fn test_integer_literal_expression() {
 }
 
 #[test]
-#[ignore = "ExpressionCompilation trait needs to be imported properly and compile_expression method used"]
 fn test_infix_expression() {
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
@@ -94,7 +92,6 @@ fn test_infix_expression() {
 }
 
 #[test]
-#[ignore = "ExpressionCompilation trait needs to be imported properly and compile_expression method used"]
 fn test_prefix_expression() {
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
