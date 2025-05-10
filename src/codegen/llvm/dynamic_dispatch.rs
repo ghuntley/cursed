@@ -119,6 +119,16 @@ impl<'ctx> InterfaceManager<'ctx> {
         }
     }
     
+    /// Get a reference to all registered interfaces
+    pub fn interfaces(&self) -> &HashMap<String, InterfaceStructure<'ctx>> {
+        &self.interfaces
+    }
+    
+    /// Get a reference to all registered vtable implementations
+    pub fn vtable_impls(&self) -> &HashMap<(String, String), VTableImpl<'ctx>> {
+        &self.vtable_impls
+    }
+    
     /// Generate a unique type ID for runtime type information
     fn generate_type_id(&mut self) -> String {
         let id = self.next_type_id;
