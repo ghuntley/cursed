@@ -96,11 +96,11 @@ impl MonomorphizationManager {
         function_name: &str,
         type_args: &[Type],
     ) -> Result<String, Error> {
-        // Generate a specialized name based on the function name and type arguments
-        Ok(format!("{}_specialized_{}", function_name, type_args.iter()
-            .map(|t| format!("{:?}", t))
-            .collect::<Vec<_>>()
-            .join("_")))
+        // This is a compatibility wrapper that forwards to the main implementation
+        // Use the standardized implementation that matches the main monomorphization manager
+        let main_manager = crate::codegen::monomorphization::MonomorphizationManager::new();
+        let specialized_name = main_manager.generate_specialized_name(function_name, type_args);
+        Ok(specialized_name)
     }
 }
 
@@ -112,7 +112,8 @@ pub trait MonomorphizationManagerExtension<'a, 'ctx> {
 
 impl<'a, 'ctx> MonomorphizationManagerExtension<'a, 'ctx> for LlvmCodeGenerator<'ctx> {
     fn monomorphization_manager(&'a mut self) -> &'a mut MonomorphizationManager {
-        // Return our LLVM-specific monomorphization manager
+        // Return our LLVM-specific monomorphization manager for backward compatibility
+        // The implementation forwards to the main monomorphization manager methods
         &mut self.llvm_mono_manager
     }
 }

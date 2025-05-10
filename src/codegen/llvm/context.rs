@@ -75,6 +75,7 @@ pub struct LlvmCodeGenerator<'ctx> {
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new LlvmCodeGenerator instance.
     pub fn new(context: &'ctx Context, module_name: &str, initial_file_path: PathBuf) -> Self {
+        tracing::debug!("Creating new LlvmCodeGenerator for module {}", module_name);
         // Initialize type assertion registration
         super::type_assertion_implementation::register_type_assertion_implementation();
         // Initialize standard functions like puts before creating the generator
@@ -97,7 +98,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             loop_contexts: Vec::new(),
             var_scopes: Vec::new(),
             constants: HashSet::new(),
+            // Use the main monomorphization manager with type checker for consistent constraint checking
             mono_manager: crate::codegen::monomorphization::MonomorphizationManager::new(),
+            // Keep this for backward compatibility, but it will use the main manager for operations
             llvm_mono_manager: self::monomorphization::MonomorphizationManager::new(),
             interface_manager: None, // Will be initialized when needed
             gc_metadata: HashMap::new(),
@@ -488,6 +491,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get a reference to the LLVM context
     pub fn context(&self) -> &'ctx Context {
         self.context
+    }
+    
+    /// Set up the monomorphization manager with a type checker reference
+    /// 
+    /// This connects the monomorphization system to the type checker for proper
+    /// interface implementation checking during generic code specialization.
+    pub fn setup_monomorphization_manager(&mut self, type_checker: std::rc::Rc<std::cell::RefCell<crate::core::type_checker::TypeChecker>>) {
+        tracing::info!("Setting up monomorphization manager with type checker");
+        // Configure the main monomorphization manager with the type checker
+        self.mono_manager = self.mono_manager.with_type_checker(type_checker.clone());
     }
     
     /// Register metadata for garbage collection of specialized types

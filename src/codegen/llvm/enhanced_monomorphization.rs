@@ -52,56 +52,15 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         concrete_type: &Type,
         interface_name: &str,
     ) -> Result<bool, Error> {
-        // In a real implementation, this would check if the concrete type implements
-        // the interface by looking up in a type registry or interface implementation table
+        // Forward to the main implementation for consistency
+        // This ensures that constraint checking behaves the same way in all parts of the system
+        tracing::debug!("Enhanced monomorphization forwarding to main implementation");
         
-        // For now, we'll implement a simplified version based on known types:
-        // Attempt to access the type checker through context or other means
-        // This would be implemented in a real system, for now just use primitive checks
+        // Create a new instance of the main manager
+        let main_manager = crate::codegen::monomorphization::MonomorphizationManager::new();
         
-        // In a complete implementation, this would delegate to the TypeChecker
-        // through a proper reference or API call. For now, fall back to primitive checks.
-        tracing::warn!("Enhanced monomorphization using fallback constraint checking");
-        
-        let implements = match concrete_type {
-            // Primitive types and their supported interfaces
-            Type::Normie | Type::Smol | Type::Mid | Type::Thicc => {
-                // Integer types implement Comparable, Numeric, Hashable
-                matches!(interface_name, "Comparable" | "Numeric" | "Hashable")
-            }
-            Type::Snack | Type::Meal => {
-                // Float types implement Comparable, Numeric
-                matches!(interface_name, "Comparable" | "Numeric")
-            }
-            Type::Tea => {
-                // String type implements Comparable, Stringable, Hashable
-                matches!(interface_name, "Comparable" | "Stringable" | "Hashable")
-            }
-            Type::Lit => {
-                // Boolean type implements Comparable, Hashable
-                matches!(interface_name, "Comparable" | "Hashable")
-            }
-            Type::Byte | Type::Rune | Type::Sip => {
-                // Character types implement Comparable, Hashable
-                matches!(interface_name, "Comparable" | "Hashable")
-            }
-            // For more complex types, we would need a proper implementation registry
-            _ => {
-                // For this implementation, assume other types don't implement any interfaces
-                // In a real implementation, we'd check a registry of interface implementations
-                tracing::error!("Cannot check interface implementation for non-primitive type: {:?}", concrete_type);
-                false
-            }
-        };
-        
-        if implements {
-            Ok(true)
-        } else {
-            Err(Error::from_str(&format!(
-                "Type '{:?}' does not implement interface '{}'",
-                concrete_type, interface_name
-            )))
-        }
+        // Forward the call to the main implementation
+        main_manager.check_constraint(concrete_type, interface_name)
     }
     
     fn validate_constraints(
