@@ -104,6 +104,8 @@ pub use self::type_assertion_integration::TypeAssertionIntegration;
 pub use self::type_assertion_implementation::IntegratedTypeAssertion;
 // Improved type assertion integration with proper error propagation
 pub use self::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
+// Enhanced error propagation for interface type assertions
+pub use self::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 // Nesting level tracking for interface type assertions
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information
@@ -194,6 +196,7 @@ mod interface_type_registry_enhanced; // Enhanced registry for full runtime type
 mod interface_type_assertion_enhanced; // Enhanced type assertions with rich error information
 mod type_registry_improved; // Improved type registry with better runtime type information
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
+pub mod interface_type_assertion_error_propagation; // Enhanced error propagation for interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
