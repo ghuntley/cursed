@@ -18,6 +18,7 @@ pub mod goroutine;
 pub mod symbol_table;
 pub mod thread_safe_goroutine;
 pub mod interface_type_checker;
+pub mod interface_registry;
 pub mod type_checker;
 pub mod type_infer;
 

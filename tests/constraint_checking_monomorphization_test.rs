@@ -64,12 +64,59 @@ fn test_constraint_checking_during_monomorphization() {
     // Initialize tracing for better debug output
     common::tracing::setup();
     
+    // Set up the registry with known interface implementations
+    use cursed::core::interface_registry::InterfaceRegistry;
+    
+    // Test both implementations
+    test_with_registry();
+    test_with_type_checker();
+}
+
+/// Test constraint checking using the registry approach
+fn test_with_registry() {
+    // Create the interface registry directly
+    let registry = InterfaceRegistry::new_with_defaults();
+    
+    // Check constraint: Normie implements Comparable
+    let normie_result = registry.check_implementation(&Type::Normie, "Comparable");
+    assert!(normie_result.is_ok());
+    assert!(normie_result.unwrap());
+    
+    // Check constraint: Normie implements Numeric
+    let numeric_result = registry.check_implementation(&Type::Normie, "Numeric");
+    assert!(numeric_result.is_ok());
+    assert!(numeric_result.unwrap());
+    
+    // Check constraint: Lit doesn't implement Numeric
+    let lit_result = registry.check_implementation(&Type::Lit, "Numeric");
+    assert!(lit_result.is_ok());
+    assert!(!lit_result.unwrap());
+    
+    // Check constraint: Custom struct implements an interface
+    let point_result = registry.check_implementation(
+        &Type::Struct("Point".to_string(), vec![]), 
+        "Comparable"
+    );
+    assert!(point_result.is_ok());
+    assert!(point_result.unwrap());
+    
+    // Check constraint: Custom struct doesn't implement non-registered interface
+    let point_numeric_result = registry.check_implementation(
+        &Type::Struct("Point".to_string(), vec![]), 
+        "Numeric"
+    );
+    assert!(point_numeric_result.is_ok());
+    assert!(!point_numeric_result.unwrap());
+}
+
+/// Test constraint checking using the monomorphization manager with type checker
+fn test_with_type_checker() {
     // Set up the type checker with interfaces and implementations
     let type_checker = setup_type_checker();
     let type_checker_rc = Rc::new(RefCell::new(type_checker));
     
     // Create a monomorphization manager with the type checker
-    let mut mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
+    let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Check constraint: Normie implements Comparable
     let normie_result = mono_manager.check_constraint(&Type::Normie, "Comparable");
