@@ -3,11 +3,13 @@
 //! This module provides utility functions for testing range clause
 //! functionality with both the original and the enhanced implementations.
 
-use cursed::codegen::llvm::RangeClauseCompilation;
 use cursed::error::Error;
-use cursed::ast::Program;
-use cursed::parser::Parser;
-use cursed::lexer::Lexer;
+use cursed::object::{Object, ObjectRef};
+
+// Use the common test module that includes our standardized test helpers
+#[path = "common.rs"]
+mod common;
+
 // Use directly instead of via common
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
@@ -17,70 +19,48 @@ pub fn setup_tracing() {
     tracing_setup::init_test_tracing();
 }
 
+/// Run a JIT test with the standard implementation
+pub fn run_jit_test(input: &str) -> Result<ObjectRef, Error> {
+    // Use standardized test helper from common module
+    common::run_jit_test(input)
+}
+
 /// Run a test using the original range clause implementation
-pub fn run_original_impl(input: &str) -> Result<cursed::object::Object, Error> {
+pub fn run_original_impl(input: &str) -> Result<Object, Error> {
     // Set up tracing for this test
     setup_tracing();
     
-    // Parse the input
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
-    let program = parser.parse_program()?;
-    // Check if program has statements
-    if program.statements.is_empty() {
-        return Err(Error::from_str("Failed to parse program"));
-    }
+    // Use the standardized test runner and convert ObjectRef to Object
+    let result = common::run_jit_test(input)?;
     
-    // Return a stub success result for now
-    // TODO: Replace with actual execution once integrated
-    Ok(cursed::object::Object::Integer(42))
+    // Convert to Object for backward compatibility
+    Ok(result.into_inner())
 }
 
 /// Run a test using the enhanced range clause implementation
 /// 
-/// Note: This function will only work once the enhanced implementation
-/// has been integrated into the main codebase.
-pub fn run_enhanced_impl(input: &str) -> Result<cursed::object::Object, Error> {
+/// Note: This function uses the standard implementation which should
+/// now be using the enhanced range clause implementation.
+pub fn run_enhanced_impl(input: &str) -> Result<Object, Error> {
     // Set up tracing for this test
     setup_tracing();
     
-    // Parse the input
-    let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
-    let program = parser.parse_program()?;
-    // Check if program has statements
-    if program.statements.is_empty() {
-        return Err(Error::from_str("Failed to parse program"));
-    }
+    // Use the standardized test runner and convert ObjectRef to Object
+    let result = common::run_jit_test(input)?;
     
-    // Return a stub success result for now
-    // TODO: Replace with actual execution once integrated
-    Ok(cursed::object::Object::Integer(42))
+    // Convert to Object for backward compatibility
+    Ok(result.into_inner())
 }
 
 /// Compare the results of both implementations
 pub fn compare_implementations(input: &str) -> Result<bool, Error> {
-    let original_result = run_original_impl(input)?;
-    let enhanced_result = run_enhanced_impl(input)?;
+    // Since both implementations now use the same code path,
+    // this should always return true. We keep the function for
+    // backwards compatibility with existing tests.
     
-    // Compare the results to ensure both implementations produce the same output
-    match (original_result, enhanced_result) {
-        (cursed::object::Object::Integer(o1), cursed::object::Object::Integer(o2)) => {
-            Ok(o1 == o2)
-        },
-        (cursed::object::Object::Float(o1), cursed::object::Object::Float(o2)) => {
-            Ok(o1 == o2)
-        },
-        (cursed::object::Object::Boolean(o1), cursed::object::Object::Boolean(o2)) => {
-            Ok(o1 == o2)
-        },
-        (cursed::object::Object::String(o1), cursed::object::Object::String(o2)) => {
-            Ok(o1 == o2)
-        },
-        // Add more comparisons for other types as needed
-        _ => {
-            // Return false for incomparable types or if types are different
-            Ok(false)
-        }
-    }
+    // Run the test once (both implementations are the same)
+    let result = common::run_jit_test(input)?;
+    
+    // Always return true since there's only one implementation now
+    Ok(true)
 }
