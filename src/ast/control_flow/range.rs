@@ -46,16 +46,12 @@ pub struct RangeClause {
 
 impl Clone for RangeClause {
     fn clone(&self) -> Self {
-        // We can't directly clone the Box<dyn Expression>
-        // but we can create a new RangeClause with the same values
-        // For a real implementation, we'd need to recursively visit and clone
-        // each Expression element
+        // Properly clone each element using clone_box method
         Self {
             token: self.token.clone(),
-            // For test purposes, we can just create placeholder expressions
-            start: None, // We intentionally don't clone start to avoid compilation issues
-            end: self.end.clone_box(), // Use clone_box for Expression
-            step: None, // We intentionally don't clone step to avoid compilation issues
+            start: self.start.as_ref().map(|e| e.clone_box()),
+            end: self.end.clone_box(),
+            step: self.step.as_ref().map(|e| e.clone_box()),
             is_container: self.is_container,
         }
     }
@@ -109,6 +105,7 @@ impl Expression for RangeClause {
     
     fn clone_box(&self) -> Box<dyn Expression> {
         Box::new(RangeClause {
+            token: self.token.clone(),
             start: self.start.as_ref().map(|e| e.clone_box()),
             end: self.end.clone_box(),
             step: self.step.as_ref().map(|e| e.clone_box()),
