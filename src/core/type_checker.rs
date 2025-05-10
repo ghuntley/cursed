@@ -695,6 +695,21 @@ impl TypeChecker {
     }
 
     /// Check if a type implements an interface
+    /// 
+    /// This function verifies that a concrete type satisfies an interface by checking
+    /// that all methods required by the interface are implemented by the type with
+    /// compatible signatures. This is a key part of the generic constraint checking system.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `type_` - The concrete type to check (usually a struct)
+    /// * `interface` - The interface type that should be implemented
+    /// 
+    /// # Returns
+    /// 
+    /// * `Ok(true)` - If the type implements the interface
+    /// * `Ok(false)` - If the type does not implement the interface
+    /// * `Err` - If there was an error during the check
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn check_interface_implementation(
         &self,
@@ -919,16 +934,39 @@ impl TypeChecker {
     }
     
     /// Get the methods of a struct
+    /// Get the methods for a struct
+    /// 
+    /// This function retrieves the method signatures for a struct, which are used
+    /// to check if the struct implements an interface during generic constraint checking.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `struct_name` - The name of the struct to get methods for
+    /// 
+    /// # Returns
+    /// 
+    /// * `Some(methods)` - A vector of method signatures if found
+    /// * `None` - If no methods are registered for this struct
+    /// 
+    /// # Note
+    /// 
+    /// This method first checks the struct_methods_map which is populated by register_methods_for_struct().
+    /// If no methods are found there, it falls back to hardcoded implementations for certain
+    /// well-known types. In a production system, only the map should be used.
+    #[tracing::instrument(level = "debug", skip(self))]
     pub fn get_struct_methods(
         &self,
         struct_name: &str,
     ) -> Option<Vec<(String, Vec<Type>, Option<Type>)>> {
         // First check our method registry map
         if let Some(methods) = self.struct_methods_map.get(struct_name) {
+            tracing::debug!(methods_count = methods.len(), "Found registered methods for {}", struct_name);
             return Some(methods.clone());
         }
         
         // Fallback to hardcoded methods for backwards compatibility
+        // This is only for testing and should be replaced with proper registration in production
+        tracing::warn!("No registered methods found for {}, falling back to hardcoded methods", struct_name);
         match struct_name {
             "StringStack" => {
                 // Implement methods for a StringStack
@@ -946,7 +984,10 @@ impl TypeChecker {
                     ("size".to_string(), vec![], Some(Type::Normie)),
                 ])
             }
-            _ => None,
+            _ => {
+                tracing::debug!("No methods found for struct: {}", struct_name);
+                None
+            },
         }
     }
     
@@ -964,6 +1005,21 @@ impl TypeChecker {
     ///
     /// * Returns the methods that were registered
     #[tracing::instrument(level = "debug", skip(self, methods))]
+    /// Register methods for a struct
+    /// 
+    /// This is a critical function for interface constraint checking. It populates
+    /// the struct_methods_map which is used to determine if a struct implements
+    /// the required methods for an interface.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `struct_name` - The name of the struct
+    /// * `methods` - A vector of method signatures (name, parameter types, return type)
+    /// 
+    /// # Returns
+    /// 
+    /// The same methods vector that was provided (for convenience)
+    #[tracing::instrument(skip(self, methods), level = "debug")]
     pub fn register_methods_for_struct(
         &mut self,
         struct_name: &str,
