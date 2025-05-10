@@ -86,6 +86,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::integrated_monomorphization::register_integrated_monomorphization();
         // Initialize interface field accessors
         super::interface_field_accessors::register_interface_field_accessors();
+        // Initialize enhanced runtime debugging for type assertions
+        super::interface_type_assertion_debugging::register_runtime_type_assertion_debugging();
         // Initialize standard functions like puts before creating the generator
         let module = context.create_module(module_name);
         let builder = context.create_builder();
@@ -120,6 +122,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality
+            // Type assertion debug level - initialized from environment variables when needed
         }
     }
     

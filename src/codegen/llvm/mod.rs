@@ -96,6 +96,8 @@ pub use self::interface_type_assertion::ImprovedTypeAssertion;
 pub use self::enhanced_type_assertion::EnhancedTypeAssertion;
 // Type assertion error handling
 pub use self::interface_type_assertion_errors::TypeAssertionErrorHandler;
+// Enhanced runtime debugging for interface type assertions
+pub use self::interface_type_assertion_debugging::{RuntimeTypeAssertionDebugging, TypeAssertionDebugLevel};
 // Type assertion integration with main compiler pipeline
 pub use self::type_assertion_integration::TypeAssertionIntegration;
 pub use self::type_assertion_implementation::IntegratedTypeAssertion;
@@ -166,6 +168,7 @@ mod integrated_interface_operations; // Unified interface operations system
 mod auto_interface_dispatcher; // Automatic code generation for interface method dispatching
 mod auto_interface_dispatcher_integration; // Integration of auto interface dispatcher with the compiler
 mod interface_field_accessors; // Integration of improved field accessors with interface system
+mod interface_type_assertion_debugging; // Enhanced runtime debugging for interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
