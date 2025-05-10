@@ -18,7 +18,7 @@ The CURSED programming language compiler is currently in **Stage 1 of developmen
 - **Basic Types**: Fully implemented
 - **Functions**: Fully implemented
 - **Control Flow**: Mostly implemented
-  - Missing `periodt` while loops LLVM implementation
+  - `periodt` while loops implementation completed and connected
   - Range clauses implemented in `src/codegen/llvm/range_clause.rs` but with placeholder container support
   - Container iteration requires actual container_length implementation instead of current placeholder
 - **Concurrency**: Partially implemented
@@ -116,11 +116,11 @@ Items that have been verified as not implemented (sorted by priority):
      - Integration module in `src/codegen/llvm/type_assertion_integration.rs`
      - Proper connection to expression compiler in `src/codegen/llvm/expression.rs`
      - Includes null checking, error propagation, and structured logging
-   - While statements (`periodt` keyword) - Implementation status:
-     - Parser fully implemented in `src/parser/statements.rs`
-     - LLVM code generation exists in `src/codegen/llvm/control_flow.rs` with a complete implementation
-     - However, the wrapper in `src/codegen/llvm/statement.rs` is a placeholder that doesn't call the actual implementation
-     - Integration between parser and code generator is incomplete
+   - While statements (`periodt` keyword) - Implementation status: ✅ IMPLEMENTED
+   - Parser fully implemented in `src/parser/statements.rs`
+   - LLVM code generation exists in `src/codegen/llvm/control_flow.rs` with a complete implementation
+   - Connection established in `src/codegen/llvm/statement.rs` to call the actual implementation
+   - Added test cases in `tests/while_statement_test.rs` to verify functionality
    - Interface implementation needs completion:
      - Parser for interface definitions (`collab` keyword) is fully implemented in `src/parser/types.rs`
      - LLVM code generation exists in `src/codegen/llvm/interface_implementation.rs` with trait `InterfaceImplementation`

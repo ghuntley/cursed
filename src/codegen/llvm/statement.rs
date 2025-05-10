@@ -320,10 +320,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Compile a while statement (wrapper for control_flow implementation)
     pub fn compile_while_statement_wrapper(&mut self, while_stmt: &WhileStatement) -> Result<(), Error> {
-        // Call the implementation from control_flow module
-        // This is just a stub for now
-        println!("DEBUG: Compiling while statement (placeholder)");
-        Ok(())
+        // Call the actual implementation from control_flow module
+        self.compile_while_statement(while_stmt)
     }
     
     /// Compile a for statement (wrapper for control_flow implementation)
