@@ -47,4 +47,11 @@ impl Expression for PointerType {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(PointerType {
+            token: self.token.clone(),
+            target_type: self.target_type.clone_box(),
+        })
+    }
 }

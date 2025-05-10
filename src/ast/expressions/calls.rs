@@ -55,6 +55,15 @@ impl Expression for CallExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(CallExpression {
+            token: self.token.clone(),
+            function: self.function.clone_box(),
+            arguments: self.arguments.iter().map(|arg| arg.clone_box()).collect(),
+            type_arguments: self.type_arguments.clone(),
+        })
+    }
 
     fn is_call_expression(&self) -> bool {
         true
@@ -116,6 +125,15 @@ impl Expression for GenericCallExpression {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(GenericCallExpression {
+            token: self.token.clone(),
+            function: self.function.clone_box(),
+            type_arguments: self.type_arguments.iter().map(|arg| arg.clone_box()).collect(),
+            arguments: self.arguments.iter().map(|arg| arg.clone_box()).collect(),
+        })
     }
 
     fn is_call_expression(&self) -> bool {

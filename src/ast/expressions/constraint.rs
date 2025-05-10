@@ -26,4 +26,12 @@ impl Expression for TypeConstraint {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(TypeConstraint {
+            token: self.token.clone(),
+            type_param: self.type_param.clone(),
+            interface: self.interface.clone(),
+        })
+    }
 }

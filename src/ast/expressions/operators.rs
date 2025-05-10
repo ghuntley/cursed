@@ -61,6 +61,14 @@ impl Expression for PrefixExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(PrefixExpression {
+            token: self.token.clone(),
+            operator: self.operator.clone(),
+            right: self.right.clone_box(),
+        })
+    }
 
     fn is_prefix_expression(&self) -> bool {
         true
@@ -141,6 +149,15 @@ impl Expression for InfixExpression {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(InfixExpression {
+            token: self.token.clone(),
+            left: self.left.clone_box(),
+            operator: self.operator.clone(),
+            right: self.right.clone_box(),
+        })
     }
 
     fn is_infix_expression(&self) -> bool {

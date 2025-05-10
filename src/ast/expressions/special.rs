@@ -60,6 +60,14 @@ impl Expression for AssignmentExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(AssignmentExpression {
+            token: self.token.clone(),
+            name: self.name.clone(),
+            value: self.value.clone_box(),
+        })
+    }
 }
 
 /// Represents a struct instantiation expression in the AST (using the "be_like" keyword in CURSED).
@@ -131,6 +139,15 @@ impl Expression for BeLikeExpression {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(BeLikeExpression {
+            token: self.token.clone(),
+            struct_name: self.struct_name.clone(),
+            type_arguments: self.type_arguments.iter().map(|arg| arg.clone_box()).collect(),
+            fields: self.fields.iter().map(|(name, expr)| (name.clone(), expr.clone_box())).collect(),
+        })
+    }
 }
 
 /// Represents the default case in a switch statement in the AST (using the "basic" keyword in CURSED).
@@ -173,6 +190,12 @@ impl Expression for DefaultCase {
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(DefaultCase {
+            token: self.token.clone(),
+        })
     }
 }
 

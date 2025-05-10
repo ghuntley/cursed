@@ -40,6 +40,13 @@ impl Expression for StringLiteral {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(StringLiteral {
+            token: self.token.clone(),
+            value: self.value.clone(),
+        })
+    }
 }
 
 /// Represents an integer literal in the source code
@@ -77,6 +84,13 @@ impl Expression for IntegerLiteral {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(IntegerLiteral {
+            token: self.token.clone(),
+            value: self.value,
+        })
+    }
 }
 
 /// FloatLiteral represents a floating-point literal
@@ -100,6 +114,13 @@ impl Expression for FloatLiteral {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(FloatLiteral {
+            token: self.token.clone(),
+            value: self.value,
+        })
     }
 }
 
@@ -129,6 +150,13 @@ impl Expression for BooleanLiteral {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(BooleanLiteral {
+            token: self.token.clone(),
+            value: self.value,
+        })
+    }
 }
 
 /// ByteLiteral represents a byte literal (single ASCII character)
@@ -153,6 +181,13 @@ impl Expression for ByteLiteral {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(ByteLiteral {
+            token: self.token.clone(),
+            value: self.value,
+        })
+    }
 }
 
 /// RuneLiteral represents a rune (Unicode character) literal
@@ -176,5 +211,12 @@ impl Expression for RuneLiteral {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(RuneLiteral {
+            token: self.token.clone(),
+            value: self.value,
+        })
     }
 }

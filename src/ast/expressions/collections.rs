@@ -54,6 +54,13 @@ impl Expression for ArrayLiteral {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(ArrayLiteral {
+            token: self.token.clone(),
+            elements: self.elements.iter().map(|e| e.clone_box()).collect(),
+        })
+    }
 }
 
 /// Represents a hash/map literal expression in the AST.
@@ -98,6 +105,15 @@ impl Expression for HashLiteral {
     fn expression_node(&self) {}
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(HashLiteral {
+            token: self.token.clone(),
+            pairs: self.pairs.iter()
+                .map(|(k, v)| (k.clone_box(), v.clone_box()))
+                .collect(),
+        })
     }
 }
 
@@ -145,6 +161,14 @@ impl Expression for IndexExpression {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(IndexExpression {
+            token: self.token.clone(),
+            left: self.left.clone_box(),
+            index: self.index.clone_box(),
+        })
     }
 
     fn is_index_expression(&self) -> bool {
