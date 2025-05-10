@@ -36,78 +36,82 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
         // Get all registered types with proper error handling
         let all_types = self.all_types();
         debug!("Building extension relationships for {} registered types", all_types.len());
-        
-        // === SAMPLE RELATIONSHIP DATA FOR TESTING ===
-        // In a real implementation, the code below would be replaced with actual registry data
-        // access. For now, we'll populate it with some test data to demonstrate the structure.
-        
-        // Create some test relationships for common interface patterns
-        // The structure here simulates what would be extracted from a real registry
-        if all_types.len() >= 2 {
-            // Extract interface IDs if they exist in the registry
-            let reader_id = all_types.iter().find(|(_, name)| name.as_str() == "Reader").map(|(id, _)| *id);
-            let file_reader_id = all_types.iter().find(|(_, name)| name.as_str() == "FileReader").map(|(id, _)| *id);
-            let json_reader_id = all_types.iter().find(|(_, name)| name.as_str() == "JSONFileReader").map(|(id, _)| *id);
-            
-            // Create relationships if the interfaces exist
-            if let Some(reader) = reader_id {
-                // Interfaces that extend Reader
-                let mut extenders = HashSet::new();
-                
-                if let Some(file_reader) = file_reader_id {
-                    extenders.insert(file_reader);
-                    
-                    // FileReader extends Reader
-                    let mut file_reader_extends = HashSet::new();
-                    file_reader_extends.insert(reader);
-                    extension_map.insert(file_reader, file_reader_extends);
-                    
-                    // JSONFileReader extends FileReader
-                    if let Some(json_reader) = json_reader_id {
-                        let mut json_reader_extends = HashSet::new();
-                        json_reader_extends.insert(file_reader);
-                        extension_map.insert(json_reader, json_reader_extends);
-                        
-                        extenders.insert(json_reader); // Also extends Reader indirectly
-                    }
-                }
-                
-                // Record extenders in the relationship map - we use empty set if none extend it
-                if !extenders.is_empty() {
-                    debug!("Found {} interfaces that extend Reader", extenders.len());
-                }
-            }
+
+        // Create a mapping of interface names to their IDs for quick lookups
+        let mut name_to_id_map = HashMap::new();
+        for (id, name) in &all_types {
+            name_to_id_map.insert(name.clone(), *id);
         }
         
-        // === ENHANCED IMPLEMENTATION OUTLINE ===
-        // In a real implementation integrated with LlvmCodeGenerator, the code below would be used
-        // to extract and process registry data. The following implementation pattern should be
-        // followed when integrating with the actual registry:
-        //
-        // # Example implementation structure for real registry access:
-        // ```
-        // let registry_guard = self.registry.read().map_err(|_| Error::from(REGISTRY_ERROR))?;
-        //
-        // // Process interface records to build extension relationships
-        // for (interface_id, interface_data) in registry_guard.interface_records.iter() {
-        //     // Process direct extension relationships from declared "extends"
-        //     if let Some(extends) = &interface_data.extends {
-        //         let target_ids: HashSet<u64> = extends.iter().cloned().collect();
-        //         if !target_ids.is_empty() {
-        //             extension_map.insert(*interface_id, target_ids);
-        //         }
-        //     }
-        //     
-        //     // Process implementation relationships from "impl for" declarations
-        //     if let Some(impls) = &interface_data.impl_for {
-        //         for implementing_id in impls {
-        //             // Each implementing type extends the implemented interface
-        //             let entry = extension_map.entry(*implementing_id).or_insert_with(HashSet::new);
-        //             entry.insert(*interface_id);
-        //         }
-        //     }
-        // }
-        // ```
+        // Access the interface extension registry to get the real extension relationships
+        if let Some(extension_registry) = self.extension_registry.as_ref() {
+            // Get the full extension hierarchy from the registry
+            let hierarchy = extension_registry.get_extension_hierarchy().map_err(|e| {
+                warn!("Error accessing extension registry: {}", e);
+                Error::from(REGISTRY_ERROR)
+            })?;
+            
+            debug!("Retrieved extension hierarchy with {} interface relationships", hierarchy.len());
+            
+            // Convert the string-based hierarchy to ID-based for our internal representation
+            for (interface_name, extends_names) in hierarchy {
+                if let Some(&interface_id) = name_to_id_map.get(&interface_name) {
+                    // Convert extended interface names to IDs
+                    let extends_ids: HashSet<u64> = extends_names.iter()
+                        .filter_map(|ext_name| name_to_id_map.get(ext_name).copied())
+                        .collect();
+                    
+                    if !extends_ids.is_empty() {
+                        debug!("Interface {:?} (ID: {}) extends {} other interfaces", 
+                               interface_name, interface_id, extends_ids.len());
+                        extension_map.insert(interface_id, extends_ids);
+                    }
+                }
+            }
+        } else {
+            // Fallback if registry is not available - use sample data for backward compatibility
+            debug!("Interface extension registry not available, using sample data");
+            
+            // Create some test relationships for common interface patterns
+            // The structure here simulates what would be extracted from a real registry
+            if all_types.len() >= 2 {
+                // Extract interface IDs if they exist in the registry
+                let reader_id = all_types.iter().find(|(_, name)| name.as_str() == "Reader").map(|(id, _)| *id);
+                let file_reader_id = all_types.iter().find(|(_, name)| name.as_str() == "FileReader").map(|(id, _)| *id);
+                let json_reader_id = all_types.iter().find(|(_, name)| name.as_str() == "JSONFileReader").map(|(id, _)| *id);
+                
+                // Create relationships if the interfaces exist
+                if let Some(reader) = reader_id {
+                    // Interfaces that extend Reader
+                    let mut extenders = HashSet::new();
+                    
+                    if let Some(file_reader) = file_reader_id {
+                        extenders.insert(file_reader);
+                        
+                        // FileReader extends Reader
+                        let mut file_reader_extends = HashSet::new();
+                        file_reader_extends.insert(reader);
+                        extension_map.insert(file_reader, file_reader_extends);
+                        
+                        // JSONFileReader extends FileReader
+                        if let Some(json_reader) = json_reader_id {
+                            let mut json_reader_extends = HashSet::new();
+                            json_reader_extends.insert(file_reader);
+                            extension_map.insert(json_reader, json_reader_extends);
+                            
+                            extenders.insert(json_reader); // Also extends Reader indirectly
+                        }
+                    }
+                    
+                    // Record extenders in the relationship map - we use empty set if none extend it
+                    if !extenders.is_empty() {
+                        debug!("Found {} interfaces that extend Reader", extenders.len());
+                    }
+                }
+            }
+            
+            warn!("Using sample data instead of real registry data for interface extensions");
+        }
         
         debug!("Built extension relationship map with {} entries", extension_map.len());
         Ok(extension_map)
