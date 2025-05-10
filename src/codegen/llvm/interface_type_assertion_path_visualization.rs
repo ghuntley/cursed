@@ -21,8 +21,8 @@ use tracing::{debug, error, info, instrument, trace, warn};
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
-// We'll implement without the nested interface type assertion dependency for now
-// This allows us to avoid import errors while demonstrating the path visualization concepts
+// Import the necessary type assertion traits
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::error::Error;
 
@@ -137,7 +137,9 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         debug!("Generating DOT graph for interface hierarchy");
         
         let mut dot = String::from("digraph interface_hierarchy {\n");
-        _ = writeln!(dot, "  node [shape=box, style=filled, fillcolor=lightblue];");
+        writeln!(dot, "  node [shape=box, style=filled, fillcolor=lightblue];").map_err(|e| {
+            Error::Compilation(format!("Failed to write to DOT graph: {}", e))
+        })?;
         
         // Get the complete hierarchy from the registry
         match self.interface_registry().get_extension_hierarchy() {
@@ -155,19 +157,25 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
                 
                 // Add nodes to DOT
                 for interface in &all_interfaces {
-                    _ = writeln!(dot, "  \"{}\" [label=\"{}\"];", interface, interface);
+                    writeln!(dot, "  \"{}\" [label=\"{}\"];", interface, interface).map_err(|e| {
+                        Error::Compilation(format!("Failed to write node to DOT graph: {}", e))
+                    })?;
                 }
                 
                 // Add edges
                 for (source, targets) in &hierarchy {
                     for target in targets {
-                        _ = writeln!(dot, "  \"{}\" -> \"{}\";", source, target);
+                        writeln!(dot, "  \"{}\" -> \"{}\";", source, target).map_err(|e| {
+                            Error::Compilation(format!("Failed to write edge to DOT graph: {}", e))
+                        })?;
                     }
                 }
             },
             Err(e) => {
                 warn!("Failed to get interface hierarchy: {}", e);
-                _ = writeln!(dot, "  \"Error\" [label=\"Failed to get interface hierarchy: {}\", color=red];", e);
+                writeln!(dot, "  \"Error\" [label=\"Failed to get interface hierarchy: {}\", color=red];", e).map_err(|e| {
+                    Error::Compilation(format!("Failed to write error node to DOT graph: {}", e))
+                })?;
             }
         }
         
@@ -189,27 +197,49 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Generate a simple ASCII art representation
         let mut result = String::new();
         
-        _ = writeln!(result, "Interface Inheritance Path:");
+        writeln!(result, "Interface Inheritance Path:").map_err(|e| {
+            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+        })?;
+        
         for (i, interface) in path.iter().enumerate() {
             if i > 0 {
-                _ = writeln!(result, "  ↓ extends");
+                writeln!(result, "  ↓ extends").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
             }
-            _ = writeln!(result, "  [{}]", interface);
+            writeln!(result, "  [{}]", interface).map_err(|e| {
+                Error::Compilation(format!("Failed to write to path visualization: {}", e))
+            })?;
         }
         
         // Also generate a DOT subgraph for just this path
-        _ = writeln!(result, "\nDOT representation:");
-        _ = writeln!(result, "digraph path {{");
-        _ = writeln!(result, "  node [shape=box, style=filled, fillcolor=lightblue];");
+        writeln!(result, "\nDOT representation:").map_err(|e| {
+            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+        })?;
+        
+        writeln!(result, "digraph path {{").map_err(|e| {
+            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+        })?;
+        
+        writeln!(result, "  node [shape=box, style=filled, fillcolor=lightblue];").map_err(|e| {
+            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+        })?;
         
         for i in 0..path.len() {
-            _ = writeln!(result, "  \"{}\" [label=\"{}\"];", path[i], path[i]);
+            writeln!(result, "  \"{}\" [label=\"{}\"];", path[i], path[i]).map_err(|e| {
+                Error::Compilation(format!("Failed to write to path visualization: {}", e))
+            })?;
+            
             if i < path.len() - 1 {
-                _ = writeln!(result, "  \"{}\" -> \"{}\";", path[i], path[i + 1]);
+                writeln!(result, "  \"{}\" -> \"{}\";", path[i], path[i + 1]).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to path visualization: {}", e))
+                })?;
             }
         }
         
-        _ = writeln!(result, "}}");
+        writeln!(result, "}}").map_err(|e| {
+            Error::Compilation(format!("Failed to write to path visualization: {}", e))
+        })?;
         
         Ok(result)
     }
@@ -231,35 +261,51 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Try to find alternative paths
         match self.find_alternative_paths(source_interface, target_interface, 3) {
             Ok(paths) if !paths.is_empty() => {
-                _ = writeln!(message, "\n\nAlternative paths between these interfaces:");
+                writeln!(message, "\n\nAlternative paths between these interfaces:").map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
                 
                 for (i, path) in paths.iter().enumerate() {
-                    _ = writeln!(message, "\nPath {}:", i + 1);
+                    writeln!(message, "\nPath {}:", i + 1).map_err(|e| {
+                        Error::Compilation(format!("Failed to write to error message: {}", e))
+                    })?;
                     for (j, interface) in path.iter().enumerate() {
                         if j > 0 {
-                            _ = writeln!(message, "  ↓ extends");
+                            writeln!(message, "  ↓ extends").map_err(|e| {
+                                Error::Compilation(format!("Failed to write to error message: {}", e))
+                            })?;
                         }
-                        _ = writeln!(message, "  [{}]", interface);
+                        writeln!(message, "  [{}]", interface).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to error message: {}", e))
+                        })?;
                     }
                 }
                 
-                _ = writeln!(
+                writeln!(
                     message,
                     "\nConsider implementing the missing interfaces in the hierarchy."
-                );
+                ).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
             },
             Ok(_) => {
-                _ = writeln!(
+                writeln!(
                     message,
                     "\n\nNo viable inheritance path exists between these interfaces."
-                );
+                ).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
                 
                 // List all interfaces that the source implements
                 match self.interface_registry().get_direct_extensions(source_interface) {
                     Ok(Some(implementations)) if !implementations.is_empty() => {
-                        _ = writeln!(message, "\n'{}' directly extends these interfaces:", source_interface);
+                        writeln!(message, "\n'{}' directly extends these interfaces:", source_interface).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to error message: {}", e))
+                        })?;
                         for impl_interface in &implementations {
-                            _ = writeln!(message, "  - {}", impl_interface);
+                            writeln!(message, "  - {}", impl_interface).map_err(|e| {
+                                Error::Compilation(format!("Failed to write to error message: {}", e))
+                            })?;
                         }
                     },
                     Ok(_) => {}, // No implementations or empty
@@ -271,9 +317,13 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
                 // List all interfaces that extend the target
                 match self.interface_registry().get_direct_implementors(target_interface) {
                     Ok(Some(implementors)) if !implementors.is_empty() => {
-                        _ = writeln!(message, "\nThese interfaces directly extend '{}':", target_interface);
+                        writeln!(message, "\nThese interfaces directly extend '{}':", target_interface).map_err(|e| {
+                            Error::Compilation(format!("Failed to write to error message: {}", e))
+                        })?;
                         for impl_interface in &implementors {
-                            _ = writeln!(message, "  - {}", impl_interface);
+                            writeln!(message, "  - {}", impl_interface).map_err(|e| {
+                                Error::Compilation(format!("Failed to write to error message: {}", e))
+                            })?;
                         }
                     },
                     Ok(_) => {}, // No implementors or empty
@@ -284,11 +334,13 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
             },
             Err(e) => {
                 warn!("Failed to find alternative paths: {}", e);
-                _ = writeln!(
+                writeln!(
                     message,
                     "\n\nFailed to analyze inheritance paths: {}",
                     e
-                );
+                ).map_err(|e| {
+                    Error::Compilation(format!("Failed to write to error message: {}", e))
+                })?;
             }
         }
         
@@ -403,8 +455,9 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
     fn compile_type_assertion_with_errors(&mut self, 
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Compile using the basic type assertion mechanism
-        self.compile_type_assertion(type_assertion)
+        // Delegate to the InterfaceTypeAssertion trait implementation
+        // which is the standard mechanism for compiling type assertions
+        InterfaceTypeAssertion::compile_type_assertion(self, type_assertion)
     }
 }
 
