@@ -41,10 +41,16 @@
   languages.swift.enable = true;
   languages.zig.enable = true;
 
+  env.LLVM_CONFIG_PATH = "${pkgs.llvmPackages_17.llvm}/bin/llvm-config";
+  # LLVM config needs both components for complete installation
+  env.LLVM_SYS_170_PREFIX = "${pkgs.llvmPackages_17.libllvm}";
 
   enterShell = ''
     export LLVM_SYS_170_PREFIX="/nix/store/m6793mx9c6hxv80m1z1cxfmml7w8wr8n-llvm-17.0.6-dev"
     export LLVM_CONFIG_PATH="/nix/store/m6793mx9c6hxv80m1z1cxfmml7w8wr8n-llvm-17.0.6-dev/bin/llvm-config"
+
+    #export LLVM_SYS_170_PREFIX="${pkgs.llvmPackages_17.libllvm}"
+    #export LLVM_CONFIG_PATH="${pkgs.llvmPackages_17.llvm}/bin/llvm-config"
   '';
 
 

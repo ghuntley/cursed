@@ -3,7 +3,7 @@
 //! This module handles code generation for statements in the CURSED language,
 //! translating AST statement nodes into LLVM IR instructions.
 
-use crate::ast::traits::Statement;
+use crate::ast::traits::{Statement, Expression};
 use crate::ast::statements::ExpressionStatement;
 use crate::ast::statements::ReturnStatement;
 use crate::ast::statements::BlockStatement;
@@ -11,7 +11,7 @@ use crate::ast::statements::declarations::LetStatement;
 use crate::ast::FunctionStatement;
 use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::ast::control_flow::{BreakStatement, ContinueStatement};
-use crate::ast::control_flow::loops::RangeForStatement;
+use crate::ast::control_flow::range::RangeForStatement;
 use crate::codegen::llvm::range_clause_fixed::RangeClauseCompilationEnhanced;
 use crate::ast;
 use crate::error::Error;
@@ -330,20 +330,28 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Compile a for statement (wrapper for control_flow implementation)
     pub fn compile_for_statement_wrapper(&mut self, for_stmt: &ForStatement) -> Result<(), Error> {
-        // Get the specific type of for statement
-        // For testing, just call the actual implementation in the RangeClauseCompilationEnhanced trait
-        let ast::control_flow::ForStatementKind::RangeFor(range_for) = &for_stmt.kind;
-
+        // This is a regular for loop, not a range-for loop
+        // Implement regular for loop compilation here
+        self.compile_for_statement(for_stmt)
+    }
+    
+    /// Compile a range-for statement
+    pub fn compile_range_for_statement(&mut self, range_for: &RangeForStatement) -> Result<(), Error> {
         // Check if it's a single-value iteration or key-value iteration
         if range_for.key_var.is_none() {
             // Single value iteration - use container iteration
-            self.compile_container_for_loop(&range_for.value_var, &range_for.range, &range_for.body)
+            // We need to trick the compiler because we can't directly convert &Box<RangeClause> to &Box<dyn Expression>
+            // Instead, we'll get the range clause as a dyn Expression, and manually box it
+            let range_expr = Box::new(range_for.range.as_ref() as &dyn Expression);
+            self.compile_container_for_loop(&range_for.value_var, &range_expr, &range_for.body)
         } else {
             // Key-value iteration - use map iteration
+            // Same type conversion trick as above
+            let range_expr = Box::new(range_for.range.as_ref() as &dyn Expression);
             self.compile_map_for_loop(
                 range_for.key_var.as_ref().unwrap(), 
                 &range_for.value_var, 
-                &range_for.range, 
+                &range_expr, 
                 &range_for.body
             )
         }
