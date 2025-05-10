@@ -81,6 +81,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) global_type_names: Option<inkwell::values::GlobalValue<'ctx>>,
     // Global counter for the number of registered types
     pub(crate) global_type_count: Option<inkwell::values::GlobalValue<'ctx>>,
+    // LRU cache for field accessors
+    pub(crate) lru_field_accessor_cache: Option<crate::codegen::llvm::lru_field_accessors::ThreadSafeFieldAccessorLruCache>,
     // Counter for generating unique IDs
     pub(crate) unique_id_counter: std::sync::atomic::AtomicU64,
 }
@@ -109,6 +111,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_assertion_enhanced::register_enhanced_type_assertion();
         // Initialize optimized dynamic dispatch
         super::optimized_dynamic_dispatch::register_optimized_dynamic_dispatch();
+        // Initialize LRU cached field accessors
+        super::lru_field_accessors::register_lru_field_accessors();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator
@@ -150,6 +154,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             global_type_count: None,
             // Initialize the unique ID counter with a random starting value
             unique_id_counter: std::sync::atomic::AtomicU64::new(rand::random::<u64>()),
+            lru_field_accessor_cache: None,
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality

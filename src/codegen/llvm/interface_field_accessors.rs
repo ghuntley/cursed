@@ -10,6 +10,7 @@ use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatemen
 use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
+use crate::codegen::llvm::lru_field_accessors::LruCachedFieldAccessors;
 use crate::codegen::llvm::integrated_monomorphization::IntegratedMonomorphization;
 use crate::codegen::llvm::monomorphization::MonomorphizationManagerExtension;
 use crate::core::type_checker::Type;
@@ -71,8 +72,8 @@ impl<'ctx> InterfaceFieldAccessors<'ctx> for LlvmCodeGenerator<'ctx> {
             struct_stmt.name.value.clone()
         };
         
-        // Use the improved field accessors implementation
-        self.generate_improved_field_accessors(struct_stmt, &specialized_name, type_args)?;
+        // Use the LRU cached field accessors implementation for better performance
+        self.generate_lru_cached_field_accessors(struct_stmt, &specialized_name, type_args)?;
         
         // Register the field accessors with the interface registry
         self.register_field_accessors_with_interface(
@@ -123,8 +124,8 @@ impl<'ctx> InterfaceFieldAccessors<'ctx> for LlvmCodeGenerator<'ctx> {
             return Ok(());
         }
         
-        // Generate the field accessors using the improved implementation
-        let result = self.generate_improved_field_accessors(generic_struct, specialized_name, type_args);
+        // Generate the field accessors using the LRU cached implementation
+        let result = self.generate_lru_cached_field_accessors(generic_struct, specialized_name, type_args);
         
         // Register that we've generated accessors for this struct
         if let Some(manager) = self.monomorphization_manager.as_mut() {

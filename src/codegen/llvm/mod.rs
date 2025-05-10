@@ -80,6 +80,7 @@ pub use self::struct_monomorphization::StructMonomorphization;
 pub use self::enhanced_monomorphization::EnhancedMonomorphization;
 pub use self::integrated_monomorphization::IntegratedMonomorphization;
 pub use self::improved_field_accessors::ImprovedFieldAccessors;
+pub use self::lru_field_accessors::LruCachedFieldAccessors;
 pub use self::property_access::PropertyAccessCompilation;
 pub use self::assignment::AssignmentCompilation;
 pub use self::break_statement::BreakStatementCompilation;
@@ -143,6 +144,7 @@ mod hook_dot_expressions; // Temporary patch for dot expressions
 pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint checking
 pub mod integrated_monomorphization; // Integrated monomorphization system
 pub mod improved_field_accessors; // Improved field accessors with proper error handling
+pub mod lru_field_accessors; // LRU cached field accessors with optimized performance
 mod errors;
 mod expression;
 pub mod function_monomorphization;

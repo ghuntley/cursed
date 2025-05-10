@@ -32,74 +32,14 @@ impl GenericInstantiator {
 
     /// Instantiate a type with concrete type arguments
     pub fn instantiate_type(&self, generic_type: &Type) -> Result<Type, Error> {
-        match generic_type {
-            // For type parameters, look up the concrete type
-            Type::TypeParam(name) => {
-                if let Some(concrete) = self.type_map.get(name) {
-                    Ok(concrete.clone())
-                } else {
-                    Err(Error::from_str(&format!(
-                        "Unknown type parameter: {}",
-                        name
-                    )))
-                }
-            }
-
-            // For composite types, instantiate their type parameters
-            Type::Array(elem_type, size) => {
-                let concrete_elem = self.instantiate_type(elem_type)?;
-                Ok(Type::Array(Box::new(concrete_elem), *size))
-            }
-
-            Type::Slice(elem_type) => {
-                let concrete_elem = self.instantiate_type(elem_type)?;
-                Ok(Type::Slice(Box::new(concrete_elem)))
-            }
-
-            Type::Map(key_type, value_type) => {
-                let concrete_key = self.instantiate_type(key_type)?;
-                let concrete_value = self.instantiate_type(value_type)?;
-                Ok(Type::Map(Box::new(concrete_key), Box::new(concrete_value)))
-            }
-
-            Type::Struct(name, type_params) => {
-                let mut concrete_params = Vec::new();
-                for param in type_params {
-                    concrete_params.push(Box::new(self.instantiate_type(param)?));
-                }
-                Ok(Type::Struct(name.clone(), concrete_params))
-            }
-
-            Type::Interface(name, type_params) => {
-                let mut concrete_params = Vec::new();
-                for param in type_params {
-                    concrete_params.push(Box::new(self.instantiate_type(param)?));
-                }
-                Ok(Type::Interface(name.clone(), concrete_params))
-            }
-
-            Type::Pointer(target_type) => {
-                let concrete_target = self.instantiate_type(target_type)?;
-                Ok(Type::Pointer(Box::new(concrete_target)))
-            }
-
-            Type::Function(param_types, return_type) => {
-                let mut concrete_params = Vec::new();
-                for param in param_types {
-                    concrete_params.push(Box::new(self.instantiate_type(param)?));
-                }
-                let concrete_return = self.instantiate_type(return_type)?;
-                Ok(Type::Function(concrete_params, Box::new(concrete_return)))
-            }
-
-            Type::Channel(elem_type) => {
-                let concrete_elem = self.instantiate_type(elem_type)?;
-                Ok(Type::Channel(Box::new(concrete_elem)))
-            }
-
-            // Non-generic types are returned as-is
-            _ => Ok(generic_type.clone()),
-        }
+        // Use the enhanced nested generic instantiation functionality for better handling of complex nested types
+        use crate::core::nested_generic_instantiation::NestedGenericSubstitution;
+        
+        // Convert our type map to the format expected by NestedGenericSubstitution
+        let type_param_map = self.type_map.clone();
+        
+        // Call the enhanced implementation with a reasonable depth limit
+        generic_type.substitute_nested_type_parameters(&type_param_map, 32)
     }
 
     // Original monomorphization functions are commented out for now as they have various issues
