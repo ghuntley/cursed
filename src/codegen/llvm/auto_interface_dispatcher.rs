@@ -8,11 +8,12 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::dynamic_dispatch::{InterfaceManager, VTableImpl};
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
+use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::core::type_checker::Type as CursedType;
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use std::collections::HashMap;
-use tracing::{debug, info, instrument};
+use tracing::{debug, info, instrument, error};
 
 /// Trait for automatic generation of interface dispatch code
 pub trait AutoInterfaceDispatcher<'ctx> {
@@ -428,6 +429,7 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
         Ok(())
     }
     
+    #[instrument(skip(self, receiver, args), fields(receiver_type = ?receiver_type, method_name = %method_name))]
     fn optimize_interface_call(
         &mut self,
         receiver: PointerValue<'ctx>,
@@ -437,18 +439,37 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<Option<BasicValueEnum<'ctx>>, Error> {
         // This is a higher-level function that chooses the best dispatch strategy
         // based on the receiver type
+        debug!("Optimizing interface call for method {}", method_name);
+        
+        // Ensure interface manager is initialized
+        if self.interface_manager.is_none() {
+            self.init_auto_interface_dispatcher()?;
+        }
         
         match receiver_type {
             CursedType::Interface(interface_name, _) => {
-                // For interface values, use regular dynamic dispatch
-                self.auto_generate_method_dispatch(
-                    receiver,
-                    interface_name,
-                    method_name,
-                    args,
-                )
+                debug!("Using enhanced dynamic dispatch for interface value");
+                // For interface values, use enhanced dynamic dispatch if available
+                if cfg!(feature = "enhanced_dynamic_dispatch") {
+                    // Try to use the enhanced dynamic dispatch for better error handling
+                    self.call_interface_method_enhanced(
+                        receiver,
+                        interface_name,
+                        method_name,
+                        args,
+                    )
+                } else {
+                    // Fall back to regular auto-generated method dispatch
+                    self.auto_generate_method_dispatch(
+                        receiver,
+                        interface_name,
+                        method_name,
+                        args,
+                    )
+                }
             },
             CursedType::Struct(struct_name, _) => {
+                debug!("Handling struct type {}", struct_name);
                 // For struct types, try to determine if it implements any interfaces
                 // and which one has the required method
                 
@@ -458,15 +479,23 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
                     None => return Err(Error::from_str("Interface manager not initialized")),
                 };
                 
-                // Find interfaces implemented by this struct
-                // For now, this is a placeholder since we can't directly access the private vtable_impls field
-                // In a real implementation, we would have a method on InterfaceManager to get interfaces implemented by a type
-                let implemented_interfaces: Vec<String> = Vec::new();
+                // Find interfaces implemented by this struct by checking all registered vtable implementations
+                let mut implemented_interfaces: Vec<String> = Vec::new();
+                
+                // Look through each registered interface's vtables to see if this struct implements any
+                for interface_name in interface_manager.interfaces().keys() {
+                    if interface_manager.get_vtable_impl(interface_name, struct_name).is_some() {
+                        implemented_interfaces.push(interface_name.clone());
+                    }
+                }
+                
+                debug!("Found {} interfaces implemented by {}", implemented_interfaces.len(), struct_name);
                 
                 // Find an interface that has this method
                 for interface_name in implemented_interfaces {
                     if let Some(vtable) = interface_manager.get_vtable(&interface_name) {
                         if vtable.method_indices.contains_key(method_name) {
+                            debug!("Found method '{}' in interface '{}'", method_name, interface_name);
                             // Found an interface with this method - use direct dispatch
                             return self.auto_generate_direct_dispatch(
                                 receiver,
@@ -480,6 +509,7 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
                 }
                 
                 // If no interface implements this method, it might be a direct method call
+                error!("Method '{}' not found on type '{}' or any of its interfaces", method_name, receiver_type);
                 Err(Error::from_str(&format!(
                     "Method '{}' not found on type '{}' or any of its interfaces",
                     method_name,
@@ -488,6 +518,7 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
             },
             _ => {
                 // Other types don't support interface method calls directly
+                error!("Type '{}' doesn't support interface method calls", receiver_type);
                 Err(Error::from_str(&format!(
                     "Type '{}' doesn't support interface method calls",
                     format!("{:?}", receiver_type)

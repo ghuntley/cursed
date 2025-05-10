@@ -78,6 +78,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         tracing::debug!("Creating new LlvmCodeGenerator for module {}", module_name);
         // Initialize type assertion registration
         super::type_assertion_implementation::register_type_assertion_implementation();
+        // Initialize auto interface dispatcher integration
+        super::auto_interface_dispatcher_integration::register_auto_interface_dispatcher_integration();
+        // Initialize enhanced dynamic dispatch
+        super::enhanced_dynamic_dispatch::register_enhanced_dynamic_dispatch();
         // Initialize standard functions like puts before creating the generator
         let module = context.create_module(module_name);
         let builder = context.create_builder();
@@ -102,7 +106,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             mono_manager: crate::codegen::monomorphization::MonomorphizationManager::new(),
             // Keep this for backward compatibility, but it will use the main manager for operations
             llvm_mono_manager: self::monomorphization::MonomorphizationManager::new(),
-            interface_manager: None, // Will be initialized when needed
+            // Initialize interface manager immediately to avoid dependency issues
+            interface_manager: Some(crate::codegen::llvm::dynamic_dispatch::InterfaceManager::new()),
             gc_metadata: HashMap::new(),
             string_literal_counter: 0,
             type_id_cache: None, // Will be initialized when needed

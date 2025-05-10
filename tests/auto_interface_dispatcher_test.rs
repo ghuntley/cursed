@@ -5,6 +5,7 @@
 
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::auto_interface_dispatcher::{AutoInterfaceDispatcher, AutoInterfaceDispatchExtension};
+use cursed::codegen::llvm::auto_interface_dispatcher_integration::AutoInterfaceDispatcherIntegration;
 use cursed::codegen::llvm::interface_implementation::InterfaceImplementation;
 use cursed::core::type_checker::Type as CursedType;
 use cursed::error::Error;
@@ -22,8 +23,8 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     let context = Context::create();
     let mut codegen = LlvmCodeGenerator::new(&context, "test_module")?;
     
-    // Initialize the auto interface dispatcher
-    codegen.init_auto_interface_dispatcher()?;
+    // Initialize the auto interface dispatcher with comprehensive integration
+    codegen.init_auto_interface_dispatcher_integration()?
     
     // Define an interface with a single method
     let greeter_methods = vec![
@@ -121,8 +122,8 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     let context = Context::create();
     let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg")?;
     
-    // Initialize the auto interface dispatcher
-    codegen.init_auto_interface_dispatcher()?;
+    // Initialize the auto interface dispatcher with comprehensive integration
+    codegen.init_auto_interface_dispatcher_integration()?
     
     // Define an interface with methods
     let shape_methods = vec![
@@ -184,11 +185,11 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     // Return a constant value for perimeter
     builder.build_return(Some(&context.f64_type().const_float(26.0))).unwrap();
     
-    // Auto-register the struct methods and generate interface implementation
-    codegen.auto_register_struct_methods(
+    // Use the enhanced discovery and registration functionality
+    codegen.discover_and_register_interface_implementations(
         struct_name,
         "Shape",
-    )?;
+    )?
     
     // Create Rectangle instance and convert to Shape interface
     let rect_struct_type = context.struct_type(&[], false);
@@ -234,8 +235,8 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     let context = Context::create();
     let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer")?;
     
-    // Initialize the auto interface dispatcher
-    codegen.init_auto_interface_dispatcher()?;
+    // Initialize the auto interface dispatcher with comprehensive integration
+    codegen.init_auto_interface_dispatcher_integration()?
     
     // Define an interface with a method
     let speaker_methods = vec![
