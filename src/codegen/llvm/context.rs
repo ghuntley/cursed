@@ -113,6 +113,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::optimized_dynamic_dispatch::register_optimized_dynamic_dispatch();
         // Initialize LRU cached field accessors
         super::lru_field_accessors::register_lru_field_accessors();
+        super::interface_field_accessors_lru::register_interface_field_accessors_lru();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator

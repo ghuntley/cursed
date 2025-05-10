@@ -145,6 +145,7 @@ pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint 
 pub mod integrated_monomorphization; // Integrated monomorphization system
 pub mod improved_field_accessors; // Improved field accessors with proper error handling
 pub mod lru_field_accessors; // LRU cached field accessors with optimized performance
+pub mod interface_field_accessors_lru; // Interface field accessors with LRU caching
 mod errors;
 mod expression;
 pub mod function_monomorphization;
