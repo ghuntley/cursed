@@ -446,8 +446,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     #[inline]
     fn get_pointee_type(&self, ptr_type: inkwell::types::PointerType<'ctx>) -> inkwell::types::BasicTypeEnum<'ctx> {
         // Get the element type of the pointer using the proper LLVM API
-        // Note: This handles the LLVM API change where get_pointee_type() was renamed to get_element_type()
-        ptr_type.get_element_type()
+        ptr_type.get_pointee_type() // Use the current API method name
     }
     /// Get the length of a container
     /// Get container length (array size, slice length, etc.)
@@ -471,7 +470,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if element_type.is_array_type() {
                 // Pointer to an array
-                if let Ok(array_type) = element_type.try_into_array_type() {
+                if let Some(array_type) = element_type.as_array_type() {
                     let length = array_type.len();
                     debug!("Pointer to array length: {}", length);
                     Ok(self.context.i32_type().const_int(length as u64, false))
@@ -482,7 +481,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             } else if element_type.is_struct_type() {
                 // For slice-like types which are structs with a length field
                 // Struct types typically have length as field 1 and data pointer as field 0
-                if let Ok(struct_type) = element_type.try_into_struct_type() {
+                if let Some(struct_type) = element_type.as_struct_type() {
                     // Get a pointer to the length field (assuming it's at index 1)
                     let indices = &[
                         self.context.i32_type().const_zero(),
@@ -530,7 +529,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // For string types, we need to call a string length function
                 
                 // Get the module reference safely
-                let module = self.get_module_ref()?
+                let module = self.get_module_ref()?;
                 
                 // Use the string_length function from our runtime
                 let fn_name = "string_length";
@@ -559,7 +558,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // For now, we'll use a special runtime helper function
                 
                 // Get the module reference safely
-                let module = self.get_module_ref()?
+                let module = self.get_module_ref()?;
                 
                 // Get or create a generic container length function 
                 let fn_name = "container_length";
@@ -587,7 +586,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // We need to call a length method or access a length property
             
             // Get the module reference safely
-            let module = self.get_module_ref()?
+            let module = self.get_module_ref()?;
             
             // Try to find a container length function that takes this type
             let fn_names = vec![
@@ -652,7 +651,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if pointee_type.is_array_type() {
                 // Pointer to an array
-                if let Ok(array_type) = pointee_type.try_into_array_type() {
+                if let Some(array_type) = pointee_type.as_array_type() {
                     let element_type = array_type.get_element_type();
                     
                     // We have two options:
@@ -675,7 +674,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // This is likely a slice or similar container
                 // For slices, we need to extract the data pointer and then index it
                 
-                if let Ok(struct_type) = pointee_type.try_into_struct_type() {
+                if let Some(struct_type) = pointee_type.as_struct_type() {
                     let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
                     debug!("Accessing element from struct container: {}", type_name);
                     
@@ -860,7 +859,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if pointee_type.is_array_type() {
                 // Pointer to an array - get the array's element type
-                if let Ok(array_type) = pointee_type.try_into_array_type() {
+                if let Some(array_type) = pointee_type.as_array_type() {
                     let element_type = array_type.get_element_type();
                     debug!("Pointer to array element type extracted");
                     Ok(element_type)
@@ -870,7 +869,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 }
             } else if pointee_type.is_struct_type() {
                 // This is likely a slice or other structured container (e.g., a Slice<T>)
-                if let Ok(struct_type) = pointee_type.try_into_struct_type() {
+                if let Some(struct_type) = pointee_type.as_struct_type() {
                     let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
                     debug!("Determining element type from struct container: {}", type_name);
                     
@@ -989,11 +988,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         let map_ptr = map_value.into_pointer_value();
         
-        // Get the module
-        let module = match &self.module {
-            Some(module) => module,
-            None => return Err(Error::Compilation("Module not available".to_string()))
-        };
+        // Get the module reference safely
+        let module = self.get_module_ref()?;
         
         // Use our runtime map_iterator_create function
         let fn_name = "map_iterator_create";
