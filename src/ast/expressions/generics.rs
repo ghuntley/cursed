@@ -42,6 +42,14 @@ impl Node for TypeReference {
 impl Expression for TypeReference {
     fn expression_node(&self) {}
     fn as_any(&self) -> &dyn Any { self }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(TypeReference {
+            token: self.token.clone(),
+            name: self.name.clone(),
+            type_arguments: self.type_arguments.iter().map(|arg| arg.clone_box()).collect(),
+        })
+    }
 }
 
 /// Represents a generic function call expression (identity[T](x))
@@ -80,6 +88,15 @@ impl Node for GenericCallExpression {
 impl Expression for GenericCallExpression {
     fn expression_node(&self) {}
     fn as_any(&self) -> &dyn Any { self }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(GenericCallExpression {
+            token: self.token.clone(),
+            function: self.function.clone_box(),
+            type_arguments: self.type_arguments.iter().map(|arg| arg.clone_box()).collect(),
+            arguments: self.arguments.iter().map(|arg| arg.clone_box()).collect(),
+        })
+    }
 }
 
 /// Represents a struct instantiation with fields
@@ -124,4 +141,13 @@ impl Node for BeLikeExpression {
 impl Expression for BeLikeExpression {
     fn expression_node(&self) {}
     fn as_any(&self) -> &dyn Any { self }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(BeLikeExpression {
+            token: self.token.clone(),
+            struct_name: self.struct_name.clone(),
+            type_arguments: self.type_arguments.iter().map(|arg| arg.clone_box()).collect(),
+            fields: self.fields.iter().map(|(name, expr)| (name.clone(), expr.clone_box())).collect(),
+        })
+    }
 }

@@ -116,11 +116,24 @@ The codebase contains numerous ignored tests that provide insight into implement
   - ❌ Fixed semicolon and LLVM API issues in the enhanced range clause implementation (in progress)
 - Still need to address compilation issues:
   - Need to fix pointer element type access (LLVM API has changed)
-  - Need to add clone_box implementation for remaining Expression types (over 20 types still missing implementation)
+  - ✅ IMPLEMENTED - Added clone_box implementation for all required Expression types:
   - Added clone_box implementation for RangeExpression
   - Added clone_box implementation for TypeAssertion
   - Added clone_box implementation for ChannelExpression, SendExpression, and ReceiveExpression
   - Added clone_box implementation for StanExpression (goroutines)
+  - Added clone_box implementation for StringLiteral, IntegerLiteral, FloatLiteral, BooleanLiteral, ByteLiteral, RuneLiteral
+  - Added clone_box implementation for ArrayLiteral, HashLiteral, IndexExpression
+  - Added clone_box implementation for Identifier
+  - Added clone_box implementation for IfExpression
+  - Added clone_box implementation for PrefixExpression, InfixExpression
+  - Added clone_box implementation for CallExpression, GenericCallExpression
+  - Added clone_box implementation for DotExpression
+  - Added clone_box implementation for AssignmentExpression, BeLikeExpression, DefaultCase
+  - Added clone_box implementation for TypeReference and other generic expressions
+  - Added clone_box implementation for StructLiteral, StructFieldAccess
+  - Added clone_box implementation for TypeConversionExpression
+  - Added clone_box implementation for PointerType, PointerDereference
+  - Added clone_box implementation for TypeConstraint
   - Need to fix some type mismatches in function calls
 - Tests in `tests/jit_map_test.rs` - map support not fully implemented
 

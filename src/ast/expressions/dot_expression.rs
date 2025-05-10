@@ -48,4 +48,12 @@ impl Expression for DotExpression {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(DotExpression {
+            token: self.token.clone(),
+            object: self.object.clone_box(),
+            property: self.property.clone(),
+        })
+    }
 }

@@ -47,4 +47,11 @@ impl Expression for PointerDereference {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(PointerDereference {
+            token: self.token.clone(),
+            pointer: self.pointer.clone_box(),
+        })
+    }
 }

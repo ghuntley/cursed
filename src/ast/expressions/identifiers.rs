@@ -44,4 +44,11 @@ impl Expression for Identifier {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(Identifier {
+            token: self.token.clone(),
+            value: self.value.clone(),
+        })
+    }
 }

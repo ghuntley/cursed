@@ -68,6 +68,22 @@ impl Expression for StructLiteral {
     fn node_type(&self) -> &str {
         "StructLiteral"
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        // Create a new StructLiteral with cloned fields
+        let cloned_fields = self.fields.iter().map(|pair| {
+            KeyValuePair {
+                key: pair.key.clone(),
+                value: pair.value.clone_box(),
+            }
+        }).collect();
+        
+        Box::new(StructLiteral {
+            token: self.token.clone(),
+            struct_name: self.struct_name.clone(),
+            fields: cloned_fields,
+        })
+    }
 }
 
 impl Display for StructLiteral {
@@ -125,6 +141,14 @@ impl Expression for StructFieldAccess {
     
     fn node_type(&self) -> &str {
         "StructFieldAccess"
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(StructFieldAccess {
+            token: self.token.clone(),
+            object: self.object.clone_box(),
+            field: self.field.clone(),
+        })
     }
 }
 

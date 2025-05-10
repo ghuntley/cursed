@@ -48,4 +48,12 @@ impl Node for TypeConversionExpression {
 impl Expression for TypeConversionExpression {
     fn expression_node(&self) {}
     fn as_any(&self) -> &dyn Any { self }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(TypeConversionExpression {
+            token: self.token.clone(),
+            expression: self.expression.clone_box(),
+            type_name: self.type_name.clone(),
+        })
+    }
 }
