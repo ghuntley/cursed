@@ -475,6 +475,32 @@ This implementation resolves the following previously identified limitations:
 
 With this enhancement, CURSED code becomes significantly more robust, providing helpful error recovery rather than crashing when encountering common iteration errors. This improves both the development experience and the reliability of programs in production environments.
 
+## Implementation Status Report - July 15, 2025
+
+I've implemented the `unmarshal` function in the `json_tea` standard library package, which provides JSON deserialization functionality for CURSED. The function parses JSON strings into CURSED object structures with proper type conversion. The main changes include:
+
+1. Created a comprehensive JSON parser in `src/stdlib/json_tea.rs` that handles all valid JSON constructs
+2. Implemented conversion from JSON to CURSED object types:
+   - Null values to `Object::Null`
+   - Boolean values to `Object::Boolean`
+   - Number values to `Object::Integer` or `Object::Float` as appropriate
+   - String values to `Object::String` with proper escape sequence handling
+   - Array values to `Object::Array` with recursive parsing
+   - Object values to `Object::HashTable` with proper key-value handling
+3. Added proper error handling for invalid JSON inputs
+4. Implemented nested object and array support for complex JSON structures
+5. Added comprehensive tests in `tests/json_tea_implementation_test.rs`
+
+Implemented improvements include:
+
+1. Full support for all JSON data types with proper conversion to CURSED types
+2. Proper string escape sequence handling (including Unicode escape sequences)
+3. Support for nested structures of arbitrary complexity
+4. Robust error handling with detailed error messages for malformed JSON
+5. Comprehensive test suite covering simple values, arrays, objects, and complex nested structures
+
+This implementation resolves the previous limitation where `unmarshal` was just a placeholder that returned a null object, enabling full JSON serialization and deserialization in the CURSED language.
+
 ## Implementation Status Report - May 10, 2025 - Part 3
 
 I've implemented enhanced interface type registry with reliable runtime type information to significantly improve error reporting and debugging capabilities. The implementation now correctly initializes global type arrays using proper GetElementPtr (GEP) operations and ensures seamless integration with the type assertion system. The main changes include:

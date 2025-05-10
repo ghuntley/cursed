@@ -135,12 +135,10 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - arrays u2192 Array
 /// - objects u2192 HashTable
 ///
-/// Note: The current implementation is simplified and returns a placeholder object.
-///
 /// # Arguments
 ///
 /// * `args[0]` - The JSON string to parse as a String Object
-/// * `args[1]` - A reference to a CURSED object to store the parsed result
+/// * `args[1]` - A reference to a CURSED object to store the parsed result (currently unused)
 ///
 /// # Returns
 ///
@@ -156,6 +154,313 @@ pub fn unmarshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         ));
     }
 
-    // Simplified implementation - just return a placeholder object
-    Ok(Rc::new(Object::Null))
+    // Get the JSON string from the first argument
+    let json_str = match &*args[0] {
+        Object::String(s) => s,
+        _ => return Err(Error::Runtime("First argument to unmarshal must be a string".to_string())),
+    };
+
+    // Trim whitespace
+    let json_str = json_str.trim();
+
+    // If the string is empty, return null
+    if json_str.is_empty() {
+        return Ok(Rc::new(Object::Null));
+    }
+
+    // Parse the JSON content based on the first character
+    let result = match json_str.chars().next().unwrap() {
+        // Object
+        '{' => parse_json_object(json_str),
+        // Array
+        '[' => parse_json_array(json_str),
+        // String
+        '"' => parse_json_string(json_str),
+        // Null, Boolean, Number
+        _ => {
+            if json_str == "null" {
+                Ok(Object::Null)
+            } else if json_str == "true" {
+                Ok(Object::Boolean(true))
+            } else if json_str == "false" {
+                Ok(Object::Boolean(false))
+            } else {
+                // Try to parse as number
+                if let Ok(int_val) = json_str.parse::<i64>() {
+                    Ok(Object::Integer(int_val))
+                } else if let Ok(float_val) = json_str.parse::<f64>() {
+                    Ok(Object::Float(float_val))
+                } else {
+                    Err(Error::Runtime(format!("Invalid JSON value: {}", json_str)))
+                }
+            }
+        }
+    }?;
+
+    Ok(Rc::new(result))
+}
+
+/// Parse a JSON object from a string
+fn parse_json_object(json_str: &str) -> Result<Object, Error> {
+    // Ensure it starts and ends with braces
+    if !json_str.starts_with('{') || !json_str.ends_with('}') {
+        return Err(Error::Runtime(format!("Invalid JSON object: {}", json_str)));
+    }
+
+    // Extract the content between the braces
+    let content = &json_str[1..json_str.len() - 1].trim();
+    
+    // If empty object, return empty map
+    if content.is_empty() {
+        return Ok(Object::HashTable(HashMap::new()));
+    }
+
+    let mut map = HashMap::new();
+    
+    // Split by commas, but respect nested structures
+    let pairs = split_json_pairs(content)?;
+    
+    for pair in pairs {
+        // Split the pair by colon
+        let parts: Vec<&str> = pair.splitn(2, ':').collect();
+        if parts.len() != 2 {
+            return Err(Error::Runtime(format!("Invalid JSON object pair: {}", pair)));
+        }
+        
+        // Parse the key (must be a string)
+        let key_str = parts[0].trim();
+        if !key_str.starts_with('"') || !key_str.ends_with('"') {
+            return Err(Error::Runtime(format!("JSON object key must be a string: {}", key_str)));
+        }
+        
+        // Remove the quotes and parse the string
+        let key = key_str[1..key_str.len() - 1].to_string();
+        
+        // Parse the value recursively
+        let value_str = parts[1].trim();
+        let value = match unmarshal(&[Rc::new(Object::String(value_str.to_string())), Rc::new(Object::Null)]) {
+            Ok(parsed) => (*parsed).clone(),
+            Err(e) => return Err(e),
+        };
+        
+        map.insert(key, value);
+    }
+    
+    Ok(Object::HashTable(map))
+}
+
+/// Parse a JSON array from a string
+fn parse_json_array(json_str: &str) -> Result<Object, Error> {
+    // Ensure it starts and ends with brackets
+    if !json_str.starts_with('[') || !json_str.ends_with(']') {
+        return Err(Error::Runtime(format!("Invalid JSON array: {}", json_str)));
+    }
+    
+    // Extract the content between the brackets
+    let content = &json_str[1..json_str.len() - 1].trim();
+    
+    // If empty array, return empty array
+    if content.is_empty() {
+        return Ok(Object::Array(Vec::new()));
+    }
+    
+    let mut array = Vec::new();
+    
+    // Split by commas, but respect nested structures
+    let elements = split_json_elements(content)?;
+    
+    for element in elements {
+        // Parse each element recursively
+        let elem_str = element.trim();
+        let parsed_elem = match unmarshal(&[Rc::new(Object::String(elem_str.to_string())), Rc::new(Object::Null)]) {
+            Ok(parsed) => (*parsed).clone(),
+            Err(e) => return Err(e),
+        };
+        
+        array.push(parsed_elem);
+    }
+    
+    Ok(Object::Array(array))
+}
+
+/// Parse a JSON string from a string
+fn parse_json_string(json_str: &str) -> Result<Object, Error> {
+    // Ensure it starts and ends with quotes
+    if !json_str.starts_with('"') || !json_str.ends_with('"') {
+        return Err(Error::Runtime(format!("Invalid JSON string: {}", json_str)));
+    }
+    
+    // Extract the content between the quotes
+    let content = &json_str[1..json_str.len() - 1];
+    
+    // Handle escape sequences
+    let mut result = String::new();
+    let mut chars = content.chars().peekable();
+    
+    while let Some(c) = chars.next() {
+        if c == '\\' {
+            match chars.next() {
+                Some('"') => result.push('"'),
+                Some('\\') => result.push('\\'),
+                Some('/') => result.push('/'),
+                Some('b') => result.push('\x08'), // Backspace
+                Some('f') => result.push('\x0C'), // Form feed
+                Some('n') => result.push('\n'),
+                Some('r') => result.push('\r'),
+                Some('t') => result.push('\t'),
+                Some('u') => {
+                    // Unicode escape sequence
+                    let mut hex = String::new();
+                    for _ in 0..4 {
+                        if let Some(digit) = chars.next() {
+                            hex.push(digit);
+                        } else {
+                            return Err(Error::Runtime("Incomplete Unicode escape sequence".to_string()));
+                        }
+                    }
+                    
+                    // Parse hex value and convert to char
+                    if let Ok(hex_val) = u32::from_str_radix(&hex, 16) {
+                        if let Some(unicode_char) = std::char::from_u32(hex_val) {
+                            result.push(unicode_char);
+                        } else {
+                            return Err(Error::Runtime(format!("Invalid Unicode escape sequence: \\u{}", hex)));
+                        }
+                    } else {
+                        return Err(Error::Runtime(format!("Invalid Unicode escape sequence: \\u{}", hex)));
+                    }
+                },
+                Some(c) => return Err(Error::Runtime(format!("Invalid escape sequence: \\{}", c))),
+                None => return Err(Error::Runtime("Incomplete escape sequence".to_string())),
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    
+    Ok(Object::String(result))
+}
+
+/// Split a JSON object's content into key-value pairs, respecting nested structures
+fn split_json_pairs(content: &str) -> Result<Vec<String>, Error> {
+    let mut pairs = Vec::new();
+    let mut current_pair = String::new();
+    let mut nesting_level = 0;
+    let mut in_string = false;
+    let mut escape_next = false;
+    
+    for c in content.chars() {
+        if escape_next {
+            current_pair.push(c);
+            escape_next = false;
+            continue;
+        }
+        
+        match c {
+            '\\' if in_string => {
+                current_pair.push(c);
+                escape_next = true;
+            },
+            '"' => {
+                current_pair.push(c);
+                in_string = !in_string;
+            },
+            '{' | '[' if !in_string => {
+                current_pair.push(c);
+                nesting_level += 1;
+            },
+            '}' | ']' if !in_string => {
+                current_pair.push(c);
+                nesting_level -= 1;
+                if nesting_level < 0 {
+                    return Err(Error::Runtime("Mismatched braces in JSON".to_string()));
+                }
+            },
+            ',' if !in_string && nesting_level == 0 => {
+                // End of a pair
+                pairs.push(current_pair.trim().to_string());
+                current_pair = String::new();
+            },
+            _ => {
+                current_pair.push(c);
+            }
+        }
+    }
+    
+    // Don't forget the last pair
+    if !current_pair.trim().is_empty() {
+        pairs.push(current_pair.trim().to_string());
+    }
+    
+    if in_string {
+        return Err(Error::Runtime("Unterminated string in JSON".to_string()));
+    }
+    
+    if nesting_level != 0 {
+        return Err(Error::Runtime("Mismatched braces in JSON".to_string()));
+    }
+    
+    Ok(pairs)
+}
+
+/// Split a JSON array's content into elements, respecting nested structures
+fn split_json_elements(content: &str) -> Result<Vec<String>, Error> {
+    let mut elements = Vec::new();
+    let mut current_element = String::new();
+    let mut nesting_level = 0;
+    let mut in_string = false;
+    let mut escape_next = false;
+    
+    for c in content.chars() {
+        if escape_next {
+            current_element.push(c);
+            escape_next = false;
+            continue;
+        }
+        
+        match c {
+            '\\' if in_string => {
+                current_element.push(c);
+                escape_next = true;
+            },
+            '"' => {
+                current_element.push(c);
+                in_string = !in_string;
+            },
+            '{' | '[' if !in_string => {
+                current_element.push(c);
+                nesting_level += 1;
+            },
+            '}' | ']' if !in_string => {
+                current_element.push(c);
+                nesting_level -= 1;
+                if nesting_level < 0 {
+                    return Err(Error::Runtime("Mismatched braces in JSON".to_string()));
+                }
+            },
+            ',' if !in_string && nesting_level == 0 => {
+                // End of an element
+                elements.push(current_element.trim().to_string());
+                current_element = String::new();
+            },
+            _ => {
+                current_element.push(c);
+            }
+        }
+    }
+    
+    // Don't forget the last element
+    if !current_element.trim().is_empty() {
+        elements.push(current_element.trim().to_string());
+    }
+    
+    if in_string {
+        return Err(Error::Runtime("Unterminated string in JSON".to_string()));
+    }
+    
+    if nesting_level != 0 {
+        return Err(Error::Runtime("Mismatched braces in JSON".to_string()));
+    }
+    
+    Ok(elements)
 }
