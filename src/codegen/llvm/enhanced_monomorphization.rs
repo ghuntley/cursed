@@ -56,6 +56,13 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         // the interface by looking up in a type registry or interface implementation table
         
         // For now, we'll implement a simplified version based on known types:
+        // Attempt to access the type checker through context or other means
+        // This would be implemented in a real system, for now just use primitive checks
+        
+        // In a complete implementation, this would delegate to the TypeChecker
+        // through a proper reference or API call. For now, fall back to primitive checks.
+        tracing::warn!("Enhanced monomorphization using fallback constraint checking");
+        
         let implements = match concrete_type {
             // Primitive types and their supported interfaces
             Type::Normie | Type::Smol | Type::Mid | Type::Thicc => {
@@ -82,6 +89,7 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             _ => {
                 // For this implementation, assume other types don't implement any interfaces
                 // In a real implementation, we'd check a registry of interface implementations
+                tracing::error!("Cannot check interface implementation for non-primitive type: {:?}", concrete_type);
                 false
             }
         };

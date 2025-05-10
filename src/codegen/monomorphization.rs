@@ -310,7 +310,17 @@ impl MonomorphizationManager {
                 if let Some(concrete_type) = type_map.get(param_name) {
                     // Check if the concrete type satisfies the constraint
                     // Our improved check_constraint now returns Err for unsatisfied constraints
-                    self.check_constraint(concrete_type, interface_name)?;
+                    match self.check_constraint(concrete_type, interface_name) {
+                        Ok(true) => {}, // Constraint satisfied
+                        Ok(false) => {
+                            // Convert to proper error for consistency
+                            return Err(Error::from_str(&format!(
+                                "Type parameter '{}' with type '{:?}' does not implement required interface '{}'", 
+                                param_name, concrete_type, interface_name
+                            )));
+                        }
+                        Err(e) => return Err(e),
+                    }
                 } else {
                     return Err(Error::from_str(&format!(
                         "Unknown type parameter: {}",
