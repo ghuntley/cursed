@@ -435,10 +435,10 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
 // Helper methods for LlvmCodeGenerator to handle container and map iteration
 // Implementation helpers for the fixed range clause trait
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Helper method to safely get the module reference
+    /// Helper method to safely get the module reference for the range clause implementation
     #[inline]
-    fn get_module(&self) -> Result<&inkwell::module::Module<'ctx>, Error> {
-        self.module.as_ref()
+    fn get_module_ref(&self) -> Result<&inkwell::module::Module<'ctx>, Error> {
+        self.module()
             .ok_or_else(|| Error::Compilation("Module not available".to_string()))
     }
     
@@ -446,6 +446,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     #[inline]
     fn get_pointee_type(&self, ptr_type: inkwell::types::PointerType<'ctx>) -> inkwell::types::BasicTypeEnum<'ctx> {
         // Get the element type of the pointer using the proper LLVM API
+        // Note: This handles the LLVM API change where get_pointee_type() was renamed to get_element_type()
         ptr_type.get_element_type()
     }
     /// Get the length of a container
@@ -470,61 +471,66 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if element_type.is_array_type() {
                 // Pointer to an array
-                let array_type = element_type.into_array_type().unwrap();
-                let length = array_type.len();
-                debug!("Pointer to array length: {}", length);
-                Ok(self.context.i32_type().const_int(length as u64, false))
+                if let Ok(array_type) = element_type.try_into_array_type() {
+                    let length = array_type.len();
+                    debug!("Pointer to array length: {}", length);
+                    Ok(self.context.i32_type().const_int(length as u64, false))
+                } else {
+                    debug!("Failed to convert element type to array type");
+                    Err(Error::CodeGenError("Expected array type".to_string()))
+                }
             } else if element_type.is_struct_type() {
                 // For slice-like types which are structs with a length field
                 // Struct types typically have length as field 1 and data pointer as field 0
-                let struct_type = element_type.into_struct_type().unwrap();
+                if let Ok(struct_type) = element_type.try_into_struct_type() {
+                    // Get a pointer to the length field (assuming it's at index 1)
+                    let indices = &[
+                        self.context.i32_type().const_zero(),
+                        self.context.i32_type().const_int(1, false)
+                    ];
                 
-                // Get a pointer to the length field (assuming it's at index 1)
-                let indices = &[
-                    self.context.i32_type().const_zero(),
-                    self.context.i32_type().const_int(1, false)
-                ];
-                
-                // Create a GEP instruction to get the length field pointer
-                let length_field_ptr = unsafe {
-                    self.builder.build_gep(struct_type, ptr_value, indices, "length_field_ptr")?
-                };
-                
-                // Load the length value
-                debug!("Loading length field from struct type: {}", struct_type.get_name().to_str().unwrap_or("unnamed"));
-                
-                // Determine length field type - default to i32 if we can't determine it
-                let length_field_type = if struct_type.get_field_types().len() > 1 {
-                    struct_type.get_field_types()[1]
-                } else {
-                    self.context.i32_type().into()
-                };
-                
-                let length_value = self.builder.build_load(length_field_type, length_field_ptr, "container_length")?;
-                
-                // Convert to i32 if needed
-                if length_value.is_int_value() {
-                    let length_int = length_value.into_int_value();
-                    if length_int.get_type().get_bit_width() != 32 {
-                        // Convert to i32
-                        let i32_length = self.builder.build_int_cast(length_int, self.context.i32_type(), "length_cast")?;
-                        Ok(i32_length)
+                    // Create a GEP instruction to get the length field pointer
+                    let length_field_ptr = unsafe {
+                        self.builder.build_gep(struct_type, ptr_value, indices, "length_field_ptr")?
+                    };
+                    
+                    // Load the length value
+                    debug!("Loading length field from struct type: {}", struct_type.get_name().to_str().unwrap_or("unnamed"));
+                    
+                    // Determine length field type - default to i32 if we can't determine it
+                    let length_field_type = if struct_type.get_field_types().len() > 1 {
+                        struct_type.get_field_types()[1]
                     } else {
-                        Ok(length_int)
+                        self.context.i32_type().into()
+                    };
+                    
+                    let length_value = self.builder.build_load(length_field_type, length_field_ptr, "container_length")?;
+                    
+                    // Convert to i32 if needed
+                    if length_value.is_int_value() {
+                        let length_int = length_value.into_int_value();
+                        if length_int.get_type().get_bit_width() != 32 {
+                            // Convert to i32
+                            let i32_length = self.builder.build_int_cast(length_int, self.context.i32_type(), "length_cast")?;
+                            Ok(i32_length)
+                        } else {
+                            Ok(length_int)
+                        }
+                    } else {
+                        // Fall back to a default length if we couldn't load it properly
+                        debug!("Falling back to default length for struct container");
+                        Ok(self.context.i32_type().const_int(0, false))
                     }
                 } else {
-                    // Fall back to a default length if we couldn't load it properly
-                    debug!("Falling back to default length for struct container");
-                    Ok(self.context.i32_type().const_int(0, false))
+                    debug!("Failed to convert element type to struct type");
+                    Err(Error::CodeGenError("Expected struct type".to_string()))
                 }
             } else if element_type.is_pointer_type() {
                 // This is likely a string, which is a pointer to char
                 // For string types, we need to call a string length function
                 
-                let module = match &self.module {
-                    Some(module) => module,
-                    None => return Err(Error::Compilation("Module not available".to_string()))
-                };
+                // Get the module reference safely
+                let module = self.get_module_ref()?
                 
                 // Use the string_length function from our runtime
                 let fn_name = "string_length";
@@ -552,10 +558,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // We need to determine the length from context or metadata
                 // For now, we'll use a special runtime helper function
                 
-                let module = match &self.module {
-                    Some(module) => module,
-                    None => return Err(Error::Compilation("Module not available".to_string()))
-                };
+                // Get the module reference safely
+                let module = self.get_module_ref()?
                 
                 // Get or create a generic container length function 
                 let fn_name = "container_length";
@@ -582,10 +586,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // For other container types like maps or custom containers
             // We need to call a length method or access a length property
             
-            let module = match &self.module {
-                Some(module) => module,
-                None => return Err(Error::Compilation("Module not available".to_string()))
-            };
+            // Get the module reference safely
+            let module = self.get_module_ref()?
             
             // Try to find a container length function that takes this type
             let fn_names = vec![
@@ -650,71 +652,72 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if pointee_type.is_array_type() {
                 // Pointer to an array
-                let array_type = pointee_type.into_array_type().unwrap();
-                let element_type = array_type.get_element_type();
-                
-                // We have two options:
-                // 1. Load the array and then index into it
-                // 2. Use GEP directly on the array pointer
-                
-                // Option 2 is more efficient, so we'll use that
-                let indices = &[self.context.i32_type().const_zero(), index];
-                let element_ptr = unsafe {
-                    self.builder.build_gep(array_type, ptr_value, indices, "element_ptr")?  
-                };
-                
-                debug!("Loading array element from pointer to array using GEP");
-                Ok(self.builder.build_load(element_type, element_ptr, "element")?.into())
+                if let Ok(array_type) = pointee_type.try_into_array_type() {
+                    let element_type = array_type.get_element_type();
+                    
+                    // We have two options:
+                    // 1. Load the array and then index into it
+                    // 2. Use GEP directly on the array pointer
+                    
+                    // Option 2 is more efficient, so we'll use that
+                    let indices = &[self.context.i32_type().const_zero(), index];
+                    let element_ptr = unsafe {
+                    self.builder.build_gep(array_type, ptr_value, indices, "element_ptr")?
+                    };
+                    
+                    debug!("Loading array element from pointer to array using GEP");
+                    Ok(self.builder.build_load(element_type, element_ptr, "element")?.into())
+                } else {
+                    debug!("Failed to convert pointee type to array type");
+                    Err(Error::CodeGenError("Expected array type".to_string()))
+                }
             } else if pointee_type.is_struct_type() {
                 // This is likely a slice or similar container
                 // For slices, we need to extract the data pointer and then index it
                 
-                let struct_type = pointee_type.into_struct_type().unwrap();
-                let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
-                debug!("Accessing element from struct container: {}", type_name);
-                
-                // For slice types, the first field is typically the data pointer
-                if struct_type.get_field_types().len() > 0 {
-                    // Get pointer to the data pointer field (field 0)
-                    let indices = &[self.context.i32_type().const_zero(), self.context.i32_type().const_zero()];
-                    let data_ptr_ptr = unsafe {
-                        self.builder.build_gep(struct_type, ptr_value, indices, "data_ptr_ptr")?
-                    };
+                if let Ok(struct_type) = pointee_type.try_into_struct_type() {
+                    let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
+                    debug!("Accessing element from struct container: {}", type_name);
                     
-                    // Load the data pointer itself
-                    let data_ptr_type = struct_type.get_field_types()[0];
-                    if !data_ptr_type.is_pointer_type() {
-                        return Err(Error::CodeGenError(format!("First field of struct {} is not a pointer type", type_name)));
-                    }
-                    
-                    debug!("Loading data pointer from struct field");
-                    let data_ptr = self.builder.build_load(data_ptr_type, data_ptr_ptr, "data_ptr")?;
-                    
-                    if !data_ptr.is_pointer_value() {
-                        return Err(Error::CodeGenError(format!("Loaded value is not a pointer")));
-                    }
-                    
-                    // Get element type from the data pointer
-                    let data_ptr_value = data_ptr.into_pointer_value();
-                    let element_type = data_ptr_type.into_pointer_type().get_element_type();
-                    
-                    // Index into the data pointer
-                    let indices = &[index];
-                    let element_ptr = unsafe {
-                        self.builder.build_gep(element_type, data_ptr_value, indices, "element_ptr")?
-                    };
-                    
-                    debug!("Loading element from slice data pointer");
-                    Ok(self.builder.build_load(element_type, element_ptr, "element")?.into())
-                } else {
-                    // Fallback approach for unknown struct layouts
-                    debug!("Using fallback for container with unknown layout");
-                    
-                    // Try to use a runtime helper function
-                    let module = match &self.module {
-                        Some(module) => module,
-                        None => return Err(Error::Compilation("Module not available".to_string()))
-                    };
+                    // For slice types, the first field is typically the data pointer
+                    if struct_type.get_field_types().len() > 0 {
+                        // Get pointer to the data pointer field (field 0)
+                        let indices = &[self.context.i32_type().const_zero(), self.context.i32_type().const_zero()];
+                        let data_ptr_ptr = unsafe {
+                            self.builder.build_gep(struct_type, ptr_value, indices, "data_ptr_ptr")?
+                        };
+                        
+                        // Load the data pointer itself
+                        let data_ptr_type = struct_type.get_field_types()[0];
+                        if !data_ptr_type.is_pointer_type() {
+                            return Err(Error::CodeGenError(format!("First field of struct {} is not a pointer type", type_name)));
+                        }
+                        
+                        debug!("Loading data pointer from struct field");
+                        let data_ptr = self.builder.build_load(data_ptr_type, data_ptr_ptr, "data_ptr")?;
+                        
+                        if !data_ptr.is_pointer_value() {
+                            return Err(Error::CodeGenError(format!("Loaded value is not a pointer")));
+                        }
+                        
+                        // Get element type from the data pointer
+                        let data_ptr_value = data_ptr.into_pointer_value();
+                        let element_type = data_ptr_type.into_pointer_type().get_element_type();
+                        
+                        // Index into the data pointer
+                        let indices = &[index];
+                        let element_ptr = unsafe {
+                            self.builder.build_gep(element_type, data_ptr_value, indices, "element_ptr")?
+                        };
+                        
+                        debug!("Loading element from slice data pointer");
+                        Ok(self.builder.build_load(element_type, element_ptr, "element")?.into())
+                    } else {
+                        // Fallback approach for unknown struct layouts
+                        debug!("Using fallback for container with unknown layout");
+                        
+                        // Try to use a runtime helper function
+                        let module = self.get_module_ref()?
                     
                     // Use our runtime container_get_element function
                     let fn_name = "container_get_element";
@@ -736,9 +739,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     
                     // Get the return value
                     call.try_as_basic_value().left().ok_or_else(|| {
-                        Error::Compilation("Failed to get element from container using helper function".to_string())
+                    Error::Compilation("Failed to get element from container using helper function".to_string())
                     })
-                }
+                        }
+            } else {
+                debug!("Failed to convert pointee type to struct type");
+                Err(Error::CodeGenError("Expected struct type for container".to_string()))
+            }
             } else if pointee_type.is_pointer_type() {
                 // This could be a string-like type (pointer to elements)
                 // or another container with a pointer to its data
@@ -856,29 +863,33 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if pointee_type.is_array_type() {
                 // Pointer to an array - get the array's element type
-                let array_type = pointee_type.into_array_type().unwrap();
-                let element_type = array_type.get_element_type();
-                debug!("Pointer to array element type extracted");
-                Ok(element_type)
+                if let Ok(array_type) = pointee_type.try_into_array_type() {
+                    let element_type = array_type.get_element_type();
+                    debug!("Pointer to array element type extracted");
+                    Ok(element_type)
+                } else {
+                    debug!("Failed to convert pointee type to array type");
+                    Err(Error::CodeGenError("Expected array type".to_string()))
+                }
             } else if pointee_type.is_struct_type() {
                 // This is likely a slice or other structured container (e.g., a Slice<T>)
-                let struct_type = pointee_type.into_struct_type().unwrap();
-                let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
-                debug!("Determining element type from struct container: {}", type_name);
-                
-                // We have multiple approaches to determine the element type:
-                
-                // 1. Field-based approach: For slice-like types, field 0 is typically a data pointer
-                if struct_type.get_field_types().len() > 0 {
-                    let data_field_type = struct_type.get_field_types()[0];
-                    if data_field_type.is_pointer_type() {
-                        // Get the element type from the data pointer
-                        let data_ptr_type = data_field_type.into_pointer_type();
-                        let element_type = data_ptr_type.get_element_type();
-                        debug!("Extracted element type from data pointer field");
-                        return Ok(element_type);
+                if let Ok(struct_type) = pointee_type.try_into_struct_type() {
+                    let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
+                    debug!("Determining element type from struct container: {}", type_name);
+                    
+                    // We have multiple approaches to determine the element type:
+                    
+                    // 1. Field-based approach: For slice-like types, field 0 is typically a data pointer
+                    if struct_type.get_field_types().len() > 0 {
+                        let data_field_type = struct_type.get_field_types()[0];
+                        if data_field_type.is_pointer_type() {
+                            // Get the element type from the data pointer
+                            let data_ptr_type = data_field_type.into_pointer_type();
+                            let element_type = data_ptr_type.get_element_type();
+                            debug!("Extracted element type from data pointer field");
+                            return Ok(element_type);
+                        }
                     }
-                }
                 
                 // 2. Name-based approach: Parse element type from the struct name
                 // Common patterns: Slice<T>, Array<T>, Vector<T>, etc.
@@ -927,10 +938,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     }
                 }
                 
-                // 3. Runtime type query: Use a runtime function to determine element type
-                // In a real implementation, this would call into a reflection system
-                debug!("Using fallback i64 type for struct container");
-                return Ok(self.context.i64_type().into());
+                    // 3. Runtime type query: Use a runtime function to determine element type
+                    // In a real implementation, this would call into a reflection system
+                    debug!("Using fallback i64 type for struct container");
+                    return Ok(self.context.i64_type().into());
+                } else {
+                    debug!("Failed to convert pointee type to struct type");
+                    return Err(Error::CodeGenError("Expected struct type".to_string()));
+                }
             } else if pointee_type.is_pointer_type() {
                 // This might be a string-like type (pointer to elements)
                 // String in CURSED is typically a pointer to runes (i8)

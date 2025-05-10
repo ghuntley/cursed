@@ -106,6 +106,15 @@ impl Expression for RangeClause {
     fn as_any(&self) -> &dyn Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(RangeClause {
+            start: self.start.as_ref().map(|e| e.clone_box()),
+            end: self.end.clone_box(),
+            step: self.step.as_ref().map(|e| e.clone_box()),
+            is_container: self.is_container,
+        })
+    }
 }
 
 /// Represents a range-based for statement in the AST.

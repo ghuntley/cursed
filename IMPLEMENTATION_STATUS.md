@@ -109,11 +109,14 @@ The codebase contains numerous ignored tests that provide insight into implement
   - Handling for struct-based containers with data pointers
   - Added runtime support functions for container operations in `src/runtime/container.rs`
   - Implementation of map iterator creation, advancement and access functions
+- Recent progress:
+  - ✅ Fixed module reference extraction with a new `get_module_ref()` helper method
+  - ✅ Fixed unwrap usage on LLVM types (ArrayType and StructType) with proper `try_into_*_type()` patterns
+  - ✅ Added clone_box implementation for RangeClause
 - Still need to address compilation issues:
-  - Need to fix pointer element type access (LLVM API has changed, `get_element_type()` no longer exists)
-  - Need to fix module reference extraction (current pattern causes type mismatch errors)
-  - Need to add clone_box implementation for Expression types (required by trait implementation)
-  - Need to fix unwrap usage on LLVM types (ArrayType and StructType don't have unwrap)
+  - Need to fix pointer element type access (LLVM API has changed)
+  - Need to add clone_box implementation for remaining Expression types
+  - Need to fix some type mismatches in function calls
 - Tests in `tests/jit_map_test.rs` - map support not fully implemented
 
 ### LLVM Codegen (High Priority)
