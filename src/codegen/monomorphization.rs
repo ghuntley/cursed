@@ -86,18 +86,24 @@ impl MonomorphizationManager {
     /// Checks if a concrete type satisfies an interface constraint
     ///
     /// This method determines whether a given concrete type implements the required interface.
-    /// It serves as a simplified implementation of constraint checking for generic types.
+    /// It is a critical part of the monomorphization system's constraint checking process and
+    /// is used during function and struct specialization.
+    ///
+    /// The check is performed in two ways:
+    /// 1. If a type checker is available, it uses its comprehensive interface implementation checking
+    /// 2. If no type checker is available, it falls back to a simplified check for primitive types only
     ///
     /// # Arguments
     ///
-    /// * `concrete_type` - The concrete type to check
+    /// * `concrete_type` - The concrete type to check against the constraint
     /// * `interface_name` - The name of the interface that should be implemented
     ///
     /// # Returns
     ///
     /// * `Ok(true)` if the type satisfies the constraint
-    /// * `Ok(false)` if it doesn't
-    /// * `Err` with an error message if there was a problem checking the constraint
+    /// * `Err` with a detailed error message if the type doesn't satisfy the constraint
+    /// * `Err` if there was a problem during the checking process
+    #[tracing::instrument(skip(self), level = "debug")]
     pub fn check_constraint(&self, concrete_type: &Type, interface_name: &str) -> Result<bool, Error> {
         // Create an interface type from the name
         let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
@@ -105,15 +111,21 @@ impl MonomorphizationManager {
         // First, try to use the type checker for interface implementation checks if available
         if let Some(type_checker) = &self.type_checker {
             // Use the type checker's interface implementation check mechanism
+            tracing::debug!("Using type checker to verify interface implementation");
             match type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type) {
-                Ok(true) => return Ok(true),
+                Ok(true) => {
+                    tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type implements interface");
+                    return Ok(true);
+                },
                 Ok(false) => {
+                    tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type does not implement interface");
                     return Err(Error::from_str(&format!(
                         "Type '{:?}' does not implement interface '{}'",
                         concrete_type, interface_name
                     )));
                 },
                 Err(e) => {
+                    tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error checking interface implementation");
                     return Err(Error::from_str(&format!(
                         "Type '{:?}' does not implement interface '{}': {}",
                         concrete_type, interface_name, e
@@ -156,9 +168,11 @@ impl MonomorphizationManager {
         };
         
         if implements {
+            tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type implements interface (fallback check)");
             Ok(true)
         } else {
             // Return a proper error for better diagnostics
+            tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "Type does not implement interface (fallback check)");
             Err(Error::from_str(&format!(
                 "Type '{:?}' does not implement interface '{}'",
                 concrete_type, interface_name
@@ -166,6 +180,10 @@ impl MonomorphizationManager {
         }
     }
     /// Create a new MonomorphizationManager
+    /// 
+    /// Creates a basic monomorphization manager with no type checker. For proper
+    /// constraint checking, you should use the `with_type_checker` method to
+    /// provide a TypeChecker reference.
     pub fn new() -> Self {
         Self::default()
     }
