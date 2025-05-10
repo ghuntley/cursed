@@ -286,7 +286,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Convert a Type to an LLVM BasicTypeEnum
-    fn type_to_llvm_basic(&self, typ: &Type) -> Result<BasicTypeEnum<'ctx>, Error> {
+    pub fn type_to_llvm_basic(&self, typ: &Type) -> Result<BasicTypeEnum<'ctx>, Error> {
         match typ {
             Type::Normie => Ok(self.context().i32_type().into()),
             Type::Smol => Ok(self.context().i8_type().into()),

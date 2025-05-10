@@ -7,6 +7,7 @@ use crate::ast::declarations::{FunctionStatement, SquadStatement, GenericConstra
 use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
+use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 use crate::codegen::llvm::struct_monomorphization::StructMonomorphization;
 use crate::core::type_checker::Type;
 use crate::error::Error;
@@ -46,12 +47,18 @@ impl<'ctx> IntegratedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Then, generate the field accessors
         // We need to explicitly call the EnhancedMonomorphization trait method
+        // but with improved error handling
+        debug!("Using standard field accessors");
         crate::codegen::llvm::EnhancedMonomorphization::generate_field_accessors(
             self,
             generic_struct,
             specialized_name,
             type_args,
         )?;
+        
+        // In the future, we can replace this with the improved implementation
+        // once the compilation issues are resolved
+        // TODO: Fix improved_field_accessors implementation and use it here instead
         
         info!("Specialized struct with accessors generated successfully");
         
