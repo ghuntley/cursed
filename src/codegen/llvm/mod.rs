@@ -107,6 +107,8 @@ pub use self::improved_type_assertion_integration::ImprovedTypeAssertionIntegrat
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information
 pub use self::interface_type_registry::{InterfaceTypeRegistry, InterfaceTypeRegistryAccess};
+// Enhanced interface type registry with full runtime type information
+pub use self::interface_type_registry_enhanced::{EnhancedTypeRegistry, RuntimeTypeInfo};
 // Range clause compilation trait
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::loop_context::*;
@@ -177,6 +179,7 @@ mod interface_field_accessors; // Integration of improved field accessors with i
 mod interface_type_assertion_debugging; // Enhanced runtime debugging for interface type assertions
 mod interface_type_assertion_nesting; // Nesting level tracking for interface type assertions
 mod interface_type_registry; // Registry for storing type information at runtime
+mod interface_type_registry_enhanced; // Enhanced registry for full runtime type information
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
 // Module already declared above
 
