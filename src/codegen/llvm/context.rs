@@ -93,6 +93,9 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub test_interface_hierarchy: Option<HashMap<String, HashSet<String>>>,
     #[cfg(test)]
     pub test_all_interfaces: Option<HashSet<String>>,
+    // Test-only field for inheritance relationships in unit tests
+    #[cfg(test)]
+    pub test_inheritance_map: Option<HashMap<String, HashSet<String>>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -181,6 +184,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             test_interface_hierarchy: None,
             #[cfg(test)]
             test_all_interfaces: None,
+            #[cfg(test)]
+            test_inheritance_map: None,
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality

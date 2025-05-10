@@ -10,6 +10,7 @@ use tracing::{debug, info, instrument, span, Level};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistryAccess;
+use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
 use crate::error::Error;
 
 /// Simple path finder extension for interface inheritance relationships
