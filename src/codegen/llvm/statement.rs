@@ -11,6 +11,9 @@ use crate::ast::statements::declarations::LetStatement;
 use crate::ast::FunctionStatement;
 use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::ast::control_flow::{BreakStatement, ContinueStatement};
+use crate::ast::control_flow::loops::RangeForStatement;
+use crate::codegen::llvm::range_clause_fixed::RangeClauseCompilationEnhanced;
+use crate::ast;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
 use super::variables::VariableScope;
@@ -326,10 +329,23 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Compile a for statement (wrapper for control_flow implementation)
     pub fn compile_for_statement_wrapper(&mut self, for_stmt: &ForStatement) -> Result<(), Error> {
-        // Call the implementation from control_flow module
-        // This is just a stub for now
-        println!("DEBUG: Compiling for statement (placeholder)");
-        Ok(())
+        // Get the specific type of for statement
+        // For testing, just call the actual implementation in the RangeClauseCompilationEnhanced trait
+        let ast::control_flow::ForStatementKind::RangeFor(range_for) = &for_stmt.kind;
+
+        // Check if it's a single-value iteration or key-value iteration
+        if range_for.key_var.is_none() {
+            // Single value iteration - use container iteration
+            self.compile_container_for_loop(&range_for.value_var, &range_for.range, &range_for.body)
+        } else {
+            // Key-value iteration - use map iteration
+            self.compile_map_for_loop(
+                range_for.key_var.as_ref().unwrap(), 
+                &range_for.value_var, 
+                &range_for.range, 
+                &range_for.body
+            )
+        }
     }
     
     /// Compile a switch statement (wrapper for control_flow implementation)
