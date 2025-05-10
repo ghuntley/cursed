@@ -29,6 +29,7 @@ pub mod async_constraint_checker;
 pub mod constraint_recovery;
 pub mod nested_interface_registry;
 pub mod deep_nested_interface_registry;
+pub mod interface_registry_extensions;
 
 /// Runtime representation of a compiled CURSED function
 ///
