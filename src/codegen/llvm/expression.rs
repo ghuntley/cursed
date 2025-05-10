@@ -21,6 +21,7 @@ use super::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use super::type_assertion_integration::TypeAssertionIntegration;
 use super::type_assertion_implementation::IntegratedTypeAssertion;
 use super::interface_type_assertion_debugging::{RuntimeTypeAssertionDebugging, TypeAssertionDebugLevel};
+use super::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -76,47 +77,17 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             tracing::debug!("Found type assertion expression: {}.({})", 
                      type_assertion.expression.string(), type_assertion.type_name);
             
-            // Check if enhanced debugging should be used
-            let debug_level = self.get_type_assertion_debug_level();
+            // Use the improved type assertion integration which handles error propagation properly
+            // Get the source location information if available (for better error messages)
+            // In a real implementation, this would extract location from AST
+            let source_loc = Some(format!("<unknown>:0"));
             
-            // If debugging is enabled, use the enhanced debugging implementation
-            if debug_level.is_enabled() {
-                tracing::debug!("Using enhanced debugging for type assertion of type {}", type_assertion.type_name);
-                // Get the source location information if available
-                // In a real implementation, this would extract location from AST
-                // For now, just use a placeholder
-                let source_loc = Some(format!("<unknown>:0"));
-                match self.compile_type_assertion_with_debugging(type_assertion, source_loc.as_deref()) {
-                    Ok(result) => {
-                        tracing::debug!("Successfully compiled type assertion with debugging for {}", type_assertion.type_name);
-                        return Ok(result);
-                    },
-                    Err(e) => {
-                        tracing::error!("Failed to compile type assertion with debugging for {}: {}", type_assertion.type_name, e);
-                        return Err(Error::Compilation(format!(
-                            "Type assertion compilation failed for {}: {}", 
-                            type_assertion.type_name, e
-                        )));
-                    }
-                }
-            }
+            // The improved integration automatically selects the appropriate implementation
+            // and correctly propagates errors using the ? operator
+            let result = self.compile_type_assertion_with_propagation(type_assertion, source_loc.as_deref())?;
             
-            // Otherwise, use the standard implementation with error handling
-            // This implementation is provided by the type_assertion_implementation module
-            // and includes proper error propagation, null checking, and structured logging
-            match self.compile_integrated_type_assertion(type_assertion) {
-                Ok(result) => {
-                    tracing::debug!("Successfully compiled type assertion for {}", type_assertion.type_name);
-                    return Ok(result);
-                },
-                Err(e) => {
-                    tracing::error!("Failed to compile type assertion for {}: {}", type_assertion.type_name, e);
-                    return Err(Error::Compilation(format!(
-                        "Type assertion compilation failed for {}: {}", 
-                        type_assertion.type_name, e
-                    )));
-                }
-            };
+            tracing::debug!("Successfully compiled type assertion for {}", type_assertion.type_name);
+            return Ok(result);
         }
         
         // Handle if expressions

@@ -91,6 +91,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_field_accessors::register_interface_field_accessors();
         // Initialize enhanced runtime debugging for type assertions
         super::interface_type_assertion_debugging::register_runtime_type_assertion_debugging();
+        // Initialize improved type assertion integration with proper error propagation
+        super::improved_type_assertion_integration::register_improved_type_assertion_integration();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator

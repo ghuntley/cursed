@@ -101,6 +101,8 @@ pub use self::interface_type_assertion_debugging::{RuntimeTypeAssertionDebugging
 // Type assertion integration with main compiler pipeline
 pub use self::type_assertion_integration::TypeAssertionIntegration;
 pub use self::type_assertion_implementation::IntegratedTypeAssertion;
+// Improved type assertion integration with proper error propagation
+pub use self::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 // Nesting level tracking for interface type assertions
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information
@@ -175,6 +177,7 @@ mod interface_field_accessors; // Integration of improved field accessors with i
 mod interface_type_assertion_debugging; // Enhanced runtime debugging for interface type assertions
 mod interface_type_assertion_nesting; // Nesting level tracking for interface type assertions
 mod interface_type_registry; // Registry for storing type information at runtime
+mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
