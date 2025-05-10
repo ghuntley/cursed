@@ -45,14 +45,14 @@ impl<'ctx> IntegratedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         debug!("Specialized struct created, now generating field accessors");
         
-        // Then, generate the field accessors using our improved implementation
+        // Then, generate the field accessors using our improved implementation directly
         debug!("Using improved field accessors with proper error handling");
-        crate::codegen::llvm::interface_field_accessors::InterfaceFieldAccessors::install_field_accessors_for_specialized_struct(
-            self,
-            generic_struct,
-            specialized_name,
-            type_args,
-        )?;
+        self.generate_improved_field_accessors(generic_struct, specialized_name, type_args)?;
+        
+        // Register with interface registry if needed
+        // Note: SquadStatement doesn't have interface constraints directly,
+        // so we just log that this functionality will be handled by the interface system instead
+        debug!("Specialized struct created, interface registration handled by interface system");
         
         info!("Specialized struct with accessors generated successfully");
         
