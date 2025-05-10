@@ -46,6 +46,10 @@ pub trait Expression: Node {
 
     fn as_any(&self) -> &dyn Any;
 
+    /// Clone this expression into a new Box<dyn Expression>
+    /// This allows cloning trait objects which normally cannot be cloned
+    fn clone_box(&self) -> Box<dyn Expression>;
+
     /// Returns true if this expression is a prefix expression
     fn is_prefix_expression(&self) -> bool {
         false
