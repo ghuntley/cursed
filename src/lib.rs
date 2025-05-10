@@ -80,8 +80,8 @@ pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 // Re-export interface type assertion error propagation
 pub use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 
-// Re-export nested generic instantiation
-pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
+// Re-export nested interface type assertion
+pub use crate::codegen::llvm::interface_type_assertion_nested::NestedInterfaceTypeAssertion;
 
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol;
