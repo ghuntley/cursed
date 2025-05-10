@@ -16,7 +16,8 @@ use tracing::{debug, error, info, instrument, span, trace, warn, Level};
 
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use crate::codegen::llvm::interface_type_registry::{InterfaceTypeRegistry, InterfaceTypeRegistryAccess};
+use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
 
 /// Trait for enhanced interface type registry functionality
 pub trait EnhancedTypeRegistry<'ctx> {
@@ -42,7 +43,7 @@ pub trait EnhancedTypeRegistry<'ctx> {
 impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
     #[instrument(skip(self), level = "debug")]
     fn initialize_type_registry_globals(&mut self) -> Result<(), Error> {
-        debug!("Initializing enhanced type registry globals");
+        debug!("Initializing enhanced type registry globals with proper GEP operations");
         
         // Get all registered types
         let registry = self.interface_type_registry_mut();
@@ -69,10 +70,12 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         self.builder().position_at_end(init_block);
         
         // --- Initialize the type ID array ---
+        // 1. Create the array type for our type IDs
         let id_type = self.context().i64_type();
         let id_array_type = id_type.array_type(type_count as u32);
         
-        // Create a unique name for the global using a timestamp-based approach
+        // 2. Create a unique name for the global using a timestamp-based approach
+        // This ensures we don't have naming conflicts when generating multiple globals
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -81,33 +84,40 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         let id_global_name = format!("cursed_type_ids_{}", timestamp);
         let id_global = self.module().add_global(id_array_type, None, &id_global_name);
         
-        // Set to internal linkage so it's not visible outside the module
+        // 3. Set to internal linkage so it's not visible outside the module
         id_global.set_linkage(inkwell::module::Linkage::Internal);
         
-        // Initialize with zeroes first
+        // 4. Initialize with zeroes first to create the memory space
         id_global.set_initializer(&id_array_type.const_zero());
         
+        // 5. Get a pointer to the global array for storing values
         let id_array_ptr = id_global.as_pointer_value();
         
         // --- Initialize the type name array ---
+        // 1. Create the array type for our type name strings
         let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::default());
         let str_array_type = i8_ptr_type.array_type(type_count as u32);
         
+        // 2. Create a unique name for the string array global
         let str_global_name = format!("cursed_type_names_{}", timestamp);
         let str_global = self.module().add_global(str_array_type, None, &str_global_name);
         
-        // Set to internal linkage so it's not visible outside the module
+        // 3. Set to internal linkage
         str_global.set_linkage(inkwell::module::Linkage::Internal);
         
-        // Initialize with zeroes first
+        // 4. Initialize with zeroes first
         str_global.set_initializer(&str_array_type.const_zero());
         
+        // 5. Get a pointer to the global array
         let str_array_ptr = str_global.as_pointer_value();
         
         // Generate string constants for each type name and store them in the arrays
         for (i, (id, name)) in types.iter().enumerate() {
-            // 1. Store the type ID in the ID array
+            // 1. Store the type ID in the ID array using proper GEP operations
             let id_val = id_type.const_int(*id, false);
+            
+            // Use build_in_bounds_gep with the correct array type
+            // First index 0 is for the pointer itself, second index i is for the array element
             let id_ptr = unsafe {
                 self.builder().build_in_bounds_gep(
                     id_array_type,
@@ -120,14 +130,16 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
                 ).map_err(|e| Error::codegen(format!("Failed to get GEP for type ID: {}", e)))?
             };
             
+            // Store the ID value in the array at index i
             self.builder().build_store(id_ptr, id_val)
                 .map_err(|e| Error::codegen(format!("Failed to store type ID: {}", e)))?;
             
-            // 2. Create a global string constant for the type name
+            // 2. Create a global string constant for each type name
             let name_with_null = format!("{}", name) + "\0";
-            let str_type = self.context().i8_type().array_type(name_with_null.len() as u32);
+            let name_bytes = name_with_null.as_bytes();
+            let str_type = self.context().i8_type().array_type(name_bytes.len() as u32);
             
-            // Add the global string constant with a unique name
+            // Create a unique name for each string global to avoid conflicts
             let str_global_name = format!("type_name_{}_{}", i, timestamp);
             let str_global = self.module().add_global(
                 str_type, 
@@ -138,17 +150,18 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
             str_global.set_constant(true);
             
             // Initialize with the string content
-            let str_val = self.context().const_string(name_with_null.as_bytes(), false);
+            let str_val = self.context().const_string(name_bytes, false);
             str_global.set_initializer(&str_val);
             
-            // 3. Cast to i8* and store in the name array
+            // 3. Cast the string global to i8* for storage in our array
             let str_ptr = self.builder().build_pointer_cast(
                 str_global.as_pointer_value(),
                 i8_ptr_type,
                 &format!("type_name_{}_ptr", i)
             ).map_err(|e| Error::codegen(format!("Failed to cast type name pointer: {}", e)))?;
             
-            // 4. Store the string pointer in the array
+            // 4. Store the string pointer in the name array using proper GEP operations
+            // Similar to the ID array, use GEP with the array type and indices
             let name_ptr = unsafe {
                 self.builder().build_in_bounds_gep(
                     str_array_type,
@@ -161,8 +174,11 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
                 ).map_err(|e| Error::codegen(format!("Failed to get pointer to string ptr: {}", e)))?
             };
             
+            // Store the string pointer in the array at index i
             self.builder().build_store(name_ptr, str_ptr)
                 .map_err(|e| Error::codegen(format!("Failed to store string pointer: {}", e)))?;
+            
+            debug!("Initialized type registry entry {} with ID {} and name '{}'", i, id, name);
         }
         
         // Return to the original block
@@ -381,7 +397,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         Ok(unknown_global.as_pointer_value().into())
     }
     
-    /// Generate code to look up a value in an array
+    /// Generate code to look up a value in an array with enhanced GetElementPtr operations
     fn generate_array_lookup(
         &mut self,
         keys_array: PointerValue<'ctx>,
