@@ -340,14 +340,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Check if it's a single-value iteration or key-value iteration
         if range_for.key_var.is_none() {
             // Single value iteration - use container iteration
-            // We need to trick the compiler because we can't directly convert &Box<RangeClause> to &Box<dyn Expression>
-            // Instead, we'll get the range clause as a dyn Expression, and manually box it
-            let range_expr = Box::new(range_for.range.as_ref() as &dyn Expression);
+            // We need to clone and box the expression to get the right type
+            // This creates a new Box<dyn Expression> from the range clause
+            let range_expr = range_for.range.clone();
             self.compile_container_for_loop(&range_for.value_var, &range_expr, &range_for.body)
         } else {
             // Key-value iteration - use map iteration
-            // Same type conversion trick as above
-            let range_expr = Box::new(range_for.range.as_ref() as &dyn Expression);
+            // Clone the expression for the right type
+            let range_expr = range_for.range.clone();
             self.compile_map_for_loop(
                 range_for.key_var.as_ref().unwrap(), 
                 &range_for.value_var, 

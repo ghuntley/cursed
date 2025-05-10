@@ -35,6 +35,7 @@ use std::any::Any;
 /// ```
 ///
 /// The AST would contain a `RangeClause` with different variations based on the form used.
+#[derive(Clone)]
 pub struct RangeClause {
     pub token: String, // Token::Flex
     pub start: Option<Box<dyn Expression>>,  // Start value (optional)
