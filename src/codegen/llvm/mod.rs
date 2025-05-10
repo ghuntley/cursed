@@ -58,6 +58,8 @@ pub use self::binary_compiler::DebugInfoLevel;
 // Interface implementation and dynamic dispatch
 pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 pub use self::interface_implementation::InterfaceImplementation;
+pub use self::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
+pub use self::integrated_interface_operations::IntegratedInterfaceOperations;
 
 // Re-export traits for module functionality
 pub use self::container_layout::{ContainerLayout, ContainerLayoutExtension, ContainerLayoutManager};
@@ -153,6 +155,8 @@ mod interface_type_assertion_errors; // Enhanced error handling for interface ty
 mod type_assertion_implementation; // Integrated type assertion implementation
 mod enhanced_type_assertion; // Optimized implementation of interface type assertions
 mod type_assertion_integration; // Integration of type assertions with main compiler pipeline
+mod enhanced_dynamic_dispatch; // Enhanced dynamic dispatch with improved error handling
+mod integrated_interface_operations; // Unified interface operations system
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

@@ -159,6 +159,41 @@ impl TokenStream {
         
         result
     }
+    
+    /// Gets detailed info about nested generic types including their full structure
+    pub fn get_detailed_nested_generic_info(&self) -> Vec<(String, Vec<GenericTypeInfo>)> {
+        let mut result = Vec::new();
+        
+        for token_with_context in &self.tokens {
+            if let Some(TokenMetadata::NestedGenericType { outer_type, nested_types }) = &token_with_context.metadata {
+                result.push((outer_type.clone(), nested_types.clone()));
+            }
+        }
+        
+        result
+    }
+    
+    /// Extracts the full generic parameter structure for a given type name
+    pub fn get_generic_type_structure(&self, type_name: &str) -> Option<Vec<GenericTypeInfo>> {
+        for token_with_context in &self.tokens {
+            if let Some(TokenMetadata::NestedGenericType { outer_type, nested_types }) = &token_with_context.metadata {
+                if outer_type == type_name {
+                    return Some(nested_types.clone());
+                }
+            } else if let Some(TokenMetadata::GenericType { name, type_params }) = &token_with_context.metadata {
+                if name == type_name {
+                    // Convert simple type params to GenericTypeInfo
+                    return Some(type_params.iter()
+                        .map(|param| GenericTypeInfo {
+                            name: param.clone(),
+                            nested_params: None,
+                        })
+                        .collect());
+                }
+            }
+        }
+        None
+    }
 
     /// Checks if the token stream contains separate brackets (which would indicate failure to combine tokens)
     pub fn contains_separate_brackets(&self) -> bool {
@@ -243,13 +278,40 @@ impl<'a> Preprocessor<'a> {
     
     /// Parse a potentially nested generic type parameter
     /// For example: "T", "Map[K, V]", "Pair[K, List[T]]", etc.
+    #[tracing::instrument(skip(self), level = "debug")]
     fn parse_generic_param(&self, param_str: &str) -> Result<GenericTypeInfo, Error> {
+        tracing::debug!(param = param_str, "Parsing generic parameter");
+        
+        // Trim the parameter string
+        let param_str = param_str.trim();
+        
         // Check if this has nested generic parameters [T, U, ...]
         if let Some(bracket_idx) = param_str.find('[') {
-            if let Some(end_bracket_idx) = param_str.rfind(']') {
+            // Find the matching closing bracket
+            // We need to count brackets to handle nesting correctly
+            let mut bracket_depth = 0;
+            let mut end_bracket_idx = None;
+            
+            for (i, c) in param_str.chars().enumerate() {
+                match c {
+                    '[' => bracket_depth += 1,
+                    ']' => {
+                        bracket_depth -= 1;
+                        if bracket_depth == 0 {
+                            end_bracket_idx = Some(i);
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            
+            if let Some(end_idx) = end_bracket_idx {
                 // Extract the base type name and the type parameters
                 let base_name = &param_str[0..bracket_idx];
-                let params_str = &param_str[bracket_idx+1..end_bracket_idx];
+                let params_str = &param_str[bracket_idx+1..end_idx];
+                
+                tracing::debug!(base = base_name, params = params_str, "Found nested generic type");
                 
                 // Parse the nested parameters
                 let nested_params = self.parse_param_list(params_str)?;
@@ -267,6 +329,7 @@ impl<'a> Preprocessor<'a> {
         }
         
         // If there are no nested parameters, just return the name
+        tracing::debug!(name = param_str, "Simple type parameter");
         Ok(GenericTypeInfo {
             name: param_str.trim().to_string(),
             nested_params: None,
@@ -274,10 +337,14 @@ impl<'a> Preprocessor<'a> {
     }
     
     /// Parse a comma-separated list of type parameters, handling nested generics
+    #[tracing::instrument(skip(self), level = "debug")]
     fn parse_param_list(&self, params_str: &str) -> Result<Vec<GenericTypeInfo>, Error> {
+        tracing::debug!(params = params_str, "Parsing parameter list");
+        
         let mut result = Vec::new();
         let mut current_param = String::new();
         let mut bracket_depth = 0;
+        let mut angle_bracket_depth = 0; // For handling angle brackets in complex types
         
         // Process character by character to handle nested commas
         for c in params_str.chars() {
@@ -287,13 +354,38 @@ impl<'a> Preprocessor<'a> {
                     current_param.push(c);
                 },
                 ']' => {
-                    bracket_depth -= 1;
+                    if bracket_depth > 0 {
+                        bracket_depth -= 1;
+                        current_param.push(c);
+                    } else {
+                        // Unmatched closing bracket - this is an error
+                        return Err(Error::from_str(&format!(
+                            "Unmatched closing bracket in parameter list: {}",
+                            params_str
+                        )));
+                    }
+                },
+                '<' => {
+                    angle_bracket_depth += 1;
                     current_param.push(c);
                 },
+                '>' => {
+                    if angle_bracket_depth > 0 {
+                        angle_bracket_depth -= 1;
+                        current_param.push(c);
+                    } else {
+                        // Unmatched closing angle bracket - this is an error
+                        return Err(Error::from_str(&format!(
+                            "Unmatched closing angle bracket in parameter list: {}",
+                            params_str
+                        )));
+                    }
+                },
                 ',' => {
-                    if bracket_depth == 0 {
+                    if bracket_depth == 0 && angle_bracket_depth == 0 {
                         // This comma separates top-level parameters
                         if !current_param.trim().is_empty() {
+                            tracing::debug!(param = current_param, "Found parameter");
                             let param_info = self.parse_generic_param(&current_param)?;
                             result.push(param_info);
                             current_param = String::new();
@@ -303,16 +395,40 @@ impl<'a> Preprocessor<'a> {
                         current_param.push(c);
                     }
                 },
+                // Handle whitespace more intelligently
+                ' ' | '\t' | '\n' | '\r' => {
+                    // Skip consecutive whitespace in parameter lists
+                    if !current_param.is_empty() && !current_param.ends_with(|ch: char| ch.is_whitespace()) {
+                        current_param.push(' '); // Normalize all whitespace to a single space
+                    }
+                },
                 _ => current_param.push(c),
             }
         }
         
+        // Ensure all brackets are closed
+        if bracket_depth > 0 {
+            return Err(Error::from_str(&format!(
+                "Unclosed square brackets in parameter list: {}",
+                params_str
+            )));
+        }
+        
+        if angle_bracket_depth > 0 {
+            return Err(Error::from_str(&format!(
+                "Unclosed angle brackets in parameter list: {}",
+                params_str
+            )));
+        }
+        
         // Handle the last parameter if there is one
         if !current_param.trim().is_empty() {
+            tracing::debug!(param = current_param, "Found final parameter");
             let param_info = self.parse_generic_param(&current_param)?;
             result.push(param_info);
         }
         
+        tracing::debug!(count = result.len(), "Parsed parameter list");
         Ok(result)
     }
 
@@ -381,7 +497,10 @@ impl<'a> Preprocessor<'a> {
     }
 
     /// Processes a generic type declaration pattern
+    #[tracing::instrument(skip(self), fields(buffer_size = self.token_buffer.len()), level = "debug")]
     fn process_generic_type_declaration(&mut self) -> Result<(), Error> {
+        tracing::debug!("Processing potential generic type declaration");
+        
         // Pattern: be_like TypeName[TypeParam] squad
         if self.token_buffer.len() >= 5 {
             if let (
@@ -395,6 +514,8 @@ impl<'a> Preprocessor<'a> {
                 &self.token_buffer[2],
                 // The rest of the tokens
             ) {
+                tracing::debug!(type_name = type_name, "Found potential generic type declaration");
+                
                 // Found potential generic type declaration
                 let mut bracket_depth = 1;
                 let mut end_index = 3;
@@ -406,25 +527,45 @@ impl<'a> Preprocessor<'a> {
                         Token::LBracket => {
                             bracket_depth += 1;
                             param_str.push('[');
+                            tracing::trace!("Added '[', new depth: {}", bracket_depth);
                         },
                         Token::RBracket => {
                             bracket_depth -= 1;
+                            tracing::trace!("Found ']', new depth: {}", bracket_depth);
                             if bracket_depth == 0 {
                                 // We've reached the closing bracket
+                                tracing::debug!("Found closing bracket at index {}", end_index);
                                 break;
                             }
                             param_str.push(']');
                         },
                         Token::Identifier(param) => {
                             // Add the parameter name to our string
+                            tracing::trace!(param = param, "Adding parameter to string");
                             param_str.push_str(param);
                         },
                         Token::Comma => {
+                            tracing::trace!("Adding comma to parameter string");
                             param_str.push(',');
                         },
-                        _ => {
-                            // For other token types, you might want to add specific handling
-                            // For now, we just ignore them
+                        Token::Less => {
+                            // Handle angle brackets for additional types like channels
+                            tracing::trace!("Adding '<' to parameter string");
+                            param_str.push('<');
+                        },
+                        Token::Greater => {
+                            // Handle angle brackets for additional types like channels
+                            tracing::trace!("Adding '>' to parameter string");
+                            param_str.push('>');
+                        },
+                        Token::At => {
+                            // Handle pointer types
+                            tracing::trace!("Adding '@' to parameter string");
+                            param_str.push('@');
+                        },
+                        token => {
+                            // For other token types, add more detailed handling
+                            tracing::trace!(token = ?token, "Unknown token in parameter list");
                         }
                     }
                     end_index += 1;
@@ -435,11 +576,13 @@ impl<'a> Preprocessor<'a> {
                     // Look for 'squad' keyword after closing bracket
                     if end_index + 1 < self.token_buffer.len() && 
                        matches!(self.token_buffer[end_index + 1].0, Token::Squad) {
+                        tracing::debug!(param_str = param_str, "Found complete generic type declaration with squad");
                         
                         // Parse the parameter string to handle nested generics
                         let type_param_info = match self.parse_param_list(&param_str) {
                             Ok(params) => params,
                             Err(e) => {
+                                tracing::error!(error = ?e, "Error parsing generic type parameters");
                                 return Err(Error::new(
                                     "Preprocessor",
                                     &format!("Error parsing generic type parameters: {}", e),
@@ -453,16 +596,25 @@ impl<'a> Preprocessor<'a> {
                             .map(|info| info.name.clone())
                             .collect::<Vec<String>>();
                         
+                        tracing::debug!(
+                            type_name = type_name,
+                            param_count = type_params.len(),
+                            params = ?type_params,
+                            "Parsed generic type parameters"
+                        );
+                        
                         // Check if we have any nested parameters
                         let has_nested = type_param_info.iter().any(|info| info.nested_params.is_some());
                         
                         // Create appropriate metadata based on whether we have nested parameters
                         let metadata = if has_nested {
+                            tracing::debug!("Creating nested generic type metadata");
                             TokenMetadata::NestedGenericType {
                                 outer_type: type_name.clone(),
                                 nested_types: type_param_info,
                             }
                         } else {
+                            tracing::debug!("Creating simple generic type metadata");
                             TokenMetadata::GenericType {
                                 name: type_name.clone(),
                                 type_params,
@@ -474,6 +626,7 @@ impl<'a> Preprocessor<'a> {
                         
                         // Check if buffer is empty after removing first token
                         if self.token_buffer.is_empty() {
+                            tracing::error!("Unexpected end of token buffer during generic type processing");
                             return Err(Error::new(
                                 "Preprocessor",
                                 "Unexpected end of token buffer during generic type processing",
@@ -488,9 +641,11 @@ impl<'a> Preprocessor<'a> {
                         // First check if we have enough tokens
                         if self.token_buffer.len() < end_index {
                             // Not enough tokens in buffer, just clear the buffer
+                            tracing::warn!("Buffer smaller than expected, clearing remaining tokens");
                             self.token_buffer.clear();
                         } else {
                             // Remove tokens one by one
+                            tracing::debug!(count = end_index, "Removing processed tokens");
                             for _ in 0..end_index {
                                 if !self.token_buffer.is_empty() {
                                     self.token_buffer.remove(0);
@@ -499,6 +654,7 @@ impl<'a> Preprocessor<'a> {
                         }
                         
                         // Now add the tokens to the stream in the right order
+                        tracing::debug!("Adding tokens to stream with metadata");
                         self.token_stream.add_token(be_like_token, be_like_loc);
                         self.token_stream.add_token_with_metadata(
                             identifier_token, 
@@ -508,6 +664,7 @@ impl<'a> Preprocessor<'a> {
                         
                         // Add the squad token directly instead of waiting for it
                         if !self.token_buffer.is_empty() && matches!(self.token_buffer[0].0, Token::Squad) {
+                            tracing::debug!("Adding squad token");
                             let squad_token = self.token_buffer.remove(0).0;
                             let squad_loc = if !self.token_buffer.is_empty() {
                                 self.token_buffer[0].1.clone()
@@ -517,10 +674,12 @@ impl<'a> Preprocessor<'a> {
                             self.token_stream.add_token(squad_token, squad_loc);
                         }
                         
+                        tracing::debug!("Successfully processed generic type declaration");
                         return Ok(());
                     }
                 } else if bracket_depth > 0 {
                     // Malformed generic syntax - unclosed bracket
+                    tracing::error!("Unclosed type parameter bracket in generic type declaration");
                     return Err(Error::new(
                         "Preprocessor",
                         &format!("Unclosed type parameter bracket in generic type declaration for '{}'", type_name),
@@ -534,7 +693,10 @@ impl<'a> Preprocessor<'a> {
     }
 
     /// Processes a generic function declaration pattern
+    #[tracing::instrument(skip(self), fields(buffer_size = self.token_buffer.len()), level = "debug")]
     fn process_generic_function_declaration(&mut self) -> Result<(), Error> {
+        tracing::debug!("Processing potential generic function declaration");
+        
         // Pattern: slay funcName[TypeParam](args) returnType
         if self.token_buffer.len() >= 5 {
             if let (
@@ -548,6 +710,8 @@ impl<'a> Preprocessor<'a> {
                 &self.token_buffer[2],
                 // The rest of the tokens
             ) {
+                tracing::debug!(func_name = func_name, "Found potential generic function declaration");
+                
                 // Found potential generic function declaration
                 let mut bracket_depth = 1;
                 let mut end_index = 3;
@@ -559,25 +723,45 @@ impl<'a> Preprocessor<'a> {
                         Token::LBracket => {
                             bracket_depth += 1;
                             param_str.push('[');
+                            tracing::trace!("Added '[', new depth: {}", bracket_depth);
                         },
                         Token::RBracket => {
                             bracket_depth -= 1;
+                            tracing::trace!("Found ']', new depth: {}", bracket_depth);
                             if bracket_depth == 0 {
                                 // We've reached the closing bracket
+                                tracing::debug!("Found closing bracket at index {}", end_index);
                                 break;
                             }
                             param_str.push(']');
                         },
                         Token::Identifier(param) => {
                             // Add the parameter name to our string
+                            tracing::trace!(param = param, "Adding parameter to string");
                             param_str.push_str(param);
                         },
                         Token::Comma => {
+                            tracing::trace!("Adding comma to parameter string");
                             param_str.push(',');
                         },
-                        _ => {
-                            // For other token types, you might want to add specific handling
-                            // For now, we just ignore them
+                        Token::Less => {
+                            // Handle angle brackets for additional types like channels
+                            tracing::trace!("Adding '<' to parameter string");
+                            param_str.push('<');
+                        },
+                        Token::Greater => {
+                            // Handle angle brackets for additional types like channels
+                            tracing::trace!("Adding '>' to parameter string");
+                            param_str.push('>');
+                        },
+                        Token::At => {
+                            // Handle pointer types
+                            tracing::trace!("Adding '@' to parameter string");
+                            param_str.push('@');
+                        },
+                        token => {
+                            // For other token types, add more detailed handling
+                            tracing::trace!(token = ?token, "Unknown token in parameter list");
                         }
                     }
                     end_index += 1;
@@ -588,11 +772,13 @@ impl<'a> Preprocessor<'a> {
                     // Look for parameter list after closing bracket
                     if end_index + 1 < self.token_buffer.len() && 
                        matches!(self.token_buffer[end_index + 1].0, Token::LParen) {
+                        tracing::debug!(param_str = param_str, "Found complete generic function declaration with params");
                         
                         // Parse the parameter string to handle nested generics
                         let type_param_info = match self.parse_param_list(&param_str) {
                             Ok(params) => params,
                             Err(e) => {
+                                tracing::error!(error = ?e, "Error parsing generic function parameters");
                                 return Err(Error::new(
                                     "Preprocessor",
                                     &format!("Error parsing generic function parameters: {}", e),
@@ -606,7 +792,16 @@ impl<'a> Preprocessor<'a> {
                             .map(|info| info.name.clone())
                             .collect::<Vec<String>>();
                         
+                        tracing::debug!(
+                            func_name = func_name,
+                            param_count = type_params.len(),
+                            params = ?type_params,
+                            has_nested = type_param_info.iter().any(|info| info.nested_params.is_some()),
+                            "Parsed generic function parameters"
+                        );
+                        
                         // Create metadata for the generic function
+                        // We now handle nested generics in functions too
                         let metadata = TokenMetadata::GenericFunction {
                             name: func_name.clone(),
                             type_params,
@@ -617,6 +812,7 @@ impl<'a> Preprocessor<'a> {
                         
                         // Check if buffer is empty after removing first token
                         if self.token_buffer.is_empty() {
+                            tracing::error!("Unexpected end of token buffer during generic function processing");
                             return Err(Error::new(
                                 "Preprocessor",
                                 "Unexpected end of token buffer during generic function processing",
@@ -630,9 +826,11 @@ impl<'a> Preprocessor<'a> {
                         // First check if we have enough tokens
                         if self.token_buffer.len() < end_index {
                             // Not enough tokens in buffer, just clear the buffer
+                            tracing::warn!("Buffer smaller than expected, clearing remaining tokens");
                             self.token_buffer.clear();
                         } else {
                             // Remove tokens one by one
+                            tracing::debug!(count = end_index, "Removing processed tokens");
                             for _ in 0..end_index {
                                 if !self.token_buffer.is_empty() {
                                     self.token_buffer.remove(0);
@@ -641,6 +839,7 @@ impl<'a> Preprocessor<'a> {
                         }
                         
                         // Now add the tokens to the stream in the right order
+                        tracing::debug!("Adding tokens to stream with metadata");
                         self.token_stream.add_token(slay_token, slay_loc);
                         self.token_stream.add_token_with_metadata(
                             identifier_token, 
@@ -648,10 +847,12 @@ impl<'a> Preprocessor<'a> {
                             metadata
                         );
                         
+                        tracing::debug!("Successfully processed generic function declaration");
                         return Ok(());
                     }
                 } else if bracket_depth > 0 {
                     // Malformed generic syntax - unclosed bracket
+                    tracing::error!("Unclosed type parameter bracket in generic function declaration");
                     return Err(Error::new(
                         "Preprocessor",
                         &format!("Unclosed type parameter bracket in generic function declaration for '{}'", func_name),
@@ -665,7 +866,10 @@ impl<'a> Preprocessor<'a> {
     }
 
     /// Processes a generic function call pattern
+    #[tracing::instrument(skip(self), fields(buffer_size = self.token_buffer.len()), level = "debug")]
     fn process_generic_function_call(&mut self) -> Result<(), Error> {
+        tracing::debug!("Processing potential generic function call");
+        
         // Pattern: funcName[TypeArg](args)
         if self.token_buffer.len() >= 4 {
             if let (
@@ -677,6 +881,8 @@ impl<'a> Preprocessor<'a> {
                 &self.token_buffer[1],
                 // The rest of the tokens
             ) {
+                tracing::debug!(func_name = func_name, "Found potential generic function call");
+                
                 // Found potential generic function call
                 let mut bracket_depth = 1;
                 let mut end_index = 2;
@@ -688,25 +894,45 @@ impl<'a> Preprocessor<'a> {
                         Token::LBracket => {
                             bracket_depth += 1;
                             param_str.push('[');
+                            tracing::trace!("Added '[', new depth: {}", bracket_depth);
                         },
                         Token::RBracket => {
                             bracket_depth -= 1;
+                            tracing::trace!("Found ']', new depth: {}", bracket_depth);
                             if bracket_depth == 0 {
                                 // We've reached the closing bracket
+                                tracing::debug!("Found closing bracket at index {}", end_index);
                                 break;
                             }
                             param_str.push(']');
                         },
                         Token::Identifier(arg) => {
                             // Add the parameter name to our string
+                            tracing::trace!(arg = arg, "Adding type argument to string");
                             param_str.push_str(arg);
                         },
                         Token::Comma => {
+                            tracing::trace!("Adding comma to parameter string");
                             param_str.push(',');
                         },
-                        _ => {
-                            // For other token types, you might want to add specific handling
-                            // For now, we just ignore them
+                        Token::Less => {
+                            // Handle angle brackets for additional types like channels
+                            tracing::trace!("Adding '<' to parameter string");
+                            param_str.push('<');
+                        },
+                        Token::Greater => {
+                            // Handle angle brackets for additional types like channels
+                            tracing::trace!("Adding '>' to parameter string");
+                            param_str.push('>');
+                        },
+                        Token::At => {
+                            // Handle pointer types
+                            tracing::trace!("Adding '@' to parameter string");
+                            param_str.push('@');
+                        },
+                        token => {
+                            // For other token types, add more detailed handling
+                            tracing::trace!(token = ?token, "Unknown token in type argument list");
                         }
                     }
                     end_index += 1;
@@ -717,11 +943,13 @@ impl<'a> Preprocessor<'a> {
                     // Look for parameter list after closing bracket
                     if end_index + 1 < self.token_buffer.len() && 
                        matches!(self.token_buffer[end_index + 1].0, Token::LParen) {
+                        tracing::debug!(param_str = param_str, "Found complete generic function call with args");
                         
                         // Parse the parameter string to handle nested generics
                         let type_param_info = match self.parse_param_list(&param_str) {
                             Ok(params) => params,
                             Err(e) => {
+                                tracing::error!(error = ?e, "Error parsing generic function call parameters");
                                 return Err(Error::new(
                                     "Preprocessor",
                                     &format!("Error parsing generic function call parameters: {}", e),
@@ -735,6 +963,14 @@ impl<'a> Preprocessor<'a> {
                             .map(|info| info.name.clone())
                             .collect::<Vec<String>>();
                         
+                        tracing::debug!(
+                            func_name = func_name,
+                            arg_count = type_args.len(),
+                            args = ?type_args,
+                            has_nested = type_param_info.iter().any(|info| info.nested_params.is_some()),
+                            "Parsed generic function call type arguments"
+                        );
+                        
                         // Create metadata for the generic function call
                         let metadata = TokenMetadata::GenericFunctionCall {
                             name: func_name.clone(),
@@ -746,6 +982,7 @@ impl<'a> Preprocessor<'a> {
                         
                         // Check if buffer is empty after removing first token
                         if self.token_buffer.is_empty() {
+                            tracing::error!("Unexpected end of token buffer during generic function call processing");
                             return Err(Error::new(
                                 "Preprocessor",
                                 "Unexpected end of token buffer during generic function call processing",
@@ -757,9 +994,11 @@ impl<'a> Preprocessor<'a> {
                         // First check if we have enough tokens
                         if self.token_buffer.len() < end_index {
                             // Not enough tokens in buffer, just clear the buffer
+                            tracing::warn!("Buffer smaller than expected, clearing remaining tokens");
                             self.token_buffer.clear();
                         } else {
                             // Remove tokens one by one
+                            tracing::debug!(count = end_index, "Removing processed tokens");
                             for _ in 0..end_index {
                                 if !self.token_buffer.is_empty() {
                                     self.token_buffer.remove(0);
@@ -768,16 +1007,19 @@ impl<'a> Preprocessor<'a> {
                         }
                         
                         // Add the token with metadata
+                        tracing::debug!("Adding token to stream with metadata");
                         self.token_stream.add_token_with_metadata(
                             identifier_token, 
                             identifier_loc.clone(),
                             metadata
                         );
                         
+                        tracing::debug!("Successfully processed generic function call");
                         return Ok(());
                     }
                 } else if bracket_depth > 0 {
                     // Malformed generic syntax - unclosed bracket
+                    tracing::error!("Unclosed type argument bracket in generic function call");
                     return Err(Error::new(
                         "Preprocessor",
                         &format!("Unclosed type argument bracket in generic function call to '{}'", func_name),
