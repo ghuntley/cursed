@@ -509,7 +509,7 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
                 }
                 
                 // If no interface implements this method, it might be a direct method call
-                error!("Method '{}' not found on type '{}' or any of its interfaces", method_name, receiver_type);
+                error!("Method '{}' not found on type '{:?}' or any of its interfaces", method_name, receiver_type);
                 Err(Error::from_str(&format!(
                     "Method '{}' not found on type '{}' or any of its interfaces",
                     method_name,
@@ -518,7 +518,7 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
             },
             _ => {
                 // Other types don't support interface method calls directly
-                error!("Type '{}' doesn't support interface method calls", receiver_type);
+                error!("Type '{:?}' doesn't support interface method calls", receiver_type);
                 Err(Error::from_str(&format!(
                     "Type '{}' doesn't support interface method calls",
                     format!("{:?}", receiver_type)
