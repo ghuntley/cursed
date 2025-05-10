@@ -56,8 +56,17 @@ pub enum TokenMetadata {
         /// The outer type
         outer_type: String,
         /// Information about the nested type
-        nested_types: Vec<String>,
+        nested_types: Vec<GenericTypeInfo>,
     },
+}
+
+/// Information about a generic type parameter, potentially nested
+#[derive(Debug, Clone)]
+pub struct GenericTypeInfo {
+    /// The name of the type parameter
+    pub name: String,
+    /// Optional nested type parameters if this is a generic type
+    pub nested_params: Option<Vec<GenericTypeInfo>>,
 }
 
 impl TokenStream {
@@ -132,6 +141,24 @@ impl TokenStream {
         }
         false
     }
+    
+    /// Gets info about nested generic types in the token stream
+    pub fn get_nested_generic_info(&self) -> Vec<(String, Vec<String>)> {
+        let mut result = Vec::new();
+        
+        for token_with_context in &self.tokens {
+            if let Some(TokenMetadata::NestedGenericType { outer_type, nested_types }) = &token_with_context.metadata {
+                // Extract the names of nested types (flattened for simplicity)
+                let nested_names = nested_types.iter()
+                    .map(|info| info.name.clone())
+                    .collect::<Vec<String>>();
+                    
+                result.push((outer_type.clone(), nested_names));
+            }
+        }
+        
+        result
+    }
 
     /// Checks if the token stream contains separate brackets (which would indicate failure to combine tokens)
     pub fn contains_separate_brackets(&self) -> bool {
@@ -140,10 +167,25 @@ impl TokenStream {
         for token_with_context in &self.tokens {
             match token_with_context.token {
                 Token::LBracket => {
-                    // If we find a left bracket that isn't part of a generic token, return true
+                    // If we find a left bracket, it should be part of a generic token's metadata
                     if token_with_context.metadata.is_none() {
+                        // This is a standalone bracket
                         return true;
                     }
+                    
+                    // Generic tokens with metadata should not have raw bracket tokens
+                    if let Some(metadata) = &token_with_context.metadata {
+                        match metadata {
+                            TokenMetadata::GenericType { .. } |
+                            TokenMetadata::GenericFunction { .. } |
+                            TokenMetadata::GenericFunctionCall { .. } |
+                            TokenMetadata::NestedGenericType { .. } => {
+                                // If this token has generic metadata but is still a bracket token, that's bad
+                                return true;
+                            }
+                        }
+                    }
+                    
                     in_brackets = true;
                 },
                 Token::RBracket => {
@@ -151,6 +193,20 @@ impl TokenStream {
                     if token_with_context.metadata.is_none() {
                         return true;
                     }
+                    
+                    // Generic tokens with metadata should not have raw bracket tokens
+                    if let Some(metadata) = &token_with_context.metadata {
+                        match metadata {
+                            TokenMetadata::GenericType { .. } |
+                            TokenMetadata::GenericFunction { .. } |
+                            TokenMetadata::GenericFunctionCall { .. } |
+                            TokenMetadata::NestedGenericType { .. } => {
+                                // If this token has generic metadata but is still a bracket token, that's bad
+                                return true;
+                            }
+                        }
+                    }
+                    
                     in_brackets = false;
                 },
                 _ => {}
@@ -183,6 +239,81 @@ impl<'a> Preprocessor<'a> {
             token_buffer: Vec::new(),
             token_stream: TokenStream::new(),
         }
+    }
+    
+    /// Parse a potentially nested generic type parameter
+    /// For example: "T", "Map[K, V]", "Pair[K, List[T]]", etc.
+    fn parse_generic_param(&self, param_str: &str) -> Result<GenericTypeInfo, Error> {
+        // Check if this has nested generic parameters [T, U, ...]
+        if let Some(bracket_idx) = param_str.find('[') {
+            if let Some(end_bracket_idx) = param_str.rfind(']') {
+                // Extract the base type name and the type parameters
+                let base_name = &param_str[0..bracket_idx];
+                let params_str = &param_str[bracket_idx+1..end_bracket_idx];
+                
+                // Parse the nested parameters
+                let nested_params = self.parse_param_list(params_str)?;
+                
+                return Ok(GenericTypeInfo {
+                    name: base_name.trim().to_string(),
+                    nested_params: Some(nested_params),
+                });
+            } else {
+                return Err(Error::from_str(&format!(
+                    "Malformed generic parameter: unclosed bracket in {}",
+                    param_str
+                )));
+            }
+        }
+        
+        // If there are no nested parameters, just return the name
+        Ok(GenericTypeInfo {
+            name: param_str.trim().to_string(),
+            nested_params: None,
+        })
+    }
+    
+    /// Parse a comma-separated list of type parameters, handling nested generics
+    fn parse_param_list(&self, params_str: &str) -> Result<Vec<GenericTypeInfo>, Error> {
+        let mut result = Vec::new();
+        let mut current_param = String::new();
+        let mut bracket_depth = 0;
+        
+        // Process character by character to handle nested commas
+        for c in params_str.chars() {
+            match c {
+                '[' => {
+                    bracket_depth += 1;
+                    current_param.push(c);
+                },
+                ']' => {
+                    bracket_depth -= 1;
+                    current_param.push(c);
+                },
+                ',' => {
+                    if bracket_depth == 0 {
+                        // This comma separates top-level parameters
+                        if !current_param.trim().is_empty() {
+                            let param_info = self.parse_generic_param(&current_param)?;
+                            result.push(param_info);
+                            current_param = String::new();
+                        }
+                    } else {
+                        // This comma is within nested parameters, keep it
+                        current_param.push(c);
+                    }
+                },
+                _ => current_param.push(c),
+            }
+        }
+        
+        // Handle the last parameter if there is one
+        if !current_param.trim().is_empty() {
+            let param_info = self.parse_generic_param(&current_param)?;
+            result.push(param_info);
+        }
+        
+        Ok(result)
     }
 
     /// Processes the token stream and returns the preprocessed tokens
@@ -265,32 +396,35 @@ impl<'a> Preprocessor<'a> {
                 // The rest of the tokens
             ) {
                 // Found potential generic type declaration
-                let mut type_params = Vec::new();
                 let mut bracket_depth = 1;
                 let mut end_index = 3;
+                let mut param_str = String::new();
                 
-                // Process everything inside the brackets
+                // Process everything inside the brackets to build a parameter string
                 while end_index < self.token_buffer.len() {
                     match &self.token_buffer[end_index].0 {
-                        Token::LBracket => bracket_depth += 1,
+                        Token::LBracket => {
+                            bracket_depth += 1;
+                            param_str.push('[');
+                        },
                         Token::RBracket => {
                             bracket_depth -= 1;
                             if bracket_depth == 0 {
                                 // We've reached the closing bracket
                                 break;
                             }
+                            param_str.push(']');
                         },
                         Token::Identifier(param) => {
-                            if bracket_depth == 1 && end_index > 0 {
-                                // This is a top-level type parameter
-                                type_params.push(param.clone());
-                            }
+                            // Add the parameter name to our string
+                            param_str.push_str(param);
                         },
                         Token::Comma => {
-                            // Just skip commas between type parameters
+                            param_str.push(',');
                         },
                         _ => {
-                            // Other tokens inside brackets might be part of nested generic types
+                            // For other token types, you might want to add specific handling
+                            // For now, we just ignore them
                         }
                     }
                     end_index += 1;
@@ -302,10 +436,37 @@ impl<'a> Preprocessor<'a> {
                     if end_index + 1 < self.token_buffer.len() && 
                        matches!(self.token_buffer[end_index + 1].0, Token::Squad) {
                         
-                        // Create metadata for the generic type
-                        let metadata = TokenMetadata::GenericType {
-                            name: type_name.clone(),
-                            type_params,
+                        // Parse the parameter string to handle nested generics
+                        let type_param_info = match self.parse_param_list(&param_str) {
+                            Ok(params) => params,
+                            Err(e) => {
+                                return Err(Error::new(
+                                    "Preprocessor",
+                                    &format!("Error parsing generic type parameters: {}", e),
+                                    Some(bracket_loc.clone())
+                                ));
+                            }
+                        };
+                        
+                        // Extract simple parameter names for metadata
+                        let type_params = type_param_info.iter()
+                            .map(|info| info.name.clone())
+                            .collect::<Vec<String>>();
+                        
+                        // Check if we have any nested parameters
+                        let has_nested = type_param_info.iter().any(|info| info.nested_params.is_some());
+                        
+                        // Create appropriate metadata based on whether we have nested parameters
+                        let metadata = if has_nested {
+                            TokenMetadata::NestedGenericType {
+                                outer_type: type_name.clone(),
+                                nested_types: type_param_info,
+                            }
+                        } else {
+                            TokenMetadata::GenericType {
+                                name: type_name.clone(),
+                                type_params,
+                            }
                         };
                         
                         // Add the tokens to the stream with the metadata
@@ -388,32 +549,35 @@ impl<'a> Preprocessor<'a> {
                 // The rest of the tokens
             ) {
                 // Found potential generic function declaration
-                let mut type_params = Vec::new();
                 let mut bracket_depth = 1;
                 let mut end_index = 3;
+                let mut param_str = String::new();
                 
-                // Process everything inside the brackets
+                // Process everything inside the brackets to build a parameter string
                 while end_index < self.token_buffer.len() {
                     match &self.token_buffer[end_index].0 {
-                        Token::LBracket => bracket_depth += 1,
+                        Token::LBracket => {
+                            bracket_depth += 1;
+                            param_str.push('[');
+                        },
                         Token::RBracket => {
                             bracket_depth -= 1;
                             if bracket_depth == 0 {
                                 // We've reached the closing bracket
                                 break;
                             }
+                            param_str.push(']');
                         },
                         Token::Identifier(param) => {
-                            if bracket_depth == 1 && end_index > 0 {
-                                // This is a top-level type parameter
-                                type_params.push(param.clone());
-                            }
+                            // Add the parameter name to our string
+                            param_str.push_str(param);
                         },
                         Token::Comma => {
-                            // Just skip commas between type parameters
+                            param_str.push(',');
                         },
                         _ => {
-                            // Other tokens inside brackets might be part of nested generic types
+                            // For other token types, you might want to add specific handling
+                            // For now, we just ignore them
                         }
                     }
                     end_index += 1;
@@ -424,6 +588,23 @@ impl<'a> Preprocessor<'a> {
                     // Look for parameter list after closing bracket
                     if end_index + 1 < self.token_buffer.len() && 
                        matches!(self.token_buffer[end_index + 1].0, Token::LParen) {
+                        
+                        // Parse the parameter string to handle nested generics
+                        let type_param_info = match self.parse_param_list(&param_str) {
+                            Ok(params) => params,
+                            Err(e) => {
+                                return Err(Error::new(
+                                    "Preprocessor",
+                                    &format!("Error parsing generic function parameters: {}", e),
+                                    Some(bracket_loc.clone())
+                                ));
+                            }
+                        };
+                        
+                        // Extract simple parameter names for metadata
+                        let type_params = type_param_info.iter()
+                            .map(|info| info.name.clone())
+                            .collect::<Vec<String>>();
                         
                         // Create metadata for the generic function
                         let metadata = TokenMetadata::GenericFunction {
@@ -497,32 +678,35 @@ impl<'a> Preprocessor<'a> {
                 // The rest of the tokens
             ) {
                 // Found potential generic function call
-                let mut type_args = Vec::new();
                 let mut bracket_depth = 1;
                 let mut end_index = 2;
+                let mut param_str = String::new();
                 
-                // Process everything inside the brackets
+                // Process everything inside the brackets to build a parameter string
                 while end_index < self.token_buffer.len() {
                     match &self.token_buffer[end_index].0 {
-                        Token::LBracket => bracket_depth += 1,
+                        Token::LBracket => {
+                            bracket_depth += 1;
+                            param_str.push('[');
+                        },
                         Token::RBracket => {
                             bracket_depth -= 1;
                             if bracket_depth == 0 {
                                 // We've reached the closing bracket
                                 break;
                             }
+                            param_str.push(']');
                         },
                         Token::Identifier(arg) => {
-                            if bracket_depth == 1 && end_index > 0 {
-                                // This is a top-level type argument
-                                type_args.push(arg.clone());
-                            }
+                            // Add the parameter name to our string
+                            param_str.push_str(arg);
                         },
                         Token::Comma => {
-                            // Just skip commas between type arguments
+                            param_str.push(',');
                         },
                         _ => {
-                            // Other tokens inside brackets might be part of nested generic types
+                            // For other token types, you might want to add specific handling
+                            // For now, we just ignore them
                         }
                     }
                     end_index += 1;
@@ -533,6 +717,23 @@ impl<'a> Preprocessor<'a> {
                     // Look for parameter list after closing bracket
                     if end_index + 1 < self.token_buffer.len() && 
                        matches!(self.token_buffer[end_index + 1].0, Token::LParen) {
+                        
+                        // Parse the parameter string to handle nested generics
+                        let type_param_info = match self.parse_param_list(&param_str) {
+                            Ok(params) => params,
+                            Err(e) => {
+                                return Err(Error::new(
+                                    "Preprocessor",
+                                    &format!("Error parsing generic function call parameters: {}", e),
+                                    Some(bracket_loc.clone())
+                                ));
+                            }
+                        };
+                        
+                        // Extract simple parameter names for metadata
+                        let type_args = type_param_info.iter()
+                            .map(|info| info.name.clone())
+                            .collect::<Vec<String>>();
                         
                         // Create metadata for the generic function call
                         let metadata = TokenMetadata::GenericFunctionCall {
