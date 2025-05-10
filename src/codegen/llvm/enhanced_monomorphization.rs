@@ -52,15 +52,32 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         concrete_type: &Type,
         interface_name: &str,
     ) -> Result<bool, Error> {
-        // Forward to the main implementation for consistency
+        // Use the interface registry for consistency
         // This ensures that constraint checking behaves the same way in all parts of the system
-        tracing::debug!("Enhanced monomorphization forwarding to main implementation");
+        tracing::debug!("Enhanced monomorphization using interface registry");
         
-        // Create a new instance of the main manager
-        let main_manager = crate::codegen::monomorphization::MonomorphizationManager::new();
+        // Get the interface registry
+        let registry = crate::core::interface_registry::InterfaceRegistry::new_with_defaults();
         
-        // Forward the call to the main implementation
-        main_manager.check_constraint(concrete_type, interface_name)
+        // Check the constraint directly with the registry
+        let result = registry.check_implementation(concrete_type, interface_name);
+        
+        // Log the result for debugging
+        match &result {
+            Ok(true) => tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type implements interface"),
+            Ok(false) => tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "Type does not implement interface"),
+            Err(e) => tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error checking interface implementation"),
+        }
+        
+        // Return the result or convert Ok(false) to an Err for consistency with other constraint checkers
+        match result {
+            Ok(true) => Ok(true),
+            Ok(false) => Err(Error::from_str(&format!(
+                "Type '{:?}' does not implement interface '{}': implementation not found in registry",
+                concrete_type, interface_name
+            ))),
+            Err(e) => Err(e),
+        }
     }
     
     fn validate_constraints(

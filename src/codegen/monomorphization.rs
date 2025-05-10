@@ -158,41 +158,36 @@ impl MonomorphizationManager {
         // Create an interface type from the name
         let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
         
-        // First, try to use the type checker for interface implementation checks if available
-        if let Some(type_checker) = &self.type_checker {
-            // Use the type checker's interface implementation check mechanism
-            tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Using type checker to verify interface implementation");
-            
-            // Handle special case for Point struct which should implement Comparable
-            if let Type::Struct(struct_name, _) = concrete_type {
-                if struct_name == "Point" && interface_name == "Comparable" {
-                    tracing::info!("Special case: Point struct implements Comparable interface");
-                    return Ok(true);
-                }
+        // Get the interface registry for efficient checking
+        let registry = crate::core::interface_registry::InterfaceRegistry::new_with_defaults();
+        
+        // Try the registry first (faster and more deterministic)
+        match registry.check_implementation(concrete_type, interface_name) {
+            Ok(true) => {
+                tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Registry confirms type implements interface");
+                return Ok(true);
+            },
+            Ok(false) => {
+                // Registry says no, but we'll try type checker as a backup
+                tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Registry says type doesn't implement interface, checking with type checker");
+            },
+            Err(e) => {
+                tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error checking interface implementation in registry");
+                // Continue to type checker fallback
             }
+        }
+        
+        // If registry didn't confirm, try to use the type checker
+        if let Some(type_checker) = &self.type_checker {
+            tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Using type checker to verify interface implementation");
             
             match type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type) {
                 Ok(true) => {
-                    tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type implements interface");
+                    tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type checker confirms type implements interface");
                     return Ok(true);
                 },
                 Ok(false) => {
-                    tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "Type does not implement interface");
-                    
-                    // For test compatibility - handle specific cases 
-                    match concrete_type {
-                        Type::Struct(struct_name, _) => {
-                            // Check for specific test structs
-                            match struct_name.as_str() {
-                                "Point" if interface_name == "Comparable" => {
-                                    tracing::info!("Special case: Point struct implements Comparable interface");
-                                    return Ok(true);
-                                },
-                                _ => {}
-                            }
-                        }
-                        _ => {}
-                    }
+                    tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "Type checker confirms type does not implement interface");
                     
                     return Err(Error::from_str(&format!(
                         "Type '{:?}' does not implement interface '{}': missing required methods",
@@ -200,7 +195,7 @@ impl MonomorphizationManager {
                     )));
                 },
                 Err(e) => {
-                    tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error checking interface implementation");
+                    tracing::error!(concrete_type = ?concrete_type, interface = interface_name, error = ?e, "Error in type checker when checking interface implementation");
                     return Err(Error::from_str(&format!(
                         "Type '{:?}' does not implement interface '{}': {}",
                         concrete_type, interface_name, e
@@ -209,88 +204,13 @@ impl MonomorphizationManager {
             }
         }
         
-        // If no type checker is available, use a fallback for primitive types and special cases
-        tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "No type checker available for interface check, using fallback mechanism");
-        
-        // Special case handling for specific types in tests
-        if let Type::Struct(struct_name, _) = concrete_type {
-            match struct_name.as_str() {
-                // Handle Point struct specially
-                "Point" => {
-                    // Point implements Comparable
-                    if interface_name == "Comparable" {
-                        tracing::info!("Fallback special case: Point implements Comparable");
-                        return Ok(true);
-                    }
-                    // Point doesn't implement Numeric or other interfaces
-                    else {
-                        tracing::warn!("Fallback special case: Point does not implement {}", interface_name);
-                        return Err(Error::from_str(&format!(
-                            "Type 'Point' does not implement interface '{}'",
-                            interface_name
-                        )));
-                    }
-                },
-                // Handle other test structs
-                "StringStack" => {
-                    // StringStack implements Container
-                    if interface_name == "Container" || interface_name == "Stack" {
-                        tracing::info!("Fallback special case: StringStack implements {}", interface_name);
-                        return Ok(true);
-                    }
-                },
-                "IntList" => {
-                    // IntList implements Container and List
-                    if interface_name == "Container" || interface_name == "List" || interface_name == "Numeric" {
-                        tracing::info!("Fallback special case: IntList implements {}", interface_name);
-                        return Ok(true);
-                    }
-                },
-                _ => {}
-            }
-        }
-        
-        // Fallback to primitive type checks if type checker is not available
-        let implements = match concrete_type {
-            // Primitive types and their supported interfaces
-            Type::Normie | Type::Smol | Type::Mid | Type::Thicc => {
-                // Integer types implement Comparable, Numeric, Hashable
-                matches!(interface_name, "Comparable" | "Numeric" | "Hashable")
-            }
-            Type::Snack | Type::Meal => {
-                // Float types implement Comparable, Numeric
-                matches!(interface_name, "Comparable" | "Numeric")
-            }
-            Type::Tea => {
-                // String type implements Comparable, Stringable, Hashable
-                matches!(interface_name, "Comparable" | "Stringable" | "Hashable")
-            }
-            Type::Lit => {
-                // Boolean type implements Comparable, Hashable
-                matches!(interface_name, "Comparable" | "Hashable")
-            }
-            Type::Byte | Type::Rune | Type::Sip => {
-                // Character types implement Comparable, Hashable
-                matches!(interface_name, "Comparable" | "Hashable")
-            }
-            // For more complex types, return an error since we need the type checker
-            _ => {
-                tracing::error!(concrete_type = ?concrete_type, interface = interface_name, "Cannot check interface implementation without type checker for complex type");
-                false
-            }
-        };
-        
-        if implements {
-            tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type implements interface (fallback check)");
-            Ok(true)
-        } else {
-            // Return a proper error for better diagnostics
-            tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "Type does not implement interface (fallback check)");
-            Err(Error::from_str(&format!(
-                "Type '{:?}' does not implement interface '{}': not supported in fallback mechanism",
-                concrete_type, interface_name
-            )))
-        }
+        // If we've reached here, neither registry nor type checker confirmed
+        // This is a deterministic error - we should treat it as the type not implementing the interface
+        tracing::warn!(concrete_type = ?concrete_type, interface = interface_name, "No mechanism confirmed interface implementation");
+        Err(Error::from_str(&format!(
+            "Type '{:?}' does not implement interface '{}': no implementation found",
+            concrete_type, interface_name
+        )))
     }
     /// Create a new MonomorphizationManager
     /// 
