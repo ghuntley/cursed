@@ -19,6 +19,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use crate::core::type_checker::Type as CursedType;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
+use crate::codegen::llvm::expression::ExpressionCompilation;
 
 use tracing::{debug, error, info, instrument, trace, warn, Level};
 
@@ -53,8 +54,45 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         debug!("Compiling integrated type assertion for {}", type_assertion.type_name);
         
+        // First compile the expression being asserted to check for initial errors
+        let expr_value = match ExpressionCompilation::compile_expression(self, type_assertion.expression.as_ref()) {
+            Ok(val) => val,
+            Err(e) => {
+                error!("Failed to compile expression for type assertion: {}", e);
+                return Err(Error::Compilation(format!(
+                    "Failed to compile expression for type assertion '{}': {}", 
+                    type_assertion.expression.string(), e
+                )));
+            }
+        };
+        
+        // Check if the expression is null before proceeding
+        if expr_value.is_pointer_value() {
+            let ptr = expr_value.into_pointer_value();
+            if let Ok(is_null) = self.builder().build_is_null(ptr, "ptr_null_check") {
+                // Check if the is_null value is a constant true
+                if is_null.is_int_value() {
+                    let int_val = is_null.into_int_value();
+                    if int_val.get_zero_extended_value() != 0 {
+                        error!("Type assertion attempted on null interface value");
+                        // Return a tuple with null value and false flag to indicate failure
+                        return self.create_type_assertion_result(None, false);
+                    }
+                }
+            }
+        }
+        
         // Use the error-handling implementation which is the most complete
-        let result = self.compile_type_assertion_with_errors(type_assertion)?;
+        let result = match TypeAssertionErrorHandler::compile_type_assertion_with_errors(self, type_assertion) {
+            Ok(val) => val,
+            Err(e) => {
+                error!("Type assertion error: {}", e);
+                return Err(Error::Compilation(format!(
+                    "Type assertion failed for type '{}': {}", 
+                    type_assertion.type_name, e
+                )));
+            }
+        };
         
         debug!("Type assertion compiled successfully");
         Ok(result)
@@ -109,6 +147,11 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Build the tuple (value, success)
         self.build_tuple(vec![value, success_val.into()])
     }
+}
+
+// Helper methods for LlvmCodeGenerator for type assertions
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    // Uses the existing is_null_pointer from pointer_ops.rs
 }
 
 // Register the module in the LLVM code generator
