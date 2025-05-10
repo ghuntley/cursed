@@ -673,6 +673,28 @@ impl<'ctx> InterfaceManager<'ctx> {
         interface_value: PointerValue<'ctx>,
         target_type_name: &str,
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        tracing::debug!("Checking if interface value implements type: {}", target_type_name);
+        
+        // First, verify that the interface value is not null
+        let is_null = builder.build_is_null(interface_value, "is_interface_null").unwrap();
+        
+        // Create basic blocks for null check
+        let current_function = builder.get_insert_block().unwrap().get_parent().unwrap();
+        let non_null_block = context.append_basic_block(current_function, "non_null_check");
+        let result_block = context.append_basic_block(current_function, "result_block");
+        
+        // Create PHI node for the result
+        builder.build_conditional_branch(is_null, result_block, non_null_block).unwrap();
+        
+        // Handle null case by setting result to false
+        let entry_block = builder.get_insert_block().unwrap();
+        builder.position_at_end(result_block);
+        let phi = builder.build_phi(context.bool_type(), "type_check_result").unwrap();
+        phi.add_incoming(&[(&context.bool_type().const_int(0, false), entry_block)]);
+        
+        // Handle non-null case
+        builder.position_at_end(non_null_block);
+        
         // Load the vtable pointer from the interface value
         let vtable_ptr_ptr = unsafe {
             // Assuming interface value is { data_ptr, vtable_ptr }
@@ -698,17 +720,68 @@ impl<'ctx> InterfaceManager<'ctx> {
             
         let vtable_ptr = vtable_ptr.into_pointer_value();
         
-        // In a real implementation, we'd check a type ID field in the vtable
-        // or load runtime type info, but for now we'll use a simple approach.
+        // Check if vtable pointer is null
+        let is_vtable_null = builder.build_is_null(vtable_ptr, "is_vtable_null").unwrap();
+        let vtable_check_block = context.append_basic_block(current_function, "vtable_check");
         
-        // Check all vtable implementations to see if any match our target type
-        let matches = self.vtable_impls.iter().any(|((_, impl_type_name), _)| {
-            impl_type_name == target_type_name
-        });
+        // Branch based on vtable null check
+        builder.build_conditional_branch(is_vtable_null, result_block, vtable_check_block).unwrap();
+        let non_null_block = builder.get_insert_block().unwrap();
+        phi.add_incoming(&[(&context.bool_type().const_int(0, false), non_null_block)]);
         
-        // Create a boolean result
-        let result = context.bool_type().const_int(if matches { 1 } else { 0 }, false);
+        // Continue with vtable check if not null
+        builder.position_at_end(vtable_check_block);
         
-        Ok(result.into())
+        // === Improved implementation - search for specific vtable that matches the target type ===
+        // Create a default false result
+        let mut result_value = context.bool_type().const_int(0, false);
+        
+        // Find all vtable implementations for the target type
+        let matching_impls: Vec<&VTableImpl> = self.vtable_impls.values()
+            .filter(|impl_| impl_.runtime_type_info.type_name == target_type_name)
+            .collect();
+        
+        if !matching_impls.is_empty() {
+            tracing::debug!("Found {} vtable implementations for type {}", matching_impls.len(), target_type_name);
+            
+            // For each implementation, check if the vtable pointer matches
+            // This creates a series of comparisons and selects to find if any match
+            for vtable_impl in matching_impls {
+                let impl_vtable_ptr = vtable_impl.vtable_global;
+                
+                // Compare pointers - using build_int_compare for pointer comparison
+                let ptrs_equal = builder.build_int_compare(
+                    inkwell::IntPredicate::EQ,
+                    vtable_ptr, 
+                    impl_vtable_ptr, 
+                    &format!("vtable_eq_{}", vtable_impl.runtime_type_info.type_id)
+                ).unwrap();
+                
+                // Update result if this comparison is true
+                result_value = builder.build_or(
+                    result_value, 
+                    ptrs_equal, 
+                    "type_check_or"
+                ).unwrap();
+            }
+            
+            tracing::debug!("Generated pointer comparison check for type: {}", target_type_name);
+        } else {
+            tracing::debug!("No vtable implementations found for type: {}", target_type_name);
+        }
+        
+        // Add the final result to the PHI node
+        let check_block = builder.get_insert_block().unwrap();
+        phi.add_incoming(&[(&result_value, check_block)]);
+        
+        // Branch to the result block
+        builder.build_unconditional_branch(result_block).unwrap();
+        
+        // Position at the result block and return the PHI result
+        builder.position_at_end(result_block);
+        let final_result = phi.as_basic_value();
+        
+        tracing::debug!("Completed type check for: {}", target_type_name);
+        Ok(final_result)
     }
 }
