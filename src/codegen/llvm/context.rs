@@ -22,6 +22,7 @@ use super::types::*;
 use super::errors::*;
 use super::LoopContext;
 use super::monomorphization;
+use super::interface_type_registry;
 
 /// Information about an imported package
 pub struct ImportedPackageInfo<'ctx> {
@@ -70,6 +71,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) default_integer_type: Option<inkwell::types::IntType<'ctx>>,
     // Cache for type IDs to improve performance of type assertions
     pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
+    // Interface type registry for runtime type information
+    pub(crate) interface_type_registry: Option<super::interface_type_registry::InterfaceTypeRegistry<'ctx>>,
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -88,6 +91,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_field_accessors::register_interface_field_accessors();
         // Initialize enhanced runtime debugging for type assertions
         super::interface_type_assertion_debugging::register_runtime_type_assertion_debugging();
+        // No initialization needed for interface type registry
+        // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator
         let module = context.create_module(module_name);
         let builder = context.create_builder();
@@ -119,6 +124,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             type_id_cache: None, // Will be initialized when needed
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
+            // Initialize interface type registry
+            interface_type_registry: Some(super::interface_type_registry::InterfaceTypeRegistry::new()),
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality

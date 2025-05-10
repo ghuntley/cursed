@@ -22,6 +22,7 @@ use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::error::Error;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
+use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistryAccess;
 
 use tracing::{debug, error, info, instrument, span, warn, Level};
 
@@ -285,17 +286,62 @@ impl<'ctx> RuntimeTypeAssertionDebugging<'ctx> for LlvmCodeGenerator<'ctx> {
         &mut self,
         type_id: BasicValueEnum<'ctx>
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // In a real implementation, this would look up the type name from a runtime registry
-        // For now, we'll just return a placeholder
+        // This implementation uses the interface type registry to look up type names at runtime
+        debug!("Getting type name for ID: {:?}", type_id);
         
-        // We'd create a global type registry and look up the name by ID
-        // For the prototype, we'll just return the type ID as a string
+        // First check if we can use the registry globals
+        if let Ok(type_name) = self.generate_type_name_lookup(type_id) {
+            return Ok(type_name);
+        }
         
-        // This would be LLVM code to call a runtime function like get_type_name(type_id)
-        debug!("Would get type name for ID: {:?}", type_id);
+        // If we don't have registry globals, try to create a string representation of the type ID
+        // as a fallback mechanism
+        let int_type = self.context().i64_type();
+        let format_str = self.context().const_string("Type#%llu".as_bytes(), true);
         
-        // Return the same type ID as placeholder
-        Ok(type_id)
+        // Add the format string as a global constant
+        let format_global = self.module().add_global(
+            format_str.get_type(),
+            None,
+            "type_id_format_str"
+        );
+        format_global.set_linkage(inkwell::module::Linkage::Private);
+        format_global.set_initializer(&format_str);
+        
+        // Declare the snprintf function if it doesn't exist
+        let i32_type = self.context().i32_type();
+        let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::default());
+        let void_type = self.context().void_type();
+        
+        let snprintf_type = i32_type.fn_type(
+            &[
+                i8_ptr_type.into(),
+                int_type.into(),
+                i8_ptr_type.into(),
+                int_type.into(),
+            ],
+            true
+        );
+        
+        let snprintf = self.module().add_function("snprintf", snprintf_type, None);
+        
+        // Allocate a buffer for the string representation
+        let buffer_len = 32; // Should be enough for a 64-bit integer
+        let buffer = self.create_entry_block_alloca(int_type.array_type(buffer_len), "type_id_str_buffer");
+        
+        // Call snprintf to format the type ID into the buffer
+        let args = &[
+            buffer.into(),
+            int_type.const_int(buffer_len as u64, false).into(),
+            format_global.as_pointer_value().into(),
+            type_id.into_int_value().into()
+        ];
+        
+        let _ = self.builder().build_call(snprintf, args, "format_type_id")
+            .map_err(|e| Error::codegen(format!("Failed to call snprintf: {}", e)))?;
+        
+        // Return the buffer as the type name string
+        Ok(buffer.into())
     }
     
     #[instrument(skip(self), level = "debug")]
