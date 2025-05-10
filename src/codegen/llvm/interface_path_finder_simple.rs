@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use tracing::{debug, info, instrument, span, Level};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistryAccess;
 use crate::error::Error;
 
 /// Simple path finder extension for interface inheritance relationships
@@ -236,84 +237,129 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Helper method to get all interfaces in the registry
+    #[instrument(skip(self), level = "debug")]
     fn get_all_interfaces(&self) -> HashSet<String> {
-        let mut result = HashSet::new();
+        let _span = span!(Level::DEBUG, "get_all_interfaces").entered();
         
-        // Just return a basic set for this simple implementation
-        let mut result = HashSet::new();
+        // Get the real interfaces from the registry
+        let registry = self.interface_type_registry();
+        let all_interfaces = registry.all_types();
         
-        // Add the source and target interfaces to make sure they're considered
-        result.insert("Animal".to_string());
-        result.insert("Mammal".to_string());
-        result.insert("Dog".to_string());
-        result.insert("Cat".to_string());
-        result.insert("Bird".to_string());
-        result.insert("Vehicle".to_string());
-        result.insert("LandVehicle".to_string());
-        result.insert("Car".to_string());
-        result.insert("Sedan".to_string());
-        result.insert("Reader".to_string());
-        result.insert("FileReader".to_string());
-        result.insert("BufferedFileReader".to_string());
-        
-        result
+        // Extract the type names from the registry
+        let interfaces: HashSet<String> = all_interfaces
+            .into_iter()
+            .map(|(_, name)| name)
+            .collect();
+            
+        debug!("Found {} interfaces in registry", interfaces.len());
+        interfaces
     }
     
-    /// Helper method to get the extension hierarchy with hardcoded relationships
+    /// Helper method to get the extension hierarchy from the actual registry
+    #[instrument(skip(self), level = "debug")]
     fn get_extension_hierarchy(&self) -> HashMap<String, HashSet<String>> {
-        // Create a hierarchy map with hardcoded relationships
+        let _span = span!(Level::DEBUG, "get_extension_hierarchy").entered();
         let mut hierarchy = HashMap::new();
         
-        // Animal hierarchy
-        let mut animal_ext = HashSet::new();
-        animal_ext.insert("Mammal".to_string());
-        animal_ext.insert("Bird".to_string());
-        hierarchy.insert("Animal".to_string(), animal_ext);
+        // Get the registry
+        let registry = self.interface_type_registry();
         
-        // Mammal hierarchy
-        let mut mammal_ext = HashSet::new();
-        mammal_ext.insert("Dog".to_string());
-        mammal_ext.insert("Cat".to_string());
-        hierarchy.insert("Mammal".to_string(), mammal_ext);
+        // Get all interfaces
+        let interfaces = self.get_all_interfaces();
         
-        // Vehicle hierarchy
-        let mut vehicle_ext = HashSet::new();
-        vehicle_ext.insert("LandVehicle".to_string());
-        hierarchy.insert("Vehicle".to_string(), vehicle_ext);
+        // For each interface, find all its extensions
+        for interface in &interfaces {
+            let mut extensions = HashSet::new();
+            
+            // Get all other interfaces that extend this one
+            for other in &interfaces {
+                if interface == other {
+                    continue; // Skip self
+                }
+                
+                // Check if other extends interface directly
+                if let Ok(true) = registry.check_interface_extends(other, interface) {
+                    extensions.insert(other.clone());
+                }
+            }
+            
+            // Only add non-empty extension sets
+            if !extensions.is_empty() {
+                hierarchy.insert(interface.clone(), extensions);
+            }
+        }
         
-        // LandVehicle hierarchy
-        let mut land_vehicle_ext = HashSet::new();
-        land_vehicle_ext.insert("Car".to_string());
-        hierarchy.insert("LandVehicle".to_string(), land_vehicle_ext);
-        
-        // Car hierarchy
-        let mut car_ext = HashSet::new();
-        car_ext.insert("Sedan".to_string());
-        hierarchy.insert("Car".to_string(), car_ext);
-        
-        // Reader hierarchy
-        let mut reader_ext = HashSet::new();
-        reader_ext.insert("FileReader".to_string());
-        hierarchy.insert("Reader".to_string(), reader_ext);
-        
-        // FileReader hierarchy
-        let mut file_reader_ext = HashSet::new();
-        file_reader_ext.insert("BufferedFileReader".to_string());
-        hierarchy.insert("FileReader".to_string(), file_reader_ext);
-        
+        debug!("Built extension hierarchy with {} entries", hierarchy.len());
         hierarchy
     }
     
-    /// Check for reversed inheritance relationship
+    /// Check for reversed inheritance relationship with detailed diagnostics
+    ///
+    /// This method detects if the inheritance relationship might be reversed,
+    /// which is a common error in interface type assertions. It provides detailed
+    /// diagnostic information to help developers fix the issue.
+    #[instrument(skip(self), level = "debug")]
     pub fn detect_reversed_inheritance_simple(
         &self,
         source_interface: &str,
         target_interface: &str,
-    ) -> Result<bool, Error> {
+    ) -> Result<(bool, String), Error> {
+        let _span = span!(Level::DEBUG, "detect_reversed_inheritance").entered();
         debug!("Checking for reversed inheritance between {} and {}", 
                source_interface, target_interface);
         
+        // Get interfaces to verify they exist
+        let interfaces = self.get_all_interfaces();
+        if !interfaces.contains(&source_interface.to_string()) {
+            return Err(Error::Compilation(format!(
+                "Source interface '{}' does not exist in the registry", 
+                source_interface
+            )));
+        }
+        
+        if !interfaces.contains(&target_interface.to_string()) {
+            return Err(Error::Compilation(format!(
+                "Target interface '{}' does not exist in the registry", 
+                target_interface
+            )));
+        }
+        
         // Check if target actually extends source (reverse of what was attempted)
-        self.check_extension_relationship_simple(target_interface, source_interface)
+        match self.check_extension_relationship_simple(target_interface, source_interface) {
+            Ok(true) => {
+                // Found reversed relationship - provide helpful message
+                let message = format!(
+                    "Reversed inheritance detected: '{}' extends '{}', not the other way around. \
+                    You might need to swap the interfaces in your type assertion.",
+                    target_interface, source_interface
+                );
+                
+                info!("Detected reversed inheritance: {} extends {}", 
+                      target_interface, source_interface);
+                
+                // Try to find a path to show the inheritance chain
+                if let Ok(path) = self.find_interface_path_simple(target_interface, source_interface) {
+                    let path_str = path.join(" -> ");
+                    let detail_message = format!(
+                        "{}\nThe actual inheritance path is: {}", 
+                        message, path_str
+                    );
+                    return Ok((true, detail_message));
+                }
+                
+                Ok((true, message))
+            },
+            Ok(false) => {
+                // No reversed relationship
+                debug!("No reversed inheritance detected between {} and {}", 
+                      source_interface, target_interface);
+                Ok((false, String::from("No reversed inheritance detected.")))
+            },
+            Err(e) => {
+                // Error checking relationship
+                debug!("Error checking reversed inheritance: {}", e);
+                Err(e)
+            }
+        }
     }
 }
