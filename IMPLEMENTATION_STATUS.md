@@ -21,10 +21,13 @@ The CURSED programming language compiler is currently in **Stage 1 of developmen
   - `periodt` while loops implementation completed and connected
   - Range clauses implementation improved and connected in `src/codegen/llvm/range_clause_fixed.rs` 
   - Container iteration partially implemented with support for arrays and placeholder code for other container types
-- **Concurrency**: Partially implemented
-  - Goroutines (`stan`): Basic structure exists but not fully connected (see `src/codegen/llvm/stan.rs`)
-  - Channels (`dm`): Implementation started but not complete
-  - `concurrenz` package: Interface defined in stdlib but needs proper implementation
+- **Concurrency**: Improved implementation
+  - Goroutines (`stan`): Basic structure exists with improved connection to expressions
+  - Channels (`dm`): Implementation significantly improved with proper runtime FFI integration
+    - Added FFI runtime functions in `src/runtime/channel.rs` for proper channel operations
+    - Connected LLVM code generation to runtime functions for channel creation, send and receive operations
+    - Implemented better structured logging throughout channel operations
+  - `concurrenz` package: Interface defined in stdlib and connected to channel implementation
 - **Structs**: Fully implemented
 - **Interfaces**: Mostly implemented
   - Interface definition/implementation: Core functionality in `src/codegen/llvm/interface_implementation.rs`
@@ -174,18 +177,21 @@ Items that have been verified as not implemented (sorted by priority):
    - Runtime linking and optimization
    - Interface type assertion error propagation
    - Interface dynamic dispatch improvements
-   - Concurrency runtime implementation is incomplete:
-     - Goroutines (`stan` keyword) have partial implementation:
+   - Concurrency runtime implementation significantly improved:
+     - Goroutines (`stan` keyword) have improved implementation:
        - Basic AST structure in `StanExpression` exists
        - Parser support is working
-       - Multiple implementation attempts: `stan.rs`, `goroutines.rs`, and `concurrency.rs`
-       - `concurrency.rs` has a stub that returns a constant instead of actual implementation
-       - Missing runtime support for proper goroutine scheduling
+       - Multiple implementation attempts consolidated into `concurrency.rs`
+       - LLVM code generation validates the goroutine expression properly
+       - Still needs runtime support for proper goroutine scheduling
      - Channels (`dm` keyword) implementation:
-       - Implementation started in `src/codegen/llvm/concurrency.rs`
-       - Channel creation is somewhat implemented
-       - Send/receive operations are incomplete
-     - No integration with GC for proper memory management of goroutines
+       - Full implementation in `src/codegen/llvm/concurrency.rs`
+       - Channel creation, send and receive operations properly connected to runtime
+       - Added FFI runtime functions in `src/runtime/channel.rs`
+       - Proper type handling for different element types
+       - Structured logging with tracing macros throughout the implementation
+       - Send/receive operations have proper error handling
+     - Runtime/GC integration started but needs further work
 
 3. **Stage 1 Compiler Features** - High Priority
    - Complete generic types implementation (monomorphization is partially implemented)✅ IMPROVED

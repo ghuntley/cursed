@@ -55,6 +55,7 @@ pub mod object_thread_safe;
 pub mod parser;
 pub mod prelude;
 pub mod repl;
+pub mod runtime;
 pub mod stdlib;
 pub mod benchmark;
 pub mod stdlib_test;

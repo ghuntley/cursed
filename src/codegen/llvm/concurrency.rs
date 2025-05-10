@@ -17,22 +17,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         &mut self,
         goroutine: &StanExpression
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        tracing::debug!("Compiling goroutine expression");
+        
         // First, compile the function call expression that will be run in the goroutine
-        // We don't actually use this result, but it helps to validate that the expression is valid
-        let _ = self.compile_expression(&*goroutine.expression)?;
+        // This would typically be a CallExpression that will execute in the goroutine
+        let func_expr = self.compile_expression(&*goroutine.expression)?;
         
-        // Get the function to call
-        // Simplified version - just return a default value without trying to extract function
-        // Let's assume this is implemented elsewhere
-        return Ok(self.context().i32_type().const_int(0, false).into());
+        // In a full implementation, we would:
+        // 1. Extract the function to call from the expression
+        // 2. Create a new goroutine context/function that calls this function
+        // 3. Call the runtime's goroutine creation function (e.g., cursed_create_goroutine)
+        // 4. Pass the function and any captured context to the runtime
         
-        // Original code (commented out):
-        /*let function = match &*goroutine.expression {
-            // TODO: Extract the function from the call expression
-            // This is a simplified version that assumes direct function calls
-            _ => return Err(Error::codegen("Only function calls are supported in goroutines".to_string()))
-        };*/
-
+        // For now, return a placeholder value
+        tracing::info!("Goroutine implementation is incomplete - returning placeholder");
+        Ok(self.context().i32_type().const_int(0, false).into())
     }
     
     /// Compile a channel (dm) creation expression
@@ -77,10 +76,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             self.context().i64_type().const_int(0, false) // Default to unbuffered channel
         };
         
-        // Call the make_channel function
+        // Call the make_channel function from our runtime implementation
+        tracing::debug!("Calling cursed_make_channel with element size and capacity");
         let args = &[size_of_elem.into(), capacity_value.into()];
         let channel_ptr = self.builder().build_call(make_channel_fn, args, "channel")
-            .map_err(|e| Error::codegen(format!("Failed to call make_channel: {}", e)))?;
+            .map_err(|e| Error::codegen(format!("Failed to call cursed_make_channel: {}", e)))?;
         
         Ok(channel_ptr.try_as_basic_value().left().unwrap())
     }
@@ -118,10 +118,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let value_i8_ptr = self.builder().build_bitcast(value_ptr, i8_ptr_type, "value_i8_ptr")
             .map_err(|e| Error::codegen(format!("Failed to bitcast value pointer: {}", e)))?;
         
-        // Call the send function
+        // Call the send function from our runtime implementation
+        tracing::debug!("Calling cursed_send_to_channel");
         let args = &[channel_ptr.into(), value_i8_ptr.into()];
         let send_result = self.builder().build_call(send_fn, args, "send_result")
-            .map_err(|e| Error::codegen(format!("Failed to call send: {}", e)))?;
+            .map_err(|e| Error::codegen(format!("Failed to call cursed_send_to_channel: {}", e)))?;
         
         // The send function returns void, so we return a dummy value
         let i32_type = self.context().i32_type();
@@ -151,16 +152,17 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let result_i8_ptr = self.builder().build_bitcast(result_ptr, i8_ptr_type, "result_i8_ptr")
             .map_err(|e| Error::codegen(format!("Failed to bitcast result pointer: {}", e)))?;
         
-        // Call the receive function
+        // Call the receive function from our runtime implementation
         let channel_ptr = if channel.is_pointer_value() {
             channel.into_pointer_value()
         } else {
             return Err(Error::codegen("Channel expression must evaluate to a pointer".to_string()));
         };
         
+        tracing::debug!("Calling cursed_receive_from_channel");
         let args = &[channel_ptr.into(), result_i8_ptr.into()];
         let _ = self.builder().build_call(receive_fn, args, "receive_call")
-            .map_err(|e| Error::codegen(format!("Failed to call receive: {}", e)))?;
+            .map_err(|e| Error::codegen(format!("Failed to call cursed_receive_from_channel: {}", e)))?;
         
         // Load and return the result
         Ok(self.builder().build_load(value_type, result_ptr, "receive_load")
