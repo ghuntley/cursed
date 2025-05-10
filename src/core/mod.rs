@@ -30,6 +30,9 @@ pub mod constraint_recovery;
 pub mod nested_interface_registry;
 pub mod deep_nested_interface_registry;
 pub mod interface_registry_extensions;
+pub mod interface_registry_visualization;
+pub mod interface_registry_visualization_enhanced;
+pub mod interface_registry_visualization_reference;
 
 /// Runtime representation of a compiled CURSED function
 ///
