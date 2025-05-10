@@ -24,6 +24,7 @@ pub mod type_checker;
 pub mod type_checker_interface_registry;
 pub mod type_infer;
 pub mod constraint_error;
+pub mod async_constraint_checker;
 
 /// Runtime representation of a compiled CURSED function
 ///

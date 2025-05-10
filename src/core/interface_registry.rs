@@ -10,7 +10,8 @@ use std::collections::{HashMap, HashSet};
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use std::sync::Arc;
-use tracing::{debug, warn, error, info, trace};
+use tracing::{debug, warn, error, info, trace, instrument};
+use crate::core::async_constraint_checker::AsyncConstraintChecking;
 
 /// Represents a generic interface implementation with type parameters
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -29,7 +30,7 @@ pub struct GenericInterfaceImpl {
 }
 
 /// A registry that tracks which types implement which interfaces.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct InterfaceRegistry {
     /// Maps an interface name to a set of type names that implement it
     implementations: HashMap<String, HashSet<Type>>,
@@ -191,6 +192,7 @@ impl InterfaceRegistry {
     /// * `Ok(true)` - If the constraints are satisfied
     /// * `Ok(false)` - If the constraints are not satisfied
     /// * `Err` - If there was an error during the check
+    #[instrument(skip(self, type_args, type_params, constraints), level = "debug")]
     fn check_generic_constraints(
         &self,
         type_args: &[Type],
@@ -213,27 +215,67 @@ impl InterfaceRegistry {
             type_map.insert(param_name.clone(), type_args[i].clone());
         }
         
-        // Check each constraint
-        for (param_name, interface_name) in constraints {
-            if let Some(concrete_type) = type_map.get(param_name) {
-                // Check if the concrete type satisfies the constraint
-                if !self.check_implementation(&concrete_type, interface_name)? {
-                    debug!(
-                        "Type parameter {} with concrete type {:?} does not implement required interface {}",
-                        param_name, concrete_type, interface_name
-                    );
+        // For small numbers of constraints, just check sequentially
+        if constraints.len() <= 2 {
+            // Check each constraint sequentially
+            for (param_name, interface_name) in constraints {
+                if let Some(concrete_type) = type_map.get(param_name) {
+                    // Check if the concrete type satisfies the constraint
+                    if !self.check_implementation(&concrete_type, interface_name)? {
+                        debug!(
+                            "Type parameter {} with concrete type {:?} does not implement required interface {}",
+                            param_name, concrete_type, interface_name
+                        );
+                        return Ok(false);
+                    }
+                } else {
+                    // This should never happen if the type parameter lists match
+                    debug!("Type parameter {} not found in mapping", param_name);
                     return Ok(false);
                 }
-            } else {
-                // This should never happen if the type parameter lists match
-                debug!("Type parameter {} not found in mapping", param_name);
-                return Ok(false);
             }
+            
+            // All constraints satisfied
+            debug!("All generic constraints satisfied sequentially");
+            Ok(true)
+        } else {
+            // For larger numbers of constraints, use parallel checking
+            // Create constraint pairs for parallel checking
+            let mut constraint_pairs = Vec::with_capacity(constraints.len());
+            
+            for (param_name, interface_name) in constraints {
+                if let Some(concrete_type) = type_map.get(param_name) {
+                    constraint_pairs.push((concrete_type.clone(), interface_name.clone()));
+                } else {
+                    // This should never happen if the type parameter lists match
+                    debug!("Type parameter {} not found in mapping", param_name);
+                    return Ok(false);
+                }
+            }
+            
+            // Use self's implementation of AsyncConstraintChecking trait
+            let results = self.check_constraints_parallel(constraint_pairs);
+            
+            // All constraints must be satisfied
+            for result in results {
+                match result {
+                    Ok(satisfied) => {
+                        if !satisfied {
+                            debug!("One of the constraints is not satisfied");
+                            return Ok(false);
+                        }
+                    }
+                    Err(err) => {
+                        // Propagate any errors
+                        return Err(err);
+                    }
+                }
+            }
+            
+            // All constraints satisfied
+            debug!("All generic constraints satisfied in parallel");
+            Ok(true)
         }
-        
-        // All constraints satisfied
-        debug!("All generic constraints satisfied");
-        Ok(true)
     }
     
     /// Get all interfaces implemented by a type
