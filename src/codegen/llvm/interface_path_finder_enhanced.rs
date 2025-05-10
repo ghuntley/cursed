@@ -736,36 +736,45 @@ impl<'ctx> InterfaceTypeRegistryExtensionChecking<'ctx> for crate::codegen::llvm
     fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         debug!("Checking if {} extends {} directly in registry", source, target);
         
-        // In a production implementation, we would check the registry's internal
-        // data structures to determine if one interface extends another.
-        
-        // For now, this implementation is a placeholder that will be enhanced later
-        // when we have proper extension relationship tracking in the registry.
-        
-        // First look for any extension relationships in the type ID cache
-        // This would work by looking at vtable structure and inheritance metadata
-        // in the actual code generator implementation.
-        
-        // Check all types in the registry to see if any matches our names
+        // Get all registered types to look up their IDs
         let all_types = self.all_types();
-        let (source_id, target_id) = (
-            all_types.iter().find(|(_, name)| name == source).map(|(id, _)| *id),
-            all_types.iter().find(|(_, name)| name == target).map(|(id, _)| *id)
-        );
+        
+        // Find the type IDs for source and target interfaces
+        let source_id = all_types.iter().find(|(_, name)| name == source).map(|(id, _)| *id);
+        let target_id = all_types.iter().find(|(_, name)| name == target).map(|(id, _)| *id);
         
         match (source_id, target_id) {
-            (Some(_), Some(_)) => {
-                // Both interfaces exist in the registry
-                // In the actual implementation, we would check the extension relationships
-                // For now, we'll use a placeholder
-                debug!("Both interfaces exist in registry, but extension checking not implemented yet");
+            (Some(source_id), Some(target_id)) => {
+                debug!("Found type IDs: {} for '{}', {} for '{}'", 
+                      source_id, source, target_id, target);
                 
-                // Return false to allow fallback to the path-finding approach
+                // Use the extension checking methods added in interface_registry_extension_checking.rs
+                // These provide a more reliable way to check inheritance relationships
+                let extension_info = self.get_interface_extension_info(source_id, target_id);
+                
+                // Check direct extension relationship
+                match extension_info {
+                    Ok(extends) => {
+                        if extends {
+                            debug!("Registry confirms '{}' extends '{}'", source, target);
+                        } else {
+                            debug!("Registry confirms '{}' does not directly extend '{}'", source, target);
+                        }
+                        Ok(extends)
+                    },
+                    Err(e) => {
+                        debug!("Error checking extension relationship: {}", e);
+                        // For now, default to false as a fallback
+                        Ok(false)
+                    }
+                }
+            },
+            (None, _) => {
+                debug!("Source interface '{}' not found in registry", source);
                 Ok(false)
             },
-            _ => {
-                debug!("One or both interfaces not found in registry");
-                // One or both interfaces don't exist in the registry
+            (_, None) => {
+                debug!("Target interface '{}' not found in registry", target);
                 Ok(false)
             }
         }
