@@ -224,7 +224,8 @@ mod improved_type_assertion_integration; // Improved interface type assertion in
 pub mod interface_type_assertion_error_propagation; // Enhanced error propagation for interface type assertions
 pub mod interface_type_assertion_error_propagation_improved; // Improved error propagation system with consistent ? operator usage
 pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface type assertions with proper error propagation
-pub mod interface_type_assertion_path_visualization; // Visual debugging tools for interface type assertions
+pub mod interface_type_assertion_path_visualization;
+pub mod interface_registry_integration; // Visual debugging tools for interface type assertions
 pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual debugging tools with better error handling
 pub mod interface_registry_visualization_integration; // Integration of interface registry visualization with code generator
 pub mod interface_path_finder_simple; // Simple path finding algorithms for interface inheritance relationships
