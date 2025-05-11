@@ -115,6 +115,8 @@ pub use self::interface_type_assertion_error_propagation_improved::ImprovedError
 pub use self::interface_type_assertion_error_propagation_source_location::EnhancedSourceLocationErrorPropagation;
 // Enhanced source location support with file system integration
 pub use self::interface_type_assertion_enhanced_source_location::EnhancedSourceLocationSupport;
+// Filesystem integration for source location tracking
+pub use self::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
 // Enhanced error propagation with filesystem integration
 pub use self::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
 // Comprehensive integration between error propagation and filesystem source location tracking
@@ -261,7 +263,9 @@ mod interface_type_assertion_result; // Interface type assertion with Result typ
 pub mod interface_type_assertion_error_propagation_source_location; // Enhanced source location support for error propagation
 pub mod interface_type_assertion_enhanced_source_location; // Improved source location support with file system integration
 pub mod interface_type_assertion_error_propagation_filesystem; // Enhanced error propagation with filesystem integration
+pub mod interface_type_assertion_filesystem_integration; // Filesystem integration for source location tracking
 pub mod interface_type_assertion_error_propagation_filesystem_integration; // Comprehensive integration between error propagation and filesystem source location tracking
+pub mod interface_type_assertion_error_visualization; // Enhanced visualization of interface type assertion errors with source context
 pub mod interface_type_assertion_benchmarking; // Performance benchmarking for interface type assertions
 // Module already declared above
 
@@ -296,7 +300,12 @@ pub use self::interface_type_assertion_result::{InterfaceTypeAssertionResult, Re
 // Re-export error propagation helpers for ? operator integration
 pub use self::interface_type_assertion_error_propagation_integration::{is_type_mismatch_error, extract_type_info, register_error_propagation_integration};
 // Re-export comprehensive error propagation filesystem integration
-pub use self::interface_type_assertion_error_propagation_filesystem_integration::register_comprehensive_error_propagation_integration;
+pub use self::interface_type_assertion_error_propagation_filesystem_integration::ComprehensiveErrorFilesystemIntegration;
+pub use self::interface_type_assertion_error_propagation_filesystem_integration::register_comprehensive_error_filesystem_integration as register_comprehensive_error_propagation_integration;
+pub use self::interface_type_assertion_error_visualization::ErrorVisualization;
+pub use self::interface_type_assertion_error_visualization::register_error_visualization;
+// Re-export filesystem source location integration for interface type assertions
+pub use self::interface_type_assertion_filesystem_integration::register_filesystem_source_location_integration;
 // Re-export benchmarking functionality for interface type assertions
 pub use self::interface_type_assertion_benchmarking::{TypeAssertionBenchmarking, HierarchyPattern, BenchmarkStats, TypeAssertionBenchmark, TypeAssertionBenchmarkSuite};
 
