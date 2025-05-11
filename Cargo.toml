@@ -72,6 +72,8 @@ chrono = "0.4"   # Date and time utilities
 binary_compiler = []
 # Enable enhanced dynamic dispatch for interfaces
 enhanced_dynamic_dispatch = []
+# Enable concurrent garbage collection
+concurrent_gc = []
 
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking

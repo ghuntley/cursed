@@ -1,364 +1,225 @@
-//! Thread-safe version of the Object type
+//! Thread-safe object implementation with GC support
 //!
-//! This module provides thread-safe wrappers around Object and related types
-//! to enable safe concurrent access from multiple threads. This is essential
-//! for the goroutine system to function correctly.
+//! This module provides a thread-safe version of the Object type
+//! that can be safely shared across threads and works with the
+//! concurrent garbage collector.
+
+use std::sync::{Arc, Mutex, RwLock};
+use std::collections::HashMap;
+use std::fmt;
+
+use tracing::{debug, error, info, trace, instrument};
 
 use crate::error::Error;
-use crate::memory::Traceable;
-use crate::memory::Visitor;
-use crate::object::Object;
-use std::fmt;
-use std::sync::{Arc, Mutex};
-use tracing::{debug, info, instrument, warn};
+use crate::memory::{Traceable, Tag, Visitor, ThreadSafeGc};
+use crate::runtime::channel_gc::ThreadSafeChannel;
 
-/// Simplified thread-safe object value types
-/// 
-/// This enum represents a subset of the regular Object types that are
-/// thread-safe and can be used in goroutines. We only include simple
-/// types that don't contain non-thread-safe constructs like Rc.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ThreadSafeValue {
-    Integer(i64),
-    Float(f64),
-    Boolean(bool),
-    String(String),
-    Array(Vec<ThreadSafeValue>),
-    Map(std::collections::HashMap<String, ThreadSafeValue>),
-    Null,
-}
-
-impl From<ThreadSafeValue> for String {
-    fn from(value: ThreadSafeValue) -> Self {
-        match value {
-            ThreadSafeValue::Integer(i) => i.to_string(),
-            ThreadSafeValue::Float(f) => f.to_string(),
-            ThreadSafeValue::Boolean(b) => b.to_string(),
-            ThreadSafeValue::String(s) => s,
-            ThreadSafeValue::Array(a) => {
-                let elements: Vec<String> = a.iter().map(|v| String::from(v.clone())).collect();
-                format!("[{}]", elements.join(", "))
-            },
-            ThreadSafeValue::Map(m) => {
-                let entries: Vec<String> = m.iter()
-                    .map(|(k, v)| format!("{}: {}", k, String::from(v.clone())))
-                    .collect();
-                format!("{{{}}}", entries.join(", "))
-            },
-            ThreadSafeValue::Null => "null".to_string(),
-        }
-    }
-}
-
-/// Thread-safe wrapper around a value
-///
-/// This structure wraps a ThreadSafeValue with thread synchronization primitives,
-/// allowing it to be safely shared and modified across multiple threads.
+/// A thread-safe object that can be shared across threads
 #[derive(Clone)]
-pub struct ThreadSafeObject {
-    /// The wrapped value protected by a mutex
-    inner: Arc<Mutex<ThreadSafeValue>>,
+pub enum ThreadSafeObject {
+    /// Integer value
+    Integer(i64),
+    /// Float value
+    Float(f64),
+    /// Boolean value
+    Boolean(bool),
+    /// String value
+    String(Arc<String>),
+    /// Array of objects
+    Array(Arc<Mutex<Vec<ThreadSafeGc<ThreadSafeObject>>>>),
+    /// Hash table
+    HashTable(Arc<RwLock<HashMap<String, ThreadSafeGc<ThreadSafeObject>>>>),
+    /// Channel
+    Channel(Arc<ThreadSafeChannel>),
+    /// Null value
+    Null,
+    /// Error
+    Error {
+        message: Arc<String>,
+        error_type: Option<Arc<String>>,
+        stack_trace: Arc<Vec<String>>,
+    },
 }
 
 impl ThreadSafeObject {
-    /// Create a new thread-safe object with the given value
-    pub fn new(value: impl Into<ThreadSafeValue>) -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(value.into())),
+    /// Create a new thread-safe channel
+    #[instrument(fields(element_type = ?element_type, buffer_size = buffer_size), level = "debug")]
+    pub fn new_channel(element_type: String, buffer_size: usize) -> Self {
+        let channel = ThreadSafeChannel::new(element_type, buffer_size);
+        debug!("Created new thread-safe channel object");
+        ThreadSafeObject::Channel(Arc::new(channel))
+    }
+    
+    /// Send a value to a channel
+    pub fn channel_send(&self, value: ThreadSafeGc<ThreadSafeObject>) -> Result<(), Error> {
+        match self {
+            ThreadSafeObject::Channel(channel) => {
+                // Create a thread-safe wrapper around the value
+                let value_obj = Arc::new(value.inner().unwrap().clone());
+                // Send the wrapped value
+                channel.send(value_obj)
+            },
+            _ => Err(Error::Runtime(format!(
+                "Cannot send to non-channel object: {}",
+                self.type_name()
+            ))),
         }
     }
-
-    /// Get a clone of the current value
-    pub fn get(&self) -> ThreadSafeValue {
-        self.inner.lock().unwrap().clone()
+    
+    /// Receive a value from a channel
+    pub fn channel_receive(&self, gc: &Arc<crate::memory::GarbageCollector>) -> Result<ThreadSafeGc<ThreadSafeObject>, Error> {
+        match self {
+            ThreadSafeObject::Channel(channel) => {
+                // Receive the value from the channel
+                match channel.receive() {
+                    Ok(value) => {
+                        // Create a new ThreadSafeGc for the received value
+                        match value {
+                            threadobj => {
+                                // Allocate a new object in the GC
+                                Ok(gc.allocate_thread_safe((*threadobj).clone()))
+                            }
+                        }
+                    },
+                    Err(e) => Err(e),
+                }
+            },
+            _ => Err(Error::Runtime(format!(
+                "Cannot receive from non-channel object: {}",
+                self.type_name()
+            ))),
+        }
     }
-
-    /// Set the object to a new value
-    pub fn set(&self, value: impl Into<ThreadSafeValue>) {
-        let mut inner = self.inner.lock().unwrap();
-        *inner = value.into();
+    
+    /// Close a channel
+    pub fn channel_close(&self) -> Result<(), Error> {
+        match self {
+            ThreadSafeObject::Channel(channel) => {
+                channel.close();
+                Ok(())
+            },
+            _ => Err(Error::Runtime(format!(
+                "Cannot close non-channel object: {}",
+                self.type_name()
+            ))),
+        }
+    }
+    
+    /// Get the type name of the object
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            ThreadSafeObject::Integer(_) => "integer",
+            ThreadSafeObject::Float(_) => "float",
+            ThreadSafeObject::Boolean(_) => "boolean",
+            ThreadSafeObject::String(_) => "string",
+            ThreadSafeObject::Array(_) => "array",
+            ThreadSafeObject::HashTable(_) => "hash",
+            ThreadSafeObject::Channel(_) => "channel",
+            ThreadSafeObject::Null => "null",
+            ThreadSafeObject::Error { .. } => "error",
+        }
+    }
+    
+    /// Estimate the size of the object in memory
+    pub fn size_estimate(&self) -> usize {
+        match self {
+            ThreadSafeObject::Integer(_) => std::mem::size_of::<i64>(),
+            ThreadSafeObject::Float(_) => std::mem::size_of::<f64>(),
+            ThreadSafeObject::Boolean(_) => std::mem::size_of::<bool>(),
+            ThreadSafeObject::String(s) => std::mem::size_of::<Arc<String>>() + s.len(),
+            ThreadSafeObject::Array(a) => {
+                let base_size = std::mem::size_of::<Arc<Mutex<Vec<ThreadSafeGc<ThreadSafeObject>>>>>();
+                if let Ok(arr) = a.lock() {
+                    base_size + arr.len() * std::mem::size_of::<ThreadSafeGc<ThreadSafeObject>>()
+                } else {
+                    base_size
+                }
+            },
+            ThreadSafeObject::HashTable(h) => {
+                let base_size = std::mem::size_of::<Arc<RwLock<HashMap<String, ThreadSafeGc<ThreadSafeObject>>>>>();
+                if let Ok(map) = h.read() {
+                    base_size + map.len() * (std::mem::size_of::<String>() + std::mem::size_of::<ThreadSafeGc<ThreadSafeObject>>())
+                } else {
+                    base_size
+                }
+            },
+            ThreadSafeObject::Channel(c) => std::mem::size_of::<Arc<ThreadSafeChannel>>() + c.size(),
+            ThreadSafeObject::Null => std::mem::size_of::<()>(),
+            ThreadSafeObject::Error { message, stack_trace, .. } => {
+                std::mem::size_of::<Arc<String>>() + message.len() +
+                std::mem::size_of::<Arc<Vec<String>>>() + stack_trace.len() * std::mem::size_of::<String>()
+            },
+        }
     }
 }
 
-impl fmt::Display for ThreadSafeObject {
+impl fmt::Debug for ThreadSafeObject {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = self.get();
-        write!(f, "{}", String::from(value))
-    }
-}
-
-/// Thread-safe callable interface
-///
-/// This trait defines the interface for objects that can be called safely
-/// from multiple threads.
-pub trait ThreadSafeCallable: Send + Sync {
-    fn call(&self, args: Vec<ThreadSafeValue>) -> Result<ThreadSafeValue, Error>;
-}
-
-// Implement From for converting between Object and ThreadSafeValue
-impl From<i64> for ThreadSafeValue {
-    fn from(value: i64) -> Self {
-        ThreadSafeValue::Integer(value)
-    }
-}
-
-impl From<f64> for ThreadSafeValue {
-    fn from(value: f64) -> Self {
-        ThreadSafeValue::Float(value)
-    }
-}
-
-impl From<bool> for ThreadSafeValue {
-    fn from(value: bool) -> Self {
-        ThreadSafeValue::Boolean(value)
-    }
-}
-
-impl From<String> for ThreadSafeValue {
-    fn from(value: String) -> Self {
-        ThreadSafeValue::String(value)
-    }
-}
-
-impl From<&str> for ThreadSafeValue {
-    fn from(value: &str) -> Self {
-        ThreadSafeValue::String(value.to_string())
-    }
-}
-
-/// Convert a regular Object to a thread-safe ThreadSafeValue
-///
-/// This function creates a ThreadSafeValue from a regular Object, ensuring
-/// that it can be safely shared across thread boundaries. Not all Object types
-/// can be converted - only those that have thread-safe equivalents.
-///
-/// # Arguments
-///
-/// * `obj` - A reference to the Object to convert
-///
-/// # Returns
-///
-/// * `Result<ThreadSafeValue, Error>` - The converted value or an error if
-///   the object type is not supported in a thread-safe context
-#[instrument(skip(obj), level = "debug")]
-pub fn convert_to_thread_safe(obj: &Object) -> Result<ThreadSafeValue, Error> {
-    match obj {
-        Object::Integer(i) => {
-            debug!(value = i, "Converting integer to thread-safe");
-            Ok(ThreadSafeValue::Integer(*i))
-        },
-        Object::Float(f) => {
-            debug!(value = f, "Converting float to thread-safe");
-            Ok(ThreadSafeValue::Float(*f))
-        },
-        Object::Boolean(b) => {
-            debug!(value = b, "Converting boolean to thread-safe");
-            Ok(ThreadSafeValue::Boolean(*b))
-        },
-        Object::String(s) => {
-            debug!("Converting string to thread-safe");
-            Ok(ThreadSafeValue::String(s.clone()))
-        },
-        Object::Array(arr) => {
-            debug!(length = arr.len(), "Converting array to thread-safe");
-            let mut thread_safe_arr = Vec::with_capacity(arr.len());
-            
-            for item in arr {
-                thread_safe_arr.push(convert_to_thread_safe(item)?);
-            }
-            
-            Ok(ThreadSafeValue::Array(thread_safe_arr))
-        },
-        Object::HashTable(map) => {
-            debug!(size = map.len(), "Converting hashtable to thread-safe");
-            let mut thread_safe_map = std::collections::HashMap::new();
-            
-            for (key, value) in map {
-                thread_safe_map.insert(key.clone(), convert_to_thread_safe(value)?);
-            }
-            
-            Ok(ThreadSafeValue::Map(thread_safe_map))
-        },
-        Object::Null => {
-            debug!("Converting null to thread-safe");
-            Ok(ThreadSafeValue::Null)
-        },
-        _ => {
-            // Other types like Function, Closure, etc. are not thread-safe
-            let error_msg = format!("Object type {:?} cannot be converted to thread-safe", obj);
-            warn!(object_type = ?obj, error = error_msg, "Conversion to thread-safe failed");
-            Err(Error::from_str(&error_msg))
-        },
-    }
-}
-
-/// Convert a thread-safe ThreadSafeValue back to a regular Object
-///
-/// This function creates a regular Object from a ThreadSafeValue, which is useful
-/// when thread-safe values need to be used in a single-threaded context.
-///
-/// # Arguments
-///
-/// * `value` - A reference to the ThreadSafeValue to convert
-///
-/// # Returns
-///
-/// * `Result<Object, Error>` - The converted Object or an error
-#[instrument(skip(value), level = "debug")]
-pub fn convert_from_thread_safe(value: &ThreadSafeValue) -> Result<Object, Error> {
-    match value {
-        ThreadSafeValue::Integer(i) => {
-            debug!(value = i, "Converting thread-safe integer to regular");
-            Ok(Object::Integer(*i))
-        },
-        ThreadSafeValue::Float(f) => {
-            debug!(value = f, "Converting thread-safe float to regular");
-            Ok(Object::Float(*f))
-        },
-        ThreadSafeValue::Boolean(b) => {
-            debug!(value = b, "Converting thread-safe boolean to regular");
-            Ok(Object::Boolean(*b))
-        },
-        ThreadSafeValue::String(s) => {
-            debug!("Converting thread-safe string to regular");
-            Ok(Object::String(s.clone()))
-        },
-        ThreadSafeValue::Array(arr) => {
-            debug!(length = arr.len(), "Converting thread-safe array to regular");
-            let mut regular_arr = Vec::with_capacity(arr.len());
-            
-            for item in arr {
-                regular_arr.push(convert_from_thread_safe(item)?);
-            }
-            
-            Ok(Object::Array(regular_arr))
-        },
-        ThreadSafeValue::Map(map) => {
-            debug!(size = map.len(), "Converting thread-safe map to regular");
-            let mut regular_map = std::collections::HashMap::new();
-            
-            for (key, value) in map {
-                regular_map.insert(key.clone(), convert_from_thread_safe(value)?);
-            }
-            
-            Ok(Object::HashTable(regular_map))
-        },
-        ThreadSafeValue::Null => {
-            debug!("Converting thread-safe null to regular");
-            Ok(Object::Null)
-        },
-    }
-}
-
-/// Thread-safe wrapper for a Traceable object
-///
-/// This structure allows Traceable objects to be used safely in a concurrent context.
-#[derive(Clone)]
-pub struct ThreadSafeTraceable {
-    /// The wrapped traceable object protected by a mutex
-    inner: Arc<Mutex<Box<dyn Traceable + Send + Sync>>>,
-}
-
-impl ThreadSafeTraceable {
-    /// Create a new thread-safe traceable object
-    pub fn new<T: Traceable + Send + Sync + 'static>(obj: T) -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(Box::new(obj))),
-        }
-    }
-
-    /// Get the inner traceable object
-    pub fn get_traceable(&self) -> impl Traceable + '_ {
-        struct TraceableWrapper<'a> {
-            inner: &'a ThreadSafeTraceable,
-        }
-
-        impl<'a> Traceable for TraceableWrapper<'a> {
-            fn trace(&self, visitor: &mut dyn Visitor) {
-                if let Ok(inner) = self.inner.inner.lock() {
-                    inner.trace(visitor);
-                }
-            }
-
-            fn size(&self) -> usize {
-                if let Ok(inner) = self.inner.inner.lock() {
-                    inner.size()
+        match self {
+            ThreadSafeObject::Integer(i) => write!(f, "Integer({})", i),
+            ThreadSafeObject::Float(fl) => write!(f, "Float({})", fl),
+            ThreadSafeObject::Boolean(b) => write!(f, "Boolean({})", b),
+            ThreadSafeObject::String(s) => write!(f, "String(\"{}\")", s),
+            ThreadSafeObject::Array(_) => write!(f, "Array([...])"),
+            ThreadSafeObject::HashTable(_) => write!(f, "HashTable({...})"),
+            ThreadSafeObject::Channel(c) => write!(f, "Channel({})", c.element_type()),
+            ThreadSafeObject::Null => write!(f, "Null"),
+            ThreadSafeObject::Error { message, error_type, .. } => {
+                if let Some(err_type) = error_type {
+                    write!(f, "{}Error: {}", err_type, message)
                 } else {
-                    0
+                    write!(f, "Error: {}", message)
                 }
-            }
-
-            fn tag(&self) -> crate::memory::Tag {
-                if let Ok(inner) = self.inner.inner.lock() {
-                    inner.tag()
-                } else {
-                    crate::memory::Tag::Null
-                }
-            }
+            },
         }
-
-        TraceableWrapper { inner: self }
     }
 }
 
-/// Thread-safe visitor implementation for garbage collection
-///
-/// This implementation of Visitor is safe to use across thread boundaries,
-/// which is essential for performing garbage collection in concurrent contexts.
-pub struct ThreadSafeVisitor {
-    /// The set of objects that have been visited
-    visited: Arc<Mutex<std::collections::HashSet<usize>>>,
-    /// The marked objects that are still reachable
-    marked: Arc<Mutex<std::collections::HashSet<usize>>>,
-}
-
-impl ThreadSafeVisitor {
-    /// Create a new thread-safe visitor for garbage collection
-    pub fn new() -> Self {
-        Self {
-            visited: Arc::new(Mutex::new(std::collections::HashSet::new())),
-            marked: Arc::new(Mutex::new(std::collections::HashSet::new())),
+impl Traceable for ThreadSafeObject {
+    fn trace(&self, visitor: &mut dyn Visitor) {
+        match self {
+            ThreadSafeObject::Array(arr) => {
+                if let Ok(elements) = arr.lock() {
+                    for elem in elements.iter() {
+                        visitor.visit_ptr(elem.id(), Tag::Object);
+                    }
+                }
+            },
+            ThreadSafeObject::HashTable(map) => {
+                if let Ok(elements) = map.read() {
+                    for (_, value) in elements.iter() {
+                        visitor.visit_ptr(value.id(), Tag::Object);
+                    }
+                }
+            },
+            ThreadSafeObject::Channel(channel) => {
+                // Trace objects in the channel buffer
+                channel.trace(visitor);
+            },
+            // Other types don't contain references to trace
+            _ => {},
         }
     }
     
-    /// Get the set of marked objects
-    pub fn get_marked(&self) -> std::collections::HashSet<usize> {
-        self.marked.lock().unwrap().clone()
-    }
-}
-
-impl Visitor for ThreadSafeVisitor {
-    fn visit(&mut self, ptr: std::ptr::NonNull<dyn Traceable>) {
-        // For thread-safe objects, we use the pointer address as the ID
-        let ptr_addr = ptr.as_ptr() as *const () as usize;
-        self.visit_ptr(ptr_addr, crate::memory::Tag::Object);
+    fn size(&self) -> usize {
+        self.size_estimate()
     }
     
-    fn visit_ptr(&mut self, id: usize, _tag: crate::memory::Tag) {
-        // Track visited objects to avoid cycles
-        let already_visited = {
-            let mut visited = self.visited.lock().unwrap();
-            if visited.contains(&id) {
-                true
-            } else {
-                visited.insert(id);
-                false
-            }
-        };
-        
-        if !already_visited {
-            // Mark the object as reachable
-            let mut marked = self.marked.lock().unwrap();
-            marked.insert(id);
+    fn tag(&self) -> Tag {
+        match self {
+            ThreadSafeObject::Integer(_) => Tag::Integer,
+            ThreadSafeObject::Float(_) => Tag::Float,
+            ThreadSafeObject::Boolean(_) => Tag::Boolean,
+            ThreadSafeObject::String(_) => Tag::String,
+            ThreadSafeObject::Array(_) => Tag::Array,
+            ThreadSafeObject::HashTable(_) => Tag::HashTable,
+            ThreadSafeObject::Channel(_) => Tag::Channel,
+            ThreadSafeObject::Null => Tag::Null,
+            ThreadSafeObject::Error { .. } => Tag::Error,
         }
     }
 }
 
-/// Initialize the thread-safe object system
-///
-/// This function sets up any global state needed for thread-safe objects.
-#[instrument(level = "info")]
-pub fn init_thread_safe_objects() {
-    info!("Initializing thread-safe object system");
-    // Register any globals or initialize state as needed
-}
+// These impls are required for thread-safe usage
+unsafe impl Send for ThreadSafeObject {}
+unsafe impl Sync for ThreadSafeObject {}
