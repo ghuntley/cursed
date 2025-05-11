@@ -25,20 +25,24 @@ pub mod pointer;
 pub mod statement_utils;
 pub mod statements;
 pub mod traits;
-// Public re-exports
+
+// Public re-exports of core types
 pub use base::Program;
 pub use pointer::{PointerDereference, PointerType};
 pub use statement_utils::StatementExtensions;
 pub use traits::{Expression, Node, Statement};
 pub use expressions::TypeAssertion;
-// Directly re-export Parameter struct
-pub use crate::ast::declarations::ParameterStatement as Parameter;
-// Re-export TypeParameter from declarations module
-pub use crate::ast::declarations::TypeParameter;
-// Re-export BlockStatement as Block for backward compatibility
-pub use crate::ast::statements::block::BlockStatement as Block;
 
-// Re-export all AST types for easier imports
+// Explicitly re-export important types for easier use
+pub use declarations::Parameter;
+pub use declarations::TypeParameter;
+pub use declarations::GenericConstraint;
+pub use declarations::Field;
+
+// Re-export BlockStatement as Block for backward compatibility
+pub use statements::block::BlockStatement as Block;
+
+// Re-export all other AST types for easier imports
 pub use control_flow::*;
 pub use declarations::*;
 pub use expressions::*;
