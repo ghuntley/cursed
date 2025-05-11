@@ -169,23 +169,25 @@ pub fn map_external_functions(
     execution_engine: &ExecutionEngine,
     module: &Module,
 ) -> Result<(), Error> {
-    // Define the 'puts' implementation
-    extern "C" fn puts_impl(val: i32) -> i32 {
-        println!("{}", val);
-        0 // Return 0 for success
-    }
+    use crate::runtime::jit_runtime::{
+        cursed_print_int,
+        cursed_print_string,
+        cursed_print_float,
+        cursed_print_bool,
+        cursed_print_char
+    };
 
     // Extract the module name (which is our package name)
     let module_name = module.get_name().to_string_lossy();
-    println!("Mapping external functions for module: {}", module_name);
+    tracing::info!(module_name = %module_name, "Mapping external functions for module");
 
-    // Map all variations of the puts function
+    // Map all variations of the puts function for integers
     // 1. Standard "puts" function
     if let Some(puts_fn) = module.get_function("puts") {
         unsafe {
-            let addr = puts_impl as usize;
+            let addr = cursed_print_int as usize;
             execution_engine.add_global_mapping(&puts_fn, addr);
-            println!("Mapped puts function");
+            tracing::debug!("Mapped puts function");
         }
     }
     
@@ -193,9 +195,9 @@ pub fn map_external_functions(
     let mangled_puts_name = format!("_{}_puts", module_name);
     if let Some(mangled_puts) = module.get_function(&mangled_puts_name) {
         unsafe {
-            let addr = puts_impl as usize;
+            let addr = cursed_print_int as usize;
             execution_engine.add_global_mapping(&mangled_puts, addr);
-            println!("Mapped {} function", mangled_puts_name);
+            tracing::debug!(function = %mangled_puts_name, "Mapped mangled puts function");
         }
     }
     
@@ -205,9 +207,82 @@ pub fn map_external_functions(
         if mangled_name != mangled_puts_name {  // Skip if we already mapped this above
             if let Some(fn_val) = module.get_function(&mangled_name) {
                 unsafe {
-                    let addr = puts_impl as usize;
+                    let addr = cursed_print_int as usize;
                     execution_engine.add_global_mapping(&fn_val, addr);
-                    println!("Mapped {} function", mangled_name);
+                    tracing::debug!(function = %mangled_name, "Mapped mangled puts function for package");
+                }
+            }
+        }
+    }
+
+    // Map println/spill function for strings
+    // Map both println and spill since either could be used
+    for fn_name in &["println", "spill", "vibez_spill"] {
+        if let Some(fn_val) = module.get_function(fn_name) {
+            unsafe {
+                let addr = cursed_print_string as usize;
+                execution_engine.add_global_mapping(&fn_val, addr);
+                tracing::debug!(function = %fn_name, "Mapped string print function");
+            }
+        }
+        
+        // Also check for mangled versions like _<package>_println, _<package>_spill
+        let mangled_name = format!("_{}_{}", module_name, fn_name);
+        if let Some(fn_val) = module.get_function(&mangled_name) {
+            unsafe {
+                let addr = cursed_print_string as usize;
+                execution_engine.add_global_mapping(&fn_val, addr);
+                tracing::debug!(function = %mangled_name, "Mapped mangled string print function");
+            }
+        }
+        
+        // Try mapping for common package names
+        for pkg_name in &["minimal", "main", "test", "vibez"] {
+            let pkg_mangled_name = format!("_{}_{}", pkg_name, fn_name);
+            if pkg_mangled_name != mangled_name {  // Skip if we already mapped this above
+                if let Some(fn_val) = module.get_function(&pkg_mangled_name) {
+                    unsafe {
+                        let addr = cursed_print_string as usize;
+                        execution_engine.add_global_mapping(&fn_val, addr);
+                        tracing::debug!(function = %pkg_mangled_name, "Mapped mangled string print function for package");
+                    }
+                }
+            }
+        }
+    }
+    
+    // Map special print functions for different types
+    let type_print_mappings = [
+        ("print_float", cursed_print_float as usize),
+        ("print_bool", cursed_print_bool as usize),
+        ("print_char", cursed_print_char as usize),
+    ];
+    
+    for (fn_base_name, addr) in &type_print_mappings {
+        // Try unmangeled name
+        if let Some(fn_val) = module.get_function(fn_base_name) {
+            unsafe {
+                execution_engine.add_global_mapping(&fn_val, *addr);
+                tracing::debug!(function = %fn_base_name, "Mapped type-specific print function");
+            }
+        }
+        
+        // Try module-mangled name
+        let mangled_name = format!("_{}_{}", module_name, fn_base_name);
+        if let Some(fn_val) = module.get_function(&mangled_name) {
+            unsafe {
+                execution_engine.add_global_mapping(&fn_val, *addr);
+                tracing::debug!(function = %mangled_name, "Mapped mangled type-specific print function");
+            }
+        }
+        
+        // Try common package names
+        for pkg_name in &["minimal", "main", "test", "vibez"] {
+            let pkg_mangled_name = format!("_{}_{}", pkg_name, fn_base_name);
+            if let Some(fn_val) = module.get_function(&pkg_mangled_name) {
+                unsafe {
+                    execution_engine.add_global_mapping(&fn_val, *addr);
+                    tracing::debug!(function = %pkg_mangled_name, "Mapped type-specific print function for package");
                 }
             }
         }
