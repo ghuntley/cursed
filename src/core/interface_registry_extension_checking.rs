@@ -562,8 +562,8 @@ mod tests {
         assert!(dot.contains("Root"), "Should include Root");
         assert!(dot.contains("Child1"), "Should include Child1");
         assert!(dot.contains("Child2"), "Should include Child2");
-        assert!(dot.contains("Root" -> "Child1"), "Should have edge from Root to Child1");
-        assert!(dot.contains("Root" -> "Child2"), "Should have edge from Root to Child2");
+        assert!(dot.contains("Root -> Child1"), "Should have edge from Root to Child1");
+        assert!(dot.contains("Root -> Child2"), "Should have edge from Root to Child2");
     }
     
     #[test]
