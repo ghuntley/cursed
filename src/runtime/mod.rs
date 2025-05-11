@@ -7,8 +7,10 @@
 pub mod channel;
 pub mod channel_gc;
 pub mod container;
+pub mod jit_runtime;
 
 // Re-export the public API
 pub use channel::*;
 pub use channel_gc::*;
 pub use container::*;
+pub use jit_runtime::*;

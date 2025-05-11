@@ -81,7 +81,6 @@ fn test_variable_assignment() {
 
 /// Tests JIT execution of string printing
 #[test]
-#[ignore = "println function not implemented yet"]
 fn test_string_printing() {
     let test_file = "tests/jit/println_string.csd";
     assert!(
