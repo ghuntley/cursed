@@ -120,7 +120,7 @@ pub use self::interface_type_assertion_filesystem_integration::FilesystemSourceL
 // Enhanced error propagation with filesystem integration
 pub use self::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
 // Comprehensive integration between error propagation and filesystem source location tracking
-pub use self::interface_type_assertion_error_propagation_filesystem_integration::ComprehensiveErrorPropagationIntegration;
+pub use self::interface_type_assertion_error_propagation_filesystem_integration::ComprehensiveErrorPropagationIntegration as ComprehensiveErrorPropagationIntegration;
 // Nesting level tracking for interface type assertions
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information

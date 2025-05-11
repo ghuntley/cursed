@@ -830,7 +830,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 }
 
 /// Type alias for backward compatibility with existing code
-pub type TypeAssertionErrorPropagation<'ctx> = InterfaceTypeAssertionErrorPropagation<'ctx>;
+pub type TypeAssertionErrorPropagation<'ctx> = dyn InterfaceTypeAssertionErrorPropagation<'ctx>;
 
 /// Register the error propagation module with the compiler
 pub fn register_error_propagation() {
