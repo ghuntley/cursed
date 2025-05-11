@@ -23,7 +23,7 @@ pub struct GoroutineState {
     channels: std::collections::HashMap<String, Arc<Mutex<Vec<ThreadSafeValue>>>>,
 }
 
-/// Lazy-initialized global goroutine state
+// Lazy-initialized global goroutine state
 lazy_static::lazy_static! {
     static ref GOROUTINE_STATE: Arc<RwLock<GoroutineState>> = Arc::new(RwLock::new(GoroutineState::default()));
 }
