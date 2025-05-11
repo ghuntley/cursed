@@ -32,9 +32,9 @@
 7. ✅ Fix missing struct definitions
    - ✅ Implement `ParameterStatement` in ast module (missing in function_monomorphization.rs)
 
-8. Resolve interface registry issues
-   - Fix conflicting implementations of traits related to interface registry
-   - Correct the missing/incorrect interface registry module references
+8. ✅ Resolve interface registry issues
+   - ✅ Fix conflicting implementations of traits related to interface registry
+   - ✅ Correct the missing/incorrect interface registry module references
 
 9. Fix token representation issues
    - Add `#[repr(inttype)]` to Token enum in lexer/token.rs
