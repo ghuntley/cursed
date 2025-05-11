@@ -329,6 +329,7 @@ impl<'a> Lexer<'a> {
             Some('}') => Token::RBrace,
             Some('[') => Token::LBracket,
             Some(']') => Token::RBracket,
+            Some('?') => Token::Question,
             Some('\"') | Some('`') => self.read_string()?,
             Some('\'') => self.read_rune()?,
             Some('b') if self.peek_char() == Some('\'') => {
