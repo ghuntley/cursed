@@ -1,676 +1,471 @@
 //! # Interface Type Assertion Filesystem Integration
 //!
-//! This module implements the integration between interface type assertions
-//! and filesystem source location tracking for improved error messages.
+//! This module enhances the interface type assertion error system with filesystem
+//! integration for better source location tracking and error reporting. It provides
+//! features for loading source files, extracting context around error locations,
+//! and presenting rich error diagnostics with code snippets.
 //!
 //! ## Key Features
 //!
-//! 1. Enhanced source location with filesystem path resolution
-//! 2. Source code context extraction for error messages
-//! 3. Line and column tracking with precise error markers
-//! 4. Integration with the error propagation system
-//!
-//! This implementation ensures that interface type assertions provide
-//! detailed error messages with accurate source code context.
+//! 1. File content caching for efficient source lookup
+//! 2. Contextual error reporting with source code snippets
+//! 3. Integration with the type assertion error propagation system
+//! 4. Support for rich error visualization with line highlighting
 
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
 use tracing::{debug, error, info, instrument, trace, warn};
 
-use inkwell::builder::Builder;
-use inkwell::context::Context;
-use inkwell::module::Module;
-use inkwell::types::{BasicTypeEnum, StructType};
-use inkwell::values::{BasicValueEnum, PointerValue, FunctionValue};
-use inkwell::AddressSpace;
-
-use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
-use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
-use crate::error::Error;
 use crate::error::SourceLocation;
 use crate::error::type_assertion_error::TypeAssertionError;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::error::Error;
 
-/// Maximum number of context lines to include in error messages
-const MAX_CONTEXT_LINES: usize = 5;
+/// Maximum number of lines of context to include before and after error location
+const DEFAULT_CONTEXT_LINES: usize = 3;
 
-/// Default file extension for source files
-const DEFAULT_SOURCE_EXTENSION: &str = ".csd";
-
-/// Trait for enhanced filesystem source location integration
-pub trait InterfaceTypeAssertionFilesystemIntegration<'ctx> {
-    /// Create an enhanced source location with filesystem information
-    fn create_enhanced_source_location(
-        &self,
-        token: &str,
-        expression: &str,
-        type_name: &str
-    ) -> Option<SourceLocation>;
-    
-    /// Extract source file content for error context
-    fn extract_source_file_content(
-        &self,
-        location: &SourceLocation
-    ) -> Option<String>;
-    
-    /// Enhance error message with source file context
-    fn enhance_error_with_source_context(
-        &self,
-        error_message: String,
-        location: &SourceLocation
-    ) -> String;
-    
-    /// Get context line range for the error location
-    fn get_context_line_range(
-        &self,
-        line: i32,
-        file_line_count: usize
-    ) -> (usize, usize);
-    
-    /// Resolve filesystem path for a source location
-    fn resolve_source_path(
-        &self,
-        file_hint: Option<&str>
-    ) -> Option<PathBuf>;
-    
-    /// Compile a type assertion with enhanced filesystem source location
-    fn compile_type_assertion_with_filesystem_location(
-        &mut self,
-        type_assertion: &TypeAssertion
-    ) -> Result<BasicValueEnum<'ctx>, Error>;
-    
-    /// Compile a type assertion question with enhanced filesystem source location
-    fn compile_type_assertion_question_with_filesystem_location(
-        &mut self,
-        type_assertion: &TypeAssertionQuestion
-    ) -> Result<BasicValueEnum<'ctx>, Error>;
+/// Structure for managing source file caching and lookups
+#[derive(Debug, Default)]
+pub struct SourceFileCache {
+    /// Map of file paths to their cached contents
+    files: HashMap<PathBuf, SourceFile>,
 }
 
-impl<'ctx> InterfaceTypeAssertionFilesystemIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
-    #[instrument(skip(self, token, expression))]
-    fn create_enhanced_source_location(
-        &self,
-        token: &str,
-        expression: &str,
-        type_name: &str
-    ) -> Option<SourceLocation> {
-        // Extract basic location info from token
-        let (line, column, file_hint) = self.extract_location_from_token(token);
+/// Represents a cached source file with its content
+#[derive(Debug, Clone)]
+pub struct SourceFile {
+    /// The absolute path to the file
+    pub path: PathBuf,
+    /// The raw content of the file
+    pub content: String,
+    /// The file content split into lines for easier access
+    pub lines: Vec<String>,
+}
+
+impl SourceFileCache {
+    /// Create a new empty source file cache
+    pub fn new() -> Self {
+        Self {
+            files: HashMap::new(),
+        }
+    }
+
+    /// Load a file into the cache if not already present
+    pub fn load_file(&mut self, path: impl AsRef<Path>) -> Result<&SourceFile, Error> {
+        let path = path.as_ref();
         
-        // Try to resolve the actual filesystem path
-        let file_path = self.resolve_source_path(file_hint.as_deref())
-            .map(|p| p.to_string_lossy().to_string());
+        if !self.files.contains_key(path) {
+            // Read the file content
+            let content = fs::read_to_string(path)
+                .map_err(|e| Error::Filesystem(format!("Failed to read file '{}': {}", path.display(), e)))?;
+            
+            // Split the content into lines
+            let lines = content.lines().map(String::from).collect();
+            
+            // Store in cache
+            self.files.insert(
+                path.to_path_buf(),
+                SourceFile {
+                    path: path.to_path_buf(),
+                    content,
+                    lines,
+                },
+            );
+        }
         
-        // Create the enhanced location
-        Some(SourceLocation {
-            line,
-            column,
-            file: file_path,
-            source_line: format!("{}.({})?", expression, type_name),
+        // Return a reference to the cached file
+        Ok(self.files.get(path).unwrap())
+    }
+    
+    /// Get a file from the cache if it exists
+    pub fn get_file(&self, path: impl AsRef<Path>) -> Option<&SourceFile> {
+        self.files.get(path.as_ref())
+    }
+    
+    /// Extract source context around a specific line
+    pub fn get_context(
+        &self, 
+        path: impl AsRef<Path>, 
+        line: usize, 
+        context_lines: Option<usize>
+    ) -> Result<SourceContext, Error> {
+        let file = self.load_file(&path)?;
+        let context_lines = context_lines.unwrap_or(DEFAULT_CONTEXT_LINES);
+        
+        // Calculate the line range to include
+        let start_line = line.saturating_sub(context_lines);
+        let end_line = std::cmp::min(line + context_lines, file.lines.len());
+        
+        // Extract the lines in the range
+        let context = file.lines[start_line..end_line]
+            .iter()
+            .enumerate()
+            .map(|(i, line_content)| {
+                ContextLine {
+                    line_number: start_line + i + 1, // 1-indexed line numbers
+                    content: line_content.clone(),
+                    is_focus: start_line + i + 1 == line,
+                }
+            })
+            .collect();
+        
+        Ok(SourceContext {
+            file_path: path.as_ref().to_path_buf(),
+            focus_line: line,
+            context_lines: context,
         })
     }
-    
-    fn extract_source_file_content(
-        &self,
-        location: &SourceLocation
-    ) -> Option<String> {
-        // Get the file path from the location
-        let file_path = match &location.file {
-            Some(path) => path,
-            None => return None,
-        };
+}
+
+/// A line of source code with contextual information
+#[derive(Debug, Clone)]
+pub struct ContextLine {
+    /// The 1-indexed line number in the file
+    pub line_number: usize,
+    /// The content of the line
+    pub content: String,
+    /// Whether this is the focus line (where the error occurred)
+    pub is_focus: bool,
+}
+
+/// Represents the source context around an error location
+#[derive(Debug, Clone)]
+pub struct SourceContext {
+    /// The path to the source file
+    pub file_path: PathBuf,
+    /// The 1-indexed line number where the error occurred
+    pub focus_line: usize,
+    /// The lines of context around the error
+    pub context_lines: Vec<ContextLine>,
+}
+
+impl SourceContext {
+    /// Format the context as a string with line numbers and highlighting
+    pub fn format(&self) -> String {
+        let mut result = String::new();
         
-        // Try to open the file
-        let file = match File::open(file_path) {
-            Ok(f) => f,
-            Err(e) => {
-                warn!("Failed to open source file for error context: {}", e);
-                return None;
-            }
-        };
+        // Add file path header
+        result.push_str(&format!("File: {}\n", self.file_path.display()));
         
-        // Read the file content
-        let reader = BufReader::new(file);
-        let lines: Result<Vec<String>, _> = reader.lines().collect();
-        match lines {
-            Ok(content) => Some(content.join("\n")),
-            Err(e) => {
-                warn!("Failed to read source file for error context: {}", e);
-                None
-            }
-        }
-    }
-    
-    fn enhance_error_with_source_context(
-        &self,
-        error_message: String,
-        location: &SourceLocation
-    ) -> String {
-        // Extract file content
-        let file_content = match self.extract_source_file_content(location) {
-            Some(content) => content,
-            None => return error_message,
-        };
+        // Calculate the width needed for line numbers
+        let max_line_num = self.context_lines.iter().map(|l| l.line_number).max().unwrap_or(0);
+        let line_num_width = max_line_num.to_string().len();
         
-        // Split into lines
-        let lines: Vec<&str> = file_content.lines().collect();
-        
-        // Get context range
-        let line_index = location.line as usize - 1; // Convert to 0-based index
-        let (start_line, end_line) = self.get_context_line_range(
-            location.line,
-            lines.len()
-        );
-        
-        // Create context display
-        let mut context = String::new();
-        context.push_str("\nSource context:\n");
-        
-        for i in start_line..=end_line {
-            if i < lines.len() {
-                // Add line prefix (marker for error line)
-                let prefix = if i == line_index { ">" } else { " " };
-                let line_num = i + 1; // Convert back to 1-based indexing for display
-                
-                // Add the line with line number
-                context.push_str(&format!("{} {:4} | {}\n", prefix, line_num, lines[i]));
-                
-                // Add error pointer marker at the error column
-                if i == line_index {
-                    let mut marker = String::from("       | ");
-                    // Add spaces up to the column
-                    for _ in 0..location.column.saturating_sub(1) {
-                        marker.push(' ');
-                    }
-                    marker.push('^');
-                    context.push_str(&format!("{}{}", marker, "\n"));
-                }
-            }
-        }
-        
-        // Combine original error with context
-        format!("{}{}", error_message, context)
-    }
-    
-    fn get_context_line_range(
-        &self,
-        line: i32,
-        file_line_count: usize
-    ) -> (usize, usize) {
-        let line_index = line as usize - 1; // Convert to 0-based index
-        
-        // Calculate context range (symmetric around error line)
-        let context_size = MAX_CONTEXT_LINES / 2;
-        let start_line = line_index.saturating_sub(context_size);
-        let end_line = std::cmp::min(line_index + context_size, file_line_count - 1);
-        
-        (start_line, end_line)
-    }
-    
-    fn resolve_source_path(
-        &self,
-        file_hint: Option<&str>
-    ) -> Option<PathBuf> {
-        // If hint is provided, use it directly
-        if let Some(hint) = file_hint {
-            let path = PathBuf::from(hint);
-            if path.exists() {
-                return Some(path);
-            }
+        // Add each context line with appropriate formatting
+        for line in &self.context_lines {
+            let prefix = if line.is_focus { ">" } else { " " };
+            let line_num = format!("{:width$}", line.line_number, width = line_num_width);
             
-            // Try adding the default extension if missing
-            if !hint.ends_with(DEFAULT_SOURCE_EXTENSION) {
-                let with_extension = format!("{}{}", hint, DEFAULT_SOURCE_EXTENSION);
-                let path_with_ext = PathBuf::from(with_extension);
-                if path_with_ext.exists() {
-                    return Some(path_with_ext);
-                }
-            }
-        }
-        
-        // If we've set a source directory in the compiler context, use it
-        if let Some(source_dir) = self.get_source_directory() {
-            let base_dir = PathBuf::from(source_dir);
+            result.push_str(&format!("{} {} | {}\n", prefix, line_num, line.content));
             
-            // Try to find the source file in the directory
-            if let Some(file_name) = file_hint {
-                let complete_path = base_dir.join(file_name);
-                if complete_path.exists() {
-                    return Some(complete_path);
-                }
-                
-                // Try with extension
-                if !file_name.ends_with(DEFAULT_SOURCE_EXTENSION) {
-                    let with_extension = format!("{}{}", file_name, DEFAULT_SOURCE_EXTENSION);
-                    let path_with_ext = base_dir.join(with_extension);
-                    if path_with_ext.exists() {
-                        return Some(path_with_ext);
-                    }
-                }
+            // Add marker under the focus line
+            if line.is_focus {
+                let marker = format!("{: >width$} | {}", "", "^", width = line_num_width + 2);
+                result.push_str(&format!("{: >width$}{}\n", "", marker, width = prefix.len()));
             }
         }
         
-        // Fallback to the current directory
-        if let Some(file_name) = file_hint {
-            let current_dir_path = PathBuf::from(".").join(file_name);
-            if current_dir_path.exists() {
-                return Some(current_dir_path);
-            }
-            
-            // Try with extension
-            if !file_name.ends_with(DEFAULT_SOURCE_EXTENSION) {
-                let with_extension = format!("{}{}", file_name, DEFAULT_SOURCE_EXTENSION);
-                let path_with_ext = PathBuf::from(".").join(with_extension);
-                if path_with_ext.exists() {
-                    return Some(path_with_ext);
-                }
-            }
-        }
-        
-        None
-    }
-    
-    #[instrument(skip(self, type_assertion))]
-    fn compile_type_assertion_with_filesystem_location(
-        &mut self,
-        type_assertion: &TypeAssertion
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Create an enhanced source location with filesystem path
-        let source_location = self.create_enhanced_source_location(
-            &type_assertion.token,
-            &type_assertion.expression.string(),
-            &type_assertion.type_name
-        );
-        
-        debug!("Compiling type assertion with filesystem location for: {}", type_assertion.string());
-        
-        // First ensure registry is initialized
-        self.ensure_registry_visualization_initialized()?;
-        
-        // Get the current function
-        let current_fn = self.current_function()
-            .ok_or_else(|| Error::Compilation("No current function for type assertion".to_string()))?;
-        
-        // Compile the expression being asserted
-        let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
-        
-        // Create basic blocks for success and failure paths
-        let success_block = self.context().append_basic_block(current_fn, "type_assert_success");
-        let failure_block = self.context().append_basic_block(current_fn, "type_assert_failure");
-        let merge_block = self.context().append_basic_block(current_fn, "type_assert_merge");
-        
-        // Check if the interface value is of the target type
-        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name, source_location.clone())?;
-        
-        // Branch based on the type check result
-        self.builder().build_conditional_branch(
-            is_instance.into_int_value(),
-            success_block,
-            failure_block
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Success path - extract and cast the data pointer
-        self.builder().position_at_end(success_block);
-        let data_ptr = self.extract_interface_data_ptr(expr_value)?;
-        
-        // Get the type id for proper error reporting
-        let type_id = self.get_type_id(&type_assertion.type_name)?;
-        
-        // Cast the data pointer to the appropriate type
-        let casted_ptr = self.builder().build_bitcast(
-            data_ptr,
-            self.pointer_type(),
-            "casted_ptr"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Create a successful Result value with rich filesystem location
-        let success_result = self.create_type_assertion_result(
-            casted_ptr.into(),
-            true, // success
-            None, // no error message
-            source_location.clone()
-        )?;
-        
-        // Branch to merge block
-        self.builder().build_unconditional_branch(merge_block)
-            .map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Failure path - create an error Result with enhanced filesystem information
-        self.builder().position_at_end(failure_block);
-        
-        // Get the actual type ID from the interface value for better error reporting
-        let actual_type_id = self.get_interface_type_id(expr_value)?;
-        
-        // Create a base error message
-        let mut error_message = format!(
-            "Failed to assert that interface value is of type {}",
-            type_assertion.type_name
-        );
-        
-        // Enhance with source context if we have location information
-        if let Some(loc) = source_location.clone() {
-            error_message = self.enhance_error_with_source_context(error_message, &loc);
-        }
-        
-        // Create a null pointer for the failure case
-        let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
-        
-        // Create a failure Result value with enhanced error information
-        let failure_result = self.create_type_assertion_result(
-            null_ptr.into(),
-            false, // failure
-            Some(&error_message),
-            source_location.clone()
-        )?;
-        
-        // Branch to merge block
-        self.builder().build_unconditional_branch(merge_block)
-            .map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Merge block - use phi node to select the appropriate result
-        self.builder().position_at_end(merge_block);
-        let phi = self.builder().build_phi(
-            // Result type structure
-            self.get_result_type(self.pointer_type().into()),
-            "assertion_result"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        phi.add_incoming(&[
-            (&success_result, success_block),
-            (&failure_result, failure_block)
-        ]);
-        
-        // Return the phi result
-        Ok(phi.as_basic_value())
-    }
-    
-    #[instrument(skip(self, type_assertion))]
-    fn compile_type_assertion_question_with_filesystem_location(
-        &mut self,
-        type_assertion: &TypeAssertionQuestion
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Create an enhanced source location with filesystem path
-        let source_location = self.create_enhanced_source_location(
-            &type_assertion.token,
-            &type_assertion.expression.string(),
-            &type_assertion.type_name
-        );
-        
-        debug!("Compiling type assertion question with filesystem location for: {}", type_assertion.string());
-        
-        // First ensure registry is initialized
-        self.ensure_registry_visualization_initialized()?;
-        
-        // Get the current function
-        let current_fn = self.current_function()
-            .ok_or_else(|| Error::Compilation("No current function for type assertion with ? operator".to_string()))?;
-        
-        // Compile the expression being asserted
-        let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
-        
-        // Create basic blocks for success and failure paths
-        let success_block = self.context().append_basic_block(current_fn, "type_assert_question_success");
-        let failure_block = self.context().append_basic_block(current_fn, "type_assert_question_failure");
-        let merge_block = self.context().append_basic_block(current_fn, "type_assert_question_merge");
-        
-        // Check if the interface value is of the target type
-        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name, source_location.clone())?;
-        
-        // Branch based on the type check result
-        self.builder().build_conditional_branch(
-            is_instance.into_int_value(),
-            success_block,
-            failure_block
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Success path - extract and cast the data pointer
-        self.builder().position_at_end(success_block);
-        let data_ptr = self.extract_interface_data_ptr(expr_value)?;
-        
-        // Get the type id for proper error reporting
-        let type_id = self.get_type_id(&type_assertion.type_name)?;
-        
-        // Cast the data pointer to the appropriate type
-        let casted_ptr = self.builder().build_bitcast(
-            data_ptr,
-            self.pointer_type(),
-            "casted_ptr"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Branch to merge block
-        self.builder().build_unconditional_branch(merge_block)
-            .map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Failure path - propagate the error through the ? operator with enhanced error info
-        self.builder().position_at_end(failure_block);
-        
-        // Get the actual type ID from the interface value for better error reporting
-        let actual_type_id = self.get_interface_type_id(expr_value)?;
-        
-        // Create a base error message
-        let mut error_message = format!(
-            "Failed to assert that interface value is of type {}",
-            type_assertion.type_name
-        );
-        
-        // Enhance with source context if we have location information
-        if let Some(loc) = source_location.clone() {
-            error_message = self.enhance_error_with_source_context(error_message, &loc);
-        }
-        
-        // Create location struct for error propagation
-        let source_struct = if let Some(loc) = &source_location {
-            self.build_source_location_struct(loc)
-        } else {
-            // Default empty struct
-            self.build_empty_source_location()
-        };
-        
-        // Call error propagation function with enhanced filesystem source information
-        self.call_error_propagation_function_with_fs(
-            self.create_string_constant(&error_message).into(), 
-            source_struct
-        )?;
-        
-        // This should be unreachable in the failure path
-        self.builder().build_unreachable().map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Merge block - return the casted pointer on success
-        self.builder().position_at_end(merge_block);
-        
-        // With question operator, we just return the value directly, error handling is automatic
-        Ok(casted_ptr.into())
+        result
     }
 }
 
-// Helper methods for the filesystem integration
+/// Trait for enhancing type assertion errors with filesystem source location information
+pub trait InterfaceTypeAssertionFilesystemIntegration {
+    /// Initialize the source file cache system
+    fn init_source_file_cache(&mut self);
+    
+    /// Get or create the source file cache
+    fn source_file_cache(&mut self) -> &mut SourceFileCache;
+    
+    /// Enhance a source location with file content information
+    fn enhance_source_location(
+        &mut self,
+        location: &mut SourceLocation,
+    ) -> Result<(), Error>;
+    
+    /// Enhance a type assertion error with filesystem source information
+    fn enhance_type_assertion_error(
+        &mut self,
+        error: &mut TypeAssertionError,
+    ) -> Result<(), Error>;
+    
+    /// Create an enhanced error message with source context
+    fn create_enhanced_error_message(
+        &mut self,
+        message: &str,
+        location: &SourceLocation,
+    ) -> Result<String, Error>;
+}
+
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Build a source location struct from a SourceLocation
-    fn build_source_location_struct(
-        &self,
-        location: &SourceLocation
-    ) -> BasicValueEnum<'ctx> {
-        let ctx = self.context();
-        
-        // Create basic values for each field
-        let line = ctx.i32_type().const_int(location.line as u64, false);
-        let column = ctx.i32_type().const_int(location.column as u64, false);
-        
-        // File path
-        let file_ptr = if let Some(file) = &location.file {
-            self.create_string_constant(file).into()
-        } else {
-            ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
-        };
-        
-        // Source line
-        let source_line_ptr = if !location.source_line.is_empty() {
-            self.create_string_constant(&location.source_line).into()
-        } else {
-            ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
-        };
-        
-        // Build the struct
-        self.build_struct_value(&[
-            line.into(),
-            column.into(),
-            file_ptr,
-            source_line_ptr
-        ]).into()
-    }
-    
-    /// Build an empty source location struct
-    fn build_empty_source_location(&self) -> BasicValueEnum<'ctx> {
-        let ctx = self.context();
-        
-        // Create zero values for all fields
-        let line = ctx.i32_type().const_int(0, false);
-        let column = ctx.i32_type().const_int(0, false);
-        let null_ptr = ctx.i8_type().ptr_type(AddressSpace::default()).const_null();
-        
-        // Build the struct
-        self.build_struct_value(&[
-            line.into(),
-            column.into(),
-            null_ptr.into(),
-            null_ptr.into()
-        ]).into()
-    }
-    
-    /// Call error propagation with enhanced filesystem source information
-    fn call_error_propagation_function_with_fs(
-        &self,
-        error_message: BasicValueEnum<'ctx>,
-        location_info: BasicValueEnum<'ctx>
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Get current module and context
-        let module = self.module();
-        let ctx = self.context();
-        let builder = self.builder();
-        
-        // Get or declare the enhanced error propagation function with filesystem info
-        let propagate_fn = match module.get_function("__cursed_propagate_error_with_filesystem_info") {
-            Some(func) => func,
-            None => {
-                // Declare the enhanced function if it doesn't exist
-                let void_type = ctx.void_type();
-                let fn_type = void_type.fn_type(&[
-                    // Error message
-                    ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-                    // Source location info (enhanced with filesystem)
-                    self.get_source_location_type().into(),
-                    // Expected type ID
-                    ctx.i32_type().into(),
-                    // Actual type ID
-                    ctx.i32_type().into(),
-                    // Error type (1 = type assertion error)
-                    ctx.i32_type().into(),
-                    // Source file content for context
-                    ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-                    // Context line range (start, end)
-                    ctx.struct_type(&[ctx.i32_type().into(), ctx.i32_type().into()], false).into()
-                ], false);
-                
-                module.add_function("__cursed_propagate_error_with_filesystem_info", fn_type, None)
-            }
-        };
-        
-        // Get current type context information
-        let expected_type_id = match self.current_expected_type_id() {
-            Some(id) => ctx.i32_type().const_int(id as u64, false),
-            None => ctx.i32_type().const_int(0, false)
-        };
-        
-        let actual_type_id = match self.current_actual_type_id() {
-            Some(id) => ctx.i32_type().const_int(id as u64, false),
-            None => ctx.i32_type().const_int(0, false)
-        };
-        
-        // Create empty source file content pointer by default
-        let null_content_ptr = ctx.i8_type().ptr_type(AddressSpace::default()).const_null();
-        
-        // Create default context line range
-        let context_range = self.build_struct_value(&[
-            ctx.i32_type().const_int(0, false).into(),
-            ctx.i32_type().const_int(0, false).into()
-        ]);
-        
-        // Type assertion error code = 1
-        let error_type = ctx.i32_type().const_int(1, false);
-        
-        // Call the enhanced function with filesystem information
-        builder.build_call(
-            propagate_fn,
-            &[
-                error_message,
-                location_info,
-                expected_type_id.into(),
-                actual_type_id.into(),
-                error_type.into(),
-                null_content_ptr.into(),
-                context_range.into()
-            ],
-            "propagate_error_call"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // This function should never return normally, but we need to emit valid LLVM IR
-        Ok(ctx.i8_type().const_int(0, false).into())
-    }
-    
-    /// Get the source directory configuration if set
-    fn get_source_directory(&self) -> Option<String> {
-        // Try to get it from internal fields if available
-        self.internal_fields.get("source_directory")
-            .and_then(|val| val.downcast_ref::<String>().cloned())
-    }
-    
-    /// Set the source directory for resolving file paths
-    pub fn set_source_directory(&mut self, directory: String) {
-        self.internal_fields.insert("source_directory".to_string(), Box::new(directory));
+    /// Ensure the source file cache is initialized
+    pub fn ensure_source_file_cache_initialized(&mut self) {
+        // Initialize the source file cache if it doesn't exist
+        if !self.internal_fields.contains_key("source_file_cache") {
+            self.internal_fields.insert(
+                "source_file_cache".to_string(),
+                Box::new(SourceFileCache::new()),
+            );
+        }
     }
 }
 
-/// Register the filesystem source location integration with the compiler
+impl<'ctx> InterfaceTypeAssertionFilesystemIntegration for LlvmCodeGenerator<'ctx> {
+    fn init_source_file_cache(&mut self) {
+        self.ensure_source_file_cache_initialized();
+    }
+    
+    fn source_file_cache(&mut self) -> &mut SourceFileCache {
+        self.ensure_source_file_cache_initialized();
+        self.internal_fields
+            .get_mut("source_file_cache")
+            .and_then(|val| val.downcast_mut::<SourceFileCache>())
+            .expect("Source file cache not initialized properly")
+    }
+    
+    #[instrument(skip(self, location))]
+    fn enhance_source_location(
+        &mut self,
+        location: &mut SourceLocation,
+    ) -> Result<(), Error> {
+        // Skip if the location doesn't have a file path
+        if location.file.is_none() {
+            return Ok(());
+        }
+        
+        // Get the file path
+        let file_path = location.file.as_ref().unwrap();
+        
+        // Ensure the cache is initialized
+        self.init_source_file_cache();
+        
+        // Try to load the file - silently return if we can't load it
+        if let Ok(file) = self.source_file_cache().load_file(file_path) {
+            // If line is within bounds, add the source line content
+            if location.line > 0 && location.line <= file.lines.len() {
+                location.source_line = file.lines[location.line - 1].clone();
+            }
+            
+            debug!("Enhanced source location with file content: {}:{}", file_path, location.line);
+        }
+        
+        Ok(())
+    }
+    
+    #[instrument(skip(self, error))]
+    fn enhance_type_assertion_error(
+        &mut self,
+        error: &mut TypeAssertionError,
+    ) -> Result<(), Error> {
+        // Skip if there's no location
+        if error.location.is_none() {
+            return Ok(());
+        }
+        
+        // Get a mutable reference to the location
+        let location = error.location.as_mut().unwrap();
+        
+        // Enhance the source location with file content
+        self.enhance_source_location(location)?;
+        
+        // Create a detailed error message with source context
+        if let Some(file) = &location.file {
+            if let Ok(context) = self.source_file_cache().get_context(file, location.line, None) {
+                // Add a formatted context to the error message
+                let context_message = context.format();
+                let full_message = format!("{} at {}:{}\n\n{}",
+                    error.get_description(),
+                    file,
+                    location.line,
+                    context_message
+                );
+                
+                // Update the error message
+                error.message = Some(full_message);
+                
+                debug!("Enhanced type assertion error with source context");
+            }
+        }
+        
+        Ok(())
+    }
+    
+    #[instrument(skip(self, message, location))]
+    fn create_enhanced_error_message(
+        &mut self,
+        message: &str,
+        location: &SourceLocation,
+    ) -> Result<String, Error> {
+        // Simple case - no file information
+        if location.file.is_none() {
+            return Ok(format!("{} at line {}, column {}", message, location.line, location.column));
+        }
+        
+        // Get the file path
+        let file_path = location.file.as_ref().unwrap();
+        
+        // Try to get source context
+        if let Ok(context) = self.source_file_cache().get_context(file_path, location.line, None) {
+            Ok(format!("{} at {}:{}\n\n{}", 
+                      message, 
+                      file_path, 
+                      location.line, 
+                      context.format()))
+        } else {
+            // Fallback if we can't get context
+            Ok(format!("{} at {}:{},{}", 
+                      message, 
+                      file_path, 
+                      location.line, 
+                      location.column))
+        }
+    }
+}
+
+/// Utility functions for working with source files and contexts
+pub mod helpers {
+    use super::*;
+    
+    /// Format a source location with context from a file
+    pub fn format_location_with_context(
+        location: &SourceLocation,
+        context_lines: Option<usize>
+    ) -> String {
+        let mut result = String::new();
+        
+        // Basic location information
+        if let Some(file) = &location.file {
+            result.push_str(&format!("{}:{},{}", file, location.line, location.column));
+        } else {
+            result.push_str(&format!("line {}, column {}", location.line, location.column));
+        }
+        
+        // Add source line if available
+        if !location.source_line.is_empty() {
+            result.push_str(&format!("\n  | {}", location.source_line));
+            
+            // Add caret pointing to the column
+            if location.column > 0 {
+                result.push_str(&format!("\n  | {}{}", " ".repeat(location.column - 1), "^"));
+            }
+        }
+        
+        result
+    }
+    
+    /// Create an enhanced error message from a type assertion error
+    pub fn create_enhanced_error_message(error: &TypeAssertionError) -> String {
+        let mut result = error.get_description();
+        
+        // Add location information if available
+        if let Some(location) = &error.location {
+            result.push_str(&format!("\n\nAt {}", format_location_with_context(location, None)));
+        }
+        
+        // Add type ID information if available
+        if let (Some(interface_id), Some(target_id)) = (error.interface_type_id, error.target_type_id) {
+            result.push_str(&format!("\n\nType IDs:\n  Interface: 0x{:016x}\n  Target:    0x{:016x}", interface_id, target_id));
+        }
+        
+        // Add actual type information if available
+        if let Some(actual_type) = &error.actual_type {
+            result.push_str(&format!("\n\nActual type: {}", actual_type));
+            
+            if let Some(actual_id) = error.actual_type_id {
+                result.push_str(&format!(", ID: 0x{:016x}", actual_id));
+            }
+        }
+        
+        result
+    }
+    
+    /// Try to load a source file and extract context
+    pub fn try_load_source_context(
+        file_path: impl AsRef<Path>,
+        line: usize,
+        context_lines: Option<usize>
+    ) -> Option<SourceContext> {
+        let mut cache = SourceFileCache::new();
+        cache.get_context(file_path, line, context_lines).ok()
+    }
+}
+
+// Register filesystem integration with the compiler
 pub fn register_filesystem_integration() {
     trace!("Interface type assertion filesystem integration module registered");
-    // This function is called during the compiler's initialization
-    // to register this implementation for use throughout compilation
+    // This function is called during compiler initialization
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
     
     #[test]
-    fn test_filesystem_integration_registration() {
-        // Test that the module registration function works
-        register_filesystem_integration();
-        assert!(true);
+    fn test_source_file_cache() {
+        // Create a temporary file with test content
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5").unwrap();
+        
+        let mut cache = SourceFileCache::new();
+        let file = cache.load_file(temp_file.path()).unwrap();
+        
+        assert_eq!(file.lines.len(), 5);
+        assert_eq!(file.lines[0], "Line 1");
+        assert_eq!(file.lines[4], "Line 5");
     }
     
     #[test]
-    fn test_context_line_range() {
-        let ctx = Context::create();
-        let module = Module::create("test", &ctx);
-        let builder = ctx.create_builder();
+    fn test_get_context() {
+        // Create a temporary file with test content
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5").unwrap();
         
-        let code_gen = LlvmCodeGenerator::new(&ctx, module, builder);
+        let mut cache = SourceFileCache::new();
+        let context = cache.get_context(temp_file.path(), 3, Some(1)).unwrap();
         
-        // Test middle of file
-        let (start, end) = code_gen.get_context_line_range(50, 100);
-        assert!(start > 0);
-        assert!(end < 100);
-        assert!(end > 50);
-        assert!(start <= 50);
+        assert_eq!(context.focus_line, 3);
+        assert_eq!(context.context_lines.len(), 3); // 2, 3, 4
+        assert_eq!(context.context_lines[0].line_number, 2);
+        assert_eq!(context.context_lines[1].line_number, 3);
+        assert_eq!(context.context_lines[2].line_number, 4);
+        assert_eq!(context.context_lines[1].is_focus, true);
+        assert_eq!(context.context_lines[0].is_focus, false);
+    }
+    
+    #[test]
+    fn test_format_context() {
+        // Create a temporary file with test content
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5").unwrap();
         
-        // Test near beginning
-        let (start, end) = code_gen.get_context_line_range(2, 100);
-        assert_eq!(start, 0);
+        let mut cache = SourceFileCache::new();
+        let context = cache.get_context(temp_file.path(), 3, Some(1)).unwrap();
         
-        // Test near end
-        let (start, end) = code_gen.get_context_line_range(99, 100);
-        assert_eq!(end, 99);
+        let formatted = context.format();
+        assert!(formatted.contains("File:"));
+        assert!(formatted.contains("Line 2"));
+        assert!(formatted.contains("Line 3"));
+        assert!(formatted.contains("Line 4"));
+        assert!(formatted.contains(">"));
+        assert!(formatted.contains("^"));
+    }
+    
+    #[test]
+    fn test_helpers() {
+        let location = SourceLocation {
+            line: 10,
+            column: 5,
+            file: Some("test.csd".to_string()),
+            source_line: "    x.(Type)?".to_string(),
+        };
+        
+        let formatted = helpers::format_location_with_context(&location, None);
+        assert!(formatted.contains("test.csd:10,5"));
+        assert!(formatted.contains("x.(Type)?"));
+        assert!(formatted.contains("^"));
     }
 }
