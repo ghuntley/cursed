@@ -1,428 +1,352 @@
-//! # Interface Type Assertion Debug Utilities
+//! Enhanced Runtime Type Debugging for Interface Type Assertions
 //!
-//! This module provides enhanced debugging support for interface type assertions,
-//! allowing developers to trace and visualize type assertion operations at runtime.
+//! This module provides additional debugging capabilities for interface type
+//! assertions, including detailed error messages, type visualization, and
+//! runtime type inspection. These features help developers diagnose and fix
+//! type-related issues in interface assertions.
 //!
-//! Key features:
-//! - Runtime debugging of type assertions with detailed trace information
-//! - Type relationship visualization during assertion operations
-//! - Interactive debugging support with conditional breakpoints
-//! - Performance metrics for type assertion operations
+//! The debugging system integrates with the path visualization capabilities
+//! to provide comprehensive information about type hierarchies and inheritance
+//! relationships when type assertions fail.
 
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
-
-use inkwell::builder::Builder;
-use inkwell::context::Context;
-use inkwell::module::Module;
 use inkwell::values::BasicValueEnum;
-use tracing::{debug, info, instrument, warn, trace};
+use inkwell::IntPredicate;
 
-use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
-use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
-use crate::error::type_assertion_error::TypeAssertionError;
 use crate::error::Error;
 use crate::error::SourceLocation;
+use crate::error::type_assertion_error::TypeAssertionError;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 
-// Global debug flag that can be toggled at runtime
-static DEBUG_TYPE_ASSERTIONS: AtomicBool = AtomicBool::new(false);
-
-// Global statistics for type assertions
-static SUCCESSFUL_ASSERTIONS: AtomicU64 = AtomicU64::new(0);
-static FAILED_ASSERTIONS: AtomicU64 = AtomicU64::new(0);
-static TOTAL_ASSERTION_TIME_MS: AtomicU64 = AtomicU64::new(0);
-
-// Cache for runtime type name mappings
-lazy_static::lazy_static! {
-    static ref TYPE_ID_CACHE: Mutex<HashMap<u64, String>> = Mutex::new(HashMap::new());
-}
-
-/// Debug configuration for type assertions
-pub struct TypeAssertionDebugConfig {
-    /// Enable verbose debugging
-    pub enable_debug: bool,
-    /// Print type hierarchies during assertions
-    pub print_hierarchies: bool,
-    /// Collect performance metrics
-    pub collect_metrics: bool,
-    /// Break on failed assertions (useful for debugging)
-    pub break_on_failure: bool,
-    /// Maximum visualization depth for type hierarchies
-    pub max_hierarchy_depth: usize,
-}
-
-impl Default for TypeAssertionDebugConfig {
-    fn default() -> Self {
-        // Check for environment variable to enable debug by default
-        let debug_env = std::env::var("CURSED_DEBUG_TYPE_ASSERTIONS").unwrap_or_default();
-        let enable_debug = !debug_env.is_empty() && debug_env != "0";
-        
-        Self {
-            enable_debug,
-            print_hierarchies: enable_debug,
-            collect_metrics: true,
-            break_on_failure: false,
-            max_hierarchy_depth: 3,
-        }
-    }
-}
-
-/// Trait for enhanced debug capabilities for interface type assertions
+/// A trait that enhances the debugging capabilities for interface type assertions
 pub trait InterfaceTypeAssertionDebug<'ctx> {
-    /// Set debug configuration for type assertions
-    fn set_type_assertion_debug_config(&mut self, config: TypeAssertionDebugConfig);
-    
-    /// Get current debug configuration
-    fn get_type_assertion_debug_config(&self) -> TypeAssertionDebugConfig;
-    
-    /// Log a type assertion operation with detailed information
+    /// Generate detailed debug information about a type assertion
     fn debug_type_assertion(
-        &mut self,
-        source_type: &str,
-        target_type: &str,
-        actual_type_id: u64,
-        target_type_id: u64,
-        source_location: Option<SourceLocation>,
-        success: bool,
-    ) -> Result<(), Error>;
-    
-    /// Print type assertion statistics
-    fn print_type_assertion_statistics(&self);
-    
-    /// Reset type assertion statistics
-    fn reset_type_assertion_statistics(&self);
-    
-    /// Extract readable type name from a runtime value
-    fn extract_readable_type_name(
-        &mut self,
-        value: BasicValueEnum<'ctx>
-    ) -> Result<String, Error>;
-    
-    /// Add a runtime type ID to name mapping
-    fn register_runtime_type(
-        &self,
-        type_id: u64,
-        type_name: &str
-    );
-    
-    /// Debug a type assertion operation with complete information
-    fn debug_assertion_operation(
         &mut self,
         interface_value: BasicValueEnum<'ctx>,
         target_type: &str,
-        location: Option<SourceLocation>
-    ) -> Result<(), Error>;
+        source_location: Option<SourceLocation>,
+    ) -> Result<String, Error>;
+    
+    /// Extract and debug the type ID from an interface value
+    fn debug_type_id_extraction(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+    ) -> Result<String, Error>;
+    
+    /// Verify a type assertion with detailed error reporting
+    fn verify_type_assertion_with_debug(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        target_type: &str,
+        source_location: Option<SourceLocation>,
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Trace the type hierarchy or interface inheritance chain
+    fn trace_type_hierarchy(
+        &self,
+        type_name: &str,
+    ) -> Result<String, Error>;
 }
 
 impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
-    #[instrument(skip(self), level = "debug")]
-    fn set_type_assertion_debug_config(&mut self, config: TypeAssertionDebugConfig) {
-        // Set the global debug flag based on configuration
-        DEBUG_TYPE_ASSERTIONS.store(config.enable_debug, Ordering::SeqCst);
-        
-        // Store the configuration for later use
-        self.type_assertion_debug_config = Some(config);
-    }
-    
-    fn get_type_assertion_debug_config(&self) -> TypeAssertionDebugConfig {
-        // Return the current config or a default if not set
-        self.type_assertion_debug_config.clone().unwrap_or_default()
-    }
-    
-    #[instrument(skip(self), fields(success = success), level = "debug")]
     fn debug_type_assertion(
-        &mut self,
-        source_type: &str,
-        target_type: &str,
-        actual_type_id: u64,
-        target_type_id: u64,
-        source_location: Option<SourceLocation>,
-        success: bool,
-    ) -> Result<(), Error> {
-        // Check if debugging is enabled
-        if !DEBUG_TYPE_ASSERTIONS.load(Ordering::SeqCst) {
-            return Ok(());
-        }
-        
-        // Update statistics
-        if success {
-            SUCCESSFUL_ASSERTIONS.fetch_add(1, Ordering::SeqCst);
-        } else {
-            FAILED_ASSERTIONS.fetch_add(1, Ordering::SeqCst);
-        }
-        
-        // Log detailed information
-        let config = self.get_type_assertion_debug_config();
-        
-        debug!(
-            "Type assertion: {} -> {} (success: {})", 
-            source_type, target_type, success
-        );
-        
-        debug!(
-            "Type IDs: actual=0x{:016x}, target=0x{:016x}",
-            actual_type_id, target_type_id
-        );
-        
-        if let Some(loc) = &source_location {
-            debug!("Location: {}:{}", loc.file.as_deref().unwrap_or("<unknown>"), loc.line);
-            if !loc.source_line.is_empty() {
-                debug!("Source: {}", loc.source_line);
-            }
-        }
-        
-        // Print type hierarchies if enabled
-        if config.print_hierarchies {
-            match self.visualize_interface_path(target_type, config.max_hierarchy_depth) {
-                Ok(hierarchy) => {
-                    debug!("Type hierarchy for target type:\n{}", hierarchy);
-                }
-                Err(err) => {
-                    warn!("Failed to visualize type hierarchy: {}", err);
-                }
-            }
-            
-            // Try to find alternative paths if assertion failed
-            if !success {
-                // Get the actual type name if possible
-                let actual_type = self.get_type_name_for_id(actual_type_id).unwrap_or_else(|_| "<unknown>".to_string());
-                
-                match self.find_alternative_paths(&actual_type, target_type, 3) {
-                    Ok(paths) if !paths.is_empty() => {
-                        debug!("Alternative conversion paths available:");
-                        for (i, path) in paths.iter().enumerate() {
-                            debug!("{}: {}", i + 1, path);
-                        }
-                    }
-                    Ok(_) => {
-                        debug!("No alternative conversion paths found.");
-                    }
-                    Err(err) => {
-                        warn!("Failed to find alternative paths: {}", err);
-                    }
-                }
-            }
-        }
-        
-        // Break on failure if configured
-        if !success && config.break_on_failure {
-            debug!("Breakpoint triggered for failed type assertion");
-            // In a real implementation, this would trigger a debugger breakpoint
-            // For now, we just log it
-        }
-        
-        Ok(())
-    }
-    
-    fn print_type_assertion_statistics(&self) {
-        let successful = SUCCESSFUL_ASSERTIONS.load(Ordering::SeqCst);
-        let failed = FAILED_ASSERTIONS.load(Ordering::SeqCst);
-        let total = successful + failed;
-        let total_time_ms = TOTAL_ASSERTION_TIME_MS.load(Ordering::SeqCst);
-        
-        let success_rate = if total > 0 {
-            (successful as f64 / total as f64) * 100.0
-        } else {
-            0.0
-        };
-        
-        let avg_time = if total > 0 {
-            total_time_ms as f64 / total as f64
-        } else {
-            0.0
-        };
-        
-        info!("Type Assertion Statistics:");
-        info!("  Total assertions: {}", total);
-        info!("  Successful: {} ({:.2}%)", successful, success_rate);
-        info!("  Failed: {}", failed);
-        info!("  Total time: {}ms (avg: {:.3}ms per assertion)", total_time_ms, avg_time);
-    }
-    
-    fn reset_type_assertion_statistics(&self) {
-        SUCCESSFUL_ASSERTIONS.store(0, Ordering::SeqCst);
-        FAILED_ASSERTIONS.store(0, Ordering::SeqCst);
-        TOTAL_ASSERTION_TIME_MS.store(0, Ordering::SeqCst);
-        info!("Type assertion statistics reset");
-    }
-    
-    #[instrument(skip(self, value), level = "debug")]
-    fn extract_readable_type_name(
-        &mut self,
-        value: BasicValueEnum<'ctx>
-    ) -> Result<String, Error> {
-        // Extract the type ID from the value
-        let type_id_value = self.extract_interface_type_id(value)?;
-        let type_id = if type_id_value.is_int_value() {
-            type_id_value.into_int_value().get_zero_extended_constant().unwrap_or(0)
-        } else {
-            // If we can't get a constant, use dynamic extraction
-            // This would be implemented in a real compiler
-            0
-        };
-        
-        // Try to find the type name in the cache
-        if let Ok(cache) = TYPE_ID_CACHE.lock() {
-            if let Some(name) = cache.get(&type_id) {
-                return Ok(name.clone());
-            }
-        }
-        
-        // Try to get the type name from the registry
-        if let Some(registry) = &self.interface_type_registry {
-            match registry.get_type_name_for_id(type_id) {
-                Ok(name) => {
-                    // Cache the result for future use
-                    if let Ok(mut cache) = TYPE_ID_CACHE.lock() {
-                        cache.insert(type_id, name.clone());
-                    }
-                    Ok(name)
-                }
-                Err(_) => Ok(format!("<unknown type 0x{:016x}>", type_id))
-            }
-        } else {
-            Ok(format!("<unknown type 0x{:016x}>", type_id))
-        }
-    }
-    
-    fn register_runtime_type(
-        &self,
-        type_id: u64,
-        type_name: &str
-    ) {
-        if let Ok(mut cache) = TYPE_ID_CACHE.lock() {
-            cache.insert(type_id, type_name.to_string());
-            trace!("Registered runtime type: {} (ID: 0x{:016x})", type_name, type_id);
-        }
-    }
-    
-    #[instrument(skip(self, interface_value), level = "debug")]
-    fn debug_assertion_operation(
         &mut self,
         interface_value: BasicValueEnum<'ctx>,
         target_type: &str,
-        location: Option<SourceLocation>
+        source_location: Option<SourceLocation>,
+    ) -> Result<String, Error> {
+        // First, get the runtime type information
+        let (actual_type_id, actual_type_name) = self.get_runtime_type_id(interface_value, source_location.clone())?;
+        
+        // Get the target type ID and name
+        let target_type_id = match &self.interface_type_registry {
+            Some(registry) => registry.get_type_id(target_type).unwrap_or_else(|_| self.hash_type_name(target_type)),
+            None => self.hash_type_name(target_type),
+        };
+        
+        // Check compatibility
+        let compatible = self.is_type_compatible(actual_type_id, target_type_id);
+        
+        // Build the debug report
+        let mut debug_info = String::new();
+        debug_info.push_str(&format!("Interface Type Assertion Debug Report\n"));
+        debug_info.push_str(&format!("======================================\n\n"));
+        
+        // Basic assertion information
+        debug_info.push_str(&format!("Assertion: {} is a {}\n", actual_type_name, target_type));
+        debug_info.push_str(&format!("Result: {}\n\n", if compatible { "COMPATIBLE" } else { "INCOMPATIBLE" }));
+        
+        // Type IDs
+        debug_info.push_str(&format!("Type Information:\n"));
+        debug_info.push_str(&format!("- Actual type: {} (ID: 0x{:x})\n", actual_type_name, actual_type_id));
+        debug_info.push_str(&format!("- Target type: {} (ID: 0x{:x})\n\n", target_type, target_type_id));
+        
+        // Location if available
+        if let Some(loc) = &source_location {
+            debug_info.push_str(&format!("Source Location:\n"));
+            debug_info.push_str(&format!("- File: {}\n", loc.file.clone().unwrap_or_else(|| "<unknown>".to_string())));
+            debug_info.push_str(&format!("- Line: {}\n", loc.line));
+            debug_info.push_str(&format!("- Column: {}\n", loc.column));
+            if !loc.source_line.is_empty() {
+                debug_info.push_str(&format!("- Code: {}\n", loc.source_line));
+            }
+            debug_info.push_str("\n");
+        }
+        
+        // Registry information if available
+        if let Some(registry) = &self.interface_type_registry {
+            debug_info.push_str(&format!("Registry Information:\n"));
+            debug_info.push_str(&format!("- Registry initialized: {}\n", "Yes"));
+            
+            // Add visualization
+            let visualization = self.visualize_type_path(&actual_type_name, target_type)?;
+            debug_info.push_str(&format!("\nType Path Visualization:\n{}", visualization));
+        } else {
+            debug_info.push_str(&format!("Registry Information:\n"));
+            debug_info.push_str(&format!("- Registry initialized: {}\n", "No"));
+        }
+        
+        Ok(debug_info)
+    }
+    
+    fn debug_type_id_extraction(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+    ) -> Result<String, Error> {
+        // Extract and get type ID
+        let type_id = self.get_interface_type_id(interface_value)?;
+        
+        // Get constant if possible
+        let const_id = match type_id.as_int_value().get_zero_extended_constant() {
+            Some(id) => id,
+            None => return Ok(format!("Type ID Extraction Debug:\n- Type ID: <dynamic at runtime>\n")),
+        };
+        
+        // Try to get type name from registry
+        let type_name = if let Some(registry) = &self.interface_type_registry {
+            match registry.get_type_name(const_id) {
+                Ok(name) => name,
+                Err(_) => format!("unknown(0x{:x})", const_id),
+            }
+        } else {
+            format!("unknown(0x{:x})", const_id)
+        };
+        
+        // Build debug info
+        let mut debug_info = String::new();
+        debug_info.push_str(&format!("Type ID Extraction Debug:\n"));
+        debug_info.push_str(&format!("- Type ID: 0x{:x}\n", const_id));
+        debug_info.push_str(&format!("- Type Name: {}\n", type_name));
+        
+        // Add vtable information if possible
+        debug_info.push_str(&format!("- From: Interface Value Vtable (first field)\n"));
+        
+        Ok(debug_info)
+    }
+    
+    fn verify_type_assertion_with_debug(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        target_type: &str,
+        source_location: Option<SourceLocation>,
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Get type information
+        let (actual_type_id, actual_type_name) = self.get_runtime_type_id(interface_value, source_location.clone())?;
+        
+        // Get target type ID
+        let target_type_id = match &self.interface_type_registry {
+            Some(registry) => registry.get_type_id(target_type).unwrap_or_else(|_| self.hash_type_name(target_type)),
+            None => self.hash_type_name(target_type),
+        };
+        
+        // Check compatibility
+        let compatible = self.is_type_compatible(actual_type_id, target_type_id);
+        
+        if compatible {
+            // Return true for compatible types
+            let true_value = self.context().bool_type().const_int(1, false);
+            return Ok(true_value.into());
+        }
+        
+        // Generate full debug information for incompatible types
+        let debug_info = self.debug_type_assertion(interface_value, target_type, source_location.clone())?;
+        
+        // Create detailed error with debug information
+        let detailed_error = TypeAssertionError::new("interface", target_type)
+            .with_message(format!("Type assertion failed with detailed debugging:\n\n{}", debug_info))
+            .with_actual_type(actual_type_name, Some(actual_type_id))
+            .with_target_type_id(target_type_id);
+            
+        if let Some(loc) = source_location {
+            return Err(Error::TypeAssertion(
+                detailed_error.with_location(loc)
+            ));
+        }
+        
+        // Return false for incompatible types
+        let false_value = self.context().bool_type().const_int(0, false);
+        Ok(false_value.into())
+    }
+    
+    fn trace_type_hierarchy(
+        &self,
+        type_name: &str,
+    ) -> Result<String, Error> {
+        // Check if registry is available
+        if self.interface_type_registry.is_none() {
+            return Ok(format!("Type Hierarchy Trace for {}:\n- Registry not available\n", type_name));
+        }
+        
+        let registry = self.interface_type_registry.as_ref().unwrap();
+        
+        // Get type ID
+        let type_id = match registry.get_type_id(type_name) {
+            Ok(id) => id,
+            Err(_) => return Ok(format!("Type Hierarchy Trace for {}:\n- Type not found in registry\n", type_name)),
+        };
+        
+        // Get inheritance map
+        let inheritance_map = match registry.get_inheritance_map() {
+            Some(map) => map,
+            None => return Ok(format!("Type Hierarchy Trace for {}:\n- No inheritance information available\n", type_name)),
+        };
+        
+        // Build hierarchy trace
+        let mut result = format!("Type Hierarchy Trace for {}:\n", type_name);
+        
+        // Check for implemented interfaces (parent types)
+        result.push_str("\nImplemented Interfaces:\n");
+        let mut found_implementations = false;
+        
+        // Find all interfaces this type implements
+        for (interface_id, implementers) in inheritance_map.iter() {
+            if implementers.contains(&type_id) {
+                let interface_name = registry.get_type_name(*interface_id)
+                    .unwrap_or_else(|_| format!("unknown(0x{:x})", interface_id));
+                result.push_str(&format!("- {}\n", interface_name));
+                found_implementations = true;
+            }
+        }
+        
+        if !found_implementations {
+            result.push_str("- None\n");
+        }
+        
+        // Check for implementations (child types)
+        result.push_str("\nImplementing Types:\n");
+        let mut found_implementers = false;
+        
+        // Find all types that implement this interface
+        if let Some(implementers) = inheritance_map.get(&type_id) {
+            for implementer_id in implementers {
+                let implementer_name = registry.get_type_name(*implementer_id)
+                    .unwrap_or_else(|_| format!("unknown(0x{:x})", implementer_id));
+                result.push_str(&format!("- {}\n", implementer_name));
+                found_implementers = true;
+            }
+        }
+        
+        if !found_implementers {
+            result.push_str("- None\n");
+        }
+        
+        Ok(result)
+    }
+}
+
+// Additional debugging utilities for LLVM code generator
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Generate LLVM code to print type assertion debug information at runtime
+    pub fn generate_type_assertion_debug_print(
+        &mut self,
+        interface_value: BasicValueEnum<'ctx>,
+        target_type: &str,
     ) -> Result<(), Error> {
-        // Check if debugging is enabled
-        if !DEBUG_TYPE_ASSERTIONS.load(Ordering::SeqCst) {
-            return Ok(());
-        }
+        // Get or create printf function declaration
+        let printf_fn = self.get_or_create_printf()?;
         
-        // Collect performance metrics if enabled
-        let config = self.get_type_assertion_debug_config();
-        let start_time = if config.collect_metrics {
-            Some(Instant::now())
-        } else {
-            None
+        // Format string for debug output
+        let format_str = "Type assertion debug: %s is%s a %s (IDs: 0x%lx, 0x%lx)\n\0";
+        let format_global = self.create_string_global(format_str)?;
+        
+        // Extract type information
+        let (actual_type_id, actual_type_name) = self.get_runtime_type_id(interface_value, None)?;
+        let actual_type_global = self.create_string_global(&format!("{}{}", actual_type_name, "\0"))?;
+        
+        // Get target type ID
+        let target_type_id = match &self.interface_type_registry {
+            Some(registry) => registry.get_type_id(target_type).unwrap_or_else(|_| self.hash_type_name(target_type)),
+            None => self.hash_type_name(target_type),
         };
+        let target_type_global = self.create_string_global(&format!("{}{}", target_type, "\0"))?;
         
-        // Extract the actual type ID
-        let type_id_value = self.extract_interface_type_id(interface_value)?;
-        let actual_type_id = if type_id_value.is_int_value() {
-            type_id_value.into_int_value().get_zero_extended_constant().unwrap_or(0)
-        } else {
-            0
-        };
+        // Check if compatible
+        let compatible = self.is_type_compatible(actual_type_id, target_type_id);
+        let compatible_str = if compatible { "" } else { " not" };
+        let compatible_global = self.create_string_global(&format!("{}{}", compatible_str, "\0"))?;
         
-        // Get the target type ID
-        let target_type_id = self.hash_type_name(target_type);
+        // Create type ID constants
+        let actual_id_const = self.context().i64_type().const_int(actual_type_id, false);
+        let target_id_const = self.context().i64_type().const_int(target_type_id, false);
         
-        // Get the actual type name if possible
-        let actual_type = self.get_type_name_for_id(actual_type_id).unwrap_or_else(|_| "<unknown>".to_string());
+        // Create printf call arguments
+        let printf_args = vec![
+            self.builder().build_pointer_cast(
+                format_global,
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()),
+                "format_ptr"
+            ).unwrap().into(),
+            self.builder().build_pointer_cast(
+                actual_type_global,
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()),
+                "actual_type_ptr"
+            ).unwrap().into(),
+            self.builder().build_pointer_cast(
+                compatible_global,
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()),
+                "compatible_ptr"
+            ).unwrap().into(),
+            self.builder().build_pointer_cast(
+                target_type_global,
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()),
+                "target_type_ptr"
+            ).unwrap().into(),
+            actual_id_const.into(),
+            target_id_const.into(),
+        ];
         
-        // Check if the assertion would succeed
-        let success = actual_type_id == target_type_id;
-        
-        // Log the assertion
-        self.debug_type_assertion(
-            &actual_type,
-            target_type,
-            actual_type_id,
-            target_type_id,
-            location,
-            success
-        )?;
-        
-        // Update performance metrics
-        if let Some(start) = start_time {
-            let elapsed = start.elapsed();
-            let elapsed_ms = elapsed.as_millis() as u64;
-            TOTAL_ASSERTION_TIME_MS.fetch_add(elapsed_ms, Ordering::SeqCst);
-        }
+        // Call printf
+        self.builder().build_call(printf_fn, &printf_args, "debug_printf")
+            .map_err(|e| Error::Compilation(e.to_string()))?;
         
         Ok(())
     }
-}
-
-// Extension to LlvmCodeGenerator for internal methods
-impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Initialize type assertion debug support
-    pub fn initialize_type_assertion_debug(&mut self) {
-        // Check for environment variable to enable debug
-        let debug_env = std::env::var("CURSED_DEBUG_TYPE_ASSERTIONS").unwrap_or_default();
-        let enable_debug = !debug_env.is_empty() && debug_env != "0";
+    
+    // Helper function to create global string constant
+    fn create_string_global(&self, content: &str) -> Result<inkwell::values::PointerValue<'ctx>, Error> {
+        let string_type = self.context().i8_type().array_type(content.len() as u32);
+        let global = self.module().add_global(string_type, None, "str_const");
         
-        // Configure debug settings
-        let config = TypeAssertionDebugConfig {
-            enable_debug,
-            print_hierarchies: enable_debug,
-            collect_metrics: true,
-            break_on_failure: false,
-            max_hierarchy_depth: 3,
-        };
+        global.set_initializer(&self.context().const_string(content.as_bytes(), false));
+        global.set_constant(true);
+        global.set_linkage(inkwell::module::Linkage::Private);
         
-        self.set_type_assertion_debug_config(config);
-        
-        if enable_debug {
-            debug!("Type assertion debugging enabled");
-        }
+        Ok(global.as_pointer_value())
     }
     
-    /// Hash a type name to create a type ID using FNV-1a algorithm
-    /// 
-    /// This function converts a type name string to a 64-bit type ID hash.
-    /// We use FNV-1a for its good distribution and speed on short strings.
-    /// 
-    /// IMPORTANT: This implementation MUST match the one in InterfaceTypeRegistry
-    /// to ensure consistent type ID generation across the codebase.
-    ///
-    /// @param type_name The type name to hash
-    /// @return The 64-bit type ID hash
-    pub fn hash_type_name(&self, type_name: &str) -> u64 {
-        // FNV-1a hash algorithm for more consistent hashing
-        // This must match the implementation in InterfaceTypeRegistry
-        trace!("Hashing type name: {}", type_name);
+    // Get or create printf function declaration
+    fn get_or_create_printf(&self) -> Result<inkwell::values::FunctionValue<'ctx>, Error> {
+        let printf_type = self.context().i32_type().fn_type(
+            &[self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).into()],
+            true
+        );
         
-        // FNV-1a initialization value (FNV offset basis)
-        let mut hash: u64 = 0xcbf29ce484222325;
-        
-        // Process each byte of the string
-        for byte in type_name.bytes() {
-            hash ^= byte as u64;
-            // FNV prime for 64-bit hash
-            hash = hash.wrapping_mul(0x100000001b3);
+        if let Some(printf_fn) = self.module().get_function("printf") {
+            return Ok(printf_fn);
         }
         
-        trace!("Hashed type name '{}' to ID: {}", type_name, hash);
-        hash
-    }
-}
-
-/// Register the type assertion debug module
-pub fn register_type_assertion_debug() {
-    debug!("Type assertion debug module registered");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_debug_module_registration() {
-        register_type_assertion_debug();
-        assert!(true);
+        let printf_fn = self.module().add_function("printf", printf_type, None);
+        Ok(printf_fn)
     }
 }

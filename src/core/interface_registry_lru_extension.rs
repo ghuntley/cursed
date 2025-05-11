@@ -170,7 +170,7 @@ impl CachedInterfaceRegistry for LruCachedRegistry {
 mod tests {
     use super::*;
     
-    #[path = "../../tests/common.rs"]
+    #[path = "../tests/common.rs"]
     mod common;
     
     #[test]

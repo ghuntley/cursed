@@ -461,7 +461,7 @@ mod tests {
     use super::*;
     use crate::core::type_checker::Type;
     
-    #[path = "../../tests/common.rs"]
+    #[path = "../tests/common.rs"]
     mod common;
     
     #[test]

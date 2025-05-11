@@ -188,7 +188,7 @@ impl ThreadSafeInterfaceCache {
 
 #[cfg(test)]
 mod tests {
-    #[path = "../../tests/common.rs"]
+    #[path = "../tests/common.rs"]
     pub mod test_common;
     use self::test_common as common;
     use super::*;

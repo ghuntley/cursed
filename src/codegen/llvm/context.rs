@@ -131,7 +131,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Initialize enhanced type registry with full runtime type information
         super::interface_type_registry_enhanced::register_enhanced_type_registry();
         // Initialize enhanced type assertions with rich error information
-        super::interface_type_assertion_enhanced::register_enhanced_type_assertion();
+        super::interface_type_assertion_enhanced::register_enhanced_interface_type_assertion();
         // Initialize optimized dynamic dispatch
         super::optimized_dynamic_dispatch::register_optimized_dynamic_dispatch();
         // Initialize interface type assertion debug utilities
@@ -140,7 +140,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::lru_field_accessors::register_lru_field_accessors();
         super::interface_field_accessors_lru::register_interface_field_accessors_lru();
         // Initialize interface type assertion path visualization
-        super::interface_type_assertion_path_visualization::register_interface_type_assertion_path_visualization();
+        super::interface_type_assertion_path_visualization::register_type_assertion_path_visualization();
         // Initialize enhanced interface type assertion path visualization with improved error handling
         super::interface_type_assertion_path_visualization_enhanced::register_enhanced_interface_type_assertion_path_visualization();
         super::interface_type_assertion_with_registry::register_interface_type_assertion_with_registry();

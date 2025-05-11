@@ -29,7 +29,7 @@ use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWit
 use crate::error::Error;
 
 /// Enhanced trait for visualizing interface inheritance paths with improved error propagation
-pub trait EnhancedInterfaceTypeAssertionPathVisualization<'ctx>: InterfaceTypeAssertionPathVisualization<'ctx> {
+pub trait EnhancedInterfaceTypeAssertionPathVisualization: InterfaceTypeAssertionPathVisualization {
     /// Access the interface registry for visualization
     fn interface_registry(&self) -> &dyn InterfaceRegistryExtensionWithVisualization;
     
