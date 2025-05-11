@@ -241,4 +241,57 @@ impl ThreadSafeInterfaceExtensionRegistry {
         
         Ok(registry.get_extension_hierarchy())
     }
+    
+    /// Find paths between two interfaces using breadth-first search
+    #[instrument(skip(self), level = "debug")]
+    pub fn find_interface_paths(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+        max_paths: usize,
+    ) -> Result<Vec<Vec<String>>, Error> {
+        debug!("Finding paths from {} to {}", source_interface, target_interface);
+        
+        // Initialize data structures for BFS
+        let mut paths = Vec::new();
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
+        
+        // Start with source
+        queue.push_back(vec![source_interface.to_string()]);
+        visited.insert(source_interface.to_string());
+        
+        // Handle the case where source and target are the same
+        if source_interface == target_interface {
+            return Ok(vec![vec![source_interface.to_string()]]);
+        }
+        
+        // Perform BFS to find paths
+        while let Some(path) = queue.pop_front() {
+            let current = path.last().unwrap();
+            
+            // If we've reached the target, add this path
+            if current == target_interface {
+                paths.push(path);
+                if paths.len() >= max_paths {
+                    break;
+                }
+                continue;
+            }
+            
+            // Get extensions from the current node
+            if let Some(extensions) = self.get_direct_extensions(current)? {
+                for extension in extensions {
+                    if !visited.contains(&extension) {
+                        let mut new_path = path.clone();
+                        new_path.push(extension.clone());
+                        queue.push_back(new_path);
+                        visited.insert(extension);
+                    }
+                }
+            }
+        }
+        
+        Ok(paths)
+    }
 }

@@ -10,6 +10,9 @@
 
 use crate::ast::{BlockStatement, Expression, RangeExpression};
 use crate::codegen::llvm::context::LlvmCodeGenerator;
+use crate::codegen::llvm::expression::ExpressionCompilation;
+use crate::codegen::llvm::statement::StatementCompilation;
+use crate::codegen::llvm::range_clause_fixed::{RangeClauseCompilationEnhanced};
 use crate::error::Error;
 use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
 use tracing::{debug, info, instrument, warn, error};
