@@ -37,7 +37,7 @@ use std::collections::HashMap;
 use tracing::{debug, info, trace};
 use crate::ast::expressions::TypeAssertion;
 use crate::error::Error;
-use crate::codegen::llvm::interface_type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;
 
 /// Different interface hierarchy patterns for benchmark classification

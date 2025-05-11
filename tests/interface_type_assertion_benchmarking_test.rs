@@ -10,7 +10,7 @@ use inkwell::targets::{InitializationConfig, Target, TargetMachine};
 use cursed::{
     ast::expressions::TypeAssertion,
     codegen::llvm::LlvmCodeGenerator,
-    codegen::llvm::interface_type_assertion::InterfaceTypeAssertion,
+    codegen::llvm::type_assertion::InterfaceTypeAssertion,
     codegen::llvm::interface_type_assertion_benchmarking::{TypeAssertionBenchmarking, HierarchyPattern, BenchmarkStats, TypeAssertionBenchmark},
     core::interface_registry_lru_cache::LruCachedRegistry,
 };

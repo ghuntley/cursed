@@ -34,16 +34,25 @@ pub use traits::{Expression, Node, Statement};
 pub use expressions::TypeAssertion;
 
 // Explicitly re-export important types for easier use
+pub use declarations::GenericConstraint;
+
+// Re-export control flow types
+pub use control_flow::*;
+
+// Re-export declarations module types but exclude fields to avoid conflicts
+pub use declarations::{Function, StructDeclaration, InterfaceDeclaration, ConstantDeclaration, 
+                      VariableDeclaration, TypeDeclaration, GenericParameter, ImportDeclaration, 
+                      FunctionStatement};
+// Only import Parameter and TypeParameter once
 pub use declarations::Parameter;
 pub use declarations::TypeParameter;
-pub use declarations::GenericConstraint;
-pub use declarations::Field;
+// Explicitly import Field from declarations to avoid ambiguity
+pub use declarations::fields::Field;
 
-// Re-export BlockStatement as Block for backward compatibility
-pub use statements::block::BlockStatement as Block;
-
-// Re-export all other AST types for easier imports
-pub use control_flow::*;
-pub use declarations::*;
+// Re-export expressions
 pub use expressions::*;
-pub use statements::*;
+
+// Re-export BlockStatement as Block for backward compatibility - only do it once
+pub use statements::block::BlockStatement as Block;
+// Explicitly import FieldStatement
+pub use statements::fields::FieldStatement;
