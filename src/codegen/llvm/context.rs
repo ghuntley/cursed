@@ -117,6 +117,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::integrated_monomorphization::register_integrated_monomorphization();
         // Initialize interface field accessors
         super::interface_field_accessors::register_interface_field_accessors();
+        // Initialize interface registry integration
+        super::interface_registry_integration::register_interface_registry_integration();
         // Initialize enhanced runtime debugging for type assertions
         super::interface_type_assertion_debugging::register_runtime_type_assertion_debugging();
         // Initialize improved type assertion integration with proper error propagation

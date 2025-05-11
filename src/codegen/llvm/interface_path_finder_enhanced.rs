@@ -22,7 +22,8 @@ use std::sync::Arc;
 use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
+use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
+use crate::core::interface_registry_visualization::ThreadSafeInterfaceRegistryVisualization as InterfaceRegistryVisualization;
 use crate::error::Error;
 
 /// Represents a path between interfaces in the inheritance hierarchy.
@@ -582,7 +583,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Check if an interface exists in the registry
     fn interface_exists_in_registry(&self, interface: &str) -> Result<bool, Error> {
         // First try using the interface registry visualization
-        if let Some(registry) = &self.registry_visualization {
+        if let Some(registry) = self.registry_visualization() {
             return registry.interface_exists(interface);
         }
 
@@ -609,7 +610,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Get all interfaces in the registry
     fn get_all_interfaces_in_registry(&self) -> Result<HashSet<String>, Error> {
         // First try using the interface registry visualization
-        if let Some(registry) = &self.registry_visualization {
+        if let Some(registry) = self.registry_visualization() {
             return registry.get_all_interfaces();
         }
 
@@ -636,7 +637,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Get direct extensions of an interface
     fn get_direct_extensions_for_interface(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // First try using the interface registry visualization
-        if let Some(registry) = &self.registry_visualization {
+        if let Some(registry) = self.registry_visualization() {
             return registry.get_direct_extensions(interface);
         }
 
@@ -653,7 +654,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Detect cycles in the inheritance hierarchy
     fn detect_cycles_in_inheritance_hierarchy(&self) -> Result<Vec<Vec<String>>, Error> {
         // First try using the interface registry visualization
-        if let Some(registry) = &self.registry_visualization {
+        if let Some(registry) = self.registry_visualization() {
             return registry.detect_cycles();
         }
 
