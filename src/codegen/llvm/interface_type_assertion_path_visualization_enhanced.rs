@@ -31,10 +31,10 @@ use crate::error::Error;
 /// Enhanced trait for visualizing interface inheritance paths with improved error propagation
 pub trait EnhancedInterfaceTypeAssertionPathVisualization<'ctx>: InterfaceTypeAssertionPathVisualization<'ctx> {
     /// Access the interface registry for visualization
-    fn interface_registry(&self) -> &dyn InterfaceRegistryExtensionWithVisualization;
+    fn interface_registry(&self) -> &(dyn InterfaceRegistryExtensionWithVisualization + '_);
     
     /// Access the interface registry with mutable reference for visualization
-    fn interface_registry_mut(&mut self) -> &mut dyn InterfaceRegistryExtensionWithVisualization;
+    fn interface_registry_mut(&mut self) -> &mut (dyn InterfaceRegistryExtensionWithVisualization + '_);
     /// Generate a DOT graph representation of the interface hierarchy with enhanced error handling
     fn generate_interface_hierarchy_dot_enhanced(&self) -> Result<String, Error>;
     
@@ -69,14 +69,14 @@ pub trait EnhancedInterfaceTypeAssertionPathVisualization<'ctx>: InterfaceTypeAs
 }
 
 impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
-    fn interface_registry(&self) -> &dyn InterfaceRegistryExtensionWithVisualization {
+    fn interface_registry(&self) -> &(dyn InterfaceRegistryExtensionWithVisualization + '_) {
         // The interface extension registry is stored in the registry_extensions field
         // of the LlvmCodeGenerator, which is initialized in the constructor
         // It now uses the adapter pattern to resolve implementation conflicts
         &self.registry_extensions
     }
     
-    fn interface_registry_mut(&mut self) -> &mut dyn InterfaceRegistryExtensionWithVisualization {
+    fn interface_registry_mut(&mut self) -> &mut (dyn InterfaceRegistryExtensionWithVisualization + '_) {
         // The interface extension registry is stored in the registry_extensions field
         // of the LlvmCodeGenerator, which is initialized in the constructor
         // It now uses the adapter pattern to resolve implementation conflicts
