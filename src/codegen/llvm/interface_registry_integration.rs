@@ -19,31 +19,32 @@
 use std::sync::Arc;
 use tracing::{debug, error, info, instrument, trace, warn};
 
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
+use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 use crate::core::interface_registry_visualization::ThreadSafeInterfaceRegistryVisualization as InterfaceRegistryVisualization;
-use crate::error::Error;
 
 /// Trait for integrating the LlvmCodeGenerator with the interface registry visualization system
 pub trait InterfaceRegistryIntegration {
     /// Get access to the interface registry visualization
-    fn registry_visualization(&self) -> Option<&dyn InterfaceRegistryVisualization>;
+    fn registry_visualization(&self) -> Option<&dyn InterfaceRegistryExtensionWithVisualization>;
     
     /// Get mutable access to the interface registry visualization
-    fn registry_visualization_mut(&mut self) -> Option<&mut dyn InterfaceRegistryVisualization>;
+    fn registry_visualization_mut(&mut self) -> Option<&mut dyn InterfaceRegistryExtensionWithVisualization>;
     
     /// Initialize the registry visualization component if not already initialized
     fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error>;
 }
 
 impl<'ctx> InterfaceRegistryIntegration for LlvmCodeGenerator<'ctx> {
-    fn registry_visualization(&self) -> Option<&dyn InterfaceRegistryVisualization> {
+    fn registry_visualization(&self) -> Option<&dyn InterfaceRegistryExtensionWithVisualization> {
         // The registry_extensions field implements InterfaceRegistryVisualization
         // so we can just return a reference to it
         Some(&self.registry_extensions)
     }
     
-    fn registry_visualization_mut(&mut self) -> Option<&mut dyn InterfaceRegistryVisualization> {
+    fn registry_visualization_mut(&mut self) -> Option<&mut dyn InterfaceRegistryExtensionWithVisualization> {
         // The registry_extensions field implements InterfaceRegistryVisualization
         // so we can just return a mutable reference to it
         Some(&mut self.registry_extensions)
