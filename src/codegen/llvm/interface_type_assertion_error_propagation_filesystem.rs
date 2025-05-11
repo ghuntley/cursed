@@ -31,6 +31,7 @@ use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryInteg
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
+use crate::codegen::llvm::interface_type_registry_helpers::TypeNameRegistry;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
 use crate::error::SourceLocation;
@@ -38,7 +39,7 @@ use crate::error::SourceLocation;
 /// Trait for enhanced error propagation with filesystem integration
 pub trait EnhancedErrorPropagationWithFilesystem<'ctx>: 
     InterfaceTypeAssertionErrorPropagation<'ctx> + 
-    FilesystemSourceLocationIntegration<'ctx> 
+    FilesystemSourceLocationIntegration 
 {
     /// Compile a type assertion with the ? operator using enhanced filesystem integration
     /// for better error messages with source code context
@@ -138,14 +139,17 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         // Get the actual type ID from the interface value for better error reporting
         let actual_type_id = self.get_interface_type_id(expr_value)?;
         
-        // Look up the type names for better error messages
-        let expected_type_name = self.get_type_name_by_id(type_id);
-        let actual_type_name = self.get_type_name_by_id(actual_type_id);
+        // Look up the type names for better error messages using common function
+        let expected_type_name = crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, type_id)?;
+        let actual_type_name = match crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, actual_type_id) {
+            Ok(name) => Some(name),
+            Err(_) => None
+        };
         
         // Create an enhanced error message
         let error_message = self.create_enhanced_error_message(
             type_assertion,
-            &expected_type_name.unwrap_or(type_assertion.type_name.clone()),
+            &expected_type_name,
             actual_type_name.as_deref()
         )?;
         
@@ -311,13 +315,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         ]).into()
     }
     
-    /// Get a type name by its ID for better error messages
-    fn get_type_name_by_id(&self, type_id: u32) -> Option<String> {
-        // Try to get the type name from the registry
-        // This is a best-effort approach - if we can't get it, we'll use the type ID
-        self.get_type_name_from_registry(type_id)
-            .or_else(|| Some(format!("Type#{}", type_id)))
-    }
+    // Using the shared implementation from interface_type_registry_helpers.rs
+    // through the TypeNameRegistry trait
 }
 
 /// Register the enhanced error propagation with filesystem integration

@@ -15,8 +15,8 @@ use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegi
 use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, VisualizationOptions};
 use crate::error::Error;
 
-/// Implementation of visualization capabilities for `ThreadSafeInterfaceExtensionRegistry`
-impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensionRegistry {
+/// Extension methods for visualization capabilities of `ThreadSafeInterfaceExtensionRegistry`
+impl ThreadSafeInterfaceExtensionRegistry {
     #[instrument(level = "debug")]
     fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
         // Delegate to the instance method

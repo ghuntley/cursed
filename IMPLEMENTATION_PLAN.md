@@ -28,24 +28,24 @@ These errors prevent the codebase from compiling and must be addressed first.
 *   **RESOLVED: `error[E0592]: duplicate definitions with name 'find_inheritance_path'`** (multiple occurrences)
     *   Description: `find_inheritance_path` is defined in multiple files with slightly different signatures/purposes.
     *   Action: Resolved by moving the core functionality to `interface_type_assertion_common.rs` with the common `InterfaceRegistry` trait. Different implementations now make use of this centralized function.
-*   **`error[E0592]: duplicate definitions with name 'get_type_name_by_id'`**
+*   **RESOLVED: `error[E0592]: duplicate definitions with name 'get_type_name_by_id'`**
     *   Description: `get_type_name_by_id` defined in both `interface_type_assertion_error_propagation_filesystem.rs` and `interface_type_assertion_diamond_inheritance.rs`.
-    *   Action: Consolidate or rename.
-*   **`error[E0592]: duplicate definitions with name 'get_interface_path_finder'`** (multiple occurrences)
+    *   Action: Resolved by using the common implementation `get_type_name_by_id_impl` from `interface_type_registry_common.rs` in both files. Removed the duplicated implementation in `interface_type_assertion_diamond_inheritance.rs` and modified `interface_type_assertion_error_propagation_filesystem.rs` to use the common implementation.
+*   **RESOLVED: `error[E0592]: duplicate definitions with name 'get_interface_path_finder'`** (multiple occurrences)
     *   Description: `get_interface_path_finder` has multiple definitions.
-    *   Action: Consolidate or rename.
-*   **`error[E0592]: duplicate definitions with name 'type_implements'`** (multiple occurrences)
+    *   Action: Fixed by updating benchmark code to use the common implementation from `interface_type_registry_common`.
+*   **RESOLVED: `error[E0592]: duplicate definitions with name 'type_implements'`** (multiple occurrences)
     *   Description: `type_implements` has multiple definitions.
-    *   Action: Consolidate or rename.
-*   **`error[E0592]: duplicate definitions with name 'get_interface_registry'`** (multiple occurrences)
+    *   Action: Fixed by using the common implementation `type_implements_impl` from `interface_type_registry_common`.
+*   **RESOLVED: `error[E0592]: duplicate definitions with name 'get_interface_registry'`** (multiple occurrences)
     *   Description: `get_interface_registry` has multiple definitions.
-    *   Action: Consolidate or rename.
-*   **`error[E0592]: duplicate definitions with name 'get_interface_registry_mut'`**
+    *   Action: Fixed by using the common implementation `get_interface_registry_impl` from `interface_type_registry_common`.
+*   **RESOLVED: `error[E0592]: duplicate definitions with name 'get_interface_registry_mut'`**
     *   Description: `get_interface_registry_mut` defined in `interface_type_assertion_benchmark.rs` and `interface_type_assertion_benchmark_enhanced.rs`.
-    *   Action: Consolidate or rename.
-*   **`error[E0592]: duplicate definitions with name 'detect_diamond_inheritance'`**
+    *   Action: Fixed by using the common implementation `get_interface_registry_mut_impl` from `interface_type_registry_common`.
+*   **RESOLVED: `error[E0592]: duplicate definitions with name 'detect_diamond_inheritance'`**
     *   Description: `detect_diamond_inheritance` defined in `interface_type_assertion_benchmark.rs` and `interface_type_assertion_benchmark_enhanced.rs`.
-    *   Action: Consolidate or rename.
+    *   Action: Fixed by using the common implementation `detect_diamond_inheritance_impl` from `interface_type_registry_common`.
 *   **`error[E0592]: duplicate definitions with name 'from_seconds'` in `src/stdlib/timez/mod.rs`**
     *   Description: `from_seconds` is defined twice within the same module.
     *   Action: Remove the duplicate definition.

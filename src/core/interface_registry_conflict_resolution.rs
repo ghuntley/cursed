@@ -13,10 +13,10 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, info, instrument, trace, warn};
 
-use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_extensions::{InterfaceRegistryExtension, ThreadSafeInterfaceExtensionRegistry};
 use crate::core::interface_registry_visualization::{
-    InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization,
-    VisualizationOptions,
+    InterfaceRegistryVisualization, InterfaceRegistryExtensionWithVisualization, 
+    ThreadSafeInterfaceRegistryVisualization, VisualizationOptions,
 };
 use crate::error::Error;
 
@@ -26,42 +26,110 @@ pub struct InterfaceRegistryAdapter {
     /// The extension registry to delegate to
     extension_registry: ThreadSafeInterfaceExtensionRegistry,
     /// Optional visualization registry to delegate to when available
-    visualization_registry: Option<ThreadSafeInterfaceRegistryVisualization>,
+    visualization_registry: Option<Box<dyn InterfaceRegistryVisualization + Send + Sync>>,
 }
 
 impl InterfaceRegistryAdapter {
     /// Create a new adapter with the extension registry
     pub fn new(extension_registry: ThreadSafeInterfaceExtensionRegistry) -> Self {
+        // Create a new adapter
         Self {
             extension_registry,
             visualization_registry: None,
         }
     }
 
+    /// Add visualization registry to the adapter
+    pub fn with_visualization(mut self, visualization: Box<dyn InterfaceRegistryVisualization + Send + Sync>) -> Self {
+        self.visualization_registry = Some(visualization);
+        self
+    }
+}
+
+/// Implementation of InterfaceRegistryExtension for the adapter
+impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
+    /// Register a new interface
+    fn register_interface(&mut self, name: &str) {
+        self.extension_registry.register_interface(name);
+    }
+    
+    /// Register an extension relationship between interfaces
+    fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        self.extension_registry.register_extension(source, target)
+    }
+    
+    /// Check if an extension relationship exists between interfaces
+    fn has_extension(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extension_registry.has_extension(source, target)
+    }
+    
+    /// Get all registered interfaces
+    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+        self.extension_registry.get_all_interfaces()
+    }
+    
+    /// Get all direct extensions of an interface
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        self.extension_registry.get_direct_extensions(interface)
+    }
+    
+    /// Get all direct implementers of an interface
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        self.extension_registry.get_direct_implementers(interface)
+    }
+    
+    /// Check if an interface extends another interface (direct or indirect)
+    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extension_registry.extends(source, target)
+    }
+    
+    /// Find a common ancestor between two interfaces
+    fn find_common_ancestor(&self, a: &str, b: &str) -> Result<Option<String>, Error> {
+        self.extension_registry.find_common_ancestor(a, b)
+    }
+    
+    /// Find the longest path between two interfaces
+    fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        self.extension_registry.find_longest_path(source, target)
+    }
+}
+
     /// Create a new adapter with both registries
     pub fn new_with_visualization(
         extension_registry: ThreadSafeInterfaceExtensionRegistry,
-        visualization_registry: ThreadSafeInterfaceRegistryVisualization,
-    ) -> Self {
-        Self {
+        visualization_registry: Box<dyn InterfaceRegistryVisualization + Send + Sync>,
+    ) -> InterfaceRegistryAdapter {
+        InterfaceRegistryAdapter {
             extension_registry,
             visualization_registry: Some(visualization_registry),
         }
     }
 
-    /// Get a reference to the extension registry
-    pub fn extension_registry(&self) -> &ThreadSafeInterfaceExtensionRegistry {
-        &self.extension_registry
+/// Custom implementation for the adapter - doesn't actually implement the trait directly
+impl InterfaceRegistryAdapter {
+    fn get_inheritance_distance(&self, source: &str, target: &str) -> Result<Option<usize>, Error> {
+        // Use the internal extension registry implementation
+        match InterfaceRegistryExtensionWithVisualization::get_inheritance_distance(&self.extension_registry, source, target) {
+            Ok(distance) => Ok(distance),
+            Err(e) => Err(e),
+        }
     }
-
-    /// Get a reference to the visualization registry if available
-    pub fn visualization_registry(&self) -> Option<&ThreadSafeInterfaceRegistryVisualization> {
-        self.visualization_registry.as_ref()
+    
+    fn find_all_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        // Use the internal extension registry implementation
+        match InterfaceRegistryExtensionWithVisualization::find_all_paths(&self.extension_registry, source, target) {
+            Ok(paths) => Ok(paths),
+            Err(e) => Err(e),
+        }
     }
-}
-
-/// Implement the InterfaceRegistryExtensionWithVisualization trait for the adapter
-impl InterfaceRegistryExtensionWithVisualization for InterfaceRegistryAdapter {
+    
+    fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error> {
+        // Use the internal extension registry implementation
+        match InterfaceRegistryExtensionWithVisualization::find_diamond_inheritance_patterns(&self.extension_registry) {
+            Ok(patterns) => Ok(patterns),
+            Err(e) => Err(e),
+        }
+    }
     #[instrument(level = "debug")]
     fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
         // Always delegate to the extension registry

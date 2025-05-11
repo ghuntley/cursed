@@ -1,297 +1,278 @@
 //! # Interface Registry Extensions
 //!
-//! This module provides support for tracking interface extension relationships
-//! in the compiler's interface registry. It allows the compiler to determine
-//! if one interface extends another, either directly or indirectly.
-//!
-//! The registry maintains a graph of interface extension relationships and
-//! provides methods to query these relationships efficiently.
+//! This module provides extension traits and implementations for the interface registry
+//! to support additional features like caching, LRU cache, and visualization.
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
-use tracing::{debug, info, trace, warn, instrument};
-
 use crate::error::Error;
+use tracing::{debug, trace, instrument};
 
-/// Tracks interface extension relationships
-pub struct InterfaceExtensionRegistry {
-    /// Maps interface names to the set of interfaces they directly extend
-    direct_extensions: HashMap<String, HashSet<String>>,
+/// Extension trait for interface registries to provide additional functionality
+pub trait InterfaceRegistryExtension: Send + Sync {
+    /// Register a new interface
+    fn register_interface(&mut self, name: &str);
     
-    /// Maps interface names to the set of interfaces they indirectly extend (transitive closure)
-    transitive_extensions: HashMap<String, HashSet<String>>,
+    /// Register an extension relationship between interfaces
+    fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error>;
     
-    /// Maps interface names to the set of interfaces that directly extend them
-    reverse_extensions: HashMap<String, HashSet<String>>,
+    /// Check if an extension relationship exists between interfaces
+    fn has_extension(&self, source: &str, target: &str) -> Result<bool, Error>;
+    
+    /// Get all registered interfaces
+    fn get_all_interfaces(&self) -> Option<HashSet<String>>;
+    
+    /// Get all direct extensions of an interface
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    
+    /// Get all direct implementers of an interface
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    
+    /// Check if an interface extends another interface (direct or indirect)
+    fn extends(&self, source: &str, target: &str) -> Result<bool, Error>;
+    
+    /// Find a common ancestor between two interfaces
+    fn find_common_ancestor(&self, a: &str, b: &str) -> Result<Option<String>, Error>;
+    
+    /// Find the longest path between two interfaces
+    fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error>;
 }
 
-impl InterfaceExtensionRegistry {
-    /// Creates a new empty interface extension registry
-    pub fn new() -> Self {
-        InterfaceExtensionRegistry {
-            direct_extensions: HashMap::new(),
-            transitive_extensions: HashMap::new(),
-            reverse_extensions: HashMap::new(),
+/// A thread-safe implementation of InterfaceRegistryExtension
+pub struct ThreadSafeInterfaceExtensionRegistry {
+    /// Direct extensions (interface -> set of interfaces it directly extends)
+    direct_extensions: RwLock<HashMap<String, HashSet<String>>>,
+    
+    /// Direct implementers (interface -> set of interfaces that directly extend it)
+    direct_implementers: RwLock<HashMap<String, HashSet<String>>>,
+    
+    /// All registered interfaces
+    interfaces: RwLock<HashSet<String>>,
+}
+
+impl ThreadSafeInterfaceExtensionRegistry {
+    /// Create a new thread-safe interface registry
+    pub fn new() -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self {
+            direct_extensions: RwLock::new(HashMap::new()),
+            direct_implementers: RwLock::new(HashMap::new()),
+            interfaces: RwLock::new(HashSet::new()),
+        }))
+    }
+}
+
+impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
+    #[instrument(skip(self), level = "debug")]
+    fn register_interface(&mut self, name: &str) {
+        self.interfaces.write().unwrap().insert(name.to_string());
+        debug!("Registered interface: {}", name);
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        // Ensure both interfaces exist
+        if !self.interfaces.read().unwrap().contains(source) {
+            return Err(Error::NotFound(format!("Source interface '{}' not found", source)));
+        }
+        
+        if !self.interfaces.read().unwrap().contains(target) {
+            return Err(Error::NotFound(format!("Target interface '{}' not found", target)));
+        }
+        
+        // Add to direct extensions
+        self.direct_extensions.write().unwrap()
+            .entry(source.to_string())
+            .or_insert_with(HashSet::new)
+            .insert(target.to_string());
+        
+        // Add to direct implementers
+        self.direct_implementers.write().unwrap()
+            .entry(target.to_string())
+            .or_insert_with(HashSet::new)
+            .insert(source.to_string());
+        
+        debug!("Registered extension: {} extends {}", source, target);
+        Ok(())
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn has_extension(&self, source: &str, target: &str) -> Result<bool, Error> {
+        if let Some(extensions) = self.direct_extensions.read().unwrap().get(source) {
+            if extensions.contains(target) {
+                return Ok(true);
+            }
+        }
+        
+        Ok(false)
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+        Some(self.interfaces.read().unwrap().clone())
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        if let Some(extensions) = self.direct_extensions.read().unwrap().get(interface) {
+            Ok(Some(extensions.clone()))
+        } else {
+            if !self.interfaces.read().unwrap().contains(interface) {
+                return Err(Error::NotFound(format!("Interface '{}' not found", interface)));
+            }
+            Ok(None)
         }
     }
     
-    /// Registers that one interface extends another
-    pub fn register_extension(&mut self, interface: &str, extends: &str) -> Result<(), Error> {
-        trace!("Registering that {} extends {}", interface, extends);
-        
-        // Skip self-extension (not allowed)
-        if interface == extends {
-            return Err(Error::SemanticError(format!(
-                "Interface {} cannot extend itself", interface
-            )));
+    #[instrument(skip(self), level = "trace")]
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        if let Some(implementers) = self.direct_implementers.read().unwrap().get(interface) {
+            Ok(Some(implementers.clone()))
+        } else {
+            if !self.interfaces.read().unwrap().contains(interface) {
+                return Err(Error::NotFound(format!("Interface '{}' not found", interface)));
+            }
+            Ok(None)
+        }
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        if source == target {
+            return Ok(true); // An interface extends itself
         }
         
-        // Update direct extensions mapping
-        self.direct_extensions
-            .entry(interface.to_string())
-            .or_insert_with(HashSet::new)
-            .insert(extends.to_string());
+        // Check if there is a direct extension
+        if self.has_extension(source, target)? {
+            return Ok(true);
+        }
         
-        // Update reverse extensions mapping
-        self.reverse_extensions
-            .entry(extends.to_string())
-            .or_insert_with(HashSet::new)
-            .insert(interface.to_string());
+        // Recursively check extensions
+        if let Some(extensions) = self.get_direct_extensions(source)? {
+            for ext in extensions {
+                if self.extends(&ext, target)? {
+                    return Ok(true);
+                }
+            }
+        }
         
-        // Clear transitive extensions cache to force recomputation
-        self.transitive_extensions.clear();
+        Ok(false)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn find_common_ancestor(&self, a: &str, b: &str) -> Result<Option<String>, Error> {
+        // First check if either is an ancestor of the other
+        if self.extends(a, b)? {
+            return Ok(Some(b.to_string()));
+        }
+        
+        if self.extends(b, a)? {
+            return Ok(Some(a.to_string()));
+        }
+        
+        // Get the ancestors of a
+        let mut a_ancestors = HashSet::new();
+        self.collect_ancestors(a, &mut a_ancestors)?;
+        
+        // Get the ancestors of b
+        let mut b_ancestors = HashSet::new();
+        self.collect_ancestors(b, &mut b_ancestors)?;
+        
+        // Find the common ancestors
+        let common_ancestors: Vec<_> = a_ancestors.intersection(&b_ancestors).cloned().collect();
+        
+        // Return the first common ancestor found
+        Ok(common_ancestors.first().cloned())
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        if !self.extends(source, target)? {
+            return Ok(None);
+        }
+        
+        // Use dynamic programming to find the longest path
+        let mut memo = HashMap::new();
+        let path = self.find_longest_path_dp(source, target, &mut memo)?;
+        
+        Ok(Some(path))
+    }
+}
+
+impl ThreadSafeInterfaceExtensionRegistry {
+    /// Helper method to collect all ancestors of an interface
+    #[instrument(skip(self, ancestors), level = "trace")]
+    fn collect_ancestors(&self, interface: &str, ancestors: &mut HashSet<String>) -> Result<(), Error> {
+        if let Some(extensions) = self.get_direct_extensions(interface)? {
+            for ext in extensions {
+                ancestors.insert(ext.clone());
+                self.collect_ancestors(&ext, ancestors)?;
+            }
+        }
         
         Ok(())
     }
     
-    /// Gets the set of interfaces that a given interface directly extends
-    pub fn get_direct_extensions(&self, interface: &str) -> Option<HashSet<String>> {
-        self.direct_extensions.get(interface).cloned()
-    }
-    
-    /// Gets the set of interfaces that directly extend a given interface
-    pub fn get_direct_implementors(&self, interface: &str) -> Option<HashSet<String>> {
-        self.reverse_extensions.get(interface).cloned()
-    }
-    
-    /// Checks if one interface extends another (directly or indirectly)
-    #[instrument(level = "trace", skip(self))]
-    pub fn does_extend(&mut self, interface: &str, extends: &str) -> bool {
-        trace!("Checking if {} extends {}", interface, extends);
-        
-        // Trivial case: every interface extends itself
-        if interface == extends {
-            return true;
-        }
-        
-        // Check the transitive extensions cache
-        if let Some(extensions) = self.transitive_extensions.get(interface) {
-            if extensions.contains(extends) {
-                return true;
-            }
-        }
-        
-        // If not in cache, compute transitive extensions for this interface
-        let transitive = self.compute_transitive_extensions(interface);
-        
-        // Cache the result
-        self.transitive_extensions.insert(interface.to_string(), transitive.clone());
-        
-        // Check if the target interface is in the transitive set
-        transitive.contains(extends)
-    }
-    
-    /// Computes the transitive closure of interface extensions
-    fn compute_transitive_extensions(&self, interface: &str) -> HashSet<String> {
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        
-        // Start with direct extensions
-        if let Some(direct) = self.direct_extensions.get(interface) {
-            for ext in direct {
-                queue.push_back(ext.clone());
-                result.insert(ext.clone());
-                visited.insert(ext.clone());
-            }
-        }
-        
-        // Breadth-first search to find all transitive extensions
-        while let Some(current) = queue.pop_front() {
-            if let Some(next_level) = self.direct_extensions.get(&current) {
-                for ext in next_level {
-                    if !visited.contains(ext) {
-                        queue.push_back(ext.clone());
-                        result.insert(ext.clone());
-                        visited.insert(ext.clone());
-                    }
-                }
-            }
-        }
-        
-        result
-    }
-    
-    /// Gets all interfaces in the registry
-    pub fn get_all_interfaces(&self) -> HashSet<String> {
-        let mut result = HashSet::new();
-        
-        // Add all interfaces from direct_extensions (as keys)
-        for key in self.direct_extensions.keys() {
-            result.insert(key.clone());
-        }
-        
-        // Add all interfaces from direct_extensions (as values)
-        for values in self.direct_extensions.values() {
-            for value in values {
-                result.insert(value.clone());
-            }
-        }
-        
-        // Add all interfaces from reverse_extensions (as keys)
-        for key in self.reverse_extensions.keys() {
-            result.insert(key.clone());
-        }
-        
-        result
-    }
-    
-    /// Gets the complete extension hierarchy for visualization or debugging
-    pub fn get_extension_hierarchy(&self) -> HashMap<String, HashSet<String>> {
-        self.direct_extensions.clone()
-    }
-}
-
-/// Thread-safe version of InterfaceExtensionRegistry
-pub struct ThreadSafeInterfaceExtensionRegistry {
-    /// The registry wrapped in a read-write lock
-    registry: Arc<RwLock<InterfaceExtensionRegistry>>,
-}
-
-impl ThreadSafeInterfaceExtensionRegistry {
-    /// Creates a new empty thread-safe interface extension registry
-    pub fn new() -> Self {
-        ThreadSafeInterfaceExtensionRegistry {
-            registry: Arc::new(RwLock::new(InterfaceExtensionRegistry::new())),
-        }
-    }
-    
-    /// Registers that one interface extends another
-    pub fn register_extension(&self, interface: &str, extends: &str) -> Result<(), Error> {
-        let mut registry = self.registry.write().map_err(|e| {
-            Error::Compilation(format!(
-                "Failed to acquire write lock on interface registry: {}", e
-            ))
-        })?;
-        
-        registry.register_extension(interface, extends)
-    }
-    
-    /// Gets the set of interfaces that a given interface directly extends
-    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        let registry = self.registry.read().map_err(|e| {
-            Error::Compilation(format!(
-                "Failed to acquire read lock on interface registry: {}", e
-            ))
-        })?;
-        
-        Ok(registry.get_direct_extensions(interface))
-    }
-    
-    /// Gets the set of interfaces that directly extend a given interface
-    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        let registry = self.registry.read().map_err(|e| {
-            Error::Compilation(format!(
-                "Failed to acquire read lock on interface registry: {}", e
-            ))
-        })?;
-        
-        Ok(registry.get_direct_implementors(interface))
-    }
-    
-    /// Checks if one interface extends another (directly or indirectly)
-    pub fn does_extend(&self, interface: &str, extends: &str) -> Result<bool, Error> {
-        let mut registry = self.registry.write().map_err(|e| {
-            Error::Compilation(format!(
-                "Failed to acquire write lock on interface registry: {}", e
-            ))
-        })?;
-        
-        Ok(registry.does_extend(interface, extends))
-    }
-    
-    /// Gets all interfaces in the registry
-    pub fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
-        let registry = self.registry.read().map_err(|e| {
-            Error::Compilation(format!(
-                "Failed to acquire read lock on interface registry: {}", e
-            ))
-        })?;
-        
-        Ok(registry.get_all_interfaces())
-    }
-    
-    /// Gets the complete extension hierarchy for visualization or debugging
-    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
-        let registry = self.registry.read().map_err(|e| {
-            Error::Compilation(format!(
-                "Failed to acquire read lock on interface registry: {}", e
-            ))
-        })?;
-        
-        Ok(registry.get_extension_hierarchy())
-    }
-    
-    /// Find paths between two interfaces using breadth-first search
-    #[instrument(skip(self), level = "debug")]
-    pub fn find_interface_paths(
+    /// Helper method to find the longest path between two interfaces using dynamic programming
+    #[instrument(skip(self, memo), level = "trace")]
+    fn find_longest_path_dp(
         &self,
-        source_interface: &str,
-        target_interface: &str,
-        max_paths: usize,
-    ) -> Result<Vec<Vec<String>>, Error> {
-        debug!("Finding paths from {} to {}", source_interface, target_interface);
-        
-        // Initialize data structures for BFS
-        let mut paths = Vec::new();
-        let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        
-        // Start with source
-        queue.push_back(vec![source_interface.to_string()]);
-        visited.insert(source_interface.to_string());
-        
-        // Handle the case where source and target are the same
-        if source_interface == target_interface {
-            return Ok(vec![vec![source_interface.to_string()]]);
+        source: &str,
+        target: &str,
+        memo: &mut HashMap<(String, String), Vec<String>>
+    ) -> Result<Vec<String>, Error> {
+        // Check if result is already memoized
+        let key = (source.to_string(), target.to_string());
+        if let Some(path) = memo.get(&key) {
+            return Ok(path.clone());
         }
         
-        // Perform BFS to find paths
-        while let Some(path) = queue.pop_front() {
-            let current = path.last().unwrap();
-            
-            // If we've reached the target, add this path
-            if current == target_interface {
-                paths.push(path);
-                if paths.len() >= max_paths {
-                    break;
-                }
-                continue;
-            }
-            
-            // Get extensions from the current node
-            if let Some(extensions) = self.get_direct_extensions(current)? {
-                for extension in extensions {
-                    if !visited.contains(&extension) {
-                        let mut new_path = path.clone();
-                        new_path.push(extension.clone());
-                        queue.push_back(new_path);
-                        visited.insert(extension);
+        // Direct case
+        if source == target {
+            let path = vec![source.to_string()];
+            memo.insert(key, path.clone());
+            return Ok(path);
+        }
+        
+        // If there is a direct extension, return it
+        if self.has_extension(source, target)? {
+            let path = vec![source.to_string(), target.to_string()];
+            memo.insert(key, path.clone());
+            return Ok(path);
+        }
+        
+        // Try all possible paths through extensions
+        let mut longest_path = Vec::new();
+        if let Some(extensions) = self.get_direct_extensions(source)? {
+            for ext in extensions {
+                if self.extends(&ext, target)? {
+                    let mut path = self.find_longest_path_dp(&ext, target, memo)?;
+                    path.insert(0, source.to_string());
+                    
+                    if path.len() > longest_path.len() {
+                        longest_path = path;
                     }
                 }
             }
         }
         
-        Ok(paths)
+        // Memoize the result
+        memo.insert(key, longest_path.clone());
+        
+        Ok(longest_path)
     }
+}
+
+/// Create a thread-safe interface registry with the given name and interfaces
+pub fn create_interface_registry(name: &str, interfaces: &[&str]) -> Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>> {
+    let registry = ThreadSafeInterfaceExtensionRegistry::new();
+    
+    // Register interfaces
+    for interface in interfaces {
+        registry.write().unwrap().register_interface(interface);
+    }
+    
+    debug!("Created interface registry: {} with {} interfaces", 
+           name, interfaces.len());
+    
+    registry
 }

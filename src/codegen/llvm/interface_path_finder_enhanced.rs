@@ -224,19 +224,28 @@ impl InterfaceInheritancePath {
     }
 }
 
-/// Enhanced path finder for interface inheritance relationships
-pub struct EnhancedInterfacePathFinder<'ctx> {
+/// Enhanced path finder for interface inheritance relationships trait
+pub trait EnhancedInterfacePathFinder {
+    /// Find path between interfaces
+    fn find_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error>;
+    
+    /// Visualize the path between interfaces
+    fn visualize_path(&self, source: &str, target: &str) -> Result<Option<String>, Error>;
+}
+
+/// Concrete implementation of EnhancedInterfacePathFinder
+pub struct EnhancedInterfacePathFinderImpl<'ctx> {
     /// Reference to the interface type registry
     registry: &'ctx InterfaceTypeRegistry<'ctx>,
 }
 
-impl<'ctx> EnhancedInterfacePathFinder<'ctx> {
+impl<'ctx> EnhancedInterfacePathFinderImpl<'ctx> {
     /// Creates a new enhanced path finder
     ///
     /// # Arguments
     /// * `registry` - Reference to the interface type registry
     pub fn new(registry: &'ctx InterfaceTypeRegistry<'ctx>) -> Self {
-        EnhancedInterfacePathFinder { registry }
+        EnhancedInterfacePathFinderImpl { registry }
     }
     
     /// Finds a path between two interfaces by name
@@ -325,5 +334,18 @@ impl<'ctx> EnhancedInterfacePathFinder<'ctx> {
     ) -> Result<String, Error> {
         // Use the trait method to visualize the path
         self.registry.visualize_path(source_id, target_id)
+    }
+}
+
+// Implement the trait for our concrete implementation
+impl<'ctx> EnhancedInterfacePathFinder for EnhancedInterfacePathFinderImpl<'ctx> {
+    fn find_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        let path = self.find_path_by_name(source, target)?;
+        Ok(path.map(|p| p.names))
+    }
+    
+    fn visualize_path(&self, source: &str, target: &str) -> Result<Option<String>, Error> {
+        let path = self.find_path_by_name(source, target)?;
+        Ok(path.map(|p| p.to_string()))
     }
 }

@@ -9,7 +9,9 @@
 //! architecture, where functionality is added to LlvmCodeGenerator through
 //! trait implementation.
 
-use crate::ast::{BlockStatement, Expression, RangeExpression};
+use crate::ast::Expression;
+use crate::ast::statements::BlockStatement;
+use crate::ast::expressions::RangeExpression;
 use crate::codegen::llvm::context::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::variables::VariableHandling;

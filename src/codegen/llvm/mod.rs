@@ -47,8 +47,14 @@
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
 
+// Re-export type registry helpers
+pub use self::interface_type_registry_helpers::TypeNameRegistry;
+
 // Import type assertion implementation modules
 use type_assertion_implementation::register_type_assertion_implementation;
+
+// Re-export common utilities for interface type assertions
+pub use self::interface_type_assertion_common::{get_result_type, get_source_location_type, build_struct_value, call_error_propagation_function, is_string_type_by_name, create_string_constant_from_codegen, find_inheritance_path, InterfaceRegistry, InterfacePathFinder, get_interface_registry, get_interface_path_finder, detect_diamond_inheritance, MutableInterfaceRegistry, get_interface_registry_mut};
 
 // Re-export binary compiler
 pub use self::binary_compiler::BinaryCompiler;
@@ -63,6 +69,8 @@ pub use self::optimized_dynamic_dispatch::{OptimizedDynamicDispatch, OptimizedDy
 pub use self::integrated_interface_operations::IntegratedInterfaceOperations;
 pub use self::auto_interface_dispatcher::{AutoInterfaceDispatcher, AutoInterfaceDispatchExtension};
 pub use self::auto_interface_dispatcher_integration::AutoInterfaceDispatcherIntegration;
+// pub use self::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling; // Commented out due to conflicts
+// pub use self::interface_path_finder_enhanced::EnhancedInterfacePathFinder; // Commented out due to conflicts
 
 // Re-export traits for module functionality
 pub use self::container_layout::{ContainerLayout, ContainerLayoutExtension, ContainerLayoutManager};
@@ -154,7 +162,7 @@ pub use self::interface_path_finder_enhanced_fix::EnhancedInterfacePathFinder;
 // Interface type assertion with registry integration for enhanced error diagnostics
 pub use self::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
 // Enhanced error handling for interface type assertions with proper propagation between systems
-pub use self::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling;
+// pub use self::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling; // Commented out due to conflicts
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};
@@ -194,8 +202,10 @@ pub mod memory_layout;   // Memory layout management
 pub mod monomorphization;// Function monomorphization implementation
 mod pointer_ops;     // Standardized pointer operations implementation
 pub mod pointer;     // Keep for backward compatibility
+pub mod interface_registry; // Interface registry for type assertions
 mod statement;
 mod string_switch;
+mod string_utils;
 pub mod struct_monomorphization;
 mod types;
 mod variables;
@@ -238,6 +248,7 @@ mod interface_type_assertion_debugging; // Enhanced runtime debugging for interf
 mod interface_type_assertion_nesting; // Nesting level tracking for interface type assertions
 mod interface_type_registry; // Registry for storing type information at runtime
 mod interface_type_registry_enhanced; // Enhanced registry for full runtime type information
+pub mod interface_type_registry_common; // Common implementations to avoid duplicate definitions
 mod pointer_type_extension; // Extension trait for pointer element type access
 mod interface_type_assertion_enhanced; // Enhanced type assertions with rich error information
 mod interface_type_assertion_enhanced_impl; // Enhanced interface type assertion implementation for complex inheritance patterns
@@ -262,6 +273,7 @@ mod interface_type_assertion_error_handling; // Enhanced error handling for inte
 mod interface_type_assertion_result_integration; // Result-based error propagation with ? operator integration
 mod interface_type_assertion_result_implementation; // Comprehensive Result implementation with proper ? operator integration
 mod interface_type_assertion_result; // Interface type assertion with Result type and ? operator integration
+pub mod interface_type_assertion_common; // Common utilities for interface type assertions
 pub mod interface_type_assertion_error_propagation_source_location; // Enhanced source location support for error propagation
 pub mod interface_type_assertion_enhanced_source_location; // Improved source location support with file system integration
 pub mod interface_type_assertion_error_propagation_filesystem; // Enhanced error propagation with filesystem integration
@@ -298,6 +310,9 @@ pub use self::container_layout::ContainerKind;
 // Re-export pointer type extension
 pub use self::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtension};
 
+// Re-export string utilities extension
+pub use self::string_utils::StringUtilsExtension;
+
 // Re-export Result integration for interface type assertions
 pub use self::interface_type_assertion_result_integration::TypeAssertionResultIntegration;
 pub use self::interface_type_assertion_result_implementation::{IntegratedResultTypeAssertion, TypeAssertionErrorInfo, register_result_implementation};
@@ -318,11 +333,14 @@ pub use self::interface_type_assertion_diamond_inheritance_handler::register_dia
 // Re-export filesystem source location integration for interface type assertions
 pub use self::interface_type_assertion_filesystem_integration::InterfaceTypeAssertionFilesystemIntegration;
 pub use self::interface_type_assertion_filesystem_integration::register_filesystem_integration as register_filesystem_source_location_integration;
-pub use self::interface_type_assertion_filesystem_integration::InterfaceTypeAssertionFilesystemIntegration as FilesystemSourceLocationIntegration;
+// Removed duplicate FilesystemSourceLocationIntegration declaration - already imported above
 // Re-export benchmarking functionality for interface type assertions
 pub use self::interface_type_assertion_benchmarking::{TypeAssertionBenchmarking, HierarchyPattern, BenchmarkStats, TypeAssertionBenchmark, TypeAssertionBenchmarkSuite};
 
 // Import key modules and traits
 pub use string_switch::*;
+
+// Type registry helpers module
+mod interface_type_registry_helpers;
 pub use interface_field_accessors::InterfaceFieldAccessors;
 // These are already re-exported through self:: in the re-exports section

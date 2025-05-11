@@ -4,6 +4,8 @@
 //! from LlvmCodeGenerator for use by the error recovery implementation.
 
 use crate::codegen::llvm::context::LlvmCodeGenerator;
+use crate::codegen::llvm::util::LlvmCodeGeneratorExtension;
+use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::error::Error;
 use inkwell::types::{BasicTypeEnum, AnyType, BasicType};
 use inkwell::values::{BasicValueEnum, IntValue, PointerValue, BasicMetadataValueEnum};
@@ -49,17 +51,6 @@ pub trait RangeClauseFixedMethodsExtension<'ctx> {
 
 /// Helper methods for the RangeClauseFixedMethodsExtension implementation
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Check if a type is a string type
-    fn is_string_type(&self, ty: BasicTypeEnum<'ctx>) -> bool {
-        if let BasicTypeEnum::PointerType(ptr_ty) = ty {
-            if ptr_ty.get_element_type().is_int_type() {
-                // This is an approximation - assumes char* pattern for strings
-                let int_ty = ptr_ty.get_element_type().into_int_type();
-                return int_ty.get_bit_width() == 8;
-            }
-        }
-        false
-    }
     
     /// Emit code to get the length of a string
     fn emit_string_length(&self, string_value: BasicValueEnum<'ctx>) -> Result<IntValue<'ctx>, Error> {
@@ -141,7 +132,7 @@ impl<'ctx> RangeClauseFixedMethodsExtension<'ctx> for LlvmCodeGenerator<'ctx> {
         let container_type = container.get_type();
         
         // Check if this is a string
-        if self.is_string_type(container_type) {
+        if crate::codegen::llvm::string_utils::StringUtilsExtension::is_string_type(self, container_type) {
             return self.emit_string_length(container);
         }
         
@@ -163,7 +154,7 @@ impl<'ctx> RangeClauseFixedMethodsExtension<'ctx> for LlvmCodeGenerator<'ctx> {
         let container_type = container.get_type();
         
         // Check if this is a string
-        if self.is_string_type(container_type) {
+        if crate::codegen::llvm::string_utils::StringUtilsExtension::is_string_type(self, container_type) {
             return self.emit_string_get_char(container, index);
         }
         
@@ -191,7 +182,7 @@ impl<'ctx> RangeClauseFixedMethodsExtension<'ctx> for LlvmCodeGenerator<'ctx> {
         let container_type = container.get_type();
         
         // For strings, the element type is char (i8)
-        if self.is_string_type(container_type) {
+        if crate::codegen::llvm::string_utils::StringUtilsExtension::is_string_type(self, container_type) {
             return Ok(self.context().i8_type().into());
         }
         

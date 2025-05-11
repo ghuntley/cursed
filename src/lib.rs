@@ -63,36 +63,44 @@ pub mod symbol;
 
 // Re-export cache related modules
 pub use crate::core::interface_registry_cache;
-pub use crate::core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
+pub use crate::core::interface_registry_lru_cache;
+// This module is not yet implemented
+// pub use crate::core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
 
 // Re-export nested interface registry
-pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
+// This module is not yet implemented
+// pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
 
 // Re-export deep nested interface registry
-pub use crate::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, DeepNestedInterfaceChecking, ConstraintPath};
+// These modules are not yet implemented
+// pub use crate::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, DeepNestedInterfaceChecking, ConstraintPath};
 
 // Re-export deep nested async checker integration
-pub use crate::core::deep_nested_async_checker::{DeepNestedAsyncChecker, DeepNestedAsyncConstraintChecking};
+// pub use crate::core::deep_nested_async_checker::{DeepNestedAsyncChecker, DeepNestedAsyncConstraintChecking};
 
 // Re-export deep nested constraint checker
-pub use crate::core::deep_nested_constraint_checker::{DeepNestedConstraintChecking, TypePath, TypePathComponent, DeepConstraintResult};
+// pub use crate::core::deep_nested_constraint_checker::{DeepNestedConstraintChecking, TypePath, TypePathComponent, DeepConstraintResult};
 
 // Re-export work stealing constraint checker
-pub use crate::core::async_constraint_checker_work_stealing::{WorkStealingConstraintChecker, WorkStealingConstraintChecking, WorkStealingStats};
+// This module is not yet implemented
+// pub use crate::core::async_constraint_checker_work_stealing::{WorkStealingConstraintChecker, WorkStealingConstraintChecking, WorkStealingStats};
 
 // Re-export interface registry visualization
-pub use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization};
-pub use crate::core::interface_registry_visualization_implementation;
-pub use crate::core::interface_registry_extension_visualization;
+pub use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, InterfaceRegistryVisualization};
+// These modules are not yet implemented
+// pub use crate::core::interface_registry_visualization_implementation;
+// pub use crate::core::interface_registry_extension_visualization;
 
 // Re-export interface registry extension checking
-pub use crate::core::interface_registry_extension_checking::InterfaceTypeRegistryExtensionChecking;
+// This module is not yet implemented
+// pub use crate::core::interface_registry_extension_checking::InterfaceTypeRegistryExtensionChecking;
 
 // Tests module
 pub mod tests;
 
 // Re-export nested generic instantiation
-pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
+// This module is not yet implemented
+// pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
 
 // Re-export field accessor implementations
 pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
@@ -112,7 +120,9 @@ pub use crate::codegen::llvm::interface_type_assertion_path_visualization::Inter
 pub use crate::codegen::llvm::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
 
 // Export enhanced error handling for interface type assertions
-pub use crate::codegen::llvm::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling;
+// pub use crate::codegen::llvm::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling; // Commented out due to conflicts
+pub use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
+pub use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
 
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol;

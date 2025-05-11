@@ -8,7 +8,9 @@
 //! and debugging context to improve developer experience when dealing with
 //! range clause errors.
 
-use crate::ast::{BlockStatement, Expression, RangeExpression};
+use crate::ast::Expression;
+use crate::ast::statements::BlockStatement;
+use crate::ast::expressions::RangeExpression;
 use crate::codegen::llvm::context::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::statement::StatementCompilation;

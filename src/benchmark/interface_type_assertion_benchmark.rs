@@ -383,26 +383,24 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
 // Helper methods for the benchmarks
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper method to get a mutable reference to the interface registry
-    fn get_interface_registry_mut(&mut self) -> Option<&mut dyn crate::codegen::llvm::interface_registry::InterfaceTypeRegistry> {
-        self.internal_fields.get_mut("interface_registry")
-            .and_then(|boxed| boxed.downcast_mut::<Box<dyn crate::codegen::llvm::interface_registry::InterfaceTypeRegistry>>())
-            .map(|boxed| boxed.as_mut())
+    fn get_interface_registry_mut(&mut self) -> Option<&mut dyn crate::InterfaceTypeRegistry> {
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_mut_impl;
+        get_interface_registry_mut_impl(self)
     }
     
     /// Helper to check if a type implements an interface
     fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> bool {
-        if let Some(registry) = self.get_interface_registry() {
-            registry.type_implements_interface(concrete_type_id, interface_type_id)
-        } else {
-            false
-        }
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::type_implements_impl;
+        type_implements_impl(self, concrete_type_id, interface_type_id).unwrap_or(false)
     }
     
     /// Helper to get the interface registry
-    fn get_interface_registry(&self) -> Option<&dyn crate::codegen::llvm::interface_registry::InterfaceTypeRegistry> {
-        self.internal_fields.get("interface_registry")
-            .and_then(|boxed| boxed.downcast_ref::<Box<dyn crate::codegen::llvm::interface_registry::InterfaceTypeRegistry>>())
-            .map(|boxed| boxed.as_ref())
+    fn get_interface_registry(&self) -> Option<&dyn crate::InterfaceTypeRegistry> {
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_impl;
+        get_interface_registry_impl(self)
     }
     
     /// Helper method for finding a path in an inheritance hierarchy
@@ -425,10 +423,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Helper to get the interface path finder
-    fn get_interface_path_finder(&self) -> Option<&dyn crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder> {
-        self.internal_fields.get("interface_path_finder")
-            .and_then(|boxed| boxed.downcast_ref::<Box<dyn crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder>>())
-            .map(|boxed| boxed.as_ref())
+    fn get_interface_path_finder(&self) -> Option<Box<dyn crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder + '_>> {
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::get_interface_path_finder_impl;
+        get_interface_path_finder_impl(self)
     }
     
     /// Helper to detect diamond inheritance patterns
@@ -436,9 +434,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         &self,
         concrete_type_id: u32,
         interface_type_id: u32
-    ) -> Result<Option<crate::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondInheritancePattern>, Error> {
-        use crate::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondInheritanceDetection;
-        self.detect_diamond_inheritance(concrete_type_id, interface_type_id)
+    ) -> Result<bool, Error> {
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::detect_diamond_inheritance_impl;
+        detect_diamond_inheritance_impl(self, concrete_type_id, interface_type_id)
     }
 }
 

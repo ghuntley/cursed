@@ -6,6 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicU64;
 use rand;
+use tracing::instrument;
 
 // LLVM 17 compatible imports
 use inkwell::builder::Builder;
@@ -25,6 +26,10 @@ use super::errors::*;
 use super::LoopContext;
 use super::monomorphization;
 use super::interface_type_registry;
+use crate::codegen::llvm::interface_type_assertion_filesystem_integration::{
+    InterfaceTypeAssertionFilesystemIntegration, FilesystemSourceLocationIntegration, SourceLocationWithContext,
+};
+use std::io;
 
 /// Information about an imported package
 pub struct ImportedPackageInfo<'ctx> {
@@ -91,6 +96,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) type_assertion_implementation: Option<Box<dyn crate::codegen::llvm::type_assertion::InterfaceTypeAssertion<'ctx> + 'ctx>>,
     // Type assertion debug configuration
     pub(crate) type_assertion_debug_config: Option<crate::codegen::llvm::interface_type_assertion_debug::TypeAssertionDebugConfig>,
+    // Filesystem integration for source location tracking
+    pub(crate) filesystem_integration: InterfaceTypeAssertionFilesystemIntegration,
     
     // Test-only fields for interface hierarchy mocking in unit tests
     #[cfg(test)]
@@ -209,6 +216,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             type_assertion_implementation: None,
             // Initialize type assertion debug configuration
             type_assertion_debug_config: None,
+            // Initialize filesystem integration
+            filesystem_integration: InterfaceTypeAssertionFilesystemIntegration::new(),
             
             // Test-only fields for interface hierarchy mocking in unit tests
             #[cfg(test)]
@@ -783,6 +792,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get the default integer type, or i64 if none is set
     pub fn get_default_integer_type(&self) -> inkwell::types::IntType<'ctx> {
         self.default_integer_type.unwrap_or_else(|| self.context.i64_type())
+    }
+}
+
+
+impl<'ctx> FilesystemSourceLocationIntegration for LlvmCodeGenerator<'ctx> {
+    #[instrument(skip(self), level = "trace")]
+    fn get_source_location(&self, file_path: Option<&Path>, line: Option<usize>) -> Option<SourceLocationWithContext> {
+        self.filesystem_integration.get_source_location(file_path, line)
+    }
+
+    #[instrument(skip(self), level = "trace")]
+    fn get_context_lines(&self, file_path: &Path, line: usize, context_lines: usize) -> io::Result<Vec<String>> {
+        self.filesystem_integration.get_context_lines(file_path, line, context_lines)
     }
 }
 
