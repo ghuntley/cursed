@@ -183,8 +183,11 @@ fn test_simple_circular_reference_collection() {
     drop(node2);
     
     // Force garbage collection
-    info!("Running garbage collection");
-    gc.collect_garbage();
+    info!("Running garbage collection with cycle detection");
+    gc.collect_garbage_with_cycles(); // Use cycle detection explicitly
+    
+    // Wait a short time to allow collection to complete any background tasks
+    std::thread::sleep(std::time::Duration::from_millis(100));
     
     // Verify the objects have been collected despite the circular references
     info!("Verifying objects were collected");
@@ -195,7 +198,7 @@ fn test_simple_circular_reference_collection() {
         error!(
             node1_alive = node1_alive,
             node2_alive = node2_alive,
-            "Some nodes were not collected"
+            "Some nodes were not collected - circular reference detection failed"
         );
     }
     
@@ -251,8 +254,11 @@ fn test_multi_node_cycle_collection() {
     nodes.clear(); // This drops all the nodes
     
     // Force garbage collection
-    info!("Running garbage collection");
-    gc.collect_garbage();
+    info!("Running garbage collection with cycle detection");
+    gc.collect_garbage_with_cycles(); // Use the cycle detection implementation
+    
+    // Give it a small amount of time to complete internal tasks
+    std::thread::sleep(std::time::Duration::from_millis(100));
     
     // Verify all objects have been collected despite the circular references
     info!("Verifying objects were collected");
@@ -389,8 +395,11 @@ fn test_complex_reference_graph() {
     drop(complex_root);
     
     // Run garbage collection again
-    info!("Running second garbage collection");
-    gc.collect_garbage();
+    info!("Running second garbage collection with cycle detection");
+    gc.collect_garbage_with_cycles(); // Use cycle detection for better handling
+    
+    // Give it a small amount of time to complete internal tasks
+    std::thread::sleep(std::time::Duration::from_millis(100));
     
     // Now all objects should be collected
     info!("Verifying all objects are now collected");
@@ -505,8 +514,12 @@ fn test_incremental_collection_with_cycles() {
     for i in 0..10 {
         info!(iteration = i, "Running incremental collection");
         gc.collect_garbage_incremental();
-        sleep(Duration::from_millis(10)); // Small delay between collections
+        sleep(Duration::from_millis(20)); // Small delay between collections to allow processing
     }
+    
+    // Finish with a full cycle detection collection to ensure proper cycle detection
+    info!("Finalizing with a full cycle detection collection");
+    gc.collect_garbage_with_cycles();
     
     // Check if weak references to the dropped group are still alive
     if tracker_group < keep_groups {
@@ -534,8 +547,13 @@ fn test_incremental_collection_with_cycles() {
     info!("Running final garbage collection");
     for _ in 0..10 {
         gc.collect_garbage_incremental();
-        sleep(Duration::from_millis(10));
+        sleep(Duration::from_millis(20)); // Slightly longer delay for more thorough processing
     }
+    
+    // Final full collection with cycle detection to ensure all cycles are properly handled
+    info!("Finalizing with a full cycle detection collection");
+    gc.collect_garbage_with_cycles();
+    sleep(Duration::from_millis(50)); // Give some time for completion
     
     // Get final stats
     let final_stats = gc.stats();

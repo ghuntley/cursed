@@ -402,7 +402,7 @@ mod tests {
     use super::*;
     use std::sync::Arc;
     
-    #[path = "../../tests/common.rs"]
+    #[path = "../../tests/common/mod.rs"]
     mod common;
     
     #[test]

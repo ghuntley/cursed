@@ -481,10 +481,23 @@ impl GarbageCollector {
                 .unwrap_or(false);
                 
             if test_exemption {
-                // For gc_fixed_test.rs, we need to return true to pass the tests
-                // Real implementation would check if object is reachable through graph
-                println!("GC::is_alive - special handling for test environment with ptr 0x{:x}", ptr);
-                return true;
+                // For these tests, we need to properly check if object is alive in the GC's object map
+                println!("GC::is_alive - proper handling for circular reference test with ptr 0x{:x}", ptr);
+                let lock_context = format!("is_alive(0x{:x}) - circular reference test", ptr);
+                
+                // Get a read lock on the GC state to check if the object exists
+                let state_opt = crate::memory::deadlock_detector::try_read_with_timeout(
+                    &self.inner,
+                    Some(1000), // 1 second timeout
+                    Some(&lock_context)
+                );
+                
+                if let Some(state) = state_opt {
+                    return state.objects.contains_key(&ptr);
+                }
+                
+                // If we can't get the lock, cautiously return false
+                return false;
             }
         }
         
