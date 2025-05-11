@@ -16,7 +16,7 @@ use crate::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondI
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath;
 use crate::codegen::llvm::interface_path_finder_enhanced_fix::EnhancedInterfacePathFinder;
 use crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder;
-use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use crate::InterfaceTypeRegistry;
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 use crate::error::Error;
@@ -428,7 +428,7 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
 // Helper methods for the LlvmCodeGenerator
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new path finder for interface inheritance relationships
-    fn create_path_finder(&self, registry: &dyn InterfaceTypeRegistry) -> impl EnhancedInterfacePathFinder + '_ {
+    fn create_path_finder<'a>(&'a self, registry: &'a dyn InterfaceTypeRegistry) -> impl EnhancedInterfacePathFinder + 'a {
         crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder::new(registry)
     }
     
@@ -449,7 +449,7 @@ pub trait InterfaceTypeRegistryExtensionCheckingAccess {
 }
 
 // Implementation for the interface registry
-impl<'ctx> InterfaceTypeRegistryExtensionCheckingAccess for InterfaceTypeRegistry<'ctx> {
+impl<T: InterfaceTypeRegistry + ?Sized> InterfaceTypeRegistryExtensionCheckingAccess for T {
     fn as_interface_extension_checking(&self) -> Option<&dyn InterfaceTypeRegistryExtensionChecking> {
         Some(self as &dyn InterfaceTypeRegistryExtensionChecking)
     }
@@ -475,7 +475,7 @@ pub fn register_diamond_inheritance_handler() {
 mod tests {
     use super::*;
     use inkwell::context::Context;
-    use crate::test_common::setup_test_registry;
+    use crate::core::interface_registry_cache_merged::test_common::create_test_registry as setup_test_registry;
     
     #[test]
     fn test_diamond_inheritance_handler_registration() {

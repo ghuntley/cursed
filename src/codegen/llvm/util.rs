@@ -30,15 +30,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         true // Assume any pointer could be a string pointer
     }
     
-    /// Check if a type is a string type (i8*)
-    #[tracing::instrument(skip(self, ty), fields(type_kind = ?ty), level = "trace")]
-    pub fn is_string_type(&self, ty: BasicTypeEnum<'ctx>) -> bool {
-        if !ty.is_pointer_type() {
-            return false;
-        }
-        
-        // Since get_element_type isn't available, we'll assume any pointer
-        // could be a string pointer. In a real implementation, we'd have better type checking
-        true
-    }
+    // is_string_type was moved to string_utils.rs to avoid duplication
+    // Use StringUtilsExtension trait instead
 }

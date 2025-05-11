@@ -442,8 +442,8 @@ mod tests {
     use inkwell::context::Context;
     use crate::ast::expressions::{TypeAssertion, Identifier, Empty};
     use crate::ast::traits::Expression;
-    use crate::core::interface_registry::InterfaceRegistry;
-    use crate::core::interface_registry_lru_cache::LruCachedRegistry;
+    use crate::InterfaceTypeRegistry;
+use crate::core::interface_registry_lru_cache::LruCachedRegistry;
     
     /// Create a test type assertion
     fn create_test_assertion(type_name: &str) -> TypeAssertion {
@@ -463,7 +463,7 @@ mod tests {
         let builder = context.create_builder();
         
         // Set up a registry
-        let registry: Box<dyn InterfaceRegistry> = Box::new(LruCachedRegistry::new(100));
+        let registry: Box<dyn InterfaceTypeRegistry> = Box::new(LruCachedRegistry::new(100));
         
         // Create a test function
         let void_type = context.void_type();

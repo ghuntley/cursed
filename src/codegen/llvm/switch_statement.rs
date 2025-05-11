@@ -26,7 +26,7 @@ impl<'ctx> SwitchStatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         let switch_value = self.compile_expression(&*stmt.value)?;
         
         // Check if the switch value is a string
-        if switch_value.is_pointer_value() && self.is_string_type(switch_value) {
+        if switch_value.is_pointer_value() && self.is_string_value(switch_value) {
             // Handle string-based switch statement
             let default_case = stmt.default.as_ref();
             return self.compile_string_switch(switch_value, &stmt.cases, default_case);

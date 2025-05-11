@@ -1,21 +1,8 @@
-//! Operating system and environment functionality for CURSED
-//!
-//! The vibe_life package provides operating system functionality for CURSED
-//! programs, similar to Go's os package. It includes functions for working with
-//! environment variables, command-line arguments, the file system, and other
-//! OS-related operations.
-//!
-//! Key features:
-//!
-//! - Environment variables: `getenv`, `setenv`
-//! - Command-line arguments: `args`
-//! - Program control: `exit`
-//! - File system information: `exists`, `getwd`
+//! Original vibe_life functions
 
 use crate::error::Error;
 use crate::object::Object;
 use std::env;
-use std::fs;
 use std::path::Path;
 use std::rc::Rc;
 

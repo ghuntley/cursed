@@ -286,7 +286,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let error_msg_ptr = if let Some(msg) = error_message {
             if !success {
                 // Create a global string constant for the error message
-                self.create_string_constant(msg).into()
+                self.create_error_string_constant(msg).into()
             } else {
                 // Null pointer for success case
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
@@ -303,12 +303,12 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
                 let line = ctx.i32_type().const_int(loc.line as u64, false);
                 let column = ctx.i32_type().const_int(loc.column as u64, false);
                 let file_ptr = if let Some(file) = &loc.file {
-                    self.create_string_constant(file).into()
+                    self.create_error_string_constant(file).into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
                 let source_line_ptr = if !loc.source_line.is_empty() {
-                    self.create_string_constant(&loc.source_line).into()
+                    self.create_error_string_constant(&loc.source_line).into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
@@ -457,10 +457,10 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
                 self.context().i32_type().const_int(location.line as u64, false).into(), // line
                 self.context().i32_type().const_int(location.column as u64, false).into(), // column
                 match &location.file {
-                    Some(file) => self.create_string_constant(file).into(),
+                    Some(file) => self.create_error_string_constant(file).into(),
                     None => self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
                 },
-                self.create_string_constant(&location.source_line).into() // source line
+                self.create_error_string_constant(&location.source_line).into() // source line
             ])
         } else {
             // Default empty location struct
@@ -473,7 +473,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         };
         
         self.call_error_propagation_function(
-            self.create_string_constant(&enhanced_error_message).into(), 
+            self.create_error_string_constant(&enhanced_error_message).into(), 
             BasicValueEnum::into_struct_value(location_struct)
         )?;
         
@@ -626,7 +626,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         
         // Call error propagation function with enhanced type information and better error message
         self.call_error_propagation_function(
-            self.create_string_constant(&error_message).into(),
+            self.create_error_string_constant(&error_message).into(),
             location_info
         )?;
         
@@ -686,54 +686,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     /// Get the LLVM type for Result structure
     fn get_result_type(&self, value_type: BasicTypeEnum<'ctx>) -> StructType<'ctx> {
-        let ctx = self.context();
-        
-        // Enhanced Result structure:
-        // 1. Value of generic type
-        // 2. Success flag (bool)
-        // 3. Error message (string pointer)
-        // 4. Source location information
-        // 5. Expected type ID (i32) - for error reporting
-        // 6. Actual type ID (i32) - for error reporting
-        
-        ctx.struct_type(&[
-            value_type,
-            ctx.bool_type().into(),
-            ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-            self.get_source_location_type().into(),
-            ctx.i32_type().into(), // Expected type ID
-            ctx.i32_type().into()  // Actual type ID
-        ], false)
+        // Use the common implementation
+        crate::codegen::llvm::interface_type_assertion_common::get_result_type(self, value_type)
     }
     
     /// Get the LLVM type for source location information
     fn get_source_location_type(&self) -> StructType<'ctx> {
-        let ctx = self.context();
-        
-        // Source location structure:
-        // 1. Line number (i32)
-        // 2. Column number (i32)
-        // 3. File name (string pointer)
-        // 4. Source line text (string pointer)
-        
-        ctx.struct_type(&[
-            ctx.i32_type().into(),
-            ctx.i32_type().into(),
-            ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-            ctx.i8_type().ptr_type(AddressSpace::default()).into()
-        ], false)
+        // Use the common implementation
+        crate::codegen::llvm::interface_type_assertion_common::get_source_location_type(self)
     }
     
-    /// Create a string constant in the module
-    fn create_string_constant(&self, value: &str) -> PointerValue<'ctx> {
-        let ctx = self.context();
-        let builder = self.builder();
-        
-        // Create global string constant
-        let global_str = builder.build_global_string_ptr(value, "error_str")
-            .expect("Failed to create global string constant");
-        
-        global_str.as_pointer_value()
+    /// Create a string constant in the module for error propagation
+    fn create_error_string_constant(&self, value: &str) -> PointerValue<'ctx> {
+        crate::codegen::llvm::interface_type_assertion_common::create_string_constant_from_codegen(self, value)
     }
     
     /// Call the runtime error propagation function with enhanced type information
@@ -742,90 +707,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         error_message: BasicValueEnum<'ctx>,
         location_info: BasicValueEnum<'ctx>
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Get current module and context
-        let module = self.module();
-        let ctx = self.context();
-        let builder = self.builder();
-        
-        // Get or declare the enhanced error propagation function with type information
-        let propagate_fn = match module.get_function("__cursed_propagate_error_with_type_info") {
-            Some(func) => func,
-            None => {
-                // Declare the enhanced function if it doesn't exist
-                let void_type = ctx.void_type();
-                let fn_type = void_type.fn_type(&[
-                    // Error message
-                    ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-                    // Source location info
-                    self.get_source_location_type().into(),
-                    // Expected type ID
-                    ctx.i32_type().into(),
-                    // Actual type ID 
-                    ctx.i32_type().into(),
-                    // Error type (1 = type assertion error)
-                    ctx.i32_type().into()
-                ], false);
-                
-                module.add_function("__cursed_propagate_error_with_type_info", fn_type, None)
-            }
-        };
-        
-        // Get current type context information
-        let expected_type_id = match self.current_expected_type_id() {
-            Some(id) => ctx.i32_type().const_int(id as u64, false),
-            None => ctx.i32_type().const_int(0, false)
-        };
-        
-        let actual_type_id = match self.current_actual_type_id() {
-            Some(id) => ctx.i32_type().const_int(id as u64, false),
-            None => ctx.i32_type().const_int(0, false)
-        };
-        
-        // Type assertion error code = 1
-        let error_type = ctx.i32_type().const_int(1, false);
-        
-        // Call the enhanced function with type information
-        builder.build_call(
-            propagate_fn,
-            &[
-                error_message,
-                location_info,
-                expected_type_id.into(),
-                actual_type_id.into(),
-                error_type.into()
-            ],
-            "propagate_error_call"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // This function should never return normally, but we need to emit valid LLVM IR
-        Ok(ctx.i8_type().const_int(0, false).into())
+        // Use the common implementation
+        crate::codegen::llvm::interface_type_assertion_common::call_error_propagation_function(
+            self, error_message, location_info
+        )
     }
     
     /// Build a struct value from field values
     fn build_struct_value(&self, fields: &[BasicValueEnum<'ctx>]) -> inkwell::values::StructValue<'ctx> {
-        let ctx = self.context();
-        let builder = self.builder();
-        
-        // Create struct type from field types
-        let struct_type = ctx.struct_type(
-            &fields.iter().map(|v| v.get_type()).collect::<Vec<_>>(),
-            false
-        );
-        
-        // Create empty struct
-        let mut struct_value = struct_type.const_named_struct(&[]);
-        
-        // Insert each field
-        for (i, field) in fields.iter().enumerate() {
-            struct_value = builder.build_insert_value(
-                struct_value,
-                *field,
-                i as u32,
-                &format!("field_{}", i)
-            ).expect("Failed to insert struct field").into_struct_value();
-        }
-        
-        struct_value
+        // Use the common implementation
+        crate::codegen::llvm::interface_type_assertion_common::build_struct_value(self, fields)
     }
 }
 

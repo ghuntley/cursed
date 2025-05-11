@@ -1,6 +1,16 @@
-//! Common utilities for tests
-//! 
-//! This is a compatibility module that re-exports from the main tests/common.rs file
+//! # Common Test Utilities
+//!
+//! This module provides common utilities for tests, including tracing,
+//! timing, and other test-specific functionality.
 
-pub use crate::tests::common::tracing;
-pub use crate::tests::common::timing;
+pub mod tracing;
+pub mod timing;
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_common_module() {
+        // Simple test to ensure the module is properly set up
+        assert!(true);
+    }
+}

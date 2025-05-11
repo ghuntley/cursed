@@ -55,6 +55,9 @@ backtrace = "0.3.69"  # For stack trace capture
 # Glob pattern matching
 glob = "0.3"    # For file path pattern matching
 
+# Cache implementation
+lru = "0.10.0"  # LRU cache implementation
+
 # Structured logging
 tracing = "0.1"  # Structured logging framework
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation
@@ -64,6 +67,7 @@ num_cpus = "1.16"  # For detecting CPU cores
 
 # Date and time handling
 chrono = "0.4"   # Date and time utilities
+hostname = "0.4.1"
 
 # We removed reqwest dependency since we're using mock HTTP responses only
 
@@ -80,6 +84,7 @@ criterion = "0.5"  # For benchmarking
 pretty_assertions = "1.4"  # For nicer test output
 proptest = "1.3"  # For property-based testing
 rand = "0.8.5"  # For randomization in tests
+tempfile = "3.8"  # For temporary files in tests
 
 [workspace]
 members = [

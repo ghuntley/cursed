@@ -319,31 +319,7 @@ impl<'ctx> InterfaceTypeAssertionResult<'ctx> for LlvmCodeGenerator<'ctx> {
     }
 }
 
-/// Extension to LlvmCodeGenerator for creating string constants
-impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Create a string constant in the LLVM module
-    fn create_string_constant(&mut self, string: &str) -> Result<PointerValue<'ctx>, Error> {
-        // Create a global string constant
-        let string_with_null = format!("{}{}", string, "\0"); // Null-terminate the string
-        let string_type = self.context().i8_type().array_type(string_with_null.len() as u32);
-        
-        // Create a global variable for the string
-        let global = self.module().add_global(string_type, None, "error_str");
-        global.set_initializer(&self.context().const_string(string_with_null.as_bytes(), false));
-        global.set_constant(true);
-        global.set_linkage(inkwell::module::Linkage::Private);
-        global.set_unnamed_addr(true);
-        
-        // Get a pointer to the string
-        let ptr = self.builder().build_bitcast(
-            global.as_pointer_value(),
-            self.pointer_type(),
-            "error_str_ptr"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        Ok(ptr.into_pointer_value())
-    }
-}
+
 
 /// Helper trait for Result propagation with ? operator
 pub trait ResultPropagation<'ctx> {

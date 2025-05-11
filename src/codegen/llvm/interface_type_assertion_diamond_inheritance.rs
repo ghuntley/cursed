@@ -17,7 +17,9 @@ use tracing::{debug, error, info, instrument, trace, warn};
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath;
 use crate::codegen::llvm::interface_path_finder_enhanced_fix::EnhancedInterfacePathFinder;
-use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use crate::InterfaceTypeRegistry;
+use crate::codegen::llvm::interface_type_registry_helpers::TypeNameRegistry;
+use crate::codegen::llvm::interface_type_registry_common;
 use crate::error::Error;
 
 /// Represents a diamond inheritance pattern in the type hierarchy
@@ -181,18 +183,20 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> String {
         let mut result = String::new();
         
-        // Get type names for better readability
-        let root_name = self.get_type_name_by_id(pattern.root_type_id)
-            .unwrap_or_else(|| format!("Type#{}", pattern.root_type_id));
+        // Get type names for better readability using the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl;
         
-        let base_name = self.get_type_name_by_id(pattern.base_type_id)
-            .unwrap_or_else(|| format!("Type#{}", pattern.base_type_id));
+        let root_name = get_type_name_by_id_impl(self, pattern.root_type_id)
+            .unwrap_or_else(|_| format!("Type#{}", pattern.root_type_id));
         
-        let left_intermediate_name = self.get_type_name_by_id(pattern.left_intermediate_id)
-            .unwrap_or_else(|| format!("Type#{}", pattern.left_intermediate_id));
+        let base_name = get_type_name_by_id_impl(self, pattern.base_type_id)
+            .unwrap_or_else(|_| format!("Type#{}", pattern.base_type_id));
         
-        let right_intermediate_name = self.get_type_name_by_id(pattern.right_intermediate_id)
-            .unwrap_or_else(|| format!("Type#{}", pattern.right_intermediate_id));
+        let left_intermediate_name = get_type_name_by_id_impl(self, pattern.left_intermediate_id)
+            .unwrap_or_else(|_| format!("Type#{}", pattern.left_intermediate_id));
+        
+        let right_intermediate_name = get_type_name_by_id_impl(self, pattern.right_intermediate_id)
+            .unwrap_or_else(|_| format!("Type#{}", pattern.right_intermediate_id));
         
         // Create a diamond visualization with ASCII art
         result.push_str("Diamond Inheritance Pattern:\n\n");
@@ -217,47 +221,32 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
 
 // Helper methods for diamond inheritance detection
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Get a type name by its ID
-    fn get_type_name_by_id(&self, type_id: u32) -> Option<String> {
-        // First try to get from the registry
-        if let Some(registry) = self.get_interface_registry() {
-            if let Ok(name) = registry.get_type_name(type_id) {
-                return Some(name);
-            }
-        }
-        
-        // Fall back to internal fields
-        let key = format!("type_name_{}", type_id);
-        self.internal_fields.get(&key)
-            .and_then(|boxed| boxed.downcast_ref::<String>())
-            .map(|s| s.clone())
-    }
+    // Using the shared implementation from interface_type_registry_helpers.rs
+    // through the TypeNameRegistry trait
     
-    /// Get the interface path finder
+    /// Use the common implementation from interface_type_registry_common.rs
+    // All interface registry helper methods are now imported from interface_type_registry_common.rs
+    // rather than being defined here
+    
+    /// Get the interface path finder - delegates to common implementation
     fn get_interface_path_finder(&self) -> Option<Box<dyn EnhancedInterfacePathFinder + '_>> {
-        if let Some(registry) = self.get_interface_registry() {
-            // Create a new path finder each time
-            let path_finder = Box::new(crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder::new(registry));
-            return Some(path_finder);
-        }
-        None
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::get_interface_path_finder_impl;
+        get_interface_path_finder_impl(self)
     }
     
-    /// Check if a type implements an interface
+    /// Check if a type implements an interface - delegates to common implementation
     fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> Option<bool> {
-        // Get the interface registry
-        let registry = self.get_interface_registry()?;
-        
-        // Check if the type implements the interface
-        let implements = registry.type_implements_interface(concrete_type_id, interface_type_id);
-        Some(implements)
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::type_implements_impl;
+        type_implements_impl(self, concrete_type_id, interface_type_id)
     }
     
-    /// Get the interface registry
+    /// Get the interface registry - delegates to common implementation
     fn get_interface_registry(&self) -> Option<&dyn InterfaceTypeRegistry> {
-        self.internal_fields.get("interface_registry")
-            .and_then(|boxed| boxed.downcast_ref::<Box<dyn InterfaceTypeRegistry>>())
-            .map(|boxed| boxed.as_ref())
+        // Import the common implementation
+        use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_impl;
+        get_interface_registry_impl(self)
     }
     
     /// Find all paths between two types using BFS traversal

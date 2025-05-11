@@ -197,7 +197,7 @@ pub mod test_common {
     use std::sync::{Arc, RwLock};
     use tracing::{debug, error, info, instrument, trace, warn};
     
-    use crate::core::interface_registry::ThreadSafeInterfaceExtensionRegistry;
+    use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
     use crate::core::interface_registry_extensions::InterfaceRegistryExtension;
     use crate::core::interface_registry_lru_cache::ThreadSafeInterfaceRegistryLruCache;
     use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;

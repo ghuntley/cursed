@@ -257,7 +257,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let error_msg_ptr = if let Some(info) = &error_info {
             if !success {
                 // Create a global string constant for the error message
-                self.create_string_constant(&info.error_message).into()
+                self.create_result_string_constant(&info.error_message).into()
             } else {
                 // Null pointer for success case
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
@@ -270,7 +270,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Create source type name string (or null if success)
         let source_type_ptr = if let Some(info) = &error_info {
             if !success {
-                self.create_string_constant(&info.source_type).into()
+                self.create_result_string_constant(&info.source_type).into()
             } else {
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
             }
@@ -281,7 +281,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Create target type name string (or null if success)
         let target_type_ptr = if let Some(info) = &error_info {
             if !success {
-                self.create_string_constant(&info.target_type).into()
+                self.create_result_string_constant(&info.target_type).into()
             } else {
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
             }
@@ -296,12 +296,12 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
                 let line = ctx.i32_type().const_int(loc.line as u64, false);
                 let column = ctx.i32_type().const_int(loc.column as u64, false);
                 let file_ptr = if let Some(file) = &loc.file {
-                    self.create_string_constant(file).into()
+                    self.create_result_string_constant(file).into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
                 let source_line_ptr = if !loc.source_line.is_empty() {
-                    self.create_string_constant(&loc.source_line).into()
+                    self.create_result_string_constant(&loc.source_line).into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
@@ -327,7 +327,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Type path information for better error messages
         let type_path_ptr = if let Some(info) = &error_info {
             if !success && info.type_path.is_some() {
-                self.create_string_constant(info.type_path.as_ref().unwrap()).into()
+                self.create_result_string_constant(info.type_path.as_ref().unwrap()).into()
             } else {
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
             }
@@ -571,6 +571,8 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get the LLVM type for the enhanced Result structure
     fn get_result_type(&self, value_type: BasicTypeEnum<'ctx>) -> StructType<'ctx> {
+        // Note: This implementation uses a different Result structure than the common one
+        // We maintain it separately since it has a different field layout
         let ctx = self.context();
         
         // Enhanced Result structure:
@@ -595,31 +597,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Get the LLVM type for source location information
     fn get_source_location_type(&self) -> StructType<'ctx> {
-        let ctx = self.context();
-        
-        // Source location structure:
-        // 1. Line number (i32)
-        // 2. Column number (i32)
-        // 3. File name (string pointer)
-        // 4. Source line text (string pointer)
-        
-        ctx.struct_type(&[
-            ctx.i32_type().into(),
-            ctx.i32_type().into(),
-            ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-            ctx.i8_type().ptr_type(AddressSpace::default()).into()
-        ], false)
+        // Use the common implementation
+        crate::codegen::llvm::interface_type_assertion_common::get_source_location_type(self)
     }
     
-    /// Create a string constant in the module
-    fn create_string_constant(&self, value: &str) -> PointerValue<'ctx> {
-        let builder = self.builder();
-        
-        // Create global string constant
-        let global_str = builder.build_global_string_ptr(value, "str_const")
-            .expect("Failed to create global string constant");
-        
-        global_str.as_pointer_value()
+    /// Create a string constant for result implementation
+    fn create_result_string_constant(&self, value: &str) -> PointerValue<'ctx> {
+        crate::codegen::llvm::interface_type_assertion_common::create_string_constant_from_codegen(self, value)
     }
     
     /// Call the runtime error propagation function
@@ -671,28 +655,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Helper to build a struct value from field values
     fn build_struct_value(&self, fields: &[BasicValueEnum<'ctx>]) -> inkwell::values::StructValue<'ctx> {
-        let ctx = self.context();
-        let builder = self.builder();
-        
-        // Create struct type from field types
-        let struct_type = ctx.struct_type(
-            &fields.iter().map(|v| v.get_type()).collect::<Vec<_>>(),
-            false
-        );
-        
-        // Create empty struct and insert each field
-        let mut struct_value = struct_type.const_named_struct(&[]);
-        
-        for (i, field) in fields.iter().enumerate() {
-            struct_value = builder.build_insert_value(
-                struct_value,
-                *field,
-                i as u32,
-                &format!("field_{}", i)
-            ).expect("Failed to insert struct field").into_struct_value();
-        }
-        
-        struct_value
+        crate::codegen::llvm::interface_type_assertion_common::build_struct_value(self, fields)
     }
     
     /// Helper to convert between error types

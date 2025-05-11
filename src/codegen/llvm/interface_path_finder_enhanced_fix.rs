@@ -5,7 +5,7 @@
 //! for diamond inheritance pattern detection.
 
 use crate::error::Error;
-use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use crate::InterfaceTypeRegistry;
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath;
 use std::collections::{HashMap, HashSet, VecDeque};
 use tracing::{debug, instrument};
@@ -60,12 +60,12 @@ pub trait EnhancedInterfacePathFinder {
 /// Concrete implementation of the EnhancedInterfacePathFinder trait that adds multi-path support
 pub struct MultiPathFinder<'ctx> {
     /// The interface type registry used for lookups
-    pub registry: &'ctx InterfaceTypeRegistry<'ctx>,
+    pub registry: &'ctx dyn InterfaceTypeRegistry,
 }
 
 impl<'ctx> MultiPathFinder<'ctx> {
     /// Creates a new multi-path finder
-    pub fn new(registry: &'ctx InterfaceTypeRegistry<'ctx>) -> Self {
+    pub fn new(registry: &'ctx dyn InterfaceTypeRegistry) -> Self {
         MultiPathFinder { registry }
     }
     

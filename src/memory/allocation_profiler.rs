@@ -500,6 +500,8 @@ impl AllocationProfiler {
     }
 }
 
+// AllocationProfiler implementation is defined elsewhere
+
 // Singleton instance of the allocation profiler
 static ALLOCATION_PROFILER: once_cell::sync::Lazy<Mutex<AllocationProfiler>> =
     once_cell::sync::Lazy::new(|| Mutex::new(AllocationProfiler::new()));
