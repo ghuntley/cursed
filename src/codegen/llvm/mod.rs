@@ -136,6 +136,8 @@ pub use self::interface_path_finder_simple::*;
 pub use self::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
 // Interface type assertion with registry integration for enhanced error diagnostics
 pub use self::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
+// Enhanced error handling for interface type assertions with proper propagation between systems
+pub use self::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling;
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};
@@ -235,6 +237,7 @@ pub mod interface_path_finder_simple; // Simple path finding algorithms for inte
 pub mod interface_path_finder_enhanced; // Enhanced path finding algorithms for interface inheritance relationships with visualization
 pub mod interface_type_assertion_with_registry; // Interface type assertion with registry integration
 pub mod interface_registry_extension_checking; // Extension relationship checking for interface inheritance verification
+mod interface_type_assertion_error_handling; // Enhanced error handling for interface type assertions with proper error propagation
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
