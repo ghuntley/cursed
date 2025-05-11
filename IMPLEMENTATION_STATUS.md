@@ -116,12 +116,12 @@ The codebase currently fails to build with numerous errors. Below is a prioritiz
 - ✅ Update conditional compilation flags
 
 12. **Fix borrowing issues:**
-    - Resolve mutable/immutable borrowing conflicts in various methods
-    - Fix lifetime issues in interface type registry
+- ✅ Resolve mutable/immutable borrowing conflicts in various methods
+- ✅ Fix lifetime issues in interface type registry
 
 13. **Fix parser/lexer token issues:**
-    - Update token enum variants in preprocessor.rs
-    - Fix missing token variants (Less, Greater)
+- ✅ Update token enum variants in preprocessor.rs
+- ✅ Fix missing token variants (Less, Greater)
 
 14. **Fix stdlib ambiguous exports:**
     - Resolve naming conflicts in glob re-exports of stdlib modules

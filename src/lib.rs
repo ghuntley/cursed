@@ -80,6 +80,7 @@ pub use crate::core::deep_nested_constraint_checker::{DeepNestedConstraintChecki
 // Re-export interface registry visualization
 pub use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization};
 pub use crate::core::interface_registry_visualization_implementation;
+pub use crate::core::interface_registry_extension_visualization;
 
 // Re-export interface registry extension checking
 pub use crate::core::interface_registry_extension_checking::InterfaceTypeRegistryExtensionChecking;

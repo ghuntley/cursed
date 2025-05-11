@@ -38,6 +38,8 @@ pub enum Token {
     Percent,  // %
     Lt,       // <
     Gt,       // >
+    Less = 38,     // < (alias for Lt)
+    Greater = 39,  // > (alias for Gt)
     Eq,       // ==
     NotEq,    // !=
     LtEq,     // <=
@@ -188,6 +190,8 @@ impl Token {
             TokenType::Percent => Token::Percent,
             TokenType::Lt => Token::Lt,
             TokenType::Gt => Token::Gt,
+            TokenType::Less => Token::Lt,  // Map Less to Lt
+            TokenType::Greater => Token::Gt,  // Map Greater to Gt
             TokenType::Eq => Token::Eq,
             TokenType::NotEq => Token::NotEq,
             TokenType::LtEq => Token::LtEq,
