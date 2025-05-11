@@ -1,3 +1,18 @@
+//! Logging package for the CURSED programming language.
+//!
+//! This module implements a logging package similar to Go's standard logging library.
+//! It provides simple logging capabilities with configurable output format and destination.
+//!
+//! The package offers:
+//! - Customizable log prefixes and flags
+//! - Timestamp formatting options
+//! - File and line number information
+//! - Multiple output destinations
+//! - Fatal and panic logging functions
+//!
+//! The primary type is `Logger`, which handles the actual logging functionality.
+//! A standard logger instance is provided for common use cases.
+
 use crate::lexer::token::Token;
 use crate::memory::{Traceable, HeapObject, GcHeapObject, Trace};
 use crate::object::{Environment, Object, ObjectType};
@@ -43,15 +58,42 @@ impl Traceable for WriterObject {
     }
 }
 
-// Logger represents an active logging object
+/// A Logger represents an active logging object that can be used for logging messages.
+///
+/// The Logger provides methods for printing formatted log messages with configurable
+/// prefix, timestamp, and source location information. Multiple Logger instances
+/// can write to different outputs with different formatting configurations.
+///
+/// This is the core type of the logging package, similar to Go's log.Logger.
 #[derive(Clone)]
 pub struct Logger {
+    /// The output destination for log messages
     writer: WriterObject,
+    /// Prefix string to include with each log message
     prefix: String,
+    /// Flags controlling log message formatting
     flag: i64,
 }
 
 impl Logger {
+    /// Creates a new Logger with the specified writer, prefix, and flags.
+    ///
+    /// # Parameters
+    ///
+    /// * `writer` - The output destination for log messages
+    /// * `prefix` - A prefix string that will be included at the beginning of each log message
+    /// * `flag` - Bit flags that control formatting options (see LDATE, LTIME, etc. constants)
+    ///
+    /// # Returns
+    ///
+    /// A new Logger instance configured with the specified parameters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let stderr = WriterObject::new(io::stderr());
+    /// let logger = Logger::new(stderr, "[ERROR] ".to_string(), LDATE | LTIME);
+    /// ```
     pub fn new(writer: WriterObject, prefix: String, flag: i64) -> Self {
         Logger {
             writer,
@@ -141,7 +183,23 @@ impl Logger {
         }
     }
 
-    // Low-level output method
+    /// Low-level output method that formats and writes a log message.
+    ///
+    /// This is the core method used by all other logging methods. It formats the message
+    /// with the appropriate prefix, timestamp, and source location information based on
+    /// the logger's flags, then writes it to the output stream.
+    ///
+    /// # Parameters
+    ///
+    /// * `calldepth` - Call frame depth, used for runtime caller detection
+    /// * `s` - The message string to log
+    /// * `file` - Optional source file name where the log was called from
+    /// * `line` - Optional line number where the log was called from
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the message was successfully written
+    /// * `Err(io::Error)` - If there was an error writing to the output
     pub fn output(&self, calldepth: i32, s: String, file: Option<&str>, line: Option<i32>) -> Result<(), io::Error> {
         let mut buf = String::new();
         self.format_header(&mut buf, calldepth, file, line);
@@ -275,7 +333,10 @@ fn format_with_args(format_str: String, args: Vec<Object>) -> String {
     result
 }
 
-// Standard logger instance
+/// Standard logger instance that's used by the module-level functions.
+/// 
+/// This thread-local provides a default logger that writes to stderr with standard flags.
+/// All module-level functions like `print`, `fatal`, etc. use this logger internally.
 thread_local! {
     static STD_LOGGER: RefCell<Logger> = RefCell::new({
         let stderr = WriterObject::new(io::stderr());
@@ -283,11 +344,34 @@ thread_local! {
     });
 }
 
-// Module functions
+/// Module functions for the standard logger
+
+/// Returns the current prefix string for the standard logger.
+///
+/// # Returns
+///
+/// The prefix string that will be printed before each log message.
+///
+/// # Examples
+///
+/// ```
+/// let current_prefix = oglogging::prefix();
+/// ```
 pub fn prefix() -> String {
     STD_LOGGER.with(|logger| logger.borrow().prefix())
 }
 
+/// Sets the output prefix for the standard logger.
+///
+/// # Parameters
+///
+/// * `prefix` - The prefix string to be printed before each log message
+///
+/// # Examples
+///
+/// ```
+/// oglogging::set_prefix("[ERROR] ".to_string());
+/// ```
 pub fn set_prefix(prefix: String) {
     STD_LOGGER.with(|logger| logger.borrow_mut().set_prefix(prefix))
 }

@@ -11,6 +11,8 @@
 
 use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
+use std::env;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::error::Error;
 use crate::error::SourceLocation;
@@ -18,8 +20,83 @@ use crate::error::type_assertion_error::TypeAssertionError;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 
+/// Configuration for the type assertion debugging system
+/// Controls the level of detail and when debugging information is displayed
+#[derive(Debug, Clone)]
+pub struct TypeAssertionDebugConfig {
+    /// Whether to print detailed type information for all assertions
+    pub print_all_assertions: bool,
+    
+    /// Whether to print only failed assertions
+    pub print_failed_assertions: bool,
+    
+    /// Whether to include type hierarchy information
+    pub include_hierarchy: bool,
+    
+    /// Whether to include type path visualization
+    pub include_path_visualization: bool,
+    
+    /// Whether to generate runtime debug information
+    pub runtime_debug: bool,
+}
+
+impl Default for TypeAssertionDebugConfig {
+    fn default() -> Self {
+        // Read debug level from environment
+        let debug_env = env::var("CURSED_DEBUG").unwrap_or_else(|_| "0".to_string());
+        let debug_level = debug_env.parse::<u8>().unwrap_or(0);
+        
+        match debug_level {
+            0 => Self {
+                print_all_assertions: false,
+                print_failed_assertions: false,
+                include_hierarchy: false,
+                include_path_visualization: false,
+                runtime_debug: false,
+            },
+            1 => Self {
+                print_all_assertions: false,
+                print_failed_assertions: true,
+                include_hierarchy: false,
+                include_path_visualization: true,
+                runtime_debug: false,
+            },
+            _ => Self {
+                print_all_assertions: true,
+                print_failed_assertions: true,
+                include_hierarchy: true,
+                include_path_visualization: true,
+                runtime_debug: true,
+            },
+        }
+    }
+}
+
+// Global flag to track if debugging is registered
+static DEBUG_REGISTERED: AtomicBool = AtomicBool::new(false);
+
+/// Register the type assertion debug system
+pub fn register_type_assertion_debug() {
+    // Only register once
+    if DEBUG_REGISTERED.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst).is_ok() {
+        println!("Registered enhanced type assertion debugging system");
+        
+        // Initialize from environment if specified
+        if let Ok(debug_value) = env::var("CURSED_DEBUG") {
+            if let Ok(level) = debug_value.parse::<u8>() {
+                if level > 0 {
+                    println!("Type assertion debugging enabled at level {}", level);
+                }
+            }
+        }
+    }
+}
+
 /// A trait that enhances the debugging capabilities for interface type assertions
 pub trait InterfaceTypeAssertionDebug<'ctx> {
+    /// Get the current debug config or create a default one
+    fn get_debug_config(&self) -> TypeAssertionDebugConfig;
+    
     /// Generate detailed debug information about a type assertion
     fn debug_type_assertion(
         &mut self,
@@ -49,7 +126,11 @@ pub trait InterfaceTypeAssertionDebug<'ctx> {
     ) -> Result<String, Error>;
 }
 
-impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
+impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {    
+    /// Get the current debug config or create a default one
+    fn get_debug_config(&self) -> TypeAssertionDebugConfig {
+        self.type_assertion_debug_config.clone().unwrap_or_default()
+    }
     fn debug_type_assertion(
         &mut self,
         interface_value: BasicValueEnum<'ctx>,
@@ -151,6 +232,9 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         target_type: &str,
         source_location: Option<SourceLocation>,
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Get configuration
+        let config = self.get_debug_config();
+        
         // Get type information
         let (actual_type_id, actual_type_name) = self.get_runtime_type_id(interface_value, source_location.clone())?;
         
@@ -163,14 +247,42 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         // Check compatibility
         let compatible = self.is_type_compatible(actual_type_id, target_type_id);
         
+        // Print debug info for all assertions if enabled
+        if config.print_all_assertions {
+            let debug_info = self.debug_type_assertion(interface_value, target_type, source_location.clone())?;
+            println!("Type Assertion Debug ({}): \n{}", 
+                if compatible { "SUCCESS" } else { "FAILURE" }, 
+                debug_info);
+        }
+        
+        // Generate runtime debug if enabled
+        if config.runtime_debug && self.module().get_function("printf").is_some() {
+            // Generate runtime debugging code
+            let _ = self.generate_type_assertion_debug_print(interface_value, target_type);
+        }
+        
         if compatible {
             // Return true for compatible types
             let true_value = self.context().bool_type().const_int(1, false);
             return Ok(true_value.into());
         }
         
+        // Print failed assertions if enabled
+        if config.print_failed_assertions && !config.print_all_assertions {
+            let debug_info = self.debug_type_assertion(interface_value, target_type, source_location.clone())?;
+            println!("Type Assertion Failed: \n{}", debug_info);
+        }
+        
         // Generate full debug information for incompatible types
-        let debug_info = self.debug_type_assertion(interface_value, target_type, source_location.clone())?;
+        let mut debug_info = self.debug_type_assertion(interface_value, target_type, source_location.clone())?;
+        
+        // Add hierarchy information if enabled
+        if config.include_hierarchy {
+            if let Ok(hierarchy) = self.trace_type_hierarchy(&actual_type_name) {
+                debug_info.push_str("\n\nType Hierarchy Information:\n");
+                debug_info.push_str(&hierarchy);
+            }
+        }
         
         // Create detailed error with debug information
         let detailed_error = TypeAssertionError::new("interface", target_type)
@@ -255,8 +367,49 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
     }
 }
 
+/// Update the type assertion debug configuration
+pub fn update_type_assertion_debug_config(level: u8) -> TypeAssertionDebugConfig {
+    let config = match level {
+        0 => TypeAssertionDebugConfig {
+            print_all_assertions: false,
+            print_failed_assertions: false,
+            include_hierarchy: false,
+            include_path_visualization: false,
+            runtime_debug: false,
+        },
+        1 => TypeAssertionDebugConfig {
+            print_all_assertions: false,
+            print_failed_assertions: true,
+            include_hierarchy: false,
+            include_path_visualization: true,
+            runtime_debug: false,
+        },
+        _ => TypeAssertionDebugConfig {
+            print_all_assertions: true,
+            print_failed_assertions: true,
+            include_hierarchy: true,
+            include_path_visualization: true,
+            runtime_debug: true,
+        },
+    };
+    
+    println!("Updated type assertion debug level to {}", level);
+    config
+}
+
 // Additional debugging utilities for LLVM code generator
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Set the debug configuration for type assertions
+    pub fn set_type_assertion_debug_config(&mut self, config: TypeAssertionDebugConfig) {
+        self.type_assertion_debug_config = Some(config);
+    }
+    
+    /// Set the debug level for type assertions
+    pub fn set_type_assertion_debug_level(&mut self, level: u8) {
+        let config = update_type_assertion_debug_config(level);
+        self.set_type_assertion_debug_config(config);
+    }
+
     /// Generate LLVM code to print type assertion debug information at runtime
     pub fn generate_type_assertion_debug_print(
         &mut self,
@@ -348,5 +501,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         let printf_fn = self.module().add_function("printf", printf_type, None);
         Ok(printf_fn)
-    }
+}
+
+/// Enable improved debugging for interface type assertions with a specific level
+/// - level 0: No debugging
+/// - level 1: Basic debugging (failed assertions only)
+/// - level 2: Full debugging (all assertions with visualization)
+#[no_mangle]
+pub extern "C" fn enable_interface_type_assertion_debugging(level: u8) {
+    // Set environment variable for future instances
+    std::env::set_var("CURSED_DEBUG", level.to_string());
+    
+    // Print confirmation message
+    println!("Enabled interface type assertion debugging at level {}", level);
+    
+    // Register the debug system
+    register_type_assertion_debug();
+}
 }
