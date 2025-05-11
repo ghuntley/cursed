@@ -6,6 +6,7 @@
 
 use crate::error::Error;
 use crate::codegen::llvm::context::LlvmCodeGenerator;
+use crate::codegen::llvm::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtension};
 use inkwell::basic_block::BasicBlock;
 use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::values::{BasicValue, BasicValueEnum, IntValue, PointerValue};
@@ -43,8 +44,9 @@ impl<'ctx> MapIterationEnhancements<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         let map_ptr = map_value.into_pointer_value();
-        let map_ptr_type = map_ptr.get_type();
-        let pointee_type = map_ptr_type.get_element_type();
+let map_ptr_type = map_ptr.get_type();
+// Use our extension trait for get_element_type
+let pointee_type = map_ptr_type.get_element_type();
         
         // Maps in CURSED are typically implemented as a struct with fields for
         // key type, value type, buckets, etc. We need to analyze the struct type

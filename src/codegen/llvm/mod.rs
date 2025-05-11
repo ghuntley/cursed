@@ -215,6 +215,7 @@ mod interface_type_assertion_debugging; // Enhanced runtime debugging for interf
 mod interface_type_assertion_nesting; // Nesting level tracking for interface type assertions
 mod interface_type_registry; // Registry for storing type information at runtime
 mod interface_type_registry_enhanced; // Enhanced registry for full runtime type information
+mod pointer_type_extension; // Extension trait for pointer element type access
 mod interface_type_assertion_enhanced; // Enhanced type assertions with rich error information
 mod type_registry_improved; // Improved type registry with better runtime type information
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
@@ -250,6 +251,9 @@ pub struct LoopContext<'ctx> {
 
 // Re-export ContainerKind for backward compatibility
 pub use self::container_layout::ContainerKind;
+
+// Re-export pointer type extension
+pub use self::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtension};
 
 // Import key modules and traits
 pub use string_switch::*;
