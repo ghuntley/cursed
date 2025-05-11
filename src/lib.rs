@@ -92,7 +92,8 @@ pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, c
 pub use crate::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 
 // Re-export interface type assertion error propagation
-pub use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
+pub use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+pub use crate::codegen::llvm::interface_type_assertion_error_propagation_integration::InterfaceTypeAssertionErrorIntegration;
 
 // Re-export nested interface type assertion
 // Temporarily commented out due to integration issues
