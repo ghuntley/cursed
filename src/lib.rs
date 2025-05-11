@@ -277,6 +277,9 @@ pub use repl::start_repl;
 // Re-export specific parts of stdlib that we need for external access
 pub use stdlib::dot_registry;
 
+// Re-export interface type assertion error for external use
+pub use error::type_assertion_error::TypeAssertionError;
+
 // Helper for dot expression patching (now unused)
 /*
 struct DotExpressionInfo {

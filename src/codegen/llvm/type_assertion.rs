@@ -12,6 +12,8 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::error::Error;
+use crate::error::type_assertion_error::TypeAssertionError;
+use crate::error::SourceLocation;
 
 /// Trait for implementing interface type assertions in LLVM
 pub trait InterfaceTypeAssertion<'ctx> {
@@ -25,7 +27,8 @@ pub trait InterfaceTypeAssertion<'ctx> {
     fn check_instance_of(
         &mut self,
         interface_value: BasicValueEnum<'ctx>,
-        target_type_name: &str
+        target_type_name: &str,
+        source_location: Option<SourceLocation>
     ) -> Result<BasicValueEnum<'ctx>, Error>;
     
     /// Get the type ID from an interface value's vtable
@@ -46,6 +49,18 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         &mut self,
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Create a source location if possible
+        let source_location = match &type_assertion.token {
+            token if !token.is_empty() => {
+                Some(SourceLocation {
+                    line: 0, // Not available from AST
+                    column: 0, // Not available from AST
+                    file: None,
+                    source_line: format!("{}.({})", type_assertion.expression.string(), type_assertion.type_name),
+                })
+            },
+            _ => None,
+        };
         // Get the current function
         let current_fn = self.current_function()
             .ok_or_else(|| Error::Compilation("No current function for type assertion".to_string()))?;
@@ -59,7 +74,7 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let merge_block = self.context().append_basic_block(current_fn, "type_assert_merge");
         
         // Check if the interface value is of the target type
-        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name)?;
+        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name, source_location.clone())?;
         
         // Branch based on the type check result
         self.builder().build_conditional_branch(
@@ -120,7 +135,8 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
     fn check_instance_of(
         &mut self,
         interface_value: BasicValueEnum<'ctx>,
-        target_type_name: &str
+        target_type_name: &str,
+        source_location: Option<SourceLocation>
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // Ensure the registry is initialized
         let _ = self.ensure_registry_visualization_initialized();
@@ -130,7 +146,18 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Get the expected type ID for the target type from the registry
         let expected_type_id_u64 = match &self.interface_type_registry {
-            Some(registry) => registry.get_type_id(target_type_name)?,
+            Some(registry) => registry.get_type_id(target_type_name).map_err(|err| {
+                // Convert to TypeAssertionError with enhanced context
+                let assertion_error = TypeAssertionError::new("interface", target_type_name)
+                    .with_message(format!("Failed to get type ID from registry: {}", err))
+                    .with_target_type_id(self.hash_type_name(target_type_name));
+                
+                if let Some(loc) = source_location.clone() {
+                    Error::TypeAssertion(assertion_error.with_location(loc).into())
+                } else {
+                    Error::TypeAssertion(assertion_error.into())
+                }
+            })?,
             None => self.hash_type_name(target_type_name) // Fallback to direct hash if registry not available
         };
         
