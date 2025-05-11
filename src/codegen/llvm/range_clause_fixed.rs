@@ -15,6 +15,7 @@ use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::variables::VariableHandling;
 use crate::codegen::llvm::statement::StatementCompilation;
 use crate::codegen::llvm::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtension};
+use crate::codegen::llvm::range_clause_fixed_extension::RangeClauseFixedMethodsExtension;
 use inkwell::basic_block::BasicBlock;
 use inkwell::types::{BasicType, BasicTypeEnum};
 use inkwell::values::{BasicValue, BasicValueEnum, IntValue, PointerValue};
