@@ -76,8 +76,10 @@ The codebase currently fails to build with numerous errors. Below is a prioritiz
    - ✅ Update LLVM type conversions for proper function type generation
 
 4. **Fix token creation errors:**
-   - Update Token::new() call signatures to match the defined function parameters
-   - Remove extra line/column arguments or update Token implementation
+   - ✅ Update Token::new() call signatures to match the defined function parameters
+   - ✅ Remove extra line/column arguments or update Token implementation
+   - Added TypeParameter struct to support generic type parameters
+   - Updated SquadStatement, CollabStatement, MethodSignature, and FunctionStatement to use TypeParameter instead of Identifier
 
 5. **Fix method dispatch errors:**
    - Resolve `get_element_type` method not found issues (likely API change in LLVM bindings)

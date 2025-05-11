@@ -95,11 +95,11 @@ fn create_test_generic_struct() -> SquadStatement {
         },
         type_parameters: vec![
             TypeParameter {
-                token: Token::new(inkwell::types::AnyTypeEnum::FloatType, "T".to_string(), 0, 0),
+                token: Token::new(cursed::lexer::TokenType::Identifier, "T"),
                 value: "T".to_string(),
             },
             TypeParameter {
-                token: Token::new(inkwell::types::AnyTypeEnum::FloatType, "U".to_string(), 0, 0),
+                token: Token::new(cursed::lexer::TokenType::Identifier, "U"),
                 value: "U".to_string(),
             },
         ],
