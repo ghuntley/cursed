@@ -258,7 +258,7 @@ impl TypeAssertionBenchmark {
 /// A benchmark suite for running multiple related benchmarks
 pub struct TypeAssertionBenchmarkSuite {
     /// Benchmarks in the suite
-    benchmarks: Vec<BenchmarkStats>,
+    pub benchmarks: Vec<BenchmarkStats>,
 }
 
 impl TypeAssertionBenchmarkSuite {
