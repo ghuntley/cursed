@@ -1,7 +1,7 @@
 //! # Interface Registry Extension Checking
 //!
-//! This module enhances the implementation of InterfaceTypeRegistryExtensionChecking in interface_path_finder_enhanced.rs
-//! by providing extension methods for the interface registry to better support relationship checking.
+//! This module provides the InterfaceTypeRegistryExtensionChecker trait and implementation
+//! for checking relationships between interfaces in the interface type registry.
 
 use std::collections::{HashMap, HashSet};
 use tracing::{debug, instrument, span, Level, warn};
@@ -9,10 +9,92 @@ use tracing::{debug, instrument, span, Level, warn};
 use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use crate::error::Error;
 
+/// Trait for checking interface extension relationships
+/// 
+/// This trait provides the primary interface for querying whether one interface type
+/// extends another interface type, which is necessary for type checking and runtime
+/// type assertions in the interface system.
+pub trait InterfaceTypeRegistryExtensionChecker {
+    /// Checks if one interface extends another interface
+    ///
+    /// # Arguments
+    /// * `source_id` - The ID of the interface that may extend the target
+    /// * `target_id` - The ID of the interface that may be extended by the source
+    ///
+    /// # Returns
+    /// * `Result<bool, Error>` - True if source extends target, false otherwise
+    fn check_interface_extension(&self, source_id: u64, target_id: u64) -> Result<bool, Error>;
+    
+    /// Checks if one interface extends another interface by name
+    ///
+    /// # Arguments
+    /// * `source_interface` - The name of the interface that may extend the target
+    /// * `target_interface` - The name of the interface that may be extended by the source
+    ///
+    /// # Returns
+    /// * `Result<bool, Error>` - True if source extends target, false otherwise
+    fn check_interface_extension_by_name(&self, source_interface: &str, target_interface: &str) -> Result<bool, Error>;
+    
+    /// Gets all interfaces that extend a given interface
+    ///
+    /// # Arguments
+    /// * `interface_id` - The ID of the interface to find extenders for
+    ///
+    /// # Returns
+    /// * `Result<HashSet<u64>, Error>` - Set of interface IDs that extend the target
+    fn get_extending_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error>;
+    
+    /// Gets all interfaces that are extended by a given interface
+    ///
+    /// # Arguments
+    /// * `interface_id` - The ID of the interface to find extended interfaces for
+    ///
+    /// # Returns
+    /// * `Result<HashSet<u64>, Error>` - Set of interface IDs that are extended by the source
+    fn get_extended_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error>;
+}
+
+/// Registers the extension checking implementation with the system
+///
+/// This function is called during initialization to set up the extension checking
+/// system for the interface type registry. It's mostly a placeholder for when we 
+/// have a more sophisticated registration system.
+///
+/// # Returns
+/// * `Result<(), Error>` - Success or error during registration
+pub fn register_interface_type_registry_extension_checking() -> Result<(), Error> {
+    debug!("Registering interface type registry extension checking system");
+    // This is a placeholder for actual registration logic
+    // In a real implementation, this might register hooks or callbacks
+    Ok(())
+}
+
 /// Constant for interface registry error messages
 const REGISTRY_ERROR: &str = "Error accessing interface registry data";
 
 /// Extension methods for InterfaceTypeRegistry to support relationship checking
+impl<'ctx> InterfaceTypeRegistry<'ctx> {
+    // Extension method implementation below
+}
+
+/// Implementation of the InterfaceTypeRegistryExtensionChecker trait for InterfaceTypeRegistry
+impl<'ctx> InterfaceTypeRegistryExtensionChecker for InterfaceTypeRegistry<'ctx> {
+    fn check_interface_extension(&self, source_id: u64, target_id: u64) -> Result<bool, Error> {
+        self.get_interface_extension_info(source_id, target_id)
+    }
+    
+    fn check_interface_extension_by_name(&self, source_interface: &str, target_interface: &str) -> Result<bool, Error> {
+        self.check_interface_extension_by_name(source_interface, target_interface)
+    }
+    
+    fn get_extending_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error> {
+        self.get_extending_interfaces(interface_id)
+    }
+    
+    fn get_extended_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error> {
+        self.get_extended_interfaces(interface_id)
+    }
+}
 impl<'ctx> InterfaceTypeRegistry<'ctx> {
     /// Gets the extension relationships map from the registry
     ///

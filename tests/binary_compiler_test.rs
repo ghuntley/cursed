@@ -5,18 +5,12 @@ use std::process::Command;
 use cursed::ast::Program;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
-// Commented out for now while binary compiler is being refactored
-// use cursed::codegen::llvm::BinaryCompiler;
+use cursed::codegen::llvm::BinaryCompiler;
 use inkwell::context::Context;
-
-// Define binary compiler for compatibility
-#[allow(dead_code)]
-struct BinaryCompiler {}
 
 // Conditionally compile this test when the binary_compiler feature is enabled
 #[cfg(feature = "binary_compiler")]
 #[test]
-#[ignore = "Binary compiler implementation is currently being refactored"]
 fn test_binary_compilation_simple_program() {
     // Skip if we're running in an environment without gcc
     if !cfg!(unix) {
@@ -79,7 +73,6 @@ slay main() {
 // Conditionally compile this test when the binary_compiler feature is enabled
 #[cfg(feature = "binary_compiler")]
 #[test]
-#[ignore = "Binary compiler implementation is currently being refactored"]
 fn test_binary_compilation_with_external_functions() {
     // Skip if we're running in an environment without gcc
     if !cfg!(unix) {

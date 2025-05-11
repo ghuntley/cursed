@@ -397,10 +397,14 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         result
     }
 
+// This non-trait method is moved outside the trait implementation
+}
+
+// Additional helper methods for LlvmCodeGenerator
+impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper method to get the type assertion error propagation trait implementation
-    // This is a private helper method, not part of the trait
     #[inline(always)]
-    fn compile_type_assertion_with_errors(&mut self, 
+    pub(crate) fn compile_type_assertion_with_errors(&mut self, 
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // Delegate to the InterfaceTypeAssertion trait implementation
