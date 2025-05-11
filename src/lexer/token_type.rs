@@ -36,6 +36,8 @@ pub enum TokenType {
     Percent,  // %
     Lt,       // <
     Gt,       // >
+    Less = 38,     // < (alias for Lt)
+    Greater = 39,  // > (alias for Gt)
     Eq,       // ==
     NotEq,    // !=
     LtEq,     // <=
