@@ -1,7 +1,24 @@
 use super::expressions::Identifier;
 use super::statements::fields::FieldStatement;
 use crate::ast::{Expression, Node, Statement};
+use crate::lexer::token::Token;
 use std::any::Any;
+
+/// TypeParameter represents a generic type parameter in a type declaration
+pub struct TypeParameter {
+    pub token: Token,
+    pub value: String,
+}
+
+impl Node for TypeParameter {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        self.value.clone()
+    }
+}
 
 /// GenericConstraint represents a constraint on a generic type parameter
 pub struct GenericConstraint {
@@ -14,7 +31,7 @@ pub struct GenericConstraint {
 pub struct SquadStatement {
     pub token: String, // Token::Squad
     pub name: Identifier,
-    pub type_parameters: Vec<Identifier>, // Generic type parameters [T], [A, B], etc.
+    pub type_parameters: Vec<TypeParameter>, // Generic type parameters [T], [A, B], etc.
     pub fields: Vec<FieldStatement>,
 }
 
@@ -31,7 +48,7 @@ impl Node for SquadStatement {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.string())
+                .map(|param| param.value.clone())
                 .collect();
             format!("[{}]", params.join(", "))
         } else {
@@ -65,7 +82,7 @@ impl Statement for SquadStatement {
 pub struct CollabStatement {
     pub token: String, // Token::Collab
     pub name: Identifier,
-    pub type_parameters: Vec<Identifier>, // Generic type parameters [T], [A, B], etc.
+    pub type_parameters: Vec<TypeParameter>, // Generic type parameters [T], [A, B], etc.
     pub methods: Vec<MethodSignature>,
 }
 
@@ -82,7 +99,7 @@ impl Node for CollabStatement {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.string())
+                .map(|param| param.value.clone())
                 .collect();
             format!("[{}]", params.join(", "))
         } else {
@@ -118,7 +135,7 @@ pub struct MethodSignature {
     pub name: Identifier,
     pub parameters: Vec<ParameterStatement>,
     pub return_type: Option<Box<dyn Expression>>,
-    pub type_parameters: Vec<Identifier>, // Generic type parameters for method
+    pub type_parameters: Vec<TypeParameter>, // Generic type parameters for method
 }
 
 impl Node for MethodSignature {
@@ -134,7 +151,7 @@ impl Node for MethodSignature {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.string())
+                .map(|param| param.value.clone())
                 .collect();
             format!("[{}] ", params.join(", "))
         } else {
@@ -173,7 +190,7 @@ pub struct FunctionStatement {
     pub parameters: Vec<ParameterStatement>,
     pub body: super::statements::block::BlockStatement,
     pub return_type: Option<Box<dyn Expression>>,
-    pub type_parameters: Vec<Identifier>, // Generic type parameters for function [T], [A, B], etc.
+    pub type_parameters: Vec<TypeParameter>, // Generic type parameters for function [T], [A, B], etc.
     pub generic_constraints: Vec<GenericConstraint>, // Constraints on generic types
 }
 
@@ -190,7 +207,7 @@ impl Node for FunctionStatement {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.string())
+                .map(|param| param.value.clone())
                 .collect();
             format!("[{}] ", params.join(", "))
         } else {
