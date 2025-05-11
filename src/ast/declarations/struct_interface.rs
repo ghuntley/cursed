@@ -4,7 +4,7 @@
 //! which define composite types and interfaces in the CURSED language.
 
 use crate::ast::declarations::Parameter;
-use crate::ast::declarations::type_parameter::TypeParameter;
+use crate::ast::declarations::TypeParameter;
 use crate::ast::expressions::identifiers::Identifier;
 use crate::ast::statements::fields::FieldStatement;
 use crate::ast::{Expression, Node, Statement};
@@ -43,7 +43,7 @@ impl Node for SquadStatement {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.value.clone())
+                .map(|param| param.string())
                 .collect();
             format!("[{}]", params.join(", "))
         } else {
@@ -104,7 +104,7 @@ impl Node for MethodSignature {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.value.clone())
+                .map(|param| param.string())
                 .collect();
             format!("[{}] ", params.join(", "))
         } else {
@@ -168,7 +168,7 @@ impl Node for CollabStatement {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.value.clone())
+                .map(|param| param.string())
                 .collect();
             format!("[{}]", params.join(", "))
         } else {

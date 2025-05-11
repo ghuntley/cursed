@@ -87,6 +87,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) unique_id_counter: std::sync::atomic::AtomicU64,
     // Interface extension registry for path visualization
     pub(crate) registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry,
+    // Type assertion implementation
+    pub(crate) type_assertion_implementation: Option<Box<dyn crate::codegen::llvm::type_assertion::InterfaceTypeAssertion<'ctx> + 'ctx>>,
     
     // Test-only fields for interface hierarchy mocking in unit tests
     #[cfg(test)]
@@ -112,7 +114,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Initialize auto interface dispatcher integration
         super::auto_interface_dispatcher_integration::register_auto_interface_dispatcher_integration();
         // Initialize enhanced dynamic dispatch
-        #[cfg(feature = "enhanced_dynamic_dispatch")]
         super::enhanced_dynamic_dispatch::register_enhanced_dynamic_dispatch();
         // Initialize integrated monomorphization
         super::integrated_monomorphization::register_integrated_monomorphization();
@@ -187,6 +188,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Initialize the unique ID counter with a random starting value
             unique_id_counter: std::sync::atomic::AtomicU64::new(rand::random::<u64>()),
             lru_field_accessor_cache: None,
+            // Initialize type assertion implementation to None - will be created when needed
+            type_assertion_implementation: None,
             
             // Test-only fields for interface hierarchy mocking in unit tests
             #[cfg(test)]

@@ -4,7 +4,7 @@
 //! which define reusable blocks of code with parameters and return types.
 
 use crate::ast::declarations::Parameter;
-use crate::ast::declarations::type_parameter::{GenericConstraint, TypeParameter};
+use crate::ast::declarations::TypeParameter;
 use crate::ast::expressions::identifiers::Identifier;
 use crate::ast::statements::block::BlockStatement;
 use crate::ast::{Expression, Node, Statement};
@@ -33,7 +33,7 @@ pub struct FunctionStatement {
     pub body: BlockStatement,
     pub return_type: Option<Box<dyn Expression>>,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters for function [T], [A, B], etc.
-    pub generic_constraints: Vec<GenericConstraint>, // Constraints on generic types
+    // TODO: Add generic constraints field when implementing bounded generics
 }
 
 impl Node for FunctionStatement {
@@ -49,7 +49,7 @@ impl Node for FunctionStatement {
             let params: Vec<String> = self
                 .type_parameters
                 .iter()
-                .map(|param| param.value.clone())
+                .map(|param| param.string())
                 .collect();
             format!("[{}] ", params.join(", "))
         } else {
