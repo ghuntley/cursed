@@ -13,7 +13,9 @@ use tracing::{debug, info, instrument, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondInheritancePattern;
-use crate::codegen::llvm::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
+use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath;
+use crate::codegen::llvm::interface_path_finder_enhanced_fix::EnhancedInterfacePathFinder;
+use crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder;
 use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
 use crate::error::Error;
@@ -138,11 +140,11 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // First get all inheritance paths
         let path_finder = self.create_path_finder(registry);
-        // Convert method to handle u64 instead of u32
+        // Use the path finder to find all paths
         let all_paths = path_finder.find_all_paths(
-            concrete_type_id as u64, 
-            interface_type_id as u64
-        )?
+            concrete_type_id, 
+            interface_type_id
+        )?;
         
         // If we have multiple paths, check for diamond pattern
         if all_paths.len() >= 2 {
@@ -425,8 +427,8 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
 // Helper methods for the LlvmCodeGenerator
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new path finder for interface inheritance relationships
-    fn create_path_finder(&self, registry: &dyn InterfaceTypeRegistry) -> EnhancedInterfacePathFinder {
-        EnhancedInterfacePathFinder::new(registry)
+    fn create_path_finder(&self, registry: &dyn InterfaceTypeRegistry) -> impl EnhancedInterfacePathFinder + '_ {
+        crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder::new(registry)
     }
     
     /// Gets the interface registry extension checking functionality
