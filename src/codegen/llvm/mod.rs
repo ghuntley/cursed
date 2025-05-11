@@ -305,7 +305,9 @@ pub use self::interface_type_assertion_error_propagation_filesystem_integration:
 pub use self::interface_type_assertion_error_visualization::ErrorVisualization;
 pub use self::interface_type_assertion_error_visualization::register_error_visualization;
 // Re-export filesystem source location integration for interface type assertions
-pub use self::interface_type_assertion_filesystem_integration::register_filesystem_source_location_integration;
+pub use self::interface_type_assertion_filesystem_integration::InterfaceTypeAssertionFilesystemIntegration;
+pub use self::interface_type_assertion_filesystem_integration::register_filesystem_integration as register_filesystem_source_location_integration;
+pub use self::interface_type_assertion_filesystem_integration::InterfaceTypeAssertionFilesystemIntegration as FilesystemSourceLocationIntegration;
 // Re-export benchmarking functionality for interface type assertions
 pub use self::interface_type_assertion_benchmarking::{TypeAssertionBenchmarking, HierarchyPattern, BenchmarkStats, TypeAssertionBenchmark, TypeAssertionBenchmarkSuite};
 
