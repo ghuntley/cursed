@@ -59,6 +59,7 @@ impl Expression for StringLiteral {
 ///
 /// * `token` - The original token from the lexer
 /// * `value` - The parsed integer value
+#[derive(Clone)]
 pub struct IntegerLiteral {
     pub token: String,
     pub value: i64,

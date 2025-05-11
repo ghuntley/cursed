@@ -20,5 +20,4 @@ pub use function::FunctionStatement;
 pub use struct_interface::{CollabStatement, MethodSignature, SquadStatement};
 
 // Re-exports from type_parameter module
-pub use type_parameter::GenericConstraint;
 pub use type_parameter::TypeParameter;

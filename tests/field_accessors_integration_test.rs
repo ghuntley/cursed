@@ -96,10 +96,12 @@ fn create_test_generic_struct() -> SquadStatement {
         type_parameters: vec![
             TypeParameter {
                 token: Token::new(cursed::lexer::TokenType::Identifier, "T"),
+                name: "T".to_string(),
                 value: "T".to_string(),
             },
             TypeParameter {
                 token: Token::new(cursed::lexer::TokenType::Identifier, "U"),
+                name: "U".to_string(),
                 value: "U".to_string(),
             },
         ],

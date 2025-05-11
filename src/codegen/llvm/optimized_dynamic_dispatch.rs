@@ -60,14 +60,6 @@ pub struct CachedMethod<'ctx> {
 }
 
 /// Enhanced interface dynamic dispatch trait with optimizations
-// Create a placeholder trait if enhanced_dynamic_dispatch is not enabled
-#[cfg(not(feature = "enhanced_dynamic_dispatch"))]
-pub trait EnhancedDynamicDispatch<'ctx> {
-    // Minimal methods to satisfy the constraint
-    fn placeholder_method(&self) -> bool;
-}
-
-#[cfg(feature = "enhanced_dynamic_dispatch")]
 use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 
 pub trait OptimizedDynamicDispatch<'ctx>: EnhancedDynamicDispatch<'ctx> {
