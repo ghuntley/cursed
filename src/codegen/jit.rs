@@ -213,7 +213,70 @@ pub fn map_external_functions(
         }
     }
 
-    // TODO: Add more external function mappings as needed
+    // Map the channel runtime functions
+    map_channel_functions(execution_engine, module)?;
+    
+    Ok(())
+}
+
+/// Maps channel-related runtime functions to their implementations.
+///
+/// This function maps the channel operations like create, send, receive, and close
+/// to their corresponding implementations in the runtime/channel.rs module.
+///
+/// # Arguments
+///
+/// * `execution_engine` - The LLVM execution engine to add mappings to
+/// * `module` - The LLVM module containing the function declarations
+///
+/// # Returns
+///
+/// Result<(), Error> - Success or an error if mapping fails
+#[tracing::instrument(skip(execution_engine, module), level = "debug")]
+fn map_channel_functions(
+    execution_engine: &ExecutionEngine,
+    module: &Module,
+) -> Result<(), Error> {
+    use crate::runtime::channel::{cursed_make_channel, cursed_send_to_channel, 
+                               cursed_receive_from_channel, cursed_close_channel};
+    
+    tracing::debug!("Mapping channel runtime functions");
+    
+    // Map cursed_make_channel function
+    if let Some(make_channel_fn) = module.get_function("cursed_make_channel") {
+        unsafe {
+            let addr = cursed_make_channel as usize;
+            execution_engine.add_global_mapping(&make_channel_fn, addr);
+            println!("Mapped cursed_make_channel function");
+        }
+    }
+    
+    // Map cursed_send_to_channel function
+    if let Some(send_fn) = module.get_function("cursed_send_to_channel") {
+        unsafe {
+            let addr = cursed_send_to_channel as usize;
+            execution_engine.add_global_mapping(&send_fn, addr);
+            println!("Mapped cursed_send_to_channel function");
+        }
+    }
+    
+    // Map cursed_receive_from_channel function
+    if let Some(receive_fn) = module.get_function("cursed_receive_from_channel") {
+        unsafe {
+            let addr = cursed_receive_from_channel as usize;
+            execution_engine.add_global_mapping(&receive_fn, addr);
+            println!("Mapped cursed_receive_from_channel function");
+        }
+    }
+    
+    // Map cursed_close_channel function
+    if let Some(close_fn) = module.get_function("cursed_close_channel") {
+        unsafe {
+            let addr = cursed_close_channel as usize;
+            execution_engine.add_global_mapping(&close_fn, addr);
+            println!("Mapped cursed_close_channel function");
+        }
+    }
     
     Ok(())
 }
