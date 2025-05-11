@@ -15,8 +15,9 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
-use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
+use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath;
+use crate::codegen::llvm::interface_path_finder_enhanced_fix::EnhancedInterfacePathFinder;
+use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use crate::error::Error;
 
 /// Represents a diamond inheritance pattern in the type hierarchy
@@ -129,7 +130,7 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<Vec<InterfaceInheritancePath>, Error> {
         // Check if we have an interface path finder available
         if let Some(path_finder) = self.get_interface_path_finder() {
-            return path_finder.find_all_paths(source_type_id, target_type_id);
+            return path_finder.find_all_paths(source_type_id as u64, target_type_id as u64);
         }
         
         // Fallback implementation when path finder is not available
@@ -233,10 +234,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Get the interface path finder
-    fn get_interface_path_finder(&self) -> Option<&dyn EnhancedInterfacePathFinder> {
-        self.internal_fields.get("interface_path_finder")
-            .and_then(|boxed| boxed.downcast_ref::<Box<dyn EnhancedInterfacePathFinder>>())
-            .map(|boxed| boxed.as_ref())
+    fn get_interface_path_finder(&self) -> Option<Box<dyn EnhancedInterfacePathFinder + '_>> {
+        if let Some(registry) = self.get_interface_registry() {
+            // Create a new path finder each time
+            let path_finder = Box::new(crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder::new(registry));
+            return Some(path_finder);
+        }
+        None
     }
     
     /// Check if a type implements an interface
