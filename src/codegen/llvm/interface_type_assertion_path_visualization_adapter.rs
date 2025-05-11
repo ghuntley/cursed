@@ -64,7 +64,7 @@ pub trait InterfaceTypeAssertionPathVisualizationAdapter<'ctx>: InterfaceTypeAss
     ) -> Result<BasicValueEnum<'ctx>, Error>;
     
     /// Ensure the adapter has proper registry access
-    fn ensure_registry_access(&self) -> Result<&dyn InterfaceRegistryExtensionWithVisualization, Error>;
+    fn ensure_registry_access(&self) -> Result<&(dyn InterfaceRegistryExtensionWithVisualization + '_), Error>;
 }
 
 /// Define a generic implementation of the adapter for any code generator that implements both traits
@@ -163,7 +163,7 @@ where
     }
     
     #[instrument(skip(self), level = "debug")]
-    fn ensure_registry_access(&self) -> Result<&dyn InterfaceRegistryExtensionWithVisualization, Error> {
+    fn ensure_registry_access(&self) -> Result<&(dyn InterfaceRegistryExtensionWithVisualization + '_), Error> {
         debug!("Ensuring registry access");
         
         // Get the registry through the enhanced trait
