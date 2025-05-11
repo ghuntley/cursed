@@ -67,7 +67,7 @@ The codebase currently fails to build with numerous errors. Below is a prioritiz
 
 2. **Fix AST structure errors:**
    - ✅ Implement `Node` trait for `RangeExpression`
-   - Correct unresolved imports for `Parameter` and `Block` in the AST module
+   - ✅ Correct unresolved imports for `Parameter` and `Block` in the AST module
    - Fix module structure to properly expose these types
 
 3. **Fix LLVM code generation errors:**
