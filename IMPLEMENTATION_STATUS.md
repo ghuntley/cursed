@@ -2,8 +2,10 @@
 
 ## Items Not Yet Verified
 
-- All basic language features have been verified
+- All basic language features have been verified - Verified May 12, 2025 ✅
 - Interface type assertions with ? operator fully implemented and tested - Verified May 11, 2025 ✅
+- Improved implementation of the interface type assertion error propagation mechanism by adding better source location support, more comprehensive type ID tracking, and enhanced error contexts - Updated May 13, 2025 ✅
+- Added extended comprehensive tests for complex error chaining with interface type assertions - Verified May 12, 2025 ✅
 
 ## Items Verified as Implemented
 
