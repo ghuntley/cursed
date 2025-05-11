@@ -1,297 +1,277 @@
-//! Integration test for interface type assertion benchmarking
-//!
-//! This test validates the comprehensive benchmarking system for interface type assertions
-//! with various inheritance patterns, including simple, nested, diamond, and deep nested.
+//! Test the interface type assertion benchmark functionality.
+//! This integration test validates that the benchmarking
+//! infrastructure works correctly for interface type assertions.
 
-use std::time::Duration;
+use std::sync::Once;
+
+// We need to call init_test_tracing only once
+static INIT: Once = Once::new();
+
+#[path = "tracing_setup.rs"]
+pub mod tracing_setup;
+
+// Macro for initializing tracing in tests
+macro_rules! init_tracing {
+    () => {
+        INIT.call_once(|| {
+            tracing_setup::init_test_tracing();
+        });
+    };
+}
+
+// Import required test utilities
+use std::fs;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+
+use cursed::benchmark::interface_type_assertion_benchmark::{InterfaceTypeAssertionBenchmark, InterfaceTypeAssertionBenchmarkConfig};
+use cursed::codegen::llvm::EnhancedInterfacePathFinder;
+use cursed::codegen::llvm::InterfaceTypeRegistry;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::error::Error;
+use cursed::object::{Object, ObjectRef};
+
 use inkwell::context::Context;
-use inkwell::targets::{InitializationConfig, Target, TargetMachine};
 
-use cursed::{
-    ast::expressions::TypeAssertion,
-    codegen::llvm::LlvmCodeGenerator,
-    codegen::llvm::interface_type_assertion::InterfaceTypeAssertion,
-    codegen::llvm::interface_type_assertion_benchmarking::{
-        TypeAssertionBenchmarking, 
-        HierarchyPattern, 
-        BenchmarkStats, 
-        TypeAssertionBenchmark,
-        TypeAssertionBenchmarkSuite
-    },
-    core::interface_registry_lru_cache::LruCachedRegistry,
-    parser::Parser,
-    lexer::Lexer,
-};
-
-// Import common test utilities
-#[path = "common.rs"]
-pub mod common;
-
-use common::tracing::setup as init_tracing;
-use common::timing::Timer;
-
-/// Initialize code generator for testing
-fn create_code_generator<'ctx>(
-    context: &'ctx Context,
-) -> LlvmCodeGenerator<'ctx> {
-    // Initialize LLVM targets
-    Target::initialize_all(&InitializationConfig::default());
-    
-    // Create module and builder
-    let module = context.create_module("benchmark_integration_test");
-    let builder = context.create_builder();
-    
-    // Set up a target machine for the module
-    let target_triple = TargetMachine::get_default_triple();
-    let target = Target::from_triple(&target_triple).unwrap();
-    let target_machine = target.create_target_machine(
-        &target_triple,
-        "generic",
-        "",
-        inkwell::OptimizationLevel::Default,
-        inkwell::targets::RelocMode::Default,
-        inkwell::targets::CodeModel::Default,
-    ).unwrap();
-    
-    // Set up the data layout
-    let data_layout = target_machine.get_target_data().get_data_layout();
-    module.set_data_layout(&data_layout);
-    
-    // Create a test function
-    let void_type = context.void_type();
-    let fn_type = void_type.fn_type(&[], false);
-    let function = module.add_function("test_function", fn_type, None);
-    let basic_block = context.append_basic_block(function, "entry");
-    builder.position_at_end(basic_block);
-    
-    // Create a registry with LRU cache
-    let registry = Box::new(LruCachedRegistry::new(100));
-    
-    // Create the code generator
-    LlvmCodeGenerator::new(
-        context,
-        module,
-        &builder,
-        registry,
-        None, // no type_registry needed for test
-    )
-}
-
-/// Helper to parse a Cursed file and extract type assertions
-fn parse_file_and_extract_assertions(file_path: &str) -> Vec<TypeAssertion> {
-    use std::fs::read_to_string;
-    use std::path::Path;
-    
-    // Read the benchmark file
-    let path = Path::new(file_path);
-    let source = read_to_string(path).expect("Failed to read benchmark file");
-    
-    // Parse the file
-    let lexer = Lexer::new(source.as_str());
-    let mut parser = Parser::new(lexer);
-    let program = parser.parse_program().expect("Failed to parse program");
-    
-    // Find all type assertions (simplified - in a real implementation you'd traverse the AST)
-    let assertions = vec![
-        TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: "SimpleImpl".to_string(),
-        },
-        TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: "NestedImpl".to_string(),
-        },
-        TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: "DiamondImpl".to_string(),
-        },
-        TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: "DeepNestedImpl".to_string(),
-        },
-    ];
-    
-    assertions
-}
-
-/// Test the comprehensive benchmark suite on the example file
 #[test]
-fn test_comprehensive_benchmark_suite() {
-    // Set up tracing
-    init_tracing();
-    let _timer = Timer::new("test_comprehensive_benchmark_suite");
+fn test_interface_type_assertion_benchmark_config() {
+    init_tracing!();
     
-    // Path to the benchmark file
+    // Simply test creating a benchmark configuration
+    let config = InterfaceTypeAssertionBenchmarkConfig::default();
+    
+    // Basic assertions about the default configuration
+    assert!(config.iterations > 0, "Default iterations should be positive");
+    assert!(config.test_diamond_patterns, "Diamond pattern testing should be enabled by default");
+    assert!(config.test_deep_hierarchies, "Deep hierarchy testing should be enabled by default");
+}
+
+#[test]
+fn test_simple_interface_type_assertion_benchmark() {
+    init_tracing!();
+    
+    // Create a context and code generator
+    let context = Context::create();
+    let mut code_generator = LlvmCodeGenerator::new(&context);
+    
+    // Create a minimal dummy registry for testing
+    let mock_registry = create_mock_registry();
+    
+    // Add mock registry to the code generator
+    code_generator.internal_fields.insert(
+        "interface_registry".to_string(),
+        Box::new(mock_registry) as Box<dyn std::any::Any>
+    );
+    
+    // Create a minimal benchmark configuration
+    let config = InterfaceTypeAssertionBenchmarkConfig {
+        iterations: 10,
+        enable_warmup: false,
+        warmup_iterations: 0,
+        detailed_timing: false,
+        test_diamond_patterns: false,
+        test_deep_hierarchies: false,
+        max_hierarchy_depth: 3,
+    };
+    
+    // Run the benchmark
+    match code_generator.benchmark_interface_type_assertions(config) {
+        Ok(results) => {
+            // Should have at least one result (simple type assertions)
+            assert!(!results.is_empty(), "Should have at least one benchmark result");
+            
+            // Verify the benchmark name
+            assert_eq!(
+                results[0].name, 
+                "Simple Type Assertions", 
+                "First benchmark should be simple type assertions"
+            );
+            
+            // Verify reasonable timing values
+            assert!(results[0].avg_duration.as_nanos() > 0, "Average duration should be positive");
+        },
+        Err(e) => panic!("Benchmark failed: {}", e),
+    }
+}
+
+#[test]
+fn test_comprehensive_interface_type_assertion_benchmark() {
+    init_tracing!();
+    
+    // Create a context and code generator
+    let context = Context::create();
+    let mut code_generator = LlvmCodeGenerator::new(&context);
+    
+    // Create a comprehensive mock registry for testing
+    let mock_registry = create_comprehensive_mock_registry();
+    
+    // Add mock registry to the code generator
+    code_generator.internal_fields.insert(
+        "interface_registry".to_string(),
+        Box::new(mock_registry) as Box<dyn std::any::Any>
+    );
+    
+    // Create a comprehensive benchmark configuration with small iteration counts
+    let config = InterfaceTypeAssertionBenchmarkConfig {
+        iterations: 5,
+        enable_warmup: true,
+        warmup_iterations: 2,
+        detailed_timing: true,
+        test_diamond_patterns: true,
+        test_deep_hierarchies: true,
+        max_hierarchy_depth: 5,
+    };
+    
+    // Run the benchmark
+    match code_generator.benchmark_interface_type_assertions(config) {
+        Ok(results) => {
+            // Should have 3 results (simple, diamond, deep)
+            assert_eq!(results.len(), 3, "Should have 3 benchmark results");
+            
+            // Verify the benchmark names
+            assert_eq!(results[0].name, "Simple Type Assertions");
+            assert_eq!(results[1].name, "Diamond Inheritance Type Assertions");
+            assert!(results[2].name.starts_with("Deep Hierarchy Type Assertions"));
+            
+            // Verify all have timing data
+            for result in &results {
+                assert!(result.avg_duration.as_nanos() > 0, "Average duration should be positive");
+                assert!(result.min_duration.as_nanos() > 0, "Min duration should be positive");
+                assert!(result.max_duration.as_nanos() > 0, "Max duration should be positive");
+            }
+        },
+        Err(e) => panic!("Benchmark failed: {}", e),
+    }
+}
+
+#[test]
+fn test_interface_type_assertion_benchmark_csd_file() {
+    init_tracing!();
+    
+    // Test that the benchmark file exists
     let benchmark_file = "benchmarks/cursed/interface_type_assertion_benchmark.csd";
+    assert!(Path::new(benchmark_file).exists(), "Benchmark file should exist");
     
-    // Extract assertions from the file
-    let assertions = parse_file_and_extract_assertions(benchmark_file);
+    // Load the file and verify it has the expected content
+    let mut file = File::open(benchmark_file).expect("Failed to open benchmark file");
+    let mut content = String::new();
+    file.read_to_string(&mut content).expect("Failed to read benchmark file");
     
-    // Create benchmarking environment
-    let context = Context::create();
-    let mut code_gen = create_code_generator(&context);
-    
-    // Create named assertions for benchmarking
-    let named_assertions: Vec<(TypeAssertion, &str)> = assertions.into_iter()
-        .zip(["Simple", "Nested", "Diamond", "DeepNested"].iter())
-        .map(|(assertion, &name)| (assertion, name))
-        .collect();
-    
-    // Run benchmarks
-    let iterations = 20; // Use a small number for tests
-    let suite = code_gen.benchmark_type_assertions(
-        &named_assertions,
-        iterations
-    );
-    
-    // Check that all benchmarks ran
-    assert_eq!(suite.benchmarks.len(), 4, "Expected 4 benchmarks in the suite");
-    
-    // Generate reports
-    suite.report_all();
-    suite.report_comparisons();
-    suite.report_pattern_comparisons();
-    
-    // Check specific pattern detection
-    for benchmark in &suite.benchmarks {
-        match benchmark.name {
-            name if name.contains("Simple") => {
-                assert_eq!(benchmark.pattern, HierarchyPattern::Simple);
-            },
-            name if name.contains("Nested") => {
-                assert_eq!(benchmark.pattern, HierarchyPattern::Nested);
-            },
-            name if name.contains("Diamond") => {
-                assert_eq!(benchmark.pattern, HierarchyPattern::Diamond);
-            },
-            name if name.contains("DeepNested") => {
-                assert_eq!(benchmark.pattern, HierarchyPattern::DeepNested);
-            },
-            _ => panic!("Unexpected benchmark name: {}", benchmark.name),
-        }
-    }
+    // Verify it contains key sections
+    assert!(content.contains("benchmarkSimpleAssertions"), "File should contain simple assertion benchmark");
+    assert!(content.contains("benchmarkDiamondAssertions"), "File should contain diamond assertion benchmark");
+    assert!(content.contains("benchmarkDeepAssertions"), "File should contain deep assertion benchmark");
 }
 
-/// Test the hierarchy pattern detection with a more complex test
-#[test]
-fn test_detailed_hierarchy_pattern_detection() {
-    // Set up tracing
-    init_tracing();
+// Helper to create a simple mock registry for testing
+fn create_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
+    // This is just a stub implementation for testing
+    struct MockRegistry;
     
-    // Create assertions with type names that indicate the pattern
-    let test_cases = [
-        ("SimpleClass", HierarchyPattern::Simple),
-        ("NestedStructure", HierarchyPattern::Nested),
-        ("DiamondHierarchy", HierarchyPattern::Diamond),
-        ("DeepNestedComplex", HierarchyPattern::DeepNested),
-        ("RegularType", HierarchyPattern::Simple), // Default
-    ];
-    
-    for (type_name, expected_pattern) in &test_cases {
-        let assertion = TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: type_name.to_string(),
-        };
-        
-        let detected = HierarchyPattern::from_type_assertion(&assertion);
-        assert_eq!(detected, *expected_pattern, 
-            "Pattern detection failed for {}: expected {:?}, got {:?}",
-            type_name, expected_pattern, detected);
+    impl InterfaceTypeRegistry for MockRegistry {
+        fn register_interface(&mut self, _id: u32, _name: String) -> Result<(), Error> { Ok(()) }
+        fn register_concrete_type(&mut self, _id: u32, _name: String) -> Result<(), Error> { Ok(()) }
+        fn register_implementation(&mut self, _concrete_id: u32, _interface_id: u32) -> Result<(), Error> { Ok(()) }
+        fn type_implements_interface(&self, _concrete_id: u32, _interface_id: u32) -> bool { true }
+        fn get_implemented_interfaces(&self, _concrete_id: u32) -> Result<Vec<u32>, Error> { Ok(vec![100, 200]) }
+        fn get_type_name(&self, _id: u32) -> Result<String, Error> { Ok("MockType".to_string()) }
     }
+    
+    Box::new(MockRegistry)
 }
 
-/// Benchmark detection with actual runtime metrics
-#[test]
-fn test_benchmark_performance_metrics() {
-    // Set up tracing
-    init_tracing();
-    let _timer = Timer::new("test_benchmark_performance_metrics");
+// Helper to create a comprehensive mock registry
+fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
+    struct ComprehensiveMockRegistry {
+        interfaces: std::collections::HashMap<u32, String>,
+        concrete_types: std::collections::HashMap<u32, String>,
+        implementations: std::collections::HashMap<u32, Vec<u32>>, // concrete_id -> [interface_ids]
+    }
     
-    // Create assertions for each pattern
-    let assertions = vec![
-        (TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: "SimpleImpl".to_string(),
-        }, "Simple"),
-        (TypeAssertion {
-            token: "(".to_string(),
-            expression: Box::new(cursed::ast::expressions::Empty{}),
-            type_name: "DiamondImpl".to_string(),
-        }, "Diamond"),
-    ];
-    
-    // Create benchmarking environment
-    let context = Context::create();
-    let mut code_gen = create_code_generator(&context);
-    
-    // Run with different iteration counts to test scaling
-    let iteration_counts = [10, 50, 100];
-    
-    for &iterations in &iteration_counts {
-        let suite = code_gen.benchmark_type_assertions(&assertions, iterations);
-        
-        // Check that we have metrics for each benchmark
-        for benchmark in &suite.benchmarks {
-            assert_eq!(benchmark.iterations, iterations, 
-                "Expected {} iterations, got {}", iterations, benchmark.iterations);
-                
-            // Verify that avg time is between min and max
-            assert!(benchmark.avg_duration >= benchmark.min_duration, 
-                "Average duration should be >= min duration");
-            assert!(benchmark.avg_duration <= benchmark.max_duration, 
-                "Average duration should be <= max duration");
-                
-            // Check that the metrics are consistent
-            let metrics = benchmark.as_metrics();
-            assert_eq!(metrics.get("iterations").unwrap(), &(iterations as f64));
+    impl InterfaceTypeRegistry for ComprehensiveMockRegistry {
+        fn register_interface(&mut self, id: u32, name: String) -> Result<(), Error> {
+            self.interfaces.insert(id, name);
+            Ok(())
         }
         
-        // Report results for this iteration count
-        println!("Results for {} iterations:", iterations);
-        suite.report_all();
+        fn register_concrete_type(&mut self, id: u32, name: String) -> Result<(), Error> {
+            self.concrete_types.insert(id, name);
+            Ok(())
+        }
+        
+        fn register_implementation(&mut self, concrete_id: u32, interface_id: u32) -> Result<(), Error> {
+            self.implementations.entry(concrete_id)
+                .or_insert_with(Vec::new)
+                .push(interface_id);
+            Ok(())
+        }
+        
+        fn type_implements_interface(&self, concrete_id: u32, interface_id: u32) -> bool {
+            self.implementations.get(&concrete_id)
+                .map(|interfaces| interfaces.contains(&interface_id))
+                .unwrap_or(false)
+        }
+        
+        fn get_implemented_interfaces(&self, concrete_id: u32) -> Result<Vec<u32>, Error> {
+            Ok(self.implementations.get(&concrete_id)
+                .cloned()
+                .unwrap_or_else(Vec::new))
+        }
+        
+        fn get_type_name(&self, id: u32) -> Result<String, Error> {
+            if let Some(name) = self.interfaces.get(&id) {
+                return Ok(name.clone());
+            }
+            
+            if let Some(name) = self.concrete_types.get(&id) {
+                return Ok(name.clone());
+            }
+            
+            Ok(format!("Type{}", id))
+        }
     }
-}
-
-/// Test that we can serialize benchmark results to JSON for external analysis
-#[test]
-fn test_benchmark_serialization() {
-    use std::collections::HashMap;
     
-    // Set up tracing
-    init_tracing();
+    // Create registry with comprehensive test data
+    let mut registry = ComprehensiveMockRegistry {
+        interfaces: std::collections::HashMap::new(),
+        concrete_types: std::collections::HashMap::new(),
+        implementations: std::collections::HashMap::new(),
+    };
     
-    // Create sample durations
-    let durations = vec![
-        Duration::from_micros(100),
-        Duration::from_micros(150),
-        Duration::from_micros(120),
-    ];
+    // Add interfaces
+    registry.register_interface(100, "BaseInterface".to_string()).unwrap();
+    registry.register_interface(200, "LeftInterface".to_string()).unwrap();
+    registry.register_interface(300, "RightInterface".to_string()).unwrap();
     
-    // Create statistics
-    let stats = BenchmarkStats::new(
-        "SerializationTest", 
-        &durations, 
-        HierarchyPattern::Simple
-    );
+    // Add deep hierarchy interfaces
+    for i in 1..=5 {
+        registry.register_interface(1000 + i, format!("Level{}", i)).unwrap();
+    }
     
-    // Convert to metrics HashMap
-    let metrics = stats.as_metrics();
+    // Add concrete types
+    registry.register_concrete_type(400, "SimpleConcrete".to_string()).unwrap();
+    registry.register_concrete_type(500, "DiamondConcrete".to_string()).unwrap();
+    registry.register_concrete_type(600, "DeepConcrete".to_string()).unwrap();
     
-    // Check that we have the expected metrics
-    assert!(metrics.contains_key("iterations"));
-    assert!(metrics.contains_key("total_ms"));
-    assert!(metrics.contains_key("avg_us"));
-    assert!(metrics.contains_key("min_us"));
-    assert!(metrics.contains_key("max_us"));
+    // Add implementations
+    // Simple implementation
+    registry.register_implementation(400, 100).unwrap();
     
-    // We'd serialize this to JSON in a real implementation
-    let serialized = format!("{:?}", metrics); 
-    assert!(serialized.contains("iterations"));
-    assert!(serialized.contains("total_ms"));
+    // Diamond implementation
+    registry.register_implementation(200, 100).unwrap(); // Left extends Base
+    registry.register_implementation(300, 100).unwrap(); // Right extends Base
+    registry.register_implementation(500, 200).unwrap(); // Concrete implements Left
+    registry.register_implementation(500, 300).unwrap(); // Concrete implements Right
+    
+    // Deep hierarchy
+    for i in 1..5 {
+        registry.register_implementation(1000 + i + 1, 1000 + i).unwrap();
+    }
+    registry.register_implementation(600, 1000 + 5).unwrap(); // DeepConcrete implements deepest level
+    
+    Box::new(registry)
 }

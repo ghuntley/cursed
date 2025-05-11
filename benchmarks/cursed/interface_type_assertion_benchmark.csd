@@ -1,336 +1,297 @@
-vibe benchmarks;
+vibe main;
 
-// Comprehensive benchmark for interface type assertions
-// This file tests various inheritance patterns and their performance
+// Interface Type Assertion Benchmark Program
+// This file contains benchmarking code for interface type assertions
+// with different inheritance patterns.
 
-// Basic Result type for error handling
-squad Result<T, E> {
-    value T,
-    err E,
-    isOk lit
+// Base interface at the top of all hierarchies
+collab BaseObject {
+    slay id() lit;
+    slay name() tea;
 }
 
-// Helper to create a successful result
-slay ok<T, E>(value T) Result<T, E> {
-    return Result<T, E>{
-        value: value,
-        err: nofr as E,
-        isOk: 1
-    };
+// Simple inheritance pattern
+collab SimpleInterface {
+    slay doWork() tea;
 }
 
-// Helper to create an error result
-slay fail<T, E>(err E) Result<T, E> {
-    return Result<T, E>{
-        value: nofr as T,
-        err: err,
-        isOk: 0
-    };
+// Diamond inheritance pattern interfaces
+collab InterfaceA {
+    slay methodA() tea;
 }
 
-// Error interface
-collab Error {
-    slay error() tea;
+collab InterfaceB {
+    slay methodB() tea;
 }
 
-// Basic type assertion error
-squad TypeAssertionError {
-    expected tea,
-    actual tea
+// Deep hierarchy interfaces
+collab Level1 {
+    slay level1Method() tea;
 }
 
-slay (e TypeAssertionError) error() tea {
-    return "Type assertion failed: expected " + e.expected + " but got " + e.actual;
+collab Level2 {
+    slay level2Method() tea;
 }
 
-// ----- Simple Inheritance Pattern -----
-
-// Base interface
-collab SimpleBase {
-    slay getValue() lit;
+collab Level3 {
+    slay level3Method() tea;
 }
 
-// Concrete implementation
-squad SimpleImpl {
-    value lit
+collab Level4 {
+    slay level4Method() tea;
 }
 
-slay (s SimpleImpl) getValue() lit {
-    return s.value;
+collab Level5 {
+    slay level5Method() tea;
 }
 
-// ----- Nested Inheritance Pattern -----
-
-// Base interface
-collab NestedParent {
-    slay getParentValue() lit;
+// Concrete types implementing the interfaces
+squad SimpleType {
+    identifier lit,
+    type_name tea
 }
 
-// Child interface that extends base
-collab NestedChild {
-    slay getChildValue() lit;
+// Implement BaseObject for SimpleType
+slay (s SimpleType) id() lit {
+    return s.identifier;
 }
 
-// Implementation of both interfaces
-squad NestedImpl {
-    parentValue lit,
-    childValue lit
+slay (s SimpleType) name() tea {
+    return s.type_name;
 }
 
-slay (n NestedImpl) getParentValue() lit {
-    return n.parentValue;
+// Implement SimpleInterface for SimpleType
+slay (s SimpleType) doWork() tea {
+    return "Simple work done by " + s.type_name;
 }
 
-slay (n NestedImpl) getChildValue() lit {
-    return n.childValue;
+// Diamond pattern implementation
+squad DiamondType {
+    identifier lit,
+    type_name tea,
+    dataA tea,
+    dataB tea
 }
 
-// ----- Diamond Inheritance Pattern -----
-
-// Base interface
-collab DiamondBase {
-    slay getBaseValue() lit;
+// Implement BaseObject for DiamondType
+slay (d DiamondType) id() lit {
+    return d.identifier;
 }
 
-// Two interfaces that extend base
-collab DiamondLeft {
-    slay getLeftValue() lit;
+slay (d DiamondType) name() tea {
+    return d.type_name;
 }
 
-collab DiamondRight {
-    slay getRightValue() lit;
+// Implement InterfaceA for DiamondType
+slay (d DiamondType) methodA() tea {
+    return "Method A: " + d.dataA;
 }
 
-// Implementation of all three interfaces
-squad DiamondImpl {
-    baseValue lit,
-    leftValue lit,
-    rightValue lit
+// Implement InterfaceB for DiamondType
+slay (d DiamondType) methodB() tea {
+    return "Method B: " + d.dataB;
 }
 
-slay (d DiamondImpl) getBaseValue() lit {
-    return d.baseValue;
+// Deep hierarchy implementation
+squad DeepType {
+    identifier lit,
+    type_name tea,
+    level_data tea
 }
 
-slay (d DiamondImpl) getLeftValue() lit {
-    return d.leftValue;
+// Implement BaseObject for DeepType
+slay (d DeepType) id() lit {
+    return d.identifier;
 }
 
-slay (d DiamondImpl) getRightValue() lit {
-    return d.rightValue;
+slay (d DeepType) name() tea {
+    return d.type_name;
 }
 
-// ----- Deep Nested Inheritance Pattern -----
-
-// Five level interface hierarchy
-collab DeepLevel1 {
-    slay level1() lit;
+// Implement all level interfaces for DeepType
+slay (d DeepType) level1Method() tea {
+    return d.level_data + " - Level 1";
 }
 
-collab DeepLevel2 {
-    slay level2() lit;
+slay (d DeepType) level2Method() tea {
+    return d.level_data + " - Level 2";
 }
 
-collab DeepLevel3 {
-    slay level3() lit;
+slay (d DeepType) level3Method() tea {
+    return d.level_data + " - Level 3";
 }
 
-collab DeepLevel4 {
-    slay level4() lit;
+slay (d DeepType) level4Method() tea {
+    return d.level_data + " - Level 4";
 }
 
-collab DeepLevel5 {
-    slay level5() lit;
+slay (d DeepType) level5Method() tea {
+    return d.level_data + " - Level 5";
 }
 
-// Implementation of all five levels
-squad DeepNestedImpl {
-    val1 lit,
-    val2 lit,
-    val3 lit,
-    val4 lit,
-    val5 lit
-}
+// Benchmark functions
 
-slay (d DeepNestedImpl) level1() lit {
-    return d.val1;
-}
-
-slay (d DeepNestedImpl) level2() lit {
-    return d.val2;
-}
-
-slay (d DeepNestedImpl) level3() lit {
-    return d.val3;
-}
-
-slay (d DeepNestedImpl) level4() lit {
-    return d.val4;
-}
-
-slay (d DeepNestedImpl) level5() lit {
-    return d.val5;
-}
-
-// ----- Benchmark Functions -----
-
-// Perform a simple type assertion benchmark
-slay benchmarkSimple(base SimpleBase, iterations lit) Result<lit, Error> {
-    sus startTime = vibez.now();
-    sus successCount = 0;
+// Benchmark simple type assertions
+slay benchmarkSimpleAssertions(iterations lit) tea {
+    sus start = vibe.time();
     
-    bestie i := 0; i < iterations; i = i + 1 {
-        // Try to assert as SimpleImpl
-        sus impl, ok = base.(SimpleImpl);
-        lowkey ok {
-            successCount = successCount + 1;
-        }
-    }
+    // Create test objects
+    sus simpleObj = SimpleType{identifier: 1, type_name: "SimpleBenchmark"};
+    sus obj BaseObject = simpleObj;
     
-    sus endTime = vibez.now();
-    sus duration = endTime - startTime;
-    
-    vibez.spill("Simple inheritance benchmark: " + iterations + " iterations in " + duration + "ms");
-    vibez.spill("Success rate: " + (successCount * 100 / iterations) + "%");
-    vibez.spill("Average time per assertion: " + (duration * 1000 / iterations) + "μs");
-    
-    return ok<lit, Error>(successCount);
-}
-
-// Benchmark with nested inheritance
-slay benchmarkNested(parent NestedParent, iterations lit) Result<lit, Error> {
-    sus startTime = vibez.now();
-    sus successCount = 0;
-    
-    bestie i := 0; i < iterations; i = i + 1 {
-        // First assert as NestedChild
-        sus child, childOk = parent.(NestedChild);
-        lowkey childOk {
-            // Then assert as NestedImpl
-            sus impl = child.(NestedImpl)?;
-            successCount = successCount + 1;
-        }
-    }
-    
-    sus endTime = vibez.now();
-    sus duration = endTime - startTime;
-    
-    vibez.spill("Nested inheritance benchmark: " + iterations + " iterations in " + duration + "ms");
-    vibez.spill("Success rate: " + (successCount * 100 / iterations) + "%");
-    vibez.spill("Average time per assertion: " + (duration * 1000 / iterations) + "μs");
-    
-    return ok<lit, Error>(successCount);
-}
-
-// Benchmark with diamond inheritance
-slay benchmarkDiamond(base DiamondBase, iterations lit) Result<lit, Error> {
-    sus startTime = vibez.now();
-    sus successCount = 0;
-    
-    bestie i := 0; i < iterations; i = i + 1 {
-        // Try first path: Base -> Left -> Impl
-        sus left, leftOk = base.(DiamondLeft);
-        lowkey leftOk {
-            // Continue to implementation
-            sus impl1, implOk1 = left.(DiamondImpl);
-            lowkey implOk1 {
-                successCount = successCount + 1;
+    // Perform assertions in a loop
+    periodt i := 0; i < iterations; i++ {
+        sus simple, ok = obj.(SimpleType);
+        if ok {
+            // Use the object to prevent optimization
+            if simple.identifier != 1 {
+                return "Error: wrong id";
             }
+        } else {
+            return "Error: type assertion failed";
         }
         
-        // Try second path: Base -> Right -> Impl
-        sus right, rightOk = base.(DiamondRight);
-        lowkey rightOk {
-            // This time with ? operator
-            sus impl2 = right.(DiamondImpl)?;
-            successCount = successCount + 1;
-        } no cap {
-            // Ignore errors
+        // Also test interface assertion
+        sus iface, ifaceOk = obj.(SimpleInterface);
+        if ifaceOk {
+            // Use the interface to prevent optimization
+            sus result = iface.doWork();
+            if result == "" {
+                return "Error: empty result";
+            }
+        } else {
+            return "Error: interface assertion failed";
         }
     }
     
-    sus endTime = vibez.now();
-    sus duration = endTime - startTime;
+    sus end = vibe.time();
+    sus duration = end - start;
     
-    vibez.spill("Diamond inheritance benchmark: " + iterations + " iterations in " + duration + "ms");
-    vibez.spill("Success rate: " + (successCount * 100 / iterations) + "%");
-    vibez.spill("Average time per assertion: " + (duration * 1000 / iterations) + "μs");
-    
-    return ok<lit, Error>(successCount);
+    return "Simple assertions: " + iterations + " iterations in " + duration + "ms";
 }
 
-// Benchmark with deep nested inheritance
-slay benchmarkDeepNested(level1 DeepLevel1, iterations lit) Result<lit, Error> {
-    sus startTime = vibez.now();
-    sus successCount = 0;
+// Benchmark diamond inheritance pattern assertions
+slay benchmarkDiamondAssertions(iterations lit) tea {
+    sus start = vibe.time();
     
-    bestie i := 0; i < iterations; i = i + 1 {
-        // Chain of type assertions through all levels
-        sus l2, ok2 = level1.(DeepLevel2);
-        lowkey ok2 {
-            sus l3, ok3 = l2.(DeepLevel3);
-            lowkey ok3 {
-                sus l4 = l3.(DeepLevel4)?;
-                sus l5 = l4.(DeepLevel5)?;
-                sus impl = l5.(DeepNestedImpl)?;
-                successCount = successCount + 1;
-            }
+    // Create test object
+    sus diamondObj = DiamondType{
+        identifier: 2, 
+        type_name: "DiamondBenchmark",
+        dataA: "A data",
+        dataB: "B data"
+    };
+    
+    // Create interface references
+    sus objBase BaseObject = diamondObj;
+    sus objA InterfaceA = diamondObj;
+    sus objB InterfaceB = diamondObj;
+    
+    // Perform assertions in a loop
+    periodt i := 0; i < iterations; i++ {
+        // Test BaseObject to concrete
+        sus d1, ok1 = objBase.(DiamondType);
+        if !ok1 {
+            return "Error: base to concrete assertion failed";
+        }
+        
+        // Test InterfaceA to concrete
+        sus d2, ok2 = objA.(DiamondType);
+        if !ok2 {
+            return "Error: A to concrete assertion failed";
+        }
+        
+        // Test InterfaceB to concrete
+        sus d3, ok3 = objB.(DiamondType);
+        if !ok3 {
+            return "Error: B to concrete assertion failed";
+        }
+        
+        // Test cross-interface assertions (should fail)
+        sus _, ok4 = objA.(InterfaceB);
+        if ok4 {
+            return "Error: A to B assertion should fail";
         }
     }
     
-    sus endTime = vibez.now();
-    sus duration = endTime - startTime;
+    sus end = vibe.time();
+    sus duration = end - start;
     
-    vibez.spill("Deep nested inheritance benchmark: " + iterations + " iterations in " + duration + "ms");
-    vibez.spill("Success rate: " + (successCount * 100 / iterations) + "%");
-    vibez.spill("Average time per assertion: " + (duration * 1000 / iterations) + "μs");
+    return "Diamond assertions: " + iterations + " iterations in " + duration + "ms";
+}
+
+// Benchmark deep hierarchy assertions
+slay benchmarkDeepAssertions(iterations lit) tea {
+    sus start = vibe.time();
     
-    return ok<lit, Error>(successCount);
+    // Create test object
+    sus deepObj = DeepType{
+        identifier: 3,
+        type_name: "DeepBenchmark",
+        level_data: "Deep data"
+    };
+    
+    // Create interface references
+    sus objBase BaseObject = deepObj;
+    sus objL1 Level1 = deepObj;
+    sus objL3 Level3 = deepObj;
+    sus objL5 Level5 = deepObj;
+    
+    // Perform assertions in a loop
+    periodt i := 0; i < iterations; i++ {
+        // Test from base to concrete
+        sus d1, ok1 = objBase.(DeepType);
+        if !ok1 {
+            return "Error: base to concrete assertion failed";
+        }
+        
+        // Test from level 1 to concrete
+        sus d2, ok2 = objL1.(DeepType);
+        if !ok2 {
+            return "Error: L1 to concrete assertion failed";
+        }
+        
+        // Test from middle level to concrete
+        sus d3, ok3 = objL3.(DeepType);
+        if !ok3 {
+            return "Error: L3 to concrete assertion failed";
+        }
+        
+        // Test from deepest level to concrete
+        sus d5, ok5 = objL5.(DeepType);
+        if !ok5 {
+            return "Error: L5 to concrete assertion failed";
+        }
+        
+        // Test up and down the hierarchy
+        sus l1, ok6 = objL5.(Level1);
+        if !ok6 {
+            return "Error: L5 to L1 assertion failed";
+        }
+        
+        sus base, ok7 = objL3.(BaseObject);
+        if !ok7 {
+            return "Error: L3 to base assertion failed";
+        }
+    }
+    
+    sus end = vibe.time();
+    sus duration = end - start;
+    
+    return "Deep hierarchy assertions: " + iterations + " iterations in " + duration + "ms";
 }
 
 // Run all benchmarks
-slay runAllBenchmarks(iterations lit) {
-    // Initialize objects
-    sus simpleImpl = SimpleImpl{value: 42};
-    sus nestedImpl = NestedImpl{parentValue: 10, childValue: 20};
-    sus diamondImpl = DiamondImpl{baseValue: 1, leftValue: 2, rightValue: 3};
-    sus deepImpl = DeepNestedImpl{val1: 1, val2: 2, val3: 3, val4: 4, val5: 5};
-    
-    // Cast to interfaces
-    sus simpleBase SimpleBase = simpleImpl;
-    sus nestedParent NestedParent = nestedImpl;
-    sus diamondBase DiamondBase = diamondImpl;
-    sus deepLevel1 DeepLevel1 = deepImpl;
-    
-    // Run benchmarks
-    vibez.spill("\n==== INTERFACE TYPE ASSERTION BENCHMARKS ====");
-    vibez.spill("Running benchmarks with " + iterations + " iterations each\n");
-    
-    sus simpleResult = benchmarkSimple(simpleBase, iterations);
-    vibez.spill("");
-    
-    sus nestedResult = benchmarkNested(nestedParent, iterations);
-    vibez.spill("");
-    
-    sus diamondResult = benchmarkDiamond(diamondBase, iterations);
-    vibez.spill("");
-    
-    sus deepResult = benchmarkDeepNested(deepLevel1, iterations);
-    vibez.spill("");
-    
-    // Summary
-    vibez.spill("\n==== BENCHMARK SUMMARY ====");
-    vibez.spill("Simple:      " + simpleResult.value);
-    vibez.spill("Nested:      " + nestedResult.value);
-    vibez.spill("Diamond:     " + diamondResult.value);
-    vibez.spill("Deep Nested: " + deepResult.value);
-}
-
-// Main function
 slay main() {
-    // Number of iterations for each benchmark
+    // Define iteration counts
     sus iterations = 10000;
     
-    // Run all benchmarks
-    runAllBenchmarks(iterations);
+    // Run benchmarks
+    vibez.spill("Starting interface type assertion benchmarks...");
+    
+    vibez.spill(benchmarkSimpleAssertions(iterations));
+    vibez.spill(benchmarkDiamondAssertions(iterations));
+    vibez.spill(benchmarkDeepAssertions(iterations));
+    
+    vibez.spill("Benchmarks complete.");
 }
