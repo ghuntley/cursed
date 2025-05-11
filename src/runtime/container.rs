@@ -35,7 +35,7 @@ pub unsafe extern "C" fn container_length(container: *const c_void) -> c_int {
     let obj = Gc::<Object>::new_without_root(gc, obj_id);
     
     // Get the length based on the object type
-    let length = if let Some(inner) = obj.inner() {
+    let length = (if let Some(inner) = obj.inner() {
         if inner.is_array() {
             // For arrays, get the length directly
             inner.as_array().map(|arr| arr.len()).unwrap_or(0)
@@ -52,7 +52,7 @@ pub unsafe extern "C" fn container_length(container: *const c_void) -> c_int {
     } else {
         // If we couldn't access the inner object
         0
-    } else {
+    }) else {
         // For other container types, check for a length method
         debug!("Unknown container type");
         0
