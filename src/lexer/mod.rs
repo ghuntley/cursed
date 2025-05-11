@@ -10,6 +10,7 @@
 //! * `TokenType`: Enumeration of all token types in the language
 //! * `utils`: Helper functions for character classification and manipulation
 //! * `debug`: Tools for debugging token streams
+//! * `enhanced_token`: Extended token implementation with source location information
 
 pub mod debug;
 pub mod lexer;
@@ -17,8 +18,10 @@ pub mod lexer_methods;
 pub mod token;
 pub mod token_type;
 pub mod utils;
+pub mod enhanced_token;
 
 pub use debug::debug_tokens;
 pub use lexer::Lexer;
 pub use token::Token;
 pub use token_type::TokenType;
+pub use enhanced_token::{EnhancedToken, TokenEnhancement};

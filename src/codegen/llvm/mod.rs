@@ -111,6 +111,10 @@ pub use self::interface_type_assertion_error_propagation::InterfaceTypeAssertion
 pub use self::interface_type_assertion_error_propagation_integration::InterfaceTypeAssertionErrorIntegration;
 // Improved error propagation system with consistent ? operator usage
 pub use self::interface_type_assertion_error_propagation_improved::ImprovedErrorPropagation;
+// Enhanced source location support for interface type assertion error propagation
+pub use self::interface_type_assertion_error_propagation_source_location::EnhancedSourceLocationErrorPropagation;
+// Enhanced source location support with file system integration
+pub use self::interface_type_assertion_enhanced_source_location::EnhancedSourceLocationSupport;
 // Nesting level tracking for interface type assertions
 pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 // Interface type registry for runtime type information
@@ -250,6 +254,8 @@ mod interface_type_assertion_error_handling; // Enhanced error handling for inte
 mod interface_type_assertion_result_integration; // Result-based error propagation with ? operator integration
 mod interface_type_assertion_result_implementation; // Comprehensive Result implementation with proper ? operator integration
 mod interface_type_assertion_result; // Interface type assertion with Result type and ? operator integration
+pub mod interface_type_assertion_error_propagation_source_location; // Enhanced source location support for error propagation
+pub mod interface_type_assertion_enhanced_source_location; // Improved source location support with file system integration
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
