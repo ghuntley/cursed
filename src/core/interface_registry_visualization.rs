@@ -176,6 +176,12 @@ impl ThreadSafeInterfaceRegistryVisualization {
 
 impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceRegistryVisualization {
     #[instrument(level = "debug")]
+    fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
+        // Delegate to the instance method
+        self.register_extension(source, target)
+    }
+    
+    #[instrument(level = "debug")]
     fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         debug!("Getting complete extension hierarchy");
         
