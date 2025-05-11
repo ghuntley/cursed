@@ -38,6 +38,14 @@ use crate::error::SourceLocation;
 
 /// Trait for implementing interface type assertion error propagation
 pub trait InterfaceTypeAssertionErrorPropagation<'ctx> {
+    /// Set the current expected type ID for error reporting
+    fn set_expected_type_id(&mut self, type_id: u32);
+    
+    /// Set the current actual type ID for error reporting
+    fn set_actual_type_id(&mut self, type_id: u32);
+    
+    /// Clear the current type ID tracking
+    fn clear_type_ids(&mut self);
     /// Compile a type assertion expression with error propagation support
     /// This version returns a Result type that can be used with the ? operator
     fn compile_type_assertion_with_error_propagation(
@@ -69,8 +77,66 @@ pub trait InterfaceTypeAssertionErrorPropagation<'ctx> {
     ) -> Result<BasicValueEnum<'ctx>, Error>;
 }
 
+// Add fields to LlvmCodeGenerator for type ID tracking during error propagation
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    pub fn init_type_assertion_error_tracking(&mut self) {
+        // Initialize the type ID tracking fields if they don't exist
+        if !self.internal_fields.contains_key("current_expected_type_id") {
+            self.internal_fields.insert("current_expected_type_id".to_string(), Box::new(None::<u32>));
+        }
+        if !self.internal_fields.contains_key("current_actual_type_id") {
+            self.internal_fields.insert("current_actual_type_id".to_string(), Box::new(None::<u32>));
+        }
+    }
+    
+    // Accessor for expected type ID
+    pub fn current_expected_type_id(&self) -> Option<u32> {
+        self.internal_fields.get("current_expected_type_id")
+            .and_then(|val| val.downcast_ref::<Option<u32>>().cloned())
+            .flatten()
+    }
+    
+    // Accessor for actual type ID
+    pub fn current_actual_type_id(&self) -> Option<u32> {
+        self.internal_fields.get("current_actual_type_id")
+            .and_then(|val| val.downcast_ref::<Option<u32>>().cloned())
+            .flatten()
+    }
+}
+
 // TypeAssertionErrorPropagation - implementation trait for LLVM code generator
 impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
+    fn set_expected_type_id(&mut self, type_id: u32) {
+        self.init_type_assertion_error_tracking();
+        if let Some(field) = self.internal_fields.get_mut("current_expected_type_id") {
+            if let Some(val) = field.downcast_mut::<Option<u32>>() {
+                *val = Some(type_id);
+            }
+        }
+    }
+    
+    fn set_actual_type_id(&mut self, type_id: u32) {
+        self.init_type_assertion_error_tracking();
+        if let Some(field) = self.internal_fields.get_mut("current_actual_type_id") {
+            if let Some(val) = field.downcast_mut::<Option<u32>>() {
+                *val = Some(type_id);
+            }
+        }
+    }
+    
+    fn clear_type_ids(&mut self) {
+        self.init_type_assertion_error_tracking();
+        if let Some(field) = self.internal_fields.get_mut("current_expected_type_id") {
+            if let Some(val) = field.downcast_mut::<Option<u32>>() {
+                *val = None;
+            }
+        }
+        if let Some(field) = self.internal_fields.get_mut("current_actual_type_id") {
+            if let Some(val) = field.downcast_mut::<Option<u32>>() {
+                *val = None;
+            }
+        }
+    }
     #[instrument(skip(self, type_assertion))]
     fn compile_type_assertion_with_error_propagation(
         &mut self,
@@ -254,12 +320,25 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             location_type.const_zero().into()
         };
         
-        // Build the Result structure
+        // Get type IDs for the result
+        let expected_type_id = match self.current_expected_type_id() {
+            Some(id) => ctx.i32_type().const_int(id as u64, false),
+            None => ctx.i32_type().const_int(0, false)
+        };
+        
+        let actual_type_id = match self.current_actual_type_id() {
+            Some(id) => ctx.i32_type().const_int(id as u64, false),
+            None => ctx.i32_type().const_int(0, false)
+        };
+        
+        // Build the enhanced Result structure with type IDs
         let result_struct = self.build_struct_value(&[
             value,
             success_flag.into(),
             error_msg_ptr,
-            source_info
+            source_info,
+            expected_type_id.into(),
+            actual_type_id.into()
         ]);
         
         Ok(result_struct.into())
@@ -270,13 +349,15 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         type_assertion: &TypeAssertionQuestion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         
-        // Create a source location for error context
+        // Create a source location for error context with more detailed information
         let source_location = match &type_assertion.token {
             token if !token.is_empty() => {
+                // Try to extract more context about location from the token
+                let (line, column, file) = self.extract_location_from_token(token);
                 Some(SourceLocation {
-                    line: 0, // Not available from AST
-                    column: 0, // Not available from AST
-                    file: None,
+                    line, 
+                    column,
+                    file,
                     source_line: format!("{}.({})?", type_assertion.expression.string(), type_assertion.type_name),
                 })
             },
@@ -372,14 +453,20 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let current_fn = self.current_function()
             .ok_or_else(|| Error::Compilation("No current function for unwrapping result".to_string()))?;
         
+        // Make sure we have tracking initialized
+        self.init_type_assertion_error_tracking();
+        
         // Create basic blocks for success and failure paths
         let success_block = ctx.append_basic_block(current_fn, "unwrap_success");
         let failure_block = ctx.append_basic_block(current_fn, "unwrap_failure");
         let merge_block = ctx.append_basic_block(current_fn, "unwrap_merge");
         
+        // Get the struct value
+        let struct_value = result_value.into_struct_value();
+        
         // Extract the success flag (second field)
         let success_flag = builder.build_extract_value(
-            result_value.into_struct_value(),
+            struct_value,
             1, // Index of success flag
             "success_flag"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
@@ -394,7 +481,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         // Success path - extract and return the value
         builder.position_at_end(success_block);
         let value = builder.build_extract_value(
-            result_value.into_struct_value(),
+            struct_value,
             0, // Index of value
             "unwrapped_value"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
@@ -402,31 +489,53 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         builder.build_unconditional_branch(merge_block)
             .map_err(|e| Error::Compilation(e.to_string()))?;
         
-        // Failure path - propagate the error
+        // Failure path - propagate the error with improved type information
         builder.position_at_end(failure_block);
         
         // Extract error message and location
         let error_msg = builder.build_extract_value(
-            result_value.into_struct_value(),
+            struct_value,
             2, // Index of error message
             "error_message"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
         let location_info = builder.build_extract_value(
-            result_value.into_struct_value(),
+            struct_value,
             3, // Index of source location
             "source_location"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
-        // Call error propagation function (to be implemented in runtime support)
-        // This would typically set a thread-local error and jump to appropriate handler
+        // Extract type information if available in additional fields
+        if struct_value.get_type().count_fields() > 4 {
+            // Extract expected type ID
+            if let Ok(expected_type_id) = builder.build_extract_value(struct_value, 4, "expected_type_id") {
+                if let Ok(type_id) = expected_type_id.try_into_int_value() {
+                    // Store for error reporting
+                    let id = type_id.get_zero_extended_constant().unwrap_or(0) as u32;
+                    self.set_expected_type_id(id);
+                }
+            }
+            
+            // Extract actual type ID
+            if let Ok(actual_type_id) = builder.build_extract_value(struct_value, 5, "actual_type_id") {
+                if let Ok(type_id) = actual_type_id.try_into_int_value() {
+                    // Store for error reporting
+                    let id = type_id.get_zero_extended_constant().unwrap_or(0) as u32;
+                    self.set_actual_type_id(id);
+                }
+            }
+        }
+        
+        // Call error propagation function with enhanced type information
         self.call_error_propagation_function(error_msg, location_info)?;
         
-        // We should never reach this point in the failure path, as error propagation
-        // should trigger unwinding, but we need to emit valid LLVM IR
+        // Clean up type ID tracking after propagation
+        self.clear_type_ids();
+        
+        // We should never reach this point in the failure path
         builder.build_unreachable().map_err(|e| Error::Compilation(e.to_string()))?;
         
-        // Merge block - use phi node
+        // Merge block - use phi node (only from success path since failure is unreachable)
         builder.position_at_end(merge_block);
         let phi = builder.build_phi(
             value.get_type(),
@@ -444,21 +553,55 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
 
 // Helper methods for the error propagation system
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Extract location information from a token string
+    /// Returns (line, column, file_opt)
+    fn extract_location_from_token(&self, token: &str) -> (i32, i32, Option<String>) {
+        // Token might contain location information in format "file:line:column"
+        // This is a best-effort extraction
+        let parts: Vec<&str> = token.split(':').collect();
+        
+        if parts.len() >= 3 {
+            // Last part should be column
+            let column = parts[parts.len()-1].parse::<i32>().unwrap_or(0);
+            
+            // Second to last part should be line
+            let line = parts[parts.len()-2].parse::<i32>().unwrap_or(0);
+            
+            // Everything before that is the file
+            let file = if parts.len() > 3 {
+                let file_parts = &parts[0..parts.len()-2];
+                Some(file_parts.join(":"))
+            } else if parts.len() == 3 {
+                Some(parts[0].to_string())
+            } else {
+                None
+            };
+            
+            (line, column, file)
+        } else {
+            // No location information available in token
+            (0, 0, None)
+        }
+    }
     /// Get the LLVM type for Result structure
     fn get_result_type(&self, value_type: BasicTypeEnum<'ctx>) -> StructType<'ctx> {
         let ctx = self.context();
         
-        // Result structure:
+        // Enhanced Result structure:
         // 1. Value of generic type
         // 2. Success flag (bool)
         // 3. Error message (string pointer)
         // 4. Source location information
+        // 5. Expected type ID (i32) - for error reporting
+        // 6. Actual type ID (i32) - for error reporting
         
         ctx.struct_type(&[
             value_type,
             ctx.bool_type().into(),
             ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-            self.get_source_location_type().into()
+            self.get_source_location_type().into(),
+            ctx.i32_type().into(), // Expected type ID
+            ctx.i32_type().into()  // Actual type ID
         ], false)
     }
     
@@ -492,48 +635,68 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         global_str.as_pointer_value()
     }
     
-    /// Call the runtime error propagation function
+    /// Call the runtime error propagation function with enhanced type information
     fn call_error_propagation_function(
         &self,
         error_message: BasicValueEnum<'ctx>,
         location_info: BasicValueEnum<'ctx>
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // In a real implementation, this would call a runtime support function
-        // that would set up proper error propagation
-        
-        // For now, we'll call a placeholder function that will be replaced with
-        // proper implementation in the future
+        // Get current module and context
         let module = self.module();
         let ctx = self.context();
+        let builder = self.builder();
         
-        // Get or declare the error propagation function
-        let propagate_fn = match module.get_function("__cursed_propagate_error") {
+        // Get or declare the enhanced error propagation function with type information
+        let propagate_fn = match module.get_function("__cursed_propagate_error_with_type_info") {
             Some(func) => func,
             None => {
-                // Declare the function if it doesn't exist
+                // Declare the enhanced function if it doesn't exist
                 let void_type = ctx.void_type();
                 let fn_type = void_type.fn_type(&[
+                    // Error message
                     ctx.i8_type().ptr_type(AddressSpace::default()).into(),
-                    self.get_source_location_type().into()
+                    // Source location info
+                    self.get_source_location_type().into(),
+                    // Expected type ID
+                    ctx.i32_type().into(),
+                    // Actual type ID 
+                    ctx.i32_type().into(),
+                    // Error type (1 = type assertion error)
+                    ctx.i32_type().into()
                 ], false);
                 
-                module.add_function("__cursed_propagate_error", fn_type, None)
+                module.add_function("__cursed_propagate_error_with_type_info", fn_type, None)
             }
         };
         
-        // Call the function
-        let builder = self.builder();
+        // Get current type context information
+        let expected_type_id = match self.current_expected_type_id {
+            Some(id) => ctx.i32_type().const_int(id as u64, false),
+            None => ctx.i32_type().const_int(0, false)
+        };
+        
+        let actual_type_id = match self.current_actual_type_id {
+            Some(id) => ctx.i32_type().const_int(id as u64, false),
+            None => ctx.i32_type().const_int(0, false)
+        };
+        
+        // Type assertion error code = 1
+        let error_type = ctx.i32_type().const_int(1, false);
+        
+        // Call the enhanced function with type information
         builder.build_call(
             propagate_fn,
             &[
                 error_message,
-                location_info
+                location_info,
+                expected_type_id.into(),
+                actual_type_id.into(),
+                error_type.into()
             ],
             "propagate_error_call"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
-        // This function should never return normally, but for LLVM's sake we'll
-        // return an empty value
+        // This function should never return normally, but we need to emit valid LLVM IR
         Ok(ctx.i8_type().const_int(0, false).into())
     }
     
