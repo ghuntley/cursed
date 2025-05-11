@@ -29,6 +29,7 @@ pub mod async_constraint_checker;
 pub mod constraint_recovery;
 pub mod nested_interface_registry;
 pub mod deep_nested_interface_registry;
+pub mod deep_nested_async_checker;
 pub mod interface_registry_extensions;
 pub mod interface_registry_visualization;
 pub mod interface_registry_visualization_enhanced;

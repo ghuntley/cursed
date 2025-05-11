@@ -71,6 +71,9 @@ pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, Enhanc
 // Re-export deep nested interface registry
 pub use crate::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, DeepNestedInterfaceChecking, ConstraintPath};
 
+// Re-export deep nested async checker integration
+pub use crate::core::deep_nested_async_checker::{DeepNestedAsyncChecker, DeepNestedAsyncConstraintChecking};
+
 // Re-export interface registry visualization
 pub use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization};
 pub use crate::core::interface_registry_visualization_implementation;

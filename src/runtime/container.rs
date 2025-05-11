@@ -8,9 +8,10 @@
 //! These functions are called from the LLVM codegen for range clause iteration.
 
 use crate::object::Object;
-use crate::memory::Gc;
+use crate::memory::{Gc, GarbageCollector};
 use tracing::{debug, info, instrument};
 use std::os::raw::{c_char, c_int, c_void};
+use std::sync::Arc;
 
 /// Get the length of a container
 /// 
@@ -117,9 +118,6 @@ pub unsafe extern "C" fn container_get_element(container: *const c_void, index: 
         } else {
             None
         }
-    } else {
-        None
-    }
     } else {
         // For other container types, we don't have a standard way to access elements
         debug!("Unknown container type or invalid index");
