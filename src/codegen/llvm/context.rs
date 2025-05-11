@@ -89,6 +89,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry,
     // Type assertion implementation
     pub(crate) type_assertion_implementation: Option<Box<dyn crate::codegen::llvm::type_assertion::InterfaceTypeAssertion<'ctx> + 'ctx>>,
+    // Type assertion debug configuration
+    pub(crate) type_assertion_debug_config: Option<crate::codegen::llvm::interface_type_assertion_debug::TypeAssertionDebugConfig>,
     
     // Test-only fields for interface hierarchy mocking in unit tests
     #[cfg(test)]
@@ -98,6 +100,7 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Test-only field for inheritance relationships in unit tests
     #[cfg(test)]
     pub test_inheritance_map: Option<HashMap<String, HashSet<String>>>,
+    
 }
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -131,6 +134,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_assertion_enhanced::register_enhanced_type_assertion();
         // Initialize optimized dynamic dispatch
         super::optimized_dynamic_dispatch::register_optimized_dynamic_dispatch();
+        // Initialize interface type assertion debug utilities
+        super::interface_type_assertion_debug::register_type_assertion_debug();
         // Initialize LRU cached field accessors
         super::lru_field_accessors::register_lru_field_accessors();
         super::interface_field_accessors_lru::register_interface_field_accessors_lru();
@@ -190,6 +195,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             lru_field_accessor_cache: None,
             // Initialize type assertion implementation to None - will be created when needed
             type_assertion_implementation: None,
+            // Initialize type assertion debug configuration
+            type_assertion_debug_config: None,
             
             // Test-only fields for interface hierarchy mocking in unit tests
             #[cfg(test)]
