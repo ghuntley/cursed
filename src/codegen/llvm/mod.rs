@@ -259,6 +259,7 @@ mod interface_type_assertion_result; // Interface type assertion with Result typ
 pub mod interface_type_assertion_error_propagation_source_location; // Enhanced source location support for error propagation
 pub mod interface_type_assertion_enhanced_source_location; // Improved source location support with file system integration
 pub mod interface_type_assertion_error_propagation_filesystem; // Enhanced error propagation with filesystem integration
+pub mod interface_type_assertion_benchmarking; // Performance benchmarking for interface type assertions
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
@@ -291,6 +292,8 @@ pub use self::interface_type_assertion_result_implementation::{IntegratedResultT
 pub use self::interface_type_assertion_result::{InterfaceTypeAssertionResult, ResultPropagation};
 // Re-export error propagation helpers for ? operator integration
 pub use self::interface_type_assertion_error_propagation_integration::{is_type_mismatch_error, extract_type_info, register_error_propagation_integration};
+// Re-export benchmarking functionality for interface type assertions
+pub use self::interface_type_assertion_benchmarking::{TypeAssertionBenchmarking, HierarchyPattern, BenchmarkStats, TypeAssertionBenchmark, TypeAssertionBenchmarkSuite};
 
 // Import key modules and traits
 pub use string_switch::*;
