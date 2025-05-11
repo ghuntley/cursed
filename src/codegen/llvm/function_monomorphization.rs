@@ -487,7 +487,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     let param_type = Token::new(TokenType::Identifier, "T");
                     let return_type = Token::new(TokenType::Identifier, "T");
                     
-                    let param = crate::ast::ParameterStatement {
+                    let param = crate::ast::declarations::ParameterStatement {
                         token: "param".to_string(),
                         name: Identifier {
                             token: "value".to_string(),
