@@ -52,13 +52,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Ensure the registry is initialized
         if self.interface_type_registry.is_none() {
             return Ok(format!(
-                """
-                Type Path Visualization:
-                
-                {} --?--> {}
-                
-                No type registry available to determine the path.
-                """,
+                "Type Path Visualization:\n\n{} --?--> {}\n\nNo type registry available to determine the path.",
                 from_type, to_type
             ));
         }
@@ -69,13 +63,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         let from_id = match registry.get_type_id(from_type) {
             Ok(id) => id,
             Err(_) => return Ok(format!(
-                """
-                Type Path Visualization:
-                
-                {} (unknown type) --?--> {}
-                
-                The source type is not registered in the type registry.
-                """,
+                "Type Path Visualization:\n\n{} (unknown type) --?--> {}\n\nThe source type is not registered in the type registry.",
                 from_type, to_type
             )),
         };
@@ -83,13 +71,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         let to_id = match registry.get_type_id(to_type) {
             Ok(id) => id,
             Err(_) => return Ok(format!(
-                """
-                Type Path Visualization:
-                
-                {} --?--> {} (unknown type)
-                
-                The target type is not registered in the type registry.
-                """,
+                "Type Path Visualization:\n\n{} --?--> {} (unknown type)\n\nThe target type is not registered in the type registry.",
                 from_type, to_type
             )),
         };
@@ -97,13 +79,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // If the types are the same, it's a direct match
         if from_id == to_id {
             return Ok(format!(
-                """
-                Type Path Visualization:
-                
-                {} --DIRECT MATCH--> {}
-                
-                Types are identical, no conversion needed.
-                """,
+                "Type Path Visualization:\n\n{} --DIRECT MATCH--> {}\n\nTypes are identical, no conversion needed.",
                 from_type, to_type
             ));
         }
@@ -112,13 +88,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         let inheritance_map = match registry.get_inheritance_map() {
             Some(map) => map,
             None => return Ok(format!(
-                """
-                Type Path Visualization:
-                
-                {} --?--> {}
-                
-                No inheritance information available in the registry.
-                """,
+                "Type Path Visualization:\n\n{} --?--> {}\n\nNo inheritance information available in the registry.",
                 from_type, to_type
             )),
         };
@@ -138,13 +108,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
             
             // Create a more helpful error message with suggestions
             let mut path_str = format!(
-                """
-                Type Path Visualization:
-                
-                {} --INCOMPATIBLE--> {}
-                
-                No valid conversion path exists between these types.
-                """,
+                "Type Path Visualization:\n\n{} --INCOMPATIBLE--> {}\n\nNo valid conversion path exists between these types.",
                 from_type, to_type
             );
             
