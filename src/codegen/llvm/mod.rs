@@ -106,7 +106,7 @@ pub use self::type_assertion_implementation::IntegratedTypeAssertion;
 // Improved type assertion integration with proper error propagation
 pub use self::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 // Enhanced error propagation for interface type assertions
-pub use self::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
+pub use self::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 // Improved error propagation system with consistent ? operator usage
 pub use self::interface_type_assertion_error_propagation_improved::ImprovedErrorPropagation;
 // Nesting level tracking for interface type assertions

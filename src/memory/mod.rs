@@ -35,7 +35,7 @@ pub mod cycle_detector;
 
 // Re-exports
 pub use object_storage::{ObjectStorage, StorageWrapper, global_object_storage, register_dependency, store, contains};
-pub use finalization_order::{finalize_objects_ordered, calculate_finalization_order};
+pub use finalization_order::finalize_objects_ordered;
 pub use allocation_profiler::{global_profiler, enable_profiling, disable_profiling, reset_profiling, print_profiling_report};
 pub use cycle_detector::{CollectionResult, CollectionStats};
 

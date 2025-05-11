@@ -94,6 +94,13 @@ The garbage collector (GC) has been enhanced with proper cycle detection to hand
 4. Properly handling cycles when an object refers back to an already visited object
 5. Sweeping (collecting) all objects that weren't marked as reachable
 
+The implementation also includes a smart finalization ordering algorithm that:
+
+1. Builds a dependency graph between objects that need to be finalized
+2. Determines the correct order for finalization even in complex circular structures
+3. Can detect and break cycles in the finalization order when necessary
+4. Ensures resources are properly released in the correct order
+
 This prevents memory leaks when objects reference each other in cycles but are no longer reachable from the root set.
 
 ## Interface Type Assertion Implementation

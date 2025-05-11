@@ -707,7 +707,8 @@ impl GarbageCollector {
             if !unreachable_addrs.is_empty() {
                 println!("GC: Finalizing {} unreachable objects in dependency order", unreachable_addrs.len());
                 // Use the finalization_order module to finalize in the right order
-                crate::memory::finalize_objects_ordered(&unreachable_addrs);
+                // This properly handles circular references
+                crate::memory::finalization_order::finalize_objects_ordered(&unreachable_addrs);
             }
 
             // Now process each object - if it's not in the reachable set, remove it from GC's map
