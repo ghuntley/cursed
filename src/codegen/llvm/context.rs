@@ -146,6 +146,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_assertion_with_registry::register_interface_type_assertion_with_registry();
         // Initialize interface type assertion error propagation with proper Result integration
         super::interface_type_assertion_error_propagation::register_error_propagation();
+        super::interface_type_assertion_error_propagation_integration::register_error_propagation_integration();
         super::interface_type_assertion_result_implementation::register_result_implementation();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization

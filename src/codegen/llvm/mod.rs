@@ -107,6 +107,8 @@ pub use self::type_assertion_implementation::IntegratedTypeAssertion;
 pub use self::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 // Enhanced error propagation for interface type assertions
 pub use self::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+// Integrated error propagation for the ? operator
+pub use self::interface_type_assertion_error_propagation_integration::InterfaceTypeAssertionErrorIntegration;
 // Improved error propagation system with consistent ? operator usage
 pub use self::interface_type_assertion_error_propagation_improved::ImprovedErrorPropagation;
 // Nesting level tracking for interface type assertions
@@ -230,6 +232,7 @@ mod type_registry_improved; // Improved type registry with better runtime type i
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
 pub mod interface_type_assertion_error_propagation; // Enhanced error propagation for interface type assertions
 pub mod interface_type_assertion_error_propagation_improved; // Improved error propagation system with consistent ? operator usage
+pub mod interface_type_assertion_error_propagation_integration; // Integration layer for error propagation with ? operator support
 pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface type assertions with proper error propagation
 pub mod interface_type_assertion_path_visualization;
 pub mod interface_type_assertion_debug; // Interface type assertion debug utilities
@@ -243,6 +246,7 @@ pub mod interface_registry_extension_checking; // Extension relationship checkin
 mod interface_type_assertion_error_handling; // Enhanced error handling for interface type assertions with proper error propagation
 mod interface_type_assertion_result_integration; // Result-based error propagation with ? operator integration
 mod interface_type_assertion_result_implementation; // Comprehensive Result implementation with proper ? operator integration
+mod interface_type_assertion_result; // Interface type assertion with Result type and ? operator integration
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
@@ -272,6 +276,9 @@ pub use self::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtens
 // Re-export Result integration for interface type assertions
 pub use self::interface_type_assertion_result_integration::TypeAssertionResultIntegration;
 pub use self::interface_type_assertion_result_implementation::{IntegratedResultTypeAssertion, TypeAssertionErrorInfo, register_result_implementation};
+pub use self::interface_type_assertion_result::{InterfaceTypeAssertionResult, ResultPropagation};
+// Re-export error propagation helpers for ? operator integration
+pub use self::interface_type_assertion_error_propagation_integration::{is_type_mismatch_error, extract_type_info, register_error_propagation_integration};
 
 // Import key modules and traits
 pub use string_switch::*;
