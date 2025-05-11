@@ -34,6 +34,7 @@ pub mod interface_registry_visualization;
 pub mod interface_registry_visualization_enhanced;
 pub mod interface_registry_visualization_reference;
 pub mod interface_registry_visualization_improved;
+pub mod interface_registry_extension_checking;
 
 /// Runtime representation of a compiled CURSED function
 ///
