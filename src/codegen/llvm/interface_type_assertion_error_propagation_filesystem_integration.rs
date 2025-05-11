@@ -78,6 +78,9 @@ pub trait ComprehensiveErrorPropagationIntegration<'ctx>:
         expected_type_id: u32,
         actual_type_id: u32
     ) -> Result<(), Error>;
+    
+    /// Ensure registry visualization is properly initialized
+    fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error>;
 }
 
 impl<'ctx> ComprehensiveErrorPropagationIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
@@ -347,6 +350,27 @@ impl<'ctx> ComprehensiveErrorPropagationIntegration<'ctx> for LlvmCodeGenerator<
             // Append the type information to the source line
             location.source_line.push_str(&type_info);
         }
+        
+        Ok(())
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error> {
+        // The registry_extensions field is already initialized in the LlvmCodeGenerator constructor
+        // but we need to verify that the interface_type_registry is properly connected
+        if self.interface_type_registry.is_none() {
+            let registry_ref = Arc::new(self.registry_extensions.clone());
+            let mut ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
+            self.interface_type_registry = Some(ir);
+        }
+        
+        // Ensure consistency between registries
+        if let Some(registry) = &mut self.interface_type_registry {
+            registry.synchronize_with_extension_registry()?;
+        }
+        
+        // Mark as initialized in the internal fields
+        self.internal_fields.insert("registry_visualization_initialized".to_string(), Box::new(true));
         
         Ok(())
     }
