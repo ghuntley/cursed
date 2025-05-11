@@ -289,8 +289,7 @@ impl ThreadSafeLruCache {
 mod tests {
     use super::*;
     
-    #[path = "../tests/common.rs"]
-    mod common;
+    use crate::tests::common;
     
     #[test]
     fn test_lru_cache_basic_operations() {

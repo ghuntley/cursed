@@ -88,6 +88,9 @@ pub use crate::core::interface_registry_extension_visualization;
 // Re-export interface registry extension checking
 pub use crate::core::interface_registry_extension_checking::InterfaceTypeRegistryExtensionChecking;
 
+// Tests module
+pub mod tests;
+
 // Re-export nested generic instantiation
 pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
 
