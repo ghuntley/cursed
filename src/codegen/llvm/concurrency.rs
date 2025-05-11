@@ -23,11 +23,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else if ty.is_float_type() {
             // Handle float types based on their size
             let float_ty = ty.into_float_type();
-            if float_ty.get_type_kind() == inkwell::types::FloatTypeKind::Half {
+            // Handle float types based on their size by comparing with well-known types
+            if float_ty == self.context().f16_type() {
                 2 // 16-bit float
-            } else if float_ty.get_type_kind() == inkwell::types::FloatTypeKind::Float {
+            } else if float_ty == self.context().f32_type() {
                 4 // 32-bit float
-            } else if float_ty.get_type_kind() == inkwell::types::FloatTypeKind::Double {
+            } else if float_ty == self.context().f64_type() {
                 8 // 64-bit float
             } else {
                 16 // Largest float types (FP128, etc.)

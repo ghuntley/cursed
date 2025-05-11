@@ -213,12 +213,16 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let vtable_ptr = vtable_ptr_ptr.into_pointer_value();
         
         // Type ID is the first field in the vtable
+        let vtable_type = self.context().struct_type(&[
+            self.context().i64_type().into(), // type ID
+            self.context().i32_type().into(), // method count
+            self.context().i8_type().ptr_type(AddressSpace::default()).into(), // methods table
+        ], false);
+        
         let type_id_ptr = self.builder().build_struct_gep(
-            // Create and use a dummy struct type since we can't get the pointee type directly
-            // Note: A better approach would be to store the struct type when creating vtables
-            self.context.struct_type(&[], false),
+            vtable_type,
             vtable_ptr,
-            0, // Index of type ID pointer
+            0, // Index of type ID field
             "type_id_ptr"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
