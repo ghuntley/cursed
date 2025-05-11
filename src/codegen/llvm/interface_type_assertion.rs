@@ -32,6 +32,8 @@ use crate::ast::expressions::TypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::error::Error;
+use crate::error::type_assertion_error::TypeAssertionError;
+use crate::error::SourceLocation;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 
 /// Enhanced interface type assertion implementation that extends the base implementation.
@@ -72,7 +74,8 @@ pub trait ImprovedTypeAssertion<'ctx>: InterfaceTypeAssertion<'ctx> {
         &mut self,
         source_type: &str,
         target_type: &str,
-        success: bool
+        success: bool,
+        source_location: Option<SourceLocation>
     ) -> Result<(), Error>;
     
     /// Calculate a hash for a type name
@@ -112,16 +115,32 @@ impl<'ctx> ImprovedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         &mut self,
         source_type: &str,
         target_type: &str,
-        success: bool
+        success: bool,
+        source_location: Option<SourceLocation>
     ) -> Result<(), Error> {
         // In a real implementation, this would emit LLVM IR to call a debug logging function
         // For now, we use the Rust tracing macros for compile-time logging
-        if success {
-            tracing::debug!("Type assertion from {} to {} succeeded", source_type, target_type);
+        let result_str = if success { "succeeded" } else { "failed" };
+        
+        // Create structured logging with location information if available
+        if let Some(loc) = &source_location {
+            tracing::debug!(
+                source_type = %source_type,
+                target_type = %target_type,
+                success = %success,
+                location = %format!("{}", loc),
+                "Type assertion from {} to {} {}", source_type, target_type, result_str
+            );
         } else {
-            tracing::debug!("Type assertion from {} to {} failed", source_type, target_type);
+            tracing::debug!(
+                source_type = %source_type,
+                target_type = %target_type,
+                success = %success,
+                "Type assertion from {} to {} {}", source_type, target_type, result_str
+            );
         }
-        Ok(())
+        
+        Ok(()); // We just log and don't perform any actual LLVM operations
     }
 }
 
@@ -135,6 +154,19 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Get source type information if available
         let source_type = "interface"; // In a real implementation, this would get the runtime type name
         let target_type = &type_assertion.type_name;
+        
+        // Create a source location for error reporting
+        let source_location = match &type_assertion.token {
+            token if !token.is_empty() => {
+                Some(SourceLocation {
+                    line: 0, // Not available from AST
+                    column: 0, // Not available from AST
+                    file: None,
+                    source_line: format!("{}.({})", type_assertion.expression.string(), type_assertion.type_name),
+                })
+            },
+            _ => None,
+        };
         
         // Register the target type with the runtime
         self.register_type_with_runtime(target_type)?;
@@ -152,7 +184,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let merge_block = self.context().append_basic_block(current_fn, "type_assert_merge");
         
         // Check if the interface value is of the target type
-        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name)?;
+        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name, source_location.clone())?;
         
         // Branch based on the type check result
         self.builder().build_conditional_branch(
@@ -196,7 +228,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         ).map_err(|e| Error::Compilation(e.to_string()))?.into_struct_value();
         
         // Log the assertion success
-        self.log_type_assertion(source_type, target_type, true)?;
+        self.log_type_assertion(source_type, target_type, true, source_location.clone())?;
         
         // Branch to merge block
         self.builder().build_unconditional_branch(merge_block)
@@ -206,7 +238,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         self.builder().position_at_end(failure_block);
         
         // Log the assertion failure
-        self.log_type_assertion(source_type, target_type, false)?;
+        self.log_type_assertion(source_type, target_type, false, source_location.clone())?;
         
         let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
         let false_val = self.context().bool_type().const_int(0, false);
