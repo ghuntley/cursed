@@ -14,7 +14,7 @@
 
 use crate::ast;
 use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement};
-// TODO: Create TypeConstraint type when implementing constraint checking
+// TypeConstraint functionality is now implemented in ast::declarations::GenericConstraint
 // use crate::ast::expressions::constraint::TypeConstraint;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::generic_instantiation::GenericInstantiator;

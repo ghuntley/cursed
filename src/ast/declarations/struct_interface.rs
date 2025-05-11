@@ -5,6 +5,7 @@
 
 use crate::ast::declarations::Parameter;
 use crate::ast::declarations::TypeParameter;
+use crate::ast::declarations::GenericConstraint;
 use crate::ast::expressions::identifiers::Identifier;
 use crate::ast::statements::fields::FieldStatement;
 use crate::ast::{Expression, Node, Statement};
@@ -27,6 +28,7 @@ pub struct SquadStatement {
     pub token: String, // Token::Squad
     pub name: Identifier,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters [T], [A, B], etc.
+    pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
     pub fields: Vec<FieldStatement>,
 }
 
@@ -49,11 +51,24 @@ impl Node for SquadStatement {
         } else {
             String::new()
         };
+        
+        // Format generic constraints if any
+        let constraints_str = if !self.generic_constraints.is_empty() {
+            let constraints: Vec<String> = self
+                .generic_constraints
+                .iter()
+                .map(|c| c.string())
+                .collect();
+            format!(" where {} ", constraints.join(", "))
+        } else {
+            String::new()
+        };
 
         out.push_str(&format!(
-            "be_like {}{} squad {{\n",
+            "be_like {}{}{} squad {{\n",
             self.name.string(),
-            type_params_str
+            type_params_str,
+            constraints_str
         ));
 
         for field in &self.fields {
@@ -89,6 +104,7 @@ pub struct MethodSignature {
     pub parameters: Vec<Parameter>,
     pub return_type: Option<Box<dyn Expression>>,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters for method
+    pub generic_constraints: Vec<GenericConstraint>, // Constraints on method type parameters
 }
 
 impl Node for MethodSignature {
@@ -110,8 +126,20 @@ impl Node for MethodSignature {
         } else {
             String::new()
         };
+        
+        // Format generic constraints if any
+        let constraints_str = if !self.generic_constraints.is_empty() {
+            let constraints: Vec<String> = self
+                .generic_constraints
+                .iter()
+                .map(|c| c.string())
+                .collect();
+            format!(" where {} ", constraints.join(", "))
+        } else {
+            String::new()
+        };
 
-        out.push_str(&format!("{}{}", self.name.string(), type_params_str));
+        out.push_str(&format!("{}{}{}", self.name.string(), type_params_str, constraints_str));
 
         // Format parameters
         out.push_str("(");
@@ -152,6 +180,7 @@ pub struct CollabStatement {
     pub token: String, // Token::Collab
     pub name: Identifier,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters [T], [A, B], etc.
+    pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
     pub methods: Vec<MethodSignature>,
 }
 
@@ -174,11 +203,24 @@ impl Node for CollabStatement {
         } else {
             String::new()
         };
+        
+        // Format generic constraints if any
+        let constraints_str = if !self.generic_constraints.is_empty() {
+            let constraints: Vec<String> = self
+                .generic_constraints
+                .iter()
+                .map(|c| c.string())
+                .collect();
+            format!(" where {} ", constraints.join(", "))
+        } else {
+            String::new()
+        };
 
         out.push_str(&format!(
-            "be_like {}{} collab {{\n",
+            "be_like {}{}{} collab {{\n",
             self.name.string(),
-            type_params_str
+            type_params_str,
+            constraints_str
         ));
 
         for method in &self.methods {

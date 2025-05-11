@@ -6,6 +6,7 @@
 // Submodules
 pub mod fields;
 pub mod function;
+pub mod generic_constraint;
 pub mod struct_interface;
 pub mod type_parameter;
 
@@ -15,6 +16,9 @@ pub use fields::Parameter;
 
 // Re-exports from function module
 pub use function::FunctionStatement;
+
+// Re-exports from generic_constraint module
+pub use generic_constraint::GenericConstraint;
 
 // Re-exports from struct_interface module
 pub use struct_interface::{CollabStatement, MethodSignature, SquadStatement};
