@@ -56,6 +56,10 @@ pub mod generator; // Generator trait for property-based testing
 
 // concurrenz exports
 pub use concurrenz::{Mutex, RwMutex, WaitGroup, Once};
+pub use concurrenz::{new_mutex, mutex_lock, mutex_unlock, new_rwmutex, rwmutex_lock, rwmutex_unlock,
+                   rwmutex_rlock, rwmutex_runlock, new_waitgroup, waitgroup_add, waitgroup_done, waitgroup_wait,
+                   new_once, once_do, new_channel, channel_send, channel_receive, channel_try_send,
+                   channel_try_receive};
 
 // Keep disabled version for backward compatibility (explicit imports)
 pub use concurrenz_disabled::{create_mutex, lock_mutex, unlock_mutex, create_rwmutex, 
@@ -70,7 +74,8 @@ pub use cryptz::{hash, verify, encrypt, decrypt, generate_key};
 pub use dot_registry::{DOT_REGISTRY, is_supported, execute_dot, get_packages, get_functions};
 
 // dropz exports
-pub use dropz::{open, close, read, write, seek, open_file, close_file, read_file, write_file};
+pub use dropz::{open, close, read, write, seek, open_file, close_file, read_file, write_file,
+               read_file_string, copy, file_exists, is_readable, is_writable, file_info, remove_file, append_file};
 
 // error_drip exports
 pub use error_drip::{new_error, wrap_error, unwrap_error, is_error, error_message};
@@ -82,7 +87,7 @@ pub use htmlrizzler::{escape_html, escape_js, escape_url};
 pub use json_tea::{marshal, unmarshal};
 
 // mathz exports
-pub use mathz::{abs, sqrt, sin, cos, tan, log, exp, floor, ceil, round, max, min, pow, random};
+pub use mathz::{abs, sqrt, sin, cos, tan, log, exp, floor, ceil, round, max, min, pow, random, PI, E};
 
 // oglogging exports - aliased to avoid conflict
 pub use oglogging_simplified as oglogging;
