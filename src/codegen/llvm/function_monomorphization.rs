@@ -516,7 +516,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
     }
     
-    /// Use the existing monomorphization manager from the context
+    /// Use the existing monomorphization manager from the context.
     /// This uses the get_mono_manager_mut function from context.rs
-    /// to avoid duplicate implementations
+    /// to avoid duplicate implementations.
+    pub fn use_mono_manager(&mut self) -> &mut MonomorphizationManager<'ctx> {
+        self.get_mono_manager_mut()
+    }
 }

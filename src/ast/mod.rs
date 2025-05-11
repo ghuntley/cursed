@@ -31,6 +31,10 @@ pub use pointer::{PointerDereference, PointerType};
 pub use statement_utils::StatementExtensions;
 pub use traits::{Expression, Node, Statement};
 pub use expressions::TypeAssertion;
+// Re-export Parameter from declarations module
+pub use crate::ast::declarations::fields::Parameter;
+// Re-export BlockStatement as Block for backward compatibility
+pub use crate::ast::statements::block::BlockStatement as Block;
 
 // Re-export all AST types for easier imports
 pub use control_flow::*;
