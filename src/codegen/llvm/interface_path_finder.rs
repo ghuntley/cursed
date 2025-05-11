@@ -21,9 +21,24 @@ use crate::error::Error;
 /// Extension trait for LlvmCodeGenerator that provides path finding for interface relationships
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Find a path between two interfaces using breadth-first search
-    /// 
+    /// Find a path from one interface to another in the type registry.
+    ///
+    /// This function attempts to find a path in the interface extension graph that connects
+    /// the source interface to the target interface. This is essential for checking if one
+    /// interface can be used in place of another through extension relationships.
+    ///
     /// This method finds the shortest path between the source and target interfaces
     /// with comprehensive error handling and proper error propagation.
+    ///
+    /// # Parameters
+    ///
+    /// * `source_interface` - The name of the source interface
+    /// * `target_interface` - The name of the target interface
+    ///
+    /// # Returns
+    ///
+    /// Returns a Result containing a vector of interface names representing the path,
+    /// or an error if the path finding failed.
     #[instrument(skip(self), level = "debug")]
     pub fn find_interface_path(
         &self,
