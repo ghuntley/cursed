@@ -72,12 +72,14 @@ impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGen
     fn interface_registry(&self) -> &dyn InterfaceRegistryExtensionWithVisualization {
         // The interface extension registry is stored in the registry_extensions field
         // of the LlvmCodeGenerator, which is initialized in the constructor
+        // It now uses the adapter pattern to resolve implementation conflicts
         &self.registry_extensions
     }
     
     fn interface_registry_mut(&mut self) -> &mut dyn InterfaceRegistryExtensionWithVisualization {
         // The interface extension registry is stored in the registry_extensions field
         // of the LlvmCodeGenerator, which is initialized in the constructor
+        // It now uses the adapter pattern to resolve implementation conflicts
         &mut self.registry_extensions
     }
     #[instrument(skip(self), level = "debug")]

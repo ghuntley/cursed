@@ -85,8 +85,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) lru_field_accessor_cache: Option<crate::codegen::llvm::lru_field_accessors::ThreadSafeFieldAccessorLruCache>,
     // Counter for generating unique IDs
     pub(crate) unique_id_counter: std::sync::atomic::AtomicU64,
-    // Interface extension registry for path visualization
-    pub(crate) registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry,
+    // Interface extension registry for path visualization with conflict resolution
+    pub(crate) registry_extensions: crate::core::interface_registry_conflict_resolution::InterfaceRegistryAdapter,
     // Type assertion implementation
     pub(crate) type_assertion_implementation: Option<Box<dyn crate::codegen::llvm::type_assertion::InterfaceTypeAssertion<'ctx> + 'ctx>>,
     // Type assertion debug configuration
@@ -186,12 +186,18 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             loop_exit_blocks: Vec::new(),
             default_integer_type: None,
             // Initialize interface extension registry for path visualization
-            registry_extensions: crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new(),
+            registry_extensions: crate::core::interface_registry_conflict_resolution::InterfaceRegistryAdapter::new(
+                crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
+            ),
             // Initialize interface type registry with the new implementation and link to extension registry
             interface_type_registry: {
-                let registry_ref = std::sync::Arc::new(crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new());
-                // Store a reference in the main registry_extensions field
-                let mut ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
+                // Create a local extension registry for interface type registry
+                let registry_ext = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+                let registry_ref = std::sync::Arc::new(registry_ext.clone());
+                
+                // Create interface type registry with the extension registry
+                let ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
+                
                 Some(ir)
             },
             global_type_names: None,
