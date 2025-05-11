@@ -40,11 +40,35 @@ pub enum RangeExpression {
     },
 }
 
+impl Node for RangeExpression {
+    fn token_literal(&self) -> String {
+        String::from("range")
+    }
+
+    fn string(&self) -> String {
+        match self {
+            RangeExpression::Range { end } => {
+                format!("range {}", end.string())
+            },
+            RangeExpression::RangeFromTo { start, end } => {
+                format!("range {}, {}", start.string(), end.string())
+            },
+            RangeExpression::RangeFromToStep { start, end, step } => {
+                format!("range {}, {}, {}", start.string(), end.string(), step.string())
+            },
+        }
+    }
+}
+
 impl Expression for RangeExpression {
     fn expression_node(&self) {}
     
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    
+    fn node_type(&self) -> &str {
+        "RangeExpression"
     }
     
     fn clone_box(&self) -> Box<dyn Expression> {

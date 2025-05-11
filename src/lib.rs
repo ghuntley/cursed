@@ -90,6 +90,9 @@ pub use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAs
 // Export interface type assertion path visualization
 pub use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 
+// Export interface type assertion with registry integration
+pub use crate::codegen::llvm::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
+
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol;
 pub use crate::core::symbol_table::SymbolScope;

@@ -134,6 +134,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_assertion_path_visualization::register_interface_type_assertion_path_visualization();
         // Initialize enhanced interface type assertion path visualization with improved error handling
         super::interface_type_assertion_path_visualization_enhanced::register_enhanced_interface_type_assertion_path_visualization();
+        super::interface_type_assertion_with_registry::register_interface_type_assertion_with_registry();
         // No initialization needed for interface type registry
         // The registry is already initialized above in the struct initialization
         // Initialize standard functions like puts before creating the generator
