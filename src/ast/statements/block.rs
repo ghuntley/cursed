@@ -32,14 +32,16 @@ use std::any::Any;
 /// - A declaration statement (x := 10)
 /// - An expression statement (println call)
 /// - An assignment statement (x = x + 1)
+use crate::lexer::token::Token;
+
 pub struct BlockStatement {
-    pub token: String, // Token::LBrace
+    pub token: Token, // Token::LBrace
     pub statements: Vec<Box<dyn Statement>>,
 }
 
 impl Node for BlockStatement {
     fn token_literal(&self) -> String {
-        self.token.clone()
+        self.token.token_literal()
     }
 
     fn string(&self) -> String {
