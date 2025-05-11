@@ -35,6 +35,7 @@ use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
 use crate::error::SourceLocation;
+use crate::codegen::llvm::interface_type_assertion_filesystem_integration::InterfaceTypeAssertionFilesystemIntegration;
 
 /// Trait for implementing interface type assertion error propagation
 pub trait InterfaceTypeAssertionErrorPropagation<'ctx> {
@@ -142,18 +143,28 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         &mut self,
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Ensure filesystem cache is initialized
+        self.init_source_file_cache();
+        
         // Create a source location for error context
-        let source_location = match &type_assertion.token {
+        let mut source_location = match &type_assertion.token {
             token if !token.is_empty() => {
+                // Try to extract location from token
+                let (line, column, file) = self.extract_location_from_token(token);
                 Some(SourceLocation {
-                    line: 0, // Not available from AST
-                    column: 0, // Not available from AST
-                    file: None,
+                    line,
+                    column,
+                    file,
                     source_line: format!("{}.({}", type_assertion.expression.string(), type_assertion.type_name),
                 })
             },
             _ => None,
         };
+        
+        // Enhance source location with file content if available
+        if let Some(location) = &mut source_location {
+            let _ = self.enhance_source_location(location);
+        }
         
         debug!("Compiling type assertion with error propagation for: {}", type_assertion.string());
         
@@ -348,9 +359,11 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         &mut self,
         type_assertion: &TypeAssertionQuestion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Ensure filesystem cache is initialized
+        self.init_source_file_cache();
         
         // Create a source location for error context with more detailed information
-        let source_location = match &type_assertion.token {
+        let mut source_location = match &type_assertion.token {
             token if !token.is_empty() => {
                 // Try to extract more context about location from the token
                 let (line, column, file) = self.extract_location_from_token(token);
@@ -363,6 +376,11 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             },
             _ => None,
         };
+        
+        // Enhance source location with file content if available
+        if let Some(location) = &mut source_location {
+            let _ = self.enhance_source_location(location);
+        }
         
         debug!("Compiling type assertion with ? operator for: {}", type_assertion.string());
         
@@ -421,17 +439,42 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             type_assertion.type_name
         );
         
-        // Create type assertion error object and propagate it
+        // Create a more detailed error message with source context if available
+        let enhanced_error_message = if let Some(location) = &source_location {
+            // Create an enhanced error message with source context
+            match self.create_enhanced_error_message(&error_message, location) {
+                Ok(msg) => msg,
+                Err(_) => error_message, // Fallback to basic message
+            }
+        } else {
+            error_message
+        };
+        
+        // Create type assertion error object and propagate it with enhanced information
+        let location_struct = if let Some(location) = &source_location {
+            // Build location struct with available information
+            self.build_struct_value(&[
+                self.context().i32_type().const_int(location.line as u64, false).into(), // line
+                self.context().i32_type().const_int(location.column as u64, false).into(), // column
+                match &location.file {
+                    Some(file) => self.create_string_constant(file).into(),
+                    None => self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
+                },
+                self.create_string_constant(&location.source_line).into() // source line
+            ])
+        } else {
+            // Default empty location struct
+            self.build_struct_value(&[
+                self.context().i32_type().const_int(0, false).into(), // line 0
+                self.context().i32_type().const_int(0, false).into(), // column 0
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(), // no file
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into() // no source line
+            ])
+        };
+        
         self.call_error_propagation_function(
-            self.create_string_constant(&error_message).into(), 
-            BasicValueEnum::into_struct_value(
-                self.build_struct_value(&[
-                    self.context().i32_type().const_int(0, false).into(), // line 0
-                    self.context().i32_type().const_int(0, false).into(), // column 0
-                    self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(), // no file
-                    self.create_string_constant(&source_location.map_or(String::new(), |loc| loc.source_line)).into() // source line
-                ])
-            )
+            self.create_string_constant(&enhanced_error_message).into(), 
+            BasicValueEnum::into_struct_value(location_struct)
         )?;
         
         // This should be unreachable in the failure path
@@ -526,8 +569,66 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             }
         }
         
-        // Call error propagation function with enhanced type information
-        self.call_error_propagation_function(error_msg, location_info)?;
+        // Get source location info from the result if available
+        let mut source_location = if !location_info.is_null() {
+            // Extract components from the location_info struct
+            let line = if let Ok(line_val) = self.builder().build_extract_value(location_info.into_struct_value(), 0, "loc_line") {
+                if let Ok(line_int) = line_val.try_into_int_value() {
+                    line_int.get_zero_extended_constant().unwrap_or(0) as i32
+                } else { 0 }
+            } else { 0 };
+            
+            let column = if let Ok(col_val) = self.builder().build_extract_value(location_info.into_struct_value(), 1, "loc_column") {
+                if let Ok(col_int) = col_val.try_into_int_value() {
+                    col_int.get_zero_extended_constant().unwrap_or(0) as i32
+                } else { 0 }
+            } else { 0 };
+            
+            let file_ptr = if let Ok(file_val) = self.builder().build_extract_value(location_info.into_struct_value(), 2, "loc_file") {
+                // This could be a string pointer
+                if !file_val.is_null() {
+                    // In a real implementation, we'd extract the string value here
+                    Some("unknown.csd".to_string())
+                } else { None }
+            } else { None };
+            
+            let source_line = if let Ok(line_val) = self.builder().build_extract_value(location_info.into_struct_value(), 3, "loc_source_line") {
+                if !line_val.is_null() {
+                    // In a real implementation, we'd extract the string value here
+                    "unknown source line".to_string()
+                } else { String::new() }
+            } else { String::new() };
+            
+            Some(SourceLocation {
+                line,
+                column,
+                file: file_ptr,
+                source_line,
+            })
+        } else {
+            None
+        };
+        
+        // Enhance source location with file content if available
+        if let Some(location) = &mut source_location {
+            let _ = self.enhance_source_location(location);
+        }
+        
+        // Create an enhanced error message with source context
+        let error_message = if let Some(location) = &source_location {
+            match self.create_enhanced_error_message("Type assertion failed", location) {
+                Ok(msg) => msg,
+                Err(_) => "Type assertion failed".to_string(),
+            }
+        } else {
+            "Type assertion failed".to_string()
+        };
+        
+        // Call error propagation function with enhanced type information and better error message
+        self.call_error_propagation_function(
+            self.create_string_constant(&error_message).into(),
+            location_info
+        )?;
         
         // Clean up type ID tracking after propagation
         self.clear_type_ids();
