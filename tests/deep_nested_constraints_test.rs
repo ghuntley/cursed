@@ -1,442 +1,288 @@
-//! Tests for the deep nested interface constraints implementation
+//! Tests for deep nested constraint checking
+//! 
+//! This test verifies that the constraint checker can handle deeply nested generic types
+//! with multiple constraints.
 
-use cursed::core::interface_registry::{InterfaceRegistry, GenericInterfaceImpl};
-use cursed::core::nested_interface_registry::{NestedInterfaceRegistry, NestedConstraint, EnhancedInterfaceRegistry};
-use cursed::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, ConstraintPath, DeepNestedInterfaceChecking};
+use cursed::core::interface_registry::InterfaceRegistry;
+use cursed::core::deep_nested_constraint_checker::DeepNestedConstraintChecking;
 use cursed::core::type_checker::Type;
-use cursed::error::Error;
+use std::collections::HashMap;
 
+#[path = "common.rs"]
 mod common;
 
 #[test]
-fn test_deep_constraint_basic_registration() {
-    common::tracing::setup();
-    
-    let mut registry = DeepNestedInterfaceRegistry::new();
-    
-    // Register a deep nested constraint
-    registry.register_deep_nested_constraint(
-        "Container",
-        "T",
-        "Stack",
-        "E",
-        "Comparable"
-    );
-    
-    // Verify it was registered correctly
-    let constraints = registry.enhanced_registry.get_nested_constraints("Container");
-    assert_eq!(constraints.len(), 1);
-    assert_eq!(constraints[0].outer_type, "Container");
-    assert_eq!(constraints[0].outer_param, "T");
-    assert_eq!(constraints[0].inner_type, "Stack");
-    assert_eq!(constraints[0].inner_params[0], "E");
-    assert_eq!(constraints[0].interface, "Comparable");
-}
-
-#[test]
-fn test_multi_level_constraint_registration() {
-    common::tracing::setup();
-    
-    let mut registry = DeepNestedInterfaceRegistry::new();
-    
-    // Register a multi-level constraint where Collection[Container[List[E]]] requires E to be Comparable
-    registry.register_deep_multi_level_constraint(
-        "Collection",
-        "T",
-        vec!["Container", "List"],
-        vec!["U", "E"],
-        "Comparable"
-    );
-    
-    // Verify first level constraint (Collection -> Container)
-    let constraints = registry.enhanced_registry.get_nested_constraints("Collection");
-    assert_eq!(constraints.len(), 1);
-    assert_eq!(constraints[0].outer_type, "Collection");
-    assert_eq!(constraints[0].outer_param, "T");
-    assert_eq!(constraints[0].inner_type, "Container");
-    assert_eq!(constraints[0].inner_params[0], "U");
-    assert_eq!(constraints[0].interface, "DependentConstraint");
-    
-    // Verify second level constraint (Container -> List)
-    let constraints = registry.enhanced_registry.get_nested_constraints("Container");
-    assert_eq!(constraints.len(), 1);
-    assert_eq!(constraints[0].outer_type, "Container");
-    assert_eq!(constraints[0].outer_param, "U");
-    assert_eq!(constraints[0].inner_type, "List");
-    assert_eq!(constraints[0].inner_params[0], "E");
-    assert_eq!(constraints[0].interface, "Comparable");
-}
-
-#[test]
-fn test_constraint_path_construction() {
-    common::tracing::setup();
-    
-    let mut path = ConstraintPath::new();
-    
-    // Add segments to the path
-    path.add_segment("Collection", "T", "Container");
-    path.add_segment("Container", "U", "List");
-    path.add_segment("List", "E", "Comparable");
-    
-    // Verify path properties
-    assert_eq!(path.depth(), 3);
-    assert_eq!(path.type_path, vec!["Collection", "Container", "List"]);
-    assert_eq!(path.param_path, vec!["T", "U", "E"]);
-    assert_eq!(path.interface_path, vec!["Container", "List", "Comparable"]);
-    
-    // Verify string representation
-    let path_str = path.to_string();
-    assert!(path_str.contains("Collection<T>"));
-    assert!(path_str.contains("Container<U>"));
-    assert!(path_str.contains("List<E>"));
-}
-
-#[test]
-fn test_simple_deep_constraint_checking() {
-    common::tracing::setup();
-    
-    let mut registry = DeepNestedInterfaceRegistry::new_with_defaults();
-    
-    // Register a deep nested constraint for Container[Stack[E]] where E must be Comparable
-    registry.register_deep_nested_constraint(
-        "Container",
-        "T",
-        "Stack",
-        "E",
-        "Comparable"
-    );
-    
-    // Create a Stack[Int] type - Int implements Comparable
-    let stack_int = Type::Struct(
-        "Stack".to_string(),
-        vec![Type::Normie]
-    );
-    
-    // Create a Stack[NonComparable] type - NonComparable doesn't implement Comparable
-    let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
-    let stack_non_comparable = Type::Struct(
-        "Stack".to_string(),
-        vec![non_comparable]
-    );
-    
-    // Check constraints
-    let mut path = ConstraintPath::new();
-    let result = registry.check_deep_nested_implementation(
-        "Container",
-        "T",
-        &stack_int,
-        "Comparable",
-        &mut path
-    );
-    assert!(result.unwrap());
-    
-    let mut path = ConstraintPath::new();
-    let result = registry.check_deep_nested_implementation(
-        "Container",
-        "T",
-        &stack_non_comparable,
-        "Comparable",
-        &mut path
-    );
-    assert!(!result.unwrap());
-    
-    // Verify path tracking worked
-    assert_eq!(path.depth(), 1);
-    assert_eq!(path.type_path[0], "Container");
-    assert_eq!(path.param_path[0], "T");
-    assert_eq!(path.interface_path[0], "Comparable");
-}
-
-#[test]
-fn test_multi_level_deep_constraint_checking() {
-    common::tracing::setup();
-    
-    let mut registry = DeepNestedInterfaceRegistry::new_with_defaults();
-    
-    // Register a multi-level constraint: Collection[Container[List[E]]] requires E to be Comparable
-    registry.register_deep_multi_level_constraint(
-        "Collection",
-        "T",
-        vec!["Container", "List"],
-        vec!["U", "E"],
-        "Comparable"
-    );
-    
-    // Create test types
-    let list_int = Type::Struct(
-        "List".to_string(),
-        vec![Type::Normie] // Int implements Comparable
-    );
-    
-    let container_list_int = Type::Struct(
-        "Container".to_string(),
-        vec![list_int.clone()]
-    );
-    
-    // Create test types with non-comparable element
-    let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
-    let list_non_comparable = Type::Struct(
-        "List".to_string(),
-        vec![non_comparable.clone()]
-    );
-    
-    let container_list_non_comparable = Type::Struct(
-        "Container".to_string(),
-        vec![list_non_comparable.clone()]
-    );
-    
-    // Check constraints
-    let result = registry.check_complex_nested_constraint(
-        "Collection",
-        "T",
-        &container_list_int,
-        "Comparable"
-    );
-    assert!(result.unwrap());
-    
-    let result = registry.check_complex_nested_constraint(
-        "Collection",
-        "T",
-        &container_list_non_comparable,
-        "Comparable"
-    );
-    assert!(!result.unwrap());
-}
-
-#[test]
-fn test_error_creation_with_constraint_path() {
-    common::tracing::setup();
-    
-    let registry = DeepNestedInterfaceRegistry::new_with_defaults();
-    
-    // Create a path
-    let mut path = ConstraintPath::new();
-    path.add_segment("Collection", "T", "Container");
-    path.add_segment("Container", "U", "List");
-    path.add_segment("List", "E", "Comparable");
-    
-    // Create a type that doesn't implement Comparable
-    let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
-    
-    // Create an error with the path
-    let error = registry.create_deep_constraint_error(
-        &non_comparable,
-        "Comparable",
-        &path
-    );
-    
-    // Verify the error contains the path information
-    let message = error.message();
-    assert!(message.contains("Deep nested constraint failure"));
-    assert!(message.contains("Collection<T>"));
-    assert!(message.contains("Container<U>"));
-    assert!(message.contains("List<E>"));
-    assert!(message.contains("Comparable"));
-    assert!(message.contains("NonComparable"));
-    
-    // Verify error code
-    assert_eq!(error.code(), "CNST03");
-    
-    // Verify recommendations are included
-    assert!(message.contains("For nested container types, ensure that"));
-    assert!(message.contains("innermost type"));
-}
-
-#[test]
-fn test_extension_trait_for_base_registry() {
+fn test_simple_constraint_checking() {
+    // Initialize tracing for better debug output
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
     registry.populate_with_defaults();
     
-    // Use the extension trait to check a complex constraint
-    let list_int = Type::Struct(
-        "List".to_string(),
-        vec![Type::Normie] // Int implements Comparable
-    );
-    
-    // Should return true even though the base registry doesn't know about nested constraints
-    // because the extension trait converts it to a deep registry first
-    let result = registry.check_complex_nested_constraint(
-        "Container",
-        "T",
-        &list_int,
-        "Comparable"
-    );
-    
-    assert!(result.unwrap());
-    
-    // Convert to deep registry directly
-    let deep_registry = registry.to_deep_nested_registry();
-    assert!(deep_registry.enhanced_registry.base_registry.check_implementation(&Type::Normie, "Comparable").unwrap());
-}
-
-#[test]
-fn test_deep_nested_registry_defaults() {
-    common::tracing::setup();
-    
-    let registry = DeepNestedInterfaceRegistry::new_with_defaults();
-    
-    // Verify that base registry defaults were populated
-    assert!(registry.enhanced_registry.base_registry.check_implementation(&Type::Normie, "Comparable").unwrap());
-    assert!(registry.enhanced_registry.base_registry.check_implementation(&Type::Tea, "Comparable").unwrap());
-    
-    // Verify deep nested defaults were populated
-    let constraints = registry.enhanced_registry.get_nested_constraints("NestedMap");
-    assert!(!constraints.is_empty());
-    
-    let constraints = registry.enhanced_registry.get_nested_constraints("Triple");
-    assert!(!constraints.is_empty());
-    
-    let constraints = registry.enhanced_registry.get_nested_constraints("MultiContainer");
-    assert!(!constraints.is_empty());
-}
-
-#[test]
-fn test_constraint_cache() {
-    common::tracing::setup();
-    
-    let mut registry = DeepNestedInterfaceRegistry::new_with_defaults();
-    
-    // Register a multi-level constraint
-    registry.register_deep_multi_level_constraint(
-        "Collection",
-        "T",
-        vec!["Container", "List"],
-        vec!["U", "E"],
-        "Comparable"
-    );
-    
-    // Create test types
-    let list_int = Type::Struct(
-        "List".to_string(),
-        vec![Type::Normie] // Int implements Comparable
-    );
-    
-    let container_list_int = Type::Struct(
+    // Register a Map[K, V] generic type with K: Comparable constraint
+    let map_constraints = vec![("K".to_string(), "Comparable".to_string())];
+    registry.register_generic_implementation(
+        "Map".to_string(),
+        vec!["K".to_string(), "V".to_string()],
         "Container".to_string(),
-        vec![list_int.clone()]
+        map_constraints
     );
     
-    // First check should compute the result
-    let result1 = registry.check_complex_nested_constraint(
-        "Collection",
-        "T",
-        &container_list_int,
-        "Comparable"
-    );
-    assert!(result1.unwrap());
+    // Create a constraint map
+    let mut constraint_map = HashMap::new();
+    constraint_map.insert("K".to_string(), vec!["Comparable".to_string()]);
     
-    // Second check should use the cached result
-    let result2 = registry.check_complex_nested_constraint(
-        "Collection",
-        "T",
-        &container_list_int,
-        "Comparable"
+    // Check with valid arguments
+    let type_args = vec![Type::Tea, Type::Normie]; // String and Int
+    let result = registry.check_nested_generic_constraints(
+        "Map",
+        &type_args,
+        &constraint_map
     );
-    assert!(result2.unwrap());
     
-    // Hard to test directly that the cache was used, but we can verify correct result
+    assert_eq!(result, Ok(true));
+    
+    // Check with invalid arguments
+    let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
+    let type_args = vec![non_comparable, Type::Normie];
+    let result = registry.check_nested_generic_constraints(
+        "Map",
+        &type_args,
+        &constraint_map
+    );
+    
+    assert_eq!(result, Ok(false));
 }
 
 #[test]
-fn test_diamond_constraint_pattern() {
+fn test_nested_generic_constraint_checking() {
+    // Initialize tracing for better debug output
     common::tracing::setup();
     
-    let mut registry = DeepNestedInterfaceRegistry::new_with_defaults();
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
     
-    // Register constraints for a diamond pattern:
-    // A[B[D]] requires D: Comparable
-    // A[C[D]] requires D: Numeric
-    registry.register_deep_multi_level_constraint(
-        "A",
-        "X",
-        vec!["B", "D"],
-        vec!["Y", "Z"],
-        "Comparable"
+    // Register nested generics: Map[K, List[V]] with K: Comparable, V: Container
+    registry.register_generic_implementation(
+        "Map".to_string(),
+        vec!["K".to_string(), "V".to_string()],
+        "Container".to_string(),
+        vec![("K".to_string(), "Comparable".to_string())]
     );
     
-    registry.register_deep_multi_level_constraint(
-        "A",
-        "X",
-        vec!["C", "D"],
-        vec!["Y", "Z"],
-        "Numeric"
+    registry.register_generic_implementation(
+        "List".to_string(),
+        vec!["T".to_string()],
+        "Container".to_string(),
+        vec![("T".to_string(), "Container".to_string())]
     );
     
-    // Create test types
-    // D[Int] - Int implements both Comparable and Numeric
-    let d_int = Type::Struct(
-        "D".to_string(),
-        vec![Type::Normie]
+    // Create a constraint map
+    let mut constraint_map = HashMap::new();
+    constraint_map.insert("K".to_string(), vec!["Comparable".to_string()]);
+    constraint_map.insert("T".to_string(), vec!["Container".to_string()]);
+    
+    // Create a List[V] as the second argument
+    let list_type = Type::Generic(
+        "List".to_string(),
+        vec![Type::Struct("Array".to_string(), vec![])] // Array implements Container
     );
     
-    // B[D[Int]]
-    let b_d_int = Type::Struct(
-        "B".to_string(),
-        vec![d_int.clone()]
+    // Check with valid arguments
+    let type_args = vec![Type::Tea, list_type]; // String and List[Array]
+    let result = registry.check_nested_generic_constraints(
+        "Map",
+        &type_args,
+        &constraint_map
     );
     
-    // C[D[Int]]
-    let c_d_int = Type::Struct(
-        "C".to_string(),
-        vec![d_int.clone()]
+    assert_eq!(result, Ok(true));
+    
+    // Check with invalid nested argument
+    let bad_list_type = Type::Generic(
+        "List".to_string(),
+        vec![Type::Lit] // Lit doesn't implement Container
     );
     
-    // Check constraints
-    let result = registry.check_complex_nested_constraint(
-        "A",
-        "X",
-        &b_d_int,
-        "Comparable"
-    );
-    assert!(result.unwrap());
-    
-    let result = registry.check_complex_nested_constraint(
-        "A",
-        "X",
-        &c_d_int,
-        "Numeric"
-    );
-    assert!(result.unwrap());
-    
-    // Now create a type that implements Comparable but not Numeric
-    let only_comparable = Type::Struct("OnlyComparable".to_string(), vec![]);
-    registry.enhanced_registry.base_registry.register_implementation(
-        only_comparable.clone(),
-        "Comparable".to_string()
+    let type_args = vec![Type::Tea, bad_list_type];
+    let result = registry.check_nested_generic_constraints_with_details(
+        "Map",
+        &type_args,
+        &constraint_map
     );
     
-    let d_only_comparable = Type::Struct(
-        "D".to_string(),
-        vec![only_comparable.clone()]
+    // Verify the result correctly identifies the nested failure
+    assert!(result.is_ok());
+    let details = result.unwrap();
+    assert_eq!(details.satisfied, false);
+    
+    // The failure path should include the nested List generic
+    if let Some(path) = details.failure_path {
+        let path_str = path.format();
+        assert!(path_str.contains("List"));
+        assert!(path_str.contains("Lit"));
+    } else {
+        panic!("Expected failure path");
+    }
+}
+
+#[test]
+fn test_multiple_constraints_per_type_parameter() {
+    // Initialize tracing for better debug output
+    common::tracing::setup();
+    
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
+    
+    // Register Collection[T] with T: Container + Comparable (multiple constraints)
+    registry.register_generic_implementation(
+        "Collection".to_string(),
+        vec!["T".to_string()],
+        "Container".to_string(),
+        vec![("T".to_string(), "Container".to_string()), ("T".to_string(), "Comparable".to_string())]
     );
     
-    let b_d_only_comparable = Type::Struct(
-        "B".to_string(),
-        vec![d_only_comparable.clone()]
+    // Create a constraint map with multiple constraints per parameter
+    let mut constraint_map = HashMap::new();
+    constraint_map.insert("T".to_string(), vec!["Container".to_string(), "Comparable".to_string()]);
+    
+    // Create valid type that implements both constraints
+    let array_type = Type::Struct("Array".to_string(), vec![]); // Implements both Container and Comparable
+    
+    // Check with valid arguments
+    let type_args = vec![array_type];
+    let result = registry.check_nested_generic_constraints(
+        "Collection",
+        &type_args,
+        &constraint_map
     );
     
-    let c_d_only_comparable = Type::Struct(
-        "C".to_string(),
-        vec![d_only_comparable.clone()]
+    assert_eq!(result, Ok(true));
+    
+    // Create invalid type that only implements one constraint
+    let set_type = Type::Struct("CustomSet".to_string(), vec![]); // Only implements Container
+    registry.register_implementation(set_type.clone(), "Container".to_string());
+    
+    // Check with partially valid arguments
+    let type_args = vec![set_type];
+    let result = registry.check_nested_generic_constraints(
+        "Collection",
+        &type_args,
+        &constraint_map
     );
     
-    // Should pass for the B path (Comparable constraint)
-    let result = registry.check_complex_nested_constraint(
-        "A",
-        "X",
-        &b_d_only_comparable,
-        "Comparable"
-    );
-    assert!(result.unwrap());
+    assert_eq!(result, Ok(false));
+}
+
+#[test]
+fn test_deeply_recursive_constraint_checking() {
+    // Initialize tracing for better debug output
+    common::tracing::setup();
     
-    // Should fail for the C path (Numeric constraint)
-    let result = registry.check_complex_nested_constraint(
-        "A",
-        "X",
-        &c_d_only_comparable,
-        "Numeric"
+    let mut registry = InterfaceRegistry::new();
+    registry.populate_with_defaults();
+    
+    // Register multiple levels of nested generics
+    // Map[K, Tree[T, Map[T, List[V]]]] with multiple constraints
+    
+    // First register the base generics
+    registry.register_generic_implementation(
+        "Map".to_string(),
+        vec!["K".to_string(), "V".to_string()],
+        "Container".to_string(),
+        vec![("K".to_string(), "Comparable".to_string())]
     );
-    assert!(!result.unwrap());
+    
+    registry.register_generic_implementation(
+        "List".to_string(),
+        vec!["T".to_string()],
+        "Container".to_string(),
+        vec![("T".to_string(), "Container".to_string())]
+    );
+    
+    registry.register_generic_implementation(
+        "Tree".to_string(),
+        vec!["K".to_string(), "V".to_string()],
+        "Container".to_string(),
+        vec![("K".to_string(), "Comparable".to_string()), ("V".to_string(), "Container".to_string())]
+    );
+    
+    // Create a constraint map
+    let mut constraint_map = HashMap::new();
+    constraint_map.insert("K".to_string(), vec!["Comparable".to_string()]);
+    constraint_map.insert("T".to_string(), vec!["Comparable".to_string(), "Container".to_string()]);
+    constraint_map.insert("V".to_string(), vec!["Container".to_string()]);
+    
+    // Now build a complex nested structure that should be valid
+    // List[Array]
+    let list_type = Type::Generic(
+        "List".to_string(),
+        vec![Type::Struct("Array".to_string(), vec![])]
+    );
+    
+    // Inner Map[String, List[Array]]
+    let inner_map = Type::Generic(
+        "Map".to_string(),
+        vec![Type::Tea, list_type]
+    );
+    
+    // Tree[String, Map[String, List[Array]]]
+    let tree_type = Type::Generic(
+        "Tree".to_string(),
+        vec![Type::Tea, inner_map]
+    );
+    
+    // Outer Map[String, Tree[String, Map[String, List[Array]]]]
+    let outer_map_args = vec![Type::Tea, tree_type];
+    
+    // Check the complex structure
+    let result = registry.check_nested_generic_constraints(
+        "Map",
+        &outer_map_args,
+        &constraint_map
+    );
+    
+    assert_eq!(result, Ok(true));
+    
+    // Now introduce an invalid constraint deep in the structure
+    // Replace Array with a type that doesn't implement Container
+    let bad_list_type = Type::Generic(
+        "List".to_string(),
+        vec![Type::Lit] // Lit doesn't implement Container
+    );
+    
+    let bad_inner_map = Type::Generic(
+        "Map".to_string(),
+        vec![Type::Tea, bad_list_type]
+    );
+    
+    let bad_tree_type = Type::Generic(
+        "Tree".to_string(),
+        vec![Type::Tea, bad_inner_map]
+    );
+    
+    let bad_outer_map_args = vec![Type::Tea, bad_tree_type];
+    
+    // Check the invalid structure with detailed results
+    let result = registry.check_nested_generic_constraints_with_details(
+        "Map",
+        &bad_outer_map_args,
+        &constraint_map
+    );
+    
+    // Verify the result correctly identifies the deeply nested failure
+    assert!(result.is_ok());
+    let details = result.unwrap();
+    assert_eq!(details.satisfied, false);
+    
+    // Check that we have the correct failure path that points to the exact issue
+    if let Some(path) = details.failure_path {
+        let path_str = path.format();
+        println!("Failure path: {}", path_str);
+        assert!(path_str.contains("List"));
+        assert!(path_str.contains("Lit"));
+        assert!(path_str.contains("Container"));
+    } else {
+        panic!("Expected failure path");
+    }
 }
