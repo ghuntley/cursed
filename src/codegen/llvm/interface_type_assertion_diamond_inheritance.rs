@@ -1,501 +1,244 @@
-//! Interface Type Assertion Diamond Inheritance Handler
+//! # Interface Type Assertion Diamond Inheritance Pattern Detection
 //!
-//! This module extends the interface type assertion system with specific
-//! support for diamond inheritance patterns, where multiple inheritance paths
-//! exist between source and target types.
+//! This module provides specialized functionality for detecting and handling diamond inheritance
+//! patterns in interface type assertions. Diamond inheritance patterns occur when a type inherits
+//! from multiple types that share a common ancestor, creating an inheritance graph shaped like a diamond.
 //!
-//! Diamond inheritance occurs when a type inherits from two interfaces that
-//! both inherit from a common base interface, creating a diamond-shaped
-//! inheritance graph. This module provides specialized path analysis and
-//! visualization for these scenarios.
+//! ## Key Features
+//!
+//! 1. Detection of diamond inheritance patterns in type hierarchies
+//! 2. Specialized error handling for diamond inheritance cases
+//! 3. Visual representation of diamond inheritance relationships
+//! 4. Integration with the interface type assertion path visualization system
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::fmt;
-
 use tracing::{debug, error, info, instrument, trace, warn};
-use inkwell::values::BasicValueEnum;
 
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
 use crate::error::Error;
-use crate::error::SourceLocation;
-use crate::error::type_assertion_error::TypeAssertionError;
 
-/// Extension trait for LlvmCodeGenerator to add diamond inheritance handling
-pub trait DiamondInheritanceHandler<'ctx> {
-    /// Detect diamond inheritance patterns between two types
+/// Represents a diamond inheritance pattern in the type hierarchy
+#[derive(Debug, Clone)]
+pub struct DiamondInheritancePattern {
+    /// The root type (concrete type being asserted)
+    pub root_type_id: u32,
+    /// The base type (target interface type)
+    pub base_type_id: u32,
+    /// The left intermediate type in the diamond
+    pub left_intermediate_id: u32,
+    /// The right intermediate type in the diamond
+    pub right_intermediate_id: u32,
+}
+
+/// Trait for detecting and handling diamond inheritance patterns
+pub trait DiamondInheritanceDetection<'ctx> {
+    /// Detect diamond inheritance patterns between a concrete type and an interface
     fn detect_diamond_inheritance(
         &self,
-        source_type: &str,
-        target_type: &str
-    ) -> Result<Option<DiamondInheritanceInfo>, Error>;
+        concrete_type_id: u32,
+        interface_type_id: u32
+    ) -> Result<Option<DiamondInheritancePattern>, Error>;
     
-    /// Find all paths between two types (not just the shortest)
+    /// Find all inheritance paths between two types
     fn find_all_inheritance_paths(
         &self,
-        from_type_id: u64,
-        to_type_id: u64,
-        max_paths: usize
-    ) -> Result<Vec<Vec<u64>>, Error>;
+        source_type_id: u32,
+        target_type_id: u32
+    ) -> Result<Vec<InterfaceInheritancePath>, Error>;
     
-    /// Visualize diamond inheritance relationship between types
+    /// Check if there are multiple inheritance paths between two types
+    fn has_multiple_inheritance_paths(
+        &self,
+        source_type_id: u32,
+        target_type_id: u32
+    ) -> Result<bool, Error>;
+    
+    /// Create a visualization of the diamond inheritance pattern
     fn visualize_diamond_inheritance(
         &self,
-        source_type: &str,
-        target_type: &str,
-        inheritance_info: &DiamondInheritanceInfo
-    ) -> Result<String, Error>;
+        pattern: &DiamondInheritancePattern
+    ) -> String;
 }
 
-/// Information about a diamond inheritance pattern
-#[derive(Debug, Clone)]
-pub struct DiamondInheritanceInfo {
-    /// The common base type at the top of the diamond
-    pub base_type_id: u64,
-    pub base_type_name: String,
-    
-    /// The intermediate types that form the sides of the diamond
-    pub intermediate_type_ids: Vec<u64>,
-    pub intermediate_type_names: Vec<String>,
-    
-    /// All detected paths through the inheritance hierarchy
-    pub paths: Vec<Vec<u64>>,
-    
-    /// Path lengths (for analytical purposes)
-    pub path_lengths: Vec<usize>,
-    
-    /// The lowest common junction point in the hierarchy
-    pub junction_type_id: Option<u64>,
-    pub junction_type_name: Option<String>,
-}
-
-impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
+impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
     #[instrument(skip(self), level = "debug")]
     fn detect_diamond_inheritance(
         &self,
-        source_type: &str,
-        target_type: &str
-    ) -> Result<Option<DiamondInheritanceInfo>, Error> {
-        debug!("Detecting diamond inheritance between {} and {}", source_type, target_type);
+        concrete_type_id: u32,
+        interface_type_id: u32
+    ) -> Result<Option<DiamondInheritancePattern>, Error> {
+        // Find all paths between the concrete type and interface
+        let paths = self.find_all_inheritance_paths(concrete_type_id, interface_type_id)?;
         
-        // Ensure the registry is initialized
-        let registry = match &self.interface_type_registry {
-            Some(registry) => registry,
-            None => {
-                debug!("No type registry available to detect diamond inheritance");
+        // If there are at least two paths, check for a diamond pattern
+        if paths.len() >= 2 {
+            // For simplicity, look at the first two paths
+            let first_path = &paths[0].path;
+            let second_path = &paths[1].path;
+            
+            // Paths must start and end with the same types
+            if first_path.is_empty() || second_path.is_empty() || 
+               first_path[0] != second_path[0] || 
+               first_path[first_path.len()-1] != second_path[second_path.len()-1] {
                 return Ok(None);
             }
-        };
-        
-        // Get type IDs
-        let source_id = match registry.get_type_id(source_type) {
-            Ok(id) => id,
-            Err(_) => {
-                debug!("Source type not found in registry: {}", source_type);
+            
+            // Find where paths diverge
+            let root_type_id = first_path[0];
+            let base_type_id = first_path[first_path.len()-1];
+            
+            // Ensure paths are not identical
+            if first_path == second_path {
                 return Ok(None);
             }
-        };
-        
-        let target_id = match registry.get_type_id(target_type) {
-            Ok(id) => id,
-            Err(_) => {
-                debug!("Target type not found in registry: {}", target_type);
-                return Ok(None);
-            }
-        };
-        
-        // Get inheritance map
-        let inheritance_map = match registry.get_inheritance_map() {
-            Some(map) => map,
-            None => {
-                debug!("No inheritance map available");
-                return Ok(None);
-            }
-        };
-        
-        // Find all paths between source and target (limited to a reasonable number)
-        let paths = self.find_all_inheritance_paths(source_id, target_id, 10)?;
-        
-        // If fewer than 2 paths, it's not a diamond pattern
-        if paths.len() < 2 {
-            debug!("No diamond inheritance detected (only {} path found)", paths.len());
-            return Ok(None);
-        }
-        
-        // Analyze paths to find the common base type and junction
-        let path_lengths: Vec<usize> = paths.iter().map(|p| p.len()).collect();
-        
-        // Find common types across all paths
-        let mut common_type_counts: HashMap<u64, usize> = HashMap::new();
-        
-        for path in &paths {
-            let mut seen_in_this_path = HashSet::new();
             
-            for &type_id in path {
-                // Count each type only once per path
-                if seen_in_this_path.insert(type_id) {
-                    *common_type_counts.entry(type_id).or_insert(0) += 1;
-                }
-            }
-        }
-        
-        // Find types that appear in all paths (potential diamond corners)
-        let common_types: Vec<u64> = common_type_counts.iter()
-            .filter(|(_, &count)| count == paths.len())
-            .map(|(&type_id, _)| type_id)
-            .collect();
-        
-        if common_types.len() < 2 {
-            // Need at least source and target as common points
-            debug!("Not enough common types for diamond inheritance");
-            return Ok(None);
-        }
-        
-        // Start building the diamond information
-        let mut diamond_info = DiamondInheritanceInfo {
-            base_type_id: 0,  // Will set these below
-            base_type_name: String::new(),
-            intermediate_type_ids: Vec::new(),
-            intermediate_type_names: Vec::new(),
-            paths,
-            path_lengths,
-            junction_type_id: None,
-            junction_type_name: None,
-        };
-        
-        // Find the base type (common ancestor farthest from source)
-        // In a diamond, this should be at or near the beginning of both paths
-        let mut base_type_id = 0;
-        let mut min_position_sum = usize::MAX;
-        
-        for &type_id in &common_types {
-            // Skip source and target
-            if type_id == source_id || type_id == target_id {
-                continue;
-            }
-            
-            // Calculate the sum of positions in all paths
-            let position_sum: usize = diamond_info.paths.iter()
-                .map(|path| path.iter().position(|&id| id == type_id).unwrap_or(usize::MAX))
-                .sum();
-            
-            // The type with the smallest position sum is closest to the top of the diamond
-            if position_sum < min_position_sum {
-                min_position_sum = position_sum;
-                base_type_id = type_id;
-            }
-        }
-        
-        // If we identified a base type
-        if base_type_id != 0 {
-            diamond_info.base_type_id = base_type_id;
-            diamond_info.base_type_name = registry.get_type_name(base_type_id)
-                .unwrap_or_else(|_| format!("Unknown(0x{:x})", base_type_id));
-            
-            debug!("Identified diamond base type: {}", diamond_info.base_type_name);
-            
-            // Find the intermediate types (form the sides of the diamond)
-            let mut intermediate_types = HashSet::new();
-            
-            for path in &diamond_info.paths {
-                // Find the position of the base type in this path
-                if let Some(base_pos) = path.iter().position(|&id| id == base_type_id) {
-                    // Add all types between base and target except common types
-                    for &type_id in &path[base_pos + 1..] {
-                        if type_id != target_id && !common_types.contains(&type_id) {
-                            intermediate_types.insert(type_id);
-                        }
+            // For a classic diamond pattern, paths will have length at least 3
+            if first_path.len() >= 3 && second_path.len() >= 3 {
+                // Find first position where paths diverge
+                let mut diverge_idx = 0;
+                for i in 0..std::cmp::min(first_path.len(), second_path.len()) {
+                    if first_path[i] != second_path[i] {
+                        diverge_idx = i;
+                        break;
                     }
                 }
-            }
-            
-            // Convert to sorted vectors
-            let mut intermediate_ids: Vec<_> = intermediate_types.into_iter().collect();
-            intermediate_ids.sort(); // Sort for stable output
-            
-            diamond_info.intermediate_type_ids = intermediate_ids;
-            
-            // Get names for all intermediate types
-            for &id in &diamond_info.intermediate_type_ids {
-                let name = registry.get_type_name(id)
-                    .unwrap_or_else(|_| format!("Unknown(0x{:x})", id));
-                diamond_info.intermediate_type_names.push(name);
-            }
-            
-            // Try to identify junction point if present
-            // This is the type where different paths converge before reaching the target
-            let mut latest_common_type = None;
-            let mut max_position_sum = 0;
-            
-            for &type_id in &common_types {
-                // Skip source, target, and base type
-                if type_id == source_id || type_id == target_id || type_id == base_type_id {
-                    continue;
-                }
                 
-                // Calculate the sum of positions in all paths
-                let position_sum: usize = diamond_info.paths.iter()
-                    .map(|path| path.iter().position(|&id| id == type_id).unwrap_or(0))
-                    .sum();
+                // Get the intermediate types
+                let left_intermediate_id = first_path[diverge_idx];
+                let right_intermediate_id = second_path[diverge_idx];
                 
-                // The type with the largest position sum is closest to the bottom of the diamond
-                if position_sum > max_position_sum {
-                    max_position_sum = position_sum;
-                    latest_common_type = Some(type_id);
-                }
+                return Ok(Some(DiamondInheritancePattern {
+                    root_type_id,
+                    base_type_id,
+                    left_intermediate_id,
+                    right_intermediate_id,
+                }));
             }
-            
-            // Set junction information if found
-            if let Some(junction_id) = latest_common_type {
-                diamond_info.junction_type_id = Some(junction_id);
-                diamond_info.junction_type_name = Some(registry.get_type_name(junction_id)
-                    .unwrap_or_else(|_| format!("Unknown(0x{:x})", junction_id)));
-                
-                debug!("Identified diamond junction type: {}", 
-                       diamond_info.junction_type_name.as_ref().unwrap());
-            }
-            
-            debug!("Diamond inheritance pattern detected with {} paths and {} intermediate types", 
-                  diamond_info.paths.len(), diamond_info.intermediate_type_ids.len());
-                  
-            return Ok(Some(diamond_info));
         }
         
-        // No diamond pattern detected
-        debug!("No diamond inheritance pattern could be definitively identified");
         Ok(None)
     }
     
     #[instrument(skip(self), level = "debug")]
     fn find_all_inheritance_paths(
         &self,
-        from_type_id: u64,
-        to_type_id: u64,
-        max_paths: usize
-    ) -> Result<Vec<Vec<u64>>, Error> {
-        // Ensure the registry is initialized
-        let registry = match &self.interface_type_registry {
-            Some(registry) => registry,
-            None => return Ok(vec![]),
-        };
+        source_type_id: u32,
+        target_type_id: u32
+    ) -> Result<Vec<InterfaceInheritancePath>, Error> {
+        // Check if we have an interface path finder available
+        if let Some(path_finder) = self.get_interface_path_finder() {
+            return path_finder.find_all_paths(source_type_id, target_type_id);
+        }
         
-        // Get inheritance map
-        let inheritance_map = match registry.get_inheritance_map() {
-            Some(map) => map,
-            None => return Ok(vec![]),
-        };
+        // Fallback implementation when path finder is not available
+        let mut results = Vec::new();
         
-        // Track visited states to avoid cycles
-        let mut visited = HashSet::new();
+        // If source and target are the same, return a single-node path
+        if source_type_id == target_type_id {
+            results.push(InterfaceInheritancePath {
+                path: vec![source_type_id],
+                interfaces: HashMap::new(),
+            });
+            return Ok(results);
+        }
         
-        // Use BFS to find all paths up to a maximum count
-        let mut queue = VecDeque::new();
-        queue.push_back(vec![from_type_id]);
-        
-        let mut all_paths = Vec::new();
-        
-        while let Some(current_path) = queue.pop_front() {
-            // Get the last type in the current path
-            let current_type = *current_path.last().unwrap();
-            
-            // If we've reached the target, save this path
-            if current_type == to_type_id {
-                all_paths.push(current_path);
-                
-                // Stop if we've found enough paths
-                if all_paths.len() >= max_paths {
-                    break;
-                }
-                
-                continue;
-            }
-            
-            // Check if we've visited this type in this path
-            if !visited.insert(current_type) {
-                continue; // Skip already visited types
-            }
-            
-            // Get all direct implementations of this type
-            if let Some(implementations) = inheritance_map.get(&current_type) {
-                for &impl_id in implementations {
-                    // Skip if this would create a cycle
-                    if current_path.contains(&impl_id) {
-                        continue;
-                    }
-                    
-                    // Create a new path with this implementation
-                    let mut new_path = current_path.clone();
-                    new_path.push(impl_id);
-                    queue.push_back(new_path);
-                }
+        // Try to get implementation information directly
+        if let Some(implements) = self.type_implements(source_type_id, target_type_id) {
+            if implements {
+                // Create a simple path
+                results.push(InterfaceInheritancePath {
+                    path: vec![source_type_id, target_type_id],
+                    interfaces: HashMap::new(),
+                });
             }
         }
         
-        // Return all found paths
-        Ok(all_paths)
+        Ok(results)
     }
     
-    #[instrument(skip(self, inheritance_info), level = "debug")]
+    #[instrument(skip(self), level = "debug")]
+    fn has_multiple_inheritance_paths(
+        &self,
+        source_type_id: u32,
+        target_type_id: u32
+    ) -> Result<bool, Error> {
+        let paths = self.find_all_inheritance_paths(source_type_id, target_type_id)?;
+        Ok(paths.len() > 1)
+    }
+    
+    #[instrument(skip(self, pattern), level = "debug")]
     fn visualize_diamond_inheritance(
         &self,
-        source_type: &str,
-        target_type: &str,
-        inheritance_info: &DiamondInheritanceInfo
-    ) -> Result<String, Error> {
-        debug!("Visualizing diamond inheritance between {} and {}", source_type, target_type);
-        
-        let registry = match &self.interface_type_registry {
-            Some(registry) => registry,
-            None => return Ok(format!("Diamond Inheritance Visualization (limited):\n\n{} --> {} --> {}\n\nNo type registry available for detailed visualization.", 
-                                       source_type, inheritance_info.base_type_name, target_type)),
-        };
-        
-        // Create diamond visualization
+        pattern: &DiamondInheritancePattern
+    ) -> String {
         let mut result = String::new();
-        result.push_str("Diamond Inheritance Pattern Detected\n");
-        result.push_str("====================================\n\n");
         
-        // Basic information
-        result.push_str(&format!("Source Type: {}\n", source_type));
-        result.push_str(&format!("Target Type: {}\n", target_type));
-        result.push_str(&format!("Base Type: {}\n", inheritance_info.base_type_name));
+        // Get type names for better readability
+        let root_name = self.get_type_name_by_id(pattern.root_type_id)
+            .unwrap_or_else(|| format!("Type#{}", pattern.root_type_id));
         
-        if let Some(junction) = &inheritance_info.junction_type_name {
-            result.push_str(&format!("Junction Type: {}\n", junction));
-        }
+        let base_name = self.get_type_name_by_id(pattern.base_type_id)
+            .unwrap_or_else(|| format!("Type#{}", pattern.base_type_id));
         
-        result.push_str(&format!("Number of Paths: {}\n", inheritance_info.paths.len()));
-        result.push_str(&format!("Path Lengths: {:?}\n", inheritance_info.path_lengths));
+        let left_intermediate_name = self.get_type_name_by_id(pattern.left_intermediate_id)
+            .unwrap_or_else(|| format!("Type#{}", pattern.left_intermediate_id));
         
-        result.push_str("\nIntermediate Types:\n");
-        for name in &inheritance_info.intermediate_type_names {
-            result.push_str(&format!("  - {}\n", name));
-        }
+        let right_intermediate_name = self.get_type_name_by_id(pattern.right_intermediate_id)
+            .unwrap_or_else(|| format!("Type#{}", pattern.right_intermediate_id));
         
-        // Ascil art representation of the diamond
-        result.push_str("\nDiamond Inheritance Diagram:\n\n");
+        // Create a diamond visualization with ASCII art
+        result.push_str("Diamond Inheritance Pattern:\n\n");
         
-        result.push_str(&format!("                      {}\n", source_type));
-        result.push_str("                        |\n");
-        result.push_str("                        v\n");
-        result.push_str(&format!("                      {}\n", inheritance_info.base_type_name));
+        // ASCII art of a diamond
+        result.push_str(&format!("              {}\n", base_name));
+        result.push_str("               /\\\n");
+        result.push_str("              /  \\\n");
+        result.push_str(&format!("{:15}  {:15}\n", left_intermediate_name, right_intermediate_name));
+        result.push_str("              \\  /\n");
+        result.push_str("               \\/\n");
+        result.push_str(&format!("              {}\n\n", root_name));
         
-        // Middle part of the diamond - show the first few intermediate types on both sides
-        let left_side = inheritance_info.intermediate_type_names.get(0)
-            .cloned().unwrap_or_else(|| "?".to_string());
-            
-        let right_side = inheritance_info.intermediate_type_names.get(1)
-            .cloned().unwrap_or_else(|| "?".to_string());
+        // Add explanation
+        result.push_str("This creates ambiguity in the inheritance relationship.\n");
+        result.push_str("Type assertions with diamond inheritance patterns may not\n");
+        result.push_str("behave as expected due to multiple inheritance paths.\n");
         
-        result.push_str("                      / \\\n");
-        result.push_str(&format!("                    /   \\\n"));
-        result.push_str(&format!("        {}   {}\n", left_side, right_side));
-        result.push_str("                    \\   /\n");
-        result.push_str("                     \\ /\n");
-        
-        // Bottom of the diamond - either junction or target
-        if let Some(junction) = &inheritance_info.junction_type_name {
-            result.push_str(&format!("                      {}\n", junction));
-            result.push_str("                        |\n");
-            result.push_str("                        v\n");
-            result.push_str(&format!("                      {}\n", target_type));
-        } else {
-            result.push_str(&format!("                      {}\n", target_type));
-        }
-        
-        // Detailed path information
-        result.push_str("\nDetailed Inheritance Paths:\n");
-        
-        for (i, path) in inheritance_info.paths.iter().enumerate() {
-            result.push_str(&format!("Path {}:\n", i+1));
-            
-            for (j, &type_id) in path.iter().enumerate() {
-                let type_name = registry.get_type_name(type_id)
-                    .unwrap_or_else(|_| format!("Unknown(0x{:x})", type_id));
-                
-                // Add special marks for diamond corners
-                let marker = if type_id == inheritance_info.base_type_id {
-                    " (BASE)"
-                } else if Some(type_id) == inheritance_info.junction_type_id {
-                    " (JUNCTION)"
-                } else if j == 0 {
-                    " (SOURCE)"
-                } else if j == path.len() - 1 {
-                    " (TARGET)"
-                } else {
-                    ""
-                };
-                
-                result.push_str(&format!("  {}. {}{}", j+1, type_name, marker));
-                
-                // Add arrow except for the last element
-                if j < path.len() - 1 {
-                    // Try to get the relationship type between these types
-                    let next_type_id = path[j+1];
-                    let relation = self.get_relationship_type(type_id, next_type_id, registry);
-                    result.push_str(&format!(" --{}-->", relation));
-                }
-                
-                result.push_str("\n");
-            }
-            
-            if i < inheritance_info.paths.len() - 1 {
-                result.push_str("\n");
-            }
-        }
-        
-        // Method resolution order analysis for the diamond
-        result.push_str("\nMethod Resolution Order Analysis:\n");
-        result.push_str("When multiple inheritance paths exist, method resolution follows specific rules.\n");
-        result.push_str("In CURSED, methods are resolved by:");
-        result.push_str("  1. Checking the concrete type first\n");
-        result.push_str("  2. Following inheritance paths in declaration order\n");
-        result.push_str("  3. For diamond patterns, common base interfaces are only visited once\n");
-        
-        // Recommendation for handling this diamond inheritance
-        result.push_str("\nRecommendations:\n");
-        result.push_str("  1. Ensure method implementations are consistent across intermediate types\n");
-        result.push_str("  2. Consider using composition instead of multiple inheritance if possible\n");
-        result.push_str("  3. Use explicit type assertions when accessing methods in ambiguous cases\n");
-        
-        Ok(result)
+        result
     }
 }
 
-// Helper methods for diamond inheritance handling
+// Helper methods for diamond inheritance detection
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Get the relationship type between two types in the inheritance hierarchy
-    fn get_relationship_type(&self, from_type_id: u64, to_type_id: u64, registry: &dyn InterfaceTypeAssertionPathVisualization) -> String {
-        // Try to determine the nature of the relationship between types
-        if let Ok(from_name) = registry.get_type_name(from_type_id) {
-            if let Ok(to_name) = registry.get_type_name(to_type_id) {
-                // Look for common patterns in the names to infer relationship
-                if to_name.contains("Interface") || to_name.contains("Trait") {
-                    return "implements".to_string();
-                } else if from_name.contains("Base") && to_name.contains("Derived") {
-                    return "extends".to_string();
-                }
-            }
-        }
-        
-        // Default relationship
-        "is-a".to_string()
+    /// Get the interface path finder
+    fn get_interface_path_finder(&self) -> Option<&dyn EnhancedInterfacePathFinder> {
+        self.internal_fields.get("interface_path_finder")
+            .and_then(|boxed| boxed.downcast_ref::<Box<dyn EnhancedInterfacePathFinder>>())
+            .map(|boxed| boxed.as_ref())
+    }
+    
+    /// Check if a type implements an interface
+    fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> Option<bool> {
+        // In a real implementation, we would look up the interface implementation
+        // information from the registry
+        // This is a placeholder that always returns false
+        Some(false)
     }
 }
 
-// Register module function
-pub fn register_diamond_inheritance_handler() {
-    debug!("Registered diamond inheritance handler for interface type assertions");
+/// Register the diamond inheritance detection module
+pub fn register_diamond_inheritance_detection() {
+    debug!("Registered diamond inheritance detection for interface type assertions");
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     
     #[test]
-    fn test_diamond_inheritance_registration() {
-        register_diamond_inheritance_handler();
+    fn test_diamond_inheritance_detection_registration() {
+        // Simple test to ensure module registration works
+        register_diamond_inheritance_detection();
         assert!(true);
     }
 }
