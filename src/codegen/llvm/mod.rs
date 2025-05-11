@@ -132,6 +132,8 @@ pub use self::interface_type_assertion_nested_enhanced::NestedInterfaceTypeAsser
 pub use self::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 // Enhanced interface type assertion path visualization with improved error handling
 pub use self::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
+// Adapter for proper method exposure between path visualization traits
+pub use self::interface_type_assertion_path_visualization_adapter::InterfaceTypeAssertionPathVisualizationAdapter;
 // Interface type assertion debug utilities for runtime debugging support
 pub use self::interface_type_assertion_debug::{InterfaceTypeAssertionDebug, TypeAssertionDebugConfig};
 // Simple path finding algorithms for interface inheritance relationships
@@ -235,6 +237,7 @@ pub mod interface_type_assertion_error_propagation_improved; // Improved error p
 pub mod interface_type_assertion_error_propagation_integration; // Integration layer for error propagation with ? operator support
 pub mod interface_type_assertion_nested_enhanced; // Enhanced nested interface type assertions with proper error propagation
 pub mod interface_type_assertion_path_visualization;
+pub mod interface_type_assertion_path_visualization_adapter; // Adapter for ensuring proper method exposure
 pub mod interface_type_assertion_debug; // Interface type assertion debug utilities
 pub mod interface_registry_integration; // Visual debugging tools for interface type assertions
 pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual debugging tools with better error handling

@@ -670,12 +670,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         };
         
         // Get current type context information
-        let expected_type_id = match self.current_expected_type_id {
+        let expected_type_id = match self.current_expected_type_id() {
             Some(id) => ctx.i32_type().const_int(id as u64, false),
             None => ctx.i32_type().const_int(0, false)
         };
         
-        let actual_type_id = match self.current_actual_type_id {
+        let actual_type_id = match self.current_actual_type_id() {
             Some(id) => ctx.i32_type().const_int(id as u64, false),
             None => ctx.i32_type().const_int(0, false)
         };
@@ -727,6 +727,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         struct_value
     }
 }
+
+/// Type alias for backward compatibility with existing code
+pub type TypeAssertionErrorPropagation<'ctx> = InterfaceTypeAssertionErrorPropagation<'ctx>;
 
 /// Register the error propagation module with the compiler
 pub fn register_error_propagation() {

@@ -41,6 +41,18 @@ pub trait InterfaceTypeAssertionPathVisualization<'ctx> {
         target_type: &str,
         source_location: Option<SourceLocation>,
     ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Get a list of interfaces implemented by a type
+    fn get_implemented_interfaces(&self, type_id: u64, inheritance_map: &HashMap<u64, HashSet<u64>>) -> Vec<u64>;
+    
+    /// Get a list of types that implement an interface
+    fn get_interface_implementors(&self, interface_id: u64, inheritance_map: &HashMap<u64, HashSet<u64>>) -> Vec<u64>;
+    
+    /// Get the relationship type between two types in the inheritance hierarchy
+    fn get_relationship_type(&self, from_id: u64, to_id: u64, inheritance_map: &HashMap<u64, HashSet<u64>>) -> String;
+    
+    /// Get or insert a runtime function in the LLVM module
+    fn get_or_insert_runtime_function(&mut self, name: &str) -> Option<inkwell::values::FunctionValue<'ctx>>;
 }
 
 impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
@@ -652,4 +664,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         false
     }
+}
+
+/// Register the type assertion path visualization with the compiler
+pub fn register_type_assertion_path_visualization() {
+    tracing::trace!("Interface type assertion path visualization registered");
 }

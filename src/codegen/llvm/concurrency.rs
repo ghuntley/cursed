@@ -1,17 +1,64 @@
 //! Code generation for concurrency primitives
 
 use inkwell::values::{BasicValueEnum, FunctionValue};
+use inkwell::types::BasicTypeEnum;
 use crate::ast::expressions::concurrency::StanExpression;
 use crate::ast::expressions::channel::{ChannelExpression, SendExpression, ReceiveExpression};
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
 use crate::ast::GoStatement;
 use crate::ast::expressions::CallExpression;
+use tracing::{instrument};
 
 // Import required traits
 use super::expression::ExpressionCompilation;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Helper method to calculate the size of a type in bytes
+    #[instrument(level = "debug", skip(self))]
+    fn get_type_size_in_bytes(&self, ty: BasicTypeEnum<'ctx>) -> u64 {
+        if ty.is_int_type() {
+            let bit_width = ty.into_int_type().get_bit_width();
+            (bit_width + 7) / 8 // Round up to nearest byte
+        } else if ty.is_float_type() {
+            // Handle float types based on their size
+            let float_ty = ty.into_float_type();
+            if float_ty.get_type_kind() == inkwell::types::FloatTypeKind::Half {
+                2 // 16-bit float
+            } else if float_ty.get_type_kind() == inkwell::types::FloatTypeKind::Float {
+                4 // 32-bit float
+            } else if float_ty.get_type_kind() == inkwell::types::FloatTypeKind::Double {
+                8 // 64-bit float
+            } else {
+                16 // Largest float types (FP128, etc.)
+            }
+        } else if ty.is_pointer_type() {
+            8 // Assuming 64-bit pointers
+        } else if ty.is_struct_type() {
+            let struct_type = ty.into_struct_type();
+            let mut size = 0;
+            for i in 0..struct_type.count_fields() {
+                if let Some(field_type) = struct_type.get_field_type_at_index(i) {
+                    size += self.get_type_size_in_bytes(field_type);
+                }
+            }
+            if size == 0 { 1 } else { size } // Empty structs take at least 1 byte
+        } else if ty.is_array_type() {
+            let array_type = ty.into_array_type();
+            let elem_size = self.get_type_size_in_bytes(array_type.get_element_type());
+            let len = array_type.len();
+            elem_size * len
+        } else if ty.is_vector_type() {
+            let vector_type = ty.into_vector_type();
+            let elem_size = self.get_type_size_in_bytes(vector_type.get_element_type());
+            let len = vector_type.get_size();
+            elem_size * len
+        } else {
+            // Default fallback for types we don't handle explicitly
+            8 // Reasonable default for unknown types
+        }
+    }
+    
     /// Compile a goroutine (stan) expression
     pub fn compile_goroutine_expression(
         &mut self,
@@ -51,19 +98,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let make_channel_fn = self.get_or_create_make_channel_fn()?;
         
         // Call the make_channel function with the size of the element type and capacity
-        let size_of_elem = if elem_type.is_int_type() {
-            self.context().i64_type().const_int(elem_type.into_int_type().get_bit_width() as u64 / 8, false)
-        } else if elem_type.is_float_type() {
-            // Hardcode the size for float types based on type
-            self.context().i64_type().const_int(4, false) // Use 4 bytes for float32
-        } else if elem_type.is_pointer_type() {
-            self.context().i64_type().const_int(8, false) // Assuming 64-bit pointers
-        } else if elem_type.is_struct_type() {
-            // TODO: Get the size of the struct properly
-            self.context().i64_type().const_int(16, false) // Placeholder
-        } else {
-            return Err(Error::codegen(format!("Unsupported channel element type: {}", channel.element_type)));
-        };
+        let elem_size = self.get_type_size_in_bytes(elem_type);
+        let size_of_elem = self.context().i64_type().const_int(elem_size, false);
         
         let capacity_value = if let Some(cap_expr) = &channel.capacity {
             let compiled_cap = self.compile_expression(cap_expr.as_ref())?;

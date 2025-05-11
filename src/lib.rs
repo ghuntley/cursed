@@ -77,6 +77,9 @@ pub use crate::core::deep_nested_async_checker::{DeepNestedAsyncChecker, DeepNes
 // Re-export deep nested constraint checker
 pub use crate::core::deep_nested_constraint_checker::{DeepNestedConstraintChecking, TypePath, TypePathComponent, DeepConstraintResult};
 
+// Re-export work stealing constraint checker
+pub use crate::core::async_constraint_checker_work_stealing::{WorkStealingConstraintChecker, WorkStealingConstraintChecking, WorkStealingStats};
+
 // Re-export interface registry visualization
 pub use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization};
 pub use crate::core::interface_registry_visualization_implementation;
