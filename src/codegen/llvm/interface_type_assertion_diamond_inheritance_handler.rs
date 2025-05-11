@@ -18,6 +18,7 @@ use crate::codegen::llvm::interface_path_finder_enhanced_fix::EnhancedInterfaceP
 use crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder;
 use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
+use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 use crate::error::Error;
 
 /// Handler for diamond inheritance patterns in interface type assertions
