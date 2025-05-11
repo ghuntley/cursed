@@ -124,7 +124,7 @@ The codebase currently fails to build with numerous errors. Below is a prioritiz
 - ✅ Fix missing token variants (Less, Greater)
 
 14. **Fix stdlib ambiguous exports:**
-    - Resolve naming conflicts in glob re-exports of stdlib modules
+- ✅ Resolve naming conflicts in glob re-exports of stdlib modules
 
 15. **Clean up unused doc comments:**
     - Fix documentation style and placement
