@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 
 use tracing::{debug, error, info, instrument, trace, warn};
-import inkwell::values::BasicValueEnum;
+use inkwell::values::BasicValueEnum;
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
@@ -432,7 +432,7 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
                 if j < path.len() - 1 {
                     // Try to get the relationship type between these types
                     let next_type_id = path[j+1];
-                    let relation = self.get_relationship_type(type_id, next_type_id, &inheritance_map);
+                    let relation = self.get_relationship_type(type_id, next_type_id, registry);
                     result.push_str(&format!(" --{}-->", relation));
                 }
                 
@@ -459,6 +459,27 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
         result.push_str("  3. Use explicit type assertions when accessing methods in ambiguous cases\n");
         
         Ok(result)
+    }
+}
+
+// Helper methods for diamond inheritance handling
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Get the relationship type between two types in the inheritance hierarchy
+    fn get_relationship_type(&self, from_type_id: u64, to_type_id: u64, registry: &dyn InterfaceTypeAssertionPathVisualization) -> String {
+        // Try to determine the nature of the relationship between types
+        if let Ok(from_name) = registry.get_type_name(from_type_id) {
+            if let Ok(to_name) = registry.get_type_name(to_type_id) {
+                // Look for common patterns in the names to infer relationship
+                if to_name.contains("Interface") || to_name.contains("Trait") {
+                    return "implements".to_string();
+                } else if from_name.contains("Base") && to_name.contains("Derived") {
+                    return "extends".to_string();
+                }
+            }
+        }
+        
+        // Default relationship
+        "is-a".to_string()
     }
 }
 
