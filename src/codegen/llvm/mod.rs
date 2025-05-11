@@ -266,6 +266,8 @@ pub mod interface_type_assertion_error_propagation_filesystem; // Enhanced error
 pub mod interface_type_assertion_filesystem_integration; // Filesystem integration for source location tracking
 pub mod interface_type_assertion_error_propagation_filesystem_integration; // Comprehensive integration between error propagation and filesystem source location tracking
 pub mod interface_type_assertion_error_visualization; // Enhanced visualization of interface type assertion errors with source context
+pub mod interface_type_assertion_error_visualization_enhanced; // Enhanced error visualization with diamond pattern detection and rich formatting
+pub mod interface_type_assertion_diamond_inheritance; // Specialized detection and visualization of diamond inheritance patterns
 pub mod interface_type_assertion_benchmarking; // Performance benchmarking for interface type assertions
 // Module already declared above
 
@@ -304,6 +306,10 @@ pub use self::interface_type_assertion_error_propagation_filesystem_integration:
 pub use self::interface_type_assertion_error_propagation_filesystem_integration::register_comprehensive_error_filesystem_integration as register_comprehensive_error_propagation_integration;
 pub use self::interface_type_assertion_error_visualization::ErrorVisualization;
 pub use self::interface_type_assertion_error_visualization::register_error_visualization;
+pub use self::interface_type_assertion_error_visualization_enhanced::EnhancedErrorVisualization;
+pub use self::interface_type_assertion_error_visualization_enhanced::register_enhanced_error_visualization;
+pub use self::interface_type_assertion_diamond_inheritance::{DiamondInheritanceDetection, DiamondInheritancePattern};
+pub use self::interface_type_assertion_diamond_inheritance::register_diamond_inheritance_detection;
 // Re-export filesystem source location integration for interface type assertions
 pub use self::interface_type_assertion_filesystem_integration::InterfaceTypeAssertionFilesystemIntegration;
 pub use self::interface_type_assertion_filesystem_integration::register_filesystem_integration as register_filesystem_source_location_integration;
