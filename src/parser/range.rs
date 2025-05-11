@@ -10,6 +10,7 @@ use crate::error::Error;
 use crate::lexer::Token;
 
 use super::parser::Parser;
+use super::range_clause_error_recovery_simple::RangeClauseErrorRecoverySimple;
 use super::precedence::Precedence;
 
 impl<'a> Parser<'a> {
@@ -24,6 +25,14 @@ impl<'a> Parser<'a> {
     /// This function parses these variants and constructs the appropriate
     /// RangeClause AST node.
     pub(super) fn parse_range_clause(&mut self) -> Result<RangeClause, Error> {
+        // Use the simplified version with error recovery
+        return self.parse_range_clause_with_recovery_simple();
+    }
+    
+    /// The original implementation of parse_range_clause without error recovery
+    /// This is kept for reference but not used directly anymore
+    #[deprecated(note = "Use parse_range_clause_with_recovery instead")]
+    pub(super) fn parse_range_clause_original(&mut self) -> Result<RangeClause, Error> {
         let token = self.current_token.clone();
         self.next_token()?; // Advance past 'flex'
         
