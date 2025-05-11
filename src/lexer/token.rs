@@ -15,6 +15,7 @@ use crate::lexer::TokenType;
 /// Tokens are created by the lexer during the lexical analysis phase
 /// and consumed by the parser to build the abstract syntax tree.
 #[derive(Debug, PartialEq, Clone)]
+#[repr(u16)]
 pub enum Token {
     // Special tokens
     Illegal(String),
