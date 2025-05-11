@@ -11,6 +11,7 @@ use std::fmt;
 use tracing::{debug, error, info, trace, instrument};
 
 use crate::error::Error;
+use crate::object::Object;
 use crate::memory::{Traceable, Tag, Visitor, ThreadSafeGc};
 use crate::runtime::channel_gc::ThreadSafeChannel;
 
@@ -105,6 +106,11 @@ impl ThreadSafeObject {
         }
     }
     
+    /// Get the inner value of this ThreadSafeObject
+    pub fn get(&self) -> ThreadSafeValue {
+        Arc::new(self.clone())
+    }
+    
     /// Get the type name of the object
     pub fn type_name(&self) -> &'static str {
         match self {
@@ -161,7 +167,7 @@ impl fmt::Debug for ThreadSafeObject {
             ThreadSafeObject::Boolean(b) => write!(f, "Boolean({})", b),
             ThreadSafeObject::String(s) => write!(f, "String(\"{}\")", s),
             ThreadSafeObject::Array(_) => write!(f, "Array([...])"),
-            ThreadSafeObject::HashTable(_) => write!(f, "HashTable({...})"),
+            ThreadSafeObject::HashTable(_) => write!(f, "HashTable({{...}})"),
             ThreadSafeObject::Channel(c) => write!(f, "Channel({})", c.element_type()),
             ThreadSafeObject::Null => write!(f, "Null"),
             ThreadSafeObject::Error { message, error_type, .. } => {
@@ -218,6 +224,43 @@ impl Traceable for ThreadSafeObject {
             ThreadSafeObject::Error { .. } => Tag::Error,
         }
     }
+}
+
+// Type alias for a thread-safe reference to an object
+pub type ThreadSafeValue = Arc<ThreadSafeObject>;
+
+/// A thread-safe callable object, similar to a function
+pub trait ThreadSafeCallable: Send + Sync {
+    /// Call the object with the given arguments
+    fn call(&self, args: Vec<ThreadSafeValue>) -> Result<ThreadSafeValue, Error>;
+}
+
+/// Convert a regular Object to a ThreadSafeObject
+pub fn convert_to_thread_safe(obj: &Object) -> Result<ThreadSafeValue, Error> {
+    let thread_safe_obj = match obj {
+        Object::Integer(i) => ThreadSafeObject::Integer(*i),
+        Object::Float(f) => ThreadSafeObject::Float(*f),
+        Object::Boolean(b) => ThreadSafeObject::Boolean(*b),
+        Object::String(s) => ThreadSafeObject::String(Arc::new(s.clone())),
+        Object::Null => ThreadSafeObject::Null,
+        _ => return Err(Error::from_str("Cannot convert complex object to thread-safe form"))
+    };
+    
+    Ok(Arc::new(thread_safe_obj))
+}
+
+/// Convert a ThreadSafeObject back to a regular Object
+pub fn convert_from_thread_safe(obj: &ThreadSafeValue) -> Result<Object, Error> {
+    let regular_obj = match &**obj {
+        ThreadSafeObject::Integer(i) => Object::Integer(*i),
+        ThreadSafeObject::Float(f) => Object::Float(*f),
+        ThreadSafeObject::Boolean(b) => Object::Boolean(*b),
+        ThreadSafeObject::String(s) => Object::String(s.to_string()),
+        ThreadSafeObject::Null => Object::Null,
+        _ => return Err(Error::from_str("Cannot convert complex thread-safe object to regular form"))
+    };
+    
+    Ok(regular_obj)
 }
 
 // These impls are required for thread-safe usage

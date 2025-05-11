@@ -7,10 +7,9 @@
 use crate::ast::Expression;
 use crate::ast::expressions::range_expression::RangeExpression;
 use crate::ast::expressions::{IntegerLiteral, StringLiteral};
-use crate::ast::expressions::ExpressionUtil;
 use crate::ast::Node;
 use crate::error::Error;
-use crate::lexer::token::TokenType;
+use crate::lexer::TokenType;
 use std::any::Any;
 use tracing::{debug, error, info, instrument, warn};
 
