@@ -27,6 +27,7 @@ pub mod type_infer;
 pub mod constraint_error;
 pub mod async_constraint_checker;
 pub mod constraint_recovery;
+pub mod constraint_recovery_extension;
 pub mod nested_interface_registry;
 pub mod deep_nested_interface_registry;
 pub mod deep_nested_async_checker;
