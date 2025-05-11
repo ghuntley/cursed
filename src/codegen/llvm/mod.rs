@@ -119,7 +119,7 @@ pub use self::interface_registry_extension_checking::{InterfaceTypeRegistryExten
 // Enhanced interface type registry with full runtime type information
 pub use self::interface_type_registry_enhanced::EnhancedTypeRegistry;
 // Enhanced type assertions with rich type information
-pub use self::interface_type_assertion_enhanced::EnhancedTypeAssertion as EnhancedTypeAssertionWithRegistry;
+pub use self::interface_type_assertion_enhanced::EnhancedInterfaceTypeAssertion as EnhancedTypeAssertionWithRegistry;
 // Enhanced interface type assertions with complex inheritance pattern support
 pub use self::interface_type_assertion_enhanced_impl::EnhancedInterfaceTypeAssertion;
 // Improved type registry with better runtime type information

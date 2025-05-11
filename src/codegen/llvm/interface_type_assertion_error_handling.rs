@@ -79,7 +79,7 @@ impl From<TypeAssertionContextError> for Error {
 /// Trait for enhanced error handling in interface type assertions
 pub trait EnhancedTypeAssertionErrorHandling<'ctx>: 
     InterfaceTypeAssertion<'ctx> + 
-    InterfaceTypeAssertionPathVisualization<'ctx> + 
+    InterfaceTypeAssertionPathVisualization + 
     InterfaceRegistryIntegration 
 {
     /// Compile a type assertion with enhanced error handling

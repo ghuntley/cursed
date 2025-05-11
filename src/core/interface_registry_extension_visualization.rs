@@ -282,8 +282,11 @@ impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensio
     }
     
     #[instrument(level = "debug")]
-    fn detect_cycles(&self, hierarchy: &HashMap<String, Vec<String>>) -> Result<Vec<Vec<String>>, Error> {
+    fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
         debug!("Detecting cycles in interface inheritance hierarchy");
+        
+        // Get the hierarchy first
+        let hierarchy = self.get_extension_hierarchy()?;
         
         let mut cycles = Vec::new();
         let mut visited = HashSet::new();

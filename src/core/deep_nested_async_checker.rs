@@ -366,7 +366,7 @@ impl DeepNestedAsyncConstraintChecking for DeepNestedInterfaceRegistry {
 mod tests {
     use super::*;
     
-    #[path = "../../tests/common.rs"]
+    #[path = "../tests/common.rs"]
     mod common;
     
     #[test]

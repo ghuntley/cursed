@@ -13,7 +13,7 @@ use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 use crate::error::Error;
-use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceRegistryExtensionWithVisualization;
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 
 /// Implementation of InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensionRegistry
 impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensionRegistry {
