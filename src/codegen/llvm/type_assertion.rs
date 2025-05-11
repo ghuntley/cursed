@@ -10,6 +10,7 @@ use inkwell::AddressSpace;
 use crate::ast::expressions::TypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
+use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::error::Error;
 
 /// Trait for implementing interface type assertions in LLVM
@@ -121,17 +122,25 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         interface_value: BasicValueEnum<'ctx>,
         target_type_name: &str
     ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Ensure the registry is initialized
+        let _ = self.ensure_registry_visualization_initialized();
+        
         // Get the type ID from the interface value's vtable
         let actual_type_id = self.get_interface_type_id(interface_value)?;
         
-        // Get the expected type ID for the target type
-        let expected_type_id = self.get_type_id(target_type_name)?;
+        // Get the expected type ID for the target type from the registry
+        let expected_type_id_u64 = match &self.interface_type_registry {
+            Some(registry) => registry.get_type_id(target_type_name)?,
+            None => self.hash_type_name(target_type_name) // Fallback to direct hash if registry not available
+        };
+        
+        let expected_type_id = self.context().i64_type().const_int(expected_type_id_u64, false);
         
         // Compare the type IDs
         let result = self.builder().build_int_compare(
             IntPredicate::EQ,
             actual_type_id.into_int_value(),
-            expected_type_id.into_int_value(),
+            expected_type_id,
             "is_instance_of"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         

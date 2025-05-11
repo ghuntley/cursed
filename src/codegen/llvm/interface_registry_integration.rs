@@ -52,7 +52,18 @@ impl<'ctx> InterfaceRegistryIntegration for LlvmCodeGenerator<'ctx> {
     
     fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error> {
         // The registry_extensions field is already initialized in the LlvmCodeGenerator constructor
-        // so we don't need to do anything here
+        // but we need to verify that the interface_type_registry is properly connected
+        if self.interface_type_registry.is_none() {
+            let registry_ref = Arc::new(self.registry_extensions.clone());
+            let mut ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
+            self.interface_type_registry = Some(ir);
+        }
+        
+        // Ensure consistency between registries
+        if let Some(registry) = &mut self.interface_type_registry {
+            registry.synchronize_with_extension_registry()?;
+        }
+        
         Ok(())
     }
 }
@@ -74,8 +85,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Register an interface extension in the registry visualization system
     pub fn register_interface_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        // First ensure the visualization system is initialized
+        self.ensure_registry_visualization_initialized()?;
+        
+        // Register the extension in the visualization system
         match self.registry_visualization_mut() {
-            Some(registry) => registry.register_extension(source, target),
+            Some(registry) => {
+                let result = registry.register_extension(source, target);
+                
+                // Also register with the type registry to ensure consistency
+                if let Some(type_registry) = &mut self.interface_type_registry {
+                    type_registry.register_interface_extension(source, target)?;
+                }
+                
+                result
+            },
             None => Err(Error::from_str("No registry visualization system available"))
         }
     }
@@ -94,6 +118,49 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Some(registry) => registry.check_extension_relationship(source, target),
             None => Err(Error::from_str("No registry visualization system available"))
         }
+    }
+    
+    /// Get the type ID for a specific interface from the registry
+    pub fn get_interface_type_id(&self, interface_name: &str) -> Result<u64, Error> {
+        if let Some(registry) = &self.interface_type_registry {
+            registry.get_type_id(interface_name)
+        } else {
+            Err(Error::from_str("No interface type registry available"))
+        }
+    }
+    
+    /// Register a new interface type in the registry
+    pub fn register_interface_type(&mut self, interface_name: &str) -> Result<u64, Error> {
+        // Ensure both registries are initialized
+        self.ensure_registry_visualization_initialized()?;
+        
+        if let Some(registry) = &mut self.interface_type_registry {
+            registry.register_interface(interface_name)
+        } else {
+            Err(Error::from_str("No interface type registry available"))
+        }
+    }
+    
+    /// Update interface registry with complete hierarchy information
+    pub fn update_interface_hierarchy(&mut self) -> Result<(), Error> {
+        // Ensure both registries are initialized
+        self.ensure_registry_visualization_initialized()?;
+        
+        // Get current hierarchy from visualization registry
+        let hierarchy = self.registry_visualization()
+            .ok_or_else(|| Error::from_str("No registry visualization system available"))?  
+            .get_extension_hierarchy()?;
+        
+        // Update the type registry with the hierarchy information
+        if let Some(registry) = &mut self.interface_type_registry {
+            for (source, targets) in &hierarchy {
+                for target in targets {
+                    registry.register_interface_extension(source, target)?;
+                }
+            }
+        }
+        
+        Ok(())
     }
 }
 
