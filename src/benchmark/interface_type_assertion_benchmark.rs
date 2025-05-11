@@ -159,6 +159,9 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         iterations: usize,
     ) -> Result<TypeAssertionBenchmarkResult, Error> {
         let mut durations = Vec::with_capacity(iterations);
+        let mut type_lookup_times = Vec::with_capacity(iterations);
+        let mut type_check_times = Vec::with_capacity(iterations);
+        let mut error_handling_times = Vec::with_capacity(iterations);
         
         // Setup test types
         let interface_type_id = 1000;
@@ -175,10 +178,23 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         for _ in 0..iterations {
             let start = Instant::now();
             
-            // Perform a type assertion check
-            let _result = self.type_implements(concrete_type_id, interface_type_id);
+            // Perform a type assertion check with phase timing
+            let type_lookup_start = Instant::now();
+            let registry = self.get_interface_registry();
+            let type_lookup_time = type_lookup_start.elapsed();
             
-            // Record the time
+            let type_check_start = Instant::now();
+            let result = registry.map(|r| r.type_implements_interface(concrete_type_id, interface_type_id)).unwrap_or(false);
+            let type_check_time = type_check_start.elapsed();
+            
+            let error_handling_start = Instant::now();
+            if !result {
+                // Error case - normally we'd handle this
+                debug!("Type assertion failed: {:?} does not implement {:?}", concrete_type_id, interface_type_id);
+            }
+            let error_handling_time = error_handling_start.elapsed();
+            
+            // Record the total time
             let duration = start.elapsed();
             durations.push(duration);
         }
@@ -189,13 +205,22 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         let min_duration = durations.iter().min().cloned().unwrap_or_default();
         let max_duration = durations.iter().max().cloned().unwrap_or_default();
         
+        // Calculate phase timing averages
+        let avg_type_lookup_time = Duration::from_secs_f64(type_lookup_times.iter().sum::<Duration>().as_secs_f64() / iterations as f64);
+        let avg_type_check_time = Duration::from_secs_f64(type_check_times.iter().sum::<Duration>().as_secs_f64() / iterations as f64);
+        let avg_error_handling_time = Duration::from_secs_f64(error_handling_times.iter().sum::<Duration>().as_secs_f64() / iterations as f64);
+        
         Ok(TypeAssertionBenchmarkResult {
             name: "Simple Type Assertions".to_string(),
             avg_duration,
             min_duration,
             max_duration,
             iterations,
-            phase_timing: None, // Not implemented yet
+            phase_timing: Some(BenchmarkPhaseTiming {
+                type_lookup_time: avg_type_lookup_time,
+                type_check_time: avg_type_check_time,
+                error_handling_time: avg_error_handling_time,
+            }),
         })
     }
     
@@ -237,10 +262,24 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         for _ in 0..iterations {
             let start = Instant::now();
             
-            // Detect diamond inheritance
-            let _result = self.detect_diamond_inheritance(concrete_type_id, base_interface_id);
+            // Detect diamond inheritance with phase timing
+            let type_lookup_start = Instant::now();
+            let registry = self.get_interface_registry();
+            let type_lookup_time = type_lookup_start.elapsed();
             
-            // Record the time
+            let type_check_start = Instant::now();
+            let path_finder = self.get_interface_path_finder();
+            let paths_result = path_finder.and_then(|pf| pf.find_all_paths(concrete_type_id, base_interface_id).ok());
+            let type_check_time = type_check_start.elapsed();
+            
+            let error_handling_start = Instant::now();
+            let has_diamond = paths_result.map(|paths| paths.len() > 1).unwrap_or(false);
+            if has_diamond {
+                debug!("Diamond inheritance detected for {:?} and {:?}", concrete_type_id, base_interface_id);
+            }
+            let error_handling_time = error_handling_start.elapsed();
+            
+            // Record the total time
             let duration = start.elapsed();
             durations.push(duration);
         }
@@ -300,10 +339,26 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         for _ in 0..iterations {
             let start = Instant::now();
             
-            // Check if concrete implements the root interface
-            let _result = self.find_inheritance_path(concrete_type_id, interface_ids[0]);
+            // Check if concrete implements the root interface with phase timing
+            let type_lookup_start = Instant::now();
+            let registry = self.get_interface_registry();
+            let type_lookup_time = type_lookup_start.elapsed();
             
-            // Record the time
+            let type_check_start = Instant::now();
+            let path_finder = self.get_interface_path_finder();
+            let path_result = path_finder.and_then(|pf| pf.find_path(concrete_type_id, interface_ids[0]).ok());
+            let type_check_time = type_check_start.elapsed();
+            
+            let error_handling_start = Instant::now();
+            let path_length = path_result.map(|path| path.path.len()).unwrap_or(0);
+            if path_length > 0 {
+                debug!("Found inheritance path of length {} for deep hierarchy", path_length);
+            } else {
+                debug!("No inheritance path found for deep hierarchy");
+            }
+            let error_handling_time = error_handling_start.elapsed();
+            
+            // Record the total time
             let duration = start.elapsed();
             durations.push(duration);
         }
