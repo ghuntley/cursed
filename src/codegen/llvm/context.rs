@@ -112,6 +112,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Initialize auto interface dispatcher integration
         super::auto_interface_dispatcher_integration::register_auto_interface_dispatcher_integration();
         // Initialize enhanced dynamic dispatch
+        #[cfg(feature = "enhanced_dynamic_dispatch")]
         super::enhanced_dynamic_dispatch::register_enhanced_dynamic_dispatch();
         // Initialize integrated monomorphization
         super::integrated_monomorphization::register_integrated_monomorphization();

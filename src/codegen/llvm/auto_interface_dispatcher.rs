@@ -8,6 +8,7 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::dynamic_dispatch::{InterfaceManager, VTableImpl};
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
+#[cfg(feature = "enhanced_dynamic_dispatch")]
 use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::core::type_checker::Type as CursedType;
 use inkwell::types::BasicTypeEnum;
@@ -448,25 +449,29 @@ impl<'ctx> AutoInterfaceDispatchExtension<'ctx> for LlvmCodeGenerator<'ctx> {
         
         match receiver_type {
             CursedType::Interface(interface_name, _) => {
-                debug!("Using enhanced dynamic dispatch for interface value");
+                debug!("Using dynamic dispatch for interface value");
+                
                 // For interface values, use enhanced dynamic dispatch if available
-                if cfg!(feature = "enhanced_dynamic_dispatch") {
+                #[cfg(feature = "enhanced_dynamic_dispatch")]
+                {
+                    debug!("Using enhanced dynamic dispatch");
                     // Try to use the enhanced dynamic dispatch for better error handling
-                    self.call_interface_method_enhanced(
+                    return self.call_interface_method_enhanced(
                         receiver,
                         interface_name,
                         method_name,
                         args,
-                    )
-                } else {
-                    // Fall back to regular auto-generated method dispatch
-                    self.auto_generate_method_dispatch(
-                        receiver,
-                        interface_name,
-                        method_name,
-                        args,
-                    )
+                    );
                 }
+                
+                // Default implementation when enhanced_dynamic_dispatch is not enabled
+                debug!("Using standard dynamic dispatch");
+                return self.call_interface_method(
+                    receiver,
+                    interface_name,
+                    method_name,
+                    args
+                );
             },
             CursedType::Struct(struct_name, _) => {
                 debug!("Handling struct type {}", struct_name);
