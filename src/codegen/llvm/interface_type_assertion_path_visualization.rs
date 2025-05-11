@@ -442,24 +442,8 @@ pub trait InterfaceRegistryExtensionWithVisualization {
     fn get_all_interfaces(&self) -> Result<HashSet<String>, Error>;
 }
 
-// Implementation for ThreadSafeInterfaceExtensionRegistry
-impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensionRegistry {
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
-        self.get_extension_hierarchy()
-    }
-    
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        self.get_direct_extensions(interface)
-    }
-    
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        self.get_direct_implementors(interface)
-    }
-    
-    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
-        self.get_all_interfaces()
-    }
-}
+// Implementation is now in src/core/interface_registry_visualization_implementation.rs
+// to fix the circular reference issues and provide proper separation of concerns
 
 // Helper functions to extract type names from error messages
 // These would need to be adapted to the actual error format in the codebase
