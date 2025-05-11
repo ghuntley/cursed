@@ -1,24 +1,28 @@
 //! # Interface Type Assertion Error Propagation with Filesystem Source Location Integration
 //!
-//! This module provides the integration layer between the error propagation system for interface
-//! type assertions and the filesystem source location tracking. It creates enhanced error messages
-//! with detailed source code context when a type assertion with the ? operator fails.
+//! This module provides a comprehensive integration between error propagation and filesystem
+//! source location tracking for interface type assertions. It enhances error messages with
+//! detailed source code context, file paths, and visual highlighting of error locations.
 //!
 //! ## Key Features
 //!
-//! 1. Complete integration between error propagation and filesystem source location tracking
-//! 2. Rich error messages with code snippets and precise location information
-//! 3. Support for ? operator with automatic error propagation
-//! 4. Improved debug diagnostics with type paths and inheritance diagrams
-//! 5. Optimized source file caching for performance
+//! 1. Enhanced error messages with source code snippets and context
+//! 2. File path resolution with source search paths for accurate location tracking
+//! 3. Visual highlighting of error locations in source code
+//! 4. Integration with the Result type and ? operator mechanism
+//! 5. Comprehensive error context with line, column, and file information
+//! 6. Support for extracting source code from filesystem for error context
 //!
-//! This integration makes debugging type assertion failures much more straightforward by showing
-//! exactly where in the source code the error occurred and providing contextual information about
-//! the expected and actual types.
+//! ## Usage
+//!
+//! This integration is used when compiling interface type assertions with the ? operator
+//! to provide better error messages and diagnostics when assertions fail.
 
 use std::path::{Path, PathBuf};
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
 use std::collections::HashMap;
-use std::fs;
+
 use tracing::{debug, error, info, instrument, trace, warn};
 
 use inkwell::builder::Builder;
@@ -36,101 +40,119 @@ use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
-use crate::codegen::llvm::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
 use crate::codegen::llvm::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
-use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
 use crate::error::SourceLocation;
 
 /// Trait for comprehensive integration between error propagation and filesystem source location tracking
-pub trait ComprehensiveErrorPropagationIntegration<'ctx>: 
-    EnhancedErrorPropagationWithFilesystem<'ctx> + 
-    FilesystemSourceLocationIntegration<'ctx> +
-    InterfaceTypeAssertionPathVisualization<'ctx>
+pub trait ComprehensiveErrorFilesystemIntegration<'ctx>: 
+    EnhancedErrorPropagationWithFilesystem<'ctx> 
 {
-    /// Initialize the comprehensive error propagation integration system
-    fn init_comprehensive_error_propagation(&mut self, source_root: Option<&str>);
+    /// Initialize the comprehensive error filesystem integration
+    fn init_comprehensive_error_filesystem_integration(&mut self);
     
-    /// Compile a type assertion question operator with comprehensive error messages and source tracking
-    fn compile_type_assertion_question_with_comprehensive_error_context(
+    /// Compile a type assertion with the ? operator using comprehensive filesystem integration
+    fn compile_type_assertion_question_with_comprehensive_filesystem(
         &mut self,
         type_assertion: &TypeAssertionQuestion
     ) -> Result<BasicValueEnum<'ctx>, Error>;
     
-    /// Create a detailed error message with type path visualization and source context
+    /// Create a comprehensive error message with detailed source code context
     fn create_comprehensive_error_message(
         &self,
         type_assertion: &dyn Node,
         expected_type: &str,
         actual_type: Option<&str>,
-        source_location: &SourceLocation,
-        expected_type_id: u32,
-        actual_type_id: u32
+        source_location: &SourceLocation
     ) -> Result<String, Error>;
     
-    /// Enhance source locations with additional context information
-    fn enhance_source_location_with_type_context(
+    /// Extract source code context from filesystem for error messages
+    fn extract_source_code_context(
         &self,
-        location: &mut SourceLocation,
-        expected_type: &str,
-        actual_type: Option<&str>,
-        expected_type_id: u32,
-        actual_type_id: u32
-    ) -> Result<(), Error>;
+        file_path: &str,
+        line: usize,
+        context_lines: usize
+    ) -> Result<Vec<(usize, String)>, Error>;
     
-    /// Ensure registry visualization is properly initialized
-    fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error>;
+    /// Format an error message with source code context and highlighting
+    fn format_error_with_source_highlighting(
+        &self,
+        error_message: &str,
+        source_location: &SourceLocation,
+        context_lines: usize
+    ) -> Result<String, Error>;
+    
+    /// Call error propagation function with comprehensive context
+    fn call_error_propagation_with_comprehensive_context(
+        &self,
+        error_message: &str,
+        source_location: &SourceLocation,
+        expected_type_id: u32,
+        actual_type_id: u32,
+        type_assertion: &dyn Node
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
 }
 
-impl<'ctx> ComprehensiveErrorPropagationIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
-    #[instrument(skip(self, source_root), level = "debug")]
-    fn init_comprehensive_error_propagation(&mut self, source_root: Option<&str>) {
-        // Initialize filesystem integration first
-        self.init_filesystem_integration(source_root.as_deref());
-        
-        // Initialize enhanced error propagation
-        if !self.internal_fields.contains_key("comprehensive_error_propagation_initialized") {
-            // Set up additional search paths for source files
-            self.add_source_search_path("src");
-            self.add_source_search_path("examples");
-            self.add_source_search_path("tests");
-            
-            // Initialize path visualization for better error messages
-            if let Err(e) = self.ensure_registry_visualization_initialized() {
-                warn!("Failed to initialize registry visualization: {}", e);
-            }
-            
-            // Mark as initialized
-            self.internal_fields.insert(
-                "comprehensive_error_propagation_initialized".to_string(), 
-                Box::new(true)
-            );
-            
-            debug!("Initialized comprehensive error propagation with filesystem integration");
+impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
+    #[instrument(skip(self), level = "debug")]
+    fn init_comprehensive_error_filesystem_integration(&mut self) {
+        // Check if already initialized
+        if self.internal_fields.contains_key("comprehensive_error_fs_integration_initialized") {
+            return;
         }
+        
+        // First ensure base filesystem integration is initialized
+        self.ensure_filesystem_integration_initialized();
+        
+        // Add additional source search paths for better file resolution
+        let paths = [
+            "./",
+            "./src",
+            "./tests",
+            "./examples",
+            "../src",
+            "../examples"
+        ];
+        
+        for path in paths.iter() {
+            self.add_source_search_path(path);
+        }
+        
+        // Initialize cache for source code lines
+        if !self.internal_fields.contains_key("source_code_cache") {
+            self.internal_fields.insert(
+                "source_code_cache".to_string(),
+                Box::new(HashMap::<String, Vec<String>>::new())
+            );
+        }
+        
+        // Mark as initialized
+        self.internal_fields.insert(
+            "comprehensive_error_fs_integration_initialized".to_string(),
+            Box::new(true)
+        );
+        
+        debug!("Initialized comprehensive error filesystem integration");
     }
     
     #[instrument(skip(self, type_assertion), level = "debug")]
-    fn compile_type_assertion_question_with_comprehensive_error_context(
+    fn compile_type_assertion_question_with_comprehensive_filesystem(
         &mut self,
         type_assertion: &TypeAssertionQuestion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Initialize the comprehensive error propagation if needed
-        if !self.internal_fields.contains_key("comprehensive_error_propagation_initialized") {
-            self.init_comprehensive_error_propagation(None);
-        }
+        // Initialize comprehensive integration if needed
+        self.init_comprehensive_error_filesystem_integration();
         
-        // Extract source location information with filesystem context
-        let mut source_location = self.create_enhanced_source_location(
+        // Extract comprehensive source location information
+        let source_location = self.create_enhanced_source_location(
             type_assertion,
             self.current_file_path().as_deref()
         )?;
         
-        let token = type_assertion.token_literal();
-        let (line, column) = self.extract_line_column_from_token(&token);
-        debug!("Compiling type assertion with comprehensive error context: {} at {}:{}", 
-               type_assertion.string(), line, column);
+        debug!("Compiling type assertion with ? operator and comprehensive filesystem integration: {}", 
+               type_assertion.string());
         
         // First ensure registry is initialized
         self.ensure_registry_visualization_initialized()?;
@@ -185,31 +207,21 @@ impl<'ctx> ComprehensiveErrorPropagationIntegration<'ctx> for LlvmCodeGenerator<
         let expected_type_name = self.get_type_name_by_id(type_id);
         let actual_type_name = self.get_type_name_by_id(actual_type_id);
         
-        // Enhance source location with type context
-        self.enhance_source_location_with_type_context(
-            &mut source_location,
-            &expected_type_name.unwrap_or(type_assertion.type_name.clone()),
-            actual_type_name.as_deref(),
-            type_id,
-            actual_type_id
-        )?;
-        
-        // Create a comprehensive error message with type path information
+        // Create a comprehensive error message with source code context
         let error_message = self.create_comprehensive_error_message(
             type_assertion,
             &expected_type_name.unwrap_or(type_assertion.type_name.clone()),
             actual_type_name.as_deref(),
-            &source_location,
-            type_id,
-            actual_type_id
+            &source_location
         )?;
         
-        // Propagate the error with the enhanced source context
-        self.propagate_error_with_source_context(
+        // Call error propagation with comprehensive context
+        self.call_error_propagation_with_comprehensive_context(
             &error_message,
             &source_location,
             type_id,
-            actual_type_id
+            actual_type_id,
+            type_assertion
         )?;
         
         // This should be unreachable in the failure path
@@ -222,20 +234,16 @@ impl<'ctx> ComprehensiveErrorPropagationIntegration<'ctx> for LlvmCodeGenerator<
         Ok(casted_ptr.into())
     }
     
-    #[instrument(skip(self, type_assertion, expected_type, actual_type, source_location), level = "debug")]
+    #[instrument(skip(self, type_assertion, source_location), level = "debug")]
     fn create_comprehensive_error_message(
         &self,
         type_assertion: &dyn Node,
         expected_type: &str,
         actual_type: Option<&str>,
-        source_location: &SourceLocation,
-        expected_type_id: u32,
-        actual_type_id: u32
+        source_location: &SourceLocation
     ) -> Result<String, Error> {
-        let mut message = String::new();
-        
-        // Basic error message with type information
-        message.push_str(&match actual_type {
+        // Create a detailed error message with type information
+        let mut message = match actual_type {
             Some(actual) => format!(
                 "Type assertion failed: cannot convert from interface to {}. Actual type: {}",
                 expected_type, actual
@@ -244,235 +252,245 @@ impl<'ctx> ComprehensiveErrorPropagationIntegration<'ctx> for LlvmCodeGenerator<
                 "Type assertion failed: cannot convert from interface to {}",
                 expected_type
             )
-        });
+        };
+        
+        // Add source location information
+        if let Some(file) = &source_location.file {
+            message.push_str(&format!(
+                "\nLocation: {}:{}:{}",
+                file, source_location.line, source_location.column
+            ));
+        }
         
         // Add expression context
         message.push_str(&format!(
-            "\nIn expression: {}",
+            "\nExpression: {}",
             type_assertion.string().trim()
         ));
         
-        // Add source location
-        message.push_str(&format!(
-            "\nAt: {}:{}:{}",
-            source_location.file.as_deref().unwrap_or("<unknown>"),
-            source_location.line,
-            source_location.column
-        ));
-        
-        // Add source code snippet if available
-        if !source_location.source_line.is_empty() {
-            message.push_str("\n\nSource:\n");
-            message.push_str(&source_location.source_line);
-        }
-        
-        // Try to add type path information if available
-        if let Ok(type_info) = self.get_interface_path_info(expected_type_id, actual_type_id) {
-            if !type_info.is_empty() {
-                message.push_str("\n\nType Relationship:\n");
-                message.push_str(&type_info);
+        // Add source code context if available
+        if let (Some(file), true) = (&source_location.file, source_location.line > 0) {
+            if let Ok(context) = self.extract_source_code_context(
+                file, 
+                source_location.line, 
+                2 // Show 2 lines of context before and after
+            ) {
+                message.push_str("\n\nSource context:\n");
+                
+                // Add context lines with highlighting for the error line
+                for (line_num, line_content) in context {
+                    let prefix = if line_num == source_location.line {
+                        "> " // Highlight the error line
+                    } else {
+                        "  "
+                    };
+                    
+                    message.push_str(&format!(
+                        "{}{}| {}",
+                        prefix,
+                        line_num,
+                        line_content
+                    ));
+                    
+                    // Add a newline if not already present
+                    if !line_content.ends_with('\n') {
+                        message.push('\n');
+                    }
+                }
             }
         }
         
         Ok(message)
     }
     
-    #[instrument(skip(self, location, expected_type, actual_type), level = "debug")]
-    fn enhance_source_location_with_type_context(
-        &self,
-        location: &mut SourceLocation,
-        expected_type: &str,
-        actual_type: Option<&str>,
-        expected_type_id: u32,
-        actual_type_id: u32
-    ) -> Result<(), Error> {
-        // If we don't have file information, try to add it from the current context
-        if location.file.is_none() {
-            if let Some(file_path) = self.current_file_path() {
-                location.file = Some(file_path);
-            }
-        }
-        
-        // If source line is empty, try to extract it from the file
-        if location.source_line.is_empty() && location.file.is_some() && location.line > 0 {
-            if let Ok(context) = self.get_source_line_with_context(
-                location.file.as_ref().unwrap(),
-                location.line,
-                2 // Include 2 lines of context
-            ) {
-                let mut source_text = String::new();
-                for (line_num, line_text) in context {
-                    let prefix = if line_num == location.line {
-                        ">"
-                    } else {
-                        " "
-                    };
-                    source_text.push_str(&format!("{} {:4} | {}\n", prefix, line_num, line_text));
-                    
-                    // Add a marker for the exact column
-                    if line_num == location.line {
-                        let mut marker = String::new();
-                        marker.push_str("  ");
-                        marker.push_str(&" ".repeat(5));
-                        marker.push_str("| ");
-                        // Add spaces up to the column
-                        let actual_column = std::cmp::min(location.column, line_text.len());
-                        marker.push_str(&" ".repeat(actual_column));
-                        marker.push_str("^\n");
-                        source_text.push_str(&marker);
-                    }
-                }
-                location.source_line = source_text;
-            }
-        }
-        
-        // Add type information to the source line context
-        if !location.source_line.is_empty() {
-            let mut type_info = String::new();
-            
-            type_info.push_str("\nType Information:\n");
-            type_info.push_str(&format!("  Expected Type: {} (ID: {})\n", expected_type, expected_type_id));
-            
-            if let Some(actual) = actual_type {
-                type_info.push_str(&format!("  Actual Type: {} (ID: {})\n", actual, actual_type_id));
-            } else {
-                type_info.push_str(&format!("  Actual Type: <unknown> (ID: {})\n", actual_type_id));
-            }
-            
-            // Try to add inheritance path information if available
-            if let Ok(path_info) = self.get_interface_path_info(expected_type_id, actual_type_id) {
-                if !path_info.is_empty() {
-                    type_info.push_str("\nInheritance Path:\n");
-                    type_info.push_str(&path_info);
-                }
-            }
-            
-            // Append the type information to the source line
-            location.source_line.push_str(&type_info);
-        }
-        
-        Ok(())
-    }
-    
     #[instrument(skip(self), level = "debug")]
-    fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error> {
-        // The registry_extensions field is already initialized in the LlvmCodeGenerator constructor
-        // but we need to verify that the interface_type_registry is properly connected
-        if self.interface_type_registry.is_none() {
-            let registry_ref = Arc::new(self.registry_extensions.clone());
-            let mut ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
-            self.interface_type_registry = Some(ir);
+    fn extract_source_code_context(
+        &self,
+        file_path: &str,
+        line: usize,
+        context_lines: usize
+    ) -> Result<Vec<(usize, String)>, Error> {
+        // Try to get source code from cache first
+        let source_code_cache = self.get_source_code_cache()?;
+        let cached_lines = source_code_cache.get(file_path);
+        
+        let file_lines = if let Some(lines) = cached_lines {
+            // Use cached lines
+            lines.clone()
+        } else {
+            // Read file and cache lines
+            let resolved_path = self.resolve_source_file_path(file_path)?;
+            let file = File::open(&resolved_path)
+                .map_err(|e| Error::Compilation(format!("Failed to open file {}: {}", file_path, e)))?;
+            
+            let reader = BufReader::new(file);
+            let lines: Vec<String> = reader.lines()
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| Error::Compilation(format!("Failed to read lines from {}: {}", file_path, e)))?;
+            
+            // Cache the lines for future use
+            self.update_source_code_cache(file_path, lines.clone())?;
+            
+            lines
+        };
+        
+        // Calculate the range of lines to include in the context
+        let start_line = if line > context_lines { line - context_lines } else { 1 };
+        let end_line = std::cmp::min(line + context_lines, file_lines.len());
+        
+        // Extract the context lines with line numbers
+        let context: Vec<(usize, String)> = (start_line..=end_line)
+            .filter_map(|i| {
+                if i <= file_lines.len() {
+                    Some((i, file_lines[i-1].clone()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        
+        Ok(context)
+    }
+    
+    #[instrument(skip(self, error_message, source_location), level = "debug")]
+    fn format_error_with_source_highlighting(
+        &self,
+        error_message: &str,
+        source_location: &SourceLocation,
+        context_lines: usize
+    ) -> Result<String, Error> {
+        let mut formatted = error_message.to_string();
+        
+        // Add additional highlighting for the specific column in the error line
+        if let (Some(file), true) = (&source_location.file, source_location.line > 0) {
+            if let Ok(context) = self.extract_source_code_context(file, source_location.line, context_lines) {
+                // Find the error line in the context
+                if let Some((_, error_line)) = context.iter().find(|(num, _)| *num == source_location.line) {
+                    // Add a caret pointing to the specific column in the error line
+                    if source_location.column > 0 {
+                        // Calculate spaces needed for the caret line
+                        let line_num_spaces = source_location.line.to_string().len() + 2; // +2 for '> ' prefix
+                        let spaces_before_caret = line_num_spaces + 2 + source_location.column - 1; // +2 for '| '
+                        
+                        // Append a line with a caret pointing to the error location
+                        let caret_line = format!(
+                            "{}^-- Error occurs here\n",
+                            " ".repeat(spaces_before_caret)
+                        );
+                        
+                        formatted.push_str(&caret_line);
+                    }
+                }
+            }
         }
         
-        // Ensure consistency between registries
-        if let Some(registry) = &mut self.interface_type_registry {
-            registry.synchronize_with_extension_registry()?;
-        }
+        Ok(formatted)
+    }
+    
+    #[instrument(skip(self, error_message, source_location, type_assertion), level = "debug")]
+    fn call_error_propagation_with_comprehensive_context(
+        &self,
+        error_message: &str,
+        source_location: &SourceLocation,
+        expected_type_id: u32,
+        actual_type_id: u32,
+        type_assertion: &dyn Node
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Set type IDs for error reporting
+        self.set_expected_type_id(expected_type_id);
+        self.set_actual_type_id(actual_type_id);
         
-        // Mark as initialized in the internal fields
-        self.internal_fields.insert("registry_visualization_initialized".to_string(), Box::new(true));
+        // Format the error message with source highlighting
+        let enhanced_message = self.format_error_with_source_highlighting(
+            error_message,
+            source_location,
+            2 // Include 2 lines of context
+        ).unwrap_or_else(|_| error_message.to_string());
         
+        // Create an enhanced source location with file path information
+        let enhanced_location = SourceLocation {
+            line: source_location.line,
+            column: source_location.column,
+            file: source_location.file.clone(),
+            source_line: type_assertion.string(),
+        };
+        
+        // Convert source location to LLVM structure
+        let location_struct = self.build_source_location_struct(&enhanced_location);
+        
+        // Create a constant string for the error message
+        let error_message_ptr = self.create_string_constant(&enhanced_message);
+        
+        // Call the error propagation function with the enhanced message and location
+        self.call_error_propagation_function(
+            error_message_ptr.into(),
+            location_struct
+        )
+    }
+}
+
+// Helper methods for the comprehensive integration
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Get the source code cache from internal fields
+    fn get_source_code_cache(&self) -> Result<&HashMap<String, Vec<String>>, Error> {
+        self.internal_fields.get("source_code_cache")
+            .and_then(|boxed| boxed.downcast_ref::<HashMap<String, Vec<String>>>())
+            .ok_or_else(|| Error::Compilation("Source code cache not initialized".to_string()))
+    }
+    
+    /// Update the source code cache with new file lines
+    fn update_source_code_cache(&self, file_path: &str, lines: Vec<String>) -> Result<(), Error> {
+        let mut cache = self.internal_fields.get_mut("source_code_cache")
+            .and_then(|boxed| boxed.downcast_mut::<HashMap<String, Vec<String>>>())
+            .ok_or_else(|| Error::Compilation("Source code cache not initialized".to_string()))?;
+        
+        cache.insert(file_path.to_string(), lines);
         Ok(())
     }
-}
-
-// Additional helper methods for the LlvmCodeGenerator
-impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Extract line and column information from a token string
-    fn extract_line_column_from_token(&self, token: &str) -> (u32, u32) {
-        // Default values
-        let mut line = 0;
-        let mut column = 0;
+    
+    /// Resolve a source file path using search paths
+    fn resolve_source_file_path(&self, file_path: &str) -> Result<PathBuf, Error> {
+        // Check if the path is absolute or direct file exists
+        let path = PathBuf::from(file_path);
+        if path.is_absolute() && path.exists() {
+            return Ok(path);
+        }
         
-        // Try to parse line:column from the token if it contains this info
-        if let Some(pos) = token.rfind(':') {
-            if let Some(line_start) = token[..pos].rfind(':') {
-                if let Ok(l) = token[line_start+1..pos].parse::<u32>() {
-                    line = l;
-                    if let Ok(c) = token[pos+1..].parse::<u32>() {
-                        column = c;
-                    }
-                }
+        // Check if the file exists directly
+        if path.exists() {
+            return Ok(path);
+        }
+        
+        // Try search paths
+        let search_paths = self.get_source_search_paths()?;
+        for search_path in search_paths {
+            let full_path = PathBuf::from(&search_path).join(file_path);
+            if full_path.exists() {
+                return Ok(full_path);
             }
         }
         
-        (line, column)
+        // If we couldn't resolve, return the original path (error will be handled by caller)
+        Err(Error::Compilation(format!("Could not resolve source file path: {}", file_path)))
     }
     
-    /// Get information about the path between two interface types
-    fn get_interface_path_info(&self, expected_type_id: u32, actual_type_id: u32) -> Result<String, Error> {
-        // Try to get type names first
-        let expected_name = self.get_type_name_by_id(expected_type_id)
-            .unwrap_or_else(|| format!("Type#{}", expected_type_id));
-        let actual_name = self.get_type_name_by_id(actual_type_id)
-            .unwrap_or_else(|| format!("Type#{}", actual_type_id));
-        
-        // Try to visualize the path between types
-        let mut result = String::new();
-        
-        // Check if we have path visualization support enabled
-        if self.is_registry_visualization_enabled() {
-            // Get the path information
-            if let Ok(paths) = self.find_interface_implementation_paths(actual_type_id, expected_type_id) {
-                if paths.is_empty() {
-                    result.push_str("  No implementation path found between types.\n");
-                } else {
-                    for (i, path) in paths.iter().enumerate() {
-                        result.push_str(&format!("  Path #{}: ", i + 1));
-                        
-                        for (j, &type_id) in path.iter().enumerate() {
-                            let type_name = self.get_type_name_by_id(type_id)
-                                .unwrap_or_else(|| format!("Type#{}", type_id));
-                            
-                            if j > 0 {
-                                result.push_str(" -> ");
-                            }
-                            result.push_str(&type_name);
-                        }
-                        result.push_str("\n");
-                    }
-                }
-            } else {
-                result.push_str("  Could not find implementation path between types.\n");
-            }
-            
-            // Add diamond inheritance information if available
-            if let Ok(is_diamond) = self.is_diamond_inheritance_pattern(actual_type_id, expected_type_id) {
-                if is_diamond {
-                    result.push_str("\n  Note: Diamond inheritance pattern detected!\n");
-                    result.push_str("  This can cause ambiguity in method resolution.\n");
-                }
-            }
-        } else {
-            result.push_str("  Type path visualization not enabled.\n");
-        }
-        
-        Ok(result)
-    }
-    
-    /// Check if registry visualization is enabled
-    fn is_registry_visualization_enabled(&self) -> bool {
-        self.internal_fields.contains_key("registry_visualization_initialized") &&
-        self.internal_fields.get("registry_visualization_initialized")
-            .and_then(|v| v.downcast_ref::<bool>())
-            .cloned()
-            .unwrap_or(false)
-    }
-    
-    /// Get a type name by its ID
-    fn get_type_name_by_id(&self, type_id: u32) -> Option<String> {
-        // Try to get from the registry if available
-        if self.is_registry_visualization_enabled() {
-            self.get_type_name_from_registry(type_id)
-        } else {
-            None
-        }
+    /// Get the list of source search paths
+    fn get_source_search_paths(&self) -> Result<Vec<String>, Error> {
+        self.internal_fields.get("source_search_paths")
+            .and_then(|boxed| boxed.downcast_ref::<Vec<String>>())
+            .map(|paths| paths.clone())
+            .ok_or_else(|| Error::Compilation("Source search paths not initialized".to_string()))
     }
 }
 
-/// Function to register the comprehensive error propagation integration
-pub fn register_comprehensive_error_propagation_integration() {
+/// Register the comprehensive error propagation with filesystem integration
+pub fn register_comprehensive_error_filesystem_integration() {
     debug!("Registered comprehensive error propagation with filesystem integration for interface type assertions");
+}
+
+/// Alias for register_comprehensive_error_filesystem_integration to match expected function name
+pub fn register_comprehensive_error_propagation_integration() {
+    register_comprehensive_error_filesystem_integration();
 }
 
 #[cfg(test)]
@@ -481,9 +499,9 @@ mod tests {
     use inkwell::context::Context;
     
     #[test]
-    fn test_comprehensive_error_propagation_registration() {
-        // Test that the registration function works
-        register_comprehensive_error_propagation_integration();
+    fn test_comprehensive_error_filesystem_integration_registration() {
+        // Test that the module registration function works
+        register_comprehensive_error_filesystem_integration();
         assert!(true);
     }
 }
