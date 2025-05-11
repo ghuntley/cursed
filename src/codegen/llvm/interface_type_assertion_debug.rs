@@ -380,6 +380,35 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             debug!("Type assertion debugging enabled");
         }
     }
+    
+    /// Hash a type name to create a type ID using FNV-1a algorithm
+    /// 
+    /// This function converts a type name string to a 64-bit type ID hash.
+    /// We use FNV-1a for its good distribution and speed on short strings.
+    /// 
+    /// IMPORTANT: This implementation MUST match the one in InterfaceTypeRegistry
+    /// to ensure consistent type ID generation across the codebase.
+    ///
+    /// @param type_name The type name to hash
+    /// @return The 64-bit type ID hash
+    pub fn hash_type_name(&self, type_name: &str) -> u64 {
+        // FNV-1a hash algorithm for more consistent hashing
+        // This must match the implementation in InterfaceTypeRegistry
+        trace!("Hashing type name: {}", type_name);
+        
+        // FNV-1a initialization value (FNV offset basis)
+        let mut hash: u64 = 0xcbf29ce484222325;
+        
+        // Process each byte of the string
+        for byte in type_name.bytes() {
+            hash ^= byte as u64;
+            // FNV prime for 64-bit hash
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        
+        trace!("Hashed type name '{}' to ID: {}", type_name, hash);
+        hash
+    }
 }
 
 /// Register the type assertion debug module
