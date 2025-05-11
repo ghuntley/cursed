@@ -12,9 +12,6 @@
 use std::fmt;
 use std::io;
 
-pub mod type_assertion_error;
-pub use type_assertion_error::TypeAssertionError;
-
 /// Represents a location in the source code for error reporting
 ///
 /// Contains information about the line and column numbers,

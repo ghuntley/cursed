@@ -241,6 +241,7 @@ pub mod interface_path_finder_enhanced; // Enhanced path finding algorithms for 
 pub mod interface_type_assertion_with_registry; // Interface type assertion with registry integration
 pub mod interface_registry_extension_checking; // Extension relationship checking for interface inheritance verification
 mod interface_type_assertion_error_handling; // Enhanced error handling for interface type assertions with proper error propagation
+mod interface_type_assertion_result_integration; // Result-based error propagation with ? operator integration
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops
@@ -266,6 +267,9 @@ pub use self::container_layout::ContainerKind;
 
 // Re-export pointer type extension
 pub use self::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtension};
+
+// Re-export Result integration for interface type assertions
+pub use self::interface_type_assertion_result_integration::TypeAssertionResultIntegration;
 
 // Import key modules and traits
 pub use string_switch::*;

@@ -84,7 +84,7 @@ impl TypeAssertionError {
     /// Get a descriptive message for the error
     pub fn get_description(&self) -> String {
         let mut message = format!("Failed to assert that {} is a {}", 
-                                 self.interface_type, self.target_type);
+                                  self.interface_type, self.target_type);
         
         if let Some(actual_type) = &self.actual_type {
             message.push_str(&format!(". Actual type was {}", actual_type));
@@ -170,7 +170,32 @@ impl From<TypeAssertionError> for CursedError {
 impl From<crate::error::Error> for TypeAssertionError {
     fn from(err: crate::error::Error) -> Self {
         match err {
-            crate::error::Error::TypeAssertion(assertion_error) => assertion_error,
+            crate::error::Error::TypeAssertion(assertion_error) => {
+                let assertion_error = assertion_error.clone();
+                let mut result = TypeAssertionError::new("unknown", "unknown");
+                
+                if let Some(interface_type) = assertion_error.context("interface_type") {
+                    result.interface_type = interface_type.to_string();
+                }
+                
+                if let Some(target_type) = assertion_error.context("target_type") {
+                    result.target_type = target_type.to_string();
+                }
+                
+                if let Some(actual_type) = assertion_error.context("actual_type") {
+                    result = result.with_actual_type(actual_type.to_string(), None);
+                }
+                
+                let location_opt = assertion_error.location().map(|loc| {
+                    SourceLocation::new(loc.line as usize, loc.column as usize)
+                });
+                
+                if let Some(loc) = location_opt {
+                    result = result.with_location(loc);
+                }
+                
+                result.with_message(assertion_error.message())
+            },
             _ => TypeAssertionError::new("unknown", "unknown")
                 .with_message(format!("Original error: {}", err))
         }
