@@ -365,13 +365,47 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization for LlvmCodeGenerator<'ctx> {
         }
     }
     
+    /// Extracts the runtime type ID from an interface value
+    /// 
+    /// This is a critical function for type assertions, as it determines the actual
+    /// concrete type behind an interface value at runtime. The function works in 
+    /// two stages:
+    /// 
+    /// 1. Try to extract a constant type ID if possible (for static interface values)
+    /// 2. If that fails, fall back to dynamic lookup through the interface registry
+    ///
+    /// The extracted type ID is then used to look up the type name and compare it
+    /// against the expected type in type assertions.
     fn get_runtime_type_id(
         &mut self,
         value: inkwell::values::BasicValueEnum<'_>
     ) -> Result<u64, Error> {
-        // Get type ID from interface value (stub implementation)
-        let type_id = 0u64;  // Actual implementation would extract this from the value
-        Ok(type_id)
+        // Extract type ID from interface value
+        let type_id_value = self.extract_interface_type_id(value)?;
+        
+        // Check if we have a constant value
+        if type_id_value.is_int_value() {
+            let int_value = type_id_value.into_int_value();
+            // Try to get it as a constant
+            if let Some(const_val) = int_value.get_zero_extended_constant() {
+                trace!(type_id = const_val, "Extracted constant type ID from value");
+                return Ok(const_val);
+            }
+        }
+        
+        // If we can't get a constant value, we need to evaluate it at runtime
+        if let Some(registry) = &self.interface_type_registry {
+            // Try to create a dynamic lookup if available
+            match registry.lookup_runtime_type_id(value) {
+                Ok(id) => {
+                    trace!(type_id = id, "Looked up runtime type ID from registry");
+                    Ok(id)
+                },
+                Err(e) => Err(Error::Compilation(format!("Failed to extract dynamic type ID: {}", e)))
+            }
+        } else {
+            Err(Error::Compilation("Interface type registry not initialized".to_string()))
+        }
     }
     
     fn get_type_name_for_id(
