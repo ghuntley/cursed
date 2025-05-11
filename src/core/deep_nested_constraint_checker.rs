@@ -461,8 +461,7 @@ mod tests {
     use super::*;
     use crate::core::type_checker::Type;
     
-    #[path = "../tests/common.rs"]
-    mod common;
+    use crate::tests::common;
     
     #[test]
     fn test_deep_nested_constraints_basic() {

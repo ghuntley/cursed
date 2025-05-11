@@ -170,8 +170,7 @@ impl CachedInterfaceRegistry for LruCachedRegistry {
 mod tests {
     use super::*;
     
-    #[path = "../tests/common.rs"]
-    mod common;
+    use crate::tests::common;
     
     #[test]
     fn test_lru_cached_registry_basic() {

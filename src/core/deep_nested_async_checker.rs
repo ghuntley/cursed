@@ -366,8 +366,7 @@ impl DeepNestedAsyncConstraintChecking for DeepNestedInterfaceRegistry {
 mod tests {
     use super::*;
     
-    #[path = "../tests/common.rs"]
-    mod common;
+    use crate::tests::common;
     
     #[test]
     fn test_deep_nested_async_checker_creation() {

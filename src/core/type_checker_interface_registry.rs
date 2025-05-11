@@ -6,7 +6,7 @@
 //! registration.
 
 use crate::core::interface_registry::{InterfaceRegistry, GenericInterfaceImpl};
-use crate::core::interface_registry_cache::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
+use crate::core::interface_registry_cache_merged::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
 use crate::core::type_checker::{Type, TypeChecker};
 use crate::error::Error;
 use std::sync::{Arc, Mutex};
@@ -402,8 +402,7 @@ mod tests {
     use super::*;
     use std::sync::Arc;
     
-    #[path = "../../tests/common/mod.rs"]
-    mod common;
+    use crate::tests::common;
     
     #[test]
     fn test_auto_registration_concrete_type() {

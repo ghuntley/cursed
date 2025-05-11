@@ -574,8 +574,7 @@ mod tests {
     use super::*;
     use crate::core::type_checker::Type;
     
-    #[path = "../tests/common.rs"]
-    mod common;
+    use crate::tests::common;
     
     #[test]
     fn test_async_constraint_checker_single_constraint() {
