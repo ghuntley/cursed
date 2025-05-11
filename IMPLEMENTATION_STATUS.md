@@ -92,8 +92,8 @@ The codebase currently fails to build with numerous errors. Below is a prioritiz
    - ✅ Implement or expose visualization methods for the registry
 
 7. **Fix circular reference handling:**
-   - Fix circular reference detection in test files
-   - Update `ObjectRef` references in container.rs
+- ✅ Update `ObjectRef` references in container.rs to use `Gc<Object>` and properly handle circular references
+- Fix circular reference detection in test files
 
 8. **Fix module structure issues:**
    - Fix common.rs loading in interface_registry_cache
