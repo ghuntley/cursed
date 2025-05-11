@@ -3,11 +3,12 @@
 //! This module handles the specialization of generic functions in LLVM code generation.
 //! It creates concrete implementations of generic functions with specific type parameters.
 
-use inkwell::values::{BasicValueEnum, FunctionValue};
-use inkwell::types::BasicTypeEnum;
+use inkwell::values::{BasicValueEnum, FunctionValue, BasicMetadataValueEnum};
+use inkwell::types::{BasicTypeEnum, BasicMetadataTypeEnum};
 use crate::ast::expressions::CallExpression;
 use crate::ast::declarations::FunctionStatement;
 use crate::ast::statements::ReturnStatement;
+use crate::ast::traits::Node;
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use crate::lexer::{Token, TokenType};
@@ -16,6 +17,7 @@ use crate::ast::Block;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::statement::StatementCompilation;
 use super::context::LlvmCodeGenerator;
+use crate::codegen::MonomorphizationManager;
 use std::collections::HashMap;
 
 /// Trait for function monomorphization functionality
@@ -92,13 +94,17 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         // 6. Compile the arguments
         let mut compiled_args = Vec::new();
         for arg in &call_expr.arguments {
-            let compiled_arg = self.compile_expression(arg)?;
+            // Compile the expression from inside the Box
+            let compiled_arg = self.compile_expression(arg.as_ref())?;
             compiled_args.push(compiled_arg);
         }
         
         // 7. Call the specialized function
+        // Convert BasicValueEnum to BasicMetadataValueEnum for LLVM API
+        let metadata_args: Vec<_> = compiled_args.iter().map(|&arg| arg.into()).collect();
+            
         let call_result = self.builder()
-            .build_call(specialized_function, &compiled_args, "call")
+            .build_call(specialized_function, &metadata_args, "call")
             .map_err(|e| Error::from_str(&format!("Failed to build function call: {}", e)))?;
             
         // 8. Handle the return value
@@ -198,19 +204,22 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         // 4. Create the function type
+        // Convert BasicTypeEnum to BasicMetadataTypeEnum for LLVM API
+        let metadata_param_types: Vec<_> = param_types.iter().map(|&t| t.into()).collect();
+        
         let function_type = if let Some((_, ret_type)) = &return_type {
             // Function with a return type
             match ret_type {
-                BasicTypeEnum::IntType(t) => t.fn_type(&param_types, false),
-                BasicTypeEnum::FloatType(t) => t.fn_type(&param_types, false),
-                BasicTypeEnum::PointerType(t) => t.fn_type(&param_types, false),
-                BasicTypeEnum::StructType(t) => t.fn_type(&param_types, false),
-                BasicTypeEnum::ArrayType(t) => t.fn_type(&param_types, false),
-                BasicTypeEnum::VectorType(t) => t.fn_type(&param_types, false),
+                BasicTypeEnum::IntType(t) => t.fn_type(&metadata_param_types, false),
+                BasicTypeEnum::FloatType(t) => t.fn_type(&metadata_param_types, false),
+                BasicTypeEnum::PointerType(t) => t.fn_type(&metadata_param_types, false),
+                BasicTypeEnum::StructType(t) => t.fn_type(&metadata_param_types, false),
+                BasicTypeEnum::ArrayType(t) => t.fn_type(&metadata_param_types, false),
+                BasicTypeEnum::VectorType(t) => t.fn_type(&metadata_param_types, false),
             }
         } else {
             // Function with no return type (void)
-            self.context().void_type().fn_type(&param_types, false)
+            self.context().void_type().fn_type(&metadata_param_types, false)
         };
         
         // 5. Create the function
@@ -473,29 +482,35 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     use crate::ast::literals::*;
                     
                     // Create a dummy generic function for testing
-                    let type_param = Token::new(TokenType::Identifier, "T".to_string(), 0, 0);
-                    let param_name = Token::new(TokenType::Identifier, "value".to_string(), 0, 0);
-                    let param_type = Token::new(TokenType::Identifier, "T".to_string(), 0, 0);
-                    let return_type = Token::new(TokenType::Identifier, "T".to_string(), 0, 0);
+                    let type_param = Token::new(TokenType::Identifier, "T");
+                    let param_name = Token::new(TokenType::Identifier, "value");
+                    let param_type = Token::new(TokenType::Identifier, "T");
+                    let return_type = Token::new(TokenType::Identifier, "T");
                     
                     let param = crate::ast::ParameterStatement {
                         token: "param".to_string(),
                         name: Identifier {
-                            token: param_name.value.clone(),
-                            value: param_name.value.clone(),
+                            token: "value".to_string(),
+                            value: "value".to_string(),
                         },
                         type_name: Box::new(Identifier {
-                            token: param_type.value.clone(),
-                            value: param_type.value.clone(),
+                            token: "T".to_string(),
+                            value: "T".to_string(),
                         }),
                     };
                     
-                    let fn_name = Token::new(TokenType::Identifier, "test_generic_fn".to_string(), 0, 0);
+                    let fn_name = Token::new(TokenType::Identifier, "test_generic_fn");
                     
                     TEST_FN = Some(FunctionStatement {
                         token: "slay".to_string(),
-                        name: fn_name,
-                        type_parameters: vec![type_param],
+                        name: Identifier {
+                            token: "test_generic_fn".to_string(),
+                            value: "test_generic_fn".to_string(),
+                        },
+                        type_parameters: vec![Identifier {
+                            token: "T".to_string(),
+                            value: "T".to_string(),
+                        }],
                         parameters: vec![param],
                         body: crate::ast::statements::block::BlockStatement {
                             token: "{".to_string(),
