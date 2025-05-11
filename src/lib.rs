@@ -428,13 +428,13 @@ pub fn run_stdlib_test(test_name: &str) -> Result<(), Error> {
 // Make internal helper public for now (consider a dedicated public fn later)
 #[tracing::instrument(skip(input), fields(file_path = ?file_path, input_size = input.len()), level = "debug")]
 pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> Result<(), Error> {
-    println!("📝 Processing file: {:?}", file_path);
-    println!("📦 Input size: {} bytes", input.len());
+    std::println!("📝 Processing file: {:?}", file_path);
+    std::println!("📦 Input size: {} bytes", input.len());
 
-    println!("🔍 Lexical Analysis...");
+    std::println!("🔍 Lexical Analysis...");
     let mut lexer = lexer::Lexer::new(input);
 
-    println!("🔨 Parsing...");
+    std::println!("🔨 Parsing...");
     let mut parser = parser::Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
 
@@ -447,12 +447,12 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
             .collect::<Vec<String>>()
             .join("\n");
         error!(errors_count, errors = ?errors_str, "Parser found errors");
-        println!("❌ Parser found {} errors", errors_count);
+        std::println!("❌ Parser found {} errors", errors_count);
         return Err(Error::from_str(&format!("Parser errors:\n{}", errors_str)));
     }
 
-    println!("✅ Successfully parsed program");
-    println!("📊 Program structure:\n{}", program.string());
+    std::println!("✅ Successfully parsed program");
+    std::println!("📊 Program structure:\n{}", program.string());
 
     // Extract package name from the program
     let package_name = {

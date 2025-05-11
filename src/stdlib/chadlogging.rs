@@ -240,14 +240,14 @@ impl TextHandler {
             Object::Float(f) => format!("{key}={f}"),
             Object::Boolean(b) => format!("{key}={b}"),
             Object::Array(arr) => format!("{key}=[{}]", 
-                arr.iter().map(|v| format!("{:?}", v)).collect::<Vec<_>>().join(", ")),
+                arr.iter().map(|v| std::format!("{:?}", v)).collect::<Vec<_>>().join(", ")),
             Object::HashTable(map) => {
                 if map.contains_key("__type") && map["__type"] == Object::String("attrs".to_string()) {
                     // Special group formatting
                     format!("{key}=<group>")
                 } else {
                     format!("{key}={{{}}}", 
-                        map.iter().map(|(k, v)| format!("{k}:{:?}", v)).collect::<Vec<_>>().join(", "))
+                        map.iter().map(|(k, v)| std::format!("{k}:{:?}", v)).collect::<Vec<_>>().join(", "))
                 }
             },
             _ => format!("{key}=null"),
