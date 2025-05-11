@@ -337,7 +337,7 @@ impl ConstraintRecovery for InterfaceRegistry {
                     "slay {}({}) {{
     // Implementation needed for interface method
     // This is a stub that needs to be filled with proper implementation
-    panic!("Implementation needed");
+    panic!("Not implemented");
 }}
 
 ",
