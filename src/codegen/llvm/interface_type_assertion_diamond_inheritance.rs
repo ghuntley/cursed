@@ -16,6 +16,7 @@ use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
+use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 use crate::error::Error;
 
 /// Represents a diamond inheritance pattern in the type hierarchy
@@ -154,6 +155,11 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
             }
         }
         
+        // If we couldn't find direct paths, try to find indirect paths with BFS
+        if results.is_empty() && self.get_interface_registry().is_some() {
+            results = self.find_all_paths_bfs(source_type_id, target_type_id)?;
+        }
+        
         Ok(results)
     }
     
@@ -210,6 +216,22 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
 
 // Helper methods for diamond inheritance detection
 impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Get a type name by its ID
+    fn get_type_name_by_id(&self, type_id: u32) -> Option<String> {
+        // First try to get from the registry
+        if let Some(registry) = self.get_interface_registry() {
+            if let Ok(name) = registry.get_type_name(type_id) {
+                return Some(name);
+            }
+        }
+        
+        // Fall back to internal fields
+        let key = format!("type_name_{}", type_id);
+        self.internal_fields.get(&key)
+            .and_then(|boxed| boxed.downcast_ref::<String>())
+            .map(|s| s.clone())
+    }
+    
     /// Get the interface path finder
     fn get_interface_path_finder(&self) -> Option<&dyn EnhancedInterfacePathFinder> {
         self.internal_fields.get("interface_path_finder")
@@ -219,10 +241,94 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Check if a type implements an interface
     fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> Option<bool> {
-        // In a real implementation, we would look up the interface implementation
-        // information from the registry
-        // This is a placeholder that always returns false
-        Some(false)
+        // Get the interface registry
+        let registry = self.get_interface_registry()?;
+        
+        // Check if the type implements the interface
+        let implements = registry.type_implements_interface(concrete_type_id, interface_type_id);
+        Some(implements)
+    }
+    
+    /// Get the interface registry
+    fn get_interface_registry(&self) -> Option<&dyn InterfaceTypeRegistry> {
+        self.internal_fields.get("interface_registry")
+            .and_then(|boxed| boxed.downcast_ref::<Box<dyn InterfaceTypeRegistry>>())
+            .map(|boxed| boxed.as_ref())
+    }
+    
+    /// Find all paths between two types using BFS traversal
+    fn find_all_paths_bfs(
+        &self,
+        source_type_id: u32,
+        target_type_id: u32
+    ) -> Result<Vec<InterfaceInheritancePath>, Error> {
+        let registry = match self.get_interface_registry() {
+            Some(r) => r,
+            None => return Ok(Vec::new()),
+        };
+        
+        let mut results = Vec::new();
+        let mut queue = VecDeque::new();
+        let mut visited = HashSet::new();
+        let mut path_map: HashMap<u32, Vec<u32>> = HashMap::new();
+        
+        // Initialize with the source type
+        queue.push_back(source_type_id);
+        visited.insert(source_type_id);
+        path_map.insert(source_type_id, vec![source_type_id]);
+        
+        // Process queue
+        while let Some(current_id) = queue.pop_front() {
+            // Check if we've reached the target
+            if current_id == target_type_id {
+                if let Some(path) = path_map.get(&current_id) {
+                    let inheritance_path = InterfaceInheritancePath {
+                        path: path.clone(),
+                        interfaces: HashMap::new(),
+                    };
+                    results.push(inheritance_path);
+                }
+                continue; // Don't expand this node further if it's the target
+            }
+            
+            // Get parent interfaces for the current type
+            let interfaces = match registry.get_implemented_interfaces(current_id) {
+                Ok(ifaces) => ifaces,
+                Err(_) => vec![], // Handle error by returning empty vec
+            };
+            
+            for &interface_id in &interfaces {
+                if !visited.contains(&interface_id) {
+                    // Create a new path including this interface
+                    if let Some(current_path) = path_map.get(&current_id) {
+                        let mut new_path = current_path.clone();
+                        new_path.push(interface_id);
+                        path_map.insert(interface_id, new_path);
+                    }
+                    
+                    // Add to the queue for processing
+                    queue.push_back(interface_id);
+                    visited.insert(interface_id);
+                }
+                else if interface_id == target_type_id {
+                    // Special case: if we found the target again through a different path
+                    if let Some(current_path) = path_map.get(&current_id) {
+                        let mut new_path = current_path.clone();
+                        new_path.push(interface_id);
+                        
+                        // This is a new path to the target
+                        let inheritance_path = InterfaceInheritancePath {
+                            path: new_path,
+                            interfaces: HashMap::new(),
+                        };
+                        results.push(inheritance_path);
+                    }
+                }
+            }
+        }
+        
+        // A complete implementation would populate the interfaces field too
+        Ok(results)
     }
 }
 
@@ -234,11 +340,43 @@ pub fn register_diamond_inheritance_detection() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use inkwell::context::Context;
     
     #[test]
     fn test_diamond_inheritance_detection_registration() {
         // Simple test to ensure module registration works
         register_diamond_inheritance_detection();
         assert!(true);
+    }
+    
+    #[test]
+    fn test_visualize_diamond_inheritance() {
+        // Create a simple diamond pattern
+        let pattern = DiamondInheritancePattern {
+            root_type_id: 1,
+            base_type_id: 4,
+            left_intermediate_id: 2,
+            right_intermediate_id: 3,
+        };
+        
+        // Create a stub LlvmCodeGenerator
+        let context = Context::create();
+        let mut generator = LlvmCodeGenerator::new(&context);
+        
+        // Add type name lookups
+        generator.internal_fields.insert("type_name_1".to_string(), Box::new("Concrete".to_string()));
+        generator.internal_fields.insert("type_name_2".to_string(), Box::new("LeftInterface".to_string()));
+        generator.internal_fields.insert("type_name_3".to_string(), Box::new("RightInterface".to_string()));
+        generator.internal_fields.insert("type_name_4".to_string(), Box::new("BaseInterface".to_string()));
+        
+        // Visualize the pattern
+        let visualization = generator.visualize_diamond_inheritance(&pattern);
+        
+        // Basic assertions
+        assert!(visualization.contains("Diamond Inheritance Pattern"));
+        assert!(visualization.contains("BaseInterface"));
+        assert!(visualization.contains("LeftInterface"));
+        assert!(visualization.contains("RightInterface"));
+        assert!(visualization.contains("Concrete"));
     }
 }
