@@ -5,7 +5,7 @@
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::traits::Expression;
-use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion};
+use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion, TypeAssertionQuestion};
 use crate::ast::pointer::types::PointerType;
 use crate::ast::pointer::operations::PointerDereference;
 use crate::error::Error;
@@ -78,11 +78,25 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                      type_assertion.expression.string(), type_assertion.type_name);
             
             // Use our improved error propagation implementation 
-            use super::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
+            use super::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
             // Use fully qualified syntax to avoid ambiguity
-            let result = TypeAssertionErrorPropagation::compile_type_assertion_with_propagation(self, type_assertion)?;
+            let result = self.compile_type_assertion_with_error_propagation(type_assertion)?;
             
             tracing::debug!("Successfully compiled type assertion for {}", type_assertion.type_name);
+            return Ok(result);
+        }
+        
+        // Handle type assertion expressions with ? operator (value.(Type)?)
+        if let Some(type_assertion) = any.downcast_ref::<TypeAssertionQuestion>() {
+            tracing::debug!("Found type assertion with ? operator: {}.({})?\n", 
+                     type_assertion.expression.string(), type_assertion.type_name);
+            
+            // Use our error propagation implementation with ? operator 
+            use super::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+            // Call the version for TypeAssertionQuestion that automatically propagates errors
+            let result = self.compile_type_assertion_question(type_assertion)?;
+            
+            tracing::debug!("Successfully compiled type assertion with ? operator for {}", type_assertion.type_name);
             return Ok(result);
         }
         

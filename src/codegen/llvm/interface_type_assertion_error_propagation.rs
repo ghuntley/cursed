@@ -27,7 +27,7 @@ use inkwell::IntPredicate;
 use inkwell::basic_block::BasicBlock;
 use inkwell::AddressSpace;
 
-use crate::ast::expressions::TypeAssertion;
+use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
@@ -43,6 +43,14 @@ pub trait InterfaceTypeAssertionErrorPropagation<'ctx> {
     fn compile_type_assertion_with_error_propagation(
         &mut self,
         type_assertion: &TypeAssertion
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Compile a type assertion expression with ? operator
+    /// This is specialized for the TypeAssertionQuestion AST node and will automatically 
+    /// propagate errors through the ? operator mechanism
+    fn compile_type_assertion_question(
+        &mut self,
+        type_assertion: &TypeAssertionQuestion
     ) -> Result<BasicValueEnum<'ctx>, Error>;
 
     /// Create a Result type value for interface type assertions
@@ -61,6 +69,7 @@ pub trait InterfaceTypeAssertionErrorPropagation<'ctx> {
     ) -> Result<BasicValueEnum<'ctx>, Error>;
 }
 
+// TypeAssertionErrorPropagation - implementation trait for LLVM code generator
 impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
     #[instrument(skip(self, type_assertion))]
     fn compile_type_assertion_with_error_propagation(
@@ -254,6 +263,104 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         ]);
         
         Ok(result_struct.into())
+    }
+    
+    fn compile_type_assertion_question(
+        &mut self,
+        type_assertion: &TypeAssertionQuestion
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        
+        // Create a source location for error context
+        let source_location = match &type_assertion.token {
+            token if !token.is_empty() => {
+                Some(SourceLocation {
+                    line: 0, // Not available from AST
+                    column: 0, // Not available from AST
+                    file: None,
+                    source_line: format!("{}.({})?", type_assertion.expression.string(), type_assertion.type_name),
+                })
+            },
+            _ => None,
+        };
+        
+        debug!("Compiling type assertion with ? operator for: {}", type_assertion.string());
+        
+        // First ensure registry is initialized
+        self.ensure_registry_visualization_initialized()?;
+        
+        // Get the current function
+        let current_fn = self.current_function()
+            .ok_or_else(|| Error::Compilation("No current function for type assertion with ? operator".to_string()))?;
+        
+        // Compile the expression being asserted
+        let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
+        
+        // Create basic blocks for success and failure paths
+        let success_block = self.context().append_basic_block(current_fn, "type_assert_question_success");
+        let failure_block = self.context().append_basic_block(current_fn, "type_assert_question_failure");
+        let merge_block = self.context().append_basic_block(current_fn, "type_assert_question_merge");
+        
+        // Check if the interface value is of the target type
+        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name, source_location.clone())?;
+        
+        // Branch based on the type check result
+        self.builder().build_conditional_branch(
+            is_instance.into_int_value(),
+            success_block,
+            failure_block
+        ).map_err(|e| Error::Compilation(e.to_string()))?;
+        
+        // Success path - extract and cast the data pointer
+        self.builder().position_at_end(success_block);
+        let data_ptr = self.extract_interface_data_ptr(expr_value)?;
+        
+        // Get the type id for proper error reporting
+        let type_id = self.get_type_id(&type_assertion.type_name)?;
+        
+        // Cast the data pointer to the appropriate type
+        let casted_ptr = self.builder().build_bitcast(
+            data_ptr,
+            self.pointer_type(),
+            "casted_ptr"
+        ).map_err(|e| Error::Compilation(e.to_string()))?;
+        
+        // Branch to merge block
+        self.builder().build_unconditional_branch(merge_block)
+            .map_err(|e| Error::Compilation(e.to_string()))?;
+        
+        // Failure path - propagate the error through the ? operator
+        self.builder().position_at_end(failure_block);
+        
+        // Get the actual type ID from the interface value for better error reporting
+        let actual_type_id = self.get_interface_type_id(expr_value)?;
+        
+        // Create an error message
+        let error_message = format!(
+            "Failed to assert that interface value is of type {}",
+            type_assertion.type_name
+        );
+        
+        // Create type assertion error object and propagate it
+        self.call_error_propagation_function(
+            self.create_string_constant(&error_message).into(), 
+            BasicValueEnum::into_struct_value(
+                self.build_struct_value(&[
+                    self.context().i32_type().const_int(0, false).into(), // line 0
+                    self.context().i32_type().const_int(0, false).into(), // column 0
+                    self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(), // no file
+                    self.create_string_constant(&source_location.map_or(String::new(), |loc| loc.source_line)).into() // source line
+                ])
+            )
+        )?;
+        
+        // This should be unreachable in the failure path
+        self.builder().build_unreachable().map_err(|e| Error::Compilation(e.to_string()))?;
+        
+        // Merge block - return the casted pointer on success
+        self.builder().position_at_end(merge_block);
+        
+        // With question operator, we just return the value directly, error handling is automatic
+        Ok(casted_ptr.into())
     }
     
     fn unwrap_type_assertion_result(

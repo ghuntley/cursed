@@ -31,6 +31,7 @@ pub mod special;
 pub mod struct_expr;
 pub mod types;
 pub mod type_assertion;
+pub mod type_assertion_question;
 pub mod empty;
 
 pub use calls::{CallExpression, GenericCallExpression};
@@ -44,6 +45,7 @@ pub use concurrency::StanExpression;
 pub use channel::{ReceiveExpression, SendExpression};
 pub use special::{AssignmentExpression, BeLikeExpression, DefaultCase};
 pub use type_assertion::TypeAssertion;
+pub use type_assertion_question::TypeAssertionQuestion;
 pub use range_expression::RangeExpression;
 
 // Specific imports from generics to avoid conflicts

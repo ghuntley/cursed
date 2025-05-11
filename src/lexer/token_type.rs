@@ -84,6 +84,7 @@ pub enum TokenType {
     LBracket,  // [
     RBracket,  // ]
     Dot,       // .
+    Question,  // ?
 
     // Keywords - CURSED uses Gen Z slang for keywords
     Vibe,      // package (vibe)
