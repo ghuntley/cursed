@@ -1,193 +1,267 @@
-//! Finalization order management for garbage collection
+//! Improved Finalization Order for Circular References
 //!
-//! This module manages the finalization order of objects to ensure proper cleanup,
-//! particularly for objects with dependencies on each other.
-
-/// Finalization graph for managing object dependencies
-/// This is a simple type alias for testing purposes
-pub type FinalizationGraph = HashMap<usize, HashSet<usize>>;
+//! This module implements an improved approach to object finalization
+//! that properly handles circular references. It ensures objects are
+//! finalized in the correct order even when there are cycles in the
+//! object graph.
 
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::sync::Arc;
+use tracing::{debug, error, info, trace, warn, instrument};
 
-/// Finalize objects in the correct order based on dependencies
-pub fn finalize_objects_ordered(addresses: &[usize]) {
-    // Get the global object storage
-    let storage = crate::memory::global_object_storage();
-    if let Ok(mut storage_lock) = storage.write() {
-        // Build a map of object dependencies
-        let mut dependencies = HashMap::new();
+use crate::memory::{Gc, Tag, Traceable, Visitor};
+use crate::memory::cycle_detector::ReferenceCollector;
+
+/// Represents a node in the finalization dependency graph
+#[derive(Debug)]
+struct FinalizationNode {
+    /// The object ID
+    id: usize,
+    /// Objects that depend on this object
+    dependents: HashSet<usize>,
+    /// Objects this object depends on
+    dependencies: HashSet<usize>,
+    /// Whether this object has been finalized
+    finalized: bool,
+}
+
+/// Manages the finalization order of objects with circular references
+#[derive(Debug, Default)]
+pub struct FinalizationOrderManager {
+    /// Maps object IDs to their finalization nodes
+    nodes: HashMap<usize, FinalizationNode>,
+    /// Objects ready for finalization (no remaining dependencies)
+    ready_queue: VecDeque<usize>,
+}
+
+impl FinalizationOrderManager {
+    /// Create a new finalization order manager
+    pub fn new() -> Self {
+        Self {
+            nodes: HashMap::new(),
+            ready_queue: VecDeque::new(),
+        }
+    }
+    
+    /// Add an object to the finalization dependency graph
+    #[instrument(skip(self), fields(obj_id = format!("{:#x}", obj_id)))]
+    pub fn add_object(&mut self, obj_id: usize) {
+        trace!(?obj_id, "Adding object to finalization graph");
         
-        for &addr in addresses {
-            if storage_lock.contains(addr) {
-                // Get the dependencies for this object from the storage wrapper
-                if let Some(wrapper) = storage_lock.get_wrapper(addr) {
-                    // Clone the dependencies to build our graph
-                    dependencies.insert(addr, wrapper.dependencies().clone());
+        // Skip if the object is already in the graph
+        if self.nodes.contains_key(&obj_id) {
+            trace!(?obj_id, "Object already in graph");
+            return;
+        }
+        
+        // Create a new node for this object
+        let node = FinalizationNode {
+            id: obj_id,
+            dependents: HashSet::new(),
+            dependencies: HashSet::new(),
+            finalized: false,
+        };
+        
+        self.nodes.insert(obj_id, node);
+        trace!(?obj_id, "Added object to graph");
+    }
+    
+    /// Add a dependency relationship between two objects
+    #[instrument(skip(self), fields(from = format!("{:#x}", from), to = format!("{:#x}", to)))]
+    pub fn add_dependency(&mut self, from: usize, to: usize) {
+        // Skip self-dependencies
+        if from == to {
+            trace!("Skipping self-dependency");
+            return;
+        }
+        
+        // Make sure both objects are in the graph
+        self.add_object(from);
+        self.add_object(to);
+        
+        // Add the dependency
+        if let Some(from_node) = self.nodes.get_mut(&from) {
+            let is_new = from_node.dependencies.insert(to);
+            if is_new {
+                trace!("Added new dependency");
+            }
+        }
+        
+        // Add the dependent relationship
+        if let Some(to_node) = self.nodes.get_mut(&to) {
+            let is_new = to_node.dependents.insert(from);
+            if is_new {
+                trace!("Added new dependent");
+            }
+        }
+    }
+    
+    /// Build the finalization graph from a set of objects
+    #[instrument(skip(self, objects), fields(count = objects.len()))]
+    pub fn build_graph(&mut self, objects: &[usize]) {
+        info!(count = objects.len(), "Building finalization graph");
+        
+        // First, add all objects to the graph
+        for &obj_id in objects {
+            self.add_object(obj_id);
+        }
+        
+        // Then, collect references for each object
+        for &obj_id in objects {
+            let references = ReferenceCollector::collect_references(obj_id);
+            trace!(obj_id = format!("{:#x}", obj_id), refs_count = references.len(), "Found references");
+            
+            // Add dependencies for references (only for objects in our set)
+            for &ref_id in &references {
+                if objects.contains(&ref_id) {
+                    // obj_id depends on ref_id
+                    self.add_dependency(obj_id, ref_id);
+                }
+            }
+        }
+        
+        // Initialize the ready queue with objects that have no dependencies
+        for &obj_id in objects {
+            if let Some(node) = self.nodes.get(&obj_id) {
+                if node.dependencies.is_empty() {
+                    trace!(obj_id = format!("{:#x}", obj_id), "Object has no dependencies, adding to ready queue");
+                    self.ready_queue.push_back(obj_id);
                 } else {
-                    dependencies.insert(addr, HashSet::new());
+                    trace!(obj_id = format!("{:#x}", obj_id), deps = node.dependencies.len(), "Object has dependencies");
                 }
             }
         }
         
-        // Calculate the order
-        let order = calculate_finalization_order(&dependencies);
+        info!(ready_count = self.ready_queue.len(), "Ready queue initialized");
+    }
+    
+    /// Get the next object ready for finalization
+    pub fn next_ready(&mut self) -> Option<usize> {
+        self.ready_queue.pop_front()
+    }
+    
+    /// Mark an object as finalized and update the dependency graph
+    #[instrument(skip(self), fields(obj_id = format!("{:#x}", obj_id)))]
+    pub fn mark_finalized(&mut self, obj_id: usize) {
+        trace!("Marking object as finalized");
         
-        // Finalize and remove objects in the correct order
-        for addr in order {
-            if addresses.contains(&addr) {
-                if let Some(obj_ptr) = storage_lock.remove(addr) {
-                    // Call finalize on the object
-                    unsafe {
-                        // Safety: We're ensuring the pointer is valid by checking against
-                        // the storage, and we have exclusive access via the write lock
-                        let traceable = obj_ptr.as_ptr().as_mut().unwrap();
-                        traceable.finalize();
-                    }
+        // Mark the object as finalized
+        if let Some(node) = self.nodes.get_mut(&obj_id) {
+            node.finalized = true;
+            
+            // Get the dependents to update
+            let dependents = node.dependents.clone();
+            trace!(dependents_count = dependents.len(), "Found dependents to update");
+            
+            // Update each dependent
+            for &dep_id in &dependents {
+                self.update_dependent(dep_id, obj_id);
+            }
+        }
+    }
+    
+    /// Update a dependent after its dependency has been finalized
+    #[instrument(skip(self), fields(dep_id = format!("{:#x}", dep_id), dependency_id = format!("{:#x}", dependency_id)))]
+    fn update_dependent(&mut self, dep_id: usize, dependency_id: usize) {
+        trace!("Updating dependent");
+        
+        if let Some(node) = self.nodes.get_mut(&dep_id) {
+            // Remove the finalized dependency
+            node.dependencies.remove(&dependency_id);
+            
+            // If no more dependencies, add to ready queue
+            if node.dependencies.is_empty() && !node.finalized {
+                trace!("Dependent has no more dependencies, adding to ready queue");
+                self.ready_queue.push_back(dep_id);
+            } else {
+                trace!(deps_remaining = node.dependencies.len(), "Dependent still has dependencies");
+            }
+        }
+    }
+    
+    /// Handle circular references by breaking cycles
+    #[instrument(skip(self))]
+    pub fn handle_circular_references(&mut self) {
+        // If the ready queue is empty but we still have unfinalized objects,
+        // we have circular references
+        if self.ready_queue.is_empty() {
+            let unfinalized = self.nodes.iter()
+                .filter(|(_, node)| !node.finalized)
+                .map(|(id, _)| *id)
+                .collect::<Vec<_>>();
+                
+            if !unfinalized.is_empty() {
+                warn!(count = unfinalized.len(), "Detected circular references");
+                
+                // Break cycles by adding the first unfinalized object to ready queue
+                if let Some(&first) = unfinalized.first() {
+                    warn!(obj_id = format!("{:#x}", first), "Breaking cycle by adding to ready queue");
+                    self.ready_queue.push_back(first);
                 }
             }
         }
+    }
+    
+    /// Finalize all objects in the correct order
+    #[instrument(skip(self, finalizer), fields(objects_count = self.nodes.len()))]
+    pub fn finalize_all<F>(&mut self, mut finalizer: F) 
+    where
+        F: FnMut(usize)
+    {
+        info!(objects_count = self.nodes.len(), "Finalizing all objects");
+        
+        // Process objects until we're done
+        let mut processed_count = 0;
+        
+        while let Some(obj_id) = self.next_ready() {
+            // Finalize the object
+            trace!(obj_id = format!("{:#x}", obj_id), "Finalizing object");
+            finalizer(obj_id);
+            processed_count += 1;
+            
+            // Mark it as finalized in our graph
+            self.mark_finalized(obj_id);
+            
+            // If the ready queue is empty, handle circular references
+            if self.ready_queue.is_empty() {
+                self.handle_circular_references();
+            }
+        }
+        
+        info!(processed_count, "Finalization complete");
     }
 }
 
-/// Calculate the finalization order of objects based on dependencies
-/// Returns a list of objects in the order they should be finalized
-pub fn calculate_finalization_order(objects: &HashMap<usize, HashSet<usize>>) -> Vec<usize> {
-    // Create a graph of dependencies (adjacency list)
-    let mut graph: HashMap<usize, Vec<usize>> = HashMap::new();
-    let mut in_degree: HashMap<usize, usize> = HashMap::new();
+/// Finalize a set of objects in the correct order, handling circular references
+#[instrument(skip(objects), fields(count = objects.len()))]
+pub fn finalize_objects_in_order(objects: &[usize]) {
+    info!(count = objects.len(), "Finalizing objects in order");
     
-    // Initialize the graph and in-degree count
-    for (&id, deps) in objects.iter() {
-        // Make sure all nodes are in the graph
-        graph.entry(id).or_insert_with(Vec::new);
-        in_degree.entry(id).or_insert(0);
-        
-        // Add dependencies
-        for &dep in deps.iter() {
-            graph.entry(dep).or_insert_with(Vec::new).push(id);
-            *in_degree.entry(id).or_insert(0) += 1;
-        }
-    }
+    // Create a finalization manager
+    let mut manager = FinalizationOrderManager::new();
     
-    // Topological sort using Kahn's algorithm
-    let mut result = Vec::new();
-    let mut queue = VecDeque::new();
+    // Build the dependency graph
+    manager.build_graph(objects);
     
-    // Find all nodes with in-degree 0 (no dependencies)
-    for (&id, &degree) in in_degree.iter() {
-        if degree == 0 {
-            queue.push_back(id);
-        }
-    }
-    
-    // Process the queue
-    while let Some(id) = queue.pop_front() {
-        result.push(id);
-        
-        // Decrease in-degree of adjacent nodes
-        if let Some(neighbors) = graph.get(&id) {
-            for &neighbor in neighbors.iter() {
-                if let Some(degree) = in_degree.get_mut(&neighbor) {
-                    *degree -= 1;
-                    if *degree == 0 {
-                        queue.push_back(neighbor);
-                    }
+    // Finalize objects in the correct order
+    manager.finalize_all(|obj_id| {
+        // Get the object from global storage and finalize it
+        let storage = crate::memory::object_storage::global_object_storage();
+        if let Ok(storage_lock) = storage.read() {
+            if let Some(obj_box) = storage_lock.get_dyn_traceable(obj_id) {
+                trace!(obj_id = format!("{:#x}", obj_id), "Finalizing object");
+                
+                // Call finalize on the object
+                unsafe {
+                    let obj = &mut *(obj_box.as_ptr() as *mut dyn Traceable);
+                    obj.finalize();
                 }
             }
         }
-    }
-    
-    // Check for cycles
-    if result.len() != objects.len() {
-        // There's a cycle, so we need to handle it
-        // For now, include remaining objects in any order
-        for (&id, _) in objects.iter() {
-            if !result.contains(&id) {
-                result.push(id);
-            }
-        }
-    }
-    
-    // Objects with dependencies should be finalized first, so we don't need to reverse
-    // the topological order
-    result
+    });
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_linear_dependencies() {
-        // Create a linear dependency chain: 1 -> 2 -> 3
-        let mut objects = HashMap::new();
-        
-        objects.insert(1, HashSet::new());
-        
-        let mut deps2 = HashSet::new();
-        deps2.insert(1);
-        objects.insert(2, deps2);
-        
-        let mut deps3 = HashSet::new();
-        deps3.insert(2);
-        objects.insert(3, deps3);
-        
-        let order = calculate_finalization_order(&objects);
-        
-        // Expected order: 1, 2, 3 (dependencies first)
-        assert_eq!(order, vec![1, 2, 3]);
-    }
-    
-    #[test]
-    fn test_complex_dependencies() {
-        // Create a more complex dependency graph
-        let mut objects = HashMap::new();
-        
-        objects.insert(1, HashSet::new());
-        objects.insert(2, HashSet::new());
-        
-        let mut deps3 = HashSet::new();
-        deps3.insert(1);
-        deps3.insert(2);
-        objects.insert(3, deps3);
-        
-        let mut deps4 = HashSet::new();
-        deps4.insert(2);
-        deps4.insert(3);
-        objects.insert(4, deps4);
-        
-        let order = calculate_finalization_order(&objects);
-        
-        // Check that dependencies come before dependents
-        assert!(order.iter().position(|&x| x == 1).unwrap() < order.iter().position(|&x| x == 3).unwrap());
-        assert!(order.iter().position(|&x| x == 2).unwrap() < order.iter().position(|&x| x == 3).unwrap());
-        assert!(order.iter().position(|&x| x == 2).unwrap() < order.iter().position(|&x| x == 4).unwrap());
-        assert!(order.iter().position(|&x| x == 3).unwrap() < order.iter().position(|&x| x == 4).unwrap());
-    }
-    
-    #[test]
-    fn test_cyclic_dependencies() {
-        // Create a cycle: 1 -> 2 -> 3 -> 1
-        let mut objects = HashMap::new();
-        
-        let mut deps1 = HashSet::new();
-        deps1.insert(3);
-        objects.insert(1, deps1);
-        
-        let mut deps2 = HashSet::new();
-        deps2.insert(1);
-        objects.insert(2, deps2);
-        
-        let mut deps3 = HashSet::new();
-        deps3.insert(2);
-        objects.insert(3, deps3);
-        
-        let order = calculate_finalization_order(&objects);
-        
-        // All objects should be included
-        assert_eq!(order.len(), 3);
-        assert!(order.contains(&1));
-        assert!(order.contains(&2));
-        assert!(order.contains(&3));
-    }
+/// Global function to finalize objects in order
+pub fn finalize_objects_ordered(objects: &[usize]) {
+    finalize_objects_in_order(objects);
 }

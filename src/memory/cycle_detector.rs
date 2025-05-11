@@ -243,7 +243,14 @@ impl GarbageCollector {
         
         debug!(unmarked_count = unmarked_objects.len(), "Found unmarked objects");
         
-        // Process all unmarked objects
+        // Finalize all unmarked objects in the correct order, handling circular references
+        if !unmarked_objects.is_empty() {
+            info!(count = unmarked_objects.len(), "Finalizing unmarked objects in dependency order");
+            // Use the improved finalization order system
+            crate::memory::finalization_order::finalize_objects_ordered(&unmarked_objects);
+        }
+        
+        // Remove all unmarked objects from the GC's object map
         for &obj_id in &unmarked_objects {
             // Check for timeout
             if start_time.elapsed() > timeout {
@@ -251,9 +258,6 @@ impl GarbageCollector {
                 stats.sweep_time_ms = start_time.elapsed().as_millis();
                 return Err(format!("Sweep phase timed out after {}ms", stats.sweep_time_ms));
             }
-            
-            // Finalize the object (release resources, close files, etc.)
-            self.finalize_object(obj_id);
             
             // Remove the object from the GC's object map
             if let Ok(mut state) = self.inner.write() {
