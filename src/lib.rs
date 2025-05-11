@@ -73,6 +73,10 @@ pub use crate::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistr
 
 // Re-export interface registry visualization
 pub use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, ThreadSafeInterfaceRegistryVisualization};
+pub use crate::core::interface_registry_visualization_implementation;
+
+// Re-export interface registry extension checking
+pub use crate::core::interface_registry_extension_checking::InterfaceTypeRegistryExtensionChecking;
 
 // Re-export nested generic instantiation
 pub use crate::core::nested_generic_instantiation::{NestedGenericSubstitution, create_type_param_map, substitute_type_parameters};
