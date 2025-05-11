@@ -115,6 +115,7 @@ pub use self::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssert
 pub use self::interface_type_registry::{InterfaceTypeRegistry, InterfaceTypeRegistryAccess};
 // Interface registry extension checking for inheritance verification
 pub use self::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
+pub use self::interface_registry_extension_checking::{InterfaceTypeRegistryExtensionChecker, register_interface_type_registry_extension_checking};
 // Enhanced interface type registry with full runtime type information
 pub use self::interface_type_registry_enhanced::EnhancedTypeRegistry;
 // Enhanced type assertions with rich type information
