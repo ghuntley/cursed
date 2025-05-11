@@ -19,6 +19,7 @@ pub mod scenarios;
 pub mod language_comparison;
 pub mod expanded_language_comparison;
 pub mod interface_type_assertion_benchmark;
+pub mod interface_type_assertion_benchmark_enhanced;
 
 // Re-exports
 pub use harness::{Benchmark, BenchmarkSuite, BenchmarkConfig};
