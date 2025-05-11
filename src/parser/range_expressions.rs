@@ -8,6 +8,7 @@ use crate::error::Error;
 use crate::ast::expressions::StringLiteral;
 
 use super::parser::Parser;
+use super::range_expression_error_recovery_simple::RangeExpressionErrorRecoverySimple;
 
 impl<'a> Parser<'a> {
     /// Parse a range clause as an expression
@@ -19,11 +20,8 @@ impl<'a> Parser<'a> {
     ///
     /// A boxed Range expression
     pub(super) fn parse_range_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
-        // Call the existing parse_range_clause method
-        let range_clause = self.parse_range_clause()?;
-        
-        // Box it as a generic expression
-        Ok(Box::new(range_clause))
+        // Use our simplified recovery version for better error handling
+        self.parse_range_expression_with_recovery_simple()
     }
     
     /// Parse an ellipsis expression (for the '...' token)
