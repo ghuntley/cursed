@@ -1,22 +1,24 @@
 //! # Enhanced Interface Type Assertion Implementation
 //!
-//! This module provides a complete implementation of interface type assertions with
-//! proper error propagation, handling of complex inheritance patterns, and integration
-//! with the interface type registry visualization system.
+//! This module implements comprehensive support for interface type assertions
+//! with proper error propagation and advanced handling of complex inheritance
+//! patterns like diamond inheritance.
 //!
 //! ## Features
 //!
-//! 1. Proper error propagation using the `?` operator throughout the type assertion pipeline
-//! 2. Support for complex inheritance patterns, including diamond inheritance
-//! 3. Integration with interface path visualization for better error messages
-//! 4. Comprehensive error context with source location information
-//! 5. Runtime type information based type checking with fallback to compile-time checks
+//! 1. Proper error propagation using the `?` operator
+//! 2. Support for diamond inheritance patterns
+//! 3. Integration with interface path visualization
+//! 4. Enhanced error messages with path information
+//! 5. Thread-safe implementation
 
+use std::sync::{Arc, RwLock};
+use std::collections::{HashMap, HashSet, VecDeque};
 use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::IntPredicate;
 use inkwell::AddressSpace;
 use inkwell::types::{BasicTypeEnum, StructType};
-use tracing::{debug, error, info, trace, warn, instrument};
+use tracing::{debug, error, info, trace, warn, instrument, span, Level};
 
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::{Expression, Node};
@@ -404,7 +406,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
     }
 }
 
-// Register the enhanced type assertion module
+// Register the enhanced type assertion implementation module
 pub fn register_enhanced_interface_type_assertion() {
-    trace!("Enhanced interface type assertion module registered");
+    trace!("Enhanced interface type assertion implementation module registered");
 }

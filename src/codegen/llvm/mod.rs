@@ -120,6 +120,8 @@ pub use self::interface_registry_extension_checking::{InterfaceTypeRegistryExten
 pub use self::interface_type_registry_enhanced::EnhancedTypeRegistry;
 // Enhanced type assertions with rich type information
 pub use self::interface_type_assertion_enhanced::EnhancedTypeAssertion as EnhancedTypeAssertionWithRegistry;
+// Enhanced interface type assertions with complex inheritance pattern support
+pub use self::interface_type_assertion_enhanced_impl::EnhancedInterfaceTypeAssertion;
 // Improved type registry with better runtime type information
 pub use self::type_registry_improved::ImprovedTypeRegistry;
 // Enhanced nested interface type assertions with proper error propagation
@@ -219,6 +221,7 @@ mod interface_type_registry; // Registry for storing type information at runtime
 mod interface_type_registry_enhanced; // Enhanced registry for full runtime type information
 mod pointer_type_extension; // Extension trait for pointer element type access
 mod interface_type_assertion_enhanced; // Enhanced type assertions with rich error information
+mod interface_type_assertion_enhanced_impl; // Enhanced interface type assertion implementation for complex inheritance patterns
 mod type_registry_improved; // Improved type registry with better runtime type information
 mod improved_type_assertion_integration; // Improved interface type assertion integration with proper error propagation
 pub mod interface_type_assertion_error_propagation; // Enhanced error propagation for interface type assertions

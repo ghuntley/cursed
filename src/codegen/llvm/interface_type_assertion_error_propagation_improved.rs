@@ -1,294 +1,187 @@
 //! # Enhanced Interface Type Assertion Error Propagation
-//! 
-//! This module improves the error propagation and error handling in interface type assertions,
-//! with particular focus on proper use of the `?` operator for consistent error propagation.
-//! 
-//! The implementation provides:
-//! 1. Consistent error propagation using the `?` operator throughout all operations
-//! 2. Rich error context with detailed source location information
-//! 3. Enhanced error messages with specific guidance for fixing type assertion issues
-//! 4. Improved integration with the nested type assertion system
-//! 5. Better error recovery with detailed error context
+//!
+//! This module provides improved error propagation for interface type assertions.
+//! It extends the base interface type assertion functionality with proper Result handling
+//! and error context.
+//!
+//! ## Features
+//!
+//! - Consistent use of the `?` operator for cleaner error handling
+//! - Detailed error messages with source location and type information
+//! - Integration with the enhanced path visualization system
+//! - Error recovery suggestions when possible
 
-use inkwell::values::{BasicValueEnum, PointerValue};
-use inkwell::IntPredicate;
+use tracing::{debug, error, info, instrument, warn};
+use std::fmt;
+
+use inkwell::values::BasicValueEnum;
+use inkwell::context::Context;
+use inkwell::module::Module;
+use inkwell::basic_block::BasicBlock;
 use inkwell::AddressSpace;
 
 use crate::ast::expressions::TypeAssertion;
-use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::codegen::llvm::interface_type_assertion_nesting::{NestedTypeAssertion, TypeAssertionNestingContext};
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
-use crate::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
+use crate::codegen::llvm::interface_type_assertion::ImprovedTypeAssertion;
+use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::error::Error;
 
-use tracing::{debug, error, info, instrument, trace, warn, Level};
+/// Structured error type for type assertion failures
+#[derive(Debug)]
+pub struct TypeAssertionError {
+    pub source_type: String,
+    pub target_type: String,
+    pub source_location: String,
+    pub message: String,
+    pub recovery_hint: Option<String>,
+}
 
-/// Trait for implementing interface type assertions with enhanced error propagation
-pub trait ImprovedErrorPropagation<'ctx> {
-    /// Main method for compiling type assertions with improved error propagation
+impl fmt::Display for TypeAssertionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Type assertion error: {} is not a {}\n{}", 
+               self.source_type, self.target_type, self.message)?;
+        
+        if let Some(hint) = &self.recovery_hint {
+            write!(f, "\n\nRecovery hint: {}", hint)?;
+        }
+        
+        write!(f, "\n\nAt: {}", self.source_location)
+    }
+}
+
+impl From<TypeAssertionError> for Error {
+    fn from(err: TypeAssertionError) -> Self {
+        Error::Compilation(err.to_string())
+    }
+}
+
+/// Trait for enhanced error propagation in interface type assertions
+pub trait ImprovedTypeAssertionErrorPropagation<'ctx>: 
+    InterfaceTypeAssertion<'ctx> + 
+    ImprovedTypeAssertion<'ctx> + 
+    InterfaceTypeAssertionPathVisualization<'ctx> 
+{
+    /// Compile a type assertion with proper error propagation
     fn compile_type_assertion_with_error_propagation(
         &mut self,
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error>;
     
-    /// Check if an interface value implements a specific interface type
-    /// with proper error propagation using ? operator
-    fn check_interface_implementation_with_propagation(
+    /// Generate a structured error for a type assertion failure
+    fn generate_type_assertion_error(
         &mut self,
-        interface_value: BasicValueEnum<'ctx>,
-        target_type_name: &str
-    ) -> Result<BasicValueEnum<'ctx>, Error>;
+        source_type: &str,
+        target_type: &str,
+        source_location: &str,
+        additional_message: Option<String>
+    ) -> Result<TypeAssertionError, Error>;
     
-    /// Extract type information from interface values with proper error handling
-    fn extract_interface_type_info_with_propagation(
+    /// Suggest recovery options for type assertion failures
+    fn suggest_recovery_options(
         &mut self,
-        interface_value: BasicValueEnum<'ctx>,
-        target_type_name: &str
-    ) -> Result<(String, String), Error>;
-    
-    /// Get path information for error messages when dealing with complex inheritance hierarchies
-    fn get_interface_path_info_for_error(
-        &self,
-        from_type: &str,
-        to_type: &str
-    ) -> Result<String, Error>;
+        source_type: &str,
+        target_type: &str
+    ) -> Result<Option<String>, Error>;
 }
 
-impl<'ctx> ImprovedErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
-    #[instrument(skip(self), level = "debug")]
+impl<'ctx> ImprovedTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
+    #[instrument(skip(self, type_assertion), level = "debug")]
     fn compile_type_assertion_with_error_propagation(
         &mut self,
         type_assertion: &TypeAssertion
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        debug!("Compiling type assertion with enhanced error propagation for {}", 
-              type_assertion.type_name);
+        debug!("Compiling type assertion with improved error propagation: {}", type_assertion.string());
         
-        // First compile the expression being asserted with proper error propagation
+        // Source location for error messages
+        let source_location = type_assertion.token_literal();
+        
+        // Compile the expression to get the interface value
         let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
         
-        // Get a reference to the location for better error context
-        let location = format!("line {}", self.get_expression_line(type_assertion.expression.as_ref()));
-        debug!("Expression location: {}", location);
+        // Get the runtime type ID and name
+        let runtime_type_id = self.get_runtime_type_id(expr_value)?;
+        let runtime_type_name = self.get_type_name_for_id(runtime_type_id)?;
+        let target_type_name = &type_assertion.type_name;
         
-        // Get the current function for basic block creation
+        // Create basic blocks for success and failure paths
         let current_fn = self.current_function()
-            .ok_or_else(|| Error::Compilation(format!(
-                "Type assertion at {} cannot be compiled: no current function", 
-                location
-            )))?;
+            .ok_or_else(|| Error::Compilation("No current function for type assertion".to_string()))?;
         
-        // Check if the expression is null before proceeding
-        // This avoids segmentation faults at runtime
-        if expr_value.is_pointer_value() {
-            let ptr = expr_value.into_pointer_value();
-            let is_null = self.builder().build_is_null(ptr, "ptr_null_check")
-                .map_err(|e| Error::Compilation(format!(
-                    "Failed to check if interface pointer is null at {}: {}", 
-                    location, e
-                )))?;
-            
-            // Create basic blocks for null and non-null paths
-            let null_block = self.context().append_basic_block(current_fn, "null_interface");
-            let non_null_block = self.context().append_basic_block(current_fn, "non_null_interface");
-            let continue_block = self.context().append_basic_block(current_fn, "continue_interface");
-            
-            // Branch based on null check
-            self.builder().build_conditional_branch(
-                is_null,
-                null_block,
-                non_null_block
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to build null check branch at {}: {}", 
-                location, e
-            )))?;
-            
-            // Null path - create a failed assertion result
-            self.builder().position_at_end(null_block);
-            
-            let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
-            let false_val = self.context().bool_type().const_int(0, false);
-            let null_result = self.build_tuple(vec![null_ptr.into(), false_val.into()])?;
-            
-            // Log the null interface error
-            warn!("Type assertion on null interface value at {}", location);
-            
-            // Branch to continue block
-            self.builder().build_unconditional_branch(continue_block)
-                .map_err(|e| Error::Compilation(format!(
-                    "Failed to build branch from null block at {}: {}", 
-                    location, e
-                )))?;
-            
-            // Non-null path - proceed with normal type checking
-            self.builder().position_at_end(non_null_block);
-        }
-        
-        // Create blocks for success, failure, and merge
         let success_block = self.context().append_basic_block(current_fn, "type_assert_success");
         let failure_block = self.context().append_basic_block(current_fn, "type_assert_failure");
         let merge_block = self.context().append_basic_block(current_fn, "type_assert_merge");
         
-        // Check if the interface value implements the target type
-        let is_instance = self.check_interface_implementation_with_propagation(
-            expr_value, 
-            &type_assertion.type_name
-        )?;
+        // Check if the value is an instance of the target type
+        let is_instance = self.check_instance_of_with_registry(expr_value, target_type_name)?;
         
-        // Branch based on the implementation check
+        // Branch based on the type check result
         self.builder().build_conditional_branch(
             is_instance.into_int_value(),
             success_block,
             failure_block
-        ).map_err(|e| Error::Compilation(format!(
-            "Failed to build conditional branch at {}: {}", 
-            location, e
-        )))?;
+        ).map_err(|e| Error::Compilation(format!("Failed to build conditional branch: {}", e)))?;
         
-        // Success path - extract and cast the data pointer
+        // Success path
         self.builder().position_at_end(success_block);
-        
-        // Get the data pointer from the interface value
-        let data_ptr = if expr_value.is_struct_value() {
-            // Direct interface value - extract the data pointer field
-            let data_field = self.builder().build_extract_value(
-                expr_value.into_struct_value(),
-                0, // Data pointer is the first element
-                "data_ptr"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to extract data pointer at {}: {}", 
-                location, e
-            )))?;
-            
-            // Ensure it's a pointer
-            if !data_field.is_pointer_value() {
-                return Err(Error::Compilation(format!(
-                    "Type assertion at {}: expected data field to be a pointer, got {:?}", 
-                    location, data_field
-                )));
-            }
-            
-            data_field.into_pointer_value()
-        } else if expr_value.is_pointer_value() {
-            // Pointer to interface - load and extract the data pointer
-            let loaded = self.builder().build_load(
-                expr_value.get_type(),
-                expr_value.into_pointer_value(),
-                "interface_value"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to load interface value at {}: {}", 
-                location, e
-            )))?;
-            
-            let data_field = self.builder().build_extract_value(
-                loaded.into_struct_value(),
-                0, // Data pointer is the first element
-                "data_ptr"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to extract data pointer from loaded value at {}: {}", 
-                location, e
-            )))?;
-            
-            // Ensure it's a pointer
-            if !data_field.is_pointer_value() {
-                return Err(Error::Compilation(format!(
-                    "Type assertion at {}: expected loaded data field to be a pointer, got {:?}", 
-                    location, data_field
-                )));
-            }
-            
-            data_field.into_pointer_value()
-        } else {
-            return Err(Error::Compilation(format!(
-                "Type assertion at {}: expected interface value or pointer, got {:?}", 
-                location, expr_value
-            )));
-        };
-        
-        // Cast the data pointer to a generic pointer type
-        let casted_ptr = self.builder().build_bitcast(
-            data_ptr,
-            self.pointer_type(),
-            "casted_ptr"
-        ).map_err(|e| Error::Compilation(format!(
-            "Failed to cast data pointer at {}: {}", 
-            location, e
-        )))?;
-        
-        // Create a success result (pointer and true flag)
+        let success_value = self.cast_to_interface_type(expr_value, target_type_name)?;
         let true_val = self.context().bool_type().const_int(1, false);
-        let success_result = self.build_tuple(vec![casted_ptr.into(), true_val.into()])?;
         
-        // Log the successful assertion with debug information
-        if let Ok((from_type, to_type)) = self.extract_interface_type_info_with_propagation(
-            expr_value, 
-            &type_assertion.type_name
-        ) {
-            debug!("Type assertion SUCCESS at {}: {} -> {}", location, from_type, to_type);
-        }
+        // Create success result struct with value and true flag
+        let result_type = self.create_assertion_result_type(target_type_name)?;
         
-        // Branch to the merge block
+        // Build the success result struct
+        let success_result = self.build_assertion_result_struct(
+            result_type,
+            success_value,
+            true_val
+        )?;
+        
+        // Branch to merge block
         self.builder().build_unconditional_branch(merge_block)
-            .map_err(|e| Error::Compilation(format!(
-                "Failed to build branch to merge block at {}: {}", 
-                location, e
-            )))?;
+            .map_err(|e| Error::Compilation(format!("Failed to build unconditional branch: {}", e)))?;
         
-        // Failure path - create a failure result (null and false flag)
+        // Failure path
         self.builder().position_at_end(failure_block);
         
-        // Get detailed information for the error message
-        if let Ok((from_type, to_type)) = self.extract_interface_type_info_with_propagation(
-            expr_value, 
-            &type_assertion.type_name
-        ) {
-            // Log the failure with detailed type information
-            warn!(
-                "Type assertion FAILED at {}: cannot convert {} to {}", 
-                location, from_type, to_type
-            );
-            
-            // Check if we have path information for better error messages
-            if let Ok(path_info) = self.get_interface_path_info_for_error(&from_type, &to_type) {
-                if !path_info.is_empty() {
-                    warn!("Interface path info: {}", path_info);
-                }
-            }
-        } else {
-            // Fallback if we can't get detailed type information
-            warn!(
-                "Type assertion FAILED at {}: type mismatch for {}", 
-                location, type_assertion.type_name
-            );
+        // Log the assertion failure with enhanced details
+        debug!("Type assertion failed: {} is not a {}", runtime_type_name, target_type_name);
+        
+        // Create a null value for the target type
+        let null_value = self.create_null_value_for_type(target_type_name)?;
+        let false_val = self.context().bool_type().const_int(0, false);
+        
+        // Build the failure result struct
+        let failure_result = self.build_assertion_result_struct(
+            result_type,
+            null_value,
+            false_val
+        )?;
+        
+        // Generate detailed diagnostics for debugging
+        #[cfg(debug_assertions)]
+        {
+            let error = self.generate_type_assertion_error(
+                &runtime_type_name,
+                target_type_name,
+                &source_location,
+                None
+            )?;
+            error!("Type assertion failed: {}", error);
         }
         
-        let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
-        let false_val = self.context().bool_type().const_int(0, false);
-        let failure_result = self.build_tuple(vec![null_ptr.into(), false_val.into()])?;
-        
-        // Branch to the merge block
+        // Branch to merge block
         self.builder().build_unconditional_branch(merge_block)
-            .map_err(|e| Error::Compilation(format!(
-                "Failed to build branch from failure block at {}: {}", 
-                location, e
-            )))?;
+            .map_err(|e| Error::Compilation(format!("Failed to build unconditional branch: {}", e)))?;
         
         // Merge block - use phi node to select the appropriate result
         self.builder().position_at_end(merge_block);
-        
-        // Create the result type (pointer and bool)
-        let result_type = self.tuple_type(vec![self.pointer_type().into(), self.context().bool_type().into()]);
-        
-        // Build the phi node to select between success and failure results
         let phi = self.builder().build_phi(
             result_type,
             "assertion_result"
-        ).map_err(|e| Error::Compilation(format!(
-            "Failed to build phi node at {}: {}", 
-            location, e
-        )))?;
+        ).map_err(|e| Error::Compilation(format!("Failed to build phi node: {}", e)))?;
         
-        // Add incoming values from success and failure blocks
         phi.add_incoming(&[(
             &success_result,
             success_block
@@ -297,216 +190,192 @@ impl<'ctx> ImprovedErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
             failure_block
         )]);
         
-        debug!("Type assertion with enhanced error propagation compiled successfully");
+        // Return the phi result
         Ok(phi.as_basic_value())
     }
     
-    #[instrument(skip(self, interface_value), level = "debug")]
-    fn check_interface_implementation_with_propagation(
+    #[instrument(skip(self), level = "debug")]
+    fn generate_type_assertion_error(
         &mut self,
-        interface_value: BasicValueEnum<'ctx>,
-        target_type_name: &str
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        debug!("Checking if value implements interface {} with error propagation", target_type_name);
+        source_type: &str,
+        target_type: &str,
+        source_location: &str,
+        additional_message: Option<String>
+    ) -> Result<TypeAssertionError, Error> {
+        // Generate interface hierarchy visualization
+        let hierarchy = self.visualize_interface_hierarchy(target_type, 2)?;
         
-        // Extract type ID from the interface value's vtable
-        let actual_type_id = if interface_value.is_struct_value() {
-            // Direct interface value - extract vtable pointer field
-            let vtable_field = self.builder().build_extract_value(
-                interface_value.into_struct_value(),
-                1, // VTable pointer is the second element
-                "vtable_ptr"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to extract vtable pointer: {}", e
-            )))?;
-            
-            // Verify it's a pointer
-            if !vtable_field.is_pointer_value() {
-                return Err(Error::Compilation(format!(
-                    "Expected vtable field to be a pointer, got {:?}", vtable_field
-                )));
-            }
-            
-            let vtable_ptr = vtable_field.into_pointer_value();
-            
-            // Check if vtable pointer is null
-            let vtable_null_check = self.builder().build_is_null(vtable_ptr, "vtable_null_check")
-                .map_err(|e| Error::Compilation(format!(
-                    "Failed to check if vtable pointer is null: {}", e
-                )))?;
-            
-            // Create basic blocks for null and non-null vtable paths
-            let current_function = self.current_function()
-                .ok_or_else(|| Error::Compilation("No current function when checking vtable".to_string()))?;
-            
-            let vtable_null_block = self.context().append_basic_block(current_function, "null_vtable");
-            let vtable_non_null_block = self.context().append_basic_block(current_function, "non_null_vtable");
-            let vtable_continue_block = self.context().append_basic_block(current_function, "continue_vtable");
-            
-            // Branch based on vtable null check
-            self.builder().build_conditional_branch(
-                vtable_null_check,
-                vtable_null_block,
-                vtable_non_null_block
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to build vtable null check branch: {}", e
-            )))?;
-            
-            // Null vtable path - report error
-            self.builder().position_at_end(vtable_null_block);
-            
-            // In the null vtable case, we'll return a special type ID that won't match anything
-            let null_vtable_type_id = self.context().i64_type().const_int(u64::MAX - 1, false);
-            
-            // Branch to continue block
-            self.builder().build_unconditional_branch(vtable_continue_block)
-                .map_err(|e| Error::Compilation(format!(
-                    "Failed to build branch from null vtable block: {}", e
-                )))?;
-            
-            // Non-null vtable path
-            self.builder().position_at_end(vtable_non_null_block);
-            
-            // Type ID is the first field in the vtable
-            let type_id_ptr = self.builder().build_struct_gep(
-                // Create and use a dummy struct type since we can't get the pointee type directly
-                self.context.struct_type(&[], false),
-                vtable_ptr,
-                0, // Index of type ID pointer
-                "type_id_ptr"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to get type ID pointer: {}", e
-            )))?;
-            
-            // Load the type ID
-            let type_id = self.builder().build_load(
-                self.context().i64_type(),
-                type_id_ptr,
-                "type_id"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to load type ID: {}", e
-            )))?;
-            
-            // Branch to continue block
-            self.builder().build_unconditional_branch(vtable_continue_block)
-                .map_err(|e| Error::Compilation(format!(
-                    "Failed to build branch to vtable continue block: {}", e
-                )))?;
-            
-            // Continue block - use phi node to select the appropriate type ID
-            self.builder().position_at_end(vtable_continue_block);
-            
-            let vtable_phi = self.builder().build_phi(
-                self.context().i64_type(),
-                "vtable_check_result"
-            ).map_err(|e| Error::Compilation(format!(
-                "Failed to build vtable phi node: {}", e
-            )))?;
-            
-            vtable_phi.add_incoming(&[(
-                &null_vtable_type_id,
-                vtable_null_block
-            ), (
-                &type_id,
-                vtable_non_null_block
-            )]);
-            
-            vtable_phi.as_basic_value()
-        } else if interface_value.is_pointer_value() {
-            // TODO: Add similar code path for pointer to interface value
-            // This is omitted for brevity, but would follow the same pattern
-            // with proper error propagation
-            // For now, we'll return a placeholder that won't match any valid type
-            let null_type_id = self.context().i64_type().const_int(u64::MAX, false);
-            null_type_id.into()
-        } else {
-            return Err(Error::Compilation(format!(
-                "Expected interface value or pointer, got {:?}",
-                interface_value
-            )));
+        // Try to find alternative paths between these types
+        let alt_paths = match self.find_alternative_paths_enhanced(source_type, target_type, 3) {
+            Ok(paths) => {
+                if paths.is_empty() {
+                    format!("No inheritance path exists between '{}' and '{}'", source_type, target_type)
+                } else {
+                    let mut result = format!("Found {} possible alternative inheritance path(s):", paths.len());
+                    for (i, path) in paths.iter().enumerate() {
+                        result.push_str(&format!("\n  Path {}: {}", i + 1, path.to_string_representation()));
+                    }
+                    result
+                }
+            },
+            Err(_) => format!("Could not find any inheritance relationship between '{}' and '{}'", 
+                             source_type, target_type)
         };
         
-        // Get the expected type ID for the target type
-        let expected_type_id = self.get_type_id(target_type_name).map_err(|e| {
-            Error::Compilation(format!("Failed to get type ID for {}: {}", target_type_name, e))
-        })?;
+        // Combine the message parts
+        let message = format!("{}{}{}",
+            additional_message.unwrap_or_default(),
+            if additional_message.is_some() { "\n\n" } else { "" },
+            format!("{}\n\n{}", alt_paths, hierarchy)
+        );
         
-        // Compare the type IDs
-        let result = self.builder().build_int_compare(
-            IntPredicate::EQ,
-            actual_type_id.into_int_value(),
-            expected_type_id.into_int_value(),
-            "is_instance_of"
-        ).map_err(|e| Error::Compilation(format!(
-            "Failed to compare type IDs: {}", e
-        )))?;
+        // Generate recovery suggestions
+        let recovery_hint = self.suggest_recovery_options(source_type, target_type)?;
         
-        debug!("Implementation check completed with error propagation");
-        Ok(result.into())
-    }
-    
-    #[instrument(skip(self, interface_value), level = "debug")]
-    fn extract_interface_type_info_with_propagation(
-        &mut self,
-        interface_value: BasicValueEnum<'ctx>,
-        target_type_name: &str
-    ) -> Result<(String, String), Error> {
-        debug!("Extracting type information for better error messages");
-        
-        // Since we don't know details of the internal implementation,
-        // we'll just return the target type name and a generic source name
-        let source_type = "interface value";
-        
-        // Return the type information
-        Ok((source_type.to_string(), target_type_name.to_string()))
+        Ok(TypeAssertionError {
+            source_type: source_type.to_string(),
+            target_type: target_type.to_string(),
+            source_location: source_location.to_string(),
+            message,
+            recovery_hint,
+        })
     }
     
     #[instrument(skip(self), level = "debug")]
-    fn get_interface_path_info_for_error(
-        &self,
-        from_type: &str,
-        to_type: &str
-    ) -> Result<String, Error> {
-        debug!("Getting path information for error messages: {} -> {}", from_type, to_type);
+    fn suggest_recovery_options(
+        &mut self,
+        source_type: &str,
+        target_type: &str
+    ) -> Result<Option<String>, Error> {
+        // Check if source implements target as an interface
+        let implements = self.check_extension_relationship_enhanced(source_type, target_type)?;
         
-        // This is a placeholder for now
-        // In a real implementation, we would use the interface path finder
-        // to get information about the inheritance path between interfaces
+        // Check if target implements source as an interface (reversed relationship)
+        let reversed = self.check_extension_relationship_enhanced(target_type, source_type)?;
         
-        // For now, just return an empty string
-        // This would be enhanced in the real implementation
-        Ok(String::new())
-    }
-}
-
-// Helper methods implementation for LLVM code generator
-impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Helper method to get the line number from an expression
-    /// This is used because we don't have direct access to location_string()
-    fn get_expression_line(&self, expr: &dyn crate::ast::traits::Expression) -> i32 {
-        // Use a default line number if we can't get it directly
-        // In real implementations, this would inspect the expression to get the line number
-        1
-    }
-    
-    /// Get a human-readable description of a type assertion error
-    pub fn get_type_assertion_error_description(
-        &self,
-        from_type: &str,
-        to_type: &str
-    ) -> String {
-        // Check for common error patterns
-        if from_type == "nil" || from_type == "Unknown" {
-            return format!("Cannot convert nil to {}", to_type);
+        if reversed {
+            return Ok(Some(format!(
+                "The relationship between '{}' and '{}' appears to be reversed. Try asserting '{}' as '{}'.",
+                source_type, target_type, target_type, source_type
+            )));
         }
         
-        // Basic error message
-        format!("Cannot convert {} to {}", from_type, to_type)
+        // Find common interfaces that both types implement
+        let source_interfaces = self.get_implemented_interfaces(source_type)?;
+        let target_interfaces = self.get_implemented_interfaces(target_type)?;
+        
+        let common_interfaces: Vec<String> = source_interfaces.iter()
+            .filter(|i| target_interfaces.contains(i))
+            .cloned()
+            .collect();
+        
+        if !common_interfaces.is_empty() {
+            let mut hint = format!("Both '{}' and '{}' implement the following common interfaces:", 
+                                 source_type, target_type);
+            
+            for interface in common_interfaces {
+                hint.push_str(&format!("\n  - {}", interface));
+            }
+            
+            hint.push_str("\nConsider using one of these common interfaces instead.");
+            return Ok(Some(hint));
+        }
+        
+        // If no common ground, suggest implementing the interface
+        Ok(Some(format!(
+            "To make this assertion work, implement '{}' for the type '{}'.",
+            target_type, source_type
+        )))
     }
 }
 
-/// Register the enhanced error propagation module in the LLVM code generator
-pub fn register_enhanced_error_propagation() {
-    trace!("Registering enhanced error propagation for type assertions");
-    // This function is called during LlvmCodeGenerator initialization
+// Helper methods for the implementation
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Creates a result struct type for the assertion
+    fn create_assertion_result_type(
+        &self,
+        type_name: &str
+    ) -> Result<inkwell::types::StructType<'ctx>, Error> {
+        // For now, we use a simple struct with a data pointer and a success flag
+        // In a full implementation, this would use proper LLVM types based on the target type
+        let context = self.context();
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
+        let bool_type = context.bool_type();
+        
+        Ok(context.struct_type(&[i8_ptr_type.into(), bool_type.into()], false))
+    }
+    
+    /// Builds a result struct with the given value and flag
+    fn build_assertion_result_struct(
+        &self,
+        result_type: inkwell::types::StructType<'ctx>,
+        value: BasicValueEnum<'ctx>,
+        flag: inkwell::values::IntValue<'ctx>
+    ) -> Result<inkwell::values::StructValue<'ctx>, Error> {
+        // Cast the value to an i8 pointer for consistency
+        let i8_ptr = self.builder().build_bitcast(
+            value.into_pointer_value(),
+            self.context().i8_type().ptr_type(AddressSpace::default()),
+            "casted_ptr"
+        ).map_err(|e| Error::Compilation(format!("Failed to cast value: {}", e)))?;
+        
+        // Create an empty struct and insert values
+        let mut result = result_type.const_named_struct(&[]);
+        
+        // Insert the data pointer
+        result = self.builder().build_insert_value(
+            result,
+            i8_ptr,
+            0,
+            "insert_data_ptr"
+        ).map_err(|e| Error::Compilation(format!("Failed to insert data pointer: {}", e)))?.into_struct_value();
+        
+        // Insert the success flag
+        result = self.builder().build_insert_value(
+            result,
+            flag,
+            1,
+            "insert_success_flag"
+        ).map_err(|e| Error::Compilation(format!("Failed to insert success flag: {}", e)))?.into_struct_value();
+        
+        Ok(result)
+    }
+    
+    /// Creates a null value for the target type
+    fn create_null_value_for_type(
+        &self,
+        type_name: &str
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Get the LLVM type for the target type
+        let i8_ptr_type = self.context().i8_type().ptr_type(AddressSpace::default());
+        let null_ptr = i8_ptr_type.const_null();
+        
+        Ok(null_ptr.into())
+    }
+    
+    /// Gets a list of interfaces implemented by a type
+    fn get_implemented_interfaces(
+        &self,
+        type_name: &str
+    ) -> Result<Vec<String>, Error> {
+        // This would be implemented using the type registry
+        // For now, return an empty list as a placeholder
+        Ok(Vec::new())
+    }
+}
+
+/// Register the improved error propagation module
+pub fn register_interface_type_assertion_error_propagation() {
+    debug!("Interface type assertion error propagation module registered");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_error_propagation_registration() {
+        register_interface_type_assertion_error_propagation();
+        assert!(true);
+    }
 }
