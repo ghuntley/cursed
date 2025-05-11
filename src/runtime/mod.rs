@@ -5,8 +5,10 @@
 //! garbage collection, and FFI.
 
 pub mod channel;
+pub mod channel_gc;
 pub mod container;
 
 // Re-export the public API
 pub use channel::*;
+pub use channel_gc::*;
 pub use container::*;

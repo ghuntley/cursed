@@ -58,6 +58,15 @@ pub use concurrent_gc::ConcurrentGarbageCollector;
 // For testing (re-exported)
 pub use test_environment::{reset_test_environment, get_test_gc};
 
+/// Get a reference to the global garbage collector
+pub fn get_global_gc() -> std::sync::Arc<GarbageCollector> {
+    lazy_static::lazy_static! {
+        static ref GLOBAL_GC: std::sync::Arc<GarbageCollector> = std::sync::Arc::new(GarbageCollector::new());
+    }
+    
+    GLOBAL_GC.clone()
+}
+
 /// Object tags for the garbage collector
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tag {
@@ -83,6 +92,14 @@ pub enum Tag {
     Map,
     /// Null object
     Null,
+    /// Channel object
+    Channel,
+    /// Integer object
+    Integer,
+    /// Hash table object
+    HashTable,
+    /// Error object
+    Error,
 }
 
 /// Trait for objects that can be traced by the garbage collector
@@ -113,6 +130,11 @@ pub trait Visitor {
     
     /// Visit an object by its memory address
     fn visit_ptr(&mut self, addr: usize, tag: Tag) {
+        // Default implementation does nothing
+    }
+    
+    /// Visit an object by reference
+    fn visit_object(&mut self, obj: &Object) {
         // Default implementation does nothing
     }
 }
@@ -355,6 +377,9 @@ impl<T: Traceable + 'static> TraceableAsAny for T {
 
 // Import std::sync::Arc for GC
 use std::sync::Arc;
+
+// Import Object type
+use crate::object::Object;
 
 #[cfg(test)]
 mod tests {
