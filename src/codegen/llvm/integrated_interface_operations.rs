@@ -13,6 +13,7 @@
 
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
+#[cfg(feature = "enhanced_dynamic_dispatch")]
 use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
 use crate::codegen::llvm::type_assertion_implementation::IntegratedTypeAssertion;
@@ -68,15 +69,16 @@ impl<'ctx> IntegratedInterfaceOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         debug!("Performing integrated interface method call: {}::{}", interface_name, method_name);
         
         // First check if the enhanced dynamic dispatch is available
-        if cfg!(feature = "enhanced_dynamic_dispatch") {
+        #[cfg(feature = "enhanced_dynamic_dispatch")]
+        {
             // Use the enhanced implementation
             debug!("Using enhanced dynamic dispatch");
-            self.call_interface_method_enhanced(interface_ptr, interface_name, method_name, args)
-        } else {
-            // Fall back to the standard implementation
-            debug!("Using standard dynamic dispatch");
-            self.call_interface_method(interface_ptr, interface_name, method_name, args)
+            return self.call_interface_method_enhanced(interface_ptr, interface_name, method_name, args);
         }
+        
+        // Fall back to the standard implementation
+        debug!("Using standard dynamic dispatch");
+        self.call_interface_method(interface_ptr, interface_name, method_name, args)
     }
     
     #[instrument(skip(self), level = "debug")]

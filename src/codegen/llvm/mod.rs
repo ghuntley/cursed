@@ -58,6 +58,7 @@ pub use self::binary_compiler::DebugInfoLevel;
 // Interface implementation and dynamic dispatch
 pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 pub use self::interface_implementation::InterfaceImplementation;
+#[cfg(feature = "enhanced_dynamic_dispatch")]
 pub use self::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 pub use self::optimized_dynamic_dispatch::{OptimizedDynamicDispatch, OptimizedDynamicDispatchExtensions};
 pub use self::integrated_interface_operations::IntegratedInterfaceOperations;
@@ -207,6 +208,7 @@ mod interface_type_assertion_errors; // Enhanced error handling for interface ty
 mod type_assertion_implementation; // Integrated type assertion implementation
 mod enhanced_type_assertion; // Optimized implementation of interface type assertions
 mod type_assertion_integration; // Integration of type assertions with main compiler pipeline
+#[cfg(feature = "enhanced_dynamic_dispatch")]
 mod enhanced_dynamic_dispatch; // Enhanced dynamic dispatch with improved error handling
 mod optimized_dynamic_dispatch; // Optimized dynamic dispatch with inline caching and speculative dispatch
 mod integrated_interface_operations; // Unified interface operations system
