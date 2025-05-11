@@ -40,9 +40,7 @@ pub use declarations::GenericConstraint;
 pub use control_flow::*;
 
 // Re-export declarations module types but exclude fields to avoid conflicts
-pub use declarations::{Function, StructDeclaration, InterfaceDeclaration, ConstantDeclaration, 
-                      VariableDeclaration, TypeDeclaration, GenericParameter, ImportDeclaration, 
-                      FunctionStatement};
+pub use declarations::{FunctionStatement, SquadStatement, CollabStatement, ParameterStatement};
 // Only import Parameter and TypeParameter once
 pub use declarations::Parameter;
 pub use declarations::TypeParameter;
