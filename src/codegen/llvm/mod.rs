@@ -131,6 +131,8 @@ pub use self::interface_type_assertion_path_visualization_enhanced::EnhancedInte
 pub use self::interface_path_finder_simple::*;
 // Enhanced path finding algorithms for interface inheritance relationships with visualization
 pub use self::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
+// Interface type assertion with registry integration for enhanced error diagnostics
+pub use self::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
 // Range clause compilation traits
 pub use self::range_clause_fixed::RangeClauseCompilationEnhanced as RangeClauseCompilation;
 pub use self::range_clause_error_recovery::{RangeClauseErrorRecovery, RangeClauseCompilationWithRecovery};
@@ -223,6 +225,7 @@ pub mod interface_type_assertion_path_visualization_enhanced; // Enhanced visual
 pub mod interface_registry_visualization_integration; // Integration of interface registry visualization with code generator
 pub mod interface_path_finder_simple; // Simple path finding algorithms for interface inheritance relationships
 pub mod interface_path_finder_enhanced; // Enhanced path finding algorithms for interface inheritance relationships with visualization
+pub mod interface_type_assertion_with_registry; // Interface type assertion with registry integration
 pub mod interface_registry_extension_checking; // Extension relationship checking for interface inheritance verification
 // Module already declared above
 
