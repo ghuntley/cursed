@@ -186,4 +186,107 @@ impl ThreadSafeInterfaceCache {
     }
 }
 
-// Tests temporarily removed for simplicity
+#[cfg(test)]
+mod tests {
+    #[path = "../../tests/common.rs"]
+    pub mod test_common;
+    use self::test_common as common;
+    use super::*;
+    
+    #[test]
+    fn test_cache_basic_operations() {
+        let mut cache = InterfaceImplementationCache::new();
+        
+        // First lookup should be a miss
+        assert_eq!(cache.lookup(&Type::Normie, "Numeric"), None);
+        
+        // Store a result
+        cache.store(&Type::Normie, "Numeric", true);
+        
+        // Second lookup should be a hit
+        assert_eq!(cache.lookup(&Type::Normie, "Numeric"), Some(true));
+        
+        // Verify stats
+        let (size, hits, misses) = cache.stats();
+        assert_eq!(size, 1);
+        assert_eq!(hits, 1);
+        assert_eq!(misses, 1);
+        
+        // Clear the cache
+        cache.clear();
+        
+        // Stats should be reset
+        let (size, hits, misses) = cache.stats();
+        assert_eq!(size, 0);
+        assert_eq!(hits, 0);
+        assert_eq!(misses, 0);
+    }
+    
+    #[test]
+    fn test_thread_safe_cache() {
+        let cache = ThreadSafeInterfaceCache::new();
+        
+        // First lookup should be a miss
+        assert_eq!(cache.lookup(&Type::Normie, "Numeric"), None);
+        
+        // Store a result
+        cache.store(&Type::Normie, "Numeric", true);
+        
+        // Second lookup should be a hit
+        assert_eq!(cache.lookup(&Type::Normie, "Numeric"), Some(true));
+        
+        // Verify stats
+        let (size, hits, misses) = cache.stats();
+        assert_eq!(size, 1);
+        assert_eq!(hits, 1);
+        assert_eq!(misses, 1);
+        
+        // Test hit rate
+        assert_eq!(cache.hit_rate(), 0.5);
+    }
+    
+    #[test]
+    fn test_cache_with_tracing() {
+        // Initialize tracing infrastructure
+        common::tracing::setup();
+        
+        let mut cache = InterfaceImplementationCache::new();
+        
+        // Operations with tracing enabled
+        assert_eq!(cache.lookup(&Type::Normie, "Numeric"), None);
+        cache.store(&Type::Normie, "Numeric", true);
+        assert_eq!(cache.lookup(&Type::Normie, "Numeric"), Some(true));
+        
+        // Track timing using the Timer utility
+        let _timer = common::timing::Timer::new("cache_operations");
+        
+        // Do some more operations while timing
+        cache.store(&Type::Tea, "Stringer", false);
+        cache.lookup(&Type::Tea, "Stringer");
+        
+        // Timer automatically logs completion on drop
+        
+        // Clear should log information
+        cache.clear();
+    }
+    
+    #[test]
+    fn test_cache_capacity() {
+        let mut cache = InterfaceImplementationCache::with_capacity(2);
+        
+        // Store two results
+        cache.store(&Type::Normie, "Numeric", true);
+        cache.store(&Type::Tea, "Stringer", true);
+        
+        // Verify size
+        let (size, _, _) = cache.stats();
+        assert_eq!(size, 2);
+        
+        // Try to store a third result (should be ignored due to capacity)
+        cache.store(&Type::Lit, "Boolean", true);
+        
+        // Size should still be 2
+        let (size, _, _) = cache.stats();
+        assert_eq!(size, 2);
+    }
+}

@@ -11,10 +11,12 @@ use std::thread;
 #[path = "common.rs"]
 mod common;
 
+use crate::common;
+
 #[test]
 fn test_cached_registry_performance() {
     // Set up tracing for the test
-    common::tracing::setup();
+    init_tracing!();
     
     // Create a registry with defaults
     let registry = InterfaceRegistry::new_with_defaults();
@@ -72,7 +74,7 @@ fn test_cached_registry_performance() {
 #[test]
 fn test_thread_safe_cached_registry() {
     // Set up tracing for the test
-    common::tracing::setup();
+    init_tracing!();
     
     // Create a thread-safe cached registry
     let registry = InterfaceRegistry::new_with_defaults();
@@ -139,7 +141,7 @@ fn test_thread_safe_cached_registry() {
 #[test]
 fn test_complex_type_caching() {
     // Set up tracing for the test
-    common::tracing::setup();
+    init_tracing!();
     
     // Create registries
     let registry = InterfaceRegistry::new_with_defaults();
@@ -179,7 +181,7 @@ fn test_complex_type_caching() {
 #[test]
 fn test_interface_registry_cached_implementation() {
     // Set up tracing for the test
-    common::tracing::setup();
+    init_tracing!();
     
     // Create a regular registry
     let mut registry = InterfaceRegistry::new_with_defaults();
