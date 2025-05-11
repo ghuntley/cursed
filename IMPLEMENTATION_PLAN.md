@@ -41,9 +41,9 @@
 
 ## Low Priority Issues
 
-10. Fix LLVM codegen issues
-    - Correct FloatTypeKind references in llvm/concurrency.rs
-    - Update LLVM code generation for interface type assertions
+10. ✅ Fix LLVM codegen issues
+- ✅ Correct FloatTypeKind references in llvm/concurrency.rs
+- ✅ Update LLVM code generation for interface type assertions
 
 11. Fix ambiguous trait re-exports
     - Resolve ambiguous `fields` exports in ast/mod.rs
