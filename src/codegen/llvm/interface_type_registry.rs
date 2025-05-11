@@ -84,6 +84,58 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
             .collect()
     }
     
+    /// Synchronize this registry with the extension registry
+    /// 
+    /// This method ensures that the type registry and extension registry
+    /// are synchronized, making sure all types and extension relationships
+    /// are properly reflected in both registries.
+    #[instrument(skip(self), level = "debug")]
+    pub fn synchronize_with_extension_registry(&mut self) -> Result<(), Error> {
+        debug!("Synchronizing type registry with extension registry");
+        
+        if let Some(extension_registry) = &self.extension_registry {
+            // Get the extension hierarchy from the registry
+            let hierarchy = extension_registry.get_extension_hierarchy().map_err(|e| {
+                warn!("Error accessing extension registry: {}", e);
+                Error::from_str("Error accessing interface registry data")
+            })?;
+            
+            debug!("Retrieved extension hierarchy with {} interface relationships", hierarchy.len());
+            
+            // Ensure all interfaces are registered in the type registry
+            let mut interface_names = HashSet::new();
+            
+            // Collect all interface names from hierarchy
+            for (source, targets) in &hierarchy {
+                interface_names.insert(source.clone());
+                for target in targets {
+                    interface_names.insert(target.clone());
+                }
+            }
+            
+            // Register all interfaces that aren't already registered
+            for interface_name in interface_names {
+                if !self.has_type(&interface_name) {
+                    self.register_interface(&interface_name)?;
+                }
+            }
+            
+            // Now register all extension relationships
+            for (source, targets) in &hierarchy {
+                for target in targets {
+                    self.register_interface_extension(source, target)?;
+                }
+            }
+            
+            debug!("Synchronization complete. Type registry now has {} types", self.type_count);
+            
+            Ok(())
+        } else {
+            warn!("No extension registry available for synchronization");
+            Ok(())
+        }
+    }
+    
     /// Get the count of registered types
     pub fn type_count(&self) -> usize {
         self.type_count
@@ -457,4 +509,78 @@ pub fn add_interface_type_registry_to<'ctx>() {
     debug!("Interface type registry loaded");
     // This function is called when the module is loaded, but doesn't need to do anything
     // since the LlvmCodeGenerator already initializes the registry in its new() method
+}
+
+/// Extension methods for type registration and management
+impl<'ctx> InterfaceTypeRegistry<'ctx> {
+    /// Register an interface with the registry and return its type ID
+    #[instrument(skip(self), level = "debug")]
+    pub fn register_interface(&mut self, interface_name: &str) -> Result<u64, Error> {
+        debug!("Registering interface: {}", interface_name);
+        
+        // Check if the interface is already registered
+        let type_id = self.hash_type_name(interface_name);
+        if self.type_id_to_name.contains_key(&type_id) {
+            debug!("Interface {} already registered with ID {}", interface_name, type_id);
+            return Ok(type_id);
+        }
+        
+        // Register the type
+        self.register_type(type_id, interface_name.to_string());
+        self.type_count += 1;
+        
+        debug!("Registered new interface {} with ID {}", interface_name, type_id);
+        Ok(type_id)
+    }
+    
+    /// Register that one interface extends another
+    #[instrument(skip(self), level = "debug")]
+    pub fn register_interface_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        debug!("Registering that {} extends {}", source, target);
+        
+        // Make sure both interfaces are registered
+        let source_id = self.register_interface(source)?;
+        let target_id = self.register_interface(target)?;
+        
+        // If we have an extension registry, register the extension there too for consistency
+        if let Some(registry) = &self.extension_registry {
+            // Register the extension in the external registry
+            registry.register_extension(source, target).map_err(|e| {
+                warn!("Error registering extension in external registry: {}", e);
+                Error::from_str("Error updating extension registry")
+            })?;
+        }
+        
+        debug!("Registered extension: {} (ID: {}) extends {} (ID: {})", 
+               source, source_id, target, target_id);
+               
+        Ok(())
+    }
+    
+    /// Check if the registry contains a type with the given name
+    pub fn has_type(&self, type_name: &str) -> bool {
+        let type_id = self.hash_type_name(type_name);
+        self.type_id_to_name.contains_key(&type_id)
+    }
+    
+    /// Get the type ID for a given type name
+    pub fn get_type_id(&self, type_name: &str) -> Result<u64, Error> {
+        let type_id = self.hash_type_name(type_name);
+        if self.type_id_to_name.contains_key(&type_id) {
+            Ok(type_id)
+        } else {
+            Err(Error::from_str(&format!("Type {} not found in registry", type_name)))
+        }
+    }
+    
+    /// Generate a hash for the type name
+    pub fn hash_type_name(&self, type_name: &str) -> u64 {
+        // FNV-1a hash algorithm for more consistent hashing
+        let mut hash: u64 = 0xcbf29ce484222325;
+        for byte in type_name.bytes() {
+            hash ^= byte as u64;
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        hash
+    }
 }
