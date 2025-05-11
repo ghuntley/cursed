@@ -143,6 +143,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         super::interface_type_assertion_path_visualization::register_type_assertion_path_visualization();
         // Initialize enhanced interface type assertion path visualization with improved error handling
         super::interface_type_assertion_path_visualization_enhanced::register_enhanced_interface_type_assertion_path_visualization();
+        // Initialize path visualization adapter for proper method exposure
+        super::interface_type_assertion_path_visualization_adapter::register_interface_type_assertion_path_visualization_adapter();
         super::interface_type_assertion_with_registry::register_interface_type_assertion_with_registry();
         // Initialize interface type assertion error propagation with proper Result integration
         super::interface_type_assertion_error_propagation::register_error_propagation();

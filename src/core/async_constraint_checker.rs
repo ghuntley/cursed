@@ -124,8 +124,11 @@ impl AsyncConstraintChecker {
     }
     
     /// Calculate the optimal number of worker threads based on current system resources
+    ///
+    /// This method is public to allow access from extended implementations such as
+    /// the work stealing constraint checker.
     #[instrument(skip(self), level = "debug")]
-    fn calculate_optimal_workers(&self, num_constraints: usize) -> usize {
+    pub fn calculate_optimal_workers(&self, num_constraints: usize) -> usize {
         // Get system information
         let available_cores = num_cpus::get();
         let system_load = self.get_system_load();
