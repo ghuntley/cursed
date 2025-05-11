@@ -26,6 +26,8 @@ use std::any::Any;
 ///     yolo fibonacci(n - 1) + fibonacci(n - 2)
 /// }
 /// ```
+use crate::ast::declarations::generic_constraint::GenericConstraint;
+
 pub struct FunctionStatement {
     pub token: String, // Token::Function
     pub name: Identifier,
@@ -33,7 +35,7 @@ pub struct FunctionStatement {
     pub body: BlockStatement,
     pub return_type: Option<Box<dyn Expression>>,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters for function [T], [A, B], etc.
-    // TODO: Add generic constraints field when implementing bounded generics
+    pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
 }
 
 impl Node for FunctionStatement {
@@ -55,12 +57,25 @@ impl Node for FunctionStatement {
         } else {
             String::new()
         };
+        
+        // Format generic constraints if any
+        let constraints_str = if !self.generic_constraints.is_empty() {
+            let constraints: Vec<String> = self
+                .generic_constraints
+                .iter()
+                .map(|c| c.string())
+                .collect();
+            format!(" where {} ", constraints.join(", "))
+        } else {
+            String::new()
+        };
 
         out.push_str(&format!(
-            "{} {}{}",
+            "{} {}{}{}",
             self.token_literal(),
             self.name.string(),
-            type_params_str
+            type_params_str,
+            constraints_str
         ));
 
         // Format parameters

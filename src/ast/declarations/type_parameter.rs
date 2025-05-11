@@ -15,7 +15,7 @@ pub struct TypeParameter {
     pub token: Token, // The parameter token
     pub name: String, // The name of the type parameter
     pub value: String, // The value of the type parameter (for compatibility)
-    // TODO: Add constraints field for bounded type parameters
+    pub constraints: Vec<String>, // Interface names that constrain this type parameter
 }
 
 impl TypeParameter {
@@ -27,6 +27,17 @@ impl TypeParameter {
             token,
             name: name.clone(),
             value: name,
+            constraints: Vec::new(),
+        }
+    }
+    
+    /// Creates a new TypeParameter with the given token, name, and constraints.
+    pub fn with_constraints(token: Token, name: String, constraints: Vec<String>) -> Self {
+        Self {
+            token,
+            name: name.clone(),
+            value: name,
+            constraints,
         }
     }
 }

@@ -750,6 +750,7 @@ impl<'a> Parser<'a> {
             token: token.token_literal(),
             name: struct_name,
             type_parameters,
+            generic_constraints: Vec::new(), // No constraints for now
             fields,
         }))
     }
@@ -1100,10 +1101,11 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::SquadStatement {
             token: token,
             name: struct_name,
-            type_parameters: vec![ast::Identifier {
-                token: "T".to_string(),
-                value: "T".to_string(),
-            }], // Placeholder for type parameter T
+            type_parameters: vec![ast::TypeParameter::new(
+                crate::lexer::token::Token::Identifier("T".to_string()),
+                "T".to_string()
+            )], // Placeholder for type parameter T
+            generic_constraints: Vec::new(), // No constraints for now
             fields,
         }))
     }

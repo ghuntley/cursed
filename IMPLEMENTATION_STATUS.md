@@ -71,6 +71,8 @@ The codebase currently fails to build with numerous errors. Below is a prioritiz
    - ✅ Implement `Node` trait for `RangeExpression`
    - ✅ Correct unresolved imports for `Parameter` and `Block` in the AST module
    - ✅ Fix module structure to properly expose these types
+   - ✅ Added `GenericConstraint` struct for bounded type parameters
+   - ✅ Updated FunctionStatement, SquadStatement, CollabStatement, and MethodSignature to include generic constraints
 
 3. **Fix LLVM code generation errors:**
    - ✅ Update parameter type conversion in function_monomorphization.rs (convert Vec<BasicTypeEnum> to &[BasicMetadataTypeEnum])
