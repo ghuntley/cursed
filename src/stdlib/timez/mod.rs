@@ -65,17 +65,20 @@ pub fn unix_timestamp(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Create a duration from seconds
 pub fn duration_from_secs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::InvalidArguments("duration_from_secs requires a number of seconds".to_string()));
+        return Err(Error::new("InvalidArguments", "duration_from_secs requires a number of seconds", None));
     }
     
     let seconds = match &*args[0] {
         Object::Integer(secs) => *secs as f64,
         Object::Float(secs) => *secs,
-        _ => return Err(Error::InvalidArguments("duration_from_secs requires a number".to_string())),
+        _ => return Err(Error::new("InvalidArguments", "duration_from_secs requires a number", None)),
     };
     
     let duration = TimezDuration { nanos: (seconds * 1_000_000_000.0) as u64 };
-    Ok(Rc::new(Object::ExternalData(Rc::new(duration))))
+    Ok(Rc::new(Object::Struct {
+        name: "TimezDuration".to_string(),
+        fields: vec![("nanos".to_string(), duration.nanos.to_string())],
+    }))
 }
 
 /// Returns the current local time.

@@ -684,40 +684,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             (0, 0, None)
         }
     }
-    /// Get the LLVM type for Result structure
-    fn get_result_type(&self, value_type: BasicTypeEnum<'ctx>) -> StructType<'ctx> {
-        // Use the common implementation
-        crate::codegen::llvm::interface_type_assertion_common::get_result_type(self, value_type)
-    }
-    
-    /// Get the LLVM type for source location information
-    fn get_source_location_type(&self) -> StructType<'ctx> {
-        // Use the common implementation
-        crate::codegen::llvm::interface_type_assertion_common::get_source_location_type(self)
-    }
+
     
     /// Create a string constant in the module for error propagation
     fn create_error_string_constant(&self, value: &str) -> PointerValue<'ctx> {
         crate::codegen::llvm::interface_type_assertion_common::create_string_constant_from_codegen(self, value)
     }
     
-    /// Call the runtime error propagation function with enhanced type information
-    fn call_error_propagation_function(
-        &self,
-        error_message: BasicValueEnum<'ctx>,
-        location_info: BasicValueEnum<'ctx>
-    ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Use the common implementation
-        crate::codegen::llvm::interface_type_assertion_common::call_error_propagation_function(
-            self, error_message, location_info
-        )
-    }
-    
-    /// Build a struct value from field values
-    fn build_struct_value(&self, fields: &[BasicValueEnum<'ctx>]) -> inkwell::values::StructValue<'ctx> {
-        // Use the common implementation
-        crate::codegen::llvm::interface_type_assertion_common::build_struct_value(self, fields)
-    }
+
 }
 
 /// Type alias for backward compatibility with existing code

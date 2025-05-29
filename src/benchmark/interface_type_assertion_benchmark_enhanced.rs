@@ -242,49 +242,7 @@ impl InterfaceTypeAssertionBenchmark {
     }
 }
 
-impl<'ctx> crate::codegen::llvm::LlvmCodeGenerator<'ctx> for InterfaceTypeAssertionBenchmark {
-    fn module(&self) -> &inkwell::module::Module {
-        panic!("Module access not supported in benchmark")
-    }
-    
-    fn context(&self) -> &inkwell::context::Context {
-        panic!("Context access not supported in benchmark")
-    }
-    
-    fn builder(&self) -> &inkwell::builder::Builder {
-        panic!("Builder access not supported in benchmark")
-    }
-    
-    fn get_interface_registry(&self) -> Option<&dyn crate::InterfaceTypeRegistry> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_impl;
-        get_interface_registry_impl(self)
-    }
-    
-    fn get_interface_registry_mut(&mut self) -> Option<&mut dyn crate::InterfaceTypeRegistry> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_mut_impl;
-        get_interface_registry_mut_impl(self)
-    }
-    
-    /// Helper to get the interface path finder
-    fn get_interface_path_finder(&self) -> Option<Box<dyn crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder + '_>> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::get_interface_path_finder_impl;
-        get_interface_path_finder_impl(self)
-    }
-    
-    /// Helper to detect diamond inheritance patterns
-    fn detect_diamond_inheritance(
-        &self,
-        concrete_type_id: u32,
-        interface_type_id: u32
-    ) -> Result<bool, Error> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::detect_diamond_inheritance_impl;
-        detect_diamond_inheritance_impl(self, concrete_type_id, interface_type_id)
-    }
-}
+
 
 #[cfg(test)]
 mod tests {

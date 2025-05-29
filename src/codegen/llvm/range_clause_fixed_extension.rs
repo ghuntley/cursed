@@ -4,7 +4,6 @@
 //! from LlvmCodeGenerator for use by the error recovery implementation.
 
 use crate::codegen::llvm::context::LlvmCodeGenerator;
-use crate::codegen::llvm::util::LlvmCodeGeneratorExtension;
 use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::error::Error;
 use inkwell::types::{BasicTypeEnum, AnyType, BasicType};
