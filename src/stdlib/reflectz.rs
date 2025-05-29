@@ -35,7 +35,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -496,7 +496,7 @@ pub struct Method {
 
 /// Represents a value in the reflection system
 pub struct Value {
-    value: Rc<Object>,
+    value: Arc<Object>,
     typ: Type,
     can_addr: bool,
     can_set: bool,
@@ -504,7 +504,7 @@ pub struct Value {
 
 impl Value {
     /// Create a new Value object wrapping an Object
-    pub fn new(obj: Rc<Object>) -> Self {
+    pub fn new(obj: Arc<Object>) -> Self {
         // Determine the type of the object
         let typ = match &*obj {
             Object::Integer(_) => Type::new_basic("normie", TypeKind::Int),
@@ -545,7 +545,7 @@ impl Value {
     }
     
     /// Get the wrapped object
-    pub fn object(&self) -> Rc<Object> {
+    pub fn object(&self) -> Arc<Object> {
         self.value.clone()
     }
     
@@ -615,17 +615,17 @@ impl Value {
                     // In a real implementation, we'd convert value properly
                     // For now, simplify by returning a string value
                     let obj = match value {
-                        value if value == "true" => Rc::new(Object::Boolean(true)),
-                        value if value == "false" => Rc::new(Object::Boolean(false)),
-                        value => Rc::new(Object::String(value.clone())),
+                        value if value == "true" => Arc::new(Object::Boolean(true)),
+                        value if value == "false" => Arc::new(Object::Boolean(false)),
+                        value => Arc::new(Object::String(value.clone())),
                     };
                     Value::new(obj)
                 } else {
                     // Out of bounds, return null value
-                    Value::new(Rc::new(Object::Null))
+                    Value::new(Arc::new(Object::Null))
                 }
             },
-            _ => Value::new(Rc::new(Object::Null)),
+            _ => Value::new(Arc::new(Object::Null)),
         }
     }
     
@@ -637,16 +637,16 @@ impl Value {
                     if field_name == name {
                         // Convert the field value
                         let obj = match value {
-                            value if value == "true" => Rc::new(Object::Boolean(true)),
-                            value if value == "false" => Rc::new(Object::Boolean(false)),
+                            value if value == "true" => Arc::new(Object::Boolean(true)),
+                            value if value == "false" => Arc::new(Object::Boolean(false)),
                             value => {
                                 // Try parsing as numeric types
                                 if let Ok(i) = value.parse::<i64>() {
-                                    Rc::new(Object::Integer(i))
+                                    Arc::new(Object::Integer(i))
                                 } else if let Ok(f) = value.parse::<f64>() {
-                                    Rc::new(Object::Float(f))
+                                    Arc::new(Object::Float(f))
                                 } else {
-                                    Rc::new(Object::String(value.clone()))
+                                    Arc::new(Object::String(value.clone()))
                                 }
                             },
                         };
@@ -654,14 +654,14 @@ impl Value {
                     }
                 }
                 // Field not found
-                Value::new(Rc::new(Object::Null))
+                Value::new(Arc::new(Object::Null))
             },
-            _ => Value::new(Rc::new(Object::Null)),
+            _ => Value::new(Arc::new(Object::Null)),
         }
     }
     
     /// Convert the value to an interface{}
-    pub fn interface(&self) -> Rc<Object> {
+    pub fn interface(&self) -> Arc<Object> {
         self.value.clone()
     }
     
@@ -700,14 +700,14 @@ impl Value {
     pub fn method_by_name(&self, name: &str) -> Value {
         // This is a simplified implementation
         // In a real implementation, we would return a callable function
-        Value::new(Rc::new(Object::Null))
+        Value::new(Arc::new(Object::Null))
     }
     
     /// Call a method with arguments
     pub fn call(&self, args: Vec<Value>) -> Vec<Value> {
         // This is a simplified implementation
         // In a real implementation, we would actually call the function
-        vec![Value::new(Rc::new(Object::Null))]
+        vec![Value::new(Arc::new(Object::Null))]
     }
 }
 
@@ -728,7 +728,7 @@ impl Value {
 /// # Errors
 ///
 /// Returns a Runtime error if no argument is provided
-pub fn type_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn type_of(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "type_of requires 1 argument: object".to_string(),
@@ -769,7 +769,7 @@ pub fn type_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     }
     
     // Create the Type object as a struct
-    Ok(Rc::new(Object::Struct {
+    Ok(Arc::new(Object::Struct {
         name: "Type".to_string(),
         fields,
     }))
@@ -792,7 +792,7 @@ pub fn type_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if:
 /// - No argument is provided
 /// - The argument is not a Type object
-pub fn fields(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn fields(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "fields requires 1 argument: a Type object".to_string(),
@@ -814,7 +814,7 @@ pub fn fields(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             
             if !is_struct {
                 // Not a struct type, return empty array
-                return Ok(Rc::new(Object::Array(vec![])));
+                return Ok(Arc::new(Object::Array(vec![])));
             }
             
             // Get the struct name from the type
@@ -857,7 +857,7 @@ pub fn fields(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 }
             }
             
-            Ok(Rc::new(Object::Array(field_objects)))
+            Ok(Arc::new(Object::Array(field_objects)))
         },
         _ => {
             return Err(Error::Runtime(
@@ -900,7 +900,7 @@ fn create_field_object(name: &str, typ: &str, tag: &str) -> Object {
 /// Returns a Runtime error if:
 /// - Fewer than 2 arguments are provided
 /// - Either argument is not a Type object
-pub fn implements(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn implements(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "implements requires 2 arguments: concrete type and interface type".to_string(),
@@ -943,7 +943,7 @@ pub fn implements(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             // unless there's specific information suggesting otherwise
             let implements = is_struct && is_interface;
             
-            Ok(Rc::new(Object::Boolean(implements)))
+            Ok(Arc::new(Object::Boolean(implements)))
         },
         _ => {
             return Err(Error::Runtime(
@@ -969,7 +969,7 @@ pub fn implements(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if no argument is provided
-pub fn value_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn value_of(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "value_of requires 1 argument: object".to_string(),
@@ -1010,10 +1010,10 @@ pub fn value_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // Store the original object reference (serialized)
     // In a real implementation, we would need to store the actual object reference
-    fields.push(("_object_ref".to_string(), format!("{:p}", Rc::as_ptr(&obj))));
+    fields.push(("_object_ref".to_string(), format!("{:p}", Arc::as_ptr(&obj))));
     
     // Create the Value object as a struct
-    Ok(Rc::new(Object::Struct {
+    Ok(Arc::new(Object::Struct {
         name: "Value".to_string(),
         fields,
     }))
@@ -1039,7 +1039,7 @@ pub fn value_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// Returns a Runtime error if:
 /// - Fewer than 2 arguments are provided
 /// - The second argument is not a String Object
-pub fn is_type(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_type(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "is_type requires 2 arguments: object and type name".to_string(),
@@ -1077,7 +1077,7 @@ pub fn is_type(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // An object is of the specified type if any of the checks matches
     let result = direct_match || alias_match || fallback_match;
-    Ok(Rc::new(Object::Boolean(result)))
+    Ok(Arc::new(Object::Boolean(result)))
 }
 
 /// Gets the value of a named field from a struct object.
@@ -1100,7 +1100,7 @@ pub fn is_type(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - Fewer than 2 arguments are provided
 /// - The first argument is not a struct
 /// - The second argument is not a string
-pub fn get_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn get_field(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "get_field requires 2 arguments: struct and field name".to_string(),
@@ -1135,7 +1135,7 @@ pub fn get_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // If the field doesn't exist or is not valid, return null
     if !field_value.is_valid() || field_value.is_nil() {
-        return Ok(Rc::new(Object::Null));
+        return Ok(Arc::new(Object::Null));
     }
     
     // Return the field value
@@ -1164,7 +1164,7 @@ pub fn get_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - The first argument is not a struct reference
 /// - The second argument is not a string
 /// - The field doesn't exist in the struct
-pub fn set_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn set_field(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime(
             "set_field requires 3 arguments: struct, field name, and value".to_string(),
@@ -1250,7 +1250,7 @@ pub fn set_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             // - We would handle access control and validation
             
             // For now, just return success
-            return Ok(Rc::new(Object::Null));
+            return Ok(Arc::new(Object::Null));
         },
         _ => {
             // This should never happen since we already checked the type
@@ -1282,7 +1282,7 @@ pub fn set_field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - Fewer than 2 arguments are provided
 /// - The second argument is not a string
 /// - Method call fails
-pub fn call_method(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn call_method(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "call_method requires at least 2 arguments: object and method name".to_string(),
@@ -1319,7 +1319,7 @@ pub fn call_method(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // We would need access to the VM or environment to actually call methods
     // This is a placeholder implementation
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Gets a field value from a Value object by name.
@@ -1339,7 +1339,7 @@ pub fn call_method(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - Fewer than 2 arguments are provided
 /// - First argument is not a Value object
 /// - Second argument is not a string
-pub fn field_by_name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn field_by_name(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "field_by_name requires 2 arguments: Value object and field name".to_string(),
@@ -1369,18 +1369,18 @@ pub fn field_by_name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                     // Simulate field access for a struct
                     for (name, value) in fields {
                         if name == field_name {
-                            return Ok(Rc::new(Object::String(value.clone())));
+                            return Ok(Arc::new(Object::String(value.clone())));
                         }
                     }
                 },
                 _ => {
                     // Not a struct, can't access fields
-                    return Ok(Rc::new(Object::Null));
+                    return Ok(Arc::new(Object::Null));
                 }
             }
             
             // Field not found
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => {
             return Err(Error::Runtime(
@@ -1407,7 +1407,7 @@ pub fn field_by_name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - Fewer than 2 arguments are provided
 /// - First argument is not a Value object
 /// - Second argument is not an integer
-pub fn field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn field(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "field requires 2 arguments: Value object and field index".to_string(),
@@ -1438,18 +1438,18 @@ pub fn field(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                     if field_index < fields.len() {
                         let field = fields.get(field_index);
                         if let Some((name, value)) = field {
-                            return Ok(Rc::new(Object::String(value.clone())));
+                            return Ok(Arc::new(Object::String(value.clone())));
                         }
                     }
                 },
                 _ => {
                     // Not a struct, can't access fields
-                    return Ok(Rc::new(Object::Null));
+                    return Ok(Arc::new(Object::Null));
                 }
             }
             
             // Index out of bounds
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => {
             return Err(Error::Runtime(

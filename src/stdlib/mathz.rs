@@ -17,7 +17,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 
 // Constants
 pub const PI: f64 = std::f64::consts::PI;
@@ -34,9 +34,9 @@ pub const E: f64 = std::f64::consts::E;
 ///
 /// # Returns
 ///
-/// Result<Rc<Object>, Error> - The absolute value result or an error
+/// Result<Arc<Object>, Error> - The absolute value result or an error
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn abs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn abs(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         tracing::warn!("abs called without arguments");
         return Err(Error::Runtime("abs requires 1 argument".to_string()));
@@ -45,11 +45,11 @@ pub fn abs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     match &*args[0] {
         Object::Integer(i) => {
             tracing::debug!(value = i, absolute = i.abs(), "Integer abs");
-            Ok(Rc::new(Object::Integer(i.abs())))
+            Ok(Arc::new(Object::Integer(i.abs())))
         },
         Object::Float(f) => {
             tracing::debug!(value = f, absolute = f.abs(), "Float abs");
-            Ok(Rc::new(Object::Float(f.abs())))
+            Ok(Arc::new(Object::Float(f.abs())))
         },
         _ => {
             tracing::warn!(type_name = args[0].type_name(), "Invalid type for abs");
@@ -61,14 +61,14 @@ pub fn abs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Ceiling function (smallest integer >= x)
-pub fn ceil(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn ceil(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("ceil requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.ceil()))),
+        Object::Integer(i) => Ok(Arc::new(Object::Integer(*i))),
+        Object::Float(f) => Ok(Arc::new(Object::Float(f.ceil()))),
         _ => Err(Error::Runtime(
             "Argument to ceil must be a number".to_string(),
         )),
@@ -76,14 +76,14 @@ pub fn ceil(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Floor function (largest integer <= x)
-pub fn floor(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn floor(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("floor requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.floor()))),
+        Object::Integer(i) => Ok(Arc::new(Object::Integer(*i))),
+        Object::Float(f) => Ok(Arc::new(Object::Float(f.floor()))),
         _ => Err(Error::Runtime(
             "Argument to floor must be a number".to_string(),
         )),
@@ -91,18 +91,18 @@ pub fn floor(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Maximum of x and y
-pub fn max(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn max(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("max requires 2 arguments".to_string()));
     }
 
     match (&*args[0], &*args[1]) {
         (Object::Integer(x), Object::Integer(y)) => {
-            Ok(Rc::new(Object::Integer(std::cmp::max(*x, *y))))
+            Ok(Arc::new(Object::Integer(std::cmp::max(*x, *y))))
         }
-        (Object::Float(x), Object::Float(y)) => Ok(Rc::new(Object::Float(x.max(*y)))),
-        (Object::Integer(x), Object::Float(y)) => Ok(Rc::new(Object::Float((*x as f64).max(*y)))),
-        (Object::Float(x), Object::Integer(y)) => Ok(Rc::new(Object::Float(x.max(*y as f64)))),
+        (Object::Float(x), Object::Float(y)) => Ok(Arc::new(Object::Float(x.max(*y)))),
+        (Object::Integer(x), Object::Float(y)) => Ok(Arc::new(Object::Float((*x as f64).max(*y)))),
+        (Object::Float(x), Object::Integer(y)) => Ok(Arc::new(Object::Float(x.max(*y as f64)))),
         _ => Err(Error::Runtime(
             "Arguments to max must be numbers".to_string(),
         )),
@@ -110,18 +110,18 @@ pub fn max(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Minimum of x and y
-pub fn min(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn min(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("min requires 2 arguments".to_string()));
     }
 
     match (&*args[0], &*args[1]) {
         (Object::Integer(x), Object::Integer(y)) => {
-            Ok(Rc::new(Object::Integer(std::cmp::min(*x, *y))))
+            Ok(Arc::new(Object::Integer(std::cmp::min(*x, *y))))
         }
-        (Object::Float(x), Object::Float(y)) => Ok(Rc::new(Object::Float(x.min(*y)))),
-        (Object::Integer(x), Object::Float(y)) => Ok(Rc::new(Object::Float((*x as f64).min(*y)))),
-        (Object::Float(x), Object::Integer(y)) => Ok(Rc::new(Object::Float(x.min(*y as f64)))),
+        (Object::Float(x), Object::Float(y)) => Ok(Arc::new(Object::Float(x.min(*y)))),
+        (Object::Integer(x), Object::Float(y)) => Ok(Arc::new(Object::Float((*x as f64).min(*y)))),
+        (Object::Float(x), Object::Integer(y)) => Ok(Arc::new(Object::Float(x.min(*y as f64)))),
         _ => Err(Error::Runtime(
             "Arguments to min must be numbers".to_string(),
         )),
@@ -129,7 +129,7 @@ pub fn min(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// x^y
-pub fn pow(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn pow(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("pow requires 2 arguments".to_string()));
     }
@@ -157,9 +157,9 @@ pub fn pow(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Check if we can return an integer
     let result = x.powf(y);
     if result.fract() == 0.0 && result >= (i64::MIN as f64) && result <= (i64::MAX as f64) {
-        Ok(Rc::new(Object::Integer(result as i64)))
+        Ok(Arc::new(Object::Integer(result as i64)))
     } else {
-        Ok(Rc::new(Object::Float(result)))
+        Ok(Arc::new(Object::Float(result)))
     }
 }
 
@@ -175,8 +175,8 @@ pub fn pow(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 ///
 /// # Returns
 ///
-/// Result<Rc<Object>, Error> - The square root result or an error
-pub fn sqrt(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+/// Result<Arc<Object>, Error> - The square root result or an error
+pub fn sqrt(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("sqrt requires 1 argument".to_string()));
     }
@@ -207,21 +207,21 @@ pub fn sqrt(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     let result = x.sqrt();
     if result.fract() == 0.0 {
-        Ok(Rc::new(Object::Integer(result as i64)))
+        Ok(Arc::new(Object::Integer(result as i64)))
     } else {
-        Ok(Rc::new(Object::Float(result)))
+        Ok(Arc::new(Object::Float(result)))
     }
 }
 
 /// Round to nearest integer
-pub fn round(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn round(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("round requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Integer(*i))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.round()))),
+        Object::Integer(i) => Ok(Arc::new(Object::Integer(*i))),
+        Object::Float(f) => Ok(Arc::new(Object::Float(f.round()))),
         _ => Err(Error::Runtime(
             "Argument to round must be a number".to_string(),
         )),
@@ -237,14 +237,14 @@ pub fn round(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// The sine of the angle
-pub fn sin(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn sin(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("sin requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).sin()))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.sin()))),
+        Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).sin()))),
+        Object::Float(f) => Ok(Arc::new(Object::Float(f.sin()))),
         _ => Err(Error::Runtime(
             "Argument to sin must be a number".to_string(),
         )),
@@ -260,14 +260,14 @@ pub fn sin(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// The cosine of the angle
-pub fn cos(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn cos(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("cos requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).cos()))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.cos()))),
+        Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).cos()))),
+        Object::Float(f) => Ok(Arc::new(Object::Float(f.cos()))),
         _ => Err(Error::Runtime(
             "Argument to cos must be a number".to_string(),
         )),
@@ -283,14 +283,14 @@ pub fn cos(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// The tangent of the angle
-pub fn tan(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn tan(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("tan requires 1 argument".to_string()));
     }
 
     match &*args[0] {
-        Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).tan()))),
-        Object::Float(f) => Ok(Rc::new(Object::Float(f.tan()))),
+        Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).tan()))),
+        Object::Float(f) => Ok(Arc::new(Object::Float(f.tan()))),
         _ => Err(Error::Runtime(
             "Argument to tan must be a number".to_string(),
         )),

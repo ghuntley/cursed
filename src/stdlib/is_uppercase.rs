@@ -3,10 +3,10 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Check if a character is uppercase
-pub fn is_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_uppercase(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::new(
             "ArgumentError",
@@ -19,7 +19,7 @@ pub fn is_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::String(s) if s.len() == 1 => {
             // Get the first (and only) character
             let c = s.chars().next().unwrap();
-            Ok(Rc::new(Object::Boolean(c.is_uppercase())))
+            Ok(Arc::new(Object::Boolean(c.is_uppercase())))
         },
         Object::String(_) => Err(Error::new(
             "TypeError",
@@ -28,7 +28,7 @@ pub fn is_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         )),
         Object::Char(c) => {
             // Handle character type if it exists
-            Ok(Rc::new(Object::Boolean(c.is_uppercase())))
+            Ok(Arc::new(Object::Boolean(c.is_uppercase())))
         },
         _ => Err(Error::new(
             "TypeError",
@@ -39,7 +39,7 @@ pub fn is_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Check if a character is lowercase
-pub fn is_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_lowercase(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::new(
             "ArgumentError",
@@ -52,7 +52,7 @@ pub fn is_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::String(s) if s.len() == 1 => {
             // Get the first (and only) character
             let c = s.chars().next().unwrap();
-            Ok(Rc::new(Object::Boolean(c.is_lowercase())))
+            Ok(Arc::new(Object::Boolean(c.is_lowercase())))
         },
         Object::String(_) => Err(Error::new(
             "TypeError",
@@ -61,7 +61,7 @@ pub fn is_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         )),
         Object::Char(c) => {
             // Handle character type if it exists
-            Ok(Rc::new(Object::Boolean(c.is_lowercase())))
+            Ok(Arc::new(Object::Boolean(c.is_lowercase())))
         },
         _ => Err(Error::new(
             "TypeError",
@@ -72,7 +72,7 @@ pub fn is_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Check if a character is a digit
-pub fn is_digit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_digit(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::new(
             "ArgumentError",
@@ -85,7 +85,7 @@ pub fn is_digit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::String(s) if s.len() == 1 => {
             // Get the first (and only) character
             let c = s.chars().next().unwrap();
-            Ok(Rc::new(Object::Boolean(c.is_digit(10))))
+            Ok(Arc::new(Object::Boolean(c.is_digit(10))))
         },
         Object::String(_) => Err(Error::new(
             "TypeError",
@@ -94,7 +94,7 @@ pub fn is_digit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         )),
         Object::Char(c) => {
             // Handle character type if it exists
-            Ok(Rc::new(Object::Boolean(c.is_digit(10))))
+            Ok(Arc::new(Object::Boolean(c.is_digit(10))))
         },
         _ => Err(Error::new(
             "TypeError",
@@ -105,7 +105,7 @@ pub fn is_digit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Check if a character is alphabetic
-pub fn is_alpha(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_alpha(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::new(
             "ArgumentError",
@@ -118,7 +118,7 @@ pub fn is_alpha(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::String(s) if s.len() == 1 => {
             // Get the first (and only) character
             let c = s.chars().next().unwrap();
-            Ok(Rc::new(Object::Boolean(c.is_alphabetic())))
+            Ok(Arc::new(Object::Boolean(c.is_alphabetic())))
         },
         Object::String(_) => Err(Error::new(
             "TypeError",
@@ -127,7 +127,7 @@ pub fn is_alpha(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         )),
         Object::Char(c) => {
             // Handle character type if it exists
-            Ok(Rc::new(Object::Boolean(c.is_alphabetic())))
+            Ok(Arc::new(Object::Boolean(c.is_alphabetic())))
         },
         _ => Err(Error::new(
             "TypeError",
@@ -138,7 +138,7 @@ pub fn is_alpha(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Convert a character to uppercase
-pub fn to_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn to_uppercase(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::new(
             "ArgumentError",
@@ -152,7 +152,7 @@ pub fn to_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             // Get the first (and only) character
             let c = s.chars().next().unwrap();
             let upper = c.to_uppercase().collect::<String>();
-            Ok(Rc::new(Object::String(upper)))
+            Ok(Arc::new(Object::String(upper)))
         },
         Object::String(_) => Err(Error::new(
             "TypeError",
@@ -162,7 +162,7 @@ pub fn to_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::Char(c) => {
             // Handle character type if it exists
             let upper = c.to_uppercase().collect::<String>();
-            Ok(Rc::new(Object::String(upper)))
+            Ok(Arc::new(Object::String(upper)))
         },
         _ => Err(Error::new(
             "TypeError",
@@ -173,7 +173,7 @@ pub fn to_uppercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Convert a character to lowercase
-pub fn to_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn to_lowercase(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::new(
             "ArgumentError",
@@ -187,7 +187,7 @@ pub fn to_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             // Get the first (and only) character
             let c = s.chars().next().unwrap();
             let lower = c.to_lowercase().collect::<String>();
-            Ok(Rc::new(Object::String(lower)))
+            Ok(Arc::new(Object::String(lower)))
         },
         Object::String(_) => Err(Error::new(
             "TypeError",
@@ -197,7 +197,7 @@ pub fn to_lowercase(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::Char(c) => {
             // Handle character type if it exists
             let lower = c.to_lowercase().collect::<String>();
-            Ok(Rc::new(Object::String(lower)))
+            Ok(Arc::new(Object::String(lower)))
         },
         _ => Err(Error::new(
             "TypeError",

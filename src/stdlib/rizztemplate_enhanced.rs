@@ -17,10 +17,10 @@
 use crate::error::Error;
 use crate::object::Object;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Create a new template with the given name
-pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("new requires 1 argument".to_string()));
     }
@@ -45,19 +45,19 @@ pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     instance_fields.insert("source".to_string(), Object::String(String::new()));
     instance_fields.insert("parsed".to_string(), Object::Boolean(false));
     
-    let struct_type = Rc::new(Object::Struct {
+    let struct_type = Arc::new(Object::Struct {
         name: "Template".to_string(),
         fields,
     });
     
-    Ok(Rc::new(Object::Instance {
+    Ok(Arc::new(Object::Instance {
         struct_type,
         fields: instance_fields,
     }))
 }
 
 /// Parse template text and return a template
-pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("parse requires 2 arguments".to_string()));
     }
@@ -99,11 +99,11 @@ pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
     
     let error = Object::Null;
-    Ok(Rc::new(Object::Array(vec![result, error])))
+    Ok(Arc::new(Object::Array(vec![result, error])))
 }
 
 /// Parse templates from files
-pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_files(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("parse_files requires at least 1 argument".to_string()));
     }
@@ -120,7 +120,7 @@ pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     instance_fields.insert("source".to_string(), Object::String(String::new()));
     instance_fields.insert("parsed".to_string(), Object::Boolean(false));
     
-    let struct_type = Rc::new(Object::Struct {
+    let struct_type = Arc::new(Object::Struct {
         name: "Template".to_string(),
         fields,
     });
@@ -136,11 +136,11 @@ pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         stack_trace: Vec::new(),
     };
     
-    Ok(Rc::new(Object::Array(vec![template, error])))
+    Ok(Arc::new(Object::Array(vec![template, error])))
 }
 
 /// Parse templates matching a pattern
-pub fn parse_glob(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_glob(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("parse_glob requires 1 argument".to_string()));
     }
@@ -157,7 +157,7 @@ pub fn parse_glob(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     instance_fields.insert("source".to_string(), Object::String(String::new()));
     instance_fields.insert("parsed".to_string(), Object::Boolean(false));
     
-    let struct_type = Rc::new(Object::Struct {
+    let struct_type = Arc::new(Object::Struct {
         name: "Template".to_string(),
         fields,
     });
@@ -173,11 +173,11 @@ pub fn parse_glob(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         stack_trace: Vec::new(),
     };
     
-    Ok(Rc::new(Object::Array(vec![template, error])))
+    Ok(Arc::new(Object::Array(vec![template, error])))
 }
 
 /// Apply template to data and write to w
-pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn execute(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime("execute requires 3 arguments".to_string()));
     }
@@ -218,7 +218,7 @@ pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // In a production implementation, this would write to the writer
     // For now we'll just return null to indicate success
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 // A template substitution engine that handles field substitution and basic control structures
@@ -318,23 +318,23 @@ fn simple_template_substitution(template: &str, data: &Object) -> Result<String,
 }
 
 /// Apply named template to data and write to w
-pub fn execute_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn execute_template(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 4 {
         return Err(Error::Runtime("execute_template requires 4 arguments".to_string()));
     }
 
     // Not implemented in this version
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Create a new FuncMap
-pub fn func_map(_args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn func_map(_args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Create and return an empty HashMap
-    Ok(Rc::new(Object::HashTable(HashMap::new())))
+    Ok(Arc::new(Object::HashTable(HashMap::new())))
 }
 
 /// Returns a template that can be safely used without error checking
-pub fn must(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn must(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("must requires 2 arguments".to_string()));
     }
@@ -357,7 +357,7 @@ pub fn must(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Get template name
-pub fn name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn name(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("name requires a template".to_string()));
     }
@@ -368,7 +368,7 @@ pub fn name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     match &**template {
         Object::Instance { fields, .. } => {
             if let Some(Object::String(name)) = fields.get("name") {
-                Ok(Rc::new(Object::String(name.clone())))
+                Ok(Arc::new(Object::String(name.clone())))
             } else {
                 Err(Error::Runtime("Template has no name".to_string()))
             }
@@ -378,7 +378,7 @@ pub fn name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Add functions to template
-pub fn funcs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn funcs(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("funcs requires a template and function map".to_string()));
     }
@@ -389,23 +389,23 @@ pub fn funcs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Return all templates in the set
-pub fn templates(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn templates(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("templates requires a template".to_string()));
     }
 
     // In a real implementation, this would return all templates in the set
     // For now, we'll just return an empty array
-    Ok(Rc::new(Object::Array(Vec::new())))
+    Ok(Arc::new(Object::Array(Vec::new())))
 }
 
 /// Parse a single file template
-pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     parse_files(args)
 }
 
 /// Clone a template
-pub fn clone_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn clone_template(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("clone_template requires a template".to_string()));
     }

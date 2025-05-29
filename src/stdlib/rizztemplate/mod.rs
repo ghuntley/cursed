@@ -65,7 +65,7 @@ pub fn parse(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         functions: HashMap::new(),
     };
     
-    Ok(Rc::new(Object::Template(Rc::new(template))))
+    Ok(Arc::new(Object::Template(Arc::new(template))))
 }
 
 /// Execute a template with the provided data
@@ -78,7 +78,7 @@ pub fn parse(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
 /// # Returns
 ///
 /// A String Object containing the template output
-pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn execute(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("InvalidArguments", "Expected template object", None));
     }
@@ -88,7 +88,7 @@ pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     match &args[0] {
         obj if obj.is_template() => {
             if let Object::Template(template) = &**obj {
-                Ok(Rc::new(Object::String(template.name.clone())))
+                Ok(Arc::new(Object::String(template.name.clone())))
             } else {
                 Err(Error::new("InvalidArguments", "Not a template", None))
             }
@@ -144,7 +144,7 @@ enum TemplateAST {
 /// # Errors
 ///
 /// Returns a Runtime error if parsing fails
-pub fn parse_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_template(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "parse_template requires at least 1 argument: template string".to_string(),
@@ -183,7 +183,7 @@ pub fn parse_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     // Return as an ExternalData object
-    Ok(Rc::new(Object::ExternalData(Box::new(template))))
+    Ok(Arc::new(Object::ExternalData(Box::new(template))))
 }
 
 /// Executes a parsed template with the provided data.
@@ -200,7 +200,7 @@ pub fn parse_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if execution fails
-pub fn execute_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn execute_template(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "execute_template requires 2 arguments: template and data".to_string(),
@@ -238,8 +238,8 @@ pub fn execute_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // For a basic implementation, just return the template text
     // In a real implementation, this would replace variables with values from the data
     match &template.parsed {
-        TemplateAST::Text(text) => Ok(Rc::new(Object::String(text.clone()))),
-        _ => Ok(Rc::new(Object::String(format!("Template: {}", template.name)))),
+        TemplateAST::Text(text) => Ok(Arc::new(Object::String(text.clone()))),
+        _ => Ok(Arc::new(Object::String(format!("Template: {}", template.name)))),
     }
 }
 
@@ -258,7 +258,7 @@ pub fn execute_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if adding the function fails
-pub fn add_func(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn add_func(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime(
             "add_func requires 3 arguments: template, function name, and function".to_string(),
@@ -301,7 +301,7 @@ pub fn add_func(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     new_template.functions.insert(func_name, func);
 
     // Return the updated template
-    Ok(Rc::new(Object::ExternalData(Box::new(new_template))))
+    Ok(Arc::new(Object::ExternalData(Box::new(new_template))))
 }
 
 /// Parses a template from a file.
@@ -327,7 +327,7 @@ pub fn add_func(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - They ensure consistent rendering across different data inputs
 /// - They verify proper HTML escaping to prevent XSS vulnerabilities
 /// - They confirm template performance with large datasets
-pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "parse_file requires at least 1 argument: file path".to_string(),
@@ -376,7 +376,7 @@ pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     // Return as an ExternalData object
-    Ok(Rc::new(Object::ExternalData(Box::new(template))))
+    Ok(Arc::new(Object::ExternalData(Box::new(template))))
 }
 
 /// Parses files matching a pattern into a collection of templates.
@@ -392,7 +392,7 @@ pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if glob matching or file reading fails
-pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_files(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "parse_files requires 1 argument: glob pattern".to_string(),
@@ -451,5 +451,5 @@ pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     }
 
     // Return templates map
-    Ok(Rc::new(Object::HashTable(templates)))
+    Ok(Arc::new(Object::HashTable(templates)))
 }

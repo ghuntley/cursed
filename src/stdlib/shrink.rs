@@ -2,7 +2,7 @@
 
 use crate::object::Object;
 use crate::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 use std::collections::HashSet;
 
@@ -49,7 +49,7 @@ impl Shrinker {
     }
     
     /// Shrink a failing test case to find a simpler one that still fails
-    pub fn shrink<F>(&self, test_fn: F, input: Rc<Object>, config: &Config) -> Option<Rc<Object>>
+    pub fn shrink<F>(&self, test_fn: F, input: Arc<Object>, config: &Config) -> Option<Arc<Object>>
     where
         F: Fn(&Object) -> bool,
     {
@@ -75,7 +75,7 @@ impl Shrinker {
                 }
                 tried.insert(candidate_str);
                 
-                let candidate_rc = Rc::new(candidate);
+                let candidate_rc = Arc::new(candidate);
                 
                 // Check if the candidate still fails the test
                 if !test_fn(&candidate_rc) {
@@ -279,7 +279,7 @@ pub fn smart_shrinker() -> Shrinker {
 }
 
 /// Shrink a failing test case based on the specified strategy
-pub fn shrink<F>(test_fn: F, input: Rc<Object>, config: &Config) -> Option<Rc<Object>>
+pub fn shrink<F>(test_fn: F, input: Arc<Object>, config: &Config) -> Option<Arc<Object>>
 where
     F: Fn(&Object) -> bool,
 {

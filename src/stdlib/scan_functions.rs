@@ -5,11 +5,11 @@ use crate::memory::{Traceable, Tag, Visitor};
 use crate::object::{self, Object};
 use crate::error::Error;
 use crate::prelude::*;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Scans text using format specifiers
 /// Similar to Go's fmt.Scan
-pub fn scan_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn scan_string(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::new("ArgumentError", 
             format!("scan_string requires at least 2 arguments, got {}", args.len()),
@@ -27,12 +27,12 @@ pub fn scan_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Remaining arguments must be references to variables
     let scan_result = parse_and_assign_args(input, &args[1..], false)?;
     
-    Ok(Rc::new(Object::Integer(scan_result)))
+    Ok(Arc::new(Object::Integer(scan_result)))
 }
 
 /// Scans a line of text (up to a newline) using format specifiers
 /// Similar to Go's fmt.Scanln
-pub fn scanln_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn scanln_string(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::new("ArgumentError", 
             format!("scanln_string requires at least 2 arguments, got {}", args.len()),
@@ -56,11 +56,11 @@ pub fn scanln_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Remaining arguments must be references to variables
     let scan_result = parse_and_assign_args(line, &args[1..], true)?;
     
-    Ok(Rc::new(Object::Integer(scan_result)))
+    Ok(Arc::new(Object::Integer(scan_result)))
 }
 
 /// Parse and assign values to the provided arguments
-fn parse_and_assign_args(input: &str, var_refs: &[Rc<Object>], respect_whitespace: bool) -> Result<i64, Error> {
+fn parse_and_assign_args(input: &str, var_refs: &[Arc<Object>], respect_whitespace: bool) -> Result<i64, Error> {
     // Split the input string by whitespace
     let mut parts: Vec<&str> = if respect_whitespace {
         input.split_whitespace().collect()

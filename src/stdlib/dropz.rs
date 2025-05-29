@@ -16,7 +16,7 @@ use std::fs;
 use std::fs::{metadata, File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Reads an entire file into a byte array
 ///
@@ -32,7 +32,7 @@ use std::rc::Rc;
 /// An array of integers representing the file bytes, or an error if the file
 /// cannot be read
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn read_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn read_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "read_file requires 1 argument: path".to_string(),
@@ -55,7 +55,7 @@ pub fn read_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 .into_iter()
                 .map(|b| Object::Integer(b as i64))
                 .collect();
-            Ok(Rc::new(Object::Array(byte_objects)))
+            Ok(Arc::new(Object::Array(byte_objects)))
         }
         Err(e) => Err(Error::Runtime(format!(
             "Failed to read file {}: {}",
@@ -65,7 +65,7 @@ pub fn read_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Read a file into a string
-pub fn read_file_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn read_file_string(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "read_file_string requires 1 argument: path".to_string(),
@@ -82,7 +82,7 @@ pub fn read_file_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     match fs::read_to_string(&path) {
-        Ok(content) => Ok(Rc::new(Object::String(content))),
+        Ok(content) => Ok(Arc::new(Object::String(content))),
         Err(e) => Err(Error::Runtime(format!(
             "Failed to read file {}: {}",
             path, e
@@ -92,7 +92,7 @@ pub fn read_file_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
 /// Write a byte array to a file
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn write_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn write_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "write_file requires 2 arguments: path and data".to_string(),
@@ -132,7 +132,7 @@ pub fn write_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     match fs::write(&path, data) {
-        Ok(_) => Ok(Rc::new(Object::Null)),
+        Ok(_) => Ok(Arc::new(Object::Null)),
         Err(e) => Err(Error::Runtime(format!(
             "Failed to write file {}: {}",
             path, e
@@ -141,7 +141,7 @@ pub fn write_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Copy from a reader to a writer
-pub fn copy(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn copy(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Simplified implementation
     if args.len() < 2 {
         return Err(Error::Runtime(
@@ -150,11 +150,11 @@ pub fn copy(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     }
 
     // For now, just return the number of bytes that would be copied
-    Ok(Rc::new(Object::Integer(0)))
+    Ok(Arc::new(Object::Integer(0)))
 }
 
 /// Check if a file exists
-pub fn file_exists(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn file_exists(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "file_exists requires 1 argument: path".to_string(),
@@ -171,11 +171,11 @@ pub fn file_exists(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     let exists = Path::new(&path).exists();
-    Ok(Rc::new(Object::Boolean(exists)))
+    Ok(Arc::new(Object::Boolean(exists)))
 }
 
 /// Check if a file is readable
-pub fn is_readable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_readable(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "is_readable requires 1 argument: path".to_string(),
@@ -195,18 +195,18 @@ pub fn is_readable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     // Check if file exists first
     if !path_obj.exists() {
-        return Ok(Rc::new(Object::Boolean(false)));
+        return Ok(Arc::new(Object::Boolean(false)));
     }
 
     // Try to open the file for reading
     match File::open(path_obj) {
-        Ok(_) => Ok(Rc::new(Object::Boolean(true))),
-        Err(_) => Ok(Rc::new(Object::Boolean(false))),
+        Ok(_) => Ok(Arc::new(Object::Boolean(true))),
+        Err(_) => Ok(Arc::new(Object::Boolean(false))),
     }
 }
 
 /// Check if a file is writable
-pub fn is_writable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_writable(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "is_writable requires 1 argument: path".to_string(),
@@ -228,7 +228,7 @@ pub fn is_writable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if !path_obj.exists() {
         if let Some(parent) = path_obj.parent() {
             if !parent.exists() {
-                return Ok(Rc::new(Object::Boolean(false)));
+                return Ok(Arc::new(Object::Boolean(false)));
             }
 
             // Try to open a temporary file in the parent directory
@@ -237,17 +237,17 @@ pub fn is_writable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             if let Ok(_) = result {
                 // Clean up the temporary file
                 let _ = fs::remove_file(&temp_path);
-                return Ok(Rc::new(Object::Boolean(true)));
+                return Ok(Arc::new(Object::Boolean(true)));
             }
-            return Ok(Rc::new(Object::Boolean(false)));
+            return Ok(Arc::new(Object::Boolean(false)));
         }
-        return Ok(Rc::new(Object::Boolean(false)));
+        return Ok(Arc::new(Object::Boolean(false)));
     }
 
     // If path exists, try to open it for writing
     match OpenOptions::new().write(true).open(path_obj) {
-        Ok(_) => Ok(Rc::new(Object::Boolean(true))),
-        Err(_) => Ok(Rc::new(Object::Boolean(false))),
+        Ok(_) => Ok(Arc::new(Object::Boolean(true))),
+        Err(_) => Ok(Arc::new(Object::Boolean(false))),
     }
 }
 
@@ -270,7 +270,7 @@ pub fn is_writable(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// - "modified": modification timestamp (if available)
 /// - "created": creation timestamp (if available)
 /// - "accessed": last access timestamp (if available)
-pub fn file_info(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn file_info(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "file_info requires 1 argument: path".to_string(),
@@ -326,14 +326,14 @@ pub fn file_info(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 }
             }
 
-            Ok(Rc::new(Object::HashTable(info)))
+            Ok(Arc::new(Object::HashTable(info)))
         }
-        Err(_) => Ok(Rc::new(Object::HashTable(std::collections::HashMap::new()))),
+        Err(_) => Ok(Arc::new(Object::HashTable(std::collections::HashMap::new()))),
     }
 }
 
 /// Remove a file
-pub fn remove_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn remove_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "remove_file requires 1 argument: path".to_string(),
@@ -350,7 +350,7 @@ pub fn remove_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     match fs::remove_file(&path) {
-        Ok(_) => Ok(Rc::new(Object::Boolean(true))),
+        Ok(_) => Ok(Arc::new(Object::Boolean(true))),
         Err(e) => Err(Error::Runtime(format!(
             "Failed to remove file {}: {}",
             path, e
@@ -359,7 +359,7 @@ pub fn remove_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Append to a file
-pub fn append_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn append_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "append_file requires 2 arguments: path and data".to_string(),
@@ -401,7 +401,7 @@ pub fn append_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Open file in append mode
     match OpenOptions::new().create(true).append(true).open(&path) {
         Ok(mut file) => match file.write_all(&data) {
-            Ok(_) => Ok(Rc::new(Object::Boolean(true))),
+            Ok(_) => Ok(Arc::new(Object::Boolean(true))),
             Err(e) => Err(Error::Runtime(format!(
                 "Failed to append to file {}: {}",
                 path, e

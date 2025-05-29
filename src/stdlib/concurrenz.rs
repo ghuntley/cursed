@@ -608,7 +608,7 @@ where
 /// # Returns
 ///
 /// A new Channel object
-pub fn new_channel(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new_channel(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("new_channel requires a capacity argument".to_string()));
     }
@@ -625,7 +625,7 @@ pub fn new_channel(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => return Err(Error::Runtime("Failed to create channel".to_string()))
     };
     
-    Ok(Rc::new(Object::Channel(channel)))
+    Ok(Arc::new(Object::Channel(channel)))
 }
 
 /// Sends a value to a channel
@@ -638,7 +638,7 @@ pub fn new_channel(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the arguments are invalid
-pub fn channel_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn channel_send(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("channel_send requires a channel and value arguments".to_string()));
     }
@@ -656,7 +656,7 @@ pub fn channel_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let channel_obj = Object::Channel(channel_ref.clone());
     send_to_channel(channel_obj, value).map_err(|e| Error::Runtime(e))?;
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Receives a value from a channel
@@ -668,7 +668,7 @@ pub fn channel_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// The received value or an error if the arguments are invalid
-pub fn channel_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn channel_receive(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("channel_receive requires a channel argument".to_string()));
     }
@@ -683,7 +683,7 @@ pub fn channel_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let channel_obj = Object::Channel(channel_ref.clone());
     let value = receive_from_channel(channel_obj).map_err(|e| Error::Runtime(e))?;
     
-    Ok(Rc::new(value))
+    Ok(Arc::new(value))
 }
 
 /// Tries to send a value to a channel without blocking
@@ -696,7 +696,7 @@ pub fn channel_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `true` if the send was successful, `false` if the channel is full
-pub fn channel_try_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn channel_try_send(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("channel_try_send requires a channel and value arguments".to_string()));
     }
@@ -719,7 +719,7 @@ pub fn channel_try_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => return Err(Error::Runtime("try_send_to_channel returned unexpected type".to_string()))
     };
     
-    Ok(Rc::new(Object::Boolean(success)))
+    Ok(Arc::new(Object::Boolean(success)))
 }
 
 /// Tries to receive a value from a channel without blocking
@@ -731,7 +731,7 @@ pub fn channel_try_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// An option containing the received value, or None if the channel is empty
-pub fn channel_try_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn channel_try_receive(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("channel_try_receive requires a channel argument".to_string()));
     }
@@ -750,8 +750,8 @@ pub fn channel_try_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     match result {
         Object::Option(opt) => {
             match opt {
-                Some(obj) => Ok(Rc::new(Object::Option(Some(obj.clone())))),
-                None => Ok(Rc::new(Object::Option(None))),
+                Some(obj) => Ok(Arc::new(Object::Option(Some(obj.clone())))),
+                None => Ok(Arc::new(Object::Option(None))),
             }
         },
         _ => Err(Error::Runtime("try_receive_from_channel returned unexpected type".to_string()))

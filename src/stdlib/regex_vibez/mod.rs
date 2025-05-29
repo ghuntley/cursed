@@ -6,7 +6,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use regex::Regex;
 
 // Import core functionality
@@ -32,7 +32,7 @@ pub use impl_regex_vibez::*;
 ///
 /// Returns a Runtime error if no argument is provided, 
 /// if the argument is not a string, or if the pattern is invalid
-pub fn compile(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn compile(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "compile requires 1 argument: pattern".to_string(),
@@ -54,7 +54,7 @@ pub fn compile(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Ok(regex) => {
             // Create a new object to encapsulate the regex
             let regex_obj = Object::ExternalData(Box::new(regex));
-            Ok(Rc::new(regex_obj))
+            Ok(Arc::new(regex_obj))
         },
         Err(e) => {
             Err(Error::Runtime(
@@ -78,7 +78,7 @@ pub fn compile(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if arguments are invalid
-pub fn match_str(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn match_str(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "match_str requires 2 arguments: pattern and string".to_string(),
@@ -115,7 +115,7 @@ pub fn match_str(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     // Check if the pattern matches anywhere in the string
-    Ok(Rc::new(Object::Boolean(regex.is_match(s))))
+    Ok(Arc::new(Object::Boolean(regex.is_match(s))))
 }
 
 /// Replaces parts of a string that match a pattern with a replacement.
@@ -133,7 +133,7 @@ pub fn match_str(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if arguments are invalid
-pub fn replace(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn replace(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime(
             "replace requires 3 arguments: pattern, string, and replacement".to_string(),
@@ -181,7 +181,7 @@ pub fn replace(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Replace first occurrence
     let result = regex.replace(s, replacement);
     
-    Ok(Rc::new(Object::String(result.to_string())))
+    Ok(Arc::new(Object::String(result.to_string())))
 }
 
 /// Replaces all parts of a string that match a pattern with a replacement.
@@ -199,7 +199,7 @@ pub fn replace(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if arguments are invalid
-pub fn replace_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn replace_all(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime(
             "replace_all requires 3 arguments: pattern, string, and replacement".to_string(),
@@ -247,5 +247,5 @@ pub fn replace_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Replace all occurrences
     let result = regex.replace_all(s, replacement);
     
-    Ok(Rc::new(Object::String(result.to_string())))
+    Ok(Arc::new(Object::String(result.to_string())))
 }
