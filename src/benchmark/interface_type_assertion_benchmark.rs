@@ -389,56 +389,15 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         get_interface_registry_mut_impl(self)
     }
     
-    /// Helper to check if a type implements an interface
-    fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> bool {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::type_implements_impl;
-        type_implements_impl(self, concrete_type_id, interface_type_id).unwrap_or(false)
-    }
+
     
-    /// Helper to get the interface registry
-    fn get_interface_registry(&self) -> Option<&dyn crate::InterfaceTypeRegistry> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_impl;
-        get_interface_registry_impl(self)
-    }
+
     
-    /// Helper method for finding a path in an inheritance hierarchy
-    fn find_inheritance_path(&self, concrete_type_id: u32, interface_type_id: u32) -> Option<Vec<u32>> {
-        // Check if we have a direct implementation
-        if self.type_implements(concrete_type_id, interface_type_id) {
-            return Some(vec![concrete_type_id, interface_type_id]);
-        }
-        
-        // Check for interface path finder
-        if let Some(path_finder) = self.get_interface_path_finder() {
-            if let Ok(paths) = path_finder.find_all_paths(concrete_type_id, interface_type_id) {
-                if !paths.is_empty() {
-                    return Some(paths[0].path.clone());
-                }
-            }
-        }
-        
-        None
-    }
+
     
-    /// Helper to get the interface path finder
-    fn get_interface_path_finder(&self) -> Option<Box<dyn crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder + '_>> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::get_interface_path_finder_impl;
-        get_interface_path_finder_impl(self)
-    }
+
     
-    /// Helper to detect diamond inheritance patterns
-    fn detect_diamond_inheritance(
-        &self,
-        concrete_type_id: u32,
-        interface_type_id: u32
-    ) -> Result<bool, Error> {
-        // Import the common implementation
-        use crate::codegen::llvm::interface_type_registry_common::detect_diamond_inheritance_impl;
-        detect_diamond_inheritance_impl(self, concrete_type_id, interface_type_id)
-    }
+
 }
 
 #[cfg(test)]

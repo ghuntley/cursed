@@ -12,19 +12,19 @@ use std::fmt::Write;
 pub fn spill(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
         println!();
-        return Ok(Rc::new(Object::Nil));
+        return Ok(Rc::new(Object::Null));
     }
     
     let message = format_args(args)?;
     println!("{}", message);
     
-    Ok(Rc::new(Object::Nil))
+    Ok(Rc::new(Object::Null))
 }
 
 /// Log a formatted message to standard output
 pub fn spillf(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::InvalidArguments("spillf requires at least one argument".to_string()));
+        return Err(Error::new("InvalidArguments", "spillf requires at least one argument", None));
     }
     
     let format_str = args[0].to_string();
@@ -33,7 +33,7 @@ pub fn spillf(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let result = format_string(&format_str, format_args)?;
     println!("{}", result);
     
-    Ok(Rc::new(Object::Nil))
+    Ok(Rc::new(Object::Null))
 }
 
 /// Format objects into a string and return it

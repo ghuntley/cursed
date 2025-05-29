@@ -80,7 +80,7 @@ pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// A String Object containing the template output
 pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     if args.is_empty() {
-        return Err(Error::InvalidArguments("Expected template object".to_string()));
+        return Err(Error::new("InvalidArguments", "Expected template object", None));
     }
     
     // In a real implementation, we would execute the template with the provided data
@@ -90,10 +90,10 @@ pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             if let Object::Template(template) = &**obj {
                 Ok(Rc::new(Object::String(template.name.clone())))
             } else {
-                Err(Error::InvalidArguments("Not a template".to_string()))
+                Err(Error::new("InvalidArguments", "Not a template", None))
             }
         },
-        _ => Err(Error::InvalidArguments("Not a template".to_string())),
+        _ => Err(Error::new("InvalidArguments", "Not a template", None)),
     }
 }
 
