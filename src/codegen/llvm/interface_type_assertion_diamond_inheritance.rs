@@ -141,7 +141,7 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
         // If source and target are the same, return a single-node path
         if source_type_id == target_type_id {
             results.push(InterfaceInheritancePath {
-                path: vec![source_type_id],
+                path: vec![source_type_id as u64],
                 interfaces: HashMap::new(),
             });
             return Ok(results);
@@ -152,7 +152,7 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
             if implements {
                 // Create a simple path
                 results.push(InterfaceInheritancePath {
-                    path: vec![source_type_id, target_type_id],
+                    path: vec![source_type_id as u64, target_type_id as u64],
                     interfaces: HashMap::new(),
                 });
             }
@@ -276,7 +276,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             if current_id == target_type_id {
                 if let Some(path) = path_map.get(&current_id) {
                     let inheritance_path = InterfaceInheritancePath {
-                        path: path.clone(),
+                        path: path.iter().map(|&id| id as u64).collect(),
                         interfaces: HashMap::new(),
                     };
                     results.push(inheritance_path);
@@ -311,7 +311,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                         
                         // This is a new path to the target
                         let inheritance_path = InterfaceInheritancePath {
-                            path: new_path,
+                            path: new_path.iter().map(|&id| id as u64).collect(),
                             interfaces: HashMap::new(),
                         };
                         results.push(inheritance_path);

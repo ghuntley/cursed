@@ -229,7 +229,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             }
             
             // Proceed with the standard dynamic dispatch since we don't have optimization info yet
-            return self.call_interface_method_enhanced(interface_ptr, interface_name, method_name, args);
+            return self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args);
         }
         
         // 2. For frequently called methods, try speculative dispatch
@@ -262,7 +262,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // 3. Fall back to enhanced dynamic dispatch if speculative dispatch isn't appropriate yet
-        let result = self.call_interface_method_enhanced(interface_ptr, interface_name, method_name, args)?;
+        let result = self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args)?;
         
         // 4. Update observed types for future optimization
         self.update_type_observations(interface_ptr, interface_name, method_name)?;
@@ -309,7 +309,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         debug!("Generating speculative dispatch for {} expected types", expected_types.len());
         
         // Make sure we have a valid interface pointer
-        if self.check_interface_null(interface_ptr, &format!("speculative dispatch for {}", method_name))? {
+        if self.check_interface_null(interface_ptr.into(), &format!("speculative dispatch for {}", method_name))? {
             return Err(Error::from_str(&format!(
                 "Cannot call method '{}' on null interface value of type {}",
                 method_name, interface_name
@@ -323,7 +323,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         // Extract the vtable pointer for type checking
-        let vtable_ptr = self.extract_vtable_pointer(interface_ptr)?;
+        let vtable_ptr = self.extract_vtable_pointer(interface_ptr.into())?;
         
         // For each expected type, we'll generate a fast path
         let current_function = self.builder().get_insert_block().unwrap().get_parent().unwrap();
@@ -399,7 +399,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
                 let type_struct = CursedType::Struct(type_name.to_string(), Vec::new());
                 
                 // Extract the data pointer
-                let data_ptr = self.extract_data_pointer(interface_ptr)?;
+                let data_ptr = self.extract_data_pointer(interface_ptr.into())?;
                 
                 // Cast to the concrete type
                 // This would be more complex in practice and involve proper struct type determination
@@ -486,7 +486,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Call the regular dynamic dispatch method
         let fallback_result = self.call_interface_method_enhanced(
-            interface_ptr,
+            interface_ptr.into(),
             interface_name,
             method_name,
             args
@@ -636,7 +636,7 @@ impl<'ctx> OptimizedDynamicDispatchExtensions<'ctx> for LlvmCodeGenerator<'ctx> 
         method_name: &str,
     ) -> Result<(), Error> {
         // Extract the vtable pointer
-        let vtable_ptr = self.extract_vtable_pointer(interface_ptr)?;
+        let vtable_ptr = self.extract_vtable_pointer(interface_ptr.into())?;
         
         // Get the interface manager
         let interface_manager = match &self.interface_manager {
