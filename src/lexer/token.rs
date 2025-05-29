@@ -275,6 +275,7 @@ impl Token {
             TokenType::Break => Token::Ghosted,
             TokenType::Continue => Token::Simp,
             TokenType::For => Token::Bestie,
+            TokenType::Question => Token::Question,
         }
     }
 

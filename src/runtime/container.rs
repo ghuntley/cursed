@@ -183,7 +183,7 @@ pub unsafe extern "C" fn map_iterator_create(map: *const c_void) -> *mut c_void 
     // This is unsafe but necessary for FFI interaction
     let gc = Arc::new(GarbageCollector::new());
     let obj_id = map as usize;
-    let obj = Gc::<Object>::new_without_root(gc, obj_id);
+    let obj = Gc::<Object>::new_without_root(gc.clone(), obj_id);
     
     // Check if it's a map
     if let Some(inner) = obj.inner() {

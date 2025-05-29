@@ -397,16 +397,16 @@ pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Close a channel
-pub fn close(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn close(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "close: missing channel argument", None));
     }
     
     match &*args[0] {
         Object::Channel(ch) => {
-            let mut channel = ch.borrow_mut();
+            let mut channel = ch.write().map_err(|_| Error::Runtime("Failed to write channel".to_string()))?;
             channel.close();
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::new("Runtime", "close: argument must be a channel", None)),
     }

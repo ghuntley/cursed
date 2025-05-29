@@ -23,13 +23,12 @@ pub struct Channel {
     pub closed: bool,
 }
 
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use crate::prelude::{StrExt, VecExt, VecStrJoinExt};
 // use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};
@@ -93,7 +92,7 @@ impl ErrorLocation {
 ///
 /// This type is used throughout the runtime system, standard library, and
 /// garbage collector to represent and manipulate program values.
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Object {
     Integer(i64),
     Float(f64),
@@ -102,12 +101,12 @@ pub enum Object {
     Char(char),
     Array(Vec<Object>),
     HashTable(HashMap<String, Object>),
-    Channel(Rc<RefCell<Channel>>),
-    Mutex(RefCell<crate::stdlib::concurrenz::CursedMutex>),
-    RWMutex(RefCell<crate::stdlib::concurrenz::CursedRWMutex>),
-    WaitGroup(RefCell<crate::stdlib::concurrenz::CursedWaitGroup>),
-    Once(RefCell<crate::stdlib::concurrenz::CursedOnce>),
-    Option(Option<Rc<Object>>),
+    Channel(Arc<RwLock<Channel>>),
+    Mutex(RwLock<crate::stdlib::concurrenz::CursedMutex>),
+    RWMutex(RwLock<crate::stdlib::concurrenz::CursedRWMutex>),
+    WaitGroup(RwLock<crate::stdlib::concurrenz::CursedWaitGroup>),
+    Once(RwLock<crate::stdlib::concurrenz::CursedOnce>),
+    Option(Option<Arc<Object>>),
     CompiledFunction {
         ir_representation: String,
         num_locals: usize,
@@ -117,7 +116,7 @@ pub enum Object {
         is_variadic: bool,
     },
     Closure {
-        function: Rc<CompiledFunction>,
+        function: Arc<CompiledFunction>,
         free_vars: Vec<Object>,
     },
     Builtin {
@@ -129,7 +128,7 @@ pub enum Object {
         fields: Vec<(String, String)>, // (name, type)
     },
     Instance {
-        struct_type: Rc<Object>,
+        struct_type: Arc<Object>,
         fields: HashMap<String, Object>,
     },
     Interface {
@@ -141,19 +140,81 @@ pub enum Object {
         name: String,                      // Method name
         parameters: Vec<(String, String)>, // Parameters (name, type)
         return_type: Option<String>,       // Optional return type
-        function: Rc<CompiledFunction>,    // The compiled method body
+        function: Arc<CompiledFunction>,   // The compiled method body
     },
     Error {
         message: String,
         error_type: Option<String>,
         stack_trace: Vec<ErrorLocation>,
     },
-    Reference(Rc<RefCell<Object>>),
+    Reference(Arc<RwLock<Object>>),
+    /// External data wrapper for arbitrary data types
+    ExternalData(Box<dyn std::any::Any + Send + Sync>),
+    /// Template object for string templating
+    Template(Arc<dyn std::any::Any + Send + Sync>),
+    /// Function object wrapper
+    Function(Arc<CompiledFunction>),
     Null,
 }
 
 /// Builtin function type for the CURSED language
-pub type BuiltinFunction = fn(args: &[Rc<Object>]) -> Result<Rc<Object>, Error>;
+pub type BuiltinFunction = fn(args: &[Arc<Object>]) -> Result<Arc<Object>, Error>;
+
+impl PartialEq for Object {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Object::Integer(a), Object::Integer(b)) => a == b,
+            (Object::Float(a), Object::Float(b)) => a == b,
+            (Object::Boolean(a), Object::Boolean(b)) => a == b,
+            (Object::String(a), Object::String(b)) => a == b,
+            (Object::Char(a), Object::Char(b)) => a == b,
+            (Object::Array(a), Object::Array(b)) => a == b,
+            (Object::HashTable(a), Object::HashTable(b)) => a == b,
+            (Object::Null, Object::Null) => true,
+            // For complex types like Channel, Mutex, etc., we compare by identity
+            (Object::Channel(a), Object::Channel(b)) => Arc::ptr_eq(a, b),
+            (Object::Mutex(a), Object::Mutex(b)) => std::ptr::eq(a, b),
+            (Object::RWMutex(a), Object::RWMutex(b)) => std::ptr::eq(a, b),
+            (Object::WaitGroup(a), Object::WaitGroup(b)) => std::ptr::eq(a, b),
+            (Object::Once(a), Object::Once(b)) => std::ptr::eq(a, b),
+            (Object::Option(a), Object::Option(b)) => a == b,
+            (Object::CompiledFunction { name: name_a, ir_representation: ir_a, .. }, 
+             Object::CompiledFunction { name: name_b, ir_representation: ir_b, .. }) => {
+                name_a == name_b && ir_a == ir_b
+            },
+            (Object::Closure { function: func_a, .. }, Object::Closure { function: func_b, .. }) => {
+                Arc::ptr_eq(func_a, func_b)
+            },
+            (Object::Builtin { name: name_a, .. }, Object::Builtin { name: name_b, .. }) => {
+                name_a == name_b
+            },
+            (Object::Struct { name: name_a, fields: fields_a }, Object::Struct { name: name_b, fields: fields_b }) => {
+                name_a == name_b && fields_a == fields_b
+            },
+            (Object::Instance { struct_type: type_a, fields: fields_a }, 
+             Object::Instance { struct_type: type_b, fields: fields_b }) => {
+                Arc::ptr_eq(type_a, type_b) && fields_a == fields_b
+            },
+            (Object::Interface { name: name_a, .. }, Object::Interface { name: name_b, .. }) => {
+                name_a == name_b
+            },
+            (Object::Method { name: name_a, receiver_type: recv_a, .. }, 
+             Object::Method { name: name_b, receiver_type: recv_b, .. }) => {
+                name_a == name_b && recv_a == recv_b
+            },
+            (Object::Error { message: msg_a, error_type: type_a, .. }, 
+             Object::Error { message: msg_b, error_type: type_b, .. }) => {
+                msg_a == msg_b && type_a == type_b
+            },
+            (Object::Reference(a), Object::Reference(b)) => Arc::ptr_eq(a, b),
+            // ExternalData, Template, and Function variants are not comparable by value
+            (Object::ExternalData(_), Object::ExternalData(_)) => false,
+            (Object::Template(_), Object::Template(_)) => false,
+            (Object::Function(a), Object::Function(b)) => Arc::ptr_eq(a, b),
+            _ => false,
+        }
+    }
+}
 
 /// Trait for callable objects (functions, closures, methods) that can be invoked
 pub trait Callable {
@@ -174,12 +235,16 @@ impl Callable for Object {
                 Ok(Object::Null)
             }
             Object::Builtin { function, .. } => {
-                // Convert args to Rc<Object> for builtin function call
-                let rc_args: Vec<Rc<Object>> =
-                    args.iter().map(|arg| Rc::new(arg.clone())).collect();
+                // Convert args to Arc<Object> for builtin function call
+                let arc_args: Vec<Arc<Object>> =
+                    args.iter().map(|arg| Arc::new(arg.clone())).collect();
                 // Call the builtin function and convert the result back
-                let rc_result = function(&rc_args)?;
-                Ok((*rc_result).clone())
+                let arc_result = function(&arc_args)?;
+                Ok((*arc_result).clone())
+            }
+            Object::Function(_function) => {
+                // Simplified implementation for Function wrapper
+                Ok(Object::Null)
             }
             _ => Err(Error::Runtime(format!(
                 "Cannot call non-callable object: {}",
@@ -271,9 +336,15 @@ impl Clone for Object {
                 return_type: return_type.clone(),
                 function: function.clone(),
             },
+            Object::ExternalData(data) => {
+                // ExternalData cannot be cloned since it's Any - create a new null instead
+                Object::Null
+            },
+            Object::Template(template) => Object::Template(template.clone()),
+            Object::Function(function) => Object::Function(function.clone()),
             Object::Null => Object::Null,
             Object::Reference(ref_obj) => {
-                Object::Reference(Rc::new(RefCell::new(ref_obj.borrow().clone())))
+                Object::Reference(Arc::new(RwLock::new(ref_obj.read().unwrap().clone())))
             }
         }
     }
@@ -368,6 +439,15 @@ impl Traceable for Object {
                 if let Some(obj) = opt {
                     obj.trace(visitor);
                 }
+            },
+            Object::ExternalData(_) => {
+                // ExternalData doesn't contain any traceable references
+            },
+            Object::Template(_) => {
+                // Template doesn't contain any traceable references
+            },
+            Object::Function(_) => {
+                // Function doesn't contain any traceable references
             }
         }
     }
@@ -444,7 +524,7 @@ impl Traceable for Object {
                 struct_type,
                 fields,
             } => {
-                let mut size = std::mem::size_of::<Rc<Object>>() + struct_type.size();
+                let mut size = std::mem::size_of::<Arc<Object>>() + struct_type.size();
                 for (key, value) in fields {
                     size += key.len() + value.size();
                 }
@@ -477,24 +557,27 @@ impl Traceable for Object {
                 if let Some(ret_type) = return_type {
                     size += ret_type.len();
                 }
-                size += std::mem::size_of::<Rc<CompiledFunction>>();
+                size += std::mem::size_of::<Arc<CompiledFunction>>();
                 size
             }
             Object::Null => std::mem::size_of::<()>(),
             Object::Reference(ref_obj) => {
-                std::mem::size_of::<Rc<RefCell<Object>>>() + ref_obj.borrow().size()
+                std::mem::size_of::<Arc<RwLock<Object>>>() + ref_obj.read().unwrap().size()
             },
-            Object::Mutex(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedMutex>>(),
-            Object::RWMutex(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedRWMutex>>(),
-            Object::WaitGroup(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedWaitGroup>>(),
-            Object::Once(_) => std::mem::size_of::<RefCell<crate::stdlib::concurrenz::CursedOnce>>(),
+            Object::Mutex(_) => std::mem::size_of::<RwLock<crate::stdlib::concurrenz::CursedMutex>>(),
+            Object::RWMutex(_) => std::mem::size_of::<RwLock<crate::stdlib::concurrenz::CursedRWMutex>>(),
+            Object::WaitGroup(_) => std::mem::size_of::<RwLock<crate::stdlib::concurrenz::CursedWaitGroup>>(),
+            Object::Once(_) => std::mem::size_of::<RwLock<crate::stdlib::concurrenz::CursedOnce>>(),
             Object::Option(opt) => {
-                let base_size = std::mem::size_of::<Option<Rc<Object>>>();
+                let base_size = std::mem::size_of::<Option<Arc<Object>>>();
                 match opt {
                     Some(obj) => base_size + obj.size(),
                     None => base_size,
                 }
-            }
+            },
+            Object::ExternalData(_) => std::mem::size_of::<Box<dyn std::any::Any + Send + Sync>>(),
+            Object::Template(_) => std::mem::size_of::<Arc<dyn std::any::Any + Send + Sync>>(),
+            Object::Function(_) => std::mem::size_of::<Arc<CompiledFunction>>(),
         }
     }
 
@@ -524,6 +607,9 @@ impl Traceable for Object {
                 Some(obj) => obj.tag(),
                 None => Tag::Null,
             },
+            Object::ExternalData(_) => Tag::Object,
+            Object::Template(_) => Tag::Object,
+            Object::Function(_) => Tag::Function,
             Object::Null => Tag::Null,
         }
     }
@@ -637,7 +723,10 @@ impl Display for Object {
             Object::Option(opt) => match opt {
                 Some(obj) => write!(f, "Some({})", obj),
                 None => write!(f, "None"),
-            }
+            },
+            Object::ExternalData(_) => write!(f, "[ExternalData]"),
+            Object::Template(_) => write!(f, "[Template]"),
+            Object::Function(_) => write!(f, "[Function]"),
         }
     }
 }
@@ -859,6 +948,11 @@ impl Object {
     pub fn is_struct(&self) -> bool {
         matches!(self, Object::Struct { .. })
     }
+    
+    /// Check if this object is a template
+    pub fn is_template(&self) -> bool {
+        matches!(self, Object::Template(_))
+    }
 
     /// Get the type name of this object
     pub fn type_name(&self) -> &'static str {
@@ -886,6 +980,9 @@ impl Object {
             Object::Once(_) => "once",
             Object::Option(Some(obj)) => "option",
             Object::Option(None) => "option",
+            Object::ExternalData(_) => "external_data",
+            Object::Template(_) => "template",
+            Object::Function(_) => "function",
             Object::Null => "null",
         }
     }
@@ -960,7 +1057,7 @@ impl Object {
             Object::Array(a) => !a.is_empty(),
             Object::HashTable(h) => !h.is_empty(),
             Object::Channel(ch) => {
-                let channel = ch.borrow();
+                let channel = ch.read().unwrap();
                 !channel.closed // Channel is truthy if it's not closed
             }
             Object::CompiledFunction { .. } => true,
@@ -975,8 +1072,11 @@ impl Object {
             Object::Mutex(_) => true,
             Object::RWMutex(_) => true,
             Object::WaitGroup(_) => true,
-            Object::Once(once) => once.borrow().is_done(),
+            Object::Once(once) => once.read().unwrap().is_done(),
             Object::Option(opt) => opt.is_some(),
+            Object::ExternalData(_) => true,
+            Object::Template(_) => true,
+            Object::Function(_) => true,
             Object::Null => false,
         }
     }
@@ -1072,7 +1172,10 @@ impl Object {
                     "method {}:{}({}){}{{ ... }}",
                     receiver_type, name, params_str, return_str
                 )
-            }
+            },
+            Object::ExternalData(_) => "[ExternalData]".to_string(),
+            Object::Template(_) => "[Template]".to_string(),
+            Object::Function(_) => "[Function]".to_string(),
         }
     }
 
@@ -1149,7 +1252,7 @@ impl Object {
         }
     }
 
-    pub fn to_instance(&self) -> Option<(Rc<Object>, HashMap<String, Object>)> {
+    pub fn to_instance(&self) -> Option<(Arc<Object>, HashMap<String, Object>)> {
         match self {
             Object::Instance {
                 struct_type,
@@ -1174,14 +1277,14 @@ impl Object {
     pub fn new_channel(element_type: String, buffer_size: usize) -> Self {
         let channel = Channel::new(element_type, buffer_size);
         tracing::debug!("Created new channel object");
-        Object::Channel(Rc::new(RefCell::new(channel)))
+        Object::Channel(Arc::new(RwLock::new(channel)))
     }
 
     /// Send a value to a channel
     #[tracing::instrument(skip(self, value), fields(self_type = ?self.type_name(), value_type = ?value.type_name()), level = "debug")]
     pub fn channel_send(&self, value: Object) -> Result<(), Error> {
         match self {
-            Object::Channel(channel) => channel.borrow_mut().send(value),
+            Object::Channel(channel) => channel.write().unwrap().send(value),
             _ => Err(Error::Runtime(format!(
                 "Cannot send to non-channel object: {}",
                 self.type_name()
@@ -1192,7 +1295,7 @@ impl Object {
     /// Receive a value from a channel
     pub fn channel_receive(&self) -> Result<Object, Error> {
         match self {
-            Object::Channel(channel) => channel.borrow_mut().receive(),
+            Object::Channel(channel) => channel.write().unwrap().receive(),
             _ => Err(Error::Runtime(format!(
                 "Cannot receive from non-channel object: {}",
                 self.type_name()
@@ -1200,7 +1303,7 @@ impl Object {
         }
     }
 
-    pub fn to_function(&self) -> Option<Rc<CompiledFunction>> {
+    pub fn to_function(&self) -> Option<Arc<CompiledFunction>> {
         match self {
             Object::CompiledFunction {
                 ir_representation,
@@ -1225,7 +1328,7 @@ impl Object {
                         .collect(),
                     is_variadic: *is_variadic,
                 };
-                Some(Rc::new(func))
+                Some(Arc::new(func))
             }
             _ => None,
         }
@@ -1539,8 +1642,8 @@ impl From<(String, Vec<(String, String)>)> for Object {
     }
 }
 
-impl From<(Rc<Object>, HashMap<String, Object>)> for Object {
-    fn from(val: (Rc<Object>, HashMap<String, Object>)) -> Self {
+impl From<(Arc<Object>, HashMap<String, Object>)> for Object {
+    fn from(val: (Arc<Object>, HashMap<String, Object>)) -> Self {
         Object::Instance {
             struct_type: val.0,
             fields: val.1,
@@ -1548,8 +1651,8 @@ impl From<(Rc<Object>, HashMap<String, Object>)> for Object {
     }
 }
 
-impl From<(Rc<CompiledFunction>, Vec<Object>)> for Object {
-    fn from(val: (Rc<CompiledFunction>, Vec<Object>)) -> Self {
+impl From<(Arc<CompiledFunction>, Vec<Object>)> for Object {
+    fn from(val: (Arc<CompiledFunction>, Vec<Object>)) -> Self {
         Object::Closure {
             function: val.0,
             free_vars: val.1,

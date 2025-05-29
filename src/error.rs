@@ -158,6 +158,9 @@ pub enum Error {
     
     /// Type assertion errors
     TypeAssertion(crate::error_enhanced::CursedError),
+    
+    /// Invalid arguments error
+    InvalidArguments(String),
 }
 
 /// Utility for creating properly formatted error instances
@@ -296,6 +299,7 @@ impl Clone for Error {
             Error::SystemError(msg) => Error::SystemError(msg.clone()),
             Error::CodeGenError(msg) => Error::CodeGenError(msg.clone()),
             Error::TypeAssertion(error) => Error::TypeAssertion(error.clone()),
+            Error::InvalidArguments(msg) => Error::InvalidArguments(msg.clone()),
         }
     }
 }
@@ -473,6 +477,7 @@ impl Error {
             Error::NotImplemented { message } => message.clone(),
             Error::CodeGenError(msg) => msg.clone(),
             Error::TypeAssertion(error) => error.message().to_string(),
+            Error::InvalidArguments(msg) => msg.clone(),
         }
     }
 
