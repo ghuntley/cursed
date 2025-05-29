@@ -20,7 +20,7 @@ use std::path::Path;
 /// # Returns
 ///
 /// A new empty Template Object with the given name
-pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::InvalidArguments("Expected at least template name".to_string()));
     }
@@ -32,7 +32,7 @@ pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         functions: HashMap::new(),
     };
     
-    Ok(Rc::new(Object::Template(Rc::new(template))))
+    Ok(Arc::new(Object::Template(Arc::new(template))))
 }
 
 /// Parse a template from a string
@@ -45,7 +45,7 @@ pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A Template Object containing the parsed template
-pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::InvalidArguments("Expected template string".to_string()));
     }
@@ -105,7 +105,7 @@ pub struct Template {
     /// The parsed template structure (internal representation)
     parsed: TemplateAST,
     /// Custom functions available in this template
-    functions: HashMap<String, Rc<Object>>,
+    functions: HashMap<String, Arc<Object>>,
 }
 
 /// Internal AST representation of a parsed template

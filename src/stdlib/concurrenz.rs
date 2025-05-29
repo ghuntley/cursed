@@ -241,9 +241,9 @@ impl CursedOnce {
 /// # Returns
 ///
 /// A new mutex object
-pub fn new_mutex(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new_mutex(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let mutex = CursedMutex::new();
-    Ok(Rc::new(Object::Mutex(RefCell::new(mutex))))
+    Ok(Arc::new(Object::Mutex(RwLock::new(mutex))))
 }
 
 /// Locks a mutex
@@ -259,16 +259,16 @@ pub fn new_mutex(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the mutex is invalid
-pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn mutex_lock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("mutex_lock requires a mutex argument".to_string()));
     }
     
     match &*args[0] {
         Object::Mutex(mutex_cell) => {
-            let mutex = mutex_cell.borrow();
+            let mut mutex = mutex_cell.write().unwrap();
             mutex.lock()?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::Runtime("First argument to mutex_lock must be a mutex".to_string())),
     }
@@ -286,16 +286,16 @@ pub fn mutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the mutex is invalid or not locked
-pub fn mutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn mutex_unlock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("mutex_unlock requires a mutex argument".to_string()));
     }
     
     match &*args[0] {
         Object::Mutex(mutex_cell) => {
-            let mutex = mutex_cell.borrow();
+            let mutex = mutex_cell.read().map_err(|_| Error::Runtime("Failed to read mutex".to_string()))?;
             mutex.unlock()?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::Runtime("First argument to mutex_unlock must be a mutex".to_string())),
     }
@@ -309,9 +309,9 @@ pub fn mutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new RWMutex object
-pub fn new_rwmutex(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new_rwmutex(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let rwmutex = CursedRWMutex::new();
-    Ok(Rc::new(Object::RWMutex(RefCell::new(rwmutex))))
+    Ok(Arc::new(Object::RWMutex(RwLock::new(rwmutex))))
 }
 
 /// Locks a read-write mutex for writing
@@ -326,16 +326,16 @@ pub fn new_rwmutex(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the RWMutex is invalid
-pub fn rwmutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn rwmutex_lock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("rwmutex_lock requires a rwmutex argument".to_string()));
     }
     
     match &*args[0] {
         Object::RWMutex(rwmutex_cell) => {
-            let rwmutex = rwmutex_cell.borrow();
+            let rwmutex = rwmutex_cell.read().map_err(|_| Error::Runtime("Failed to read rwmutex".to_string()))?;
             rwmutex.lock()?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::Runtime("First argument to rwmutex_lock must be a rwmutex".to_string())),
     }
@@ -352,16 +352,16 @@ pub fn rwmutex_lock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the RWMutex is invalid or not locked
-pub fn rwmutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn rwmutex_unlock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("rwmutex_unlock requires a rwmutex argument".to_string()));
     }
     
     match &*args[0] {
         Object::RWMutex(rwmutex_cell) => {
-            let rwmutex = rwmutex_cell.borrow();
+            let rwmutex = rwmutex_cell.read().map_err(|_| Error::Runtime("Failed to read rwmutex".to_string()))?;
             rwmutex.unlock()?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::Runtime("First argument to rwmutex_unlock must be a rwmutex".to_string())),
     }
@@ -379,16 +379,16 @@ pub fn rwmutex_unlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the RWMutex is invalid
-pub fn rwmutex_rlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn rwmutex_rlock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("rwmutex_rlock requires a rwmutex argument".to_string()));
     }
     
     match &*args[0] {
         Object::RWMutex(rwmutex_cell) => {
-            let rwmutex = rwmutex_cell.borrow();
+            let rwmutex = rwmutex_cell.read().map_err(|_| Error::Runtime("Failed to read rwmutex".to_string()))?;
             rwmutex.rlock()?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::Runtime("First argument to rwmutex_rlock must be a rwmutex".to_string())),
     }
@@ -405,16 +405,16 @@ pub fn rwmutex_rlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the RWMutex is invalid or not locked
-pub fn rwmutex_runlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn rwmutex_runlock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("rwmutex_runlock requires a rwmutex argument".to_string()));
     }
     
     match &*args[0] {
         Object::RWMutex(rwmutex_cell) => {
-            let rwmutex = rwmutex_cell.borrow();
+            let rwmutex = rwmutex_cell.read().map_err(|_| Error::Runtime("Failed to read rwmutex".to_string()))?;
             rwmutex.runlock()?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::Runtime("First argument to rwmutex_runlock must be a rwmutex".to_string())),
     }
@@ -430,9 +430,9 @@ pub fn rwmutex_runlock(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new WaitGroup object
-pub fn new_waitgroup(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new_waitgroup(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let waitgroup = CursedWaitGroup::new();
-    Ok(Rc::new(Object::WaitGroup(RefCell::new(waitgroup))))
+    Ok(Arc::new(Object::WaitGroup(RwLock::new(waitgroup))))
 }
 
 /// Adds delta to the WaitGroup counter
@@ -449,14 +449,14 @@ pub fn new_waitgroup(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the arguments are invalid
-pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn waitgroup_add(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("waitgroup_add requires a waitgroup and delta arguments".to_string()));
     }
     
     // Extract waitgroup
-    let waitgroup = match &*args[0] {
-        Object::WaitGroup(wg_cell) => wg_cell.borrow(),
+    let mut waitgroup = match &*args[0] {
+        Object::WaitGroup(wg_cell) => wg_cell.write().unwrap(),
         _ => return Err(Error::Runtime("First argument to waitgroup_add must be a waitgroup".to_string())),
     };
     
@@ -469,7 +469,7 @@ pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Add to the waitgroup
     waitgroup.add(delta)?;
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Decrements the WaitGroup counter by one
@@ -483,21 +483,21 @@ pub fn waitgroup_add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the arguments are invalid
-pub fn waitgroup_done(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn waitgroup_done(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("waitgroup_done requires a waitgroup argument".to_string()));
     }
     
     // Extract waitgroup
-    let waitgroup = match &*args[0] {
-        Object::WaitGroup(wg_cell) => wg_cell.borrow(),
+    let mut waitgroup = match &*args[0] {
+        Object::WaitGroup(wg_cell) => wg_cell.write().unwrap(),
         _ => return Err(Error::Runtime("First argument to waitgroup_done must be a waitgroup".to_string())),
     };
     
     // Call done on the waitgroup
     waitgroup.done()?;
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Blocks until the WaitGroup counter is zero
@@ -509,21 +509,21 @@ pub fn waitgroup_done(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the arguments are invalid
-pub fn waitgroup_wait(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn waitgroup_wait(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("waitgroup_wait requires a waitgroup argument".to_string()));
     }
     
     // Extract waitgroup
     let waitgroup = match &*args[0] {
-        Object::WaitGroup(wg_cell) => wg_cell.borrow(),
+        Object::WaitGroup(wg_cell) => wg_cell.read().unwrap(),
         _ => return Err(Error::Runtime("First argument to waitgroup_wait must be a waitgroup".to_string())),
     };
     
     // Wait on the waitgroup
     waitgroup.wait()?;
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Creates a new Once object
@@ -533,9 +533,9 @@ pub fn waitgroup_wait(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new Once object
-pub fn new_once(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new_once(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let once = CursedOnce::new();
-    Ok(Rc::new(Object::Once(RefCell::new(once))))
+    Ok(Arc::new(Object::Once(RwLock::new(once))))
 }
 
 /// Performs a function execution exactly once
@@ -552,21 +552,21 @@ pub fn new_once(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the arguments are invalid
-pub fn once_do(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn once_do(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("once_do requires a once argument".to_string()));
     }
     
     // Extract once
-    let once = match &*args[0] {
-        Object::Once(once_cell) => once_cell.borrow(),
+    let mut once = match &*args[0] {
+        Object::Once(once_cell) => once_cell.write().unwrap(),
         _ => return Err(Error::Runtime("First argument to once_do must be a once".to_string())),
     };
     
     // Execute with an empty function (for testing)
     once.do_with_fn(|| {})?;
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Internal function used by tests to execute a function exactly once with a Once object
@@ -579,7 +579,7 @@ pub fn once_do(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// `nil` on success or an error if the arguments are invalid
-pub fn once_do_with_fn<F>(args: &[Rc<Object>], f: F) -> Result<Rc<Object>, Error>
+pub fn once_do_with_fn<F>(args: &[Arc<Object>], f: F) -> Result<Arc<Object>, Error>
 where
     F: FnOnce() + Send + 'static
 {
@@ -588,15 +588,15 @@ where
     }
     
     // Extract once
-    let once = match &*args[0] {
-        Object::Once(once_cell) => once_cell.borrow(),
+    let mut once = match &*args[0] {
+        Object::Once(once_cell) => once_cell.write().unwrap(),
         _ => return Err(Error::Runtime("First argument to once_do_with_fn must be a once".to_string())),
     };
     
     // Execute with the provided function
     once.do_with_fn(f)?;
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Creates a new channel with the specified capacity
