@@ -371,7 +371,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let fn_type = direct_getter.get_type().get_return_type()
             .ok_or_else(|| Error::codegen(format!("Failed to get return type for {}", direct_getter.get_name().to_string_lossy())))?
             .fn_type(
-                direct_getter_type.get_param_types().iter().map(|t| t.into()).collect::<Vec<_>>().as_slice(), 
+                direct_getter_type.get_param_types().iter().map(|t| (*t).into()).collect::<Vec<_>>().as_slice(), 
                 false
             );
         
@@ -415,7 +415,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let direct_setter_type = direct_setter.get_type();
         let fn_type = self.context().void_type()
             .fn_type(
-                direct_setter_type.get_param_types().iter().map(|t| t.into()).collect::<Vec<_>>().as_slice(), 
+                direct_setter_type.get_param_types().iter().map(|t| (*t).into()).collect::<Vec<_>>().as_slice(), 
                 false
             );
         
