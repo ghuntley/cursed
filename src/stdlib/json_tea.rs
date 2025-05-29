@@ -36,7 +36,7 @@
 use crate::error::Error;
 use crate::object::Object;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Serializes a CURSED object into a JSON string.
 ///
@@ -63,7 +63,7 @@ use std::rc::Rc;
 /// Returns a Runtime error if:
 /// - No argument is provided
 /// - The object contains unsupported types for JSON serialization
-pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn marshal(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("marshal requires 1 argument".to_string()));
     }
@@ -82,7 +82,7 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                     json.push_str(",");
                 }
                 // Recursive marshal
-                let item_json = marshal(&[Rc::new(item.clone())])?;
+                let item_json = marshal(&[Arc::new(item.clone())])?;
                 if let Object::String(s) = &*item_json {
                     json.push_str(s);
                 }
@@ -104,7 +104,7 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 json.push_str(&format!("\"{}\": ", key));
 
                 // Recursive marshal for value
-                let value_json = marshal(&[Rc::new(value.clone())])?;
+                let value_json = marshal(&[Arc::new(value.clone())])?;
                 if let Object::String(s) = &*value_json {
                     json.push_str(s);
                 }
@@ -121,7 +121,7 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::String(json)))
+    Ok(Arc::new(Object::String(json)))
 }
 
 /// Parses a JSON string into a CURSED object.
@@ -147,7 +147,7 @@ pub fn marshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if fewer than 2 arguments are provided
-pub fn unmarshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn unmarshal(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "unmarshal requires 2 arguments: JSON string and target object".to_string(),
@@ -165,7 +165,7 @@ pub fn unmarshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     // If the string is empty, return null
     if json_str.is_empty() {
-        return Ok(Rc::new(Object::Null));
+        return Ok(Arc::new(Object::Null));
     }
 
     // Parse the JSON content based on the first character
@@ -197,7 +197,7 @@ pub fn unmarshal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     }?;
 
-    Ok(Rc::new(result))
+    Ok(Arc::new(result))
 }
 
 /// Parse a JSON object from a string
@@ -238,7 +238,7 @@ fn parse_json_object(json_str: &str) -> Result<Object, Error> {
         
         // Parse the value recursively
         let value_str = parts[1].trim();
-        let value = match unmarshal(&[Rc::new(Object::String(value_str.to_string())), Rc::new(Object::Null)]) {
+        let value = match unmarshal(&[Arc::new(Object::String(value_str.to_string())), Arc::new(Object::Null)]) {
             Ok(parsed) => (*parsed).clone(),
             Err(e) => return Err(e),
         };
@@ -272,7 +272,7 @@ fn parse_json_array(json_str: &str) -> Result<Object, Error> {
     for element in elements {
         // Parse each element recursively
         let elem_str = element.trim();
-        let parsed_elem = match unmarshal(&[Rc::new(Object::String(elem_str.to_string())), Rc::new(Object::Null)]) {
+        let parsed_elem = match unmarshal(&[Arc::new(Object::String(elem_str.to_string())), Arc::new(Object::Null)]) {
             Ok(parsed) => (*parsed).clone(),
             Err(e) => return Err(e),
         };

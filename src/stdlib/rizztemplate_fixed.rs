@@ -5,7 +5,7 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
 use std::io::{self, Write};
-use std::rc::Rc;
+use std::sync::Arc;
 use std::str::Chars;
 
 extern crate glob;
@@ -20,7 +20,7 @@ extern crate glob;
 /// 
 /// A Result containing the parsed template set or an error
 #[tracing::instrument(level = "debug")]
-pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_files(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("rizztemplate.ParseFiles requires file names".to_string()));
     }
@@ -39,7 +39,7 @@ pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         fields: vec![("name".to_string(), "string".to_string())],
     };
     
-    Ok(Rc::new(template_obj))
+    Ok(Arc::new(template_obj))
 }
 
 /// Parses files matching the glob pattern into a template set
@@ -52,7 +52,7 @@ pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A Result containing the parsed template set or an error
 #[tracing::instrument(level = "debug")]
-pub fn parse_glob(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_glob(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("rizztemplate.ParseGlob requires a pattern".to_string()));
     }
@@ -69,5 +69,5 @@ pub fn parse_glob(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         fields: vec![("name".to_string(), "string".to_string())],
     };
     
-    Ok(Rc::new(template_obj))
+    Ok(Arc::new(template_obj))
 }

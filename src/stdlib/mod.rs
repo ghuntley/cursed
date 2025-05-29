@@ -63,7 +63,7 @@ pub mod generator; // Generator trait for property-based testing
 pub mod concurrenz_impl {
     use crate::error::Error;
     use crate::object::Object;
-    use std::rc::Rc;
+    use std::sync::Arc;
     use std::sync::{Mutex, RwLock, Once, OnceLock};
     use std::cell::RefCell;
     use std::sync::mpsc::{channel, Sender, Receiver};
@@ -79,8 +79,8 @@ pub mod concurrenz_impl {
     }
     
     /// Create a new wait group
-    pub fn new_waitgroup() -> Rc<Object> {
-        Rc::new(Object::Integer(0)) // Placeholder
+    pub fn new_waitgroup() -> Arc<Object> {
+        Arc::new(Object::Integer(0)) // Placeholder
     }
     
     /// Create a new Once
@@ -128,7 +128,7 @@ pub use json_tea::{marshal, unmarshal};
 pub mod mathz_impl {
     use crate::error::Error;
     use crate::object::Object;
-    use std::rc::Rc;
+    use std::sync::Arc;
     use std::f64;
     use rand::Rng;
     
@@ -139,137 +139,137 @@ pub mod mathz_impl {
     // Math operations
     
     /// Absolute value
-    pub fn abs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn abs(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("abs requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Integer(i.abs()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.abs()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Integer(i.abs()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.abs()))),
             _ => Err(Error::Runtime("abs requires a number".to_string())),
         }
     }
     
     /// Square root
-    pub fn sqrt(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn sqrt(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("sqrt requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).sqrt()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.sqrt()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).sqrt()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.sqrt()))),
             _ => Err(Error::Runtime("sqrt requires a number".to_string())),
         }
     }
     
     /// Sine
-    pub fn sin(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn sin(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("sin requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).sin()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.sin()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).sin()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.sin()))),
             _ => Err(Error::Runtime("sin requires a number".to_string())),
         }
     }
     
     /// Cosine
-    pub fn cos(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn cos(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("cos requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).cos()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.cos()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).cos()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.cos()))),
             _ => Err(Error::Runtime("cos requires a number".to_string())),
         }
     }
     
     /// Tangent
-    pub fn tan(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn tan(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("tan requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).tan()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.tan()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).tan()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.tan()))),
             _ => Err(Error::Runtime("tan requires a number".to_string())),
         }
     }
     
     /// Natural logarithm
-    pub fn log(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn log(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("log requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).ln()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.ln()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).ln()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.ln()))),
             _ => Err(Error::Runtime("log requires a number".to_string())),
         }
     }
     
     /// Exponential
-    pub fn exp(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn exp(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("exp requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Float((*i as f64).exp()))),
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.exp()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Float((*i as f64).exp()))),
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.exp()))),
             _ => Err(Error::Runtime("exp requires a number".to_string())),
         }
     }
     
     /// Floor
-    pub fn floor(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn floor(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("floor requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Integer(*i))), // Integer already floored
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.floor()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Integer(*i))), // Integer already floored
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.floor()))),
             _ => Err(Error::Runtime("floor requires a number".to_string())),
         }
     }
     
     /// Ceiling
-    pub fn ceil(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn ceil(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("ceil requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Integer(*i))), // Integer already ceiled
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.ceil()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Integer(*i))), // Integer already ceiled
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.ceil()))),
             _ => Err(Error::Runtime("ceil requires a number".to_string())),
         }
     }
     
     /// Round
-    pub fn round(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn round(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("round requires 1 argument".to_string()));
         }
         
         match &*args[0] {
-            Object::Integer(i) => Ok(Rc::new(Object::Integer(*i))), // Integer already rounded
-            Object::Float(f) => Ok(Rc::new(Object::Float(f.round()))),
+            Object::Integer(i) => Ok(Arc::new(Object::Integer(*i))), // Integer already rounded
+            Object::Float(f) => Ok(Arc::new(Object::Float(f.round()))),
             _ => Err(Error::Runtime("round requires a number".to_string())),
         }
     }
     
     /// Maximum
-    pub fn max(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn max(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 2 {
             return Err(Error::Runtime("max requires at least 2 arguments".to_string()));
         }
@@ -277,25 +277,25 @@ pub mod mathz_impl {
         // Simple implementation for just 2 numbers
         match (&*args[0], &*args[1]) {
             (Object::Integer(a), Object::Integer(b)) => {
-                Ok(Rc::new(Object::Integer(std::cmp::max(*a, *b))))
+                Ok(Arc::new(Object::Integer(std::cmp::max(*a, *b))))
             },
             (Object::Integer(a), Object::Float(b)) => {
                 let a_float = *a as f64;
-                Ok(Rc::new(Object::Float(a_float.max(*b))))
+                Ok(Arc::new(Object::Float(a_float.max(*b))))
             },
             (Object::Float(a), Object::Integer(b)) => {
                 let b_float = *b as f64;
-                Ok(Rc::new(Object::Float(a.max(b_float))))
+                Ok(Arc::new(Object::Float(a.max(b_float))))
             },
             (Object::Float(a), Object::Float(b)) => {
-                Ok(Rc::new(Object::Float(a.max(*b))))
+                Ok(Arc::new(Object::Float(a.max(*b))))
             },
             _ => Err(Error::Runtime("max requires numbers".to_string())),
         }
     }
     
     /// Minimum
-    pub fn min(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn min(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 2 {
             return Err(Error::Runtime("min requires at least 2 arguments".to_string()));
         }
@@ -303,25 +303,25 @@ pub mod mathz_impl {
         // Simple implementation for just 2 numbers
         match (&*args[0], &*args[1]) {
             (Object::Integer(a), Object::Integer(b)) => {
-                Ok(Rc::new(Object::Integer(std::cmp::min(*a, *b))))
+                Ok(Arc::new(Object::Integer(std::cmp::min(*a, *b))))
             },
             (Object::Integer(a), Object::Float(b)) => {
                 let a_float = *a as f64;
-                Ok(Rc::new(Object::Float(a_float.min(*b))))
+                Ok(Arc::new(Object::Float(a_float.min(*b))))
             },
             (Object::Float(a), Object::Integer(b)) => {
                 let b_float = *b as f64;
-                Ok(Rc::new(Object::Float(a.min(b_float))))
+                Ok(Arc::new(Object::Float(a.min(b_float))))
             },
             (Object::Float(a), Object::Float(b)) => {
-                Ok(Rc::new(Object::Float(a.min(*b))))
+                Ok(Arc::new(Object::Float(a.min(*b))))
             },
             _ => Err(Error::Runtime("min requires numbers".to_string())),
         }
     }
     
     /// Power
-    pub fn pow(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn pow(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 2 {
             return Err(Error::Runtime("pow requires 2 arguments: base and exponent".to_string()));
         }
@@ -330,36 +330,36 @@ pub mod mathz_impl {
             (Object::Integer(base), Object::Integer(exp)) => {
                 if *exp >= 0 {
                     // Integer exponentiation
-                    Ok(Rc::new(Object::Integer(base.pow(*exp as u32))))
+                    Ok(Arc::new(Object::Integer(base.pow(*exp as u32))))
                 } else {
                     // Negative exponent results in float
                     let base_float = *base as f64;
                     let exp_float = *exp as f64;
-                    Ok(Rc::new(Object::Float(base_float.powf(exp_float))))
+                    Ok(Arc::new(Object::Float(base_float.powf(exp_float))))
                 }
             },
             (Object::Integer(base), Object::Float(exp)) => {
                 let base_float = *base as f64;
-                Ok(Rc::new(Object::Float(base_float.powf(*exp))))
+                Ok(Arc::new(Object::Float(base_float.powf(*exp))))
             },
             (Object::Float(base), Object::Integer(exp)) => {
                 let exp_float = *exp as f64;
-                Ok(Rc::new(Object::Float(base.powf(exp_float))))
+                Ok(Arc::new(Object::Float(base.powf(exp_float))))
             },
             (Object::Float(base), Object::Float(exp)) => {
-                Ok(Rc::new(Object::Float(base.powf(*exp))))
+                Ok(Arc::new(Object::Float(base.powf(*exp))))
             },
             _ => Err(Error::Runtime("pow requires numeric arguments".to_string())),
         }
     }
     
     /// Random number generator
-    pub fn random(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn random(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         let mut rng = rand::thread_rng();
         
         if args.is_empty() {
             // Return a random float in [0, 1)
-            Ok(Rc::new(Object::Float(rng.gen::<f64>())))
+            Ok(Arc::new(Object::Float(rng.gen::<f64>())))
         } else if args.len() == 1 {
             // Random integer from 0 to n-1
             match &*args[0] {
@@ -368,7 +368,7 @@ pub mod mathz_impl {
                         return Err(Error::Runtime("random requires a positive max value".to_string()));
                     }
                     let n: i64 = rng.gen_range(0..*max);
-                    Ok(Rc::new(Object::Integer(n)))
+                    Ok(Arc::new(Object::Integer(n)))
                 },
                 _ => Err(Error::Runtime("random with one argument requires an integer".to_string())),
             }
@@ -380,7 +380,7 @@ pub mod mathz_impl {
                         return Err(Error::Runtime("random requires min < max".to_string()));
                     }
                     let n: i64 = rng.gen_range(*min..*max);
-                    Ok(Rc::new(Object::Integer(n)))
+                    Ok(Arc::new(Object::Integer(n)))
                 },
                 _ => Err(Error::Runtime("random with two arguments requires integers".to_string())),
             }
@@ -400,10 +400,10 @@ pub use oglogging_simplified as oglogging;
 pub mod reflectz_impl {
     use crate::error::Error;
     use crate::object::Object;
-    use std::rc::Rc;
+    use std::sync::Arc;
     
     /// Gets the type name of an object
-    pub fn type_name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn type_name(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("type_name requires 1 argument".to_string()));
         }
@@ -421,11 +421,11 @@ pub mod reflectz_impl {
             _ => "unknown",
         };
         
-        Ok(Rc::new(Object::String(type_name.to_string())))
+        Ok(Arc::new(Object::String(type_name.to_string())))
     }
     
     /// Gets the kind of an object
-    pub fn kind_of(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn kind_of(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("kind_of requires 1 argument".to_string()));
         }
@@ -443,21 +443,21 @@ pub mod reflectz_impl {
             _ => "unknown",
         };
         
-        Ok(Rc::new(Object::String(kind.to_string())))
+        Ok(Arc::new(Object::String(kind.to_string())))
     }
     
     /// Converts an object to a string
-    pub fn to_string(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn to_string(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("to_string requires 1 argument".to_string()));
         }
         
         let str_value = format!("{:?}", args[0]);
-        Ok(Rc::new(Object::String(str_value)))
+        Ok(Arc::new(Object::String(str_value)))
     }
     
     /// Checks if two objects are deeply equal
-    pub fn deep_equal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn deep_equal(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 2 {
             return Err(Error::Runtime("deep_equal requires 2 arguments".to_string()));
         }
@@ -466,11 +466,11 @@ pub mod reflectz_impl {
         let a_str = format!("{:?}", args[0]);
         let b_str = format!("{:?}", args[1]);
         
-        Ok(Rc::new(Object::Boolean(a_str == b_str)))
+        Ok(Arc::new(Object::Boolean(a_str == b_str)))
     }
     
     /// Creates a copy of an object
-    pub fn clone(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn clone(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.is_empty() {
             return Err(Error::Runtime("clone requires 1 argument".to_string()));
         }
@@ -480,7 +480,7 @@ pub mod reflectz_impl {
     }
     
     /// Sets a property on an object
-    pub fn set_prop(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn set_prop(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 3 {
             return Err(Error::Runtime("set_prop requires 3 arguments: object, key, and value".to_string()));
         }
@@ -497,7 +497,7 @@ pub mod reflectz_impl {
     }
     
     /// Gets a property from an object
-    pub fn get_prop(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn get_prop(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 2 {
             return Err(Error::Runtime("get_prop requires 2 arguments: object and key".to_string()));
         }
@@ -510,9 +510,9 @@ pub mod reflectz_impl {
         match &*args[0] {
             Object::HashTable(map) => {
                 if let Some(value) = map.get(key) {
-                    Ok(Rc::new(value.clone()))
+                    Ok(Arc::new(value.clone()))
                 } else {
-                    Ok(Rc::new(Object::Null))
+                    Ok(Arc::new(Object::Null))
                 }
             },
             _ => Err(Error::Runtime("get_prop only works on maps".to_string())),
@@ -520,7 +520,7 @@ pub mod reflectz_impl {
     }
     
     /// Checks if an object has a property
-    pub fn has_prop(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn has_prop(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         if args.len() < 2 {
             return Err(Error::Runtime("has_prop requires 2 arguments: object and key".to_string()));
         }
@@ -532,9 +532,9 @@ pub mod reflectz_impl {
         
         match &*args[0] {
             Object::HashTable(map) => {
-                Ok(Rc::new(Object::Boolean(map.contains_key(key))))
+                Ok(Arc::new(Object::Boolean(map.contains_key(key))))
             },
-            _ => Ok(Rc::new(Object::Boolean(false))),
+            _ => Ok(Arc::new(Object::Boolean(false))),
         }
     }
 }
@@ -567,56 +567,56 @@ pub use self::vibe_life::{getenv, setenv, args, exit, hostname, executable, temp
 // Re-export vibez functions with legacy aliases
 pub use self::vibez::{spill, spillf, spillstr};
 // Provide backward compatibility for errorf, scan, fscan
-pub fn errorf(args: &[std::rc::Rc<crate::object::Object>]) -> Result<std::rc::Rc<crate::object::Object>, crate::error::Error> {
+pub fn errorf(args: &[std::sync::Arc<crate::object::Object>]) -> Result<std::sync::Arc<crate::object::Object>, crate::error::Error> {
     spillf(args)
 }
-pub fn scan(_args: &[std::rc::Rc<crate::object::Object>]) -> Result<std::rc::Rc<crate::object::Object>, crate::error::Error> {
-    Ok(std::rc::Rc::new(crate::object::Object::Null))
+pub fn scan(_args: &[std::sync::Arc<crate::object::Object>]) -> Result<std::sync::Arc<crate::object::Object>, crate::error::Error> {
+    Ok(std::rc::Arc::new(crate::object::Object::Null))
 }
-pub fn fscan(_args: &[std::rc::Rc<crate::object::Object>]) -> Result<std::rc::Rc<crate::object::Object>, crate::error::Error> {
-    Ok(std::rc::Rc::new(crate::object::Object::Null))
+pub fn fscan(_args: &[std::sync::Arc<crate::object::Object>]) -> Result<std::sync::Arc<crate::object::Object>, crate::error::Error> {
+    Ok(std::rc::Arc::new(crate::object::Object::Null))
 }
 
 // web_vibez exports
 pub mod web_vibez_impl {
     use crate::error::Error;
     use crate::object::Object;
-    use std::rc::Rc;
+    use std::sync::Arc;
     
     /// Performs an HTTP GET request
-    pub fn get(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn get(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::String("GET response placeholder".to_string())))
+        Ok(Arc::new(Object::String("GET response placeholder".to_string())))
     }
     
     /// Performs an HTTP POST request
-    pub fn post(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn post(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::String("POST response placeholder".to_string())))
+        Ok(Arc::new(Object::String("POST response placeholder".to_string())))
     }
     
     /// Starts a server listening on a port
-    pub fn listen(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn listen(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::String("Server listening placeholder".to_string())))
+        Ok(Arc::new(Object::String("Server listening placeholder".to_string())))
     }
     
     /// Registers a handler for a path
-    pub fn handle(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn handle(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Null))
+        Ok(Arc::new(Object::Null))
     }
     
     /// Creates a client
-    pub fn client(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn client(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::String("Client placeholder".to_string())))
+        Ok(Arc::new(Object::String("Client placeholder".to_string())))
     }
     
     /// Creates a server
-    pub fn server(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn server(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::String("Server placeholder".to_string())))
+        Ok(Arc::new(Object::String("Server placeholder".to_string())))
     }
 }
 
@@ -627,42 +627,42 @@ pub use web_vibez_impl::{get as http_get, post as http_post, listen, handle, cli
 pub mod syslog_era_impl {
     use crate::error::Error;
     use crate::object::Object;
-    use std::rc::Rc;
+    use std::sync::Arc;
     
     /// Logs a message to syslog
-    pub fn syslog(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn syslog(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Null))
+        Ok(Arc::new(Object::Null))
     }
     
     /// Gets or sets the facility
-    pub fn facility(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn facility(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Integer(0)))
+        Ok(Arc::new(Object::Integer(0)))
     }
     
     /// Gets or sets the priority
-    pub fn priority(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn priority(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Integer(0)))
+        Ok(Arc::new(Object::Integer(0)))
     }
     
     /// Logs a message
-    pub fn log_message(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn log_message(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Null))
+        Ok(Arc::new(Object::Null))
     }
     
     /// Opens the log
-    pub fn open_log(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn open_log(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Null))
+        Ok(Arc::new(Object::Null))
     }
     
     /// Closes the log
-    pub fn close_log(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+    pub fn close_log(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         // Simple implementation
-        Ok(Rc::new(Object::Null))
+        Ok(Arc::new(Object::Null))
     }
 }
 

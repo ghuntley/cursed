@@ -34,7 +34,7 @@
 use crate::error::Error;
 use crate::object::Object;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 // We don't need Duration anymore as we're using mock responses only
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -60,7 +60,7 @@ static TIMEOUT_MS: AtomicU64 = AtomicU64::new(30000);
 /// // Get the current timeout
 /// timeout := web_vibez.client_timeout()
 /// ```
-pub fn client_timeout(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn client_timeout(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if !args.is_empty() {
         // Set timeout
         let timeout = match &*args[0] {
@@ -79,7 +79,7 @@ pub fn client_timeout(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // Return current timeout
     let current = TIMEOUT_MS.load(Ordering::Relaxed);
-    Ok(Rc::new(Object::Integer(current as i64)))
+    Ok(Arc::new(Object::Integer(current as i64)))
 }
 
 /// Create mock headers for testing
@@ -181,7 +181,7 @@ fn create_mock_response(method: &str, url: &str) -> HashMap<String, Object> {
 /// # Errors
 ///
 /// Returns a Runtime error if no URL argument is provided
-pub fn get(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn get(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("get requires at least 1 argument: url".to_string()));
     }
@@ -204,7 +204,7 @@ pub fn get(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Always use mock responses for now
     // In a real implementation, we would implement actual HTTP requests here
     let response = create_mock_response("GET", &url);
-    Ok(Rc::new(Object::HashTable(response)))
+    Ok(Arc::new(Object::HashTable(response)))
 }
 
 /// Makes an HTTP POST request to the specified URL with a JSON body.
@@ -225,7 +225,7 @@ pub fn get(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if required arguments are missing
-pub fn post(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn post(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("post requires at least 2 arguments: url and body".to_string()));
     }
@@ -260,7 +260,7 @@ pub fn post(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
     
     let response = create_mock_response("POST", &url);
-    Ok(Rc::new(Object::HashTable(response)))
+    Ok(Arc::new(Object::HashTable(response)))
 }
 
 /// Makes an HTTP PUT request to the specified URL with a JSON body.
@@ -281,7 +281,7 @@ pub fn post(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if required arguments are missing
-pub fn put(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn put(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("put requires at least 2 arguments: url and body".to_string()));
     }
@@ -304,7 +304,7 @@ pub fn put(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Always use mock responses for now
     // In a real implementation, we would send the actual HTTP request here
     let response = create_mock_response("PUT", &url);
-    Ok(Rc::new(Object::HashTable(response)))
+    Ok(Arc::new(Object::HashTable(response)))
 }
 
 /// Makes an HTTP HEAD request to the specified URL.
@@ -324,7 +324,7 @@ pub fn put(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if no URL argument is provided
-pub fn head(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn head(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("head requires at least 1 argument: url".to_string()));
     }
@@ -347,7 +347,7 @@ pub fn head(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Always use mock responses for now
     // In a real implementation, we would send the actual HTTP request here
     let response = create_mock_response("HEAD", &url);
-    Ok(Rc::new(Object::HashTable(response)))
+    Ok(Arc::new(Object::HashTable(response)))
 }
 
 /// Makes an HTTP DELETE request to the specified URL.
@@ -367,7 +367,7 @@ pub fn head(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if no URL argument is provided
-pub fn delete(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn delete(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("delete requires at least 1 argument: url".to_string()));
     }
@@ -390,7 +390,7 @@ pub fn delete(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Always use mock responses for now
     // In a real implementation, we would send the actual HTTP request here
     let response = create_mock_response("DELETE", &url);
-    Ok(Rc::new(Object::HashTable(response)))
+    Ok(Arc::new(Object::HashTable(response)))
 }
 
 /// Registers a handler function for a specific HTTP path.
@@ -407,7 +407,7 @@ pub fn delete(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if fewer than 2 arguments are provided
-pub fn handle_func(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn handle_func(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "handle_func requires 2 arguments: path and handler function".to_string(),
@@ -415,7 +415,7 @@ pub fn handle_func(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     }
 
     // Simplified implementation - just acknowledge registration
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Starts an HTTP server on the specified address and listens for incoming connections.
@@ -431,7 +431,7 @@ pub fn handle_func(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Errors
 ///
 /// Returns a Runtime error if no address argument is provided
-pub fn listen_and_serve(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn listen_and_serve(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "listen_and_serve requires 1 argument: address".to_string(),
@@ -440,5 +440,5 @@ pub fn listen_and_serve(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     // Simplified implementation that doesn't actually start a server
     // Just return null to indicate success
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }

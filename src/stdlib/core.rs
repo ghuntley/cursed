@@ -4,14 +4,13 @@
 //! in all CURSED programs.
 
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use crate::Error;
 use crate::object::{Object, Channel};
 
 /// Convert to boolean
-pub fn lit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn lit(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "lit: missing argument", None));
     }
@@ -33,11 +32,11 @@ pub fn lit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => Object::Boolean(true), // Default to true for other types
     };
     
-    Ok(Rc::new(result))
+    Ok(Arc::new(result))
 }
 
 /// Convert to int32
-pub fn normie(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn normie(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "normie: missing argument", None));
     }
@@ -58,11 +57,11 @@ pub fn normie(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => Object::Integer(0), // Default for other types
     };
     
-    Ok(Rc::new(result))
+    Ok(Arc::new(result))
 }
 
 /// Convert to int64
-pub fn thicc(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn thicc(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "thicc: missing argument", None));
     }
@@ -83,11 +82,11 @@ pub fn thicc(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => Object::Integer(0), // Default for other types
     };
     
-    Ok(Rc::new(result))
+    Ok(Arc::new(result))
 }
 
 /// Convert to float32
-pub fn snack(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn snack(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "snack: missing argument", None));
     }
@@ -108,11 +107,11 @@ pub fn snack(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => Object::Float(0.0), // Default for other types
     };
     
-    Ok(Rc::new(result))
+    Ok(Arc::new(result))
 }
 
 /// Convert to float64
-pub fn meal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn meal(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "meal: missing argument", None));
     }
@@ -133,52 +132,52 @@ pub fn meal(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         _ => Object::Float(0.0), // Default for other types
     };
     
-    Ok(Rc::new(result))
+    Ok(Arc::new(result))
 }
 
 /// Convert to string
-pub fn tea(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn tea(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "tea: missing argument", None));
     }
     
     let x = &*args[0];
-    Ok(Rc::new(Object::String(x.to_string())))
+    Ok(Arc::new(Object::String(x.to_string())))
 }
 
 /// Get the length of a string, array, slice, map, or channel
-pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn len(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "len: missing argument", None));
     }
     
     let v = &*args[0];
     match v {
-        Object::String(s) => Ok(Rc::new(Object::Integer(s.len() as i64))),
-        Object::Array(a) => Ok(Rc::new(Object::Integer(a.len() as i64))),
-        Object::HashTable(h) => Ok(Rc::new(Object::Integer(h.len() as i64))),
+        Object::String(s) => Ok(Arc::new(Object::Integer(s.len() as i64))),
+        Object::Array(a) => Ok(Arc::new(Object::Integer(a.len() as i64))),
+        Object::HashTable(h) => Ok(Arc::new(Object::Integer(h.len() as i64))),
         Object::Channel(ch) => {
             let channel = ch.borrow();
-            Ok(Rc::new(Object::Integer(channel.len() as i64)))
+            Ok(Arc::new(Object::Integer(channel.len() as i64)))
         },
-        _ => Ok(Rc::new(Object::Integer(0))), // Default for unsupported types
+        _ => Ok(Arc::new(Object::Integer(0))), // Default for unsupported types
     }
 }
 
 /// Get the capacity of a slice, map, or channel
-pub fn cap(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn cap(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "cap: missing argument", None));
     }
     
     let v = &*args[0];
     match v {
-        Object::Array(a) => Ok(Rc::new(Object::Integer(a.capacity() as i64))),
+        Object::Array(a) => Ok(Arc::new(Object::Integer(a.capacity() as i64))),
         Object::Channel(ch) => {
             let channel = ch.borrow();
-            Ok(Rc::new(Object::Integer(channel.capacity() as i64)))
+            Ok(Arc::new(Object::Integer(channel.capacity() as i64)))
         },
-        _ => Ok(Rc::new(Object::Integer(0))), // Default for unsupported types
+        _ => Ok(Arc::new(Object::Integer(0))), // Default for unsupported types
     }
 }
 
@@ -192,7 +191,7 @@ pub fn cap(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new slice with the elements appended
-pub fn append(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn append(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "append: missing slice argument", None));
     }
@@ -208,14 +207,14 @@ pub fn append(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 new_array.push((&*args[i]).clone());
             }
             
-            Ok(Rc::new(Object::Array(new_array)))
+            Ok(Arc::new(Object::Array(new_array)))
         },
         _ => Err(Error::new("Runtime", "First argument to append must be an array", None)),
     }
 }
 
 /// Check if a map contains a key
-pub fn has_key(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn has_key(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::new("Runtime", "has_key: requires map and key arguments", None));
     }
@@ -230,14 +229,14 @@ pub fn has_key(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 _ => key.to_string(), // Convert non-string keys to string
             };
             
-            Ok(Rc::new(Object::Boolean(h.contains_key(&key_str))))
+            Ok(Arc::new(Object::Boolean(h.contains_key(&key_str))))
         },
         _ => Err(Error::new("Runtime", "First argument to has_key must be a map", None)),
     }
 }
 
 /// Get a value from a map by key
-pub fn get_map_value(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn get_map_value(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::new("Runtime", "get_map_value: requires map and key arguments", None));
     }
@@ -253,9 +252,9 @@ pub fn get_map_value(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             };
             
             if let Some(value) = h.get(&key_str) {
-                Ok(Rc::new(value.clone()))
+                Ok(Arc::new(value.clone()))
             } else {
-                Ok(Rc::new(Object::Null))
+                Ok(Arc::new(Object::Null))
             }
         },
         _ => Err(Error::new("Runtime", "First argument to get_map_value must be a map", None)),
@@ -263,7 +262,7 @@ pub fn get_map_value(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Set a value in a map by key
-pub fn set_map_value(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn set_map_value(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::new("Runtime", "set_map_value: requires map, key, and value arguments", None));
     }
@@ -283,7 +282,7 @@ pub fn set_map_value(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             };
             
             new_map.insert(key_str, value.clone());
-            Ok(Rc::new(Object::HashTable(new_map)))
+            Ok(Arc::new(Object::HashTable(new_map)))
         },
         _ => Err(Error::new("Runtime", "First argument to set_map_value must be a map", None)),
     }
@@ -300,7 +299,7 @@ pub fn set_map_value(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new instance of the requested type
-pub fn make(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn make(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "make: missing type argument", None));
     }
@@ -339,20 +338,20 @@ pub fn make(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             for _ in 0..size {
                 vec.push(Object::Null);
             }
-            Ok(Rc::new(Object::Array(vec)))
+            Ok(Arc::new(Object::Array(vec)))
         },
         "map" => {
             // Create a new empty map
             let capacity = size.unwrap_or(0) as usize;
             let map = HashMap::with_capacity(capacity);
-            Ok(Rc::new(Object::HashTable(map)))
+            Ok(Arc::new(Object::HashTable(map)))
         },
         "channel" => {
             // Create a new channel with the given buffer size
             let buffer_size = size.unwrap_or(0) as usize;
             let element_type = capacity.map(|_| "any".to_string()).unwrap_or_else(|| "any".to_string());
             let channel = Channel::new(element_type, buffer_size);
-            Ok(Rc::new(Object::Channel(Rc::new(RefCell::new(channel)))))
+            Ok(Arc::new(Object::Channel(Arc::new(RefCell::new(channel)))))
         },
         _ => Err(Error::new("Runtime", format!("Unsupported type for make: {}", type_name), None)),
     }
@@ -367,7 +366,7 @@ pub fn make(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A zero value of the specified type
-pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "new: missing type argument", None));
     }
@@ -380,19 +379,19 @@ pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // Create a zero value of the specified type
     match type_name {
-        "int" | "normie" => Ok(Rc::new(Object::Integer(0))),
-        "int64" | "thicc" => Ok(Rc::new(Object::Integer(0))),
-        "float32" | "snack" => Ok(Rc::new(Object::Float(0.0))),
-        "float64" | "meal" => Ok(Rc::new(Object::Float(0.0))),
-        "string" | "tea" => Ok(Rc::new(Object::String(String::new()))),
-        "bool" | "lit" => Ok(Rc::new(Object::Boolean(false))),
-        "map" => Ok(Rc::new(Object::HashTable(HashMap::new()))),
+        "int" | "normie" => Ok(Arc::new(Object::Integer(0))),
+        "int64" | "thicc" => Ok(Arc::new(Object::Integer(0))),
+        "float32" | "snack" => Ok(Arc::new(Object::Float(0.0))),
+        "float64" | "meal" => Ok(Arc::new(Object::Float(0.0))),
+        "string" | "tea" => Ok(Arc::new(Object::String(String::new()))),
+        "bool" | "lit" => Ok(Arc::new(Object::Boolean(false))),
+        "map" => Ok(Arc::new(Object::HashTable(HashMap::new()))),
         "channel" => {
             let channel = Channel::new("any".to_string(), 0);
-            Ok(Rc::new(Object::Channel(Rc::new(RefCell::new(channel)))))
+            Ok(Arc::new(Object::Channel(Arc::new(RefCell::new(channel)))))
         },
-        "array" | "slice" => Ok(Rc::new(Object::Array(Vec::new()))),
-        _ => Ok(Rc::new(Object::Null)),
+        "array" | "slice" => Ok(Arc::new(Object::Array(Vec::new()))),
+        _ => Ok(Arc::new(Object::Null)),
     }
 }
 
@@ -413,7 +412,7 @@ pub fn close(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
 }
 
 /// Send a value to a channel
-pub fn send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn send(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::new("Runtime", "send: requires channel and value arguments", None));
     }
@@ -423,14 +422,14 @@ pub fn send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             let mut channel = ch.borrow_mut();
             let value = (&*args[1]).clone();
             channel.send(value)?;
-            Ok(Rc::new(Object::Null))
+            Ok(Arc::new(Object::Null))
         },
         _ => Err(Error::new("Runtime", "send: first argument must be a channel", None)),
     }
 }
 
 /// Try to send a value to a channel without blocking
-pub fn try_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn try_send(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::new("Runtime", "try_send: requires channel and value arguments", None));
     }
@@ -440,14 +439,14 @@ pub fn try_send(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             let mut channel = ch.borrow_mut();
             let value = (&*args[1]).clone();
             let result = channel.try_send(value)?;
-            Ok(Rc::new(Object::Boolean(result)))
+            Ok(Arc::new(Object::Boolean(result)))
         },
         _ => Err(Error::new("Runtime", "try_send: first argument must be a channel", None)),
     }
 }
 
 /// Receive a value from a channel
-pub fn receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn receive(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "receive: missing channel argument", None));
     }
@@ -456,14 +455,14 @@ pub fn receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Object::Channel(ch) => {
             let mut channel = ch.borrow_mut();
             let value = channel.receive()?;
-            Ok(Rc::new(value))
+            Ok(Arc::new(value))
         },
         _ => Err(Error::new("Runtime", "receive: argument must be a channel", None)),
     }
 }
 
 /// Try to receive a value from a channel without blocking
-pub fn try_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn try_receive(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("Runtime", "try_receive: missing channel argument", None));
     }
@@ -475,12 +474,12 @@ pub fn try_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                 Some(value) => {
                     // Return a tuple of (value, true) indicating success
                     let result = vec![value, Object::Boolean(true)];
-                    Ok(Rc::new(Object::Array(result)))
+                    Ok(Arc::new(Object::Array(result)))
                 },
                 None => {
                     // Return a tuple of (null, false) indicating would block
                     let result = vec![Object::Null, Object::Boolean(false)];
-                    Ok(Rc::new(Object::Array(result)))
+                    Ok(Arc::new(Object::Array(result)))
                 }
             }
         },
@@ -489,7 +488,7 @@ pub fn try_receive(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Panic with a value
-pub fn panic(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn panic(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         std::panic!("CURSED panic");
     }
@@ -506,7 +505,7 @@ pub fn panic(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 ///
 /// If called during unwinding from a panic, the panic value as a string.
 /// Otherwise, returns null.
-pub fn recover(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn recover(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // In a real implementation, this would be integrated with the runtime's panic handling
     // This is a simplified version that works with the current state of the codebase
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -514,8 +513,8 @@ pub fn recover(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         // we're currently unwinding from a panic
         false
     })) {
-        Ok(false) => Ok(Rc::new(Object::Null)), // Not currently unwinding
-        Ok(true) => Ok(Rc::new(Object::String("Recovered from panic".to_string()))), // Unwinding
+        Ok(false) => Ok(Arc::new(Object::Null)), // Not currently unwinding
+        Ok(true) => Ok(Arc::new(Object::String("Recovered from panic".to_string()))), // Unwinding
         Err(e) => {
             // Convert the panic payload to a string if possible
             let result = if let Some(s) = e.downcast_ref::<String>() {
@@ -525,12 +524,12 @@ pub fn recover(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             } else {
                 Object::String("Recovered from unknown panic".to_string())
             };
-            Ok(Rc::new(result))
+            Ok(Arc::new(result))
         }
     }
 }
 
 // For backward compatibility
-pub fn core_new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn core_new(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     new(args)
 }

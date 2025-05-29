@@ -5,14 +5,14 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use regex::Regex;
 
 /// Finds the first occurrence of a regular expression pattern in a string.
 ///
 /// This function returns the first substring that matches the given regular expression pattern,
 /// or null if no match is found.
-pub fn find(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn find(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "find requires 2 arguments: pattern and string".to_string(),
@@ -50,8 +50,8 @@ pub fn find(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     // Find first match
     match regex.find(s) {
-        Some(m) => Ok(Rc::new(Object::String(s[m.start()..m.end()].to_string()))),
-        None => Ok(Rc::new(Object::Null)),
+        Some(m) => Ok(Arc::new(Object::String(s[m.start()..m.end()].to_string()))),
+        None => Ok(Arc::new(Object::Null)),
     }
 }
 
@@ -59,7 +59,7 @@ pub fn find(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 ///
 /// This function returns all substrings that match the given regular expression pattern,
 /// returned as an array of strings.
-pub fn find_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn find_all(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "find_all requires at least 2 arguments: pattern and string".to_string(),
@@ -132,14 +132,14 @@ pub fn find_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         matches.push(Object::String(s[m.start()..m.end()].to_string()));
     }
 
-    Ok(Rc::new(Object::Array(matches)))
+    Ok(Arc::new(Object::Array(matches)))
 }
 
 /// Checks if a string matches a regular expression pattern.
 ///
 /// This function uses full regex pattern matching to determine if the input
 /// string contains any matches for the given pattern.
-pub fn matches(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn matches(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "matches requires 2 arguments: pattern and string".to_string(),
@@ -176,14 +176,14 @@ pub fn matches(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     // Check if the pattern matches anywhere in the string
-    Ok(Rc::new(Object::Boolean(regex.is_match(s))))
+    Ok(Arc::new(Object::Boolean(regex.is_match(s))))
 }
 
 /// Splits a string by a regular expression pattern.
 ///
 /// This function splits the input string at each occurrence of the regex pattern,
 /// returning an array of the substrings between matches.
-pub fn split(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn split(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "split requires at least 2 arguments: pattern and string".to_string(),
@@ -247,14 +247,14 @@ pub fn split(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         regex.split(s).map(|part| Object::String(part.to_string())).collect()
     };
 
-    Ok(Rc::new(Object::Array(parts)))
+    Ok(Arc::new(Object::Array(parts)))
 }
 
 /// Extracts capture groups from a regular expression match.
 ///
 /// This function extracts the first match of a pattern and its capture groups from a string,
 /// returning them as an array. The first element is the full match, followed by each capture group.
-pub fn extract(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn extract(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "extract requires 2 arguments: pattern and string".to_string(),
@@ -308,14 +308,14 @@ pub fn extract(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     }
 
-    Ok(Rc::new(Object::Array(results)))
+    Ok(Arc::new(Object::Array(results)))
 }
 
 /// Tests if a regular expression is valid.
 ///
 /// This function checks if a string is a valid regular expression without
 /// attempting to match it against any input.
-pub fn is_valid(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn is_valid(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "is_valid requires 1 argument: pattern".to_string(),
@@ -335,14 +335,14 @@ pub fn is_valid(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Check if the pattern is valid
     let is_valid = Regex::new(pattern).is_ok();
     
-    Ok(Rc::new(Object::Boolean(is_valid)))
+    Ok(Arc::new(Object::Boolean(is_valid)))
 }
 
 /// Escapes a string for use as a literal in a regular expression.
 ///
 /// This function escapes all characters that have special meaning in regex patterns,
 /// so the resulting string will match literally in a pattern.
-pub fn escape(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn escape(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "escape requires 1 argument: string".to_string(),
@@ -362,5 +362,5 @@ pub fn escape(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Escape the string using regex library
     let escaped = regex::escape(s);
     
-    Ok(Rc::new(Object::String(escaped)))
+    Ok(Arc::new(Object::String(escaped)))
 }

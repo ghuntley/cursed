@@ -5,7 +5,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Hash a string using a cryptographic hash function
 ///
@@ -32,7 +32,7 @@ pub fn hash(data: &str, algorithm: &str) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the MD5 hash
-pub fn md5sum(args: &[Rc<Object>]) -> Result<Object, Error> {
+pub fn md5sum(args: &[Arc<Object>]) -> Result<Object, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("md5sum expects exactly one argument"));
     }
@@ -55,7 +55,7 @@ pub fn md5sum(args: &[Rc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the SHA1 hash
-pub fn sha1sum(args: &[Rc<Object>]) -> Result<Object, Error> {
+pub fn sha1sum(args: &[Arc<Object>]) -> Result<Object, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("sha1sum expects exactly one argument"));
     }
@@ -78,7 +78,7 @@ pub fn sha1sum(args: &[Rc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the SHA256 hash
-pub fn sha256sum(args: &[Rc<Object>]) -> Result<Object, Error> {
+pub fn sha256sum(args: &[Arc<Object>]) -> Result<Object, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("sha256sum expects exactly one argument"));
     }
@@ -101,7 +101,7 @@ pub fn sha256sum(args: &[Rc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the HMAC
-pub fn hmac(args: &[Rc<Object>]) -> Result<Object, Error> {
+pub fn hmac(args: &[Arc<Object>]) -> Result<Object, Error> {
     if args.len() < 2 || args.len() > 3 {
         return Err(Error::from_str("hmac expects 2 or 3 arguments: key, message, [algorithm]"));
     }
@@ -138,7 +138,7 @@ pub fn hmac(args: &[Rc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A string of random bytes represented as hex
-pub fn random_bytes(args: &[Rc<Object>]) -> Result<Object, Error> {
+pub fn random_bytes(args: &[Arc<Object>]) -> Result<Object, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("random_bytes expects exactly one argument"));
     }

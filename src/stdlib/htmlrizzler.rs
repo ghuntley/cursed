@@ -14,25 +14,25 @@ use crate::error::Error;
 use crate::object::Object;
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::rc::Rc;
+use std::sync::Arc;
 
 // Re-export functions from rizztemplate wrapped with HTML escaping
 use crate::stdlib::rizztemplate;
 
 /// Create a new HTML template with the given name
-pub fn new(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn new(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Simply delegate to rizztemplate.new
     rizztemplate::new(args)
 }
 
 /// Parse an HTML template from a string
-pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Simply delegate to rizztemplate.parse
     rizztemplate::parse(args)
 }
 
 /// Parse an HTML template from a file
-pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_file(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Since rizztemplate module doesn't have a parse_file function, we need to implement it
     if args.is_empty() {
         return Err(Error::Runtime("parse_file requires a filename".to_string()));
@@ -48,8 +48,8 @@ pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         Ok(content) => {
             // Create arguments for the parse function: content and optional name
             let parse_args = vec![
-                Rc::new(Object::String(content)),
-                Rc::new(Object::String(filename)),
+                Arc::new(Object::String(content)),
+                Arc::new(Object::String(filename)),
             ];
             
             // Use the parse function
@@ -60,19 +60,19 @@ pub fn parse_file(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Parse multiple HTML template files
-pub fn parse_files(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse_files(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Simply delegate to rizztemplate.parse_files
     rizztemplate::parse_files(args)
 }
 
 /// Execute an HTML template with the given data
-pub fn execute(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn execute(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Simply delegate to rizztemplate.execute
     rizztemplate::execute(args)
 }
 
 /// Add functions to an HTML template
-pub fn funcs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn funcs(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("funcs requires template and function map arguments".to_string()));
     }
@@ -82,31 +82,31 @@ pub fn funcs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     
     // We would need to delegate to a function on the template instance itself
     // For now, just return the template as-is
-    Ok(Rc::clone(template))
+    Ok(Arc::clone(template))
 }
 
 /// Get the HTML template name
-pub fn name(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn name(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("name requires a template".to_string()));
     }
 
     // For now, return a placeholder name
-    Ok(Rc::new(Object::String("template".to_string())))
+    Ok(Arc::new(Object::String("template".to_string())))
 }
 
 /// Get all associated HTML templates
-pub fn templates(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn templates(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("templates requires a template".to_string()));
     }
     
     // For now, return an empty array
-    Ok(Rc::new(Object::Array(vec![])))
+    Ok(Arc::new(Object::Array(vec![])))
 }
 
 /// Clone an HTML template
-pub fn clone_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn clone_template(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("clone requires a template".to_string()));
     }
@@ -114,11 +114,11 @@ pub fn clone_template(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let template = &args[0];
     
     // For now, just return the original template
-    Ok(Rc::clone(template))
+    Ok(Arc::clone(template))
 }
 
 /// HTML escape a string
-pub fn escape_html(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn escape_html(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("escape_html requires a string".to_string()));
     }
@@ -129,11 +129,11 @@ pub fn escape_html(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
     
     let escaped = html_escape(&s);
-    Ok(Rc::new(Object::String(escaped)))
+    Ok(Arc::new(Object::String(escaped)))
 }
 
 /// HTML escape a string for a JavaScript context
-pub fn escape_js(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn escape_js(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("escape_js requires a string".to_string()));
     }
@@ -150,11 +150,11 @@ pub fn escape_js(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
                    .replace('<', "\\u003C")
                    .replace('>', "\\u003E");
                    
-    Ok(Rc::new(Object::String(escaped)))
+    Ok(Arc::new(Object::String(escaped)))
 }
 
 /// HTML escape a string for a URL context
-pub fn escape_url(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn escape_url(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("escape_url requires a string".to_string()));
     }
@@ -179,7 +179,7 @@ pub fn escape_url(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     }
     
-    Ok(Rc::new(Object::String(escaped)))
+    Ok(Arc::new(Object::String(escaped)))
 }
 
 /// Escape HTML special characters
@@ -192,7 +192,7 @@ fn html_escape(s: &str) -> String {
 }
 
 /// HTML escape a string for a CSS context
-pub fn escape_css(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn escape_css(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("escape_css requires a string".to_string()));
     }
@@ -215,6 +215,6 @@ pub fn escape_css(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     }
     
-    Ok(Rc::new(Object::String(result)))
+    Ok(Arc::new(Object::String(result)))
 }
 

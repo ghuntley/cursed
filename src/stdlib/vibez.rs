@@ -5,24 +5,24 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::fmt::Write;
 
 /// Log a message to standard output
-pub fn spill(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn spill(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         println!();
-        return Ok(Rc::new(Object::Null));
+        return Ok(Arc::new(Object::Null));
     }
     
     let message = format_args(args)?;
     println!("{}", message);
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Log a formatted message to standard output
-pub fn spillf(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn spillf(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("InvalidArguments", "spillf requires at least one argument", None));
     }
@@ -33,21 +33,21 @@ pub fn spillf(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let result = format_string(&format_str, format_args)?;
     println!("{}", result);
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Format objects into a string and return it
-pub fn spillstr(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn spillstr(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
-        return Ok(Rc::new(Object::String("".to_string())));
+        return Ok(Arc::new(Object::String("".to_string())));
     }
     
     let message = format_args(args)?;
-    Ok(Rc::new(Object::String(message)))
+    Ok(Arc::new(Object::String(message)))
 }
 
 /// Helper function to format arguments into a string
-fn format_args(args: &[Rc<Object>]) -> Result<String, Error> {
+fn format_args(args: &[Arc<Object>]) -> Result<String, Error> {
     let mut result = String::new();
     
     for (i, arg) in args.iter().enumerate() {
@@ -62,7 +62,7 @@ fn format_args(args: &[Rc<Object>]) -> Result<String, Error> {
 }
 
 /// Helper function to format a string with placeholders
-fn format_string(format_str: &str, args: &[Rc<Object>]) -> Result<String, Error> {
+fn format_string(format_str: &str, args: &[Arc<Object>]) -> Result<String, Error> {
     let mut result = String::new();
     let mut arg_index = 0;
     let mut chars = format_str.chars().peekable();

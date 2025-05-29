@@ -4,7 +4,7 @@ use crate::error::Error;
 use crate::object::Object;
 use std::env;
 use std::path::Path;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Gets the command-line arguments passed to the CURSED program
 ///
@@ -15,14 +15,14 @@ use std::rc::Rc;
 /// # Returns
 ///
 /// An array of strings representing the command-line arguments
-pub fn args(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn args(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let cmd_args: Vec<Object> = env::args().map(|arg| Object::String(arg)).collect();
 
-    Ok(Rc::new(Object::Array(cmd_args)))
+    Ok(Arc::new(Object::Array(cmd_args)))
 }
 
 /// Get an environment variable
-pub fn getenv(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn getenv(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "getenv requires 1 argument: key".to_string(),
@@ -39,13 +39,13 @@ pub fn getenv(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     match env::var(key) {
-        Ok(value) => Ok(Rc::new(Object::String(value))),
-        Err(_) => Ok(Rc::new(Object::String("".to_string()))),
+        Ok(value) => Ok(Arc::new(Object::String(value))),
+        Err(_) => Ok(Arc::new(Object::String("".to_string()))),
     }
 }
 
 /// Set an environment variable
-pub fn setenv(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn setenv(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "setenv requires 2 arguments: key and value".to_string(),
@@ -71,7 +71,7 @@ pub fn setenv(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     env::set_var(key, value);
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Terminates the CURSED program with the specified exit code
@@ -87,7 +87,7 @@ pub fn setenv(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Note
 ///
 /// This function never returns as it terminates the program.
-pub fn exit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn exit(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let code = if args.is_empty() {
         0
     } else {
@@ -105,7 +105,7 @@ pub fn exit(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 }
 
 /// Check if a file or directory exists
-pub fn exists(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn exists(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "exists requires 1 argument: path".to_string(),
@@ -121,13 +121,13 @@ pub fn exists(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::Boolean(Path::new(&path).exists())))
+    Ok(Arc::new(Object::Boolean(Path::new(&path).exists())))
 }
 
 /// Get the current working directory
-pub fn getwd(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn getwd(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     match env::current_dir() {
-        Ok(path) => Ok(Rc::new(Object::String(path.to_string_lossy().to_string()))),
+        Ok(path) => Ok(Arc::new(Object::String(path.to_string_lossy().to_string()))),
         Err(e) => Err(Error::Runtime(format!(
             "Failed to get current directory: {}",
             e

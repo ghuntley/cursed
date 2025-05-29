@@ -15,7 +15,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Returns the length of a string in characters
 ///
@@ -27,7 +27,7 @@ use std::rc::Rc;
 ///
 /// An integer representing the number of characters in the string
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn len(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         tracing::warn!(provided = args.len(), "Wrong number of arguments to len");
         return Err(Error::new(
@@ -52,7 +52,7 @@ pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 
     let char_count = s.chars().count() as i64;
     tracing::debug!(string = %s, char_count = char_count, "Computed string length");
-    Ok(Rc::new(Object::Integer(char_count)))
+    Ok(Arc::new(Object::Integer(char_count)))
 }
 
 /// Checks if a string contains a substring
@@ -68,7 +68,7 @@ pub fn len(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A boolean value: true if the substring is found, false otherwise
-pub fn contains(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn contains(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("contains requires 2 arguments".to_string()));
     }
@@ -91,11 +91,11 @@ pub fn contains(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::Boolean(s.contains(&substr))))
+    Ok(Arc::new(Object::Boolean(s.contains(&substr))))
 }
 
 /// Count occurrences of substr in s
-pub fn count(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn count(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("count requires 2 arguments".to_string()));
     }
@@ -119,15 +119,15 @@ pub fn count(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     if substr.is_empty() {
-        return Ok(Rc::new(Object::Integer(0)));
+        return Ok(Arc::new(Object::Integer(0)));
     }
 
     let count = s.matches(&substr).count() as i64;
-    Ok(Rc::new(Object::Integer(count)))
+    Ok(Arc::new(Object::Integer(count)))
 }
 
 /// Check if s starts with prefix
-pub fn has_prefix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn has_prefix(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "has_prefix requires 2 arguments".to_string(),
@@ -152,11 +152,11 @@ pub fn has_prefix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::Boolean(s.starts_with(&prefix))))
+    Ok(Arc::new(Object::Boolean(s.starts_with(&prefix))))
 }
 
 /// Check if s ends with suffix
-pub fn has_suffix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn has_suffix(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "has_suffix requires 2 arguments".to_string(),
@@ -181,11 +181,11 @@ pub fn has_suffix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::Boolean(s.ends_with(&suffix))))
+    Ok(Arc::new(Object::Boolean(s.ends_with(&suffix))))
 }
 
 /// Join elements with separator
-pub fn join(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn join(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("join requires 2 arguments".to_string()));
     }
@@ -211,7 +211,7 @@ pub fn join(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::String(elements.join(&sep))))
+    Ok(Arc::new(Object::String(elements.join(&sep))))
 }
 
 /// Splits a string into substrings based on a separator
@@ -227,7 +227,7 @@ pub fn join(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// An array of substring strings from the original string
-pub fn split(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn split(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("split requires 2 arguments".to_string()));
     }
@@ -255,11 +255,11 @@ pub fn split(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         .map(|part| Object::String(part.to_string()))
         .collect();
 
-    Ok(Rc::new(Object::Array(parts)))
+    Ok(Arc::new(Object::Array(parts)))
 }
 
 /// Convert to lowercase
-pub fn to_lower(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn to_lower(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("to_lower requires 1 argument".to_string()));
     }
@@ -273,11 +273,11 @@ pub fn to_lower(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::String(s.to_lowercase())))
+    Ok(Arc::new(Object::String(s.to_lowercase())))
 }
 
 /// Convert to uppercase
-pub fn to_upper(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn to_upper(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("to_upper requires 1 argument".to_string()));
     }
@@ -291,12 +291,12 @@ pub fn to_upper(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::String(s.to_uppercase())))
+    Ok(Arc::new(Object::String(s.to_uppercase())))
 }
 
 /// Trim characters from beginning and end
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn trim(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn trim(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("trim requires 2 arguments".to_string()));
     }
@@ -322,7 +322,7 @@ pub fn trim(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     let chars_to_trim: Vec<char> = cutset.chars().collect();
     let trimmed = s.trim_matches(|c| chars_to_trim.contains(&c));
 
-    Ok(Rc::new(Object::String(trimmed.to_string())))
+    Ok(Arc::new(Object::String(trimmed.to_string())))
 }
 
 /// Trim whitespace from beginning and end
@@ -335,7 +335,7 @@ pub fn trim(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A string with all leading and trailing whitespace removed
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn trim_space(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn trim_space(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime("trim_space requires 1 argument".to_string()));
     }
@@ -350,7 +350,7 @@ pub fn trim_space(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
 
     let trimmed = s.trim();
-    Ok(Rc::new(Object::String(trimmed.to_string())))
+    Ok(Arc::new(Object::String(trimmed.to_string())))
 }
 
 /// Trim a prefix from a string if it exists
@@ -364,7 +364,7 @@ pub fn trim_space(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A string with the prefix removed if it exists, otherwise the original string
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn trim_prefix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn trim_prefix(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("trim_prefix requires 2 arguments".to_string()));
     }
@@ -393,7 +393,7 @@ pub fn trim_prefix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         s
     };
 
-    Ok(Rc::new(Object::String(result)))
+    Ok(Arc::new(Object::String(result)))
 }
 
 /// Trim a suffix from a string if it exists
@@ -407,7 +407,7 @@ pub fn trim_prefix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A string with the suffix removed if it exists, otherwise the original string
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn trim_suffix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn trim_suffix(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("trim_suffix requires 2 arguments".to_string()));
     }
@@ -436,7 +436,7 @@ pub fn trim_suffix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         s
     };
 
-    Ok(Rc::new(Object::String(result)))
+    Ok(Arc::new(Object::String(result)))
 }
 
 /// Find the index of a substring in a string
@@ -450,7 +450,7 @@ pub fn trim_suffix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// The index of the first occurrence of the substring, or -1 if not found
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn index(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn index(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("index requires 2 arguments".to_string()));
     }
@@ -478,7 +478,7 @@ pub fn index(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         None => -1,
     };
 
-    Ok(Rc::new(Object::Integer(index)))
+    Ok(Arc::new(Object::Integer(index)))
 }
 
 /// Find the last index of a substring in a string
@@ -492,7 +492,7 @@ pub fn index(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// The index of the last occurrence of the substring, or -1 if not found
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn last_index(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn last_index(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("last_index requires 2 arguments".to_string()));
     }
@@ -520,7 +520,7 @@ pub fn last_index(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         None => -1,
     };
 
-    Ok(Rc::new(Object::Integer(index)))
+    Ok(Arc::new(Object::Integer(index)))
 }
 
 /// Replace occurrences of a substring in a string
@@ -536,7 +536,7 @@ pub fn last_index(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A new string with the replacements made
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn replace(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn replace(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime("replace requires at least 3 arguments".to_string()));
     }
@@ -605,7 +605,7 @@ pub fn replace(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     }
 
-    Ok(Rc::new(Object::String(result)))
+    Ok(Arc::new(Object::String(result)))
 }
 
 /// Replace all occurrences of a substring in a string
@@ -620,7 +620,7 @@ pub fn replace(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A new string with all occurrences replaced
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn replace_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn replace_all(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 3 {
         return Err(Error::Runtime("replace_all requires 3 arguments".to_string()));
     }
@@ -655,7 +655,7 @@ pub fn replace_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Simple implementation using standard library
     let result = s.replace(&old, &new);
 
-    Ok(Rc::new(Object::String(result)))
+    Ok(Arc::new(Object::String(result)))
 }
 
 /// Repeat a string n times
@@ -669,7 +669,7 @@ pub fn replace_all(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// 
 /// A new string consisting of the input string repeated n times
 #[tracing::instrument(skip(args), fields(args_count = args.len()), level = "debug")]
-pub fn repeat(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn repeat(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime("repeat requires 2 arguments".to_string()));
     }
@@ -699,5 +699,5 @@ pub fn repeat(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         }
     };
 
-    Ok(Rc::new(Object::String(s.repeat(count))))
+    Ok(Arc::new(Object::String(s.repeat(count))))
 }

@@ -5,7 +5,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::{Duration as StdDuration, Instant, SystemTime, UNIX_EPOCH};
 use std::thread;
 
@@ -52,18 +52,18 @@ impl TimezDuration {
 }
 
 /// Get the Unix timestamp in seconds
-pub fn unix_timestamp(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn unix_timestamp(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Get the current time as a Unix timestamp
     let now = SystemTime::now();
     let duration_since_epoch = now.duration_since(UNIX_EPOCH)
         .map_err(|e| Error::Runtime(format!("Failed to get Unix timestamp: {}", e)))?
         .as_secs_f64();
     
-    Ok(Rc::new(Object::Float(duration_since_epoch)))
+    Ok(Arc::new(Object::Float(duration_since_epoch)))
 }
 
 /// Create a duration from seconds
-pub fn duration_from_secs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn duration_from_secs(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::new("InvalidArguments", "duration_from_secs requires a number of seconds", None));
     }
@@ -75,7 +75,7 @@ pub fn duration_from_secs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     };
     
     let duration = TimezDuration { nanos: (seconds * 1_000_000_000.0) as u64 };
-    Ok(Rc::new(Object::Struct {
+    Ok(Arc::new(Object::Struct {
         name: "TimezDuration".to_string(),
         fields: vec![("nanos".to_string(), duration.nanos.to_string())],
     }))
@@ -86,7 +86,7 @@ pub fn duration_from_secs(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A timestamp object representing the current time
-pub fn now(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn now(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let now = SystemTime::now();
     let now_since_epoch = now
         .duration_since(UNIX_EPOCH)
@@ -102,7 +102,7 @@ pub fn now(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(timestamp))
+    Ok(Arc::new(timestamp))
 }
 
 /// Formats a timestamp into a string using the specified layout.
@@ -115,7 +115,7 @@ pub fn now(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A formatted time string
-pub fn format(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn format(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "format requires 2 arguments: time and layout".to_string(),
@@ -153,7 +153,7 @@ pub fn format(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Format the timestamp
     let formatted = timestamp.format(format).to_string();
     
-    Ok(Rc::new(Object::String(formatted)))
+    Ok(Arc::new(Object::String(formatted)))
 }
 
 /// Parses a time string using the specified layout.
@@ -166,7 +166,7 @@ pub fn format(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A timestamp object representing the parsed time
-pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn parse(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "parse requires 2 arguments: time string and layout".to_string(),
@@ -199,7 +199,7 @@ pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(timestamp))
+    Ok(Arc::new(timestamp))
 }
 
 /// Returns the Unix time (seconds since January 1, 1970 UTC).
@@ -211,7 +211,7 @@ pub fn parse(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// The Unix time as an integer
-pub fn unix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn unix(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // If no argument is provided, use the current time
     if args.is_empty() {
         let now = SystemTime::now();
@@ -220,14 +220,14 @@ pub fn unix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
             .unwrap_or(StdDuration::from_secs(0))
             .as_secs();
         
-        return Ok(Rc::new(Object::Integer(unix_time as i64)));
+        return Ok(Arc::new(Object::Integer(unix_time as i64)));
     }
     
     // Otherwise, get the Unix time from the provided timestamp
     match &*args[0] {
         Object::HashTable(map) => {
             match map.get("unix") {
-                Some(Object::Integer(secs)) => Ok(Rc::new(Object::Integer(*secs))),
+                Some(Object::Integer(secs)) => Ok(Arc::new(Object::Integer(*secs))),
                 _ => Err(Error::Runtime("Invalid timestamp: missing unix field".to_string())),
             }
         },
@@ -244,7 +244,7 @@ pub fn unix(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// Null
-pub fn sleep(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn sleep(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "sleep requires 1 argument: duration in seconds".to_string(),
@@ -264,7 +264,7 @@ pub fn sleep(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
     // Sleep
     thread::sleep(duration.to_std());
     
-    Ok(Rc::new(Object::Null))
+    Ok(Arc::new(Object::Null))
 }
 
 /// Waits until the specified duration has elapsed and then sends the current time on a channel.
@@ -276,7 +276,7 @@ pub fn sleep(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A channel that will receive the time after the duration elapses
-pub fn after(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn after(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "after requires 1 argument: duration in seconds".to_string(),
@@ -311,7 +311,7 @@ pub fn after(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(channel))
+    Ok(Arc::new(channel))
 }
 
 /// Returns a channel that sends the current time at intervals of the specified duration.
@@ -323,7 +323,7 @@ pub fn after(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A channel that will receive the time at regular intervals
-pub fn tick(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn tick(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "tick requires 1 argument: interval in seconds".to_string(),
@@ -361,7 +361,7 @@ pub fn tick(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(channel))
+    Ok(Arc::new(channel))
 }
 
 /// Creates a new Duration object.
@@ -373,7 +373,7 @@ pub fn tick(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A Duration object
-pub fn duration(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn duration(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.is_empty() {
         return Err(Error::Runtime(
             "duration requires 1 argument: seconds".to_string(),
@@ -398,7 +398,7 @@ pub fn duration(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(duration_map))
+    Ok(Arc::new(duration_map))
 }
 
 /// Adds a duration to a time.
@@ -411,7 +411,7 @@ pub fn duration(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new timestamp with the duration added
-pub fn add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn add(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "add requires 2 arguments: time and duration".to_string(),
@@ -460,7 +460,7 @@ pub fn add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(new_timestamp))
+    Ok(Arc::new(new_timestamp))
 }
 
 /// Subtracts a duration from a time.
@@ -473,7 +473,7 @@ pub fn add(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
 /// # Returns
 ///
 /// A new timestamp with the duration subtracted
-pub fn sub(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
+pub fn sub(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 {
         return Err(Error::Runtime(
             "sub requires 2 arguments: time and duration".to_string(),
@@ -522,5 +522,5 @@ pub fn sub(args: &[Rc<Object>]) -> Result<Rc<Object>, Error> {
         map
     });
     
-    Ok(Rc::new(new_timestamp))
+    Ok(Arc::new(new_timestamp))
 }

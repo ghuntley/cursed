@@ -10,7 +10,7 @@
 use crate::error::Error;
 use crate::object::Object;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 use rand::distributions::{Alphanumeric, Standard};
 use rand::{thread_rng, Rng};
 use rand::prelude::*;
@@ -58,9 +58,9 @@ pub struct TestResult {
     /// Test case number where it failed (0 if passed)
     pub failed_after: usize,
     /// Counterexample that caused the failure
-    pub counterexample: Option<Rc<Object>>,
+    pub counterexample: Option<Arc<Object>>,
     /// Shrunk counterexample (if shrinking was enabled)
-    pub shrunk_counterexample: Option<Rc<Object>>,
+    pub shrunk_counterexample: Option<Arc<Object>>,
 }
 
 /// Random value generator trait
@@ -75,10 +75,10 @@ pub trait StateMachine {
     fn init() -> Self;
     
     /// Generate a random command
-    fn gen_command(&self) -> Rc<Object>;
+    fn gen_command(&self) -> Arc<Object>;
     
     /// Apply a command to the state machine
-    fn apply(&mut self, cmd: &Rc<Object>) -> bool;
+    fn apply(&mut self, cmd: &Arc<Object>) -> bool;
     
     /// Check if the state machine is in a valid state
     fn valid(&self) -> bool;
@@ -133,7 +133,7 @@ pub fn hash_map(min_entries: usize, max_entries: usize) -> HashMap<String, i64> 
 }
 
 /// Generate a value of the specified type
-pub fn one_of_type(type_name: &str, min: i64, max: i64) -> Rc<Object> {
+pub fn one_of_type(type_name: &str, min: i64, max: i64) -> Arc<Object> {
     let mut rng = thread_rng();
     
     match type_name.to_lowercase().as_str() {
@@ -143,16 +143,16 @@ pub fn one_of_type(type_name: &str, min: i64, max: i64) -> Rc<Object> {
             } else {
                 rng.gen_range(3..20)
             };
-            Rc::new(Object::String(string_with_length(len, len)))
+            Arc::new(Object::String(string_with_length(len, len)))
         },
         "int" => {
-            Rc::new(Object::Integer(int_range(min, max)))
+            Arc::new(Object::Integer(int_range(min, max)))
         },
         "float" => {
-            Rc::new(Object::Float(float_range(min as f64, max as f64)))
+            Arc::new(Object::Float(float_range(min as f64, max as f64)))
         },
         "bool" => {
-            Rc::new(Object::Boolean(boolean()))
+            Arc::new(Object::Boolean(boolean()))
         },
         "array" => {
             let min_len = min as usize;
@@ -161,16 +161,16 @@ pub fn one_of_type(type_name: &str, min: i64, max: i64) -> Rc<Object> {
             let array: Vec<Object> = (0..len)
                 .map(|_| Object::Integer(rng.gen_range(-100..100)))
                 .collect();
-            Rc::new(Object::Array(array))
+            Arc::new(Object::Array(array))
         },
-        _ => Rc::new(Object::Null),
+        _ => Arc::new(Object::Null),
     }
 }
 
 /// Higher-order function for testing properties
-pub fn for_all<F>(generator: fn() -> Rc<Object>, property: F, config: &Config) -> TestResult
+pub fn for_all<F>(generator: fn() -> Arc<Object>, property: F, config: &Config) -> TestResult
 where
-    F: Fn(&Rc<Object>) -> bool,
+    F: Fn(&Arc<Object>) -> bool,
 {
     let rng = match config.seed {
         Some(seed) => StdRng::seed_from_u64(seed),
@@ -218,7 +218,7 @@ pub fn string_with_length(min_len: usize, max_len: usize) -> String {
 }
 
 /// Combine multiple generators
-pub fn combine(generators: Vec<fn() -> Rc<Object>>) -> Vec<Rc<Object>> {
+pub fn combine(generators: Vec<fn() -> Arc<Object>>) -> Vec<Arc<Object>> {
     generators.iter().map(|gen| gen()).collect()
 }
 
@@ -271,7 +271,7 @@ pub fn complex128() -> (f64, f64) {
 }
 
 /// Generate a struct from field generators
-pub fn struct_of(field_generators: Vec<fn() -> (String, Rc<Object>)>) -> HashMap<String, Rc<Object>> {
+pub fn struct_of(field_generators: Vec<fn() -> (String, Arc<Object>)>) -> HashMap<String, Arc<Object>> {
     let mut result = HashMap::new();
     
     for gen in field_generators {
@@ -293,9 +293,9 @@ pub fn alpha_numeric() -> String {
 }
 
 /// Generate a slice of values from a generator
-pub fn slice_of<F>(min_len: usize, max_len: usize, gen: F) -> Rc<Object>
+pub fn slice_of<F>(min_len: usize, max_len: usize, gen: F) -> Arc<Object>
 where
-    F: Fn() -> Rc<Object>,
+    F: Fn() -> Arc<Object>,
 {
     let mut rng = thread_rng();
     let len = rng.gen_range(min_len..=max_len);
@@ -313,13 +313,13 @@ where
         })
         .collect();
     
-    Rc::new(Object::Array(objects))
+    Arc::new(Object::Array(objects))
 }
 
 /// Generate a slice of fixed length from a generator
-pub fn slice_of_n<F>(n: usize, gen: F) -> Rc<Object>
+pub fn slice_of_n<F>(n: usize, gen: F) -> Arc<Object>
 where
-    F: Fn() -> Rc<Object>,
+    F: Fn() -> Arc<Object>,
 {
     let objects: Vec<Object> = (0..n)
         .map(|_| {
@@ -334,7 +334,7 @@ where
         })
         .collect();
     
-    Rc::new(Object::Array(objects))
+    Arc::new(Object::Array(objects))
 }
 
 /// Run a property-based test
@@ -449,28 +449,28 @@ pub fn register_functions() {
 }
 
 // Internal helper functions to be used by the above API
-fn generate_random_object() -> Rc<Object> {
+fn generate_random_object() -> Arc<Object> {
     let mut rng = thread_rng();
     let type_choice = rng.gen_range(0..5);
     
     match type_choice {
-        0 => Rc::new(Object::Integer(rng.gen_range(-100..100))),
-        1 => Rc::new(Object::Float(rng.gen_range(-100.0..100.0))),
-        2 => Rc::new(Object::Boolean(rng.gen())),
+        0 => Arc::new(Object::Integer(rng.gen_range(-100..100))),
+        1 => Arc::new(Object::Float(rng.gen_range(-100.0..100.0))),
+        2 => Arc::new(Object::Boolean(rng.gen())),
         3 => {
             let len = rng.gen_range(3..15);
             let s: String = (0..len)
                 .map(|_| rng.sample(Alphanumeric) as char)
                 .collect();
-            Rc::new(Object::String(s))
+            Arc::new(Object::String(s))
         },
         4 => {
             let len = rng.gen_range(0..5);
             let arr: Vec<Object> = (0..len)
                 .map(|_| Object::Integer(rng.gen_range(-10..10)))
                 .collect();
-            Rc::new(Object::Array(arr))
+            Arc::new(Object::Array(arr))
         },
-        _ => Rc::new(Object::Null),
+        _ => Arc::new(Object::Null),
     }
 }

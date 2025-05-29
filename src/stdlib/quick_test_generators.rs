@@ -1,11 +1,11 @@
 //! Implementations of generator functions for the Quick Test module
 
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use rand::{thread_rng, Rng, SeedableRng};
 
 /// Generate a string with a length between min and max
-pub fn string_of_n(min: usize, max: usize) -> impl Fn() -> Rc<Object> {
+pub fn string_of_n(min: usize, max: usize) -> impl Fn() -> Arc<Object> {
     move || {
         let mut rng = thread_rng();
         let len = rng.gen_range(min..=max);
@@ -25,22 +25,22 @@ pub fn string_of_n(min: usize, max: usize) -> impl Fn() -> Rc<Object> {
                 }
             })
             .collect();
-        Rc::new(Object::String(s))
+        Arc::new(Object::String(s))
     }
 }
 
 /// Generate an integer in the range [min, max]
-pub fn int_range_gen(min: i64, max: i64) -> impl Fn() -> Rc<Object> {
+pub fn int_range_gen(min: i64, max: i64) -> impl Fn() -> Arc<Object> {
     move || {
         let mut rng = thread_rng();
         let val = rng.gen_range(min..=max);
-        Rc::new(Object::Integer(val))
+        Arc::new(Object::Integer(val))
     }
 }
 
 /// Generator combiner that takes multiple generators and combines them
 pub fn combine(
-    generators: Vec<Box<dyn Fn() -> Rc<Object>>>,
+    generators: Vec<Box<dyn Fn() -> Arc<Object>>>,
     combiner: Box<dyn Fn(&[Object]) -> Object>,
 ) -> impl Fn() -> Object 
 {
@@ -119,7 +119,7 @@ impl<T: Clone> StateMachineImpl<T> {
                     passed: false,
                     count: i,
                     failed_after: i,
-                    counterexample: Some(Rc::new(Object::String(name.clone()))),
+                    counterexample: Some(Arc::new(Object::String(name.clone()))),
                     shrunk_counterexample: None,
                 };
             }
