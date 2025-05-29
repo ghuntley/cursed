@@ -9,6 +9,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
+use std::sync::{Arc, RwLock};
 use tracing::{debug, instrument};
 
 use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
@@ -19,7 +20,7 @@ use crate::error::Error;
 #[derive(Debug)]
 pub struct InterfaceRegistryVisualizationIntegration {
     /// The interface extension registry
-    pub registry: ThreadSafeInterfaceExtensionRegistry,
+    pub registry: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>,
     /// The visualization system
     pub visualization: ThreadSafeInterfaceRegistryVisualization,
 }
@@ -39,7 +40,7 @@ impl InterfaceRegistryVisualizationIntegration {
         debug!("Registering extension in integrated system: {} extends {}", source, target);
         
         // Register in the regular registry
-        self.registry.register_extension(source, target)?;
+        self.registry.write().map_err(|_| Error::Internal("Failed to acquire registry write lock".to_string()))?.register_extension(source, target)?;
         
         // Register in the visualization system
         self.visualization.register_extension(source, target)?;

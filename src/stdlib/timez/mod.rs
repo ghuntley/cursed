@@ -5,7 +5,6 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::sync::Arc;
 use std::time::{Duration as StdDuration, Instant, SystemTime, UNIX_EPOCH};
 use std::thread;
 

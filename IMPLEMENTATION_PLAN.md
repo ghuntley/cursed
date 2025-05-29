@@ -1,13 +1,19 @@
 # Test Failure Resolution Plan
 
-## Status: 749 compilation errors (increased from 673 due to stdlib migration phase)
+## Status: 742 compilation errors (reduced from 749 → 7 errors fixed this iteration)
 
-## Priority 1: Thread Safety Migration - IN PROGRESS 
+## Priority 1: Thread Safety Migration - CONTINUING CALL SITE UPDATES
 
 **RECENTLY RESOLVED (THIS ITERATION):**
+*   **Fixed Object method signatures** - Updated `to_closure()` to return `Arc<CompiledFunction>` instead of `Rc<CompiledFunction>`
+*   **Updated Arc pointer operations** - Fixed 4 instances of `Rc::as_ptr()` to `Arc::as_ptr()` in object.rs
+*   **Fixed From trait implementation** - Updated `From<Rc<CompiledFunction>>` to `From<Arc<CompiledFunction>>`
+*   **Updated interface registry types** - Fixed ThreadSafeInterfaceExtensionRegistry field types and Arc<RwLock<>> wrapper usage
+*   **Resolved import conflicts** - Fixed duplicate Arc imports in stdlib/timez/mod.rs
+
+**PREVIOUS ITERATION:**
 *   **Completed stdlib Rc→Arc migration** - Converted all 204 stdlib function signatures from `Rc<Object>` to `Arc<Object>`
 *   **Updated all stdlib modules** - Fixed imports in mod.rs, core.rs, stringz.rs, mathz.rs, timez, vibe_life, dropz, reflectz, htmlrizzler, and more
-*   **Fixed duplicate imports** - Resolved Arc import conflicts in stdlib/core.rs
 *   **Migration infrastructure complete** - All stdlib functions now use thread-safe Arc<Object> pattern
 
 **MIGRATION STATUS:**
@@ -31,10 +37,14 @@
 
 **CURRENT ERROR BREAKDOWN:**
 - **E0599 (252 errors)**: Method not found - missing trait imports, incorrect method names
-- **E0308 (125 errors)**: Type mismatches - thread safety migration (Rc→Arc) still needed
+- **E0308 (169 errors)**: Type mismatches - reduced from 174, continued call site updates needed
 - **E0277 (68 errors)**: Trait bounds not satisfied - thread safety issues  
 - **E0624 (64 errors)**: Private method access
 - **E0609 (52 errors)**: Field access issues
+
+**PROGRESS THIS ITERATION:**
+- E0308 errors: 174 → 169 (-5 errors) - Successfully fixing Rc/Arc mismatches
+- Total errors: 749 → 742 (-7 errors) - Steady progress on call site migration
 
 These errors prevent the codebase from compiling and must be addressed first.
 
