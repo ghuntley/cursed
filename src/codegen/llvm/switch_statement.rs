@@ -6,6 +6,7 @@ use crate::ast::expressions::StringLiteral;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
 use super::expression::ExpressionCompilation;
+use super::string_utils::StringUtilsExtension;
 use super::statement::StatementCompilation;
 
 /// Trait for switch statement compilation

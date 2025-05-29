@@ -50,7 +50,7 @@ let pointee_type = map_ptr_type.get_element_type();
         
         // Maps in CURSED are typically implemented as a struct with fields for
         // key type, value type, buckets, etc. We need to analyze the struct type
-        if let Some(struct_type) = pointee_type.as_struct_type() {
+        if let BasicTypeEnum::StructType(struct_type) = pointee_type {
             let type_name = struct_type.get_name()
                 .and_then(|n| n.to_str().ok())
                 .unwrap_or("unknown");
@@ -92,21 +92,21 @@ let pointee_type = map_ptr_type.get_element_type();
                         let field_type = struct_type.get_field_types()[field_idx];
                         
                         // Buckets/entries field is typically a pointer to an array of entry structs
-                        if let Some(ptr_type) = field_type.as_pointer_type() {
+                        if let BasicTypeEnum::PointerType(ptr_type) = field_type {
                             let element_type = ptr_type.get_element_type();
                             
                             // Try to extract key type from entry struct
-                            if let Some(entry_struct) = element_type.as_struct_type() {
+                            if let BasicTypeEnum::StructType(entry_struct) = element_type {
                                 if entry_struct.get_field_types().len() > 0 {
                                     // First field in an entry is typically the key
                                     let key_field_type = entry_struct.get_field_types()[0];
                                     debug!("Inferred key type from map entry struct");
                                     return Ok(key_field_type);
                                 }
-                            } else if let Some(array_type) = element_type.as_array_type() {
+                            } else if let BasicTypeEnum::ArrayType(array_type) = element_type {
                                 // If it's an array, look at the element type
                                 let array_element = array_type.get_element_type();
-                                if let Some(entry_struct) = array_element.as_struct_type() {
+                                if let BasicTypeEnum::StructType(entry_struct) = array_element {
                                     if entry_struct.get_field_types().len() > 0 {
                                         // First field in an entry is typically the key
                                         let key_field_type = entry_struct.get_field_types()[0];
@@ -144,7 +144,7 @@ let pointee_type = map_ptr_type.get_element_type();
         
         // Maps in CURSED are typically implemented as a struct with fields for
         // key type, value type, buckets, etc. We need to analyze the struct type
-        if let Some(struct_type) = pointee_type.as_struct_type() {
+        if let BasicTypeEnum::StructType(struct_type) = pointee_type {
             let type_name = struct_type.get_name()
                 .and_then(|n| n.to_str().ok())
                 .unwrap_or("unknown");
@@ -186,21 +186,21 @@ let pointee_type = map_ptr_type.get_element_type();
                         let field_type = struct_type.get_field_types()[field_idx];
                         
                         // Buckets/entries field is typically a pointer to an array of entry structs
-                        if let Some(ptr_type) = field_type.as_pointer_type() {
+                        if let BasicTypeEnum::PointerType(ptr_type) = field_type {
                             let element_type = ptr_type.get_element_type();
                             
                             // Try to extract value type from entry struct
-                            if let Some(entry_struct) = element_type.as_struct_type() {
+                            if let BasicTypeEnum::StructType(entry_struct) = element_type {
                                 if entry_struct.get_field_types().len() > 1 {
                                     // Second field in an entry is typically the value
                                     let value_field_type = entry_struct.get_field_types()[1];
                                     debug!("Inferred value type from map entry struct");
                                     return Ok(value_field_type);
                                 }
-                            } else if let Some(array_type) = element_type.as_array_type() {
+                            } else if let BasicTypeEnum::ArrayType(array_type) = element_type {
                                 // If it's an array, look at the element type
                                 let array_element = array_type.get_element_type();
-                                if let Some(entry_struct) = array_element.as_struct_type() {
+                                if let BasicTypeEnum::StructType(entry_struct) = array_element {
                                     if entry_struct.get_field_types().len() > 1 {
                                         // Second field in an entry is typically the value
                                         let value_field_type = entry_struct.get_field_types()[1];

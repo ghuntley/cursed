@@ -9,6 +9,7 @@ use inkwell::types::BasicTypeEnum;
 use crate::ast::expressions::dot_expression::DotExpression;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
+use super::pointer_type_extension::PointerTypeExtension;
 use super::expression::ExpressionCompilation;
 
 /// Trait for property access compilation

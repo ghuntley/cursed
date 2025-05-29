@@ -36,6 +36,7 @@ use inkwell::AddressSpace;
 use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;

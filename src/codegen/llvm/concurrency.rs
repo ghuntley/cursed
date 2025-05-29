@@ -6,6 +6,7 @@ use crate::ast::expressions::concurrency::StanExpression;
 use crate::ast::expressions::channel::{ChannelExpression, SendExpression, ReceiveExpression};
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
+use super::pointer_type_extension::PointerTypeExtension;
 use crate::ast::statements::GoStatement;
 use crate::ast::expressions::CallExpression;
 use tracing::{instrument};

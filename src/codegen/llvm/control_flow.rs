@@ -14,6 +14,7 @@ use super::expression::ExpressionCompilation;
 use super::statement::StatementCompilation;
 use super::variables::VariableHandling;
 use super::variables::VariableScope;
+use super::string_utils::StringUtilsExtension;
 
 /// Control flow implementation
 impl<'ctx> LlvmCodeGenerator<'ctx> {
