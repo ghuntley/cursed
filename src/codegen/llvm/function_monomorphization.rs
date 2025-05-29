@@ -6,13 +6,15 @@
 use inkwell::values::{BasicValueEnum, FunctionValue, BasicMetadataValueEnum};
 use inkwell::types::{BasicTypeEnum, BasicMetadataTypeEnum};
 use crate::ast::expressions::CallExpression;
+use crate::ast::expressions::identifiers::Identifier;
 use crate::ast::declarations::FunctionStatement;
+use crate::ast::declarations::type_parameter::TypeParameter;
+use crate::ast::declarations::fields::Parameter;
 use crate::ast::statements::ReturnStatement;
 use crate::ast::traits::Node;
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use crate::lexer::{Token, TokenType};
-use crate::ast::Parameter;
 use crate::ast::Block;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::statement::StatementCompilation;
@@ -487,13 +489,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     let param_type = Token::new(TokenType::Identifier, "T");
                     let return_type = Token::new(TokenType::Identifier, "T");
                     
-                    let param = crate::ast::declarations::ParameterStatement {
-                        token: "param".to_string(),
+                    let param = Parameter {
+                        token: "value".to_string(),
                         name: Identifier {
                             token: "value".to_string(),
                             value: "value".to_string(),
                         },
-                        type_name: Box::new(Identifier {
+                        param_type: Box::new(Identifier {
                             token: "T".to_string(),
                             value: "T".to_string(),
                         }),
@@ -507,13 +509,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                             token: "test_generic_fn".to_string(),
                             value: "test_generic_fn".to_string(),
                         },
-                        type_parameters: vec![Identifier {
-                            token: "T".to_string(),
-                            value: "T".to_string(),
-                        }],
+                        type_parameters: vec![TypeParameter::new(
+                            Token::new(TokenType::Identifier, "T"),
+                            "T".to_string()
+                        )],
                         parameters: vec![param],
                         body: crate::ast::statements::block::BlockStatement {
-                            token: "{".to_string(),
+                            token: Token::new(TokenType::LBrace, "{"),
                             statements: vec![],
                         },
                         return_type: Some(Box::new(Identifier {

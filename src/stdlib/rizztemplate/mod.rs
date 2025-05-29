@@ -410,7 +410,7 @@ pub fn parse_files(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     };
 
     // Use glob to find matching files
-    let paths = match glob::glob(pattern) {
+    let paths = match glob::glob(&pattern) {
         Ok(paths) => paths,
         Err(e) => {
             return Err(Error::Runtime(

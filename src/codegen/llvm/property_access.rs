@@ -41,7 +41,7 @@ impl<'ctx> PropertyAccessCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             tracing::debug!(struct_name = struct_name, field_name = field_name, "Looking up field in struct");
             
             // Try to find the field index by name using our improved field registry
-            if let Ok((field_idx, _)) = self.get_field_index(struct_name, field_name) {
+            if let Ok((field_idx, _)) = self.get_field_index(struct_name, &field_name) {
                 // Use GEP to get a pointer to the field
                 let indices = [
                     self.context().i32_type().const_int(0, false),
