@@ -28,6 +28,7 @@ use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
+use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;

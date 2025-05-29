@@ -20,6 +20,7 @@ use crate::ast::expressions::Identifier;
 use crate::ast::expressions::struct_expr::StructLiteral;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
+use super::pointer_type_extension::PointerTypeExtension;
 use super::pointer_ops::PointerOperations;
 use inkwell::types::BasicType;
 

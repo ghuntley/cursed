@@ -13,6 +13,7 @@
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl, TypeInfo};
+use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
 #[cfg(feature = "enhanced_dynamic_dispatch")]
 use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::core::type_checker::Type as CursedType;

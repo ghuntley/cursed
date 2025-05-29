@@ -15,6 +15,7 @@ use crate::error::Error;
 
 use super::context::LlvmCodeGenerator;
 use super::expression::ExpressionCompilation;
+use super::pointer_type_extension::PointerTypeExtension;
 
 /// Trait for pointer operations
 pub trait PointerOperations<'ctx> {

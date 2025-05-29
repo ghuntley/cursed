@@ -18,6 +18,7 @@ use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
 use crate::codegen::llvm::type_assertion_implementation::IntegratedTypeAssertion;
 use crate::core::type_checker::Type as CursedType;
+use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::AddressSpace;
 use tracing::{debug, error, info, instrument, trace, warn};

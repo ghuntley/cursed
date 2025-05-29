@@ -10,6 +10,7 @@ use inkwell::AddressSpace;
 use crate::ast::expressions::TypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
+use crate::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
 use crate::error::Error;
 
 use tracing::{debug, error, info, instrument, span, warn, Level};

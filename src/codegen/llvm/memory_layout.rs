@@ -4,6 +4,7 @@
 use inkwell::types::BasicTypeEnum;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
+use super::pointer_type_extension::PointerTypeExtension;
 
 /// Memory layout trait for handling type sizes and alignments
 pub trait MemoryLayout<'ctx> {

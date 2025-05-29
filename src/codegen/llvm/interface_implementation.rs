@@ -8,6 +8,7 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 use crate::core::type_checker::Type as CursedType;
+use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use inkwell::AddressSpace;
