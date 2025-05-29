@@ -674,7 +674,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             if pointee_type.is_array_type() {
                 // Pointer to an array
-                if let Some(array_type) = pointee_type.as_array_type() {
+                if let BasicTypeEnum::ArrayType(array_type) = pointee_type {
                     let element_type = array_type.get_element_type();
                     
                     // We have two options:
@@ -697,7 +697,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // This is likely a slice or similar container
                 // For slices, we need to extract the data pointer and then index it
                 
-                if let Some(struct_type) = pointee_type.as_struct_type() {
+                if let BasicTypeEnum::StructType(struct_type) = pointee_type {
                     let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
                     debug!("Accessing element from struct container: {}", type_name);
                     

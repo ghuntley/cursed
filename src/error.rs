@@ -161,6 +161,21 @@ pub enum Error {
     
     /// Invalid arguments error
     InvalidArguments(String),
+    
+    /// Not found error
+    NotFound(String),
+    
+    /// Parsing error  
+    Parsing(String),
+    
+    /// I/O error wrapper
+    IO(std::io::Error),
+    
+    /// Internal error
+    Internal(String),
+    
+    /// Validation error
+    Validation(String),
 }
 
 /// Utility for creating properly formatted error instances
@@ -300,6 +315,11 @@ impl Clone for Error {
             Error::CodeGenError(msg) => Error::CodeGenError(msg.clone()),
             Error::TypeAssertion(error) => Error::TypeAssertion(error.clone()),
             Error::InvalidArguments(msg) => Error::InvalidArguments(msg.clone()),
+            Error::NotFound(msg) => Error::NotFound(msg.clone()),
+            Error::Parsing(msg) => Error::Parsing(msg.clone()),
+            Error::IO(e) => Error::IO(std::io::Error::new(e.kind(), format!("{}", e))),
+            Error::Internal(msg) => Error::Internal(msg.clone()),
+            Error::Validation(msg) => Error::Validation(msg.clone()),
         }
     }
 }
@@ -478,6 +498,11 @@ impl Error {
             Error::CodeGenError(msg) => msg.clone(),
             Error::TypeAssertion(error) => error.message().to_string(),
             Error::InvalidArguments(msg) => msg.clone(),
+            Error::NotFound(msg) => msg.clone(),
+            Error::Parsing(msg) => msg.clone(),
+            Error::IO(err) => err.to_string(),
+            Error::Internal(msg) => msg.clone(),
+            Error::Validation(msg) => msg.clone(),
         }
     }
 

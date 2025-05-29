@@ -5,6 +5,7 @@
 
 use crate::codegen::llvm::context::LlvmCodeGenerator;
 use crate::codegen::llvm::string_utils::StringUtilsExtension;
+use crate::codegen::llvm::pointer_type_extension::PointerTypeExtension;
 use crate::error::Error;
 use inkwell::types::{BasicTypeEnum, AnyType, BasicType};
 use inkwell::values::{BasicValueEnum, IntValue, PointerValue, BasicMetadataValueEnum};
