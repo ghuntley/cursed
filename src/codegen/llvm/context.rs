@@ -199,8 +199,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Initialize interface type registry with the new implementation and link to extension registry
             interface_type_registry: {
                 // Create a local extension registry for interface type registry
-                let registry_ext = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
-                let registry_ref = std::sync::Arc::new(registry_ext.clone());
+                let registry_ref = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
                 
                 // Create interface type registry with the extension registry
                 let ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
@@ -804,7 +803,17 @@ impl<'ctx> FilesystemSourceLocationIntegration for LlvmCodeGenerator<'ctx> {
 
     #[instrument(skip(self), level = "trace")]
     fn get_context_lines(&self, file_path: &Path, line: usize, context_lines: usize) -> io::Result<Vec<String>> {
-        self.filesystem_integration.get_context_lines(file_path, line, context_lines)
+        // Convert parameters to SourceLocation
+        let location = crate::codegen::llvm::interface_type_assertion_filesystem_integration::SourceLocation {
+            file_path: Some(file_path.to_path_buf()),
+            line: Some(line),
+            column: None,
+            source_line: None,
+            description: None,
+        };
+        let context_map = self.filesystem_integration.get_context_lines(&location, context_lines);
+        // Convert HashMap<usize, String> to Vec<String> for compatibility
+        Ok(context_map.values().cloned().collect())
     }
 }
 

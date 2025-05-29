@@ -38,7 +38,7 @@ pub struct InterfaceTypeRegistry<'ctx> {
     type_count: usize,
     
     /// Reference to the interface extension registry for checking relationships
-    pub extension_registry: Option<std::sync::Arc<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>>,
+    pub extension_registry: Option<std::sync::Arc<std::sync::RwLock<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>>>,
 }
 
 impl<'ctx> InterfaceTypeRegistry<'ctx> {
@@ -54,7 +54,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
     }
     
     /// Create a new registry with an extension registry
-    pub fn with_extension_registry(extension_registry: std::sync::Arc<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>) -> Self {
+    pub fn with_extension_registry(extension_registry: std::sync::Arc<std::sync::RwLock<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>>) -> Self {
         Self {
             type_id_to_name: HashMap::new(),
             type_names_global: None,

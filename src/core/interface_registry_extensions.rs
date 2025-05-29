@@ -198,6 +198,45 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
     }
 }
 
+/// Trait implementation for Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>
+impl InterfaceRegistryExtension for Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
+    fn register_interface(&mut self, name: &str) {
+        self.write().unwrap().register_interface(name);
+    }
+    
+    fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        self.write().unwrap().register_extension(source, target)
+    }
+    
+    fn has_extension(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.read().unwrap().has_extension(source, target)
+    }
+    
+    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+        self.read().unwrap().get_all_interfaces()
+    }
+    
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        self.read().unwrap().get_direct_extensions(interface)
+    }
+    
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+        self.read().unwrap().get_direct_implementers(interface)
+    }
+    
+    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.read().unwrap().extends(source, target)
+    }
+    
+    fn find_common_ancestor(&self, a: &str, b: &str) -> Result<Option<String>, Error> {
+        self.read().unwrap().find_common_ancestor(a, b)
+    }
+    
+    fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        self.read().unwrap().find_longest_path(source, target)
+    }
+}
+
 impl ThreadSafeInterfaceExtensionRegistry {
     /// Helper method to collect all ancestors of an interface
     #[instrument(skip(self, ancestors), level = "trace")]

@@ -24,14 +24,14 @@ use crate::error::Error;
 #[derive(Debug)]
 pub struct InterfaceRegistryAdapter {
     /// The extension registry to delegate to
-    extension_registry: ThreadSafeInterfaceExtensionRegistry,
+    extension_registry: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>,
     /// Optional visualization registry to delegate to when available
     visualization_registry: Option<Box<dyn InterfaceRegistryVisualization + Send + Sync>>,
 }
 
 impl InterfaceRegistryAdapter {
     /// Create a new adapter with the extension registry
-    pub fn new(extension_registry: ThreadSafeInterfaceExtensionRegistry) -> Self {
+    pub fn new(extension_registry: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>) -> Self {
         // Create a new adapter
         Self {
             extension_registry,

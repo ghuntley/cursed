@@ -103,8 +103,8 @@ impl<'ctx> EnhancedMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Check each constraint
         for constraint in &generic_function.generic_constraints {
-            let param_name = &constraint.type_parameter.value;
-            let interface_name = &constraint.trait_name.value;
+            let param_name = &constraint.parameter_name;
+            let interface_name = &constraint.interface_name;
             
             // Get the concrete type for this parameter
             if let Some(concrete_type) = type_map.get(param_name) {

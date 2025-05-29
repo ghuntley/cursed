@@ -60,7 +60,7 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             // Convert AST type nodes to Type system types
             let mut type_args = Vec::new();
             for type_arg in &call_expr.type_arguments {
-                let type_name = type_arg.string();
+                let type_name = type_arg.to_string();
                 let arg_type = crate::core::type_checker::Type::new_basic(&type_name);
                 type_args.push(arg_type);
             }
@@ -142,7 +142,7 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         for param in &generic_function.parameters {
             // Get the parameter type name
-            let param_type_name = param.type_name.string();
+            let param_type_name = param.param_type.string();
             tracing::debug!("Processing parameter: {} with type {}", param.name.value, param_type_name);
             
             // Create a Type from the parameter type name

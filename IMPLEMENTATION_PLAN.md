@@ -75,30 +75,30 @@ These errors prevent the codebase from compiling and must be addressed first.
 
 These errors indicate issues with type compatibility, trait bounds, or incorrect method calls.
 
-*   **`error[E0308]: mismatched types` in `src/codegen/llvm/context.rs:197:17` and `src/codegen/llvm/context.rs:206:120`**
-    *   Description: Arguments passed to `InterfaceRegistryAdapter::new` and `InterfaceTypeRegistry::with_extension_registry` do not match the expected types (likely related to `Arc<RwLock<...>>` wrapping).
-    *   Action: Adjust the argument types or the function signatures to ensure compatibility.
-*   **`error[E0061]: this method takes 2 arguments but 3 arguments were supplied` in `src/codegen/llvm/context.rs:807:37`**
+*   **RESOLVED: `error[E0308]: mismatched types` in `src/codegen/llvm/context.rs:197:17` and `src/codegen/llvm/context.rs:206:120`**
+    *   Description: Arguments passed to `InterfaceRegistryAdapter::new` and `InterfaceTypeRegistry::with_extension_registry` do not match the expected types (related to `Arc<RwLock<...>>` wrapping).
+    *   Action: Fixed by updating type signatures to use `Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>` consistently across the codebase and adding trait implementations for the Arc<RwLock> wrapper.
+*   **RESOLVED: `error[E0061]: this method takes 2 arguments but 3 arguments were supplied` in `src/codegen/llvm/context.rs:807:37`**
     *   Description: `get_context_lines` is called with an incorrect number of arguments.
-    *   Action: Correct the method call to pass the expected number and types of arguments.
-*   **`error[E0308]: mismatched types` in `src/codegen/llvm/context.rs:807:9` (return type)**
+    *   Action: Fixed by converting the parameters to a SourceLocation struct and updating the return type conversion from HashMap to Vec.
+*   **RESOLVED: `error[E0308]: mismatched types` in `src/codegen/llvm/context.rs:807:9` (return type)**
     *   Description: The return type of `get_context_lines` does not match the expected `io::Result<Vec<String>>`.
-    *   Action: Modify the function to return the correct type, or update the calling code to expect the actual return type.
-*   **`error[E0609]: no field 'type_parameter' on type '&GenericConstraint'` in `src/codegen/llvm/enhanced_monomorphization.rs:106:42`**
+    *   Action: Fixed by converting the HashMap<usize, String> result to Vec<String> for API compatibility.
+*   **RESOLVED: `error[E0609]: no field 'type_parameter' on type '&GenericConstraint'` in `src/codegen/llvm/enhanced_monomorphization.rs:106:42`**
     *   Description: Accessing a non-existent field `type_parameter` on `GenericConstraint`.
-    *   Action: Use the correct field name (`parameter_name` or `interface_name`).
-*   **`error[E0609]: no field 'trait_name' on type '&GenericConstraint'` in `src/codegen/llvm/enhanced_monomorphization.rs:107:46`**
+    *   Action: Fixed by using the correct field name `parameter_name`.
+*   **RESOLVED: `error[E0609]: no field 'trait_name' on type '&GenericConstraint'` in `src/codegen/llvm/enhanced_monomorphization.rs:107:46`**
     *   Description: Accessing a non-existent field `trait_name` on `GenericConstraint`.
-    *   Action: Use the correct field name (`interface_name`).
-*   **`error[E0277]: the trait bound \`BasicMetadataTypeEnum<'_>: From<&BasicTypeEnum<'_>>\` is not satisfied`** (multiple occurrences in `interface_field_accessors_lru.rs`)
+    *   Action: Fixed by using the correct field name `interface_name`.
+*   **RESOLVED: `error[E0277]: the trait bound \`BasicMetadataTypeEnum<'_>: From<&BasicTypeEnum<'_>>\` is not satisfied`** (multiple occurrences in `interface_field_accessors_lru.rs`)
     *   Description: Attempting to convert `&BasicTypeEnum` to `BasicMetadataTypeEnum` where the `From` trait is not implemented.
-    *   Action: Implement the `From` trait or use an alternative conversion method (e.g., dereferencing `*t` as suggested).
-*   **`error[E0599]: no method named 'string' found for reference '&type_checker::Type'` in `src/codegen/llvm/function_monomorphization.rs:63:42`**
+    *   Action: Fixed by dereferencing the reference (`(*t).into()`) as suggested by the compiler.
+*   **RESOLVED: `error[E0599]: no method named 'string' found for reference '&type_checker::Type'` in `src/codegen/llvm/function_monomorphization.rs:63:42`**
     *   Description: Calling a non-existent method `string()`.
-    *   Action: Use `to_string()` or implement the `Node` trait if appropriate.
-*   **`error[E0609]: no field 'type_name' on type '&Parameter'` in `src/codegen/llvm/function_monomorphization.rs:145:41`**
+    *   Action: Fixed by using `to_string()` method.
+*   **RESOLVED: `error[E0609]: no field 'type_name' on type '&Parameter'` in `src/codegen/llvm/function_monomorphization.rs:145:41`**
     *   Description: Accessing a non-existent field `type_name` on `Parameter`.
-    *   Action: Use the correct field name (`param_type`).
+    *   Action: Fixed by using the correct field name `param_type` and calling `string()` method on the Expression trait.
 *   **`error[E0308]: mismatched types` in `src/codegen/llvm/function_monomorphization.rs:510:47`, `514:42`, `516:36`**
     *   Description: Incorrect types used when constructing `TypeParameter`, `Parameter`, and `Token`.
     *   Action: Ensure the correct types are used for initialization, possibly wrapping values in appropriate enums or structs.
