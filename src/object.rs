@@ -490,7 +490,7 @@ impl Traceable for Object {
                 free_vars,
             } => {
                 let mut size =
-                    std::mem::size_of::<Rc<CompiledFunction>>() + function.ir_representation.len();
+                    std::mem::size_of::<Arc<CompiledFunction>>() + function.ir_representation.len();
                 for var in free_vars {
                     size += var.size();
                 }
@@ -1262,7 +1262,7 @@ impl Object {
         }
     }
 
-    pub fn to_closure(&self) -> Option<(Rc<CompiledFunction>, Vec<Object>)> {
+    pub fn to_closure(&self) -> Option<(Arc<CompiledFunction>, Vec<Object>)> {
         match self {
             Object::Closure {
                 function,
@@ -1368,7 +1368,7 @@ impl Object {
                 function,
                 free_vars,
             } => {
-                let func_ptr = Rc::as_ptr(function) as usize;
+                let func_ptr = Arc::as_ptr(function) as usize;
                 // visitor.visit_ptr(func_ptr, Tag::Function);
 
                 for var in free_vars {
@@ -1380,7 +1380,7 @@ impl Object {
                 struct_type,
                 fields,
             } => {
-                let type_ptr = Rc::as_ptr(struct_type) as usize;
+                let type_ptr = Arc::as_ptr(struct_type) as usize;
                 // visitor.visit_ptr(type_ptr, Tag::Object);
 
                 for (_, value) in fields {
@@ -1392,7 +1392,7 @@ impl Object {
                 // Interface objects don't contain references that need tracing
             }
             Object::Method { function, .. } => {
-                let func_ptr = Rc::as_ptr(function) as usize;
+                let func_ptr = Arc::as_ptr(function) as usize;
                 // visitor.visit_ptr(func_ptr, Tag::Function);
             }
             _ => {}
@@ -1456,7 +1456,7 @@ impl Object {
                     .join(", ");
                 format!(
                     "Closure[function={:p}, free_vars=[{}]]",
-                    Rc::as_ptr(&function),
+                    Arc::as_ptr(&function),
                     free_vars_str
                 )
             }
@@ -1606,8 +1606,8 @@ impl From<HashMap<String, Object>> for Object {
     }
 }
 
-impl From<Rc<CompiledFunction>> for Object {
-    fn from(val: Rc<CompiledFunction>) -> Self {
+impl From<Arc<CompiledFunction>> for Object {
+    fn from(val: Arc<CompiledFunction>) -> Self {
         Object::CompiledFunction {
             ir_representation: val.ir_representation.clone(),
             num_locals: val.num_locals,
