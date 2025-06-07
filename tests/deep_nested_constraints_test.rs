@@ -24,14 +24,14 @@ fn test_simple_constraint_checking() {
     let map_constraints = vec![("K".to_string(), "Comparable".to_string())];
     registry.register_generic_implementation(
         "Map".to_string(),
-        vec!["K".to_string(), "V".to_string())],
+        vec!["K".to_string(), "V".to_string()],
         "Container".to_string(),
         map_constraints
     );
     
     // Create a constraint map
     let mut constraint_map = HashMap::new();
-    constraint_map.insert("K".to_string(), vec!["Comparable".to_string())]);
+    constraint_map.insert("K".to_string(), vec!["Comparable".to_string()]);
     
     // Check with valid arguments
     let type_args = vec![Type::Tea, Type::Normie]; // String and Int
@@ -41,7 +41,7 @@ fn test_simple_constraint_checking() {
         &constraint_map
     );
     
-    assert_eq!(result, Ok(true);
+    assert_eq!(result, Ok(true));
     
     // Check with invalid arguments
     let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
@@ -52,7 +52,7 @@ fn test_simple_constraint_checking() {
         &constraint_map
     );
     
-    assert_eq!(result, Ok(false);
+    assert_eq!(result, Ok(false));
 }
 
 #[test]
@@ -66,22 +66,22 @@ fn test_nested_generic_constraint_checking() {
     // Register nested generics: Map[K, List[V]] with K: Comparable, V: Container
     registry.register_generic_implementation(
         "Map".to_string(),
-        vec!["K".to_string(), "V".to_string())],
+        vec!["K".to_string(), "V".to_string()],
         "Container".to_string(),
         vec![("K".to_string(), "Comparable".to_string())]
     );
     
     registry.register_generic_implementation(
         "List".to_string(),
-        vec!["T".to_string())],
+        vec!["T".to_string()],
         "Container".to_string(),
         vec![("T".to_string(), "Container".to_string())]
     );
     
     // Create a constraint map
     let mut constraint_map = HashMap::new();
-    constraint_map.insert("K".to_string(), vec!["Comparable".to_string())]);
-    constraint_map.insert("T".to_string(), vec!["Container".to_string())]);
+    constraint_map.insert("K".to_string(), vec!["Comparable".to_string()]);
+    constraint_map.insert("T".to_string(), vec!["Container".to_string()]);
     
     // Create a List[V] as the second argument
     let list_type = Type::Generic(
@@ -97,7 +97,7 @@ fn test_nested_generic_constraint_checking() {
         &constraint_map
     );
     
-    assert_eq!(result, Ok(true);
+    assert_eq!(result, Ok(true));
     
     // Check with invalid nested argument
     let bad_list_type = Type::Generic(
@@ -120,8 +120,8 @@ fn test_nested_generic_constraint_checking() {
     // The failure path should include the nested List generic
     if let Some(path) = details.failure_path {
         let path_str = path.format();
-        assert!(path_str.contains("List");
-        assert!(path_str.contains("Lit");
+        assert!(path_str.contains("List"));
+        assert!(path_str.contains("Lit"));
     } else {
         panic!("Expected failure path");
     }
@@ -138,14 +138,14 @@ fn test_multiple_constraints_per_type_parameter() {
     // Register Collection[T] with T: Container + Comparable (multiple constraints)
     registry.register_generic_implementation(
         "Collection".to_string(),
-        vec!["T".to_string())],
+        vec!["T".to_string()],
         "Container".to_string(),
-        vec![("T".to_string(), "Container".to_string(), ("T".to_string(), "Comparable".to_string())]
+        vec![("T".to_string(), "Container".to_string()), ("T".to_string(), "Comparable".to_string())]
     );
     
     // Create a constraint map with multiple constraints per parameter
     let mut constraint_map = HashMap::new();
-    constraint_map.insert("T".to_string(), vec!["Container".to_string(), "Comparable".to_string())]);
+    constraint_map.insert("T".to_string(), vec!["Container".to_string(), "Comparable".to_string()]);
     
     // Create valid type that implements both constraints
     let array_type = Type::Struct("Array".to_string(), vec![]); // Implements both Container and Comparable
@@ -158,7 +158,7 @@ fn test_multiple_constraints_per_type_parameter() {
         &constraint_map
     );
     
-    assert_eq!(result, Ok(true);
+    assert_eq!(result, Ok(true));
     
     // Create invalid type that only implements one constraint
     let set_type = Type::Struct("CustomSet".to_string(), vec![]); // Only implements Container
@@ -172,7 +172,7 @@ fn test_multiple_constraints_per_type_parameter() {
         &constraint_map
     );
     
-    assert_eq!(result, Ok(false);
+    assert_eq!(result, Ok(false));
 }
 
 #[test]
@@ -189,30 +189,30 @@ fn test_deeply_recursive_constraint_checking() {
     // First register the base generics
     registry.register_generic_implementation(
         "Map".to_string(),
-        vec!["K".to_string(), "V".to_string())],
+        vec!["K".to_string(), "V".to_string()],
         "Container".to_string(),
         vec![("K".to_string(), "Comparable".to_string())]
     );
     
     registry.register_generic_implementation(
         "List".to_string(),
-        vec!["T".to_string())],
+        vec!["T".to_string()],
         "Container".to_string(),
         vec![("T".to_string(), "Container".to_string())]
     );
     
     registry.register_generic_implementation(
         "Tree".to_string(),
-        vec!["K".to_string(), "V".to_string())],
+        vec!["K".to_string(), "V".to_string()],
         "Container".to_string(),
-        vec![("K".to_string(), "Comparable".to_string(), ("V".to_string(), "Container".to_string())]
+        vec![("K".to_string(), "Comparable".to_string()), ("V".to_string(), "Container".to_string())]
     );
     
     // Create a constraint map
     let mut constraint_map = HashMap::new();
-    constraint_map.insert("K".to_string(), vec!["Comparable".to_string())]);
-    constraint_map.insert("T".to_string(), vec!["Comparable".to_string(), "Container".to_string())]);
-    constraint_map.insert("V".to_string(), vec!["Container".to_string())]);
+    constraint_map.insert("K".to_string(), vec!["Comparable".to_string()]);
+    constraint_map.insert("T".to_string(), vec!["Comparable".to_string(), "Container".to_string()]);
+    constraint_map.insert("V".to_string(), vec!["Container".to_string()]);
     
     // Now build a complex nested structure that should be valid
     // List[Array]
@@ -243,7 +243,7 @@ fn test_deeply_recursive_constraint_checking() {
         &constraint_map
     );
     
-    assert_eq!(result, Ok(true);
+    assert_eq!(result, Ok(true));
     
     // Now introduce an invalid constraint deep in the structure
     // Replace Array with a type that doesn't implement Container
@@ -280,9 +280,9 @@ fn test_deeply_recursive_constraint_checking() {
     if let Some(path) = details.failure_path {
         let path_str = path.format();
         println!("Failure path: {}", path_str);
-        assert!(path_str.contains("List");
-        assert!(path_str.contains("Lit");
-        assert!(path_str.contains("Container");
+        assert!(path_str.contains("List"));
+        assert!(path_str.contains("Lit"));
+        assert!(path_str.contains("Container"));
     } else {
         panic!("Expected failure path");
     }

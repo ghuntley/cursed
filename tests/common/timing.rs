@@ -1,8 +1,7 @@
+/// Timing utilities for tests
+
 use std::time::Instant;
 use tracing::info;
-
-//! Timing utilities for tests
-
 
 /// Timer utility for benchmarking operations in tests
 pub struct Timer {

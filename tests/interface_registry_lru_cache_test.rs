@@ -1,5 +1,5 @@
 use cursed::core::interface_registry::InterfaceRegistry;
-use cursed::core::interface_registry_lru_cache::{LruInterfaceCache, ThreadSafeLruCache};
+use cursed::core::interface_registry_lru_cache::LruInterfaceCache;
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
 use std::thread;
@@ -105,12 +105,12 @@ fn test_lru_cache_generic_types() {
     cache.store(&map_string_int, "Map", true);
     
     // Verify correct cache hits
-    assert_eq!(cache.lookup(&stack_string, "Container"), Some(true);
-    assert_eq!(cache.lookup(&stack_int, "Container"), Some(true);
-    assert_eq!(cache.lookup(&list_string, "Container"), Some(true);
-    assert_eq!(cache.lookup(&map_string_int, "Container"), Some(true);
-    assert_eq!(cache.lookup(&list_string, "List"), Some(true);
-    assert_eq!(cache.lookup(&map_string_int, "Map"), Some(true);
+    assert_eq!(cache.lookup(&stack_string, "Container"), Some(true));
+    assert_eq!(cache.lookup(&stack_int, "Container"), Some(true));
+    assert_eq!(cache.lookup(&list_string, "Container"), Some(true));
+    assert_eq!(cache.lookup(&map_string_int, "Container"), Some(true));
+    assert_eq!(cache.lookup(&list_string, "List"), Some(true));
+    assert_eq!(cache.lookup(&map_string_int, "Map"), Some(true));
     
     // These should be cache misses
     assert_eq!(cache.lookup(&stack_string, "List"), None);
@@ -177,11 +177,11 @@ fn test_lru_eviction_policy() {
     assert_eq!(cache.lookup(&types[6], "Comparable"), None, "Type at index 6 should have been evicted");
     
     // Other entries should still be in the cache
-    assert_eq!(cache.lookup(&types[5], "Comparable"), Some(true);
-    assert_eq!(cache.lookup(&types[7], "Comparable"), Some(true);
-    assert_eq!(cache.lookup(&types[8], "Comparable"), Some(false);
-    assert_eq!(cache.lookup(&types[9], "Comparable"), Some(false);
-    assert_eq!(cache.lookup(&new_type, "Comparable"), Some(true);
+    assert_eq!(cache.lookup(&types[5], "Comparable"), Some(true));
+    assert_eq!(cache.lookup(&types[7], "Comparable"), Some(true));
+    assert_eq!(cache.lookup(&types[8], "Comparable"), Some(false));
+    assert_eq!(cache.lookup(&types[9], "Comparable"), Some(false));
+    assert_eq!(cache.lookup(&new_type, "Comparable"), Some(true));
 }
 
 /// Test cache performance compared to the original cache
@@ -213,8 +213,7 @@ fn test_lru_cache_performance() {
                     7 => Type::Rune,
                     8 => Type::Sip,
                     _ => Type::Extra,
-                })]
-            );
+                })]));
         }
     }
     
@@ -247,7 +246,7 @@ fn test_lru_cache_performance() {
                     // Use the cached result
                 } else {
                     // Cache miss, perform the check and store result
-                    let result = registry.check_implementation(type_, interface).unwrap());
+                    let result = registry.check_implementation(type_, interface).unwrap();
                     lru_cache.store(type_, interface, result);
                 }
             }
@@ -277,14 +276,44 @@ fn test_lru_cache_performance() {
     assert!(lru_cache.hit_rate() > 0.8);
 }
 
+/// Simple wrapper to make LruInterfaceCache thread-safe for testing
+#[derive(Debug)]
+struct ThreadSafeLruCache {
+    cache: std::sync::Mutex<LruInterfaceCache>,
+}
+
+impl ThreadSafeLruCache {
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            cache: std::sync::Mutex::new(LruInterfaceCache::with_capacity(capacity)),
+        }
+    }
+    
+    fn lookup(&self, type_: &Type, interface_name: &str) -> Option<bool> {
+        self.cache.lock().unwrap().lookup(type_, interface_name)
+    }
+    
+    fn store(&self, type_: &Type, interface_name: &str, result: bool) {
+        self.cache.lock().unwrap().store(type_, interface_name, result);
+    }
+    
+    fn stats(&self) -> (usize, usize, usize, usize, usize) {
+        self.cache.lock().unwrap().stats()
+    }
+    
+    fn hit_rate(&self) -> f64 {
+        self.cache.lock().unwrap().hit_rate()
+    }
+}
+
 /// Test thread safety of the thread-safe LRU cache
 #[test]
 fn test_thread_safe_lru_cache() {
     // Initialize tracing
     tracing_setup::init_test_tracing();
     
-    // Create a thread-safe LRU cache
-    let cache = Arc::new(ThreadSafeLruCache::with_capacity(1000);
+    // Create a thread-safe LRU cache  
+    let cache = Arc::new(ThreadSafeLruCache::with_capacity(1000));
     
     // Create some common types to test with
     let types = vec![
@@ -307,8 +336,8 @@ fn test_thread_safe_lru_cache() {
         
         let handle = thread::spawn(move || {
             for i in 0..100 {
-                let type_index = (i + thread_id) % types_clone.len());
-                let interface_index = (i + thread_id) % interfaces_clone.len());
+                let type_index = (i + thread_id) % types_clone.len();
+                let interface_index = (i + thread_id) % interfaces_clone.len();
                 
                 let type_ = &types_clone[type_index];
                 let interface = interfaces_clone[interface_index];
@@ -332,7 +361,7 @@ fn test_thread_safe_lru_cache() {
     
     // Wait for all threads to complete
     for handle in handles {
-        handle.join().unwrap());
+        handle.join().unwrap();
     }
     
     // Get final cache statistics

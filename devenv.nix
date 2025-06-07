@@ -58,8 +58,9 @@
     export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:$LIBRARY_PATH"
     # Completely disable mold and force GNU linker
     export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.gcc}/bin/gcc"
-    export RUSTFLAGS="-C link-arg=-fuse-ld=ld -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
-    export RUSTDOCFLAGS="-C link-arg=-fuse-ld=ld -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
+    # More aggressive mold override
+    export RUSTFLAGS="-C linker=${pkgs.gcc}/bin/gcc -C link-arg=-fuse-ld=${pkgs.binutils}/bin/ld -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
+    export RUSTDOCFLAGS="-C linker=${pkgs.gcc}/bin/gcc -C link-arg=-fuse-ld=${pkgs.binutils}/bin/ld -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
     # Override any system mold linker - put our binutils first in PATH
     export PATH="${pkgs.binutils}/bin:${pkgs.gcc}/bin:${pkgs.llvmPackages_17.clang}/bin:$PATH"
     # Ensure we find the libraries by name
@@ -68,6 +69,10 @@
     # Also try to force the linker through environment variables that override system defaults
     export LINKER="${pkgs.binutils}/bin/ld"
     export LD="${pkgs.binutils}/bin/ld"
+    # Additional mold override attempts
+    export CARGO_BUILD_RUSTFLAGS="$RUSTFLAGS"
+    unset CC_x86_64_unknown_linux_gnu
+    unset CXX_x86_64_unknown_linux_gnu
   '';
 
 

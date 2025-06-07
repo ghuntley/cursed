@@ -12,7 +12,7 @@ pub fn init_test_tracing() {
     TRACING_INIT.call_once(|| {
         // Get log level from environment or use INFO as default
         let filter = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new("info,cursed=debug");
+            .unwrap_or_else(|_| EnvFilter::new("info,cursed=debug"));
 
         // Initialize the tracing subscriber
         fmt()

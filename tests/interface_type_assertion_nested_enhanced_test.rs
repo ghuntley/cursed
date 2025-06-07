@@ -38,13 +38,13 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().iter().map(|e| e.to_string()).collect::<Vec<_>>().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg);
+        return Err(format!("Parser errors:\n{}", error_msg));
     }
     
     // Create LLVM context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_program.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone();
+    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone());
     
     // Compile the program
     code_gen.compile(&program).map_err(|e| e.to_string())?;
@@ -59,7 +59,7 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
     cursed::codegen::jit::init_goroutine_manager();
     
     // Create JIT compiler
-    let mut jit_compiler = JitCompiler::new(&context, execution_engine, "_main_main", file_path.clone();
+    let mut jit_compiler = JitCompiler::new(&context, execution_engine, "_main_main", file_path.clone());
     
     // Use existing code_gen to avoid recompilation
     *jit_compiler.code_generator_mut() = Some(code_gen);

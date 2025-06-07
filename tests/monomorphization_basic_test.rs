@@ -1,6 +1,7 @@
 use cursed::ast::FunctionStatement;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::declarations::type_parameter::TypeParameter;
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::function_monomorphization::FunctionMonomorphization;
@@ -15,18 +16,15 @@ use std::path::PathBuf;
 fn test_function_monomorphization_basic() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_monomorphization", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_monomorphization", PathBuf::from("test.csd"));
 
     // Create a generic function AST
-    let type_param = Identifier {
-        token: "token".to_string(),
-        value: "T".to_string(),
-    };
+    let type_param = TypeParameter::new(Token::Identifier("T".to_string()), "T".to_string());
 
     let function = FunctionStatement {
-        token: Token::Slay,
+        token: "slay".to_string(),
         name: Identifier {
-            token: "token".to_string(),
+            token: "identity".to_string(),
             value: "identity".to_string(),
         },
         parameters: vec![],
@@ -35,7 +33,7 @@ fn test_function_monomorphization_basic() {
             statements: vec![],
         },
         return_type: Some(Box::new(Identifier {
-            token: "token".to_string(),
+            token: "T".to_string(),
             value: "T".to_string(),
         })),
         type_parameters: vec![type_param],
@@ -50,7 +48,7 @@ fn test_function_monomorphization_basic() {
     ).expect("Failed to generate specialized i32 function");
 
     // Verify the module
-    let verify_result = generator.module().verify());
+    let verify_result = generator.module().verify();
     assert!(verify_result.is_ok(), "Module verification failed: {:?}", verify_result.err());
 
     // Check that the specialized function exists
