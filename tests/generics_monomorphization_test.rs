@@ -85,8 +85,8 @@ fn test_multi_parameter_generic_function_monomorphization() {
     let result2 = code_gen.specialized_function_builder().compile_generic_call(&call2);
 
     // Verify that both compilations succeeded
-    assert!(result1.is_ok(), "First generic call compilation should succeed: {:?}", result1.err();
-    assert!(result2.is_ok(), "Second generic call compilation should succeed: {:?}", result2.err();
+    assert!(result1.is_ok(), "First generic call compilation should succeed: {:?}", result1.err());
+    assert!(result2.is_ok(), "Second generic call compilation should succeed: {:?}", result2.err());
 
     // Verify the specialized functions exist in the module
     let specialized_name1 = code_gen
@@ -185,7 +185,7 @@ fn test_cross_module_generic_function_usage() {
 
     // Compile the generic call in module B
     let result_b = code_gen_b.specialized_function_builder().compile_generic_call(&map_call_b);
-    assert!(result_b.is_ok(), "Module B generic call compilation should succeed: {:?}", result_b.err();
+    assert!(result_b.is_ok(), "Module B generic call compilation should succeed: {:?}", result_b.err());
 
     // Create a specialization name for map<tea, tea>
     let specialized_map_name_b = code_gen_b
@@ -279,7 +279,7 @@ fn create_generic_select_function() -> FunctionStatement {
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
         token: "token".to_string(),
         value: "T".to_string(),
-    });
+    }));
 
     // Create body: { if condition { return first; } else { return second; } }
     // For simplicity, we'll just return the first parameter
@@ -359,7 +359,7 @@ fn create_generic_map_function() -> FunctionStatement {
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
         token: "token".to_string(),
         value: "Array".to_string(),
-    });
+    }));
 
     // Create simple body for testing
     let return_statement = ReturnStatement {

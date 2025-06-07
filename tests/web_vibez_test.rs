@@ -95,9 +95,9 @@ fn test_head_mock() {
     match &*result {
         Object::HashTable(response) => {
             // Verify response structure
-            assert!(response.contains_key("status"))
-            assert!(response.contains_key("headers"))
-            assert!(!response.contains_key("body")) // HEAD requests don't have a body
+            assert!(response.contains_key("status"));
+            assert!(response.contains_key("headers"));
+            assert!(!response.contains_key("body")); // HEAD requests don't have a body
             
             // Verify status is 200
             match &response["status"] {

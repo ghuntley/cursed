@@ -64,21 +64,21 @@ fn test_cycle_detection() {
     tracing_setup::init_test_tracing();
     info!("Starting cycle detection test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new();
+    let gc = Arc::new(GarbageCollector::new());
     
     // Create a scope for root tracking
-    let _scope_guard = with_gc_scope(gc.clone();
+    let _scope_guard = with_gc_scope(gc.clone());
     
     // Create a cycle: node1 -> node2 -> node3 -> node1
-    let mut node1 = gc.allocate(CyclicNode::new(1);
-    let mut node2 = gc.allocate(CyclicNode::new(2);
-    let mut node3 = gc.allocate(CyclicNode::new(3);
+    let mut node1 = gc.allocate(CyclicNode::new(1));
+    let mut node2 = gc.allocate(CyclicNode::new(2));
+    let mut node3 = gc.allocate(CyclicNode::new(3));
     
     // Create the cycle
     {
-        node1.inner_mut().unwrap().set_next(node2.clone();
-        node2.inner_mut().unwrap().set_next(node3.clone();
-        node3.inner_mut().unwrap().set_next(node1.clone();
+        node1.inner_mut().unwrap().set_next(node2.clone());
+        node2.inner_mut().unwrap().set_next(node3.clone());
+        node3.inner_mut().unwrap().set_next(node1.clone());
     }
     
     // Keep weak references to check if nodes are collected
@@ -134,18 +134,18 @@ fn test_incremental_collection() {
     });
     
     // Create a scope for root tracking
-    let _scope_guard = with_gc_scope(gc.clone();
+    let _scope_guard = with_gc_scope(gc.clone());
     
     // Create 20 nodes with various connections
     let mut nodes = Vec::new();
     for i in 0..20 {
-        nodes.push(gc.allocate(CyclicNode::new(i))
+        nodes.push(gc.allocate(CyclicNode::new(i)));
     }
     
     // Create some connections (including cycles)
     for i in 0..nodes.len() {
         // Connect each node to the next one in a ring structure
-        let next_idx = (i + 1) % nodes.len());
+        let next_idx = (i + 1) % nodes.len();
         
         // Get mutable reference to current node first
         let mut current = nodes[i].clone();
@@ -159,8 +159,8 @@ fn test_incremental_collection() {
     // Drop half the nodes to create garbage
     let mut weak_refs = Vec::new();
     for i in 0..10 {
-        weak_refs.push(nodes[i].downgrade();
-        nodes[i] = gc.allocate(CyclicNode::new(100 + i); // Replace with new nodes
+        weak_refs.push(nodes[i].downgrade());
+        nodes[i] = gc.allocate(CyclicNode::new(100 + i)); // Replace with new nodes
     }
     
     // Trigger several incremental collections

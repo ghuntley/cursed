@@ -77,7 +77,7 @@ fn test_channel_with_concurrent_gc() {
     
     // Create a thread-safe channel
     let channel = ThreadSafeChannel::new("TestData".to_string(), 10);
-    let channel_obj = ThreadSafeObject::Channel(Arc::new(channel);
+    let channel_obj = ThreadSafeObject::Channel(Arc::new(channel));
     
     // Allocate some test data objects
     let mut data_objects = Vec::new();
@@ -94,7 +94,7 @@ fn test_channel_with_concurrent_gc() {
         // Send the object through the channel
         if let Some(channel) = channel_gc.inner() {
             // Convert TestData to ThreadSafeObject::Integer
-            let value = obj.inner().unwrap().get_value());
+            let value = obj.inner().unwrap().get_value();
             let thread_safe_obj = ThreadSafeObject::Integer(value as i64);
             let obj_gc = concurrent_gc.allocate(thread_safe_obj);
             match channel.channel_send(obj_gc) {
@@ -112,7 +112,7 @@ fn test_channel_with_concurrent_gc() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to run
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200));
     
     // Receive objects from the channel
     let channel_gc = concurrent_gc.allocate(channel_obj.clone();
@@ -157,7 +157,7 @@ fn test_channel_with_concurrent_gc() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to run
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200));
     
     // Check GC statistics
     let stats = concurrent_gc.stats();
@@ -186,7 +186,7 @@ fn test_concurrent_channel_operations() {
     
     // Create an unbuffered channel to force synchronization
     let channel = ThreadSafeChannel::new("TestData".to_string(), 0);
-    let channel_obj = ThreadSafeObject::Channel(Arc::new(channel);
+    let channel_obj = ThreadSafeObject::Channel(Arc::new(channel));
     let channel_gc = concurrent_gc.allocate(channel_obj.clone();
     
     // Spawn sender threads
@@ -206,7 +206,7 @@ fn test_concurrent_channel_operations() {
                 // Send the data through the channel
                 if let Some(channel) = channel_gc_clone.inner() {
                     // Convert TestData to ThreadSafeObject::Integer
-                    let value = data.inner().unwrap().get_value());
+                    let value = data.inner().unwrap().get_value();
                     let thread_safe_obj = ThreadSafeObject::Integer(value as i64);
                     let obj_gc = concurrent_gc_clone.allocate(thread_safe_obj);
                     match channel.channel_send(obj_gc) {
@@ -220,7 +220,7 @@ fn test_concurrent_channel_operations() {
                 }
                 
                 // Small sleep to allow interleaving
-                thread::sleep(Duration::from_millis(1);
+                thread::sleep(Duration::from_millis(1));
             }
         });
         
@@ -299,7 +299,7 @@ fn test_concurrent_channel_operations() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to run
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200));
     
     // Check GC statistics
     let stats = concurrent_gc.stats();

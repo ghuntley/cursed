@@ -263,7 +263,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
         // Start BFS from source_interface
         queue.push_back(source_interface.to_string());
         visited.insert(source_interface.to_string());
-        path_map.insert(source_interface.to_string(), (None, vec![source_interface.to_string())]);
+        path_map.insert(source_interface.to_string(), (None, vec![source_interface.to_string()]));
         
         // Perform BFS to find the shortest path
         while let Some(current) = queue.pop_front() {

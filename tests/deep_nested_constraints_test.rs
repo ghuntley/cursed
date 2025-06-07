@@ -113,15 +113,15 @@ fn test_nested_generic_constraint_checking() {
     );
     
     // Verify the result correctly identifies the nested failure
-    assert!(result.is_ok())
+    assert!(result.is_ok());
     let details = result.unwrap();
     assert_eq!(details.satisfied, false);
     
     // The failure path should include the nested List generic
     if let Some(path) = details.failure_path {
         let path_str = path.format();
-        assert!(path_str.contains("List"))
-        assert!(path_str.contains("Lit"))
+        assert!(path_str.contains("List"));
+        assert!(path_str.contains("Lit"));
     } else {
         panic!("Expected failure path");
     }
@@ -272,7 +272,7 @@ fn test_deeply_recursive_constraint_checking() {
     );
     
     // Verify the result correctly identifies the deeply nested failure
-    assert!(result.is_ok())
+    assert!(result.is_ok());
     let details = result.unwrap();
     assert_eq!(details.satisfied, false);
     
@@ -280,9 +280,9 @@ fn test_deeply_recursive_constraint_checking() {
     if let Some(path) = details.failure_path {
         let path_str = path.format();
         println!("Failure path: {}", path_str);
-        assert!(path_str.contains("List"))
-        assert!(path_str.contains("Lit"))
-        assert!(path_str.contains("Container"))
+        assert!(path_str.contains("List"));
+        assert!(path_str.contains("Lit"));
+        assert!(path_str.contains("Container"));
     } else {
         panic!("Expected failure path");
     }

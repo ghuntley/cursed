@@ -45,7 +45,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
     // Register puts function which is used in the test
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
 
     // Compile the program
     code_gen.compile_program(&program)?;
@@ -135,7 +135,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
     // Register puts function which is used in the test
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
 
     // Compile the program
     code_gen.compile_program(&program)?;
@@ -224,7 +224,7 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
     // Register puts function which is used in the test
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
 
     // Compile the program
     code_gen.compile_program(&program)?;

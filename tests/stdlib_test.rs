@@ -97,6 +97,6 @@ mod tests {
         
         // Test getting functions for a package
         let vibez_functions = registry.functions("vibez");
-        assert!(vibez_functions.contains(&"spill".to_string(), "spill function should be listed");
+        assert!(vibez_functions.contains(&"spill".to_string()), "spill function should be listed");
     }
 }

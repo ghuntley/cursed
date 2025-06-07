@@ -105,8 +105,8 @@ fn test_with_registry() {
         &Type::Struct("Point".to_string(), vec![]), 
         "Numeric"
     );
-    assert!(point_numeric_result.is_ok())
-    assert!(!point_numeric_result.unwrap();
+    assert!(point_numeric_result.is_ok());
+    assert!(!point_numeric_result.unwrap());
 }
 
 /// Test constraint checking using the monomorphization manager with type checker

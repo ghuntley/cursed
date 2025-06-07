@@ -77,8 +77,8 @@ mod tests {
 
         match converted_error {
             Error::Compilation(msg) => {
-                assert!(msg.contains("Type mismatch");
-                assert!(msg.contains("type assertion operation");
+                assert!(msg.contains("Type mismatch"));
+                assert!(msg.contains("type assertion operation"));
             },
             _ => panic!("Expected Compilation error")
         }
@@ -90,16 +90,16 @@ mod tests {
         let context = Context::create();
         let mut setup = TestSetup::new(&context);
 
-        let errors = vec![Error::Compilation("Error 1".to_string(),
-            Error::Runtime("Error 2".to_string()];
+        let errors = vec![Error::Compilation("Error 1".to_string()),
+            Error::Runtime("Error 2".to_string())];
 
         let combined_error = setup.codegen.collect_type_assertion_errors(errors);
 
         match combined_error {
             Error::Compilation(msg) => {
-                assert!(msg.contains("Multiple type assertion errors");
-                assert!(msg.contains("Error 1");
-                assert!(msg.contains("Error 2");
+                assert!(msg.contains("Multiple type assertion errors"));
+                assert!(msg.contains("Error 1"));
+                assert!(msg.contains("Error 2"));
             },
             _ => panic!("Expected Compilation error")
         }
@@ -114,7 +114,7 @@ mod tests {
         let interface_type = "Greeter";
         let target_type = "Person";
         let source_location = "test.csd:42";
-        let errors = vec![Error::Compilation("Type mismatch".to_string()];
+        let errors = vec![Error::Compilation("Type mismatch".to_string())];
 
         let report = setup.codegen.create_type_assertion_error_report(
             interface_type,
@@ -124,9 +124,9 @@ mod tests {
         );
 
         assert!(report.contains("Type Assertion Error Report");
-        assert!(report.contains("test.csd:42");
-        assert!(report.contains("Greeter -> Person");
-        assert!(report.contains("Type mismatch");
+        assert!(report.contains("test.csd:42"));
+        assert!(report.contains("Greeter -> Person"));
+        assert!(report.contains("Type mismatch"));
     }
 
     // This test would verify the full ? operator integration if we could set up the complete test environment
@@ -151,10 +151,10 @@ mod tests {
         }
 
         let result = outer_operation();
-        assert!(result.is_err())
+        assert!(result.is_err());
         
         match result {
-            Err(Error::Compilation(msg))) => {
+            Err(Error::Compilation(msg)) => {
                 assert_eq!(msg, "Inner error");
             },
             _ => panic!("Expected compilation error")

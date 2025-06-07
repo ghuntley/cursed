@@ -28,7 +28,7 @@ fn test_struct_field_incompatible_types() {
     
     // Register a Person struct type
     let person_name = "Person";
-    let string_ptr = generator.context().i8_type().ptr_type(Default::default(); // String pointer
+    let string_ptr = generator.context().i8_type().ptr_type(Default::default()); // String pointer
     let person_ty = generator.context().struct_type(&[
         string_ptr.into(), // name: string
         generator.context().i32_type().into(), // age: i32
@@ -75,18 +75,18 @@ fn test_struct_field_incompatible_types() {
     }
     
     // Return a dummy value to finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Verify the module
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }
 
 // Helper function to create tokens correctly
 fn new_token(token_type: TokenType, literal: &str) -> Token {
     match token_type {
-        TokenType::Identifier => Token::Identifier(literal.to_string(),
+        TokenType::Identifier => Token::Identifier(literal.to_string()),
         TokenType::Int => {
             if let Ok(value) = literal.parse::<i64>() {
                 Token::Int(value)
@@ -101,7 +101,7 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
                 Token::Illegal(format!("Invalid float: {}", literal))
             }
         },
-        TokenType::String => Token::String(literal.to_string(),
+        TokenType::String => Token::String(literal.to_string()),
         TokenType::LBrace => Token::LBrace,
         TokenType::RBrace => Token::RBrace,
         TokenType::Sus => Token::Sus,
@@ -162,13 +162,13 @@ fn test_simple_struct_field_type_inference() {
     
     // Compile the struct literal
     let result = generator.compile_struct_literal(&struct_literal);
-    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err());
     
     // Return a dummy value to finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Verify the module
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }

@@ -80,7 +80,7 @@ fn setup_test_hierarchy() -> Result<TypeChecker, Error> {
 /// Test interface implementation checking
 #[test]
 fn test_interface_implementation_checking() -> Result<(), Error> {
-    common::tracing::init();
+    common::tracing::setup();
     tracing::info!("Starting interface implementation checking test");
     
     let mut type_checker = setup_test_hierarchy()?;
@@ -105,16 +105,14 @@ fn test_interface_implementation_checking() -> Result<(), Error> {
 /// Test enhanced dynamic dispatch
 #[test]
 fn test_enhanced_dynamic_dispatch() -> Result<(), Error> {
-    common::tracing::init();
+    common::tracing::setup();
     tracing::info!("Starting enhanced dynamic dispatch test");
     
     // Set up LLVM context
     let context = Context::create();
-    let module = context.create_module("test_enhanced_dispatch");
-    let builder = context.create_builder();
     
     // Create code generator
-    let mut code_gen = LlvmCodeGenerator::new_with_module(context, module, builder);
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_enhanced_dispatch", std::path::PathBuf::from("test.csd"));
     
     // Set up interface manager
     let interface_manager = InterfaceManager::new();
@@ -189,16 +187,14 @@ fn test_enhanced_dynamic_dispatch() -> Result<(), Error> {
 /// Test integrated interface operations
 #[test]
 fn test_integrated_interface_operations() -> Result<(), Error> {
-    common::tracing::init();
+    common::tracing::setup();
     tracing::info!("Starting integrated interface operations test");
     
     // Set up LLVM context
     let context = Context::create();
-    let module = context.create_module("test_integrated_ops");
-    let builder = context.create_builder();
     
     // Create code generator
-    let mut code_gen = LlvmCodeGenerator::new_with_module(context, module, builder);
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_integrated_ops", std::path::PathBuf::from("test.csd"));
     
     // Set up interface manager
     let interface_manager = InterfaceManager::new();

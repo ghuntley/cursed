@@ -54,7 +54,7 @@ be_like Box[T] squad {
     // Check the struct declaration
     // We need to find the SquadStatement, which might be at index 1, 3, or it might not exist at all
     // Let's print out all statements, look for squad statements, and create a squad statement ourselves if none exists
-    let squad_stmt_index = program.statements.iter().position(|stmt| stmt.as_any().is::<ast::SquadStatement>();
+    let squad_stmt_index = program.statements.iter().position(|stmt| stmt.as_any().is::<ast::SquadStatement>());
     
     // This is a workaround to deal with the current parser implementation
     // which doesn't directly create a SquadStatement for generic struct declarations

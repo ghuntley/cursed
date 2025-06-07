@@ -57,7 +57,7 @@ mod tests {
     fn test_get_functions() {
         // Test the get_functions function
         let vibez_functions = get_functions("vibez");
-        assert!(vibez_functions.contains(&"spill".to_string())
+        assert!(vibez_functions.contains(&"spill".to_string()));
         
         let htmlrizzler_functions = get_functions("htmlrizzler");
         assert!(htmlrizzler_functions.contains(&"escape_html".to_string())

@@ -42,7 +42,7 @@ fn create_code_generator<'ctx>(
     context: &'ctx Context,
 ) -> LlvmCodeGenerator<'ctx> {
     // Initialize LLVM targets
-    Target::initialize_all(&InitializationConfig::default();
+    Target::initialize_all(&InitializationConfig::default());
     
     // Create module and builder
     let module = context.create_module("benchmark_test");
@@ -73,7 +73,7 @@ fn create_code_generator<'ctx>(
     
     // Create a registry with LRU cache
     let base_registry = InterfaceRegistry::new();
-    let registry = Box::new(LruCachedRegistry::new(base_registry);
+    let registry = Box::new(LruCachedRegistry::new(base_registry));
     
     // Create the code generator
     LlvmCodeGenerator::new(
@@ -105,11 +105,11 @@ fn test_basic_benchmarking() {
     // Run a simple operation to benchmark
     let _duration = benchmark.benchmark(|| {
         // Simulate work
-        std::thread::sleep(Duration::from_micros(10);
+        std::thread::sleep(Duration::from_micros(10));
     });
     
     // Check that we recorded a duration
-    assert!(!benchmark.compute_stats().durations.is_empty();
+    assert!(!benchmark.compute_stats().durations.is_empty());
     
     // Report the results
     benchmark.report();
@@ -205,12 +205,12 @@ fn test_benchmark_stats() {
     
     // Verify statistics
     assert_eq!(stats.iterations, 5);
-    assert_eq!(stats.min_duration, Duration::from_micros(100);
-    assert_eq!(stats.max_duration, Duration::from_micros(150);
+    assert_eq!(stats.min_duration, Duration::from_micros(100));
+    assert_eq!(stats.max_duration, Duration::from_micros(150));
     
     // Check average calculation
     let expected_avg = Duration::from_micros(122); // (100+150+120+110+130)/5 = 122
-    assert_eq!(stats.avg_duration.as_micros(), expected_avg.as_micros();
+    assert_eq!(stats.avg_duration.as_micros(), expected_avg.as_micros());
     
     // Generate and check metrics
     let metrics = stats.as_metrics();
