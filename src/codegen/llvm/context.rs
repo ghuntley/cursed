@@ -817,8 +817,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     pub fn get_type_name_by_id(&self, type_id: u32) -> Result<String, Error> {
         use crate::codegen::llvm::interface_type_registry_helpers::{TypeNameRegistry, InterfaceRegistryAccess};
         
-        // Try to get from the type name registry
-        if let Some(name) = TypeNameRegistry::get_type_name_by_id(self, type_id) {
+        // Try to get from the type name registry (convert u32 to u64)
+        if let Some(name) = TypeNameRegistry::get_type_name_by_id(self, type_id as u64) {
             return Ok(name);
         }
         
@@ -848,6 +848,86 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Set the actual type ID for error reporting
     pub fn set_actual_type_id(&mut self, type_id: u32) {
         self.internal_fields.insert("actual_type_id".to_string(), Box::new(type_id));
+    }
+
+    /// Get runtime type name for a type ID
+    #[instrument(skip(self), level = "trace")]
+    pub fn get_runtime_type_name(&self, type_id: u32) -> Result<String, Error> {
+        // Try to get from interface type registry first
+        if let Some(registry) = &self.interface_type_registry {
+            if let Some(name) = registry.get_type_name(type_id as u64) {
+                return Ok(name.to_string());
+            }
+        }
+        
+        // Fallback to basic type name resolution
+        Ok(format!("Type_{}", type_id))
+    }
+    
+    /// Get type name for a type ID
+    #[instrument(skip(self), level = "trace")]
+    pub fn get_type_name_for_id(&self, type_id: u32) -> Result<String, Error> {
+        self.get_runtime_type_name(type_id)
+    }
+
+    /// Check if a value is an interface type
+    #[instrument(skip(self), level = "trace")]
+    pub fn is_interface_value(&self, _value: BasicValueEnum<'ctx>) -> bool {
+        // For now, return false - this would need proper runtime type information
+        false
+    }
+
+    /// Check instanceof operation for interface types
+    #[instrument(skip(self), level = "trace")]
+    pub fn check_instanceof(&mut self, _value: BasicValueEnum<'ctx>, _target_type: BasicTypeEnum<'ctx>) -> Result<BasicValueEnum<'ctx>, Error> {
+        // Create a boolean false for now - this needs proper implementation
+        let bool_type = self.context.bool_type();
+        let false_val = bool_type.const_zero();
+        Ok(false_val.into())
+    }
+
+    /// Initialize filesystem integration
+    #[instrument(skip(self), level = "trace")]
+    pub fn init_filesystem_integration(&mut self) -> Result<(), Error> {
+        // Already initialized in constructor
+        Ok(())
+    }
+
+    /// Create source location with context
+    #[instrument(skip(self), level = "trace")]
+    pub fn create_source_location_with_context(&self, file_path: Option<&Path>, line: Option<usize>) -> Option<SourceLocationWithContext> {
+        self.get_source_location(file_path, line)
+    }
+
+    /// Format error with source context
+    #[instrument(skip(self), level = "trace")]
+    pub fn format_error_with_source_context(&self, error: &str, file_path: Option<&Path>, line: Option<usize>) -> String {
+        if let (Some(path), Some(line_num)) = (file_path, line) {
+            if let Ok(context_lines) = self.get_context_lines(path, line_num, 2) {
+                return format!("{}\n  at {}:{}\n{}", error, path.display(), line_num, context_lines.join("\n"));
+            }
+        }
+        error.to_string()
+    }
+
+    /// Ensure registry visualization is initialized
+    #[instrument(skip(self), level = "trace")]
+    pub fn ensure_registry_visualization_initialized(&mut self) -> Result<(), Error> {
+        // For now, just return Ok - this would initialize visualization if needed
+        Ok(())
+    }
+
+    /// Visualize interface path
+    #[instrument(skip(self), level = "trace")]
+    pub fn visualize_interface_path(&self, _from_type: &str, _to_type: &str) -> Result<String, Error> {
+        // Return a simple path representation for now
+        Ok(format!("{} -> {}", _from_type, _to_type))
+    }
+
+    /// Generate interface hierarchy DOT graph
+    #[instrument(skip(self), level = "trace")]
+    pub fn generate_interface_hierarchy_dot_graph(&mut self) -> Result<String, Error> {
+        Ok("digraph interface_hierarchy { }".to_string())
     }
 }
 

@@ -16,13 +16,13 @@ use crate::error::Error;
 /// Enhanced interface registry visualization with comprehensive error handling
 pub trait EnhancedInterfaceRegistryVisualization {
     /// Get a map of all interface extension relationships for visualization
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error>;
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error>;
     
-    /// Get the set of interfaces that a given interface directly extends
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    /// Get the list of interfaces that a given interface directly extends
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
     
-    /// Get the set of interfaces that directly extend a given interface
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    /// Get the list of interfaces that directly extend a given interface
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
     
     /// Get all interfaces in the registry
     fn get_all_interfaces(&self) -> Result<HashSet<String>, Error>;
@@ -91,7 +91,7 @@ impl EnhancedVisualizationHelpers {
         let mut implementors = Vec::new();
         
         for (impl_interface, extensions) in hierarchy {
-            if extensions.contains(interface) {
+            if extensions.iter().any(|ext| ext == interface) {
                 implementors.push(impl_interface.clone());
             }
         }

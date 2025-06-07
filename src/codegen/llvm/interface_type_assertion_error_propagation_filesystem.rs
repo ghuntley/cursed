@@ -68,7 +68,7 @@ pub trait EnhancedErrorPropagationWithFilesystem<'ctx>:
     
     /// Propagate a type assertion error with enhanced source context
     fn propagate_error_with_source_context(
-        &self,
+        &mut self,
         error_message: &str,
         source_location: &SourceLocation,
         expected_type_id: u32,
@@ -218,13 +218,16 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         // Try to create a source location with filesystem context
         if let Some(file) = &file_path {
             if line > 0 {
-                return self.create_source_location_with_context(
-                    node,
-                    line as usize,
-                    column as usize,
-                    Some(file),
-                    2 // Include 2 lines of context before and after
-                );
+                if let Some(context) = self.create_source_location_with_context(
+                    Some(Path::new(file)),
+                    Some(line as usize)
+                ) {
+                    return Ok(SourceLocation {
+                        file: Some(file.clone()),
+                        line: line as usize,
+                        column: column as usize,
+                    });
+                }
             }
         }
         
@@ -239,7 +242,7 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
     
     #[instrument(skip(self, error_message, source_location), level = "debug")]
     fn propagate_error_with_source_context(
-        &self,
+        &mut self,
         error_message: &str,
         source_location: &SourceLocation,
         expected_type_id: u32,
@@ -252,9 +255,9 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         // Format the error message with source context if available
         let enhanced_message = self.format_error_with_source_context(
             error_message,
-            source_location,
-            2 // Include 2 lines of context
-        ).unwrap_or_else(|_| error_message.to_string());
+            source_location.file.as_ref().map(|s| Path::new(s)),
+            Some(source_location.line)
+        );
         
         // Convert source location to LLVM structure
         let location_struct = self.build_source_location_struct(source_location);
@@ -286,7 +289,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         if !self.internal_fields.contains_key("filesystem_integration_initialized") {
             // Initialize with current working directory as root
             let cwd = std::env::current_dir().ok().and_then(|p| p.to_str().map(|s| s.to_string()));
-            self.init_filesystem_integration(cwd.as_deref());
+            self.init_filesystem_integration();
             
             // Try to add common source paths
             self.add_source_search_path(".");

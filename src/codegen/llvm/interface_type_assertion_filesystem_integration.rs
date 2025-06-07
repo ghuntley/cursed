@@ -243,6 +243,45 @@ impl InterfaceTypeAssertionFilesystemIntegration {
             self.base_directory.join(relative_path)
         }
     }
+
+    /// Get context lines from a file path and line number
+    #[instrument(skip(self))]
+    pub fn get_context_lines_from_path(&self, file_path: Option<&Path>, line: Option<usize>, context_lines: usize) -> io::Result<Vec<String>> {
+        match (file_path, line) {
+            (Some(path), Some(line_num)) => {
+                let location = SourceLocation {
+                    file_path: Some(path.to_path_buf()),
+                    line: Some(line_num),
+                    column: None,
+                    source_line: None,
+                    description: None,
+                };
+                let context_map = self.get_context_lines(&location, context_lines);
+                let mut lines: Vec<_> = context_map.into_iter().collect();
+                lines.sort_by_key(|(line_num, _)| *line_num);
+                Ok(lines.into_iter().map(|(_, line)| line).collect())
+            }
+            _ => Ok(Vec::new()),
+        }
+    }
+
+    /// Get a specific line from a file
+    #[instrument(skip(self))]
+    pub fn get_line_from_file(&self, file_path: &Path, line: usize) -> io::Result<String> {
+        let location = SourceLocation {
+            file_path: Some(file_path.to_path_buf()),
+            line: Some(line),
+            column: None,
+            source_line: None,
+            description: None,
+        };
+        let context_map = self.get_context_lines(&location, 0);
+        if let Some(line_content) = context_map.get(&line) {
+            Ok(line_content.clone())
+        } else {
+            Err(io::Error::new(io::ErrorKind::NotFound, format!("Line {} not found in file {}", line, file_path.display())))
+        }
+    }
 }
 
 /// Trait for filesystem source location integration
@@ -261,8 +300,8 @@ impl FilesystemSourceLocationIntegration for InterfaceTypeAssertionFilesystemInt
         let location = SourceLocationWithContext {
             file_path: file_path.map(|p| p.to_path_buf()),
             line,
-            context_lines: self.get_context_lines_from_path(file_path, line, DEFAULT_CONTEXT_LINES).ok()?,
-            source_line: self.get_line_from_file(file_path?, line?).ok()?,
+            context_lines: self.get_context_lines_from_path(file_path, line, DEFAULT_CONTEXT_LINES).ok(),
+            source_line: self.get_line_from_file(file_path?, line?).ok(),
         };
         
         Some(location)
@@ -279,13 +318,13 @@ pub fn register_filesystem_integration(generator: &mut LlvmCodeGenerator) -> Res
     let filesystem_integration = InterfaceTypeAssertionFilesystemIntegration::new();
     
     // Register with the error propagation system
-    if let Some(error_prop) = generator.get_extension::<InterfaceTypeAssertionErrorPropagation>() {
+    if let Some(error_prop) = generator.get_extension::<dyn InterfaceTypeAssertionErrorPropagation>() {
         error_prop.set_filesystem_integration(filesystem_integration.clone());
         debug!("Registered filesystem integration with error propagation");
     }
     
     // Register with the enhanced source location support
-    if let Some(source_loc) = generator.get_extension::<EnhancedSourceLocationSupport>() {
+    if let Some(source_loc) = generator.get_extension::<dyn EnhancedSourceLocationSupport>() {
         source_loc.set_filesystem_integration(filesystem_integration);
         debug!("Registered filesystem integration with enhanced source location support");
     }

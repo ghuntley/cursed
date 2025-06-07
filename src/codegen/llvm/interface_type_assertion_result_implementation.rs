@@ -188,7 +188,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         let runtime_type_name = match runtime_type_id {
-            Some(id) => match self.get_type_name_for_id(id) {
+            Some(id) => match self.get_type_name_for_id(id.0 as u32) {
                 Ok(name) => name,
                 Err(_) => "<unknown type>".to_string(),
             },
@@ -468,7 +468,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let target_type_id = Some(self.hash_type_name(target_type));
         
         // Try to visualize the inheritance path
-        let type_path = match self.visualize_interface_path(target_type, 2) {
+        let type_path = match self.visualize_interface_path(target_type, "2") {
             Ok(path) => Some(path),
             Err(_) => None,
         };

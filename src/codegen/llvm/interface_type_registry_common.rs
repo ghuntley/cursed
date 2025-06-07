@@ -111,7 +111,7 @@ pub fn detect_diamond_inheritance_impl<'ctx>(codegen: &LlvmCodeGenerator<'ctx>, 
 /// This function provides a consistent implementation for looking up type names by ID
 /// and converting to Result type for better error handling.
 pub fn get_type_name_by_id_impl<'ctx>(codegen: &LlvmCodeGenerator<'ctx>, type_id: u32) -> Result<String, Error> {
-    // Use TypeNameRegistry trait to get the type name
-    TypeNameRegistry::get_type_name_by_id(codegen, type_id)
+    // Use TypeNameRegistry trait to get the type name (convert u32 to u64)
+    TypeNameRegistry::get_type_name_by_id(codegen, type_id as u64)
         .ok_or_else(|| Error::Compilation(format!("Could not find type name for ID {}", type_id)))
 }

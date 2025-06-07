@@ -144,12 +144,9 @@ impl NestedGenericSubstitution for Type {
                     concrete_param_types.push(Box::new(concrete_param_type));
                 }
                 
-                let concrete_return_type = if let Some(ret_type) = return_type {
-                    Box::new(ret_type.substitute_nested_type_parameters(type_param_map, max_depth - 1)?)
-                } else {
-                    // Default return type for functions with no return
-                    Box::new(Type::Unknown)
-                };
+                let concrete_return_type = Box::new(
+                    return_type.substitute_nested_type_parameters(type_param_map, max_depth - 1)?
+                );
                 
                 Ok(Type::Function(concrete_param_types, concrete_return_type))
             },

@@ -7,6 +7,10 @@ use inkwell::values::{BasicValueEnum, IntValue, PointerValue};
 use inkwell::types::{BasicTypeEnum, PointerType, StructType, IntType};
 use crate::error::Error;
 
+// Re-export for easy access
+pub use self::BasicValueExt as BasicValueExtensions;
+pub use self::BasicTypeExt as BasicTypeExtensions;
+
 /// Extension trait for BasicValueEnum providing commonly needed conversion methods
 pub trait BasicValueExt<'ctx> {
     /// Tries to convert the value to an IntValue
@@ -17,6 +21,9 @@ pub trait BasicValueExt<'ctx> {
 
     /// Checks if a pointer value is null
     fn is_null(&self) -> bool;
+
+    /// Get pointer type of the value
+    fn ptr_type(&self) -> Result<PointerType<'ctx>, Error>;
 }
 
 impl<'ctx> BasicValueExt<'ctx> for BasicValueEnum<'ctx> {
@@ -38,6 +45,17 @@ impl<'ctx> BasicValueExt<'ctx> for BasicValueEnum<'ctx> {
         match self {
             BasicValueEnum::PointerValue(ptr) => ptr.is_null(),
             _ => false,
+        }
+    }
+
+    fn ptr_type(&self) -> Result<PointerType<'ctx>, Error> {
+        match self {
+            BasicValueEnum::PointerValue(ptr) => Ok(ptr.get_type()),
+            _ => {
+                // For non-pointer types, create a pointer to their type
+                let base_type: BasicTypeEnum = self.get_type();
+                Ok(base_type.ptr_type(inkwell::AddressSpace::default()))
+            }
         }
     }
 }
@@ -105,5 +123,24 @@ impl<'ctx> NumericValueExt<'ctx> for u32 {
 impl<'ctx> NumericValueExt<'ctx> for i32 {
     fn into_int_value(&self, context: &'ctx inkwell::context::Context) -> IntValue<'ctx> {
         context.i32_type().const_int(*self as u64, true)
+    }
+}
+
+/// Extension trait for BasicTypeEnum providing ptr_type method
+pub trait BasicTypeExt<'ctx> {
+    /// Get pointer type for this basic type
+    fn ptr_type(&self, address_space: inkwell::AddressSpace) -> PointerType<'ctx>;
+}
+
+impl<'ctx> BasicTypeExt<'ctx> for BasicTypeEnum<'ctx> {
+    fn ptr_type(&self, address_space: inkwell::AddressSpace) -> PointerType<'ctx> {
+        match self {
+            BasicTypeEnum::ArrayType(t) => t.ptr_type(address_space),
+            BasicTypeEnum::FloatType(t) => t.ptr_type(address_space),
+            BasicTypeEnum::IntType(t) => t.ptr_type(address_space),
+            BasicTypeEnum::PointerType(t) => t.ptr_type(address_space),
+            BasicTypeEnum::StructType(t) => t.ptr_type(address_space),
+            BasicTypeEnum::VectorType(t) => t.ptr_type(address_space),
+        }
     }
 }

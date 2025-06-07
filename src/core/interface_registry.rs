@@ -517,6 +517,14 @@ impl InterfaceRegistry {
         
         debug!("Populated default recovery strategies");
     }
+    
+    /// Get generic implementations for an interface
+    pub fn get_generic_implementations(&self, interface_name: &str) -> Vec<GenericInterfaceImpl> {
+        self.generic_implementations
+            .get(interface_name)
+            .cloned()
+            .unwrap_or_default()
+    }
 }
 
 #[cfg(test)]

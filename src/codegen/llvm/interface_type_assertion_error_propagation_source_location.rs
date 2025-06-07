@@ -23,7 +23,7 @@ use inkwell::module::Module;
 use inkwell::types::{BasicTypeEnum, StructType};
 use inkwell::values::{BasicValueEnum, PointerValue, FunctionValue};
 use inkwell::IntPredicate;
-use crate::codegen::llvm::basic_value_extensions::{BasicValueExt, StructTypeExt};
+use crate::codegen::llvm::basic_value_extensions::{BasicValueExt, StructTypeExt, BasicTypeExt};
 use inkwell::basic_block::BasicBlock;
 use inkwell::AddressSpace;
 
@@ -180,7 +180,10 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         self.set_actual_type_id(actual_type_id as u32);
         
         // Check if the types match
-        let is_match = self.check_instanceof(expr_value, &type_assertion.type_name)?;
+        let target_type = self.get_type_by_name(&type_assertion.type_name)
+            .ok_or_else(|| Error::Type(format!("Unknown type: {}", type_assertion.type_name)))?;
+        let is_match_value = self.check_instanceof(expr_value, target_type)?;
+        let is_match = is_match_value.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0;
         
         let result = if is_match {
             // If they match, extract the data pointer
@@ -197,7 +200,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             };
             
             // Bitcast the data pointer to the target type pointer
-            let target_ptr_type = target_struct_type.ptr_type(AddressSpace::default());
+            let target_ptr_type = target_struct_type.ptr_type();
             let casted_ptr = self.builder().build_bitcast(
                 data_ptr,
                 target_ptr_type,
@@ -215,13 +218,13 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             // If they don't match, create an error message
             let error_message = format!(
                 "Type assertion failed: value of type '{}' is not of type '{}'",
-                self.get_runtime_type_name(expr_value)?,
+                self.get_runtime_type_name(actual_type_id as u32)?,
                 type_assertion.type_name
             );
             
             // Try to get path information for better error messages
             let type_path = match self.find_interface_path_simple(
-                &self.get_runtime_type_name(expr_value)?,
+                &self.get_runtime_type_name(actual_type_id as u32)?,
                 &type_assertion.type_name
             ) {
                 Ok(path) => {
@@ -261,7 +264,8 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         source_location: SourceLocation
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // Get the runtime type of the interface value
-        let runtime_type = self.get_runtime_type_name(interface_value)?;
+        let runtime_type_id = self.get_runtime_type_id(interface_value, None)?;
+        let runtime_type = self.get_runtime_type_name(runtime_type_id.0 as u32)?;
         
         // Create a detailed error message
         let error_message = format!(
@@ -357,7 +361,10 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         self.set_actual_type_id(actual_id as u32);
         
         // Check if the types match
-        let is_match = self.check_instanceof(expr_value, &type_assertion.type_name)?;
+        let target_type = self.get_type_by_name(&type_assertion.type_name)
+            .ok_or_else(|| Error::Type(format!("Unknown type: {}", type_assertion.type_name)))?;
+        let is_match_value = self.check_instanceof(expr_value, target_type)?;
+        let is_match = is_match_value.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0;
         
         let result = if is_match {
             // If they match, extract the data pointer
@@ -374,7 +381,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             };
             
             // Bitcast the data pointer to the target type pointer
-            let target_ptr_type = target_struct_type.ptr_type(AddressSpace::default());
+            let target_ptr_type = target_struct_type.ptr_type();
             let casted_ptr = self.builder().build_bitcast(
                 data_ptr,
                 target_ptr_type,
@@ -423,7 +430,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             path.to_string_lossy().into_owned()
         } else {
             // This is not a valid path, use default
-            self.current_file_path().unwrap_or_else(|| "<unknown>".to_string())
+            self.current_file_path.to_string_lossy().to_string()
         }
     }
     

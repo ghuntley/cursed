@@ -231,6 +231,14 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceRegistryCache {
         
         Ok(hierarchy)
     }
+    
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
+        self.registry.read().unwrap().find_interface_paths(source, target, max_paths)
+    }
+    
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
+    }
 }
 
 /// Cache-related helper functions

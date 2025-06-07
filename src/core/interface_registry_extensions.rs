@@ -54,10 +54,15 @@ pub trait InterfaceRegistryExtension: Send + Sync + std::fmt::Debug {
     
     /// Get all implementors of an interface
     fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error>;
+    
+    /// Find interface paths between two interfaces with a maximum count
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error>;
+    
+    /// Check if one interface extends another
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error>;
 }
 
 /// A thread-safe implementation of InterfaceRegistryExtension
-#[derive(Debug)]
 pub struct ThreadSafeInterfaceExtensionRegistry {
     /// Direct extensions (interface -> set of interfaces it directly extends)
     direct_extensions: RwLock<HashMap<String, HashSet<String>>>,
@@ -304,6 +309,16 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
         
         Ok(all_implementors)
     }
+    
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
+        // Use the existing find_all_inheritance_paths method but limit results
+        let all_paths = self.find_all_inheritance_paths(source, target)?;
+        Ok(all_paths.into_iter().take(max_paths).collect())
+    }
+    
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
+    }
 }
 
 impl ThreadSafeInterfaceExtensionRegistry {
@@ -467,6 +482,14 @@ impl InterfaceRegistryExtension for Arc<RwLock<ThreadSafeInterfaceExtensionRegis
     
     fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
         self.read().unwrap().get_all_implementors(interface)
+    }
+    
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
+        self.read().unwrap().find_interface_paths(source, target, max_paths)
+    }
+    
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.read().unwrap().does_extend(source, target)
     }
 }
 

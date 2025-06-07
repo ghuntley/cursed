@@ -170,7 +170,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
         }
     }
 
-    pub fn find_all_inheritance_paths(
+    fn find_all_inheritance_paths(
         &self,
         source: &str,
         target: &str,
@@ -181,6 +181,19 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
         } else {
             InterfaceRegistryExtension::find_all_inheritance_paths(&*self.extension_registry.read().unwrap(), source, target)
         }
+    }
+    
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
+        // Prefer visualization registry if available
+        if let Some(vis_registry) = &self.visualization_registry {
+            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::find_interface_paths(&**vis_registry, source, target, max_paths)
+        } else {
+            InterfaceRegistryExtension::find_interface_paths(&*self.extension_registry.read().unwrap(), source, target, max_paths)
+        }
+    }
+    
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error> {
+        InterfaceRegistryExtension::extends(self, source, target)
     }
 }
 
@@ -201,7 +214,7 @@ impl InterfaceRegistryAdapter {
             vis_registry.get_inheritance_distance(source, target)
         } else {
             // Fall back to manual calculation using the extension registry
-            match self.find_inheritance_path(source, target) {
+            match InterfaceRegistryExtension::find_inheritance_path(self, source, target) {
                 Ok(path) => Ok(Some(path.len().saturating_sub(1))),
                 Err(_) => Ok(None),
             }
@@ -214,7 +227,7 @@ impl InterfaceRegistryAdapter {
             vis_registry.find_all_paths(source, target)
         } else {
             // Fall back to the extension registry's implementation
-            self.find_all_inheritance_paths(source, target)
+            InterfaceRegistryExtension::find_all_inheritance_paths(self, source, target)
         }
     }
     
@@ -879,3 +892,135 @@ mod tests {
         assert_eq!(path, vec!["A", "B", "C"]);
     }
 }
+
+/// Implementation of InterfaceRegistryVisualization for InterfaceRegistryAdapter
+impl InterfaceRegistryVisualization for InterfaceRegistryAdapter {
+    /// Generate a DOT format diagram of all interface relationships
+    fn generate_dot_diagram(&self) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.generate_dot_diagram()
+        } else {
+            // Simple DOT representation
+            let hierarchy = Self::get_extension_hierarchy(self)?;
+            let mut output = String::from("digraph InterfaceHierarchy {\n");
+            for (interface, extensions) in hierarchy {
+                for extension in extensions {
+                    output.push_str(&format!("  \"{}\" -> \"{}\";\n", interface, extension));
+                }
+            }
+            output.push_str("}\n");
+            Ok(output)
+        }
+    }
+    
+    /// Generate a DOT format diagram of inheritance paths between two interfaces
+    fn generate_inheritance_path_diagram(&self, source: &str, target: &str) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.generate_inheritance_path_diagram(source, target)
+        } else {
+            let paths = InterfaceRegistryExtension::find_all_inheritance_paths(self, source, target)?;
+            let mut output = String::from("digraph InheritancePath {\n");
+            for path in paths {
+                for i in 0..path.len().saturating_sub(1) {
+                    output.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i + 1]));
+                }
+            }
+            output.push_str("}\n");
+            Ok(output)
+        }
+    }
+    
+    /// Generate a DOT format diagram of a specific interface's relationships
+    fn generate_interface_diagram(&self, interface: &str) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.generate_interface_diagram(interface)
+        } else {
+            let mut output = String::from("digraph InterfaceRelationships {\n");
+            if let Ok(Some(extensions)) = self.extension_registry.read().unwrap().get_direct_extensions(interface) {
+                for extension in extensions {
+                    output.push_str(&format!("  \"{}\" -> \"{}\";\n", interface, extension));
+                }
+            }
+            if let Ok(Some(implementors)) = self.extension_registry.read().unwrap().get_direct_implementors(interface) {
+                for implementor in implementors {
+                    output.push_str(&format!("  \"{}\" -> \"{}\";\n", implementor, interface));
+                }
+            }
+            output.push_str("}\n");
+            Ok(output)
+        }
+    }
+    
+    /// Get a text representation of interface relationships
+    fn get_text_representation(&self) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.get_text_representation()
+        } else {
+            let hierarchy = Self::get_extension_hierarchy(self)?;
+            let mut output = String::new();
+            for (interface, extensions) in hierarchy {
+                output.push_str(&format!("{}\n", interface));
+                for extension in extensions {
+                    output.push_str(&format!("  -> {}\n", extension));
+                }
+            }
+            Ok(output)
+        }
+    }
+    
+    /// Generate an ASCII tree representation of the hierarchy
+    fn generate_ascii_tree(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.generate_ascii_tree(hierarchy, options)
+        } else {
+            let mut output = String::new();
+            for (interface, extensions) in hierarchy {
+                output.push_str(&format!("{}\n", interface));
+                for extension in extensions {
+                    output.push_str(&format!("  ├── {}\n", extension));
+                }
+            }
+            Ok(output)
+        }
+    }
+    
+    /// Generate a DOT graph representation
+    fn generate_dot_graph(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.generate_dot_graph(hierarchy, options)
+        } else {
+            let mut output = String::from("digraph InterfaceHierarchy {\n");
+            for (interface, extensions) in hierarchy {
+                for extension in extensions {
+                    output.push_str(&format!("  \"{}\" -> \"{}\";\n", interface, extension));
+                }
+            }
+            output.push_str("}\n");
+            Ok(output)
+        }
+    }
+    
+    /// Generate a JSON representation
+    fn generate_json_representation(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.generate_json_representation(hierarchy, options)
+        } else {
+            // Simple JSON representation
+            let mut output = String::from("{\n");
+            let entries: Vec<_> = hierarchy.iter().collect();
+            for (i, (interface, extensions)) in entries.iter().enumerate() {
+                output.push_str(&format!("  \"{}\": [", interface));
+                for (j, extension) in extensions.iter().enumerate() {
+                    if j > 0 { output.push_str(", "); }
+                    output.push_str(&format!("\"{}\"", extension));
+                }
+                output.push_str("]");
+                if i < entries.len() - 1 { output.push(','); }
+                output.push('\n');
+            }
+            output.push_str("}\n");
+            Ok(output)
+        }
+    }
+}
+

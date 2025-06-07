@@ -156,7 +156,7 @@ impl EnhancedVisualizationIntegration {
         fn build_tree(
             result: &mut String,
             interface: &str,
-            hierarchy: &std::collections::HashMap<String, std::collections::HashSet<String>>,
+            hierarchy: &std::collections::HashMap<String, Vec<String>>,
             depth: usize,
         ) -> Result<(), Error> {
             // Add indentation based on depth
@@ -171,7 +171,7 @@ impl EnhancedVisualizationIntegration {
             let mut implementors = Vec::new();
             
             for (impl_interface, extensions) in hierarchy {
-                if extensions.contains(interface) {
+                if extensions.iter().any(|ext| ext == interface) {
                     implementors.push(impl_interface.clone());
                 }
             }

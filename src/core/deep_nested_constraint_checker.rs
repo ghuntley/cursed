@@ -254,7 +254,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
                         };
                         
                         child_path.add_component(TypePathComponent {
-                            type_: arg.clone(),
+                            type_: *arg.clone(),
                             constraint: constraint_str,
                             position: i,
                             param_name: param_name.clone(),
@@ -262,7 +262,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
                         
                         // Enqueue the child node
                         let child_node = ConstraintNode {
-                            type_: arg.clone(),
+                            type_: *arg.clone(),
                             path: child_path,
                             constraints,
                             param_names: Vec::new(), // Will be populated when processing this node
@@ -308,7 +308,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
                             };
                             
                             child_path.add_component(TypePathComponent {
-                                type_: arg.clone(),
+                                type_: *arg.clone(),
                                 constraint: constraint_str,
                                 position: i,
                                 param_name: param_name.clone(),
@@ -316,7 +316,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
                             
                             // Enqueue the child node
                             let child_node = ConstraintNode {
-                                type_: arg.clone(),
+                                type_: *arg.clone(),
                                 path: child_path,
                                 constraints,
                                 param_names: Vec::new(),
@@ -363,7 +363,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
         }
         
         // Create a root generic type for checking
-        let root_type = Type::Generic(generic_type.to_string(), type_args.to_vec());
+        let root_type = Type::Generic(generic_type.to_string(), type_args.into_iter().map(|t| Box::new(t)).collect());
         
         // Check all nested constraints
         self.check_deep_nested_constraints(&root_type, type_param_constraints)

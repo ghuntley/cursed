@@ -51,6 +51,7 @@ pub use self::context::LlvmCodeGenerator;
 pub use self::llvm_code_generator_extensions::{
     SourceLocationExtensions, SymbolLookupExtensions, ErrorPathExtensions
 };
+pub use self::basic_value_extensions::{BasicValueExtensions, BasicTypeExtensions};
 
 // Re-export type registry helpers
 pub use self::interface_type_registry_helpers::TypeNameRegistry;

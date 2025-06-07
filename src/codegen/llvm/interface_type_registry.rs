@@ -8,7 +8,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
-use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
@@ -125,7 +125,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
         
         if let Some(extension_registry) = &self.extension_registry {
             // Get the extension hierarchy from the registry
-            let hierarchy = extension_registry.get_extension_hierarchy().map_err(|e| {
+            let hierarchy = InterfaceRegistryExtension::get_extension_hierarchy(&**extension_registry).map_err(|e| {
                 warn!("Error accessing extension registry: {}", e);
                 Error::from_str("Error accessing interface registry data")
             })?;
@@ -618,7 +618,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
     pub fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         if let Some(registry) = &self.extension_registry {
             let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
-            reg.extends(source, target)
+            InterfaceRegistryExtension::extends(&*reg, source, target)
         } else {
             Ok(false)
         }
@@ -647,7 +647,7 @@ impl<'ctx> InterfaceTypeRegistryTrait for InterfaceTypeRegistry<'ctx> {
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         if let Some(registry) = &self.extension_registry {
             let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
-            reg.extends(source, target)
+            InterfaceRegistryExtension::extends(&*reg, source, target)
         } else {
             Ok(false)
         }

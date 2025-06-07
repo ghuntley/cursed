@@ -66,7 +66,7 @@ impl<'ctx> EnhancedSourceLocationSupport<'ctx> for LlvmCodeGenerator<'ctx> {
         column: usize
     ) -> SourceLocation {
         // Get current file path from context if available
-        let file_path = self.current_file_path().unwrap_or_else(|| "<unknown>".to_string());
+        let file_path = self.current_file_path.to_string_lossy().to_string();
         
         // Try to extract source line
         let source_line = self.get_source_line(&file_path, line).unwrap_or_else(|| {

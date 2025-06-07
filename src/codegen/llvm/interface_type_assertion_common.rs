@@ -195,8 +195,8 @@ pub trait InterfaceRegistry {
 /// 
 /// DEPRECATED: Use interface_type_registry_common::get_type_name_by_id_impl instead
 pub fn get_type_name_by_id_result<T: TypeNameRegistry>(registry: &T, type_id: u32) -> Result<String, Error> {
-    // Use the trait method directly
-    TypeNameRegistry::get_type_name_by_id(registry, type_id)
+    // Use the trait method directly (convert u32 to u64)
+    TypeNameRegistry::get_type_name_by_id(registry, type_id as u64)
         .ok_or_else(|| Error::Compilation(format!("Could not find type name for ID {}", type_id)))
 }
 

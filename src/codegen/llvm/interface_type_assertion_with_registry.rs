@@ -233,7 +233,7 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         // Get the runtime type name for the expression
         let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
         let runtime_type_id = self.get_runtime_type_id(expr_value, None)?;
-        let runtime_type_name = self.get_type_name_for_id(runtime_type_id)?;
+        let runtime_type_name = self.get_type_name_for_id(runtime_type_id.0 as u32)?;
         
         // Generate a rich DOT graph visualization of the inheritance hierarchy
         let dot_graph = self.generate_interface_hierarchy_dot_graph()?;

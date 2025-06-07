@@ -80,6 +80,18 @@ pub trait InterfaceTypeRegistry: std::fmt::Debug {
         // Override in concrete implementations to provide actual extension relationships
         Ok(HashMap::new())
     }
+
+    /// Get extended interfaces for a given type ID
+    fn get_extended_interfaces(&self, type_id: u32) -> Result<Vec<u32>, Error> {
+        // Default implementation returns empty vector
+        Ok(Vec::new())
+    }
+
+    /// Get implemented interfaces for a given type ID
+    fn get_implemented_interfaces(&self, type_id: u32) -> Result<Vec<u32>, Error> {
+        // Default implementation returns empty vector
+        Ok(Vec::new())
+    }
 }
 
 /// Alias for the InterfaceTypeRegistry trait (for backward compatibility)
