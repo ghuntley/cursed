@@ -109,7 +109,7 @@ impl<'ctx> InterfaceFieldAccessors<'ctx> for LlvmCodeGenerator<'ctx> {
         // Setup the monomorphization manager if not already initialized
         if self.monomorphization_manager.is_none() {
             debug!("Initializing monomorphization manager");
-            let type_checker = std::rc::Rc::new(std::cell::RefCell::new(crate::core::type_checker::TypeChecker::new()));
+            let type_checker = std::sync::Arc::new(std::sync::RwLock::new(crate::core::type_checker::TypeChecker::new()));
             self.setup_monomorphization_manager(type_checker);
         }
         

@@ -58,6 +58,11 @@ pub enum ErrorKind {
     CodeGen,
     Syntax,
     TypeAssertion,
+    InvalidArguments,
+    NotFound,
+    Parsing,
+    Internal,
+    Validation,
 }
 
 impl ErrorKind {
@@ -85,6 +90,11 @@ impl ErrorKind {
             ErrorKind::CodeGen => "CodeGen",
             ErrorKind::Syntax => "Syntax",
             ErrorKind::TypeAssertion => "TypeAssertion",
+            ErrorKind::InvalidArguments => "InvalidArguments",
+            ErrorKind::NotFound => "NotFound",
+            ErrorKind::Parsing => "Parsing",
+            ErrorKind::Internal => "Internal",
+            ErrorKind::Validation => "Validation",
         }
     }
 }
@@ -422,6 +432,12 @@ impl From<crate::error::Error> for CursedError {
             crate::error::Error::NotImplemented { message } => Self::new(ErrorKind::NotImplemented, message),
             crate::error::Error::CodeGenError(msg) => Self::new(ErrorKind::CodeGen, msg),
             crate::error::Error::TypeAssertion(error) => error,
+            crate::error::Error::InvalidArguments(msg) => Self::new(ErrorKind::InvalidArguments, msg),
+            crate::error::Error::NotFound(msg) => Self::new(ErrorKind::NotFound, msg),
+            crate::error::Error::Parsing(msg) => Self::new(ErrorKind::Parsing, msg),
+            crate::error::Error::IO(io_err) => Self::from(io_err),
+            crate::error::Error::Internal(msg) => Self::new(ErrorKind::Internal, msg),
+            crate::error::Error::Validation(msg) => Self::new(ErrorKind::Validation, msg),
         }
     }
 }

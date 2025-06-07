@@ -90,7 +90,7 @@ impl GenericInstantiator {
         for param in &generic_function.parameters {
             // Monomorphize the parameter type
             let param_type = self
-                .extract_type_from_expression(&param.type_name)
+                .extract_type_from_expression(&param.param_type)
                 .unwrap_or(Type::Unknown);
 
             // Apply type substitutions for generic parameters

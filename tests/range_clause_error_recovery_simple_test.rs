@@ -3,7 +3,7 @@
 use cursed::parser::{Parser, RangeClauseErrorRecoverySimple};
 use cursed::lexer::Lexer;
 use cursed::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_range_error_recovery_simple() {

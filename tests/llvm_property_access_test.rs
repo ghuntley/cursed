@@ -45,7 +45,7 @@ fn test_property_access() {
     
     // Create expression to access test_obj.value
     let object_ident = Identifier {
-        token: Token::new(TokenType::Identifier, "test_obj").token_literal(),
+        token: Token::new(TokenType::Identifier, "test_obj"),
         value: "test_obj".to_string(),
     };
     

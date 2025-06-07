@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use crate::Error;
 use crate::object::{Object, Channel};
 
@@ -25,7 +25,7 @@ pub fn lit(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         Object::Array(a) => Object::Boolean(!a.is_empty()),
         Object::HashTable(h) => Object::Boolean(!h.is_empty()),
         Object::Channel(ch) => {
-            let channel = ch.borrow();
+            let channel = ch.read().map_err(|_| Error::Runtime("Failed to read channel".to_string()))?;
             Object::Boolean(!channel.is_closed())
         },
         Object::Option(opt) => Object::Boolean(opt.is_some()),
@@ -157,7 +157,7 @@ pub fn len(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         Object::Array(a) => Ok(Arc::new(Object::Integer(a.len() as i64))),
         Object::HashTable(h) => Ok(Arc::new(Object::Integer(h.len() as i64))),
         Object::Channel(ch) => {
-            let channel = ch.borrow();
+            let channel = ch.read().map_err(|_| Error::Runtime("Failed to read channel".to_string()))?;
             Ok(Arc::new(Object::Integer(channel.len() as i64)))
         },
         _ => Ok(Arc::new(Object::Integer(0))), // Default for unsupported types
@@ -174,7 +174,7 @@ pub fn cap(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     match v {
         Object::Array(a) => Ok(Arc::new(Object::Integer(a.capacity() as i64))),
         Object::Channel(ch) => {
-            let channel = ch.borrow();
+            let channel = ch.read().map_err(|_| Error::Runtime("Failed to read channel".to_string()))?;
             Ok(Arc::new(Object::Integer(channel.capacity() as i64)))
         },
         _ => Ok(Arc::new(Object::Integer(0))), // Default for unsupported types
@@ -351,7 +351,7 @@ pub fn make(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
             let buffer_size = size.unwrap_or(0) as usize;
             let element_type = capacity.map(|_| "any".to_string()).unwrap_or_else(|| "any".to_string());
             let channel = Channel::new(element_type, buffer_size);
-            Ok(Arc::new(Object::Channel(Arc::new(RefCell::new(channel)))))
+            Ok(Arc::new(Object::Channel(Arc::new(RwLock::new(channel)))))
         },
         _ => Err(Error::new("Runtime", format!("Unsupported type for make: {}", type_name), None)),
     }
@@ -388,7 +388,7 @@ pub fn new(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
         "map" => Ok(Arc::new(Object::HashTable(HashMap::new()))),
         "channel" => {
             let channel = Channel::new("any".to_string(), 0);
-            Ok(Arc::new(Object::Channel(Arc::new(RefCell::new(channel)))))
+            Ok(Arc::new(Object::Channel(Arc::new(RwLock::new(channel)))))
         },
         "array" | "slice" => Ok(Arc::new(Object::Array(Vec::new()))),
         _ => Ok(Arc::new(Object::Null)),
@@ -419,7 +419,7 @@ pub fn send(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     
     match &*args[0] {
         Object::Channel(ch) => {
-            let mut channel = ch.borrow_mut();
+            let mut channel = ch.write().map_err(|_| Error::Runtime("Failed to write channel".to_string()))?;
             let value = (&*args[1]).clone();
             channel.send(value)?;
             Ok(Arc::new(Object::Null))
@@ -436,7 +436,7 @@ pub fn try_send(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     
     match &*args[0] {
         Object::Channel(ch) => {
-            let mut channel = ch.borrow_mut();
+            let mut channel = ch.write().map_err(|_| Error::Runtime("Failed to write channel".to_string()))?;
             let value = (&*args[1]).clone();
             let result = channel.try_send(value)?;
             Ok(Arc::new(Object::Boolean(result)))
@@ -453,7 +453,7 @@ pub fn receive(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     
     match &*args[0] {
         Object::Channel(ch) => {
-            let mut channel = ch.borrow_mut();
+            let mut channel = ch.write().map_err(|_| Error::Runtime("Failed to write channel".to_string()))?;
             let value = channel.receive()?;
             Ok(Arc::new(value))
         },
@@ -469,7 +469,7 @@ pub fn try_receive(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     
     match &*args[0] {
         Object::Channel(ch) => {
-            let mut channel = ch.borrow_mut();
+            let mut channel = ch.write().map_err(|_| Error::Runtime("Failed to write channel".to_string()))?;
             match channel.try_receive()? {
                 Some(value) => {
                     // Return a tuple of (value, true) indicating success

@@ -2,7 +2,7 @@ use cursed::stdlib::quick_test::*;
 use cursed::stdlib::quick_test_generators::*;
 use cursed::stdlib::{combine_gen, weighted_gen};
 use cursed::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 /// Tests for the enhanced features of the quick_test module

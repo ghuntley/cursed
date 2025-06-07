@@ -19,8 +19,8 @@ use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHan
 use crate::error::Error;
 
 use std::collections::HashMap;
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::Arc;
+use std::sync::RwLock;
 
 /// Cache for type ID lookups to improve performance
 pub struct TypeIdCache {
@@ -96,7 +96,7 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // Initialize the type ID cache if needed
         if self.type_id_cache.is_none() {
-            self.type_id_cache = Some(Rc::new(RefCell::new(TypeIdCache::new())));
+            self.type_id_cache = Some(Arc::new(RwLock::new(TypeIdCache::new())));
         }
         
         // Get the current function
@@ -287,11 +287,11 @@ impl<'ctx> EnhancedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
     fn get_cached_type_id(&mut self, type_name: &str) -> Result<BasicValueEnum<'ctx>, Error> {
         // Get the type ID from the cache
         let type_id = match &self.type_id_cache {
-            Some(cache) => cache.borrow_mut().get_type_id(type_name),
+            Some(cache) => cache.write().unwrap().get_type_id(type_name),
             None => {
                 // Initialize cache
-                let cache = Rc::new(RefCell::new(TypeIdCache::new()));
-                let id = cache.borrow_mut().get_type_id(type_name);
+                let cache = Arc::new(RwLock::new(TypeIdCache::new()));
+                let id = cache.write().unwrap().get_type_id(type_name);
                 self.type_id_cache = Some(cache);
                 id
             }
@@ -499,13 +499,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
 // Debug support extension for LlvmCodeGenerator
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Set the type ID cache for reuse
-    pub fn with_type_id_cache(mut self, cache: Rc<RefCell<TypeIdCache>>) -> Self {
+    pub fn with_type_id_cache(mut self, cache: Arc<RwLock<TypeIdCache>>) -> Self {
         self.type_id_cache = Some(cache);
         self
     }
     
     /// Get the type ID cache
-    pub fn type_id_cache(&self) -> Option<Rc<RefCell<TypeIdCache>>> {
+    pub fn type_id_cache(&self) -> Option<Arc<RwLock<TypeIdCache>>> {
         self.type_id_cache.clone()
     }
 }

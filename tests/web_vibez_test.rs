@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use cursed::object::Object;
 use cursed::stdlib::web_vibez::{get, post, head, delete, client_timeout};
@@ -7,7 +7,7 @@ use cursed::stdlib::web_vibez::{get, post, head, delete, client_timeout};
 #[test]
 fn test_client_timeout() {
     // Test setting timeout
-    let result = client_timeout(&[Rc::new(Object::Integer(5000))]).unwrap();
+    let result = client_timeout(&[Arc::new(Object::Integer(5000))]).unwrap();
     assert!(matches!(*result, Object::Integer(5000)));
     
     // Test getting timeout
@@ -19,8 +19,8 @@ fn test_client_timeout() {
 fn test_get_mock() {
     // Test with mock mode
     let result = get(&[
-        Rc::new(Object::String("https://example.com".to_string())),
-        Rc::new(Object::Boolean(true)), // Use mock mode
+        Arc::new(Object::String("https://example.com".to_string())),
+        Arc::new(Object::Boolean(true)), // Use mock mode
     ]).unwrap();
     
     match &*result {
@@ -61,9 +61,9 @@ fn test_post_mock() {
     
     // Test with mock mode
     let result = post(&[
-        Rc::new(Object::String("https://example.com/api".to_string())),
-        Rc::new(Object::HashTable(body)),
-        Rc::new(Object::Boolean(true)), // Use mock mode
+        Arc::new(Object::String("https://example.com/api".to_string())),
+        Arc::new(Object::HashTable(body)),
+        Arc::new(Object::Boolean(true)), // Use mock mode
     ]).unwrap();
     
     match &*result {
@@ -87,8 +87,8 @@ fn test_post_mock() {
 fn test_head_mock() {
     // Test with mock mode
     let result = head(&[
-        Rc::new(Object::String("https://example.com".to_string())),
-        Rc::new(Object::Boolean(true)), // Use mock mode
+        Arc::new(Object::String("https://example.com".to_string())),
+        Arc::new(Object::Boolean(true)), // Use mock mode
     ]).unwrap();
     
     match &*result {
@@ -112,8 +112,8 @@ fn test_head_mock() {
 fn test_delete_mock() {
     // Test with mock mode
     let result = delete(&[
-        Rc::new(Object::String("https://example.com/resource/123".to_string())),
-        Rc::new(Object::Boolean(true)), // Use mock mode
+        Arc::new(Object::String("https://example.com/resource/123".to_string())),
+        Arc::new(Object::Boolean(true)), // Use mock mode
     ]).unwrap();
     
     match &*result {

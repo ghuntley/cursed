@@ -4,9 +4,8 @@
 //! called by the LLVM-generated code. It serves as the bridge between the compiled
 //! LLVM code and the CURSED channel implementation in the core library.
 
-use std::rc::Rc;
 use std::cell::RefCell;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::panic;
 use std::sync::Mutex;
 use crate::object::{Object, Channel};
@@ -74,7 +73,7 @@ pub extern "C" fn cursed_make_channel(element_size: u64, capacity: u64) -> *mut 
             Object::Channel(channel_ref) => {
                 // We're returning a raw pointer to the RefCell<Channel>
                 // The caller will need to handle this as a Channel*
-                let raw_ptr = Rc::into_raw(channel_ref) as *mut c_void;
+                let raw_ptr = Arc::into_raw(channel_ref) as *mut c_void;
                 tracing::debug!(ptr = ?raw_ptr, "Channel created");
                 raw_ptr
             },
@@ -144,11 +143,11 @@ pub extern "C" fn cursed_send_to_channel(channel_ptr: *mut c_void, value_ptr: *m
         
         // Put the box back so we don't drop it
         let _ = Box::into_raw(thread_safe_channel);
-    } else {
-        // Convert the raw channel pointer back to an Rc<RefCell<Channel>>
-        let channel_ref = unsafe { Rc::from_raw(channel_ptr as *const RefCell<Channel>) };
+        } else {
+        // Convert the raw channel pointer back to an Arc<RwLock<Channel>>
+        let channel_ref = unsafe { Arc::from_raw(channel_ptr as *const RwLock<Channel>) };
         
-        // Clone the Rc to keep it alive after this function returns
+        // Clone the Arc to keep it alive after this function returns
         let channel_ref_clone = channel_ref.clone();
         
         // Convert from raw pointer back to Object
@@ -170,8 +169,8 @@ pub extern "C" fn cursed_send_to_channel(channel_ptr: *mut c_void, value_ptr: *m
             }
         }
         
-        // Instead of forgetting the Rc, clone it to maintain proper ownership
-        let _ = Rc::into_raw(channel_ref.clone());
+        // Instead of forgetting the Arc, clone it to maintain proper ownership
+        let _ = Arc::into_raw(channel_ref.clone());
     }
 }
 
@@ -249,10 +248,10 @@ pub extern "C" fn cursed_receive_from_channel(channel_ptr: *mut c_void, result_p
         // Put the box back so we don't drop it
         let _ = Box::into_raw(thread_safe_channel);
     } else {
-        // Convert the raw channel pointer back to an Rc<RefCell<Channel>>
-        let channel_ref = unsafe { Rc::from_raw(channel_ptr as *const RefCell<Channel>) };
+        // Convert the raw channel pointer back to an Arc<RwLock<Channel>>
+        let channel_ref = unsafe { Arc::from_raw(channel_ptr as *const RwLock<Channel>) };
         
-        // Clone the Rc to keep it alive after this function returns
+        // Clone the Arc to keep it alive after this function returns
         let channel_ref_clone = channel_ref.clone();
         
         // Receive from the channel
@@ -288,8 +287,8 @@ pub extern "C" fn cursed_receive_from_channel(channel_ptr: *mut c_void, result_p
             }
         }
         
-        // Instead of forgetting the Rc, clone it to maintain proper ownership
-        let _ = Rc::into_raw(channel_ref.clone());
+        // Instead of forgetting the Arc, clone it to maintain proper ownership
+        let _ = Arc::into_raw(channel_ref.clone());
     }
 }
 
@@ -337,14 +336,14 @@ pub extern "C" fn cursed_close_channel(channel_ptr: *mut c_void) {
         // Put the box back so we don't drop it
         let _ = Box::into_raw(thread_safe_channel);
     } else {
-        // Convert the raw channel pointer back to an Rc<RefCell<Channel>>
-        let channel_ref = unsafe { Rc::from_raw(channel_ptr as *const RefCell<Channel>) };
+        // Convert the raw channel pointer back to an Arc<RwLock<Channel>>
+        let channel_ref = unsafe { Arc::from_raw(channel_ptr as *const RwLock<Channel>) };
         
         // Close the channel
-        let mut channel = channel_ref.borrow_mut();
+        let mut channel = channel_ref.write().unwrap();
         channel.close();
         
-        // Instead of forgetting the Rc, clone it to maintain proper ownership
-        let _ = Rc::into_raw(channel_ref.clone());
+        // Instead of forgetting the Arc, clone it to maintain proper ownership
+        let _ = Arc::into_raw(channel_ref.clone());
     }
 }

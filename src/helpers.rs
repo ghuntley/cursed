@@ -1,8 +1,7 @@
 // Utility functions for CURSED language
 use crate::object::Object;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock, OnceLock};
 
 /// Check if a value is truthy
 #[tracing::instrument(skip(obj), fields(obj_type = ?obj.type_name()), level = "trace")]
@@ -29,23 +28,36 @@ pub fn objects_equal(left: &Object, right: &Object) -> bool {
 
 /// Create a cached string
 #[tracing::instrument(skip(value), fields(value_len = value.len()), level = "trace")]
-pub fn new_string(value: &str) -> Rc<Object> {
-    thread_local! {
-        static STRING_CACHE: RefCell<HashMap<String, Rc<Object>>> = RefCell::new(HashMap::new());
+pub fn new_string(value: &str) -> Arc<Object> {
+    static STRING_CACHE: OnceLock<RwLock<HashMap<String, Arc<Object>>>> = OnceLock::new();
+    
+    let cache = STRING_CACHE.get_or_init(|| RwLock::new(HashMap::new()));
+
+    // First try to read with shared lock
+    if let Ok(read_cache) = cache.read() {
+        if let Some(cached) = read_cache.get(value) {
+            tracing::trace!("String cache hit");
+            return cached.clone();
+        }
     }
 
-    STRING_CACHE.with(|cache| {
-        let mut cache = cache.borrow_mut();
-        if let Some(cached) = cache.get(value) {
-            tracing::trace!("String cache hit");
+    // If not found, acquire write lock to insert
+    if let Ok(mut write_cache) = cache.write() {
+        // Double-check in case another thread inserted while we were waiting
+        if let Some(cached) = write_cache.get(value) {
+            tracing::trace!("String cache hit after write lock");
             cached.clone()
         } else {
             tracing::trace!("String cache miss, creating new string");
-            let s = Rc::new(Object::String(value.to_string()));
-            cache.insert(value.to_string(), s.clone());
+            let s = Arc::new(Object::String(value.to_string()));
+            write_cache.insert(value.to_string(), s.clone());
             s
         }
-    })
+    } else {
+        // Fallback if lock is poisoned
+        tracing::warn!("String cache lock poisoned, creating uncached string");
+        Arc::new(Object::String(value.to_string()))
+    }
 }
 
 /// Format an object for display

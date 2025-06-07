@@ -40,21 +40,21 @@ fn test_struct_field_incompatible_types() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "name").token_literal(),
+                    token: new_token(TokenType::Identifier, "name"),
                     value: "name".to_string(),
                 },
                 value: Box::new(FloatLiteral { // Float assigned to string field - should fail
-                    token: new_token(TokenType::Float, "42.5").token_literal(),
+                    token: new_token(TokenType::Float, "42.5"),
                     value: 42.5,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "age").token_literal(),
+                    token: new_token(TokenType::Identifier, "age"),
                     value: "age".to_string(),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: new_token(TokenType::Int, "42").token_literal(),
+                    token: new_token(TokenType::Int, "42"),
                     value: 42,
                 }),
             },
@@ -137,21 +137,21 @@ fn test_simple_struct_field_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "x").token_literal(),
+                    token: new_token(TokenType::Identifier, "x"),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
-                    token: new_token(TokenType::Int, "10").token_literal(),
+                    token: new_token(TokenType::Int, "10"),
                     value: 10,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "y").token_literal(),
+                    token: new_token(TokenType::Identifier, "y"),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: new_token(TokenType::Float, "20.5").token_literal(),
+                    token: new_token(TokenType::Float, "20.5"),
                     value: 20.5,
                 }),
             },

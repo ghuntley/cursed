@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use std::cell::RefCell;
-    use std::rc::Rc;
+    use std::sync::Arc;
     use std::sync::Arc;
     use inkwell::context::Context;
     use inkwell::values::BasicValueEnum;

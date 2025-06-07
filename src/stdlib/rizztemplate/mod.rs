@@ -6,7 +6,7 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;

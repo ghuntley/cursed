@@ -302,8 +302,8 @@ where
     
     let objects: Vec<Object> = (0..len)
         .map(|_| {
-            let rc = gen();
-            match &*rc {
+            let arc = gen();
+            match &*arc {
                 Object::Integer(i) => Object::Integer(*i),
                 Object::Float(f) => Object::Float(*f),
                 Object::Boolean(b) => Object::Boolean(*b),
@@ -323,8 +323,8 @@ where
 {
     let objects: Vec<Object> = (0..n)
         .map(|_| {
-            let rc = gen();
-            match &*rc {
+            let arc = gen();
+            match &*arc {
                 Object::Integer(i) => Object::Integer(*i),
                 Object::Float(f) => Object::Float(*f),
                 Object::Boolean(b) => Object::Boolean(*b),

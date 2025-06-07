@@ -1,7 +1,7 @@
 //! Integration tests for the improved error propagation in interface type assertions
 
 use std::sync::Arc;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 use cursed::ast::expressions::TypeAssertion;

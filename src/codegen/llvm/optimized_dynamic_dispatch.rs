@@ -14,7 +14,6 @@ use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl, TypeInfo};
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
-#[cfg(feature = "enhanced_dynamic_dispatch")]
 use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::core::type_checker::Type as CursedType;
 use inkwell::types::{BasicTypeEnum, FunctionType, PointerType, StructType};
@@ -61,7 +60,6 @@ pub struct CachedMethod<'ctx> {
 }
 
 /// Enhanced interface dynamic dispatch trait with optimizations
-use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 
 pub trait OptimizedDynamicDispatch<'ctx>: EnhancedDynamicDispatch<'ctx> {
     /// Initialize the optimized dynamic dispatch system
@@ -229,7 +227,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             }
             
             // Proceed with the standard dynamic dispatch since we don't have optimization info yet
-            return self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args);
+            return self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args.to_vec()).map(Some);
         }
         
         // 2. For frequently called methods, try speculative dispatch
@@ -262,13 +260,13 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // 3. Fall back to enhanced dynamic dispatch if speculative dispatch isn't appropriate yet
-        let result = self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args)?;
+        let result = self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args.to_vec())?;
         
         // 4. Update observed types for future optimization
         self.update_type_observations(interface_ptr, interface_name, method_name)?;
         
         debug!("Completed optimized dispatch call");
-        Ok(result)
+        Ok(Some(result))
     }
     
     #[instrument(skip(self, interface_ptr), fields(interface_name = %interface_name, method_name = %method_name, expected_type = %expected_type), level = "debug")]
@@ -489,14 +487,12 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             interface_ptr.into(),
             interface_name,
             method_name,
-            args
+            args.to_vec()
         )?;
         
-        // Add the fallback result to the PHI node if it exists
-        if let Some(value) = fallback_result {
-            incoming_values.push(value);
-            incoming_blocks.push(self.builder().get_insert_block().unwrap());
-        }
+        // Add the fallback result to the PHI node 
+        incoming_values.push(fallback_result);
+        incoming_blocks.push(self.builder().get_insert_block().unwrap());
         
         // Branch to the result block
         self.builder().build_unconditional_branch(result_block).unwrap();
@@ -515,7 +511,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             
             // Add incoming values
             for (value, block) in incoming_values.iter().zip(incoming_blocks.iter()) {
-                phi.add_incoming(&[(&value, &block)]);
+                phi.add_incoming(&[(value, block)]);
             }
             
             Some(phi.as_basic_value())
@@ -563,13 +559,10 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<(), Error> {
         debug!("Batch registering {} interface implementations", implementations.len());
         
-        let interface_manager = match &mut self.interface_manager {
-            Some(manager) => manager,
-            None => {
-                self.interface_manager = Some(InterfaceManager::new());
-                self.interface_manager.as_mut().unwrap()
-            }
-        };
+        // Ensure interface manager exists
+        if self.interface_manager.is_none() {
+            self.interface_manager = Some(InterfaceManager::new());
+        }
         
         // Process all implementations
         for ((struct_name, interface_name), methods) in implementations {
@@ -579,14 +572,20 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             // Create the CursedType for the struct
             let struct_type = CursedType::Struct(struct_name.clone(), Vec::new());
             
+            // Get references to context and module to avoid borrowing issues
+            let context = self.context();
+            let module = self.module();
+            
             // Register the implementation with the interface manager
-            interface_manager.create_vtable_for_implementation(
-                self.context(),
-                self.module(),
-                &interface_name,
-                &struct_type,
-                methods,
-            )?;
+            if let Some(interface_manager) = &mut self.interface_manager {
+                interface_manager.create_vtable_for_implementation(
+                    context,
+                    module,
+                    &interface_name,
+                    &struct_type,
+                    methods,
+                )?;
+            }
             
             // Update our cache of implementing types
             if let Some(cache) = &mut self.method_dispatch_cache {
@@ -662,7 +661,7 @@ impl<'ctx> OptimizedDynamicDispatchExtensions<'ctx> for LlvmCodeGenerator<'ctx> 
                 // Check if the comparison is true
                 if result.is_int_value() {
                     let int_val = result.into_int_value();
-                    if int_val.get_zero_extended_value() != 0 {
+                    if int_val.get_zero_extended_constant().unwrap() != 0 {
                         concrete_type = Some(type_name.clone());
                         break;
                     }

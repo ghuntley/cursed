@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod simple_stdlib_tests {
     // Import test helper to convert between Rust and CURSED objects
-    use std::rc::Rc;
+    use std::sync::Arc;
     use cursed::object::Object;
 
     // Import packages we want to test
@@ -16,17 +16,17 @@ mod simple_stdlib_tests {
 
     // Function to create a string object from a Rust string
     fn string_object(s: &str) -> Rc<Object> {
-        Rc::new(Object::String(s.to_string()))
+        Arc::new(Object::String(s.to_string()))
     }
 
     // Function to create a number object from a Rust i64
     fn number_object(n: i64) -> Rc<Object> {
-        Rc::new(Object::Integer(n))
+        Arc::new(Object::Integer(n))
     }
 
     // Function to create a float object from a Rust f64
     fn float_object(f: f64) -> Rc<Object> {
-        Rc::new(Object::Float(f))
+        Arc::new(Object::Float(f))
     }
 
     // Function to extract a string from a CURSED object

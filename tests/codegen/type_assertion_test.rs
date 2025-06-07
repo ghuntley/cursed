@@ -7,7 +7,7 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use cursed::error::Error;
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_compile_type_assertion() {
@@ -31,7 +31,7 @@ fn test_compile_type_assertion() {
     // Verify that the TypeAssertion properly implements the Expression trait
     let _expr: &dyn Expression = &assertion;
     
-    assert_eq!(assertion.token_literal(), ".");
+    assert_eq!(assertion, ".");
     assert_eq!(assertion.string(), "myInterface.(ConcreteType))");
 }
 

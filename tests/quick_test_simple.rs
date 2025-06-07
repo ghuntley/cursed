@@ -1,7 +1,7 @@
 use cursed::stdlib::quick_test::*;
 use cursed::stdlib::{Generator, RandGen, value, one_of};
 use cursed::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
 /// Test the quick_test implementation

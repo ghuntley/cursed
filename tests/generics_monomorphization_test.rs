@@ -17,7 +17,7 @@ use cursed::core::type_checker::Type;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// This test creates a generic function with multiple type parameters 
 /// and tests its monomorphization with various concrete type combinations

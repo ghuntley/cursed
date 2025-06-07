@@ -25,7 +25,7 @@ fn test_expression_compilation() {
 
     // Test integer literal
     let int_lit = IntegerLiteral {
-        token: Token::new(TokenType::Int, "42").token_literal(),
+        token: Token::new(TokenType::Int, "42"),
         value: 42,
     };
     
@@ -37,7 +37,7 @@ fn test_expression_compilation() {
     
     // Test boolean literal
     let bool_lit = BooleanLiteral {
-        token: Token::new(TokenType::True, "true").token_literal(),
+        token: Token::new(TokenType::True, "true"),
         value: true,
     };
     
@@ -49,12 +49,12 @@ fn test_expression_compilation() {
     
     // Test infix expression
     let left = IntegerLiteral {
-        token: Token::new(TokenType::Int, "10").token_literal(),
+        token: Token::new(TokenType::Int, "10"),
         value: 10,
     };
     
     let right = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
     
@@ -73,7 +73,7 @@ fn test_expression_compilation() {
     
     // Test prefix expression
     let inner = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
     

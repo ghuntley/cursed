@@ -13,7 +13,7 @@ fn test_range_expression_node_implementation() {
     let end = Box::new(IntegerLiteral::new(10));
     let range = RangeExpression::Range { end };
     
-    assert_eq!(range.token_literal(), "range");
+    assert_eq!(range, "range");
     assert_eq!(range.string(), "range 10");
     
     // Test range with start and end
@@ -21,7 +21,7 @@ fn test_range_expression_node_implementation() {
     let end = Box::new(IntegerLiteral::new(15));
     let range = RangeExpression::RangeFromTo { start, end };
     
-    assert_eq!(range.token_literal(), "range");
+    assert_eq!(range, "range");
     assert_eq!(range.string(), "range 5, 15");
     
     // Test range with start, end, and step
@@ -30,7 +30,7 @@ fn test_range_expression_node_implementation() {
     let step = Box::new(IntegerLiteral::new(2));
     let range = RangeExpression::RangeFromToStep { start, end, step };
     
-    assert_eq!(range.token_literal(), "range");
+    assert_eq!(range, "range");
     assert_eq!(range.string(), "range 0, 20, 2");
 }
 

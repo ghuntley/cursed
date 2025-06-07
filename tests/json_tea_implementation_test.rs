@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 use cursed::error::Error;
 use cursed::object::Object;
 use cursed::stdlib::json_tea;
@@ -6,27 +6,27 @@ use cursed::stdlib::json_tea;
 #[test]
 fn test_json_unmarshal_primitive_values() {
     // Test null
-    let args = vec![Rc::new(Object::String("null".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("null".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     assert!(matches!(*result, Object::Null));
 
     // Test boolean true
-    let args = vec![Rc::new(Object::String("true".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("true".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     assert!(matches!(*result, Object::Boolean(true)));
 
     // Test boolean false
-    let args = vec![Rc::new(Object::String("false".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("false".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     assert!(matches!(*result, Object::Boolean(false)));
 
     // Test integer
-    let args = vec![Rc::new(Object::String("42".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("42".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     assert!(matches!(*result, Object::Integer(42)));
 
     // Test float
-    let args = vec![Rc::new(Object::String("3.14".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("3.14".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::Float(val) = &*result {
         assert!((*val - 3.14).abs() < f64::EPSILON);
@@ -35,7 +35,7 @@ fn test_json_unmarshal_primitive_values() {
     }
 
     // Test string
-    let args = vec![Rc::new(Object::String("\"hello\"".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("\"hello\"".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::String(val) = &*result {
         assert_eq!(val, "hello");
@@ -47,7 +47,7 @@ fn test_json_unmarshal_primitive_values() {
 #[test]
 fn test_json_unmarshal_arrays() {
     // Test empty array
-    let args = vec![Rc::new(Object::String("[]".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("[]".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::Array(val) = &*result {
         assert!(val.is_empty());
@@ -56,7 +56,7 @@ fn test_json_unmarshal_arrays() {
     }
 
     // Test array with primitive values
-    let args = vec![Rc::new(Object::String("[1, true, \"hello\"]".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("[1, true, \"hello\"]".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::Array(val) = &*result {
         assert_eq!(val.len(), 3);
@@ -72,7 +72,7 @@ fn test_json_unmarshal_arrays() {
     }
 
     // Test nested array
-    let args = vec![Rc::new(Object::String("[1, [2, 3], 4]".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("[1, [2, 3], 4]".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::Array(val) = &*result {
         assert_eq!(val.len(), 3);
@@ -93,7 +93,7 @@ fn test_json_unmarshal_arrays() {
 #[test]
 fn test_json_unmarshal_objects() {
     // Test empty object
-    let args = vec![Rc::new(Object::String("{}".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{}".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::HashTable(val) = &*result {
         assert!(val.is_empty());
@@ -102,7 +102,7 @@ fn test_json_unmarshal_objects() {
     }
 
     // Test object with primitive values
-    let args = vec![Rc::new(Object::String("{\"name\":\"zoomer\",\"age\":21,\"cool\":true}".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{\"name\":\"zoomer\",\"age\":21,\"cool\":true}".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::HashTable(val) = &*result {
         assert_eq!(val.len(), 3);
@@ -126,7 +126,7 @@ fn test_json_unmarshal_objects() {
     }
 
     // Test nested object
-    let args = vec![Rc::new(Object::String("{\"user\":{\"name\":\"zoomer\",\"age\":21},\"active\":true}".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{\"user\":{\"name\":\"zoomer\",\"age\":21},\"active\":true}".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::HashTable(val) = &*result {
         assert_eq!(val.len(), 2);
@@ -170,7 +170,7 @@ fn test_json_unmarshal_complex() {
         "settings": null
     }"#;
 
-    let args = vec![Rc::new(Object::String(json.to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String(json.to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     
     if let Object::HashTable(val) = &*result {
@@ -252,27 +252,27 @@ fn test_json_unmarshal_complex() {
 #[test]
 fn test_json_unmarshal_error_cases() {
     // Test invalid JSON
-    let args = vec![Rc::new(Object::String("{".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args);
     assert!(result.is_err());
 
     // Test missing second argument
-    let args = vec![Rc::new(Object::String("{}".to_string()))];
+    let args = vec![Arc::new(Object::String("{}".to_string()))];
     let result = json_tea::unmarshal(&args);
     assert!(result.is_err());
 
     // Test non-string first argument
-    let args = vec![Rc::new(Object::Integer(42)), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::Integer(42)), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args);
     assert!(result.is_err());
 
     // Test malformed JSON object
-    let args = vec![Rc::new(Object::String("{\"key\":}".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{\"key\":}".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args);
     assert!(result.is_err());
 
     // Test malformed JSON array
-    let args = vec![Rc::new(Object::String("[1,]".to_string())), Rc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("[1,]".to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args);
     assert!(result.is_err());
 }

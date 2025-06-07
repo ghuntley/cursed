@@ -10,7 +10,7 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::ast::Node;
 use crate::core::symbol_table::{SymbolScope, SymbolTable};
@@ -214,8 +214,8 @@ impl<T> SliceExt<T> for &[T] {
 
 // Placeholder for builtins
 pub fn len(
-    _args: &[Rc<crate::object::Object>],
-) -> Result<Rc<crate::object::Object>, crate::error::Error> {
+    _args: &[Arc<crate::object::Object>],
+) -> Result<Arc<crate::object::Object>, crate::error::Error> {
     // Implementation TBD
     Err(crate::error::Error::not_implemented(
         "len built-in function",

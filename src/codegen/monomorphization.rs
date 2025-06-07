@@ -25,8 +25,8 @@ use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 use crate::codegen::llvm::FunctionMonomorphization;
 use crate::codegen::llvm::StructMonomorphization;
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::Arc;
+use std::sync::RwLock;
 use tracing;
 // EnhancedMonomorphization provides functionality for field accessors
 use crate::codegen::llvm::enhanced_monomorphization::EnhancedMonomorphization;
@@ -56,7 +56,7 @@ pub struct MonomorphizationManager {
     
     // Reference to the type checker for interface implementation checks
     // This is optional because it may not be available during construction
-    type_checker: Option<Rc<RefCell<TypeChecker>>>,
+    type_checker: Option<Arc<RwLock<TypeChecker>>>,
 }
 
 impl Default for MonomorphizationManager {
@@ -83,7 +83,7 @@ impl MonomorphizationManager {
     /// # Returns
     ///
     /// * Self with type checker configured
-    pub fn with_type_checker(mut self, type_checker: Rc<RefCell<TypeChecker>>) -> Self {
+    pub fn with_type_checker(mut self, type_checker: Arc<RwLock<TypeChecker>>) -> Self {
         tracing::info!("Configuring monomorphization manager with type checker");
         self.type_checker = Some(type_checker);
         
@@ -465,8 +465,8 @@ impl MonomorphizationManager {
             
             // Check each constraint
             for constraint in &generic_function.generic_constraints {
-                let param_name = &constraint.type_parameter.value;
-                let interface_name = &constraint.trait_name.value;
+                let param_name = &constraint.parameter_name;
+                let interface_name = &constraint.interface_name;
                 
                 // Get the concrete type for this parameter
                 if let Some(concrete_type) = type_map.get(param_name) {

@@ -366,7 +366,7 @@ impl<'ctx> BinaryCompiler<'ctx> {
         let file_path = PathBuf::from("binary_compile.csd"); // Default path for binary compilation
         
         // Create a type checker instance for interface implementation checking
-        let type_checker = std::rc::Rc::new(std::cell::RefCell::new(crate::core::type_checker::TypeChecker::new()));
+        let type_checker = std::sync::Arc::new(std::sync::RwLock::new(crate::core::type_checker::TypeChecker::new()));
         
         // Create the code generator
         let mut code_gen = LlvmCodeGenerator::new(self.context, &module_name, file_path);

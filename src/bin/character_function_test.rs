@@ -1,11 +1,11 @@
 //! Simple test executable for character functions
 use cursed::object::Object;
 use cursed::stdlib::is_uppercase;
-use std::rc::Rc;
+use std::sync::Arc;
 
 fn main() {
     // Test is_uppercase
-    let result = is_uppercase::is_uppercase(&[Rc::new(Object::String("A".to_string()))]);
+    let result = is_uppercase::is_uppercase(&[Arc::new(Object::String("A".to_string()))]);
     match result {
         Ok(obj) => {
             match *obj {
@@ -17,7 +17,7 @@ fn main() {
     }
     
     // Test is_lowercase
-    let result = is_uppercase::is_lowercase(&[Rc::new(Object::String("a".to_string()))]);
+    let result = is_uppercase::is_lowercase(&[Arc::new(Object::String("a".to_string()))]);
     match result {
         Ok(obj) => {
             match *obj {
@@ -29,7 +29,7 @@ fn main() {
     }
     
     // Test is_digit
-    let result = is_uppercase::is_digit(&[Rc::new(Object::String("9".to_string()))]);
+    let result = is_uppercase::is_digit(&[Arc::new(Object::String("9".to_string()))]);
     match result {
         Ok(obj) => {
             match *obj {
@@ -41,7 +41,7 @@ fn main() {
     }
 
     // Test is_alpha
-    let result = is_uppercase::is_alpha(&[Rc::new(Object::String("A".to_string()))]);
+    let result = is_uppercase::is_alpha(&[Arc::new(Object::String("A".to_string()))]);
     match result {
         Ok(obj) => {
             match *obj {
@@ -53,7 +53,7 @@ fn main() {
     }
 
     // Test to_uppercase
-    let result = is_uppercase::to_uppercase(&[Rc::new(Object::String("a".to_string()))]);
+    let result = is_uppercase::to_uppercase(&[Arc::new(Object::String("a".to_string()))]);
     match result {
         Ok(obj) => {
             match &*obj {
@@ -65,7 +65,7 @@ fn main() {
     }
 
     // Test to_lowercase 
-    let result = is_uppercase::to_lowercase(&[Rc::new(Object::String("A".to_string()))]);
+    let result = is_uppercase::to_lowercase(&[Arc::new(Object::String("A".to_string()))]);
     match result {
         Ok(obj) => {
             match &*obj {

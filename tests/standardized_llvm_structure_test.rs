@@ -6,7 +6,7 @@
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use cursed::ast::expressions::{IntegerLiteral, FloatLiteral, Identifier};
 use cursed::ast::pointer::{PointerType, PointerDereference};

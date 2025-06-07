@@ -3,7 +3,7 @@
 //! This test directly tests the MonomorphizationManager.check_constraint function
 //! without requiring the entire codebase to compile.
 
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::codegen::monomorphization::MonomorphizationManager;

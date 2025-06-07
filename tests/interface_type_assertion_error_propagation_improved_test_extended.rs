@@ -2,7 +2,7 @@
 //! with actual interface hierarchies and type assertion scenarios
 
 use std::sync::Arc;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 use cursed::ast::expressions::TypeAssertion;

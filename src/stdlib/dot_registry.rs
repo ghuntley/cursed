@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::rc::Rc;
+use std::sync::Arc;
 use once_cell::sync::Lazy;
 use crate::error::Error;
 use serde_json::{Value, json};
@@ -732,7 +732,7 @@ fn cryptz_md5sum_handler(args: Vec<String>) -> Result<String, Error> {
     let input = &args[0];
     
     // Call the md5sum function from the cryptz module
-    match crate::stdlib::cryptz::md5sum(&[Rc::new(crate::object::Object::String(input.clone()))]) {
+    match crate::stdlib::cryptz::md5sum(&[Arc::new(crate::object::Object::String(input.clone()))]) {
         Ok(result) => {
             if let crate::object::Object::String(hash) = &*result {
                 Ok(hash.clone())
@@ -752,7 +752,7 @@ fn cryptz_sha1sum_handler(args: Vec<String>) -> Result<String, Error> {
     let input = &args[0];
     
     // Call the sha1sum function from the cryptz module
-    match crate::stdlib::cryptz::sha1sum(&[Rc::new(crate::object::Object::String(input.clone()))]) {
+    match crate::stdlib::cryptz::sha1sum(&[Arc::new(crate::object::Object::String(input.clone()))]) {
         Ok(result) => {
             if let crate::object::Object::String(hash) = &*result {
                 Ok(hash.clone())
@@ -772,7 +772,7 @@ fn cryptz_sha256sum_handler(args: Vec<String>) -> Result<String, Error> {
     let input = &args[0];
     
     // Call the sha256sum function from the cryptz module
-    match crate::stdlib::cryptz::sha256sum(&[Rc::new(crate::object::Object::String(input.clone()))]) {
+    match crate::stdlib::cryptz::sha256sum(&[Arc::new(crate::object::Object::String(input.clone()))]) {
         Ok(result) => {
             if let crate::object::Object::String(hash) = &*result {
                 Ok(hash.clone())
@@ -795,9 +795,9 @@ fn cryptz_hmac_handler(args: Vec<String>) -> Result<String, Error> {
     
     // Call the hmac function from the cryptz module
     let hmac_args = vec![
-        Rc::new(crate::object::Object::String(data.clone())),
-        Rc::new(crate::object::Object::String(key.clone())),
-        Rc::new(crate::object::Object::String(algorithm.clone())),
+        Arc::new(crate::object::Object::String(data.clone())),
+        Arc::new(crate::object::Object::String(key.clone())),
+        Arc::new(crate::object::Object::String(algorithm.clone())),
     ];
     
     match crate::stdlib::cryptz::hmac(&hmac_args) {
@@ -825,7 +825,7 @@ fn cryptz_random_bytes_handler(args: Vec<String>) -> Result<String, Error> {
     };
     
     // Call the random_bytes function from the cryptz module
-    match crate::stdlib::cryptz::random_bytes(&[Rc::new(crate::object::Object::Integer(length))]) {
+    match crate::stdlib::cryptz::random_bytes(&[Arc::new(crate::object::Object::Integer(length))]) {
         Ok(result) => {
             if let crate::object::Object::Array(bytes) = &*result {
                 // Convert the array to a JSON string representation

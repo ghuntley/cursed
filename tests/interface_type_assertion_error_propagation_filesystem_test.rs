@@ -4,7 +4,7 @@
 //! effectively leverages filesystem source location information to generate rich error messages.
 
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 #[path = "common.rs"]

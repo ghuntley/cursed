@@ -4,27 +4,27 @@
 #[cfg(disable_test)]
 mod tests {
 use cursed::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 use cursed::stdlib;
 
 #[test]
 fn test_is_uppercase() {
     // Test is_uppercase
-    let result = stdlib::is_uppercase(&[Rc::new(Object::String("A".to_string()))]);
+    let result = stdlib::is_uppercase(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, true),
         _ => panic!("Expected boolean result")
     }
     
-    let result = stdlib::is_uppercase(&[Rc::new(Object::String("a".to_string()))]);
+    let result = stdlib::is_uppercase(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, false),
         _ => panic!("Expected boolean result")
     }
     
-    let result = stdlib::is_uppercase(&[Rc::new(Object::String("9".to_string()))]);
+    let result = stdlib::is_uppercase(&[Arc::new(Object::String("9".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, false),
@@ -35,14 +35,14 @@ fn test_is_uppercase() {
 #[test]
 fn test_is_lowercase() {
     // Test is_lowercase
-    let result = stdlib::is_lowercase(&[Rc::new(Object::String("A".to_string()))]);
+    let result = stdlib::is_lowercase(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, false),
         _ => panic!("Expected boolean result")
     }
     
-    let result = stdlib::is_lowercase(&[Rc::new(Object::String("a".to_string()))]);
+    let result = stdlib::is_lowercase(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, true),
@@ -53,14 +53,14 @@ fn test_is_lowercase() {
 #[test]
 fn test_is_digit() {
     // Test is_digit
-    let result = stdlib::is_digit(&[Rc::new(Object::String("A".to_string()))]);
+    let result = stdlib::is_digit(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, false),
         _ => panic!("Expected boolean result")
     }
     
-    let result = stdlib::is_digit(&[Rc::new(Object::String("9".to_string()))]);
+    let result = stdlib::is_digit(&[Arc::new(Object::String("9".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, true),
@@ -71,21 +71,21 @@ fn test_is_digit() {
 #[test]
 fn test_is_alpha() {
     // Test is_alpha
-    let result = stdlib::is_alpha(&[Rc::new(Object::String("A".to_string()))]);
+    let result = stdlib::is_alpha(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, true),
         _ => panic!("Expected boolean result")
     }
     
-    let result = stdlib::is_alpha(&[Rc::new(Object::String("a".to_string()))]);
+    let result = stdlib::is_alpha(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, true),
         _ => panic!("Expected boolean result")
     }
     
-    let result = stdlib::is_alpha(&[Rc::new(Object::String("9".to_string()))]);
+    let result = stdlib::is_alpha(&[Arc::new(Object::String("9".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, false),
@@ -96,14 +96,14 @@ fn test_is_alpha() {
 #[test]
 fn test_to_uppercase() {
     // Test to_uppercase
-    let result = stdlib::to_uppercase(&[Rc::new(Object::String("a".to_string()))]);
+    let result = stdlib::to_uppercase(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "A"),
         _ => panic!("Expected string result")
     }
     
-    let result = stdlib::to_uppercase(&[Rc::new(Object::String("A".to_string()))]);
+    let result = stdlib::to_uppercase(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "A"),
@@ -114,14 +114,14 @@ fn test_to_uppercase() {
 #[test]
 fn test_to_lowercase() {
     // Test to_lowercase
-    let result = stdlib::to_lowercase(&[Rc::new(Object::String("A".to_string()))]);
+    let result = stdlib::to_lowercase(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "a"),
         _ => panic!("Expected string result")
     }
     
-    let result = stdlib::to_lowercase(&[Rc::new(Object::String("a".to_string()))]);
+    let result = stdlib::to_lowercase(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "a"),
@@ -136,11 +136,11 @@ fn test_error_handling() {
     assert!(result.is_err());
     
     // Test with non-character
-    let result = stdlib::is_uppercase(&[Rc::new(Object::Integer(42))]);
+    let result = stdlib::is_uppercase(&[Arc::new(Object::Integer(42))]);
     assert!(result.is_err());
     
     // Test with multiple character string
-    let result = stdlib::is_uppercase(&[Rc::new(Object::String("ABC".to_string()))]);
+    let result = stdlib::is_uppercase(&[Arc::new(Object::String("ABC".to_string()))]);
     assert!(result.is_err());
 }
 }

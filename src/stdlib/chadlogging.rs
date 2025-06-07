@@ -4,9 +4,9 @@
 use crate::memory::{Traceable, Tag, Visitor};
 use crate::object::{self, Object};
 use crate::prelude::*;
-use std::cell::RefCell;
+use std::sync::RwLock;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::fmt;
 
@@ -173,7 +173,7 @@ pub trait Handler: Traceable {
 
 /// TextHandler formats logs as key=value pairs
 pub struct TextHandler {
-    writer: Rc<RefCell<Vec<String>>>,
+    writer: Arc<RwLock<Vec<String>>>,
     attrs: Vec<Attr>,
     groups: Vec<String>,
     options: HandlerOptions,
@@ -181,7 +181,7 @@ pub struct TextHandler {
 
 impl TextHandler {
     /// Create a new TextHandler with default options
-    pub fn new(writer: Rc<RefCell<Vec<String>>>) -> Self {
+    pub fn new(writer: Arc<RwLock<Vec<String>>>) -> Self {
         TextHandler {
             writer,
             attrs: Vec::new(),
@@ -191,7 +191,7 @@ impl TextHandler {
     }
     
     /// Create a new TextHandler with specified options
-    pub fn new_with_options(writer: Rc<RefCell<Vec<String>>>, options: HandlerOptions) -> Self {
+    pub fn new_with_options(writer: Arc<RwLock<Vec<String>>>, options: HandlerOptions) -> Self {
         TextHandler {
             writer,
             attrs: Vec::new(),
@@ -286,7 +286,7 @@ impl Handler for TextHandler {
         let log_line = parts.join(" ");
         
         // Write to the output
-        self.writer.borrow_mut().push(log_line);
+        self.writer.write().unwrap().push(log_line);
         
         true
     }
@@ -320,7 +320,7 @@ impl Traceable for TextHandler {
 
 /// JSONHandler formats logs as JSON objects
 pub struct JSONHandler {
-    writer: Rc<RefCell<Vec<String>>>,
+    writer: Arc<RwLock<Vec<String>>>,
     attrs: Vec<Attr>,
     groups: Vec<String>,
     options: HandlerOptions,
@@ -328,7 +328,7 @@ pub struct JSONHandler {
 
 impl JSONHandler {
     /// Create a new JSONHandler with default options
-    pub fn new(writer: Rc<RefCell<Vec<String>>>) -> Self {
+    pub fn new(writer: Arc<RwLock<Vec<String>>>) -> Self {
         JSONHandler {
             writer,
             attrs: Vec::new(),
@@ -338,7 +338,7 @@ impl JSONHandler {
     }
     
     /// Create a new JSONHandler with specified options
-    pub fn new_with_options(writer: Rc<RefCell<Vec<String>>>, options: HandlerOptions) -> Self {
+    pub fn new_with_options(writer: Arc<RwLock<Vec<String>>>, options: HandlerOptions) -> Self {
         JSONHandler {
             writer,
             attrs: Vec::new(),
@@ -448,7 +448,7 @@ impl Handler for JSONHandler {
         let json_line = format!("{{{}}}", json_fields.join(","));
         
         // Write to the output
-        self.writer.borrow_mut().push(json_line);
+        self.writer.write().unwrap().push(json_line);
         
         true
     }
@@ -482,14 +482,14 @@ impl Traceable for JSONHandler {
 
 /// TestHandler for capturing logs in tests
 pub struct TestHandler {
-    logs: Rc<RefCell<Vec<Record>>>,
+    logs: Arc<RwLock<Vec<Record>>>,
     attrs: Vec<Attr>,
     groups: Vec<String>,
 }
 
 impl TestHandler {
     /// Create a new TestHandler
-    pub fn new(logs: Rc<RefCell<Vec<Record>>>) -> Self {
+    pub fn new(logs: Arc<RwLock<Vec<Record>>>) -> Self {
         TestHandler {
             logs,
             attrs: Vec::new(),
@@ -540,7 +540,7 @@ impl Handler for TestHandler {
         };
         
         // Store the record
-        self.logs.borrow_mut().push(new_record);
+        self.logs.write().unwrap().push(new_record);
         true
     }
     
@@ -710,7 +710,7 @@ pub fn default() -> Logger {
     unsafe {
         if DEFAULT_LOGGER.is_none() {
             // Create a default logger with a TextHandler that writes to stdout
-            let buffer = Rc::new(RefCell::new(Vec::new()));
+            let buffer = Arc::new(RwLock::new(Vec::new()));
             let handler = TextHandler::new(buffer);
             DEFAULT_LOGGER = Some(Logger::new(Box::new(handler)));
         }

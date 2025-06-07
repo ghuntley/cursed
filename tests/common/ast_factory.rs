@@ -6,7 +6,7 @@ use cursed::ast::Token;
 use cursed::ast::declarations::SquadStatement;
 use cursed::ast::declarations::FieldDeclaration;
 use cursed::ast::base::Identifier;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct AstFactory {}
 

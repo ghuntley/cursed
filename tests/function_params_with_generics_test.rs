@@ -58,14 +58,14 @@ slay add[T](x T, y T) T {
     assert_eq!(func_stmt.parameters[1].name.value, "y", "Second parameter should be 'y'");
     
     // Check parameter types
-    assert_eq!(func_stmt.parameters[0].type_name.token_literal(), "T", 
+    assert_eq!(func_stmt.parameters[0].type_name, "T", 
               "Parameter x should have type T");
-    assert_eq!(func_stmt.parameters[1].type_name.token_literal(), "T", 
+    assert_eq!(func_stmt.parameters[1].type_name, "T", 
               "Parameter y should have type T");
     
     // Check return type
     assert!(func_stmt.return_type.is_some(), "Should have a return type");
-    let return_type = func_stmt.return_type.as_ref().unwrap().token_literal();
+    let return_type = func_stmt.return_type.as_ref().unwrap();
     assert_eq!(return_type, "T", "Return type should be 'T'");
 }
 
@@ -103,9 +103,9 @@ slay pair[A, B](first A, second B) {
     assert_eq!(func_stmt.parameters[1].name.value, "second", "Second parameter should be 'second'");
     
     // Check parameter types
-    assert_eq!(func_stmt.parameters[0].type_name.token_literal(), "A", 
+    assert_eq!(func_stmt.parameters[0].type_name, "A", 
               "Parameter first should have type A");
-    assert_eq!(func_stmt.parameters[1].type_name.token_literal(), "B", 
+    assert_eq!(func_stmt.parameters[1].type_name, "B", 
               "Parameter second should have type B");
     
     // No return type in this case

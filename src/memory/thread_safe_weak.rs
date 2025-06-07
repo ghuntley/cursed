@@ -4,7 +4,7 @@
 //! Thread-safe weak references ensure proper memory management with concurrency.
 
 use std::marker::PhantomData;
-use std::sync::{Arc, Weak as StdWeak};
+use std::sync::{Arc, Mutex, Weak as StdWeak};
 use tracing::{debug, error, info, trace, warn, instrument};
 
 use crate::memory::{Traceable, GarbageCollector, ThreadSafeGc};
@@ -192,7 +192,6 @@ unsafe impl<T: Traceable + Send + Sync + 'static> Sync for ThreadSafeWeak<T> {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
     
     #[derive(Debug)]
     struct ThreadSafeTestObject {
