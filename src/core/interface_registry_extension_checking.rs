@@ -406,6 +406,12 @@ mod tests {
         // Register interfaces and extensions
         {
             let mut registry = arc_registry.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("Animal");
+            registry.register_interface("Mammal");
+            registry.register_interface("Dog");
+            registry.register_interface("Bird");
+            // Then register the extensions
             registry.register_extension("Animal", "Mammal").unwrap();
             registry.register_extension("Mammal", "Dog").unwrap();
             registry.register_extension("Animal", "Bird").unwrap();
@@ -440,6 +446,12 @@ mod tests {
         // Register interfaces and extensions
         {
             let mut registry = arc_registry.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("Base");
+            registry.register_interface("Derived1");
+            registry.register_interface("Derived2");
+            registry.register_interface("Derived3");
+            // Then register the extensions
             registry.register_extension("Base", "Derived1").unwrap();
             registry.register_extension("Derived1", "Derived2").unwrap();
             registry.register_extension("Derived2", "Derived3").unwrap();
@@ -472,6 +484,11 @@ mod tests {
         // Register interfaces and extensions to create multiple paths
         {
             let mut registry = arc_registry.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("A");
+            registry.register_interface("B");
+            registry.register_interface("C");
+            registry.register_interface("D");
             // Path 1: A -> B -> D
             registry.register_extension("A", "B").unwrap();
             registry.register_extension("B", "D").unwrap();
@@ -510,6 +527,11 @@ mod tests {
         // Register interfaces and extensions
         {
             let mut registry = arc_registry.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("Parent");
+            registry.register_interface("Child");
+            registry.register_interface("GrandChild");
+            // Then register the extensions
             registry.register_extension("Parent", "Child").unwrap();
             registry.register_extension("Child", "GrandChild").unwrap();
         }
@@ -532,6 +554,12 @@ mod tests {
         
         {
             let mut registry = arc_registry2.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("A");
+            registry.register_interface("B");
+            registry.register_interface("C");
+            registry.register_interface("D");
+            // Then register the extensions
             registry.register_extension("A", "B").unwrap();
             registry.register_extension("C", "D").unwrap();
         }
@@ -552,6 +580,13 @@ mod tests {
         // Register interfaces and extensions
         {
             let mut registry = arc_registry.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("Root");
+            registry.register_interface("Child1");
+            registry.register_interface("Child2");
+            registry.register_interface("GrandChild1");
+            registry.register_interface("GrandChild2");
+            // Then register the extensions
             registry.register_extension("Root", "Child1").unwrap();
             registry.register_extension("Root", "Child2").unwrap();
             registry.register_extension("Child1", "GrandChild1").unwrap();
@@ -586,6 +621,15 @@ mod tests {
         // Register interfaces and extensions
         {
             let mut registry = arc_registry.write().unwrap();
+            // First register the interfaces
+            registry.register_interface("Animal");
+            registry.register_interface("Mammal");
+            registry.register_interface("Bird");
+            registry.register_interface("Dog");
+            registry.register_interface("Cat");
+            registry.register_interface("Eagle");
+            registry.register_interface("Penguin");
+            // Then register the extensions
             registry.register_extension("Animal", "Mammal").unwrap();
             registry.register_extension("Animal", "Bird").unwrap();
             registry.register_extension("Mammal", "Dog").unwrap();
