@@ -20,7 +20,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     fn get_type_size_in_bytes(&self, ty: BasicTypeEnum<'ctx>) -> u64 {
         if ty.is_int_type() {
             let bit_width = ty.into_int_type().get_bit_width();
-            (bit_width + 7) / 8 // Round up to nearest byte
+            ((bit_width + 7) / 8) as u64 // Round up to nearest byte
         } else if ty.is_float_type() {
             // Handle float types based on their size
             let float_ty = ty.into_float_type();
@@ -49,12 +49,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             let array_type = ty.into_array_type();
             let elem_size = self.get_type_size_in_bytes(array_type.get_element_type());
             let len = array_type.len();
-            elem_size * len
+            elem_size * (len as u64)
         } else if ty.is_vector_type() {
             let vector_type = ty.into_vector_type();
             let elem_size = self.get_type_size_in_bytes(vector_type.get_element_type());
             let len = vector_type.get_size();
-            elem_size * len
+            elem_size * (len as u64)
         } else {
             // Default fallback for types we don't handle explicitly
             8 // Reasonable default for unknown types

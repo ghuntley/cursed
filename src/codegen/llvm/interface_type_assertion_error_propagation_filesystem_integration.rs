@@ -40,6 +40,7 @@ use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
 use crate::codegen::llvm::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
@@ -425,7 +426,10 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         // Call the error propagation function with the enhanced message and location
         self.call_error_propagation_function(
             error_message_ptr.into(),
-            location_struct
+            self.create_string_constant(source_type).into(),
+            self.create_string_constant(target_type).into(),
+            location_struct,
+            self.create_string_constant("").into()
         )
     }
 }

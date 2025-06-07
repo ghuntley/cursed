@@ -90,10 +90,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     pub fn get_struct_type_from_ptr(&self, ptr: inkwell::values::PointerValue<'ctx>) 
         -> Result<(inkwell::types::StructType<'ctx>, String), Error> {
         // Get the element type that this pointer points to
-        let pointee_type = ptr.get_type().get_pointee_type();
+        let pointee_type = ptr.get_type().get_element_type();
         
         // Check if it's a struct type - we can directly check this from the LLVM type
-        if let Ok(struct_type) = pointee_type.try_into_struct_type() {
+        if let BasicTypeEnum::StructType(struct_type) = pointee_type {
             // Get the struct name from LLVM (if it has one)
             if let Some(struct_name) = struct_type.get_name() {
                 // Convert from CString to regular String
@@ -156,8 +156,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
             // Check in GC metadata for field name -> index mapping
             if let Some(gc_fields) = self.gc_metadata.get(struct_name) {
-                for (idx, field_info) in gc_fields.iter() {
-                    if field_info.1 == *field_name {
+                for (idx, field_name_in_metadata) in gc_fields.iter() {
+                    if field_name_in_metadata == field_name {
                         // Make sure the index is valid
                         if *idx < field_count as usize {
                             // Get the field type

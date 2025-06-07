@@ -27,8 +27,8 @@ impl fmt::Debug for ThreadSafeInterfaceExtensionRegistry {
         
         // Attempt to get all interfaces
         let all_interfaces = match self.get_all_interfaces() {
-            Ok(interfaces) => interfaces,
-            Err(_) => {
+            Some(interfaces) => interfaces,
+            None => {
                 // If we can't acquire the lock, show a placeholder
                 debug_struct.field("registry", &"<lock acquisition failed>");
                 return debug_struct.finish();
@@ -66,7 +66,7 @@ pub mod visualization {
             let mut result = String::from("Interface Extension Hierarchy:\n");
             
             // Get all interfaces
-            let all_interfaces = self.get_all_interfaces()?;
+            let all_interfaces = self.get_all_interfaces().ok_or_else(|| Error::Internal("Failed to get interfaces".to_string()))?;
             
             // Sort interfaces for consistent output
             let mut sorted_interfaces: Vec<_> = all_interfaces.into_iter().collect();
@@ -99,7 +99,7 @@ pub mod visualization {
             result.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n");
             
             // Get all interfaces
-            let all_interfaces = self.get_all_interfaces()?;
+            let all_interfaces = self.get_all_interfaces().ok_or_else(|| Error::Internal("Failed to get interfaces".to_string()))?;
             
             // Add nodes
             for interface in &all_interfaces {

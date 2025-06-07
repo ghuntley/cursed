@@ -132,8 +132,7 @@ impl<'ctx> RangeClauseErrorRecovery<'ctx> for LlvmCodeGenerator<'ctx> {
         // We'll use the normal runtime function, but with our empty map
         self.ensure_runtime_container_functions()?;
         
-        let module = self.module()
-            .ok_or_else(|| Error::Compilation("Module not available".to_string()))?;
+        let module = self.module();
         
         // Get or create the map iterator create function
         let fn_name = "map_iterator_create";
@@ -267,8 +266,7 @@ impl<'ctx> RangeClauseErrorRecovery<'ctx> for LlvmCodeGenerator<'ctx> {
         // to a safe state that will report no more elements available
         
         // Get the module
-        let module = self.module()
-            .ok_or_else(|| Error::Compilation("Module not available".to_string()))?;
+        let module = self.module();
         
         // Define or get a function to reset an iterator to safe state
         let fn_name = "reset_iterator_to_end";

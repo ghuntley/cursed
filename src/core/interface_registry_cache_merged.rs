@@ -290,7 +290,7 @@ pub mod test_common {
     pub fn create_test_registry_cache() -> Arc<RwLock<ThreadSafeInterfaceRegistryLruCache>> {
         trace!("Creating test registry cache");
         let registry = create_test_registry_with_visualization();
-        let cache = ThreadSafeInterfaceRegistryLruCache::new(100, registry.clone());
+        let cache = ThreadSafeInterfaceRegistryLruCache::new(registry.clone(), 100);
         Arc::new(RwLock::new(cache))
     }
     

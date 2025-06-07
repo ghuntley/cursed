@@ -734,7 +734,7 @@ fn cryptz_md5sum_handler(args: Vec<String>) -> Result<String, Error> {
     // Call the md5sum function from the cryptz module
     match crate::stdlib::cryptz::md5sum(&[Arc::new(crate::object::Object::String(input.clone()))]) {
         Ok(result) => {
-            if let crate::object::Object::String(hash) = &*result {
+            if let crate::object::Object::String(hash) = result {
                 Ok(hash.clone())
             } else {
                 Err(Error::from_str("Unexpected result type from md5sum"))
@@ -754,7 +754,7 @@ fn cryptz_sha1sum_handler(args: Vec<String>) -> Result<String, Error> {
     // Call the sha1sum function from the cryptz module
     match crate::stdlib::cryptz::sha1sum(&[Arc::new(crate::object::Object::String(input.clone()))]) {
         Ok(result) => {
-            if let crate::object::Object::String(hash) = &*result {
+            if let crate::object::Object::String(hash) = result {
                 Ok(hash.clone())
             } else {
                 Err(Error::from_str("Unexpected result type from sha1sum"))
@@ -774,7 +774,7 @@ fn cryptz_sha256sum_handler(args: Vec<String>) -> Result<String, Error> {
     // Call the sha256sum function from the cryptz module
     match crate::stdlib::cryptz::sha256sum(&[Arc::new(crate::object::Object::String(input.clone()))]) {
         Ok(result) => {
-            if let crate::object::Object::String(hash) = &*result {
+            if let crate::object::Object::String(hash) = result {
                 Ok(hash.clone())
             } else {
                 Err(Error::from_str("Unexpected result type from sha256sum"))
@@ -802,7 +802,7 @@ fn cryptz_hmac_handler(args: Vec<String>) -> Result<String, Error> {
     
     match crate::stdlib::cryptz::hmac(&hmac_args) {
         Ok(result) => {
-            if let crate::object::Object::String(hash) = &*result {
+            if let crate::object::Object::String(hash) = result {
                 Ok(hash.clone())
             } else {
                 Err(Error::from_str("Unexpected result type from hmac"))
@@ -827,11 +827,11 @@ fn cryptz_random_bytes_handler(args: Vec<String>) -> Result<String, Error> {
     // Call the random_bytes function from the cryptz module
     match crate::stdlib::cryptz::random_bytes(&[Arc::new(crate::object::Object::Integer(length))]) {
         Ok(result) => {
-            if let crate::object::Object::Array(bytes) = &*result {
+            if let crate::object::Object::Array(bytes) = result {
                 // Convert the array to a JSON string representation
                 let bytes_json: Vec<Value> = bytes.iter()
                     .map(|b| {
-                        if let crate::object::Object::Integer(n) = &*b {
+                        if let crate::object::Object::Integer(n) = &**b {
                             Value::Number(serde_json::Number::from(*n))
                         } else {
                             Value::Null

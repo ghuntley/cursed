@@ -23,7 +23,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> Result<PointerValue<'ctx>, Error> {
         // For now, we only support string literals
         if let Some(string_lit) = expr.as_any().downcast_ref::<crate::ast::StringLiteral>() {
-            return self.create_string_constant(&string_lit.value)?;
+            return self.create_string_constant(&string_lit.value);
         }
 
         Err(Error::codegen(

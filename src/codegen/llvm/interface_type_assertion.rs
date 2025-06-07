@@ -79,7 +79,7 @@ pub trait ImprovedTypeAssertion<'ctx>: InterfaceTypeAssertion<'ctx> {
     ) -> Result<(), Error>;
     
     /// Calculate a hash for a type name
-    fn hash_type_name(type_name: &str) -> u64 {
+    fn hash_type_name(&self, type_name: &str) -> u64 {
         // FNV-1a hash algorithm
         let mut hash: u64 = 0xcbf29ce484222325;
         for byte in type_name.bytes() {
@@ -98,7 +98,7 @@ impl<'ctx> ImprovedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // For now, implement a simple type ID calculation
         // In a full implementation, this would return a richer structure with type hierarchy info
         let ctx = self.context();
-        let type_id = Self::hash_type_name(type_name);
+        let type_id = self.hash_type_name(type_name);
         Ok(ctx.i64_type().const_int(type_id, false).into())
     }
     

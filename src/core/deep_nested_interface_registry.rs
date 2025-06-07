@@ -97,7 +97,7 @@ impl DeepNestedInterfaceRegistry {
     }
     
     /// Populate with default deep nested constraint relationships
-    fn populate_deep_nested_defaults(&mut self) {
+    pub fn populate_deep_nested_defaults(&mut self) {
         // Register deep nested constraints for common container types
         
         // NestedMap[K, V] where if V is a Container[E], E must be Comparable

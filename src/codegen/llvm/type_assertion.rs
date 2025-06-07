@@ -285,7 +285,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     // Simple hash function for type names
-    fn hash_type_name(&self, type_name: &str) -> u64 {
+    pub fn hash_type_name(&self, type_name: &str) -> u64 {
         // FNV-1a hash algorithm
         let mut hash: u64 = 0xcbf29ce484222325;
         for byte in type_name.bytes() {

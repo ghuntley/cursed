@@ -58,6 +58,7 @@ pub trait EnhancedInterfacePathFinder {
 }
 
 /// Concrete implementation of the EnhancedInterfacePathFinder trait that adds multi-path support
+#[derive(Clone)]
 pub struct MultiPathFinder<'ctx> {
     /// The interface type registry used for lookups
     pub registry: &'ctx dyn InterfaceTypeRegistry,

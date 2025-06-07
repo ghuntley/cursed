@@ -448,26 +448,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper method to safely get the module reference for the range clause implementation
     #[inline]
     fn get_module_ref(&self) -> Result<&inkwell::module::Module<'ctx>, Error> {
-        if let Some(module) = self.module() {
-            Ok(module)
-        } else {
-            Err(Error::Compilation("Module not available".to_string()))
-        }
+        Ok(self.module())
     }
     
     /// Helper method to get element type from pointer type
     #[inline]
     fn get_pointee_type(&self, ptr_type: inkwell::types::PointerType<'ctx>) -> inkwell::types::BasicTypeEnum<'ctx> {
         // Get the element type of the pointer using the proper LLVM API
-        use inkwell::types::AnyTypeEnum;
+        use inkwell::types::BasicTypeEnum;
         match ptr_type.get_element_type() {
-            AnyTypeEnum::ArrayType(t) => t.into(),
-            AnyTypeEnum::FloatType(t) => t.into(),
-            AnyTypeEnum::IntType(t) => t.into(),
-            AnyTypeEnum::PointerType(t) => t.into(),
-            AnyTypeEnum::StructType(t) => t.into(),
-            AnyTypeEnum::VectorType(t) => t.into(),
-            _ => self.context.i32_type().into() // Fallback for unsupported types
+            BasicTypeEnum::ArrayType(t) => t.into(),
+            BasicTypeEnum::FloatType(t) => t.into(),
+            BasicTypeEnum::IntType(t) => t.into(),
+            BasicTypeEnum::PointerType(t) => t.into(),
+            BasicTypeEnum::StructType(t) => t.into(),
+            BasicTypeEnum::VectorType(t) => t.into(),
         }
     }
     /// Get the length of a container
@@ -477,7 +472,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// appropriately. For arrays, it uses the type's length property, while for
     /// other containers, it accesses length fields or calls length methods.
     #[instrument(skip(self, container), level = "debug")]
-    fn emit_container_length_fixed(&self, container: BasicValueEnum<'ctx>) -> Result<IntValue<'ctx>, Error> {
+    pub fn emit_container_length_fixed(&self, container: BasicValueEnum<'ctx>) -> Result<IntValue<'ctx>, Error> {
         if container.is_array_value() {
             // For array values, get length from the type
             let array_value = container.into_array_value();
@@ -516,7 +511,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     };
                     
                     // Load the length value
-                    let type_name = struct_type.get_name().map_or("unnamed", |n| n.to_str().unwrap_or("unnamed"));
+                    let type_name = struct_type.get_name().map(|n| n.to_str().unwrap_or("unnamed")).unwrap_or("unnamed");
                     debug!("Loading length field from struct type: {}", type_name);
                     
                     // Determine length field type - default to i32 if we can't determine it
@@ -648,7 +643,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// - Pointers to arrays: Uses proper GEP instructions
     /// - Slices and other container types: Handles through appropriate pointer arithmetic
     #[instrument(skip(self, container, index), level = "debug")]
-    fn emit_get_element_fixed(&self, container: BasicValueEnum<'ctx>, index: IntValue<'ctx>) -> Result<BasicValueEnum<'ctx>, Error> {
+    pub fn emit_get_element_fixed(&self, container: BasicValueEnum<'ctx>, index: IntValue<'ctx>) -> Result<BasicValueEnum<'ctx>, Error> {
         if container.is_array_value() {
             // For arrays, get element at index
             let array_value = container.into_array_value();
@@ -698,7 +693,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // For slices, we need to extract the data pointer and then index it
                 
                 if let BasicTypeEnum::StructType(struct_type) = pointee_type {
-                    let type_name = struct_type.get_name().to_str().unwrap_or("unknown");
+                    let type_name = struct_type.get_name().map(|s| s.to_str()).unwrap_or(Ok("unknown")).unwrap_or("unknown");
                     debug!("Accessing element from struct container: {}", type_name);
                     
                     // For slice types, the first field is typically the data pointer
@@ -867,7 +862,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// - For pointers to slices: extracts the element type from slice structure
     /// - For other containers: attempts to determine element type from context
     #[instrument(skip(self, container), level = "debug")]
-    fn determine_element_type_fixed(&self, container: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
+    pub fn determine_element_type_fixed(&self, container: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
         if container.is_array_value() {
             // For arrays, get element type directly
             let array_value = container.into_array_value();
@@ -1004,7 +999,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Create an iterator for a map
-    fn emit_map_iterator_create_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<PointerValue<'ctx>, Error> {
+    pub fn emit_map_iterator_create_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<PointerValue<'ctx>, Error> {
         debug!("Creating map iterator");
         if !map_value.is_pointer_value() {
             return Err(Error::CodeGenError("Expected map to be a pointer type".to_string()));
@@ -1043,7 +1038,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Check if a map iterator has more elements
-    fn emit_map_iterator_has_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<IntValue<'ctx>, Error> {
+    pub fn emit_map_iterator_has_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<IntValue<'ctx>, Error> {
         debug!("Checking if map iterator has next element");
         
         // Get the module reference safely
@@ -1086,7 +1081,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Get current key-value pair from map iterator and advance
-    fn emit_map_iterator_get_current_fixed(
+    pub fn emit_map_iterator_get_current_fixed(
         &self,
         iterator_ptr: PointerValue<'ctx>,
         key_ptr: PointerValue<'ctx>,
@@ -1142,7 +1137,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Advance a map iterator to the next element
-    fn emit_map_iterator_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<(), Error> {
+    pub fn emit_map_iterator_next_fixed(&self, iterator_ptr: PointerValue<'ctx>) -> Result<(), Error> {
         debug!("Advancing map iterator to next element");
         
         // Get the module reference safely
@@ -1167,14 +1162,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Determine the key type for a map
-    fn determine_map_key_type_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
+    pub fn determine_map_key_type_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
         // Use the improved map iteration enhancements functionality
         use crate::codegen::llvm::map_iteration_improvements::MapIterationEnhancements;
         self.determine_map_key_type(map_value)
     }
     
     /// Determine the value type for a map
-    fn determine_map_value_type_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
+    pub fn determine_map_value_type_fixed(&self, map_value: BasicValueEnum<'ctx>) -> Result<BasicTypeEnum<'ctx>, Error> {
         // Use the improved map iteration enhancements functionality
         use crate::codegen::llvm::map_iteration_improvements::MapIterationEnhancements;
         self.determine_map_value_type(map_value)
@@ -1183,7 +1178,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper method to add missing instrument annotation to methods that need it
     /// and add more robust error handling for container operations
     #[instrument(skip(self), level = "debug")]
-    fn ensure_runtime_container_functions(&self) -> Result<(), Error> {
+    pub fn ensure_runtime_container_functions(&self) -> Result<(), Error> {
         // Get the module reference safely
         let module = self.get_module_ref()?;
         

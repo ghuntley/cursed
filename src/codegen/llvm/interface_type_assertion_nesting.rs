@@ -191,7 +191,7 @@ impl<'ctx> NestedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
                     })?;
                     
                     if success_val.is_int_value() {
-                        success_val.into_int_value().get_zero_extended_constant() != 0
+                        success_val.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0
                     } else {
                         false
                     }

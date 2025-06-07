@@ -645,7 +645,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Check if one type is compatible with another (either same type or implements the interface)
-    fn is_type_compatible(&self, actual_type_id: u64, target_type_id: u64) -> bool {
+    pub fn is_type_compatible(&self, actual_type_id: u64, target_type_id: u64) -> bool {
         // Same type is always compatible
         if actual_type_id == target_type_id {
             return true;

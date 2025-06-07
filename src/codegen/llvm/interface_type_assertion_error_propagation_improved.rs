@@ -25,6 +25,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::error::Error;
 
 /// Structured error type for type assertion failures
@@ -348,7 +349,7 @@ impl<'ctx> ImprovedErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
         interface_value: BasicValueEnum<'ctx>
     ) -> Result<String, Error> {
         // Get the runtime type ID
-        let runtime_type_id = self.get_runtime_type_id(interface_value)?;
+        let runtime_type_id = self.get_runtime_type_id(interface_value, None)?;
         
         // Convert type ID to type name
         let runtime_type_name = self.get_type_name_for_id(runtime_type_id)?;

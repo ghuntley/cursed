@@ -55,10 +55,11 @@ impl ThreadSafeObject {
     pub fn channel_send(&self, value: ThreadSafeGc<ThreadSafeObject>) -> Result<(), Error> {
         match self {
             ThreadSafeObject::Channel(channel) => {
-                // Create a thread-safe wrapper around the value
+                // Convert the thread-safe value to a regular Object
                 let value_obj = Arc::new(value.inner().unwrap().clone());
-                // Send the wrapped value
-                channel.send(value_obj)
+                let regular_obj = convert_from_thread_safe(&value_obj)?;
+                // Send the converted value
+                channel.send(regular_obj)
             },
             _ => Err(Error::Runtime(format!(
                 "Cannot send to non-channel object: {}",
@@ -73,14 +74,11 @@ impl ThreadSafeObject {
             ThreadSafeObject::Channel(channel) => {
                 // Receive the value from the channel
                 match channel.receive() {
-                    Ok(value) => {
-                        // Create a new ThreadSafeGc for the received value
-                        match value {
-                            threadobj => {
-                                // Allocate a new object in the GC
-                                Ok(gc.allocate_thread_safe((*threadobj).clone()))
-                            }
-                        }
+                    Ok(regular_obj) => {
+                        // Convert the regular object to a thread-safe object
+                        let thread_safe_obj = convert_to_thread_safe(&regular_obj)?;
+                        // Allocate a new object in the GC
+                        Ok(gc.allocate_thread_safe((*thread_safe_obj).clone()))
                     },
                     Err(e) => Err(e),
                 }

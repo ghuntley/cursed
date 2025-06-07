@@ -169,9 +169,9 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Mock type registry if needed for testing
         if let Some(registry) = self.get_interface_registry_mut() {
-            registry.register_interface(interface_type_id, "TestInterface".to_string())?;
-            registry.register_concrete_type(concrete_type_id, "TestConcrete".to_string())?;
-            registry.register_implementation(concrete_type_id, interface_type_id)?;
+            registry.register_interface("TestInterface")?;
+            registry.register_interface("TestConcrete")?;
+            registry.register_extension("TestConcrete", "TestInterface")?;
         }
         
         // Run the benchmark
@@ -246,16 +246,16 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         // Mock type registry for testing
         if let Some(registry) = self.get_interface_registry_mut() {
             // Register interfaces and concrete type
-            registry.register_interface(base_interface_id, "BaseInterface".to_string())?;
-            registry.register_interface(left_interface_id, "LeftInterface".to_string())?;
-            registry.register_interface(right_interface_id, "RightInterface".to_string())?;
-            registry.register_concrete_type(concrete_type_id, "DiamondConcrete".to_string())?;
+            registry.register_interface("BaseInterface")?;
+            registry.register_interface("LeftInterface")?;
+            registry.register_interface("RightInterface")?;
+            registry.register_interface("DiamondConcrete")?;
             
             // Register inheritance relationships
-            registry.register_implementation(left_interface_id, base_interface_id)?; // Left extends Base
-            registry.register_implementation(right_interface_id, base_interface_id)?; // Right extends Base
-            registry.register_implementation(concrete_type_id, left_interface_id)?; // Concrete implements Left
-            registry.register_implementation(concrete_type_id, right_interface_id)?; // Concrete implements Right
+            registry.register_extension("LeftInterface", "BaseInterface")?; // Left extends Base
+            registry.register_extension("RightInterface", "BaseInterface")?; // Right extends Base
+            registry.register_extension("DiamondConcrete", "LeftInterface")?; // Concrete implements Left
+            registry.register_extension("DiamondConcrete", "RightInterface")?; // Concrete implements Right
         }
         
         // Run the benchmark
@@ -320,18 +320,18 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
         if let Some(registry) = self.get_interface_registry_mut() {
             // Register all interfaces
             for (i, &id) in interface_ids.iter().enumerate() {
-                registry.register_interface(id, format!("Interface_{}", i))?;
+                registry.register_interface(&format!("Interface_{}", i))?;
             }
-            registry.register_concrete_type(concrete_type_id, "DeepConcrete".to_string())?;
+            registry.register_interface("DeepConcrete")?;
             
             // Register inheritance relationships
             for i in 1..interface_ids.len() {
-                registry.register_implementation(interface_ids[i], interface_ids[i-1])?;
+                registry.register_extension(&format!("Interface_{}", i), &format!("Interface_{}", i - 1))?;
             }
             
             // Concrete implements the deepest interface
             if !interface_ids.is_empty() {
-                registry.register_implementation(concrete_type_id, interface_ids[interface_ids.len()-1])?;
+                registry.register_extension("DeepConcrete", &format!("Interface_{}", interface_ids.len() - 1))?;
             }
         }
         

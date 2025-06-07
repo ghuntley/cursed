@@ -30,6 +30,7 @@ use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
 use crate::codegen::llvm::interface_type_registry_helpers::TypeNameRegistry;
@@ -261,7 +262,10 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         // Call the error propagation function with the enhanced message and location
         self.call_error_propagation_function(
             self.create_string_constant(&enhanced_message).into(),
-            location_struct
+            self.create_string_constant(source_type).into(),
+            self.create_string_constant(target_type).into(),
+            location_struct,
+            self.create_string_constant("").into()
         )
     }
 }
@@ -269,7 +273,7 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
 // Helper methods for the enhanced error propagation system
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Ensure that filesystem integration is initialized
-    fn ensure_filesystem_integration_initialized(&mut self) {
+    pub fn ensure_filesystem_integration_initialized(&mut self) {
         // Check if we've already initialized
         if !self.internal_fields.contains_key("filesystem_integration_initialized") {
             // Initialize with current working directory as root
@@ -287,7 +291,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Build a source location struct for LLVM
-    fn build_source_location_struct(&self, location: &SourceLocation) -> BasicValueEnum<'ctx> {
+    pub fn build_source_location_struct(&self, location: &SourceLocation) -> BasicValueEnum<'ctx> {
         let ctx = self.context();
         
         // Create integer values for line and column

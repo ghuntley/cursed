@@ -100,7 +100,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
         visualization_registry: Box<dyn InterfaceRegistryVisualization + Send + Sync>,
     ) -> InterfaceRegistryAdapter {
         InterfaceRegistryAdapter {
-            extension_registry,
+            extension_registry: Arc::new(RwLock::new(extension_registry)),
             visualization_registry: Some(visualization_registry),
         }
     }

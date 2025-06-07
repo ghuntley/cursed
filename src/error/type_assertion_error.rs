@@ -174,16 +174,13 @@ impl From<crate::error::Error> for TypeAssertionError {
                 let assertion_error = assertion_error.clone();
                 let mut result = TypeAssertionError::new("unknown", "unknown");
                 
-                if let Some(interface_type) = assertion_error.context("interface_type") {
-                    result.interface_type = interface_type.to_string();
-                }
-                
-                if let Some(target_type) = assertion_error.context("target_type") {
-                    result.target_type = target_type.to_string();
-                }
-                
-                if let Some(actual_type) = assertion_error.context("actual_type") {
-                    result = result.with_actual_type(actual_type.to_string(), None);
+                for (key, value) in assertion_error.context() {
+                    match key.as_str() {
+                        "interface_type" => result.interface_type = value.to_string(),
+                        "target_type" => result.target_type = value.to_string(),
+                        "actual_type" => result = result.with_actual_type(value.to_string(), None),
+                        _ => {}
+                    }
                 }
                 
                 let location_opt = assertion_error.location().map(|loc| {

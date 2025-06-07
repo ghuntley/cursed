@@ -4,7 +4,10 @@
 //! for checking relationships between interfaces in the interface type registry.
 
 use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, RwLock};
 use tracing::{debug, instrument, span, Level, warn};
+use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 
 use crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use crate::error::Error;

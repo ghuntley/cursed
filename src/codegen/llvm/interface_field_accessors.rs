@@ -16,6 +16,7 @@ use crate::codegen::llvm::monomorphization::MonomorphizationManagerExtension;
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use crate::core::generic_instantiation::GenericInstantiator;
+use crate::codegen::llvm::interface_type_assertion_common::MutableInterfaceRegistry;
 use std::collections::{HashMap, HashSet};
 use tracing::{debug, info, warn, error, span, Level};
 

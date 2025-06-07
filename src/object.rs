@@ -269,10 +269,26 @@ impl Clone for Object {
             Object::Array(elements) => Object::Array(elements.clone()),
             Object::HashTable(map) => Object::HashTable(map.clone()),
             Object::Channel(channel) => Object::Channel(channel.clone()),
-            Object::Mutex(mutex) => Object::Mutex(mutex.clone()),
-            Object::RWMutex(rwmutex) => Object::RWMutex(rwmutex.clone()),
-            Object::WaitGroup(wg) => Object::WaitGroup(wg.clone()),
-            Object::Once(once) => Object::Once(once.clone()),
+            Object::Mutex(mutex) => {
+                // RwLock doesn't implement Clone, so we create a new instance with the same data
+                let data = mutex.read().unwrap().clone();
+                Object::Mutex(RwLock::new(data))
+            },
+            Object::RWMutex(rwmutex) => {
+                // RwLock doesn't implement Clone, so we create a new instance with the same data
+                let data = rwmutex.read().unwrap().clone();
+                Object::RWMutex(RwLock::new(data))
+            },
+            Object::WaitGroup(wg) => {
+                // RwLock doesn't implement Clone, so we create a new instance with the same data
+                let data = wg.read().unwrap().clone();
+                Object::WaitGroup(RwLock::new(data))
+            },
+            Object::Once(once) => {
+                // RwLock doesn't implement Clone, so we create a new instance with the same data
+                let data = once.read().unwrap().clone();
+                Object::Once(RwLock::new(data))
+            },
             Object::Option(opt) => Object::Option(opt.clone()),
             Object::CompiledFunction {
                 ir_representation,
@@ -376,7 +392,7 @@ impl Traceable for Object {
             }
             Object::Channel(channel) => {
                 // Trace channel buffer elements
-                let channel = channel.borrow();
+                let channel = channel.read().unwrap();
                 for value in &channel.buffer {
                     value.trace(visitor);
                 }
@@ -421,7 +437,7 @@ impl Traceable for Object {
             }
             Object::Reference(ref_obj) => {
                 // Trace the referenced object
-                ref_obj.borrow().trace(visitor);
+                ref_obj.read().unwrap().trace(visitor);
             },
             Object::Mutex(_) => {
                 // Mutex doesn't contain any references to trace
@@ -475,7 +491,7 @@ impl Traceable for Object {
                 size
             }
             Object::Channel(channel) => {
-                let channel = channel.borrow();
+                let channel = channel.read().unwrap();
                 let mut size = std::mem::size_of::<Channel>() + channel.element_type.len();
                 for value in &channel.buffer {
                     size += value.size();
@@ -645,10 +661,10 @@ impl Display for Object {
                 write!(f, "}}")
             }
             Object::Reference(ref_obj) => {
-                write!(f, "&{}", ref_obj.borrow())
+                write!(f, "&{}", ref_obj.read().unwrap())
             }
             Object::Channel(channel) => {
-                let channel = channel.borrow();
+                let channel = channel.read().unwrap();
                 write!(
                     f,
                     "channel<{}>[{}]",
@@ -973,7 +989,7 @@ impl Object {
             Object::Method { .. } => "method",
             Object::Instance { .. } => "instance",
             Object::Error { .. } => "error",
-            Object::Reference(ref_obj) => ref_obj.borrow().type_name(),
+            Object::Reference(ref_obj) => ref_obj.read().unwrap().type_name(),
             Object::Mutex(_) => "mutex",
             Object::RWMutex(_) => "rwmutex",
             Object::WaitGroup(_) => "waitgroup",
@@ -1068,7 +1084,7 @@ impl Object {
             Object::Method { .. } => true,
             Object::Instance { .. } => true,
             Object::Error { .. } => false,
-            Object::Reference(ref_obj) => ref_obj.borrow().is_truthy(),
+            Object::Reference(ref_obj) => ref_obj.read().unwrap().is_truthy(),
             Object::Mutex(_) => true,
             Object::RWMutex(_) => true,
             Object::WaitGroup(_) => true,
@@ -1100,7 +1116,7 @@ impl Object {
                 format!("{{{}}}", entries.join(", "))
             }
             Object::Channel(ch) => {
-                let channel = ch.borrow();
+                let channel = ch.read().unwrap();
                 format!(
                     "channel<{}>[{}]",
                     channel.element_type,
@@ -1141,7 +1157,7 @@ impl Object {
                 }
             }
             Object::Null => "null".to_string(),
-            Object::Reference(ref_obj) => format!("&{}", ref_obj.borrow().to_string()),
+            Object::Reference(ref_obj) => format!("&{}", ref_obj.read().unwrap().to_string()),
             Object::Mutex(_) => "[Mutex]".to_string(),
             Object::RWMutex(_) => "[RWMutex]".to_string(),
             Object::WaitGroup(_) => "[WaitGroup]".to_string(),
@@ -1428,7 +1444,7 @@ impl Object {
                 format!("{{{}}}", entries.join(", "))
             }
             Object::Channel(channel) => {
-                let channel = channel.borrow();
+                let channel = channel.read().unwrap();
                 let buffer_elements: Vec<String> =
                     channel.buffer.iter().map(|e| e.inspect()).collect();
                 format!(
@@ -1545,15 +1561,18 @@ impl Object {
                 }
             }
             Object::Null => "null".to_string(),
-            Object::Reference(ref_obj) => format!("&{}", ref_obj.borrow().inspect()),
+            Object::Reference(ref_obj) => format!("&{}", ref_obj.read().unwrap().inspect()),
             Object::Mutex(_) => "[Mutex]".to_string(),
             Object::RWMutex(_) => "[RWMutex]".to_string(),
             Object::WaitGroup(_) => "[WaitGroup]".to_string(),
-            Object::Once(once) => format!("[Once:{}]", if once.borrow().is_done() { "done" } else { "pending" }),
+            Object::Once(once) => format!("[Once:{}]", if once.read().unwrap().is_done() { "done" } else { "pending" }),
             Object::Option(opt) => match opt {
                 Some(obj) => format!("Some({})", obj.inspect()),
                 None => "None".to_string(),
             },
+            Object::ExternalData(_) => "[ExternalData]".to_string(),
+            Object::Template(_) => "[Template]".to_string(),
+            Object::Function(_) => "[Function]".to_string(),
         }
     }
 }

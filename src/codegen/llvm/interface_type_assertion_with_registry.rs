@@ -19,11 +19,13 @@ use std::sync::Arc;
 use tracing::{debug, error, info, instrument, span, Level, trace, warn};
 
 use crate::ast::expressions::TypeAssertion;
+use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::error::Error;
 use inkwell::values::BasicValueEnum;
@@ -75,7 +77,7 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         };
         
         // Get runtime type information
-        let runtime_type_id = self.get_runtime_type_id(expr_value)?;
+        let runtime_type_id = self.get_runtime_type_id(expr_value, None)?;
         
         // Get the target type ID
         let target_type_id = match self.get_type_id(&type_assertion.type_name) {
@@ -208,7 +210,7 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         // This code only runs if we got a type assertion error
         // Get the runtime type name for the expression
         let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
-        let runtime_type_id = self.get_runtime_type_id(expr_value)?;
+        let runtime_type_id = self.get_runtime_type_id(expr_value, None)?;
         let runtime_type_name = self.get_type_name_for_id(runtime_type_id)?;
         
         // Generate a rich DOT graph visualization of the inheritance hierarchy
@@ -240,7 +242,7 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         debug!("Target type ID for {}: {}", type_name, target_type_id);
         
         // Get the runtime type ID of the value
-        let runtime_type_id = self.get_runtime_type_id(value)?;
+        let runtime_type_id = self.get_runtime_type_id(value, None)?;
         
         // If they're the same, return true immediately
         if runtime_type_id == target_type_id {

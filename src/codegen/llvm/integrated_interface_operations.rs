@@ -13,6 +13,7 @@
 
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 #[cfg(feature = "enhanced_dynamic_dispatch")]
 use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
@@ -98,7 +99,7 @@ impl<'ctx> IntegratedInterfaceOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         };
 
         // First check if the interface pointer is null
-        if self.check_interface_null(interface_ptr, &format!("type assertion to {}", type_name))? {
+        if self.check_interface_null(interface_ptr.into(), &format!("type assertion to {}", type_name))? {
             if emit_runtime_error {
                 // Create null interface error message
                 let null_error_msg = format!("Runtime error: Cannot perform type assertion on null interface value");
@@ -129,7 +130,7 @@ impl<'ctx> IntegratedInterfaceOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         let end_block = self.context().append_basic_block(current_function, "type_assert_end");
         
         // Extract vtable pointer
-        let vtable_ptr = match self.extract_vtable_pointer(interface_ptr) {
+        let vtable_ptr = match self.extract_vtable_pointer(interface_ptr.into()) {
             Ok(ptr) => ptr,
             Err(e) => {
                 error!("Failed to extract vtable pointer: {}", e);
@@ -213,7 +214,7 @@ impl<'ctx> IntegratedInterfaceOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         self.builder().position_at_end(type_match_block);
         
         // Extract the data pointer
-        let data_ptr = match self.extract_data_pointer(interface_ptr) {
+        let data_ptr = match self.extract_data_pointer(interface_ptr.into()) {
             Ok(ptr) => ptr,
             Err(e) => {
                 error!("Failed to extract data pointer: {}", e);

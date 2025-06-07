@@ -47,6 +47,11 @@
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
 
+// Re-export extension traits
+pub use self::llvm_code_generator_extensions::{
+    SourceLocationExtensions, SymbolLookupExtensions, ErrorPathExtensions
+};
+
 // Re-export type registry helpers
 pub use self::interface_type_registry_helpers::TypeNameRegistry;
 
@@ -188,6 +193,8 @@ mod optimize_module; // Module optimization passes
 mod basic_expressions;
 mod builder;
 pub mod container_layout; // Container memory layout optimization
+pub mod llvm_code_generator_extensions; // Extension traits for LlvmCodeGenerator
+pub mod basic_value_extensions; // Extension traits for LLVM BasicValueEnum and types
 mod dot_expressions;  // Dot expression compilation (module.function)
 mod hook_dot_expressions; // Temporary patch for dot expressions
 pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint checking

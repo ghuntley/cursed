@@ -28,10 +28,13 @@ use inkwell::basic_block::BasicBlock;
 use inkwell::AddressSpace;
 
 use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::basic_value_extensions::BasicValueExt;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
 use crate::error::SourceLocation;
@@ -152,8 +155,8 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
                 // Try to extract location from token
                 let (line, column, file) = self.extract_location_from_token(token);
                 Some(SourceLocation {
-                    line,
-                    column,
+                    line: line as usize,
+                    column: column as usize,
                     file,
                     source_line: format!("{}.({}", type_assertion.expression.string(), type_assertion.type_name),
                 })
@@ -473,8 +476,11 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         };
         
         self.call_error_propagation_function(
-            self.create_error_string_constant(&enhanced_error_message).into(), 
-            BasicValueEnum::into_struct_value(location_struct)
+            self.create_error_string_constant(&enhanced_error_message).into(),
+            self.create_error_string_constant(source_type).into(),
+            self.create_error_string_constant(target_type).into(),
+            location_struct.into(),
+            self.create_error_string_constant("").into()
         )?;
         
         // This should be unreachable in the failure path
@@ -627,7 +633,10 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         // Call error propagation function with enhanced type information and better error message
         self.call_error_propagation_function(
             self.create_error_string_constant(&error_message).into(),
-            location_info
+            self.create_error_string_constant(source_type).into(),
+            self.create_error_string_constant(target_type).into(),
+            location_info,
+            self.create_error_string_constant("").into()
         )?;
         
         // Clean up type ID tracking after propagation
@@ -656,7 +665,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Extract location information from a token string
     /// Returns (line, column, file_opt)
-    fn extract_location_from_token(&self, token: &str) -> (i32, i32, Option<String>) {
+    pub fn extract_location_from_token(&self, token: &str) -> (i32, i32, Option<String>) {
         // Token might contain location information in format "file:line:column"
         // This is a best-effort extraction
         let parts: Vec<&str> = token.split(':').collect();

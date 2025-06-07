@@ -375,7 +375,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Checks if a type name refers to an interface type
-    fn is_interface_type(&self, type_name: &str) -> Result<bool, Error> {
+    pub fn is_interface_type(&self, type_name: &str) -> Result<bool, Error> {
         // In a real implementation, this would check if the type is defined as an interface
         // For now, we'll provide a mock implementation
         

@@ -453,7 +453,7 @@ impl<T: InterfaceRegistryExtension + ?Sized> InterfaceRegistryExtensionWithVisua
     }
     
     #[instrument(skip(self), level = "debug")]
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         let interfaces = match self.get_all_interfaces() {
             Some(ifs) => ifs,
             None => return Err(Error::Internal("No interfaces found".to_string())),
@@ -487,7 +487,7 @@ impl<T: InterfaceRegistryExtension + ?Sized> InterfaceRegistryExtensionWithVisua
     }
     
     #[instrument(skip(self), level = "debug")]
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         match InterfaceRegistryExtension::get_direct_implementers(self, interface)? {
             Some(implementers) => Ok(Some(implementers.into_iter().collect())),
             None => Ok(None),

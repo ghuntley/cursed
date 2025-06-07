@@ -41,7 +41,7 @@ pub fn create_channel(element_type: String, buffer_size: Option<usize>) -> Objec
 pub fn send_to_channel(channel: Object, value: Object) -> Result<Object, String> {
     match channel {
         Object::Channel(channel_ref) => {
-            let mut channel = channel_ref.borrow_mut();
+            let mut channel = channel_ref.write().unwrap();
             match channel.send(value) {
                 Ok(_) => Ok(Object::Null),
                 Err(e) => Err(e.to_string()),
@@ -58,7 +58,7 @@ pub fn send_to_channel(channel: Object, value: Object) -> Result<Object, String>
 pub fn receive_from_channel(channel: Object) -> Result<Object, String> {
     match channel {
         Object::Channel(channel_ref) => {
-            let mut channel = channel_ref.borrow_mut();
+            let mut channel = channel_ref.write().unwrap();
             match channel.receive() {
                 Ok(value) => Ok(value),
                 Err(e) => Err(e.to_string()),
@@ -75,7 +75,7 @@ pub fn receive_from_channel(channel: Object) -> Result<Object, String> {
 pub fn try_send_to_channel(channel: Object, value: Object) -> Result<Object, String> {
     match channel {
         Object::Channel(channel_ref) => {
-            let mut channel = channel_ref.borrow_mut();
+            let mut channel = channel_ref.write().unwrap();
             match channel.try_send(value) {
                 Ok(true) => Ok(Object::Boolean(true)),   // Successfully sent
                 Ok(false) => Ok(Object::Boolean(false)), // Would block
@@ -93,7 +93,7 @@ pub fn try_send_to_channel(channel: Object, value: Object) -> Result<Object, Str
 pub fn try_receive_from_channel(channel: Object) -> Result<Object, String> {
     match channel {
         Object::Channel(channel_ref) => {
-            let mut channel = channel_ref.borrow_mut();
+            let mut channel = channel_ref.write().unwrap();
             match channel.try_receive() {
                 Ok(Some(value)) => Ok(value), // Successfully received
                 Ok(None) => Ok(Object::Null), // Would block
@@ -111,7 +111,7 @@ pub fn try_receive_from_channel(channel: Object) -> Result<Object, String> {
 pub fn close_channel(channel: Object) -> Result<Object, String> {
     match channel {
         Object::Channel(channel_ref) => {
-            let mut channel = channel_ref.borrow_mut();
+            let mut channel = channel_ref.write().unwrap();
             channel.close();
             Ok(Object::Null)
         }

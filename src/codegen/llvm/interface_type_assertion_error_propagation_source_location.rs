@@ -23,6 +23,7 @@ use inkwell::module::Module;
 use inkwell::types::{BasicTypeEnum, StructType};
 use inkwell::values::{BasicValueEnum, PointerValue, FunctionValue};
 use inkwell::IntPredicate;
+use crate::codegen::llvm::basic_value_extensions::{BasicValueExt, StructTypeExt};
 use inkwell::basic_block::BasicBlock;
 use inkwell::AddressSpace;
 
@@ -32,6 +33,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
@@ -119,8 +121,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
     
     #[instrument(skip(self, node), level = "debug")]
     fn extract_source_location_from_node(&self, node: &dyn Node) -> SourceLocation {
-        let token = node.token();
-        let token_literal = token.to_string(); // Get token as string
+        let token_literal = node.token_literal(); // Get token as string
         
         // Extract line and column from token if available
         // For this implementation, we'll assume line and column information

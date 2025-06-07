@@ -7,7 +7,9 @@
 //! to look up type names from their IDs for more informative error messages.
 
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 use inkwell::builder::Builder;
 use inkwell::context::Context;
 use inkwell::module::Module;

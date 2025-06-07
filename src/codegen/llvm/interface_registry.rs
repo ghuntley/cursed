@@ -26,6 +26,48 @@ pub trait InterfaceTypeRegistry {
     
     /// Check if an interface exists in the registry
     fn interface_exists(&self, name: &str) -> Result<bool, Error>;
+    
+    // Additional methods needed by interface type assertions and debugging
+    
+    /// Check if a concrete type implements an interface by type IDs
+    fn type_implements_by_id(&self, concrete_type_id: u32, interface_type_id: u32) -> Result<bool, Error> {
+        // Default implementation - checks for ID-based relationships
+        // Override in concrete implementations for specific behavior
+        Ok(false)
+    }
+    
+    /// Get the type name for a given type ID
+    fn get_type_name(&self, type_id: u64) -> Result<String, Error> {
+        Err(Error::Compilation(format!("Type name lookup not implemented for ID {}", type_id)))
+    }
+    
+    /// Look up a type ID by name
+    fn lookup_type_id(&self, type_name: &str) -> Result<u64, Error> {
+        Err(Error::Compilation(format!("Type ID lookup not implemented for name {}", type_name)))
+    }
+    
+    /// Get the inheritance map (interface -> set of interfaces it extends)
+    fn get_inheritance_map(&self) -> Option<HashMap<String, HashSet<String>>> {
+        None
+    }
+    
+    /// Get all registered types as (id, name) pairs
+    fn all_types(&self) -> Vec<(u64, String)> {
+        Vec::new()
+    }
+    
+    /// Check if a given type ID represents an interface
+    fn is_interface(&self, type_id: u32) -> Result<bool, Error> {
+        // Default implementation returns false
+        // Override in concrete implementations
+        Ok(false)
+    }
+    
+    /// Check if a type implements an interface (32-bit type IDs)
+    fn type_implements_interface(&self, concrete_id: u32, interface_id: u32) -> bool {
+        // Default implementation delegates to type_implements_by_id
+        self.type_implements_by_id(concrete_id, interface_id).unwrap_or(false)
+    }
 }
 
 /// Alias for the InterfaceTypeRegistry trait (for backward compatibility)
@@ -47,6 +89,16 @@ impl BasicInterfaceRegistry {
             direct_extensions: HashMap::new(),
             interfaces: HashSet::new(),
         }
+    }
+    
+    /// Generate a hash for a type name (FNV-1a algorithm)
+    fn hash_name(&self, type_name: &str) -> u64 {
+        let mut hash: u64 = 0xcbf29ce484222325;
+        for byte in type_name.bytes() {
+            hash ^= byte as u64;
+            hash = hash.wrapping_mul(0x100000001b3);
+        }
+        hash
     }
 }
 
@@ -111,7 +163,7 @@ impl InterfaceTypeRegistry for BasicInterfaceRegistry {
         // Use BFS to find the shortest path
         let mut visited = HashSet::new();
         let mut queue = std::collections::VecDeque::new();
-        let mut parent = HashMap::new();
+        let mut parent: HashMap<String, String> = HashMap::new();
         
         queue.push_back(source.to_string());
         visited.insert(source.to_string());
@@ -159,6 +211,62 @@ impl InterfaceTypeRegistry for BasicInterfaceRegistry {
     
     fn interface_exists(&self, name: &str) -> Result<bool, Error> {
         Ok(self.interfaces.contains(name))
+    }
+    
+    // Implementation of new methods - these are basic implementations
+    // Concrete registries should override as needed
+    
+    fn get_inheritance_map(&self) -> Option<HashMap<String, HashSet<String>>> {
+        Some(self.direct_extensions.clone())
+    }
+    
+    fn all_types(&self) -> Vec<(u64, String)> {
+        // Create type IDs by hashing the interface names
+        let mut result = Vec::new();
+        for interface in &self.interfaces {
+            let id = self.hash_name(interface);
+            result.push((id, interface.clone()));
+        }
+        result
+    }
+    
+    fn get_type_name(&self, type_id: u64) -> Result<String, Error> {
+        // Search for a matching type ID
+        for interface in &self.interfaces {
+            if self.hash_name(interface) == type_id {
+                return Ok(interface.clone());
+            }
+        }
+        Err(Error::NotFound(format!("No interface found with type ID {}", type_id)))
+    }
+    
+    fn lookup_type_id(&self, type_name: &str) -> Result<u64, Error> {
+        if self.interfaces.contains(type_name) {
+            Ok(self.hash_name(type_name))
+        } else {
+            Err(Error::NotFound(format!("Interface '{}' not found", type_name)))
+        }
+    }
+    
+    fn is_interface(&self, type_id: u32) -> Result<bool, Error> {
+        // For BasicInterfaceRegistry, all registered types are interfaces
+        let type_id_64 = type_id as u64;
+        for interface in &self.interfaces {
+            if self.hash_name(interface) == type_id_64 {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+    
+    fn type_implements_interface(&self, concrete_id: u32, interface_id: u32) -> bool {
+        // For basic registry, check if the concrete type extends the interface
+        if let (Ok(concrete_name), Ok(interface_name)) = 
+            (self.get_type_name(concrete_id as u64), self.get_type_name(interface_id as u64)) {
+            self.extends(&concrete_name, &interface_name).unwrap_or(false)
+        } else {
+            false
+        }
     }
 }
 

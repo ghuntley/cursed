@@ -9,6 +9,7 @@ use tracing::{debug, info, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
+use crate::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
 use crate::codegen::llvm::interface_type_registry_helpers::TypeNameRegistry;
 use crate::InterfaceTypeRegistry;
 use crate::error::Error;
