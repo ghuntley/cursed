@@ -69,18 +69,18 @@ fn test_simple_circular_reference_collection() {
     let gc = Arc::new(GarbageCollector::new());
     
     // Create two nodes with a circular reference
-    let node1 = gc.allocate(CircNode::new(1))
+    let node1 = gc.allocate(CircNode::new(1));
     let node2 = gc.allocate(CircNode::new(2));
 
     //
     {
         let inner1 = node1.inner_mut().unwrap();
-        inner1.add_reference(node2.clone();
+        inner1.add_reference(node2.clone());
     }
     
     {
         let inner2 = node2.inner_mut().unwrap();
-        inner2.add_reference(node1.clone();
+        inner2.add_reference(node1.clone());
     }
     
     // Get initial stats

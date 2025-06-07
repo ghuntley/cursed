@@ -100,8 +100,8 @@ fn test_helper_functions() {
 #[test]
 fn test_recursion_limit() {
     let mut type_param_map = HashMap::new();
-    type_param_map.insert("T".to_string(), Type::TypeParam("U".to_string());
-    type_param_map.insert("U".to_string(), Type::TypeParam("T".to_string());
+    type_param_map.insert("T".to_string(), Type::TypeParam("U".to_string()));
+    type_param_map.insert("U".to_string(), Type::TypeParam("T".to_string()));
     
     let type_param = Type::TypeParam("T".to_string());
     let result = type_param.substitute_nested_type_parameters(&type_param_map, 5);

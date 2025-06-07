@@ -100,9 +100,9 @@ fn test_function_return_type_inference_int() {
     // Skip module verification for now - this will be confirmed once full type inference is implemented
     // The current implementations deliberately have a mismatch between return type and return value
     // for demonstration purposes
-    let verification = generator.module().verify());
+    let verification = generator.module().verify();
     if verification.is_err() {
-        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err();
+        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err());
     }
 }
 
@@ -187,9 +187,9 @@ fn test_function_return_type_inference_float() {
     // Skip module verification for now - this will be confirmed once full type inference is implemented
     // The current implementations deliberately have a mismatch between return type and return value
     // for demonstration purposes
-    let verification = generator.module().verify());
+    let verification = generator.module().verify();
     if verification.is_err() {
-        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err();
+        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err());
     }
 }
 
@@ -303,8 +303,8 @@ fn test_function_return_type_inference_mixed() {
     // Skip module verification for now - this will be confirmed once full type inference is implemented
     // The current implementations deliberately have a mismatch between return type and return value
     // for demonstration purposes
-    let verification = generator.module().verify());
+    let verification = generator.module().verify();
     if verification.is_err() {
-        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err();
+        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err());
     }
 }

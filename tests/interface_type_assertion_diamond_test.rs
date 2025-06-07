@@ -79,7 +79,7 @@ mod tests {
             ).unwrap();
             
             info!("Diamond visualization:\n{}", visualization);
-            assert!(visualization.contains("Diamond Inheritance Pattern");
+            assert!(visualization.contains("Diamond Inheritance Pattern"));
         }
     }
     
@@ -116,7 +116,7 @@ mod tests {
                 .map(|&id| registry.get_type_name(id).unwrap_or_else(|_| format!("Unknown(0x{:x})", id)))
                 .collect();
                 
-            info!("Path {}: {}", i+1, path_types.join(" -> ");
+            info!("Path {}: {}", i+1, path_types.join(" -> "));
             
             // Verify each path starts with Player and ends with GameObject
             assert_eq!(registry.get_type_name(path[0]).unwrap(), "Player");
@@ -158,7 +158,7 @@ mod tests {
             assert!(visualization.contains("AnimatedObject");
             
             // There should be method resolution order information
-            assert!(visualization.contains("Method Resolution Order");
+            assert!(visualization.contains("Method Resolution Order"));
         } else {
             panic!("Failed to detect diamond inheritance from Player to AnimatedObject");
         }

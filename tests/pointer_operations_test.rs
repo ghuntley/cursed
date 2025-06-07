@@ -59,7 +59,7 @@ fn test_basic_address_of_operation() -> Result<(), Error> {
     // Create a variable to take the address of
     let i32_type = context.i32_type();
     let variable = generator.builder().build_alloca(i32_type, "test_var")?;
-    let _ = generator.add_variable("test_var", variable);
+    let _ = generator.add_variable("test_var".to_string(), variable, i32_type.into());
     
     // Set the variable value
     let value = i32_type.const_int(42, false);
@@ -118,7 +118,7 @@ fn test_pointer_dereference() -> Result<(), Error> {
     // Create a variable to take the address of
     let i32_type = context.i32_type();
     let variable = generator.builder().build_alloca(i32_type, "test_var")?;
-    let _ = generator.add_variable("test_var", variable);
+    let _ = generator.add_variable("test_var".to_string(), variable, i32_type.into());
     
     // Set the variable value
     let value = i32_type.const_int(42, false);
@@ -187,7 +187,7 @@ fn test_multiple_indirection() -> Result<(), Error> {
     // Create a variable to take the address of
     let i32_type = context.i32_type();
     let variable = generator.builder().build_alloca(i32_type, "test_var")?;
-    let _ = generator.add_variable("test_var", variable);
+    let _ = generator.add_variable("test_var".to_string(), variable, i32_type.into());
     
     // Set the variable value
     let value = i32_type.const_int(42, false);
@@ -210,7 +210,7 @@ fn test_multiple_indirection() -> Result<(), Error> {
     
     // Create a pointer to pointer variable
     let ptr_ptr_var = generator.builder().build_alloca(ptr_value.get_type(), "ptr_ptr_var")?;
-    let _ = generator.add_variable("ptr_ptr_var", ptr_ptr_var);
+    let _ = generator.add_variable("ptr_ptr_var".to_string(), ptr_ptr_var, ptr_value.get_type().into());
     
     // Store the pointer in the pointer-to-pointer variable
     generator.builder().build_store(ptr_ptr_var, ptr_value)?;
@@ -295,7 +295,7 @@ fn test_store_to_pointer() -> Result<(), Error> {
     // Create a variable to take the address of
     let i32_type = context.i32_type();
     let variable = generator.builder().build_alloca(i32_type, "test_var")?;
-    let _ = generator.add_variable("test_var", variable);
+    let _ = generator.add_variable("test_var".to_string(), variable, i32_type.into());
     
     // Set initial value
     let initial_value = i32_type.const_int(42, false);

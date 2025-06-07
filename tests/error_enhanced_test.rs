@@ -14,7 +14,7 @@ fn test_error_creation() {
     // Test error with location
     let location = SourceLocation::new(10, 20);
     let err = CursedError::new(ErrorKind::Parser, "Parse error")
-        .with_location(location.clone();
+        .with_location(location.clone());
     
     assert_eq!(err.location().unwrap().line, 10);
     assert_eq!(err.location().unwrap().column, 20);

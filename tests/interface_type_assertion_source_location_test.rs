@@ -24,7 +24,7 @@ fn test_enhanced_source_location_extraction() {
     let mut code_gen = LlvmCodeGenerator::new("test_module", &context);
     
     // Initialize the enhanced source location tracking with a test file path
-    code_gen.init_enhanced_source_location_tracking(Some("test_file.csd");
+    code_gen.init_enhanced_source_location_tracking(Some("test_file.csd"));
     
     // Create a mock token with position information
     let token_str = "token@42:10";
@@ -56,7 +56,7 @@ fn test_create_enhanced_source_location() {
     let mut code_gen = LlvmCodeGenerator::new("test_module", &context);
     
     // Initialize the enhanced source location tracking with a test file path
-    code_gen.init_enhanced_source_location_tracking(Some("test_file.csd");
+    code_gen.init_enhanced_source_location_tracking(Some("test_file.csd"));
     
     // Create a mock TypeAssertion node (simplified for testing)
     let mock_node = MockNode::new("mockToken@15:20");
@@ -71,7 +71,7 @@ fn test_create_enhanced_source_location() {
     assert_eq!(location.line, 15);
     assert_eq!(location.column, 20);
     assert_eq!(location.file.as_ref().unwrap(), "test_file.csd");
-    assert!(location.source_line.contains("Type assertion to TestType");
+    assert!(location.source_line.contains("Type assertion to TestType"));
 }
 
 // Mock implementation for testing

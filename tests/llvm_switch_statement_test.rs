@@ -41,11 +41,11 @@ fn test_switch_statement_compilation() {
     // Create the code generator
     let context = inkwell::context::Context::create();
     let module_name = "switch_test";
-    let mut code_gen = LlvmCodeGenerator::new(&context, module_name, PathBuf::from("switch_test.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, module_name, PathBuf::from("switch_test.csd"));
     
     // Compile program
     let result = code_gen.compile_program(&program);
-    assert!(result.is_ok(), "Failed to compile switch statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile switch statement: {:?}", result.err());
     
     // Print generated IR for verification
     println!("Generated LLVM IR:\n{}", code_gen.module().to_string());

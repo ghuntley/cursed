@@ -62,8 +62,8 @@ mod core_type_system_tests {
         }) as Box<dyn Expression>;
         
         // Test the implementation that was a placeholder
-        let result1 = instantiator.expression_to_type(ident.as_ref();
-        let result2 = instantiator.expression_to_type(string_literal.as_ref();
+        let result1 = instantiator.expression_to_type(ident.as_ref());
+        let result2 = instantiator.expression_to_type(string_literal.as_ref());
         
         // Assert that we get proper types now instead of just Unknown
         assert!(result1.is_ok())

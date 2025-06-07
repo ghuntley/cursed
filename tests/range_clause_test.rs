@@ -38,8 +38,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["shell", "./target/debug/cursed", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string())
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     //
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
@@ -85,11 +85,11 @@ printn(yolo)\n", code);
         .map_err(|e| format!("Failed to run test: {}", e))?;
     
     if !success {
-        return Err(format!("Test execution failed:\n{}", output);
+        return Err(format!("Test execution failed:\n{}", output));
     }
     
     // Check if the output contains the expected value
-    let expected_str = expected_value.to_string());
+    let expected_str = expected_value.to_string();
     assert_output_contains(&output, &expected_str)
 }
 

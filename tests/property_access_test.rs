@@ -130,7 +130,7 @@ mod property_access_tests {
         // This should fail with a field not found error
         let result = run_code_int(code);
         assert!(result.is_err(), "Expected an error when accessing non-existent field");
-        let error = result.unwrap_err().to_string());
+        let error = result.unwrap_err().to_string();
         assert!(error.contains("not found"), "Error should mention field not found: {}", error);
     }
 

@@ -4,7 +4,6 @@ use std::time::Duration;
 use cursed::object::Object;
 use cursed::stdlib::concurrenz;
 use cursed::stdlib::concurrenz::{CursedMutex, CursedRWMutex, CursedWaitGroup, CursedOnce};
-use std::sync::Arc;
 
 
 
@@ -20,7 +19,7 @@ fn test_mutex_implementation() {
     // Since we're using a real mutex, unlock will fail because
     // the lock guard has already been dropped due to RAII
     // This is expected behavior
-    assert!(mutex.unlock().is_err())
+    assert!(mutex.unlock().is_err());
 }
 
 /// Test that we can create and use a RWMutex
@@ -32,12 +31,12 @@ fn test_rwmutex_implementation() {
     // Test read locking
     rwmutex.rlock().unwrap();
     // Since we're using a real rwmutex with RAII, this should fail
-    assert!(rwmutex.runlock().is_err())
+    assert!(rwmutex.runlock().is_err());
     
     // Test write locking
     rwmutex.lock().unwrap();
     // Since we're using a real rwmutex with RAII, this should fail
-    assert!(rwmutex.unlock().is_err())
+    assert!(rwmutex.unlock().is_err());
 }
 
 /// Test that we can create and use a WaitGroup
@@ -55,17 +54,17 @@ fn test_waitgroup_implementation() {
     wg.done().unwrap();
     
     // Test that we can't mark as done more than we added
-    assert!(wg.done().is_err())
+    assert!(wg.done().is_err());
     
     // Create another waitgroup for wait testing
     let wg2 = CursedWaitGroup::new();
     wg2.add(1).unwrap();
     
     // Start a thread that will call done after a delay
-    let wg2 = Arc::new(Mutex::new(wg2);
+    let wg2 = Arc::new(Mutex::new(wg2));
     let wg2_clone = Arc::clone(&wg2);
     let handle = thread::spawn(move || {
-        thread::sleep(Duration::from_millis(100);
+        thread::sleep(Duration::from_millis(100));
         wg2_clone.lock().unwrap().done().unwrap();
     });
     
@@ -84,7 +83,7 @@ fn test_once_implementation() {
     let once = CursedOnce::new();
     
     // Create a counter to verify Once only executes once
-    let counter = Arc::new(Mutex::new(0);
+    let counter = Arc::new(Mutex::new(0));
     let counter_clone = Arc::clone(&counter);
     
     // Test the do_with_fn method works
@@ -97,7 +96,7 @@ fn test_once_implementation() {
     assert_eq!(*counter.lock().unwrap(), 1);
     
     // Create a new counter for the second call
-    let counter2 = Arc::new(Mutex::new(0);
+    let counter2 = Arc::new(Mutex::new(0));
     let counter2_clone = Arc::clone(&counter2);
     
     // Call do_with_fn again - should still only execute once
@@ -111,6 +110,6 @@ fn test_once_implementation() {
     assert_eq!(*counter2.lock().unwrap(), 0);
     
     // Test the is_done method
-    assert!(once.is_done();
+    assert!(once.is_done());
 }
 

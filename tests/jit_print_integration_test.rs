@@ -62,7 +62,7 @@ fn test_jit_print_support() -> Result<(), Error> {
     );
     
     // Generate code
-    let code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(&context, module, "test");
+    let code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
     *(jit.code_generator_mut()) = Some(code_gen);
     
     if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
