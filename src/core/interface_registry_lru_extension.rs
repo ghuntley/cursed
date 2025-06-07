@@ -4,14 +4,16 @@
 //! the interface registry, improving performance for constraint checking.
 
 use crate::core::type_checker_interface_registry::CachedInterfaceRegistry;
-use crate::core::interface_registry_lru_cache::{LruInterfaceCache, ThreadSafeLruCache};
+use crate::core::interface_registry_lru_cache::LruInterfaceCache;
 use crate::core::interface_registry::InterfaceRegistry;
 use crate::core::type_checker::Type;
+use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 use crate::error::Error;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, trace, instrument};
 
 /// An extension of the interface registry that uses LRU caching
+#[derive(Debug)]
 pub struct LruCachedRegistry {
     /// The underlying registry
     registry: InterfaceRegistry,
@@ -68,7 +70,7 @@ pub struct ThreadSafeLruRegistry {
     registry: Arc<Mutex<InterfaceRegistry>>,
     
     /// The thread-safe LRU cache
-    cache: ThreadSafeLruCache,
+    cache: LruInterfaceCache,
 }
 
 impl ThreadSafeLruRegistry {
@@ -76,7 +78,7 @@ impl ThreadSafeLruRegistry {
     pub fn new(registry: InterfaceRegistry) -> Self {
         Self {
             registry: Arc::new(Mutex::new(registry)),
-            cache: ThreadSafeLruCache::new(),
+            cache: LruInterfaceCache::new(),
         }
     }
     
@@ -84,7 +86,7 @@ impl ThreadSafeLruRegistry {
     pub fn new_with_defaults() -> Self {
         Self {
             registry: Arc::new(Mutex::new(InterfaceRegistry::new_with_defaults())),
-            cache: ThreadSafeLruCache::new(),
+            cache: LruInterfaceCache::new(),
         }
     }
     
@@ -92,7 +94,7 @@ impl ThreadSafeLruRegistry {
     pub fn with_capacity(registry: InterfaceRegistry, capacity: usize) -> Self {
         Self {
             registry: Arc::new(Mutex::new(registry)),
-            cache: ThreadSafeLruCache::with_capacity(capacity),
+            cache: LruInterfaceCache::with_capacity(capacity),
         }
     }
     
@@ -224,5 +226,37 @@ mod tests {
         assert_eq!(stats.0, 1); // size
         assert_eq!(stats.1, 1); // hits
         assert_eq!(stats.2, 1); // misses
+    }
+}
+
+impl InterfaceTypeRegistry for LruCachedRegistry {
+    fn register_interface(&mut self, _name: &str) -> Result<(), Error> {
+        // Simple stub implementation
+        Ok(())
+    }
+    
+    fn register_extension(&mut self, _source: &str, _target: &str) -> Result<(), Error> {
+        // Simple stub implementation
+        Ok(())
+    }
+    
+    fn extends(&self, _source: &str, _target: &str) -> Result<bool, Error> {
+        // Simple stub implementation
+        Ok(false)
+    }
+    
+    fn find_path(&self, _source: &str, _target: &str) -> Result<Option<Vec<String>>, Error> {
+        // Simple stub implementation
+        Ok(None)
+    }
+    
+    fn get_all_interfaces(&self) -> Result<std::collections::HashSet<String>, Error> {
+        // Simple stub implementation
+        Ok(std::collections::HashSet::new())
+    }
+    
+    fn interface_exists(&self, _name: &str) -> Result<bool, Error> {
+        // Simple stub implementation
+        Ok(false)
     }
 }

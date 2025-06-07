@@ -34,7 +34,7 @@ fn test_integrated_deep_nested_async_checker() {
     // Test simple type check
     let stack_int = Type::Struct(
         "Stack".to_string(),
-        vec![Type::Normie] // Int implements Comparable
+        vec![Box::new(Type::Normie)] // Int implements Comparable
     );
     
     let result = checker.check_complex_nested_constraint_parallel(
@@ -51,7 +51,7 @@ fn test_integrated_deep_nested_async_checker() {
     let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
     let stack_non_comparable = Type::Struct(
         "Stack".to_string(),
-        vec![non_comparable]
+        vec![Box::new(non_comparable)]
     );
     
     let result = checker.check_complex_nested_constraint_parallel(
@@ -107,19 +107,19 @@ fn test_multi_level_constraint_parallel() {
     // Box[Int]
     let box_int = Type::Struct(
         "Box".to_string(),
-        vec![Type::Normie] // Int implements Numeric
+        vec![Box::new(Type::Normie)] // Int implements Numeric
     );
     
     // List[Box[Int]]
     let list_box_int = Type::Struct(
         "List".to_string(),
-        vec![box_int.clone()]
+        vec![Box::new(box_int.clone())]
     );
     
     // Container[List[Box[Int]]]
     let container_list_box_int = Type::Struct(
         "Container".to_string(),
-        vec![list_box_int.clone()]
+        vec![Box::new(list_box_int.clone())]
     );
     
     // Check this complex hierarchy
@@ -138,17 +138,17 @@ fn test_multi_level_constraint_parallel() {
     
     let box_non_numeric = Type::Struct(
         "Box".to_string(),
-        vec![non_numeric.clone()]
+        vec![Box::new(non_numeric.clone())]
     );
     
     let list_box_non_numeric = Type::Struct(
         "List".to_string(),
-        vec![box_non_numeric.clone()]
+        vec![Box::new(box_non_numeric.clone())]
     );
     
     let container_list_box_non_numeric = Type::Struct(
         "Container".to_string(),
-        vec![list_box_non_numeric.clone()]
+        vec![Box::new(list_box_non_numeric.clone())]
     );
     
     // Check with non-numeric inner type
@@ -185,7 +185,7 @@ fn test_caching_reuses_results() {
     // Create a test type
     let list_int = Type::Struct(
         "List".to_string(),
-        vec![Type::Normie] // Int implements Comparable
+        vec![Box::new(Type::Normie)] // Int implements Comparable
     );
     
     // First check should compute the result
@@ -266,8 +266,8 @@ fn test_combining_async_and_deep_nested_checks() {
     
     for i in 0..5 {
         let inner_type = Type::Struct(format!("TestType{}", i), vec![]);
-        let wrapper_type = Type::Struct("Wrapper".to_string(), vec![inner_type]);
-        let box_type = Type::Struct("Box".to_string(), vec![wrapper_type]);
+        let wrapper_type = Type::Struct("Wrapper".to_string(), vec![Box::new(inner_type)]);
+        let box_type = Type::Struct("Box".to_string(), vec![Box::new(wrapper_type)]);
         
         complex_checks.push(("MultiContainer", "T", box_type, "Testable"));
     }

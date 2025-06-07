@@ -171,14 +171,18 @@ impl From<crate::error::Error> for TypeAssertionError {
     fn from(err: crate::error::Error) -> Self {
         match err {
             crate::error::Error::TypeAssertion(assertion_error) => {
-                let assertion_error = assertion_error.clone();
                 let mut result = TypeAssertionError::new("unknown", "unknown");
                 
-                for (key, value) in assertion_error.context() {
+                // Clone the context to avoid borrowing issues
+                let context_map: Vec<(String, String)> = assertion_error.context().iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect();
+                
+                for (key, value) in context_map {
                     match key.as_str() {
-                        "interface_type" => result.interface_type = value.to_string(),
-                        "target_type" => result.target_type = value.to_string(),
-                        "actual_type" => result = result.with_actual_type(value.to_string(), None),
+                        "interface_type" => result.interface_type = value,
+                        "target_type" => result.target_type = value,
+                        "actual_type" => result = result.with_actual_type(value, None),
                         _ => {}
                     }
                 }
@@ -191,7 +195,7 @@ impl From<crate::error::Error> for TypeAssertionError {
                     result = result.with_location(loc);
                 }
                 
-                result.with_message(assertion_error.message())
+                result.with_message(assertion_error.message().to_string())
             },
             _ => TypeAssertionError::new("unknown", "unknown")
                 .with_message(format!("Original error: {}", err))
@@ -292,7 +296,7 @@ mod tests {
         let error = TypeAssertionError::new("Stringer", "Person")
             .with_actual_type("Dog", Some(0x1234567890ABCDEF));
             
-        assert_eq!(error.actual_type.unwrap(), "Dog");
+        assert_eq!(error.actual_type.as_ref().unwrap(), "Dog");
         assert_eq!(error.actual_type_id.unwrap(), 0x1234567890ABCDEF);
         assert!(error.get_description().contains("Actual type was Dog"));
     }

@@ -443,7 +443,7 @@ mod tests {
     use crate::ast::expressions::{TypeAssertion, Identifier, Empty};
     use crate::ast::traits::Expression;
     use crate::InterfaceTypeRegistry;
-use crate::core::interface_registry_lru_cache::LruCachedRegistry;
+use crate::core::interface_registry_lru_extension::LruCachedRegistry;
     
     /// Create a test type assertion
     fn create_test_assertion(type_name: &str) -> TypeAssertion {
@@ -459,26 +459,16 @@ use crate::core::interface_registry_lru_cache::LruCachedRegistry;
     fn test_basic_benchmarking() {
         // Set up the LLVM context and code generator
         let context = Context::create();
-        let module = context.create_module("benchmark_test");
-        let builder = context.create_builder();
         
         // Set up a registry
-        let registry: Box<dyn InterfaceTypeRegistry> = Box::new(LruCachedRegistry::new(100));
-        
-        // Create a test function
-        let void_type = context.void_type();
-        let fn_type = void_type.fn_type(&[], false);
-        let function = module.add_function("test_function", fn_type, None);
-        let basic_block = context.append_basic_block(function, "entry");
-        builder.position_at_end(basic_block);
+        let base_registry = crate::core::interface_registry::InterfaceRegistry::new_with_defaults();
+        let _registry: Box<dyn InterfaceTypeRegistry> = Box::new(LruCachedRegistry::new(base_registry));
         
         // Create the code generator
         let mut code_gen = LlvmCodeGenerator::new(
             &context,
-            module,
-            &builder,
-            registry,
-            None, // no type_registry needed for test
+            "benchmark_test",
+            std::path::PathBuf::from("test.csd"),
         );
         
         // Create test type assertions

@@ -31,10 +31,10 @@ fn test_filesystem_integration_initialization() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Initialize filesystem integration
-    code_gen.init_filesystem_integration(Some("."));
+    code_gen.init_filesystem_integration();
     
     // Add a search path
     code_gen.add_source_search_path("./tests");
@@ -75,7 +75,7 @@ fn test_source_line_retrieval() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Initialize filesystem integration with the temp directory
     code_gen.init_filesystem_integration(Some(temp_dir.path().to_str().unwrap()));
@@ -125,7 +125,7 @@ fn test_formatting_error_with_source_context() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Initialize filesystem integration with the temp directory
     code_gen.init_filesystem_integration(Some(temp_dir.path().to_str().unwrap()));
@@ -199,7 +199,7 @@ fn test_source_location_with_node() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Initialize filesystem integration with the temp directory
     code_gen.init_filesystem_integration(Some(temp_dir.path().to_str().unwrap()));

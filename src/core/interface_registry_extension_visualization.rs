@@ -695,15 +695,18 @@ mod tests {
         let arc_registry = ThreadSafeInterfaceExtensionRegistry::new();
         
         // Register interfaces first
-        arc_registry.write().unwrap().register_interface("A");
-        arc_registry.write().unwrap().register_interface("B");
-        arc_registry.write().unwrap().register_interface("C");
-        arc_registry.write().unwrap().register_interface("D");
-        
-        // Register some extensions
-        arc_registry.write().unwrap().register_extension("A", "B").unwrap();
-        arc_registry.write().unwrap().register_extension("B", "C").unwrap();
-        arc_registry.write().unwrap().register_extension("A", "D").unwrap();
+        {
+            let mut reg = arc_registry.write().unwrap();
+            reg.register_interface("A");
+            reg.register_interface("B");
+            reg.register_interface("C");
+            reg.register_interface("D");
+            
+            // Register some extensions
+            reg.register_extension("A", "B").unwrap();
+            reg.register_extension("B", "C").unwrap();
+            reg.register_extension("A", "D").unwrap();
+        }
         
         // Test visualization methods
         
@@ -755,7 +758,7 @@ mod tests {
         
         // Detect cycles
         let registry_ref2 = arc_registry.read().unwrap();
-        let cycles = registry_ref2.detect_cycles(&registry_ref2.get_extension_hierarchy().unwrap()).unwrap();
+        let cycles = registry_ref2.detect_cycles().unwrap();
         assert!(!cycles.is_empty());
     }
 }

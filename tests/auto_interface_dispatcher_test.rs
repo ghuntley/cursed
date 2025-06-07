@@ -21,7 +21,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module")?;
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"))?;
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?
@@ -120,7 +120,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg")?;
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg", std::path::PathBuf::from("test.csd"))?;
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?
@@ -233,7 +233,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer")?;
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer", std::path::PathBuf::from("test.csd"))?;
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?

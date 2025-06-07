@@ -18,7 +18,7 @@ mod common;
 fn test_field_accessors_integration() {
     setup();
     let context = Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
     
     // Create a simple generic struct for testing
     let generic_struct = create_test_generic_struct();

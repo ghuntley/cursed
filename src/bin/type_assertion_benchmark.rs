@@ -10,7 +10,8 @@ use inkwell::targets::{InitializationConfig, Target, TargetMachine};
 use cursed::{
     ast::expressions::TypeAssertion,
     codegen::llvm::LlvmCodeGenerator,
-    codegen::llvm::interface_type_assertion::InterfaceTypeAssertion,
+    codegen::llvm::InterfaceTypeAssertion,
+    codegen::llvm::InterfaceTypeAssertionResult,
     codegen::llvm::interface_type_assertion_benchmarking::{
         TypeAssertionBenchmarking, 
         HierarchyPattern, 
@@ -18,7 +19,6 @@ use cursed::{
         TypeAssertionBenchmark,
         TypeAssertionBenchmarkSuite
     },
-    core::interface_registry_lru_cache::LruCachedRegistry,
 };
 
 /// Setup tracing for benchmarks
@@ -70,16 +70,11 @@ fn create_code_generator<'ctx>(
     let basic_block = context.append_basic_block(function, "entry");
     builder.position_at_end(basic_block);
     
-    // Create a registry with LRU cache (increasing cache size for benchmarks)
-    let registry = Box::new(LruCachedRegistry::new(1000));
-    
     // Create the code generator
     LlvmCodeGenerator::new(
         context,
-        module,
-        &builder,
-        registry,
-        None, // no type_registry needed for test
+        "benchmark_module",
+        std::path::PathBuf::from("benchmark.cursed")
     )
 }
 
@@ -164,14 +159,14 @@ fn run_detailed_pattern_benchmark(pattern: HierarchyPattern, iterations: usize) 
     // Warm-up phase
     println!("Warming up...");
     for _ in 0..WARMUP_ITERATIONS {
-        let _ = code_gen.compile_type_assertion(&assertion);
+        let _ = code_gen.compile_type_assertion_result(&assertion);
     }
     
     // Benchmark phase
     println!("Running benchmark...");
     for _ in 0..iterations {
         benchmark.start();
-        let _ = code_gen.compile_type_assertion(&assertion);
+        let _ = code_gen.compile_type_assertion_result(&assertion);
         benchmark.stop();
     }
     

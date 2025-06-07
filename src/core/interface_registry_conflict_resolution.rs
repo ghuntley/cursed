@@ -16,7 +16,7 @@ use tracing::{debug, info, instrument, trace, warn};
 use crate::core::interface_registry_extensions::{InterfaceRegistryExtension, ThreadSafeInterfaceExtensionRegistry};
 use crate::core::interface_registry_visualization::{
     InterfaceRegistryVisualization, InterfaceRegistryExtensionWithVisualization, 
-    ThreadSafeInterfaceRegistryVisualization, VisualizationOptions,
+    ThreadSafeInterfaceRegistryVisualization, VisualizationOptions, DefaultInterfaceRegistryVisualization,
 };
 use crate::error::Error;
 
@@ -129,7 +129,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::extends(&**vis_registry, source, target)
+            vis_registry.extends(source, target)
         } else {
             InterfaceRegistryExtension::extends(&*self.extension_registry.read().unwrap(), source, target)
         }
@@ -146,7 +146,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::get_all_extensions(&**vis_registry, interface)
+            vis_registry.get_all_extensions(interface)
         } else {
             InterfaceRegistryExtension::get_all_extensions(&*self.extension_registry.read().unwrap(), interface)
         }
@@ -155,7 +155,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::get_all_implementors(&**vis_registry, interface)
+            vis_registry.get_all_implementors(interface)
         } else {
             InterfaceRegistryExtension::get_all_implementors(&*self.extension_registry.read().unwrap(), interface)
         }
@@ -164,7 +164,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::find_inheritance_path(&**vis_registry, source, target)
+            vis_registry.find_inheritance_path(source, target)
         } else {
             InterfaceRegistryExtension::find_inheritance_path(&*self.extension_registry.read().unwrap(), source, target)
         }
@@ -177,7 +177,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     ) -> Result<Vec<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::find_all_inheritance_paths(&**vis_registry, source, target)
+            vis_registry.find_all_inheritance_paths(source, target)
         } else {
             InterfaceRegistryExtension::find_all_inheritance_paths(&*self.extension_registry.read().unwrap(), source, target)
         }
@@ -186,7 +186,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::find_interface_paths(&**vis_registry, source, target, max_paths)
+            vis_registry.find_interface_paths(source, target, max_paths)
         } else {
             InterfaceRegistryExtension::find_interface_paths(&*self.extension_registry.read().unwrap(), source, target, max_paths)
         }
@@ -200,11 +200,11 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
 impl InterfaceRegistryAdapter {
     /// Create a new adapter with both registries
     pub fn new_with_visualization(
-        extension_registry: ThreadSafeInterfaceExtensionRegistry,
+        extension_registry: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>,
         visualization_registry: Box<dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization + Send + Sync>,
     ) -> InterfaceRegistryAdapter {
         InterfaceRegistryAdapter {
-            extension_registry: Arc::new(RwLock::new(extension_registry)),
+            extension_registry,
             visualization_registry: Some(visualization_registry),
         }
     }
@@ -251,7 +251,7 @@ impl InterfaceRegistryAdapter {
     fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::get_extension_hierarchy(&**vis_registry)
+            vis_registry.get_extension_hierarchy()
         } else {
             self.extension_registry.read().unwrap().get_extension_hierarchy()
         }
@@ -261,7 +261,7 @@ impl InterfaceRegistryAdapter {
     fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::get_all_interfaces(&**vis_registry)
+            vis_registry.get_all_interfaces()
         } else {
             self.extension_registry.read().unwrap().get_all_interfaces()
         }
@@ -271,7 +271,7 @@ impl InterfaceRegistryAdapter {
     fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::get_direct_extensions(&**vis_registry, interface)
+            vis_registry.get_direct_extensions(interface)
         } else {
             self.extension_registry.read().unwrap().get_direct_extensions(interface)
         }
@@ -281,7 +281,7 @@ impl InterfaceRegistryAdapter {
     fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            <dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization as InterfaceRegistryExtension>::get_direct_implementors(&**vis_registry, interface)
+            vis_registry.get_direct_implementors(interface)
         } else {
             self.extension_registry.read().unwrap().get_direct_implementors(interface)
         }
@@ -843,7 +843,7 @@ mod tests {
     #[test]
     fn test_adapter_with_only_extension_registry() {
         // Create a new extension registry
-        let registry = ThreadSafeInterfaceExtensionRegistry::new();
+        let mut registry = ThreadSafeInterfaceExtensionRegistry::new();
         
         // Register some extensions
         registry.register_extension("A", "B").unwrap();
@@ -866,21 +866,25 @@ mod tests {
     #[test]
     fn test_adapter_with_both_registries() {
         // Create a new extension registry
-        let ext_registry = ThreadSafeInterfaceExtensionRegistry::new();
+        let mut ext_registry = ThreadSafeInterfaceExtensionRegistry::new();
         
         // Register some extensions
         ext_registry.register_extension("A", "B").unwrap();
         ext_registry.register_extension("B", "C").unwrap();
         
         // Create a new visualization registry
-        let vis_registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let vis_registry_arc = ThreadSafeInterfaceExtensionRegistry::new();
+        let mut vis_registry: Box<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync> = Box::new(DefaultInterfaceRegistryVisualization::new(vis_registry_arc));
         
         // Register the same extensions
         vis_registry.register_extension("A", "B").unwrap();
         vis_registry.register_extension("B", "C").unwrap();
         
         // Create adapter with both registries
-        let adapter = InterfaceRegistryAdapter::new_with_visualization(ext_registry, vis_registry);
+        let fresh_ext_registry = ThreadSafeInterfaceExtensionRegistry::new();
+        fresh_ext_registry.write().unwrap().register_extension("A", "B").unwrap();
+        fresh_ext_registry.write().unwrap().register_extension("B", "C").unwrap();
+        let adapter = InterfaceRegistryAdapter::new_with_visualization(fresh_ext_registry, vis_registry);
         
         // Test basic functionality
         let all_interfaces = adapter.get_all_interfaces().unwrap();
