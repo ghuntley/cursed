@@ -18,25 +18,35 @@ use crate::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionReg
 use crate::error::Error;
 
 impl fmt::Debug for ThreadSafeInterfaceExtensionRegistry {
-    #[instrument(level = "debug", skip(self, f))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        debug!("Formatting ThreadSafeInterfaceExtensionRegistry for Debug");
+        // Simple, safe Debug implementation that avoids infinite recursion
+        // Do NOT use #[instrument] here as it can cause the Debug trait to be called recursively
         
-        // Use a simplified representation to avoid stack overflow from circular debug formatting
-        let mut debug_struct = f.debug_struct("ThreadSafeInterfaceExtensionRegistry");
-        
-        // Get basic information without triggering complex debug formatting
-        let interface_count = match self.get_all_interfaces() {
+        // Get basic information directly from the internal structures without triggering complex operations
+        let interface_count = match self.interfaces().try_read() {
             Ok(interfaces) => interfaces.len(),
             Err(_) => {
-                debug_struct.field("status", &"<lock acquisition failed>");
-                return debug_struct.finish();
+                return f.debug_struct("ThreadSafeInterfaceExtensionRegistry")
+                    .field("status", &"<read lock failed>")
+                    .finish();
             }
         };
         
+        let extensions_count = match self.direct_extensions().try_read() {
+            Ok(extensions) => extensions.len(),
+            Err(_) => 0,
+        };
+        
+        let implementers_count = match self.direct_implementers().try_read() {
+            Ok(implementers) => implementers.len(),
+            Err(_) => 0,
+        };
+        
         // Only show summary information to prevent infinite recursion
-        debug_struct
+        f.debug_struct("ThreadSafeInterfaceExtensionRegistry")
             .field("interface_count", &interface_count)
+            .field("extensions_count", &extensions_count)
+            .field("implementers_count", &implementers_count)
             .field("type", &"ThreadSafeInterfaceExtensionRegistry")
             .finish()
     }
