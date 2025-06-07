@@ -112,5 +112,5 @@ fn test_monomorphization_with_interface_registry() {
     // Type that doesn't implement interface should return Err
     let point_numeric_result = mono_manager.check_constraint(&point_type, "Numeric");
     assert!(point_numeric_result.is_err());
-    assert!(point_numeric_result.unwrap_err().to_string().contains("does not implement interface");
+    assert!(point_numeric_result.unwrap_err().to_string().contains("does not implement interface"));
 }

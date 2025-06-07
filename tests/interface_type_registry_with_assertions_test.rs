@@ -1,12 +1,13 @@
 use std::env;
-use common::tracing;
-use tracing::{debug, error, info, trace, warn};
-use cursed::ast::types::{InterfaceType, StructType, Type};
 use cursed::ast::expressions::TypeAssertion;
 use cursed::parser::Parser;
+use cursed::lexer::Lexer;
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::core::jit::JitCompiler;
 use cursed::error::Error;
+use inkwell::context::Context;
+use inkwell::OptimizationLevel;
+use std::path::PathBuf;
+use tracing::{debug, error, info, trace, warn};
 
 // # Interface Type Registry with Assertions Test
 //
@@ -14,22 +15,14 @@ use cursed::error::Error;
 // during type assertions.
 
 
-#[path = "common.rs"]
-mod common;
-
-
-
-/// Initialize tracing for tests
-macro_rules! init_tracing {
-    () => {
-        common::tracing::setup();
-    };
-}
+// Import common test utilities for setting up tracing
+#[path = "tracing_setup.rs"]
+mod tracing_setup;
 
 /// Test type assertion with enhanced error reporting
 #[test]
 fn test_type_assertion_with_enhanced_error_reporting() {
-    init_tracing!();
+    tracing_setup::init_test_tracing();
     info!(test_case = "type_assertion_with_enhanced_error_reporting", "Starting test");
     
     // Set debug mode to verbose for maximum error information
@@ -111,20 +104,30 @@ fn test_type_assertion_with_enhanced_error_reporting() {
 /// Helper function to compile and run CURSED code
 fn compile_and_run(source: &str) -> Result<(), Error> {
     // Parse the source code
-    let mut parser = Parser::new(source, "test.csd")?;
+    let mut lexer = Lexer::new(source);
+    let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
     
     // Set up the LLVM code generator
-    let code_generator = LlvmCodeGenerator::new("test_module")?;
+    let context = Context::create();
+    let dummy_path = PathBuf::from("test.csd");
+    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
     
     // Generate LLVM IR code
-    let module = code_generator.compile_program(&program)?;
+    code_generator.compile_program(&program)?;
     
-    // Set up JIT compiler
-    let jit = JitCompiler::new()?;
+    // Create JIT execution engine  
+    let execution_engine = code_generator
+        .module()
+        .create_jit_execution_engine(OptimizationLevel::None)
+        .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
     
-    // Compile and run the code
-    jit.run_jit(&module)?;
+    // Try to find and execute the main function
+    if let Ok(main_function) = unsafe { execution_engine.get_function::<unsafe extern "C" fn() -> i32>("main") } {
+        unsafe {
+            let _result = main_function.call();
+        }
+    }
     
     Ok(())
 }

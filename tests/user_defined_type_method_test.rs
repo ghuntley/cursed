@@ -11,7 +11,7 @@ fn test_vector2d_length() {
     let vector = json!({"x": 3.0, "y": 4.0});
     
     // Check if the method is supported
-    assert!(is_method_supported("Vector2D", "length");
+    assert!(is_method_supported("Vector2D", "length"));
     
     // Call the length method
     let result = execute_method("Vector2D", "length", vector.to_string(), vec![]);
@@ -32,10 +32,10 @@ fn test_vector2d_add() {
     let vector = json!({"x": 3.0, "y": 4.0});
     
     // Check if the method is supported
-    assert!(is_method_supported("Vector2D", "add");
+    assert!(is_method_supported("Vector2D", "add"));
     
     // Call the add method with arguments
-    let result = execute_method("Vector2D", "add", vector.to_string(), vec!["2".to_string(), "3".to_string())]);
+    let result = execute_method("Vector2D", "add", vector.to_string(), vec!["2".to_string(), "3".to_string()]);
     
     // Check the result
     assert!(result.is_ok());
@@ -58,7 +58,7 @@ fn test_vector2d_to_string() {
     let vector = json!({"x": 3.0, "y": 4.0});
     
     // Check if the method is supported
-    assert!(is_method_supported("Vector2D", "toString");
+    assert!(is_method_supported("Vector2D", "toString"));
     
     // Call the toString method
     let result = execute_method("Vector2D", "toString", vector.to_string(), vec![]);

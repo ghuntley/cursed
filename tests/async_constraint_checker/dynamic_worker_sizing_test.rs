@@ -25,16 +25,17 @@ fn test_dynamic_worker_sizing() {
     );
     
     // Verify the configuration was applied correctly
-    assert_eq!(checker.min_workers, 2);
-    assert_eq!(checker.max_workers, 6);
-    assert_eq!(checker.scaling_factor, 0.5);
+    let initial_stats = checker.get_detailed_stats();
+    assert_eq!(initial_stats.min_workers, 2);
+    assert_eq!(initial_stats.max_workers, 6);
+    assert_eq!(initial_stats.scaling_factor, 0.5);
     
     // Create constraints to check
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string(),
-        (Type::Tea, "Comparable".to_string(),
-        (Type::Thicc, "Numeric".to_string(),
-        (Type::Lit, "Comparable".to_string(),
+        (Type::Normie, "Numeric".to_string()),
+        (Type::Tea, "Comparable".to_string()),
+        (Type::Thicc, "Numeric".to_string()),
+        (Type::Lit, "Comparable".to_string()),
     ];
     
     // Check constraints and verify results
@@ -64,10 +65,10 @@ fn test_extension_trait_with_worker_config() {
     
     // Use the extension trait to create a custom worker configuration
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string(),
-        (Type::Tea, "Comparable".to_string(),
-        (Type::Thicc, "Numeric".to_string(),
-        (Type::Lit, "Comparable".to_string(),
+        (Type::Normie, "Numeric".to_string()),
+        (Type::Tea, "Comparable".to_string()),
+        (Type::Thicc, "Numeric".to_string()),
+        (Type::Lit, "Comparable".to_string()),
     ];
     
     // Test the check_constraints_with_config method
@@ -116,14 +117,14 @@ fn test_cpu_detection_and_scaling() {
     assert!(stats.available_cores > 0);
     
     // Check that max_workers is limited by available cores
-    assert!(checker.max_workers <= stats.available_cores);
+    assert!(stats.max_workers <= stats.available_cores);
     
     // Create constraints to check
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string(),
-        (Type::Tea, "Comparable".to_string(),
-        (Type::Thicc, "Numeric".to_string(),
-        (Type::Lit, "Comparable".to_string(),
+        (Type::Normie, "Numeric".to_string()),
+        (Type::Tea, "Comparable".to_string()),
+        (Type::Thicc, "Numeric".to_string()),
+        (Type::Lit, "Comparable".to_string()),
     ];
     
     // Check constraints
