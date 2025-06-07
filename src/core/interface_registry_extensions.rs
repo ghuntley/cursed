@@ -9,7 +9,7 @@ use crate::error::Error;
 use tracing::{debug, trace, instrument};
 
 /// Extension trait for interface registries to provide additional functionality
-pub trait InterfaceRegistryExtension: Send + Sync {
+pub trait InterfaceRegistryExtension: Send + Sync + std::fmt::Debug {
     /// Register a new interface
     fn register_interface(&mut self, name: &str);
     
@@ -57,6 +57,7 @@ pub trait InterfaceRegistryExtension: Send + Sync {
 }
 
 /// A thread-safe implementation of InterfaceRegistryExtension
+#[derive(Debug)]
 pub struct ThreadSafeInterfaceExtensionRegistry {
     /// Direct extensions (interface -> set of interfaces it directly extends)
     direct_extensions: RwLock<HashMap<String, HashSet<String>>>,
@@ -596,8 +597,9 @@ impl ThreadSafeInterfaceExtensionRegistry {
         
         let mut all_paths = Vec::new();
         let mut current_path = vec![source.to_string()];
+        let mut visited = HashSet::new();
         
-        self.find_all_paths_recursive(source, target, &mut current_path, &mut all_paths)?;
+        self.find_all_paths_recursive(source, target, &mut current_path, &mut all_paths, &mut visited)?;
         
         Ok(all_paths)
     }
@@ -638,33 +640,7 @@ impl ThreadSafeInterfaceExtensionRegistry {
         Ok(all_implementors)
     }
     
-    /// Helper method for finding all paths recursively
-    #[instrument(skip(self, current_path, all_paths), level = "trace")]
-    fn find_all_paths_recursive(
-        &self,
-        current: &str,
-        target: &str,
-        current_path: &mut Vec<String>,
-        all_paths: &mut Vec<Vec<String>>
-    ) -> Result<(), Error> {
-        if current == target {
-            all_paths.push(current_path.clone());
-            return Ok(());
-        }
-        
-        if let Some(extensions) = self.get_direct_extensions(current)? {
-            for ext in extensions {
-                // Avoid cycles
-                if !current_path.contains(&ext) {
-                    current_path.push(ext.clone());
-                    self.find_all_paths_recursive(&ext, target, current_path, all_paths)?;
-                    current_path.pop();
-                }
-            }
-        }
-        
-        Ok(())
-    }
+
     
     /// Helper method to find a path between two interfaces
     #[instrument(skip(self, visited, path), level = "trace")]

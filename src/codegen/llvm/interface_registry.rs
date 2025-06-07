@@ -7,7 +7,7 @@ use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 
 /// Interface Type Registry trait for LLVM code generator
-pub trait InterfaceTypeRegistry {
+pub trait InterfaceTypeRegistry: std::fmt::Debug {
     // This needs to match the trait name used in benchmarks and other modules
     /// Register an interface type
     fn register_interface(&mut self, name: &str) -> Result<(), Error>;
@@ -86,6 +86,7 @@ pub trait InterfaceTypeRegistry {
 pub type InterfaceRegistry = dyn InterfaceTypeRegistry + Send + Sync;
 
 /// Basic implementation of InterfaceTypeRegistry
+#[derive(Debug)]
 pub struct BasicInterfaceRegistry {
     /// Direct extensions map (interface -> set of interfaces it directly extends)
     direct_extensions: HashMap<String, HashSet<String>>,

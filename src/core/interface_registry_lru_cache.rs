@@ -11,6 +11,7 @@ use tracing::{debug, trace, instrument};
 use lru::LruCache;
 
 /// Thread-safe implementation of a LRU-cached interface registry
+#[derive(Debug)]
 pub struct ThreadSafeInterfaceRegistryLruCache {
     /// The underlying registry to delegate to
     registry: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>>,

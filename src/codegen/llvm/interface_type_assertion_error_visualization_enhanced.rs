@@ -125,8 +125,8 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
             
             // Add each node in the path
             for (i, node_id) in path.path.iter().enumerate() {
-                let node_name = self.get_type_name_by_id(*node_id)
-                    .unwrap_or_else(|| format!("Type#{}", node_id));
+                let node_name = self.get_type_name_by_id(*node_id as u32)
+                    .unwrap_or_else(|_| format!("Type#{}", node_id));
                 
                 if i == 0 {
                     result.push_str(&format!("  {} (actual)\n", node_name));
@@ -179,7 +179,7 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         let type_name = self.get_type_name_by_id(type_id)
-            .unwrap_or_else(|| format!("Type#{}", type_id));
+            .unwrap_or_else(|_| format!("Type#{}", type_id));
         
         // Create a graph visualization of inheritance relationships
         let mut result = String::new();
@@ -199,7 +199,7 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
             }
             
             let current_name = self.get_type_name_by_id(current_id)
-                .unwrap_or_else(|| format!("Type#{}", current_id));
+                .unwrap_or_else(|_| format!("Type#{}", current_id));
             
             // Add indentation based on depth
             let indent = "  ".repeat(depth);
@@ -270,7 +270,7 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         for &type_id in &sorted_types {
             let type_name = self.get_type_name_by_id(type_id)
-                .unwrap_or_else(|| format!("Type#{}", type_id));
+            .unwrap_or_else(|_| format!("Type#{}", type_id));
             
             // Determine in which paths this type appears
             let positions = type_positions.get(&type_id).unwrap();
@@ -309,8 +309,8 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
             // Show the sequence of types in this path
             let path_sequence = paths[i].path.iter()
                 .map(|type_id| {
-                    self.get_type_name_by_id(*type_id)
-                        .unwrap_or_else(|| format!("Type#{}", type_id))
+                    self.get_type_name_by_id(*type_id as u32)
+                    .unwrap_or_else(|_| format!("Type#{}", type_id))
                 })
                 .collect::<Vec<_>>()
                 .join(" -> ");
@@ -331,16 +331,16 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Get type names for better readability
         let root_name = self.get_type_name_by_id(diamond.root_type_id)
-            .unwrap_or_else(|| format!("Type#{}", diamond.root_type_id));
+            .unwrap_or_else(|_| format!("Type#{}", diamond.root_type_id));
         
         let base_name = self.get_type_name_by_id(diamond.base_type_id)
-            .unwrap_or_else(|| format!("Type#{}", diamond.base_type_id));
+            .unwrap_or_else(|_| format!("Type#{}", diamond.base_type_id));
         
         let left_intermediate_name = self.get_type_name_by_id(diamond.left_intermediate_id)
-            .unwrap_or_else(|| format!("Type#{}", diamond.left_intermediate_id));
+            .unwrap_or_else(|_| format!("Type#{}", diamond.left_intermediate_id));
         
         let right_intermediate_name = self.get_type_name_by_id(diamond.right_intermediate_id)
-            .unwrap_or_else(|| format!("Type#{}", diamond.right_intermediate_id));
+            .unwrap_or_else(|_| format!("Type#{}", diamond.right_intermediate_id));
         
         // Create a diamond visualization with ASCII art
         result.push_str("Diamond Inheritance Pattern Detected:\n\n");
@@ -421,10 +421,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             let right_intermediate_id = second_path[diverge_idx];
             
             return Some(DiamondInheritancePattern {
-                root_type_id,
-                base_type_id,
-                left_intermediate_id,
-                right_intermediate_id,
+                root_type_id: root_type_id as u32,
+                base_type_id: base_type_id as u32,
+                left_intermediate_id: left_intermediate_id as u32,
+                right_intermediate_id: right_intermediate_id as u32,
             });
         }
         

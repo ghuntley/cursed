@@ -269,7 +269,7 @@ impl InterfaceInheritancePath {
 }
 
 /// Enhanced path finder for interface inheritance relationships trait
-pub trait EnhancedInterfacePathFinder {
+pub trait EnhancedInterfacePathFinder: std::fmt::Debug {
     /// Find path between interfaces
     fn find_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error>;
     
@@ -284,7 +284,7 @@ pub trait EnhancedInterfacePathFinder {
 }
 
 /// Concrete implementation of EnhancedInterfacePathFinder
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EnhancedInterfacePathFinderImpl<'ctx> {
     /// Reference to the interface type registry
     registry: &'ctx InterfaceTypeRegistry<'ctx>,

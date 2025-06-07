@@ -12,16 +12,12 @@ use std::sync::Arc;
 use tracing::{debug, info, instrument, trace, warn};
 
 use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
-use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, VisualizationOptions};
+use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, InterfaceRegistryVisualization, VisualizationOptions};
 use crate::error::Error;
 
 /// Extension methods for visualization capabilities of `ThreadSafeInterfaceExtensionRegistry`
 impl ThreadSafeInterfaceExtensionRegistry {
-    #[instrument(level = "debug")]
-    fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
-        // Delegate to the instance method
-        self.register_extension(source, target)
-    }
+
     
     #[instrument(level = "debug")]
     pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
@@ -87,194 +83,15 @@ impl ThreadSafeInterfaceExtensionRegistry {
         }
     }
     
-    #[instrument(level = "debug")]
-    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
-        debug!("Checking if {} extends {}", source, target);
-        
-        // If source and target are the same, return true immediately
-        if source == target {
-            return Ok(true);
-        }
-        
-        // Use the extends method from the trait implementation
-        self.extends(source, target)
-    }
+
     
-    #[instrument(level = "debug")]
-    fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error> {
-        debug!("Getting all extensions of interface: {}", interface);
-        
-        let mut result = HashSet::new();
-        let mut queue = VecDeque::new();
-        let mut visited = HashSet::new();
-        
-        // Start with the interface itself
-        queue.push_back(interface.to_string());
-        visited.insert(interface.to_string());
-        
-        // Perform BFS to find all extensions
-        while let Some(current) = queue.pop_front() {
-            if let Some(extensions) = self.get_direct_extensions(&current)? {
-                for extension in extensions {
-                    if !visited.contains(&extension) {
-                        visited.insert(extension.clone());
-                        queue.push_back(extension.clone());
-                        result.insert(extension);
-                    }
-                }
-            }
-        }
-        
-        Ok(result)
-    }
+
     
-    #[instrument(level = "debug")]
-    fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
-        debug!("Getting all implementors of interface: {}", interface);
-        
-        let mut result = HashSet::new();
-        let mut queue = VecDeque::new();
-        let mut visited = HashSet::new();
-        
-        // Start with the interface itself
-        queue.push_back(interface.to_string());
-        visited.insert(interface.to_string());
-        
-        // Perform BFS to find all implementors
-        while let Some(current) = queue.pop_front() {
-            if let Some(implementors) = self.get_direct_implementors(&current)? {
-                for implementor in implementors {
-                    if !visited.contains(&implementor) {
-                        visited.insert(implementor.clone());
-                        queue.push_back(implementor.clone());
-                        result.insert(implementor);
-                    }
-                }
-            }
-        }
-        
-        Ok(result)
-    }
+
     
-    #[instrument(level = "debug")]
-    fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error> {
-        debug!("Finding inheritance path from {} to {}", source, target);
-        
-        // If source and target are the same, return a path with just the interface
-        if source == target {
-            return Ok(vec![source.to_string()]);
-        }
-        
-        // Use BFS to find the shortest path
-        let mut visited = HashSet::new();
-        let mut queue = VecDeque::new();
-        let mut parent_map: HashMap<String, String> = HashMap::new();
-        
-        // Start BFS from source
-        queue.push_back(source.to_string());
-        visited.insert(source.to_string());
-        
-        // Perform BFS
-        while let Some(current) = queue.pop_front() {
-            // Check if we've reached the target
-            if current == target {
-                // Reconstruct the path
-                let mut path = Vec::new();
-                let mut curr = current.clone();
-                
-                path.push(curr.clone());
-                
-                while let Some(parent) = parent_map.get(&curr) {
-                    path.push(parent.clone());
-                    curr = parent.clone();
-                }
-                
-                // Reverse the path to get it in the correct order
-                path.reverse();
-                
-                return Ok(path);
-            }
-            
-            // Get direct extensions of current interface
-            if let Some(extensions) = self.get_direct_extensions(&current)? {
-                for extension in extensions {
-                    if !visited.contains(&extension) {
-                        visited.insert(extension.clone());
-                        queue.push_back(extension.clone());
-                        parent_map.insert(extension.clone(), current.clone());
-                    }
-                }
-            }
-        }
-        
-        // No path found
-        Err(Error::Compilation(format!(
-            "No inheritance path found from interface '{}' to interface '{}'",
-            source, target
-        )))
-    }
+
     
-    #[instrument(level = "debug")]
-    fn find_all_inheritance_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
-        debug!("Finding all inheritance paths from {} to {}", source, target);
-        
-        // If source and target are the same, return a path with just the interface
-        if source == target {
-            return Ok(vec![vec![source.to_string()]]);
-        }
-        
-        // Use DFS to find all paths
-        let mut paths = Vec::new();
-        let mut visited = HashSet::new();
-        let mut current_path = Vec::new();
-        
-        // Helper function for DFS
-        fn dfs(
-            registry: &ThreadSafeInterfaceExtensionRegistry,
-            source: &str,
-            target: &str,
-            current_path: &mut Vec<String>,
-            visited: &mut HashSet<String>,
-            paths: &mut Vec<Vec<String>>,
-        ) -> Result<(), Error> {
-            // Mark current interface as visited
-            visited.insert(source.to_string());
-            current_path.push(source.to_string());
-            
-            // Check if we've reached the target
-            if source == target {
-                paths.push(current_path.clone());
-            } else {
-                // Get direct extensions of current interface
-                if let Some(extensions) = registry.get_direct_extensions(source)? {
-                    for extension in extensions {
-                        if !visited.contains(&extension) {
-                            dfs(registry, &extension, target, current_path, visited, paths)?;
-                        }
-                    }
-                }
-            }
-            
-            // Backtrack
-            visited.remove(source);
-            current_path.pop();
-            
-            Ok(())
-        }
-        
-        // Start DFS
-        dfs(self, source, target, &mut current_path, &mut visited, &mut paths)?;
-        
-        // Check if we found any paths
-        if paths.is_empty() {
-            return Err(Error::Compilation(format!(
-                "No inheritance paths found from interface '{}' to interface '{}'",
-                source, target
-            )));
-        }
-        
-        Ok(paths)
-    }
+
     
     #[instrument(level = "debug")]
     fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
@@ -749,40 +566,49 @@ mod tests {
     
     #[test]
     fn test_visualization_interface_implementation() {
+        use crate::core::interface_registry_extensions::InterfaceRegistryExtension;
+        
         // Create a new ThreadSafeInterfaceExtensionRegistry
-        let registry = ThreadSafeInterfaceExtensionRegistry::new();
+        let arc_registry = ThreadSafeInterfaceExtensionRegistry::new();
+        
+        // Register interfaces first
+        arc_registry.write().unwrap().register_interface("A");
+        arc_registry.write().unwrap().register_interface("B");
+        arc_registry.write().unwrap().register_interface("C");
+        arc_registry.write().unwrap().register_interface("D");
         
         // Register some extensions
-        registry.register_extension("A", "B").unwrap();
-        registry.register_extension("B", "C").unwrap();
-        registry.register_extension("A", "D").unwrap();
+        arc_registry.write().unwrap().register_extension("A", "B").unwrap();
+        arc_registry.write().unwrap().register_extension("B", "C").unwrap();
+        arc_registry.write().unwrap().register_extension("A", "D").unwrap();
         
         // Test visualization methods
         
         // Check if visualization is initialized
-        assert!(registry.is_visualization_initialized().unwrap());
+        assert!(arc_registry.read().unwrap().is_visualization_initialized().unwrap());
         
         // Get all interfaces
-        let interfaces = registry.get_all_interfaces().unwrap();
+        let interfaces = arc_registry.read().unwrap().get_all_interfaces().unwrap();
         assert!(interfaces.contains("A"));
         assert!(interfaces.contains("B"));
         assert!(interfaces.contains("C"));
         assert!(interfaces.contains("D"));
         
-        // Check extension relationship
-        assert!(registry.extends("A", "B").unwrap());
-        assert!(registry.extends("A", "C").unwrap());
-        assert!(registry.extends("B", "C").unwrap());
-        assert!(!registry.extends("C", "A").unwrap());
+        // Check extension relationship (using the trait method via Arc)
+        assert!(arc_registry.extends("A", "B").unwrap());
+        assert!(arc_registry.extends("A", "C").unwrap());
+        assert!(arc_registry.extends("B", "C").unwrap());
+        assert!(!arc_registry.extends("C", "A").unwrap());
         
         // Get inheritance path
-        let path = registry.find_inheritance_path("A", "C").unwrap();
+        let path = arc_registry.find_inheritance_path("A", "C").unwrap();
         assert_eq!(path, vec!["A", "B", "C"]);
         
         // Generate ASCII tree
-        let hierarchy = registry.get_extension_hierarchy().unwrap();
+        let registry_ref = arc_registry.read().unwrap();
+        let hierarchy = registry_ref.get_extension_hierarchy().unwrap();
         let options = VisualizationOptions::default();
-        let ascii = registry.generate_ascii_tree(&hierarchy, &options).unwrap();
+        let ascii = registry_ref.generate_ascii_tree(&hierarchy, &options).unwrap();
         
         // Check that the ASCII tree contains all interfaces
         assert!(ascii.contains("A"));
@@ -791,7 +617,7 @@ mod tests {
         assert!(ascii.contains("D"));
         
         // Generate DOT graph
-        let dot = registry.generate_dot_graph(&hierarchy, &options).unwrap();
+        let dot = registry_ref.generate_dot_graph(&hierarchy, &options).unwrap();
         
         // Check that the DOT graph contains all interfaces
         assert!(dot.contains("A"));
@@ -799,11 +625,280 @@ mod tests {
         assert!(dot.contains("C"));
         assert!(dot.contains("D"));
         
+        drop(registry_ref); // Release the read lock
+        
         // Test cyclic extensions
-        registry.register_extension("C", "A").unwrap();
+        arc_registry.write().unwrap().register_extension("C", "A").unwrap();
         
         // Detect cycles
-        let cycles = registry.detect_cycles(&registry.get_extension_hierarchy().unwrap()).unwrap();
+        let registry_ref2 = arc_registry.read().unwrap();
+        let cycles = registry_ref2.detect_cycles(&registry_ref2.get_extension_hierarchy().unwrap()).unwrap();
         assert!(!cycles.is_empty());
+    }
+}
+
+/// Implementation of InterfaceRegistryVisualization trait for ThreadSafeInterfaceExtensionRegistry
+impl InterfaceRegistryVisualization for ThreadSafeInterfaceExtensionRegistry {
+    #[instrument(skip(self), level = "debug")]
+    fn generate_dot_diagram(&self) -> Result<String, Error> {
+        debug!("Generating DOT diagram for interface hierarchy");
+        
+        let interfaces = self.get_all_interfaces()?;
+        let hierarchy = self.get_extension_hierarchy()?;
+        
+        let mut dot = String::from("digraph InterfaceHierarchy {\n");
+        dot.push_str("  rankdir=BT;\n"); // Bottom to top
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
+        
+        // Add nodes
+        for interface in &interfaces {
+            dot.push_str(&format!("  \"{}\" [label=\"{}\"];\n", interface, interface));
+        }
+        
+        dot.push_str("\n");
+        
+        // Add edges
+        for (source, targets) in &hierarchy {
+            for target in targets {
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", source, target));
+            }
+        }
+        
+        dot.push_str("}\n");
+        
+        Ok(dot)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn generate_inheritance_path_diagram(&self, source: &str, target: &str) -> Result<String, Error> {
+        debug!("Generating inheritance path diagram from {} to {}", source, target);
+        
+        // Check if the source extends the target
+        if !self.extends(source, target)? {
+            return Err(Error::Validation(format!(
+                "'{}' does not extend '{}'", source, target
+            )));
+        }
+        
+        // Find the longest path
+        let path = match self.find_longest_path(source, target)? {
+            Some(p) => p,
+            None => return Err(Error::Internal("Failed to find path".to_string())),
+        };
+        
+        let mut dot = String::from("digraph InheritancePath {\n");
+        dot.push_str("  rankdir=BT;\n"); // Bottom to top
+        dot.push_str("  node [shape=box, style=filled];\n\n");
+        
+        // Add nodes with colors
+        for (i, interface) in path.iter().enumerate() {
+            let color = if i == 0 {
+                "lightgreen" // Source
+            } else if i == path.len() - 1 {
+                "lightpink"  // Target
+            } else {
+                "lightblue"  // Intermediate
+            };
+            dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor={}];\n", 
+                interface, interface, color));
+        }
+        
+        dot.push_str("\n");
+        
+        // Add edges
+        for i in 0..path.len() - 1 {
+            dot.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i + 1]));
+        }
+        
+        dot.push_str("}\n");
+        
+        Ok(dot)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn generate_interface_diagram(&self, interface: &str) -> Result<String, Error> {
+        debug!("Generating interface diagram for: {}", interface);
+        
+        if !self.interface_exists(interface)? {
+            return Err(Error::NotFound(format!("Interface '{}' not found", interface)));
+        }
+        
+        let mut dot = String::from("digraph InterfaceRelationships {\n");
+        dot.push_str("  rankdir=BT;\n"); // Bottom to top
+        dot.push_str("  node [shape=box, style=filled];\n\n");
+        
+        // Add the target interface in a different color
+        dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor=yellow];\n", interface, interface));
+        
+        // Add direct extensions
+        if let Ok(Some(extensions)) = self.get_direct_extensions(interface) {
+            for extension in extensions {
+                dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor=lightgreen];\n", 
+                    extension, extension));
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", interface, extension));
+            }
+        }
+        
+        // Add direct implementors
+        if let Ok(Some(implementors)) = self.get_direct_implementors(interface) {
+            for implementor in implementors {
+                dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor=lightpink];\n", 
+                    implementor, implementor));
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", implementor, interface));
+            }
+        }
+        
+        dot.push_str("}\n");
+        
+        Ok(dot)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn get_text_representation(&self) -> Result<String, Error> {
+        debug!("Generating text representation of interface relationships");
+        
+        let hierarchy = self.get_extension_hierarchy()?;
+        let mut result = String::from("Interface Extension Relationships:\n\n");
+        
+        if hierarchy.is_empty() {
+            result.push_str("No interface relationships found.\n");
+            return Ok(result);
+        }
+        
+        let mut sorted_interfaces: Vec<_> = hierarchy.keys().collect();
+        sorted_interfaces.sort();
+        
+        for interface in sorted_interfaces {
+            let extensions = hierarchy.get(interface).unwrap();
+            if !extensions.is_empty() {
+                result.push_str(&format!("{} extends:\n", interface));
+                for extension in extensions {
+                    result.push_str(&format!("  - {}\n", extension));
+                }
+                result.push_str("\n");
+            }
+        }
+        
+        Ok(result)
+    }
+    
+    #[instrument(skip(self, hierarchy, options), level = "debug")]
+    fn generate_ascii_tree(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        // Use the existing implementation
+        self.generate_ascii_tree(hierarchy, options)
+    }
+    
+    #[instrument(skip(self, hierarchy, options), level = "debug")]
+    fn generate_dot_graph(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        debug!("Generating DOT graph with custom hierarchy");
+        
+        let mut dot = String::from("digraph CustomHierarchy {\n");
+        dot.push_str("  rankdir=BT;\n"); // Bottom to top
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
+        
+        // Collect all interfaces
+        let mut all_interfaces = HashSet::new();
+        for (source, targets) in hierarchy {
+            all_interfaces.insert(source.clone());
+            for target in targets {
+                all_interfaces.insert(target.clone());
+            }
+        }
+        
+        // Add nodes
+        for interface in &all_interfaces {
+            dot.push_str(&format!("  \"{}\" [label=\"{}\"];\n", interface, interface));
+        }
+        
+        dot.push_str("\n");
+        
+        // Add edges
+        for (source, targets) in hierarchy {
+            for target in targets {
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", source, target));
+            }
+        }
+        
+        dot.push_str("}\n");
+        
+        Ok(dot)
+    }
+    
+    #[instrument(skip(self, hierarchy, options), level = "debug")]
+    fn generate_json_representation(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        debug!("Generating JSON representation");
+        
+        // Convert hierarchy to a simple JSON structure
+        let mut json = String::from("{\n");
+        json.push_str("  \"interfaces\": {\n");
+        
+        let mut first = true;
+        for (interface, extensions) in hierarchy {
+            if !first {
+                json.push_str(",\n");
+            }
+            first = false;
+            
+            json.push_str(&format!("    \"{}\": [", interface));
+            
+            for (i, extension) in extensions.iter().enumerate() {
+                if i > 0 {
+                    json.push_str(", ");
+                }
+                json.push_str(&format!("\"{}\"", extension));
+            }
+            
+            json.push_str("]");
+        }
+        
+        json.push_str("\n  }\n");
+        json.push_str("}\n");
+        
+        Ok(json)
+    }
+}
+
+/// Implementation of InterfaceRegistryVisualization trait for Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>
+impl InterfaceRegistryVisualization for Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
+    #[instrument(skip(self), level = "debug")]
+    fn generate_dot_diagram(&self) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.generate_dot_diagram()
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn generate_inheritance_path_diagram(&self, source: &str, target: &str) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.generate_inheritance_path_diagram(source, target)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn generate_interface_diagram(&self, interface: &str) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.generate_interface_diagram(interface)
+    }
+    
+    #[instrument(skip(self), level = "debug")]
+    fn get_text_representation(&self) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_text_representation()
+    }
+    
+    #[instrument(skip(self, hierarchy, options), level = "debug")]
+    fn generate_ascii_tree(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.generate_ascii_tree(hierarchy, options)
+    }
+    
+    #[instrument(skip(self, hierarchy, options), level = "debug")]
+    fn generate_dot_graph(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.generate_dot_graph(hierarchy, options)
+    }
+    
+    #[instrument(skip(self, hierarchy, options), level = "debug")]
+    fn generate_json_representation(&self, hierarchy: &HashMap<String, Vec<String>>, options: &VisualizationOptions) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.generate_json_representation(hierarchy, options)
     }
 }

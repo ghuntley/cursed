@@ -134,8 +134,8 @@ pub fn call_error_propagation_function<'ctx>(
     builder.build_call(
         propagate_fn,
         &[
-            error_message,
-            location_info,
+            error_message.into(),
+            location_info.into(),
             expected_type_id.into(),
             actual_type_id.into(),
             error_type.into()
@@ -195,8 +195,9 @@ pub trait InterfaceRegistry {
 /// 
 /// DEPRECATED: Use interface_type_registry_common::get_type_name_by_id_impl instead
 pub fn get_type_name_by_id_result<T: TypeNameRegistry>(registry: &T, type_id: u32) -> Result<String, Error> {
-    // Delegate to the common implementation in interface_type_registry_common
-    crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(registry, type_id)
+    // Use the trait method directly
+    TypeNameRegistry::get_type_name_by_id(registry, type_id)
+        .ok_or_else(|| Error::Compilation(format!("Could not find type name for ID {}", type_id)))
 }
 
 /// Helper to find interface paths

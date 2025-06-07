@@ -153,6 +153,10 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Find target type in the registry or create an opaque type
         let target_struct_type = self.get_type_by_name(&type_assertion.type_name)
+            .map(|bve| match bve {
+                BasicValueEnum::StructValue(sv) => sv.get_type(),
+                _ => self.context().opaque_struct_type(&type_assertion.type_name)
+            })
             .unwrap_or_else(|| self.context().opaque_struct_type(&type_assertion.type_name));
         
         let target_ptr_type = target_struct_type.ptr_type(AddressSpace::default());
@@ -259,7 +263,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let error_msg_ptr = if let Some(info) = &error_info {
             if !success {
                 // Create a global string constant for the error message
-                self.create_result_string_constant(&info.error_message).into()
+                self.create_result_string_constant(&info.error_message)?.into()
             } else {
                 // Null pointer for success case
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
@@ -272,7 +276,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Create source type name string (or null if success)
         let source_type_ptr = if let Some(info) = &error_info {
             if !success {
-                self.create_result_string_constant(&info.source_type).into()
+                self.create_result_string_constant(&info.source_type)?.into()
             } else {
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
             }
@@ -283,7 +287,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Create target type name string (or null if success)
         let target_type_ptr = if let Some(info) = &error_info {
             if !success {
-                self.create_result_string_constant(&info.target_type).into()
+                self.create_result_string_constant(&info.target_type)?.into()
             } else {
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
             }
@@ -298,12 +302,12 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
                 let line = ctx.i32_type().const_int(loc.line as u64, false);
                 let column = ctx.i32_type().const_int(loc.column as u64, false);
                 let file_ptr = if let Some(file) = &loc.file {
-                    self.create_result_string_constant(file).into()
+                    self.create_result_string_constant(file)?.into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
                 let source_line_ptr = if !loc.source_line.is_empty() {
-                    self.create_result_string_constant(&loc.source_line).into()
+                    self.create_result_string_constant(&loc.source_line)?.into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
@@ -329,7 +333,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Type path information for better error messages
         let type_path_ptr = if let Some(info) = &error_info {
             if !success && info.type_path.is_some() {
-                self.create_result_string_constant(info.type_path.as_ref().unwrap()).into()
+                self.create_result_string_constant(info.type_path.as_ref().unwrap())?.into()
             } else {
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
             }
@@ -460,15 +464,8 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         source_location: Option<SourceLocation>
     ) -> Result<TypeAssertionErrorInfo, Error> {
         // Try to get type IDs
-        let source_type_id = match self.get_type_id(source_type) {
-            Ok(id) => Some(id),
-            Err(_) => None,
-        };
-        
-        let target_type_id = match self.get_type_id(target_type) {
-            Ok(id) => Some(id),
-            Err(_) => None,
-        };
+        let source_type_id = Some(self.hash_type_name(source_type));
+        let target_type_id = Some(self.hash_type_name(target_type));
         
         // Try to visualize the inheritance path
         let type_path = match self.visualize_interface_path(target_type, 2) {
@@ -604,7 +601,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Create a string constant for result implementation
-    fn create_result_string_constant(&self, value: &str) -> PointerValue<'ctx> {
+    fn create_result_string_constant(&mut self, value: &str) -> Result<PointerValue<'ctx>, Error> {
         crate::codegen::llvm::interface_type_assertion_common::create_string_constant_from_codegen(self, value)
     }
     
@@ -643,11 +640,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         builder.build_call(
             propagate_fn,
             &[
-                error_message,
-                source_type,
-                target_type,
-                location_info,
-                type_path
+                error_message.into(),
+                source_type.into(),
+                target_type.into(),
+                location_info.into(),
+                type_path.into()
             ],
             "propagate_error_call"
         )?;

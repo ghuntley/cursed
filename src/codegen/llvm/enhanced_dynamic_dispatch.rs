@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
+use crate::codegen::llvm::pointer_type_extension::PointerTypeExtension;
 use inkwell::values::{BasicValueEnum, PointerValue};
 
 /// Enhanced dynamic dispatch for interfaces

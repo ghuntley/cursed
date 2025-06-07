@@ -154,7 +154,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         // Extract comprehensive source location information
         let source_location = self.create_enhanced_source_location(
             type_assertion,
-            Some(self.current_file_path())
+            self.current_file_path().to_str()
         )?;
         
         debug!("Compiling type assertion with ? operator and comprehensive filesystem integration: {}", 
@@ -176,7 +176,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         let merge_block = self.context().append_basic_block(current_fn, "type_assert_question_merge");
         
         // Check if the interface value is of the target type
-        let is_instance = self.check_instance_of(expr_value, &type_assertion.type_name, Some(source_location.clone()))?;
+        let is_instance = InterfaceTypeAssertion::check_instance_of(self, expr_value, &type_assertion.type_name, Some(source_location.clone()))?;
         
         // Branch based on the type check result
         self.builder().build_conditional_branch(
@@ -210,14 +210,16 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         let actual_type_id = self.get_interface_type_id(expr_value)?;
         
         // Look up the type names for better error messages
-        let expected_type_name = self.get_type_name_by_id(type_id);
-        let actual_type_name = self.get_type_name_by_id(actual_type_id);
+        let type_id_u32 = type_id.into_int_value().get_zero_extended_constant().unwrap() as u32;
+        let actual_type_id_u32 = actual_type_id.into_int_value().get_zero_extended_constant().unwrap() as u32;
+        let expected_type_name = self.get_type_name_by_id(type_id_u32);
+        let actual_type_name = self.get_type_name_by_id(actual_type_id_u32);
         
         // Create a comprehensive error message with source code context
         let error_message = self.create_comprehensive_error_message(
             type_assertion,
             &expected_type_name.unwrap_or(type_assertion.type_name.clone()),
-            actual_type_name.as_deref(),
+            actual_type_name.ok().as_deref(),
             &source_location
         )?;
         
@@ -225,8 +227,8 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         self.call_error_propagation_with_comprehensive_context(
             &error_message,
             &source_location,
-            type_id,
-            actual_type_id,
+            type_id_u32,
+            actual_type_id_u32,
             type_assertion
         )?;
         

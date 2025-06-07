@@ -194,7 +194,7 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
         let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
         
         // Check if the source extends the target
-        if !registry.extends(source, target)? {
+        if !InterfaceRegistryExtensionWithVisualization::extends(&*registry, source, target)? {
             return Err(Error::Validation(format!(
                 "'{}' does not extend '{}'", source, target
             )));

@@ -28,6 +28,7 @@ use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryE
 
 /// Interface type registry that maintains a mapping of type IDs to type names
 /// for improved debugging and error reporting
+#[derive(Debug)]
 pub struct InterfaceTypeRegistry<'ctx> {
     /// Maps type IDs to corresponding type names
     type_id_to_name: HashMap<u64, String>,
@@ -41,6 +42,9 @@ pub struct InterfaceTypeRegistry<'ctx> {
     /// Count of registered types
     type_count: usize,
     
+    /// Next type ID to assign
+    next_type_id: u64,
+    
     /// Reference to the interface extension registry for checking relationships
     pub extension_registry: Option<std::sync::Arc<std::sync::RwLock<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>>>,
 }
@@ -53,6 +57,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
             type_names_global: None,
             type_ids_global: None,
             type_count: 0,
+            next_type_id: 1, // Start with 1 so 0 can represent null or invalid
             extension_registry: None,
         }
     }
@@ -64,6 +69,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
             type_names_global: None,
             type_ids_global: None,
             type_count: 0,
+            next_type_id: 1, // Start with 1 so 0 can represent null or invalid
             extension_registry: Some(extension_registry),
         }
     }

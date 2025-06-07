@@ -12,7 +12,7 @@ use std::fmt::Write;
 use std::sync::{Arc, RwLock};
 use tracing::{debug, instrument};
 
-use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use crate::core::interface_registry_visualization::{ThreadSafeInterfaceRegistryVisualization, InterfaceRegistryExtensionWithVisualization, VisualizationFormat, VisualizationOptions};
 use crate::error::Error;
 
@@ -110,7 +110,7 @@ impl InterfaceRegistryVisualizationIntegration {
         
         // Use the registry's path finding capabilities
         let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire registry read lock".to_string()))?;
-        let paths = registry.find_all_inheritance_paths(source, target)?;
+        let paths = InterfaceRegistryExtensionWithVisualization::find_all_inheritance_paths(&*registry, source, target)?;
         
         // Limit the number of paths if requested
         let limited_paths = if max_paths > 0 && paths.len() > max_paths {
