@@ -256,7 +256,7 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
         let hierarchy = self.interface_registry().get_extension_hierarchy()?;
         
         // Call the registry's cycle detection with proper error handling
-        self.registry_extensions.detect_cycles(&hierarchy)
+        self.registry_extensions.detect_cycles()
     }
     
     #[instrument(skip(self), level = "debug")]

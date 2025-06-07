@@ -4,7 +4,7 @@
 //! for visualizing constraint paths, generating improved error messages,
 //! and providing more sophisticated recovery strategies for complex interface constraints.
 
-use crate::core::constraint_recovery::{ConstraintFailureContext, ConstraintFailureSeverity, RecoveryStrategy};
+use crate::core::constraint_recovery::{ConstraintFailureContext, ConstraintFailureSeverity, RecoveryStrategy, ConstraintRecovery};
 use crate::core::interface_registry::InterfaceRegistry;
 use crate::core::type_checker::Type;
 use crate::error::Error;

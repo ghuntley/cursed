@@ -157,6 +157,7 @@ impl<'ctx> EnhancedDynamicDispatch<'ctx> for crate::codegen::llvm::LlvmCodeGener
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // Compare pointers for equality
         let result = self.builder().build_ptr_diff(
+            self.context().i8_type(),
             vtable_ptr1,
             vtable_ptr2,
             "ptr_diff"

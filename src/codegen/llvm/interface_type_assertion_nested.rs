@@ -23,6 +23,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::error::Error;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 
 /// A trait for handling type assertions involving nested interfaces

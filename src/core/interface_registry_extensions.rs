@@ -107,12 +107,12 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+    pub fn get_all_interfaces(&self) -> Option<HashSet<String>> {
         Some(self.interfaces.read().unwrap().clone())
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
         if let Some(extensions) = self.direct_extensions.read().unwrap().get(interface) {
             Ok(Some(extensions.clone()))
         } else {
@@ -133,6 +133,32 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
             }
             Ok(None)
         }
+    }
+    
+    /// Public method for get_direct_implementors (Vec version for compatibility)
+    #[instrument(skip(self), level = "trace")]
+    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        match self.get_direct_implementers(interface)? {
+            Some(implementers) => Ok(Some(implementers.into_iter().collect())),
+            None => Ok(None),
+        }
+    }
+    
+    /// Public method for getting extension hierarchy
+    #[instrument(skip(self), level = "trace")]
+    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+        use std::collections::HashMap;
+        let mut hierarchy = HashMap::new();
+        
+        if let Some(interfaces) = self.get_all_interfaces() {
+            for interface in interfaces {
+                if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
+                    hierarchy.insert(interface, extensions.into_iter().collect());
+                }
+            }
+        }
+        
+        Ok(hierarchy)
     }
     
     #[instrument(skip(self), level = "debug")]
@@ -212,16 +238,38 @@ impl InterfaceRegistryExtension for Arc<RwLock<ThreadSafeInterfaceExtensionRegis
         self.read().unwrap().has_extension(source, target)
     }
     
-    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+    pub fn get_all_interfaces(&self) -> Option<HashSet<String>> {
         self.read().unwrap().get_all_interfaces()
     }
     
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
         self.read().unwrap().get_direct_extensions(interface)
     }
     
     fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
         self.read().unwrap().get_direct_implementers(interface)
+    }
+    
+    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        match self.get_direct_implementers(interface)? {
+            Some(implementers) => Ok(Some(implementers.into_iter().collect())),
+            None => Ok(None),
+        }
+    }
+    
+    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+        use std::collections::HashMap;
+        let mut hierarchy = HashMap::new();
+        
+        if let Some(interfaces) = self.get_all_interfaces() {
+            for interface in interfaces {
+                if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
+                    hierarchy.insert(interface, extensions.into_iter().collect());
+                }
+            }
+        }
+        
+        Ok(hierarchy)
     }
     
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {

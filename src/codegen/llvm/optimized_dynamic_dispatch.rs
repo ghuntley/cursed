@@ -511,7 +511,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             
             // Add incoming values
             for (value, block) in incoming_values.iter().zip(incoming_blocks.iter()) {
-                phi.add_incoming(&[(value, block)]);
+                phi.add_incoming(&[(&*value, *block)]);
             }
             
             Some(phi.as_basic_value())

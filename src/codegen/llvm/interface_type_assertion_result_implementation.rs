@@ -20,6 +20,7 @@ use inkwell::values::{BasicValueEnum, PointerValue, BasicMetadataValueEnum};
 use inkwell::types::{BasicTypeEnum, StructType};
 use inkwell::IntPredicate;
 use inkwell::AddressSpace;
+use crate::codegen::llvm::basic_value_extensions::BasicValueExt;
 
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::{Expression, Node};
@@ -28,6 +29,7 @@ use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
 use crate::error::SourceLocation;
@@ -140,7 +142,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         )?;
         
         self.builder().build_conditional_branch(
-            is_instance.into_int_value(),
+            is_instance,
             success_block,
             failure_block
         )?;
@@ -176,7 +178,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         self.builder().position_at_end(failure_block);
         
         // Get runtime type name for improved error messages
-        let runtime_type_id = match self.get_runtime_type_id(expr_value) {
+        let runtime_type_id = match self.get_runtime_type_id(expr_value, None) {
             Ok(id) => Some(id),
             Err(_) => None,
         };
@@ -570,7 +572,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
 // Helper methods for Result integration
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get the LLVM type for the enhanced Result structure
-    fn get_result_type(&self, value_type: BasicTypeEnum<'ctx>) -> StructType<'ctx> {
+    pub fn get_result_type(&self, value_type: BasicTypeEnum<'ctx>) -> StructType<'ctx> {
         // Note: This implementation uses a different Result structure than the common one
         // We maintain it separately since it has a different field layout
         let ctx = self.context();
@@ -596,7 +598,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Get the LLVM type for source location information
-    fn get_source_location_type(&self) -> StructType<'ctx> {
+    pub fn get_source_location_type(&self) -> StructType<'ctx> {
         // Use the common implementation
         crate::codegen::llvm::interface_type_assertion_common::get_source_location_type(self)
     }
@@ -607,7 +609,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Call the runtime error propagation function
-    fn call_error_propagation_function(
+    pub fn call_error_propagation_function(
         &self,
         error_message: BasicValueEnum<'ctx>,
         source_type: BasicValueEnum<'ctx>,
@@ -654,7 +656,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Helper to build a struct value from field values
-    fn build_struct_value(&self, fields: &[BasicValueEnum<'ctx>]) -> inkwell::values::StructValue<'ctx> {
+    pub fn build_struct_value(&self, fields: &[BasicValueEnum<'ctx>]) -> inkwell::values::StructValue<'ctx> {
         crate::codegen::llvm::interface_type_assertion_common::build_struct_value(self, fields)
     }
     

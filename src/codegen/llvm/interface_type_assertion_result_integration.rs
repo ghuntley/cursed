@@ -17,6 +17,7 @@ use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
 use inkwell::AddressSpace;
 use tracing::{debug, error, info, trace, warn, instrument, span, Level};
+use crate::codegen::llvm::basic_value_extensions::{BasicValueExt, BoolValueExt, StructTypeExt};
 
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
@@ -24,6 +25,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::error::Error;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 
@@ -107,8 +109,9 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
         )?;
         
         // Branch based on the type check result
+        let condition_value = is_instance.into_int_value(self.context());
         self.builder().build_conditional_branch(
-            is_instance.into_int_value(),
+            condition_value,
             success_block,
             failure_block
         )?;

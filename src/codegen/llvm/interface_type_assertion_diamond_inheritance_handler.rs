@@ -116,22 +116,22 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
         // Get the interface registry
         let registry = match self.get_interface_registry() {
             Some(registry) => registry,
-            None => return Err(Error::new("Interface registry not available"))
+            None => return Err(Error::new("Runtime", "Interface registry not available", None))
         };
         
         // Get type IDs for the concrete type and interface
         let concrete_type_id = match registry.lookup_type_id(concrete_type_name) {
             Ok(id) => id,
-            Err(_) => return Err(Error::new(&format!(
+            Err(_) => return Err(Error::new("Runtime", &format!(
                 "Could not find type ID for concrete type '{}'", concrete_type_name
-            )))
+            ), None))
         };
         
         let interface_type_id = match registry.lookup_type_id(interface_type_name) {
             Ok(id) => id,
-            Err(_) => return Err(Error::new(&format!(
+            Err(_) => return Err(Error::new("Runtime", &format!(
                 "Could not find type ID for interface '{}'", interface_type_name
-            )))
+            ), None))
         };
         
         // Check if the concrete type implements the interface
@@ -286,14 +286,14 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<Vec<DiamondInheritanceInfo>, Error> {
         let registry = match self.get_interface_registry() {
             Some(registry) => registry,
-            None => return Err(Error::new("Interface registry not available"))
+            None => return Err(Error::new("Runtime", "Interface registry not available", None))
         };
         
         let concrete_type_id = match registry.lookup_type_id(concrete_type_name) {
             Ok(id) => id,
-            Err(_) => return Err(Error::new(&format!(
+            Err(_) => return Err(Error::new("Runtime", &format!(
                 "Could not find type ID for concrete type '{}'", concrete_type_name
-            )))
+            ), None))
         };
         
         // Get all interfaces implemented by this concrete type
@@ -366,7 +366,7 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
     fn generate_diamond_inheritance_report(&self) -> Result<String, Error> {
         let registry = match self.get_interface_registry() {
             Some(registry) => registry,
-            None => return Err(Error::new("Interface registry not available"))
+            None => return Err(Error::new("Runtime", "Interface registry not available", None))
         };
         
         // Get all concrete types

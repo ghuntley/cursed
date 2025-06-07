@@ -224,7 +224,7 @@ impl Traceable for ThreadSafeChannel {
                         visitor.visit_object(obj);
                     },
                     Object::Reference(ref_obj) => {
-                        visitor.visit_object(&*ref_obj.borrow());
+                        visitor.visit_object(&*ref_obj.read().unwrap());
                     },
                     Object::Instance { fields, .. } => {
                         for (_, value) in fields {

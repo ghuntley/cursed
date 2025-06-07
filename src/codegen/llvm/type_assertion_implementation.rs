@@ -86,9 +86,8 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
             let ptr = expr_value.into_pointer_value();
             if let Ok(is_null) = self.builder().build_is_null(ptr, "ptr_null_check") {
                 // Check if the is_null value is a constant true
-                if is_null.is_int_value() {
-                    let int_val = is_null.into_int_value();
-                    if int_val.get_zero_extended_value() != 0 {
+                if let Some(const_val) = is_null.get_zero_extended_constant() {
+                    if const_val != 0 {
                         error!("Type assertion attempted on null interface value");
                         // Return a tuple with null value and false flag to indicate failure
                         return self.create_type_assertion_result(None, false);

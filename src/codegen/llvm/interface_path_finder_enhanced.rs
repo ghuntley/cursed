@@ -231,9 +231,13 @@ pub trait EnhancedInterfacePathFinder {
     
     /// Visualize the path between interfaces
     fn visualize_path(&self, source: &str, target: &str) -> Result<Option<String>, Error>;
+    
+    /// Clone the trait object into a Box
+    fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder>;
 }
 
 /// Concrete implementation of EnhancedInterfacePathFinder
+#[derive(Clone)]
 pub struct EnhancedInterfacePathFinderImpl<'ctx> {
     /// Reference to the interface type registry
     registry: &'ctx InterfaceTypeRegistry<'ctx>,
@@ -347,5 +351,11 @@ impl<'ctx> EnhancedInterfacePathFinder for EnhancedInterfacePathFinderImpl<'ctx>
     fn visualize_path(&self, source: &str, target: &str) -> Result<Option<String>, Error> {
         let path = self.find_path_by_name(source, target)?;
         Ok(path.map(|p| p.to_string()))
+    }
+    
+    fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder> {
+        Box::new(EnhancedInterfacePathFinderImpl {
+            registry: self.registry,
+        })
     }
 }

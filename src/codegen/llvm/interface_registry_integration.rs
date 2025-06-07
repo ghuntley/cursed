@@ -17,9 +17,10 @@
 //! reliable way to perform interface type assertions with rich error reporting.
 
 use std::sync::Arc;
+use std::collections::HashMap;
 use tracing::{debug, error, info, instrument, trace, warn};
 
-use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
+use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, VisualizationOptions};
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
@@ -107,7 +108,11 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Generate a DOT graph representation of the interface hierarchy
     pub fn generate_interface_dot_graph(&self) -> Result<String, Error> {
         match self.registry_visualization() {
-            Some(registry) => registry.generate_dot_graph(),
+            Some(registry) => {
+                let hierarchy = HashMap::new();
+                let options = VisualizationOptions::default();
+                registry.generate_dot_graph(&hierarchy, &options)
+            },
             None => Err(Error::from_str("No registry visualization system available"))
         }
     }

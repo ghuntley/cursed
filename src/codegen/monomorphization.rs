@@ -89,7 +89,7 @@ impl MonomorphizationManager {
         
         // Add some special method registrations for test case structs
         if let Some(tc) = &self.type_checker {
-            let mut tc_mut = tc.borrow_mut();
+            let mut tc_mut = tc.write().unwrap();
             
             // Register Point methods
             let point_methods = vec![
@@ -256,17 +256,17 @@ impl MonomorphizationManager {
             // Get available methods for the concrete type (if possible)
             let available_methods = match concrete_type {
                 Type::Struct(struct_name, _) => {
-                    type_checker.borrow().get_struct_methods(struct_name)
+                    type_checker.read().unwrap().get_struct_methods(struct_name)
                         .map(|methods| methods.keys().cloned().collect::<Vec<_>>())
                 },
                 _ => None
             };
             
             // Get required methods for the interface (if possible)
-            let required_methods = type_checker.borrow().get_interface_methods(interface_name)
+            let required_methods = type_checker.read().unwrap().get_interface_methods(interface_name)
                 .map(|methods| methods.keys().cloned().collect::<Vec<_>>());
             
-            match type_checker.borrow_mut().check_interface_implementation(concrete_type, &interface_type) {
+            match type_checker.write().unwrap().check_interface_implementation(concrete_type, &interface_type) {
                 Ok(true) => {
                     tracing::debug!(concrete_type = ?concrete_type, interface = interface_name, "Type checker confirms type implements interface");
                     return Ok(true);

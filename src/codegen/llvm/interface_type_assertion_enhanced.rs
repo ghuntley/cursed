@@ -17,6 +17,8 @@ use inkwell::IntPredicate;
 use inkwell::AddressSpace;
 use inkwell::types::{BasicTypeEnum, StructType};
 use tracing::{debug, error, info, trace, warn, instrument};
+use crate::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
+use crate::codegen::llvm::basic_value_extensions::BoolValueExt;
 
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::{Expression, Node};
@@ -26,6 +28,7 @@ use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryInteg
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::error::Error;
 
 /// Enhanced trait for interface type assertions that handles complex inheritance patterns
@@ -95,8 +98,8 @@ impl<'ctx> EnhancedInterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let source_type_name = match type_assertion.expression.node_type() {
             "Identifier" => {
                 // For identifiers, we can directly get the type from our symbol table
-                if let Some(symbol) = self.lookup_symbol(type_assertion.expression.string().as_str()) {
-                    symbol.type_name.clone()
+                if let Some(_symbol) = self.lookup_symbol(type_assertion.expression.string().as_str()) {
+                    "interface".to_string() // Since we don't have type info, use generic interface type
                 } else {
                     "unknown".to_string() // Fallback if symbol not found
                 }
@@ -113,8 +116,9 @@ impl<'ctx> EnhancedInterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Step 6: Branch based on the direct type check result
         // If direct check fails, go to complex check for inheritance hierarchies
+        let condition_value = is_direct_instance.into_int_value(self.context());
         self.builder().build_conditional_branch(
-            is_direct_instance.into_int_value(),
+            condition_value,
             success_block,
             complex_check_block
         ).map_err(|e| Error::Compilation(
@@ -158,9 +162,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         self.builder().position_at_end(success_block);
         
         // Look up the target type and create appropriate pointer type
-        let target_struct_type = self
-            .get_type_by_name(&type_assertion.type_name)
-            .unwrap_or_else(|| self.context().opaque_struct_type(&type_assertion.type_name));
+        let target_struct_type = self.context().opaque_struct_type(&type_assertion.type_name);
         
         let target_ptr_type = target_struct_type.ptr_type(AddressSpace::default());
         
