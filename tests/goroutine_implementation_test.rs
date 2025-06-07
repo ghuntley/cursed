@@ -9,6 +9,7 @@ use cursed::core::thread_safe_goroutine;
 
 #[cfg(test)]
 mod goroutine_implementation_tests {
+    use super::*;
 
     // Helper struct for testing callable objects
     struct TestCallable {
@@ -23,14 +24,14 @@ mod goroutine_implementation_tests {
             result.push(self.value);
             
             // Return the value that was added
-            Ok(ThreadSafeValue::Integer(self.value))
+            Ok(Arc::new(ThreadSafeObject::Integer(self.value)))
         }
     }
 
     #[test]
     fn test_launch_goroutine_fn() {
         // Create a shared vector to store results
-        let results = Arc::new(Mutex::new(Vec::new());
+        let results = Arc::new(Mutex::new(Vec::new()));
         let results_clone = Arc::clone(&results);
         
         // Launch a goroutine that modifies the results
@@ -41,10 +42,10 @@ mod goroutine_implementation_tests {
         }).unwrap();
         
         // Verify the result is Null (goroutine launched successfully)
-        assert!(matches!(result, Object::Null);
+        assert!(matches!(result, Object::Null));
         
         // Sleep to allow goroutine to complete execution
-        thread::sleep(Duration::from_millis(100);
+        thread::sleep(Duration::from_millis(100));
         
         // Verify the goroutine executed correctly
         let result_values = results.lock().unwrap();
@@ -57,10 +58,10 @@ mod goroutine_implementation_tests {
         let result = goroutine::launch_simple_goroutine("test_function", 42).unwrap();
         
         // Verify the result is Null (goroutine launched successfully)
-        assert!(matches!(result, Object::Null);
+        assert!(matches!(result, Object::Null));
         
         // Sleep to allow goroutine to complete execution
-        thread::sleep(Duration::from_millis(100);
+        thread::sleep(Duration::from_millis(100));
         
         // With the current implementation we can't verify the function was called
         // This is mainly testing that the API works without errors
@@ -69,7 +70,7 @@ mod goroutine_implementation_tests {
     #[test]
     fn test_thread_safe_goroutine() {
         // Create a shared vector to store results
-        let results = Arc::new(Mutex::new(Vec::new());
+        let results = Arc::new(Mutex::new(Vec::new()));
         let results_clone = Arc::clone(&results);
         
         // Create a callable that adds a value to the results
@@ -79,13 +80,13 @@ mod goroutine_implementation_tests {
         });
         
         // Create thread-safe arguments
-        let args = vec![ThreadSafeObject::new(1)];
+        let args = vec![ThreadSafeObject::Integer(1)];
         
         // Run the goroutine
         thread_safe_goroutine::run_goroutine(callable, args).unwrap();
         
         // Sleep briefly to allow goroutine to complete
-        thread::sleep(Duration::from_millis(100);
+        thread::sleep(Duration::from_millis(100));
         
         // Verify the goroutine executed
         let result_values = results.lock().unwrap();
@@ -95,7 +96,7 @@ mod goroutine_implementation_tests {
     #[test]
     fn test_goroutine_fn() {
         // Create a shared vector to store results
-        let results = Arc::new(Mutex::new(Vec::new());
+        let results = Arc::new(Mutex::new(Vec::new()));
         let results_clone = Arc::clone(&results);
         
         // Run a function as a goroutine
@@ -106,7 +107,7 @@ mod goroutine_implementation_tests {
         }).unwrap();
         
         // Sleep briefly to allow goroutine to complete
-        thread::sleep(Duration::from_millis(100);
+        thread::sleep(Duration::from_millis(100));
         
         // Verify the goroutine executed
         let result_values = results.lock().unwrap();
@@ -116,7 +117,7 @@ mod goroutine_implementation_tests {
     #[test]
     fn test_multiple_goroutines() {
         // Create a shared vector to store results
-        let results = Arc::new(Mutex::new(Vec::new());
+        let results = Arc::new(Mutex::new(Vec::new()));
         
         // Launch multiple goroutines that add different values
         let mut handles = vec![];
@@ -131,7 +132,7 @@ mod goroutine_implementation_tests {
             });
             
             // Create thread-safe arguments
-            let args = vec![ThreadSafeObject::new(i)];
+            let args = vec![ThreadSafeObject::Integer(i)];
             
             // Run the goroutine in a separate thread to simulate concurrent execution
             let handle = thread::spawn(move || {
@@ -159,7 +160,7 @@ mod goroutine_implementation_tests {
     #[test]
     fn test_wait_all_goroutines() {
         // Create a shared vector to store results
-        let results = Arc::new(Mutex::new(Vec::new());
+        let results = Arc::new(Mutex::new(Vec::new()));
         
         // Launch 5 goroutines that sleep for different durations
         for i in 0..5 {
@@ -168,7 +169,7 @@ mod goroutine_implementation_tests {
             
             thread_safe_goroutine::run_goroutine_fn(move || {
                 // Sleep for the specified duration
-                thread::sleep(Duration::from_millis(delay_ms);
+                thread::sleep(Duration::from_millis(delay_ms));
                 
                 // Add the value to the results
                 let mut result_guard = results_clone.lock().unwrap();

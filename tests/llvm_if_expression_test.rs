@@ -9,7 +9,6 @@ use cursed::codegen::llvm::ExpressionCompilation;
 use cursed::codegen::llvm::IfExpressionCompilation;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
-use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
@@ -30,31 +29,31 @@ fn test_simple_if_expression() {
     
     // Create a simple condition: true
     let condition = BooleanLiteral {
-        token: "token".to_string().token_literal(),
+        token: "based".to_string(),
         value: true,
     };
     
     // Create the then expression: 42
     let then_expr = IntegerLiteral {
-        token: "token".to_string().token_literal(),
+        token: "42".to_string(),
         value: 42,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "token".to_string().token_literal(),
+        token: "42".to_string(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 24
     let else_expr = IntegerLiteral {
-        token: "token".to_string().token_literal(),
+        token: "24".to_string(),
         value: 24,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "token".to_string().token_literal(),
+        token: "24".to_string(),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -72,7 +71,7 @@ fn test_simple_if_expression() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "token".to_string().token_literal(),
+        token: "lowkey".to_string(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -83,13 +82,13 @@ fn test_simple_if_expression() {
     
     // Compile the if expression
     let result = generator.compile_if_expression(&if_expr);
-    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err());
     
     // Since the condition is true, the result should be 42
     println!("DEBUG TEST: Result: {:?}", result);
     
     // Make sure we have a result
-    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err());
     
     // Now safely get the value
     let value = result.unwrap();

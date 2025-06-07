@@ -7,13 +7,13 @@ fn test_debug_no_stack_overflow() {
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
     
     // Test Debug formatting - this should not cause stack overflow
-    let debug_output = format!("{:?}", *registry.read().unwrap();
+    let debug_output = format!("{:?}", *registry.read().unwrap());
     
     // Verify that the debug output contains expected information
-    assert!(debug_output.contains("ThreadSafeInterfaceExtensionRegistry");
-    assert!(debug_output.contains("interface_count");
-    assert!(debug_output.contains("extensions_count");
-    assert!(debug_output.contains("implementers_count");
+    assert!(debug_output.contains("ThreadSafeInterfaceExtensionRegistry"));
+    assert!(debug_output.contains("interface_count"));
+    assert!(debug_output.contains("extensions_count"));
+    assert!(debug_output.contains("implementers_count"));
     
     println!("Debug output: {}", debug_output);
 }
@@ -28,7 +28,7 @@ fn test_debug_nested_formatting() {
     let debug_output = format!("{:?}", vec_with_registry);
     
     // Should not cause stack overflow and should contain expected information
-    assert!(debug_output.contains("RwLock");
+    assert!(debug_output.contains("RwLock"));
     
     println!("Nested debug output: {}", debug_output);
 }

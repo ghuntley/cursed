@@ -57,7 +57,7 @@ fn test_benchmark_harness() {
     assert_eq!(results.results[0].name, "simple_benchmark");
     
     // Verify metrics
-    assert!(!results.results[0].metrics.is_empty())
+    assert!(!results.results[0].metrics.is_empty());
     assert_eq!(results.results[0].metrics[0].name(), "sleep_time");
     
     // Create a reporter and report results
@@ -85,7 +85,7 @@ fn test_gc_benchmark_suite() {
     
     // Verify results
     assert_eq!(results.suite_name, "gc");
-    assert!(!results.results.is_empty())
+    assert!(!results.results.is_empty());
     
     // Create a reporter and report results
     let reporter = cursed::benchmark::reporters::ConsoleReporter::verbose();
@@ -116,7 +116,7 @@ fn test_concurrency_benchmark_suite() {
     
     // Verify results
     assert_eq!(results.suite_name, "concurrency");
-    assert!(!results.results.is_empty())
+    assert!(!results.results.is_empty());
     
     // Create a reporter and report results
     let reporter = cursed::benchmark::reporters::ConsoleReporter::verbose();

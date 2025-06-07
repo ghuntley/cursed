@@ -36,7 +36,7 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: Token::Identifier("test.csd:10:15".to_string()),
+        token: "test.csd:10:15".to_string(),
         expression: Box::new(MockExpression { token: "token".to_string() }),
         type_name: "ExpectedType".to_string(),
     };
@@ -110,7 +110,7 @@ fn test_interface_filesystem_error_propagation_integration() {
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: Token::Identifier("interface_type_assertion_question_op.csd:98:20".to_string()),
+        token: "interface_type_assertion_question_op.csd:98:20".to_string(),
         expression: Box::new(MockExpression { token: "token".to_string() }),
         type_name: "Circle".to_string(),
     };

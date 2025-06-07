@@ -8,6 +8,7 @@ use cursed::error::Error;
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     
     
     // Helper to initialize tracing for tests
@@ -45,8 +46,8 @@ mod tests {
         assert_eq!(registry.get_type_name(1003).map(|s| s.as_str()), Some("Manager"));
         
         // Verify globals were created
-        assert!(registry.type_ids_global().is_some())
-        assert!(registry.type_names_global().is_some())
+        assert!(registry.type_ids_global().is_some());
+        assert!(registry.type_names_global().is_some());
     }
     
     #[test]
@@ -77,7 +78,7 @@ mod tests {
         
         // To verify, we'd need to load and check the string, but that requires executing the code
         // Just check that the result is a valid pointer value
-        assert!(type_name_ptr.is_pointer_value())
+        assert!(type_name_ptr.is_pointer_value());
     }
     
     #[test]
@@ -104,7 +105,7 @@ mod tests {
         let _ = gen.register_type_with_runtime_info(1002, "Employee");
         
         // Create an interface value struct type
-        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default();
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
         let interface_struct_type = context.struct_type(&[i8_ptr_type.into(), i8_ptr_type.into()], false);
         
         // Create a vtable with type ID
@@ -129,7 +130,7 @@ mod tests {
         ).unwrap();
         
         // Should return true
-        assert!(is_person.is_int_value())
+        assert!(is_person.is_int_value());
         
         // Clean up
         gen.builder().build_return(None).unwrap();
@@ -164,7 +165,7 @@ mod tests {
         let result = gen.log_type_assertion_with_info(type_id.into(), "Manager", false);
         
         // Should succeed even if it's just logging
-        assert!(result.is_ok())
+        assert!(result.is_ok());
         
         // Clean up
         gen.builder().build_return(None).unwrap();

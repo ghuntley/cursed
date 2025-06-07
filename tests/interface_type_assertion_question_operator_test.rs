@@ -3,9 +3,10 @@ use std::cell::RefCell;
 use cursed::ast::expressions::TypeAssertion;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::traits::{Expression, Node};
-use cursed::codegen::llvm::interface_type_assertion_result::*;
-use cursed::codegen::llvm::interface_type_assertion_result_implementation::*;
-use cursed::codegen::llvm::interface_type_assertion::InterfaceTypeAssertion;
+// Note: These modules are not public, so we'll define our own test traits
+// use cursed::codegen::llvm::interface_type_assertion_result::*;
+// use cursed::codegen::llvm::interface_type_assertion_result_implementation::*;
+// use cursed::codegen::llvm::interface_type_assertion::InterfaceTypeAssertion;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use cursed::error::SourceLocation;
@@ -28,6 +29,47 @@ use inkwell::module::Module;
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
+
+// Test trait definitions (since the real ones aren't public)
+trait InterfaceTypeAssertionResult<'ctx> {
+    fn compile_type_assertion_result(
+        &mut self,
+        type_assertion: &TypeAssertion
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    fn create_success_result(
+        &mut self,
+        value: BasicValueEnum<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    fn create_error_result(
+        &mut self,
+        error_info: TypeAssertionError
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    fn extract_success_value(
+        &mut self,
+        result_value: BasicValueEnum<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    fn extract_error_value(
+        &mut self,
+        result_value: BasicValueEnum<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+}
+
+trait ResultPropagation<'ctx> {
+    fn check_and_propagate_error(
+        &mut self,
+        result_value: BasicValueEnum<'ctx>,
+        current_function: FunctionValue<'ctx>
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    fn setup_result_propagation(
+        &mut self,
+        function: FunctionValue<'ctx>
+    ) -> Result<(), Error>;
+}
 
 
 /// Create a mock test module for testing the ? operator with type assertions
@@ -62,7 +104,7 @@ fn test_result_type_structure() {
     
     // Manually construct a Result type
     let bool_type = context.bool_type();
-    let ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     
     // Create the result type as a struct with success flag and value/error pointer
     let result_type = context.struct_type(&[
@@ -72,8 +114,8 @@ fn test_result_type_structure() {
     
     // Verify the structure
     assert_eq!(result_type.count_fields(), 2);
-    assert_eq!(result_type.get_field_type_at_index(0).unwrap(), bool_type.into();
-    assert_eq!(result_type.get_field_type_at_index(1).unwrap(), ptr_type.into();
+    assert_eq!(result_type.get_field_type_at_index(0).unwrap(), bool_type.into());
+    assert_eq!(result_type.get_field_type_at_index(1).unwrap(), ptr_type.into());
     
     info!("Result type structure verified");
 }
@@ -193,7 +235,7 @@ fn test_create_error_result() {
                 true_val,
                 0,
                 "result.success"
-            ).unwrap().into_struct_value());
+            ).unwrap().into_struct_value();
             
             // Set the value pointer
             result = self.builder.build_insert_value(
@@ -201,7 +243,7 @@ fn test_create_error_result() {
                 value_ptr,
                 1,
                 "result.value"
-            ).unwrap().into_struct_value());
+            ).unwrap().into_struct_value();
             
             Ok(result.into())
         }
@@ -220,7 +262,7 @@ fn test_create_error_result() {
             
             // Create a global variable for the string
             let global = self.module.add_global(string_type, None, "error_str");
-            global.set_initializer(&self.context.const_string(string_with_null.as_bytes(), false);
+            global.set_initializer(&self.context.const_string(string_with_null.as_bytes(), false));
             global.set_constant(true);
             global.set_linkage(inkwell::module::Linkage::Private);
             global.set_unnamed_addr(true);
@@ -249,7 +291,7 @@ fn test_create_error_result() {
                 false_val,
                 0,
                 "result.success"
-            ).unwrap().into_struct_value());
+            ).unwrap().into_struct_value();
             
             // Set the error pointer
             result = self.builder.build_insert_value(
@@ -257,7 +299,7 @@ fn test_create_error_result() {
                 error_ptr,
                 1,
                 "result.error"
-            ).unwrap().into_struct_value());
+            ).unwrap().into_struct_value();
             
             Ok(result.into())
         }
@@ -309,29 +351,29 @@ fn test_create_error_result() {
         }
     }
     
-    // Create our test code generator
-    let mut code_generator = TestCodeGenerator::new(&context, module, builder, function);
-    
     // Create a type assertion error
     let error = TypeAssertionError::new("Stringer", "Writer")
         .with_message("Type assertion failed")
         .with_interface_type_id(0x1234)
         .with_target_type_id(0x5678);
     
+    // Create our test code generator
+    let mut code_generator = TestCodeGenerator::new(&context, module, builder, function);
+    
     // Create a result with an error
     let error_result = code_generator.create_error_result(error).unwrap();
     
     // Verify it's a struct
-    assert!(error_result.is_struct_value();
+    assert!(error_result.is_struct_value());
     
     // Extract and verify the success flag is false
-    let success_flag = builder.build_extract_value(
+    let success_flag = code_generator.builder.build_extract_value(
         error_result.into_struct_value(), 
         0, 
         "success_flag"
     ).unwrap();
     
-    assert!(success_flag.is_int_value();
+    assert!(success_flag.is_int_value());
     assert_eq!(success_flag.into_int_value().get_zero_extended_constant().unwrap(), 0);
     
     info!("Error result creation verified");
@@ -352,7 +394,7 @@ fn test_question_mark_operator_propagation() {
     
     // Create the outer function that will return a Result
     let bool_type = context.bool_type();
-    let ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let result_type = context.struct_type(&[bool_type.into(), ptr_type.into()], false);
     
     let fn_type = result_type.fn_type(&[], false);
@@ -468,14 +510,14 @@ fn test_question_mark_operator_propagation() {
                 false_val,
                 0,
                 "error_result.success"
-            ).unwrap().into_struct_value());
+            ).unwrap().into_struct_value();
             
             error_result = self.builder.build_insert_value(
                 error_result,
                 error_value,
                 1,
                 "error_result.error"
-            ).unwrap().into_struct_value());
+            ).unwrap().into_struct_value();
             
             // Return the error Result
             self.builder.build_return(Some(&error_result)).unwrap();
@@ -492,13 +534,13 @@ fn test_question_mark_operator_propagation() {
         ) -> Result<(), Error> {
             // This would set up any necessary infrastructure for result propagation
             // For now, we just ensure the function's return type is compatible with Result
-            let return_type = function.get_type().get_return_type());
+            let return_type = function.get_type().get_return_type();
             
             // Very basic check - just ensure it returns something
             if return_type.is_none() {
                 return Err(Error::Compilation(
                     "Function with ? operator must return a Result type".to_string()
-                );
+                ));
             }
             
             Ok(())
@@ -516,7 +558,7 @@ fn test_question_mark_operator_propagation() {
     
     // Create a test result value with an error
     let bool_type = context.bool_type();
-    let ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let result_type = context.struct_type(&[bool_type.into(), ptr_type.into()], false);
     
     // Create an error result
@@ -524,21 +566,21 @@ fn test_question_mark_operator_propagation() {
     
     // Set the success flag to false
     let false_val = bool_type.const_int(0, false);
-    error_result = builder.build_insert_value(
+    error_result = code_generator.builder.build_insert_value(
         error_result,
         false_val,
         0,
         "error.success"
-    ).unwrap().into_struct_value());
+    ).unwrap().into_struct_value();
     
     // Set a dummy error pointer
     let error_ptr = ptr_type.const_null();
-    error_result = builder.build_insert_value(
+    error_result = code_generator.builder.build_insert_value(
         error_result,
         error_ptr,
         1,
         "error.ptr"
-    ).unwrap().into_struct_value());
+    ).unwrap().into_struct_value();
     
     // Now use the ? operator mechanism to propagate this error
     let propagate_result = code_generator.check_and_propagate_error(
@@ -547,16 +589,16 @@ fn test_question_mark_operator_propagation() {
     );
     
     // This should succeed since we built the error propagation path
-    assert!(propagate_result.is_ok())
+    assert!(propagate_result.is_ok());
     
     // Verify the module structure
-    let module_str = module.print_to_string().to_string());
+    let module_str = code_generator.module.print_to_string().to_string();
     debug!("Generated module: {}", module_str);
     
     // The module should contain blocks for propagation logic
-    assert!(module_str.contains("propagate_success");
-    assert!(module_str.contains("propagate_error");
-    assert!(module_str.contains("propagate_return");
+    assert!(module_str.contains("propagate_success"));
+    assert!(module_str.contains("propagate_error"));
+    assert!(module_str.contains("propagate_return"));
     
     info!("Question mark operator propagation verified");
 }

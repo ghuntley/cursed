@@ -1,6 +1,4 @@
 use cursed::error::Error;
-use cursed::ast::BoxedStatement;
-use crate::common;
 
 // Enhanced range clause implementation tests
 //
@@ -9,7 +7,6 @@ use crate::common;
 //
 // These tests focus on verifying the correctness of the implementation without
 // introducing conflicts with the original implementation.
-
 
 #[path = "common.rs"]
 mod common;
@@ -38,10 +35,10 @@ fn test_numeric_range_iteration() {
     // For now, we can use the original implementation via common helper
     // Later we'll switch to the enhanced implementation
     match common::run_jit_test(input) {
-        Ok(result) => {
-            assert_eq!(result.as_i64(), Some(10);
-        },
-        Err(e) => panic!("Failed to run test: {}", e),
+    Ok(result) => {
+    assert_eq!(result.as_i64(), Some(10));
+    },
+    Err(e) => panic!("Failed to run test: {}", e),
     }
 
     // Once the enhanced implementation is fully integrated,
@@ -74,7 +71,7 @@ fn test_range_with_start_and_end() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(27);
+            assert_eq!(result.as_i64(), Some(27));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -91,17 +88,17 @@ fn test_range_with_step() {
             sus sum lit = 0
             
             periodt i := range 1, 10, 2 {
-                sum = sum + i
+            sum = sum + i
             }
             
             return sum // Should be 1+3+5+7+9 = 25
-        }
-    "#;
-    
-    match common::run_jit_test(input) {
-        Ok(result) => {
-            assert_eq!(result.as_i64(), Some(25);
-        },
+            }
+"#;
+            
+            match common::run_jit_test(input) {
+            Ok(result) => {
+            assert_eq!(result.as_i64(), Some(25));
+            },
         Err(e) => panic!("Failed to run test: {}", e),
     }
 }
@@ -117,17 +114,17 @@ fn test_negative_step_range() {
             sus sum lit = 0
             
             periodt i := range 10, 1, -2 {
-                sum = sum + i
+            sum = sum + i
             }
             
             return sum // Should be 10+8+6+4+2 = 30
-        }
-    "#;
-    
-    match common::run_jit_test(input) {
-        Ok(result) => {
-            assert_eq!(result.as_i64(), Some(30);
-        },
+            }
+"#;
+            
+            match common::run_jit_test(input) {
+            Ok(result) => {
+            assert_eq!(result.as_i64(), Some(30));
+            },
         Err(e) => panic!("Failed to run test: {}", e),
     }
 }
@@ -155,7 +152,7 @@ fn test_break_in_range_loop() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(15);
+            assert_eq!(result.as_i64(), Some(15));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -184,7 +181,7 @@ fn test_continue_in_range_loop() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(25);
+            assert_eq!(result.as_i64(), Some(25));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -211,7 +208,7 @@ fn test_array_iteration() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(150);
+            assert_eq!(result.as_i64(), Some(150));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -224,23 +221,22 @@ fn test_map_key_value_iteration() {
     
     // Test iterating over a map's key-value pairs
     let input = r#"
-        slay main() lit {
-            sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
-            sus sum lit = 0;
+    slay main() lit {
+    sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
+    sus sum lit = 0
 
-    //
             periodt name, score := range scores {
-                sum = sum + score
-            }
-            
-            return sum // Should be 95+87+92 = 274
-        }
+        sum = sum + score
+    }
+    
+    return sum // Should be 95+87+92 = 274
+    }
     "#;
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(274);
-        },
+        assert_eq!(result.as_i64(), Some(274));
+    },
         Err(e) => panic!("Failed to run test: {}", e),
     }
 }

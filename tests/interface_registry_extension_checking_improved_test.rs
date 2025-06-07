@@ -42,7 +42,7 @@ fn test_implementors_error_handling() {
     // Test getting implementors for non-existent interface ID
     // This should return an empty set rather than an error
     let implementors = registry.get_implementors(9999).unwrap();
-    assert!(implementors.is_empty().is_empty())
+    assert!(implementors.is_empty());
 }
 
 /// Test sample relationships from the enhanced get_extension_relationships method
@@ -75,7 +75,7 @@ fn test_real_registry_integration() {
     );
     
     // Create a test registry with the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
     
     // Register some interface types
     registry.register_type(1001, "Reader".to_string());
