@@ -49,7 +49,7 @@ fn test_if_statement_compilation() {
 
     // Compile the if statement using the wrapper (which is just a stub for now)
     let result = generator.compile_if_statement_wrapper(&if_stmt);
-    assert!(result.is_ok(), "Failed to compile if statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile if statement: {:?}", result.err());
 
     // Finally, add a return statement at the end to complete the function
     let ret_val = context.i32_type().const_int(0, false);
@@ -96,7 +96,7 @@ fn test_while_statement_compilation() {
 
     // Compile the while statement using the wrapper (which is just a stub for now)
     let result = generator.compile_while_statement_wrapper(&while_stmt);
-    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err());
 
     // Finally, add a return statement at the end to complete the function
     let ret_val = context.i32_type().const_int(0, false);

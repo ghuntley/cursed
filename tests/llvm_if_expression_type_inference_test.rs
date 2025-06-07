@@ -83,11 +83,11 @@ fn test_assignment_type_inference() {
     }
     
     // Return a dummy value and verify the module
-    let ret_val = generator.builder().build_return(Some(&generator.context().f64_type().const_float(0.0));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&generator.context().f64_type().const_float(0.0)));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }
 
 #[test]
@@ -172,11 +172,11 @@ fn test_assignment_type_coercion() {
     assert!(loaded_value.is_float_value(), "Loaded value should be a float after coercion");
     
     // Return the loaded value and verify the module
-    let ret_val = generator.builder().build_return(Some(&loaded_value);
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&loaded_value));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }
 
 #[test]
@@ -256,12 +256,12 @@ fn test_if_expression_with_assignment_type_inference() {
     assert!(value.is_float_value(), "Result should be a float value due to type inference");
     
     // Get the result from LLVM - Important: This serves as a terminator for the merge block
-    let ret_val = generator.builder().build_return(Some(&value);
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&value));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Verify the module
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }
 
 #[test]
@@ -341,12 +341,12 @@ fn test_if_expression_with_mixed_types() {
     assert!(value.is_float_value(), "Result should be a float value due to type inference");
     
     // Get the result from LLVM
-    let ret_val = generator.builder().build_return(Some(&value);
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&value));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Verify the module
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }
 
 #[test]
