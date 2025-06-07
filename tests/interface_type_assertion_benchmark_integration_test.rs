@@ -179,7 +179,7 @@ fn create_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
         fn register_implementation(&mut self, _concrete_id: u32, _interface_id: u32) -> Result<(), Error> { Ok(()) }
         fn type_implements_interface(&self, _concrete_id: u32, _interface_id: u32) -> bool { true }
         fn get_implemented_interfaces(&self, _concrete_id: u32) -> Result<Vec<u32>, Error> { Ok(vec![100, 200]) }
-        fn get_type_name(&self, _id: u32) -> Result<String, Error> { Ok("MockType".to_string() }
+        fn get_type_name(&self, _id: u32) -> Result<String, Error> { Ok("MockType".to_string()) }
     }
     
     Box::new(MockRegistry)
@@ -225,11 +225,11 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
         
         fn get_type_name(&self, id: u32) -> Result<String, Error> {
             if let Some(name) = self.interfaces.get(&id) {
-                return Ok(name.clone();
+                return Ok(name.clone());
             }
             
             if let Some(name) = self.concrete_types.get(&id) {
-                return Ok(name.clone();
+                return Ok(name.clone());
             }
             
             Ok(format!("Type{}", id))
@@ -244,35 +244,35 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
     };
     
     // Add interfaces
-    registry.register_interface(100, "BaseInterface".to_string().unwrap());
-    registry.register_interface(200, "LeftInterface".to_string().unwrap());
-    registry.register_interface(300, "RightInterface".to_string().unwrap());
+    registry.register_interface(100, "BaseInterface".to_string()).unwrap();
+    registry.register_interface(200, "LeftInterface".to_string()).unwrap();
+    registry.register_interface(300, "RightInterface".to_string()).unwrap();
     
     // Add deep hierarchy interfaces
     for i in 1..=5 {
-        registry.register_interface(1000 + i, format!("Level{}", i)).unwrap());
+        registry.register_interface(1000 + i, format!("Level{}", i)).unwrap();
     }
     
     // Add concrete types
-    registry.register_concrete_type(400, "SimpleConcrete".to_string().unwrap());
-    registry.register_concrete_type(500, "DiamondConcrete".to_string().unwrap());
-    registry.register_concrete_type(600, "DeepConcrete".to_string().unwrap());
+    registry.register_concrete_type(400, "SimpleConcrete".to_string()).unwrap();
+    registry.register_concrete_type(500, "DiamondConcrete".to_string()).unwrap();
+    registry.register_concrete_type(600, "DeepConcrete".to_string()).unwrap();
     
     // Add implementations
     // Simple implementation
-    registry.register_implementation(400, 100).unwrap());
+    registry.register_implementation(400, 100).unwrap();
     
     // Diamond implementation
-    registry.register_implementation(200, 100).unwrap()); // Left extends Base
-    registry.register_implementation(300, 100).unwrap()); // Right extends Base
-    registry.register_implementation(500, 200).unwrap()); // Concrete implements Left
-    registry.register_implementation(500, 300).unwrap()); // Concrete implements Right
+    registry.register_implementation(200, 100).unwrap(); // Left extends Base
+    registry.register_implementation(300, 100).unwrap(); // Right extends Base
+    registry.register_implementation(500, 200).unwrap(); // Concrete implements Left
+    registry.register_implementation(500, 300).unwrap(); // Concrete implements Right
     
     // Deep hierarchy
     for i in 1..5 {
-        registry.register_implementation(1000 + i + 1, 1000 + i).unwrap());
+        registry.register_implementation(1000 + i + 1, 1000 + i).unwrap();
     }
-    registry.register_implementation(600, 1000 + 5).unwrap()); // DeepConcrete implements deepest level
+    registry.register_implementation(600, 1000 + 5).unwrap(); // DeepConcrete implements deepest level
     
     Box::new(registry)
 }

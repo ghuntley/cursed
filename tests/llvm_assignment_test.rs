@@ -17,7 +17,7 @@ use std::path::PathBuf;
 #[test]
 fn test_basic_assignment() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
 
     // Create a function context for testing
     let i32_type = context.i32_type();
@@ -28,8 +28,8 @@ fn test_basic_assignment() {
 
     // Create a variable to assign to
     let var_name = "test_var";
-    let var_ptr = generator.builder().build_alloca(i32_type, var_name).unwrap());
-    generator.add_variable_with_type(var_name, var_ptr, i32_type.into()).unwrap());
+    let var_ptr = generator.builder().build_alloca(i32_type, var_name).unwrap();
+    generator.add_variable_with_type(var_name, var_ptr, i32_type.into()).unwrap();
 
     // Create the integer value to assign
     let int_lit = IntegerLiteral {
@@ -51,11 +51,11 @@ fn test_basic_assignment() {
     };
 
     // Compile the assignment
-    let result = generator.compile_assignment_expr(&assign_expr).unwrap());
+    let result = generator.compile_assignment_expr(&assign_expr).unwrap();
     assert!(result.is_some(), "Failed to compile assignment: result is None");
 
     // Load the variable to check if assignment worked
-    let load_result = generator.builder().build_load(i32_type, var_ptr, "load_test").unwrap());
+    let load_result = generator.builder().build_load(i32_type, var_ptr, "load_test").unwrap();
     let int_value = load_result.into_int_value();
     
     // Check that the variable now has the assigned value

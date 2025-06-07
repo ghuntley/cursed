@@ -1,4 +1,5 @@
 use cursed::core::type_checker::{Type, TypeChecker};
+use cursed::core::type_infer::TypeInference;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
@@ -21,7 +22,7 @@ fn test_map_type_inference(input: &str) -> Result<Type, Error> {
     init_tracing!();
     
     // Parse the code
-    let lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(&mut lexer)?;
     let program = parser.parse_program()?;
     
@@ -37,7 +38,6 @@ fn test_map_type_inference(input: &str) -> Result<Type, Error> {
             // Infer the type of the expression
             // Use the publicly available method to infer types
             type_checker.infer_type(expr.as_ref())
-                .map(|_| ())
         } else {
             Err(Error::from_str("No expression in statement"))
         }
@@ -98,7 +98,7 @@ fn test_mixed_key_types_map_literal() {
     // This should fail because key types are inconsistent
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.to_string().contains("Inconsistent key types");
+        assert!(err.to_string().contains("Inconsistent key types"));
     }
 }
 
@@ -109,6 +109,6 @@ fn test_mixed_value_types_map_literal() {
     // This should fail because value types are inconsistent
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.to_string().contains("Inconsistent value types");
+        assert!(err.to_string().contains("Inconsistent value types"));
     }
 }
