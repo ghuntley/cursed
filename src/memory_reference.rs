@@ -137,10 +137,8 @@ impl Memory {
                     }
                 }
             },
-            Object::Function { body, env, .. } => {
-                if let Some(arc_env) = env.as_arc_rwlock() {
-                    self.mark_object(arc_env, marked);
-                }
+            Object::Function(_function) => {
+                // Function objects contain Arc<CompiledFunction>, no additional objects to mark
             },
             Object::Closure { .. } => {
                 // Mark captured variables in the closure

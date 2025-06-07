@@ -30,9 +30,9 @@ impl ThreadSafeInterfaceRegistryLruCache {
     pub fn new(registry: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>>, cache_size: usize) -> Self {
         Self {
             registry,
-            direct_extensions_cache: RwLock::new(LruCache::new(cache_size)),
-            extends_cache: RwLock::new(LruCache::new(cache_size)),
-            path_cache: RwLock::new(LruCache::new(cache_size)),
+            direct_extensions_cache: RwLock::new(LruCache::new(std::num::NonZero::new(cache_size).unwrap())),
+            extends_cache: RwLock::new(LruCache::new(std::num::NonZero::new(cache_size).unwrap())),
+            path_cache: RwLock::new(LruCache::new(std::num::NonZero::new(cache_size).unwrap())),
         }
     }
     
@@ -104,13 +104,13 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceRegistryLruCache {
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
         // No caching for this operation
         self.registry.read().unwrap().get_all_interfaces()
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // Check cache first
         let cache_key = interface.to_string();
         let direct_extensions_cache = self.direct_extensions_cache.read().unwrap();
@@ -135,9 +135,29 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceRegistryLruCache {
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // No caching for this operation
         self.registry.read().unwrap().get_direct_implementers(interface)
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error> {
+        self.registry.read().unwrap().find_inheritance_path(source, target)
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn find_all_inheritance_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        self.registry.read().unwrap().find_all_inheritance_paths(source, target)
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error> {
+        self.registry.read().unwrap().get_all_extensions(interface)
+    }
+    
+    #[instrument(skip(self), level = "trace")]
+    fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
+        self.registry.read().unwrap().get_all_implementors(interface)
     }
     
     #[instrument(skip(self), level = "debug")]
@@ -205,10 +225,10 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceRegistryLruCache {
         use std::collections::HashMap;
         let mut hierarchy = HashMap::new();
         
-        if let Some(interfaces) = self.get_all_interfaces() {
+        if let Ok(interfaces) = self.get_all_interfaces() {
             for interface in interfaces {
                 if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
-                    hierarchy.insert(interface, extensions.into_iter().collect());
+                    hierarchy.insert(interface, extensions);
                 }
             }
         }

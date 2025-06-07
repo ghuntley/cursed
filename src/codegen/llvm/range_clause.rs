@@ -468,7 +468,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 // This assumes the container has a length() method
                 
                 // Create function signature for length method
-                let container_type = element_type.into_struct_type();
+                let container_type = match element_type {
+                    inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type,
+                    _ => return Err(Error::from_str("Expected struct type for container")),
+                };
                 let fn_type = self.context.i32_type().fn_type(&[container.get_type().into()], false);
                 
                 // Get or create the length function
@@ -588,7 +591,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 
                 // For slices, typically the element type is stored in the struct
                 // or can be determined from its name/metadata
-                let struct_type = pointed_type.into_struct_type();
+                let struct_type = match pointed_type {
+                    inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type,
+                    _ => return Err(Error::from_str("Expected struct type for slice")),
+                };
                 let type_name = struct_type.get_name().to_str().unwrap_or("");
                 
                 // Check if it's a slice type (simplified approach)
@@ -658,7 +664,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Check if it's a struct type (maps are typically implemented as structs)
         if pointed_type.is_struct_type() {
-            let struct_type = pointed_type.into_struct_type();
+            let struct_type = match pointed_type {
+                inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type,
+                _ => return Err(Error::from_str("Expected struct type for map")),
+            };
             let type_name = struct_type.get_name().to_str().unwrap_or("");
             
             // Check if it's a map type (based on naming convention)
@@ -690,7 +699,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Check if it's a struct type (maps are typically implemented as structs)
         if pointed_type.is_struct_type() {
-            let struct_type = pointed_type.into_struct_type();
+            let struct_type = match pointed_type {
+                inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type,
+                _ => return Err(Error::from_str("Expected struct type for map")),
+            };
             let type_name = struct_type.get_name().to_str().unwrap_or("");
             
             // Check if it's a map type (based on naming convention)

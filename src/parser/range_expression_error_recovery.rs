@@ -156,7 +156,7 @@ impl<'a> RangeExpressionErrorRecovery<'a> for Parser<'a> {
         };
         
         // If there's no comma after this, it's a two-parameter range (start, end)
-        if !self.peek_token_is(TokenType::Comma) {
+        if !self.peek_token_is(Token::Comma) {
             // Start and end parameters, return RangeFromTo { start, end }
             return Ok(Box::new(RangeExpression::RangeFromTo { 
                 start: start_expr, 
@@ -170,7 +170,7 @@ impl<'a> RangeExpressionErrorRecovery<'a> for Parser<'a> {
         self.next_token()?; // Move past the comma
         
         // Now parse the step expression
-        let step_expr = match self.parse_expression(0) {
+        let step_expr = match self.parse_expression(Precedence::Lowest) {
             Ok(expr) => expr,
             Err(err) => {
                 warn!(error = %err, "Error parsing range step parameter, using fallback");

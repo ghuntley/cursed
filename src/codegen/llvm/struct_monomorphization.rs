@@ -3,7 +3,7 @@
 //! This module handles the specialization of generic struct types in LLVM code generation.
 //! It creates concrete implementations of generic structs with specific type parameters.
 
-use inkwell::types::StructType;
+use inkwell::types::{StructType, BasicTypeEnum};
 use crate::ast::declarations::SquadStatement;
 use crate::core::type_checker::Type;
 use crate::error::Error;
@@ -112,12 +112,19 @@ impl<'ctx> StructMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                         }
                     } else {
                         // Nested generic struct that needs specialization
-                        return self.handle_nested_generic_struct(&struct_name, nested_type_args);
+                        match self.handle_nested_generic_struct(&struct_name, &nested_type_args)? {
+                            BasicTypeEnum::StructType(struct_type) => return Ok(struct_type),
+                            _ => return Err(Error::new(
+                                "TYPE-001",
+                                format!("Expected struct type for {}", struct_name),
+                                None,
+                            )),
+                        }
                     }
                 },
-                Type::Named(name) => {
+                Type::Named(ref name) => {
                     // Handle named type - look for a struct with this name
-                    if let Some(nested_struct_type) = self.get_struct_type(&self.current_package_name, &name) {
+                    if let Some(nested_struct_type) = self.get_struct_type(&self.current_package_name, name) {
                         nested_struct_type.ptr_type(inkwell::AddressSpace::default()).into()
                     } else {
                         // For named types not found, default to a pointer to an opaque type
@@ -138,7 +145,7 @@ impl<'ctx> StructMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             field_types.push(llvm_field_type);
             
             // Track which fields need GC tracing (pointers, reference types)
-            match concrete_type {
+            match &concrete_type {
                 Type::Tea | Type::Struct(_, _) => {
                     traceable_fields.push((i, field.name.value.clone()));
                 },
@@ -194,18 +201,17 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
 
     fn handle_nested_generic_struct(&mut self, struct_name: &str, nested_type_args: &[Box<Type>]) -> Result<BasicTypeEnum<'ctx>, Error> {
-        // First, find the generic struct definition and clone it immediately
-        let generic_nested_struct = {
-            if let Some(generic_nested_struct) = self.get_generic_struct_info(struct_name) {
-                generic_nested_struct.clone()
-            } else {
+        // First, find the generic struct definition and clone it immediately to avoid borrow conflicts
+        let generic_nested_struct = match self.get_generic_struct_info(struct_name) {
+            Some(generic_nested_struct) => generic_nested_struct.clone(),
+            None => {
                 return Err(Error::new(
                     "GNRC-004",
                     format!("Unknown generic struct type: {}", struct_name),
                     None,
                 ));
             }
-        };
+        }; // immutable borrow ends here
         
         // Recursively specialize the nested struct
         let nested_type_args_vec = nested_type_args.iter().map(|b| (**b).clone()).collect::<Vec<_>>();

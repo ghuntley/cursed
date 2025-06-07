@@ -335,7 +335,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             return Err(Error::TypeAssertion(
                 TypeAssertionError::new(type_assertion.expression.node_type(), &type_assertion.type_name)
                     .with_message(format!("Cannot perform type assertion on non-interface value"))
-                    .with_location(source_location)
+                    .with_location(source_location).into()
             ));
         }
         

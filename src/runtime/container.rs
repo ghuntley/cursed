@@ -35,7 +35,7 @@ pub unsafe extern "C" fn container_length(container: *const c_void) -> c_int {
     let obj = Gc::<Object>::new_without_root(gc, obj_id);
     
     // Get the length based on the object type
-    let length = (if let Some(inner) = obj.inner() {
+    let length = if let Some(inner) = obj.inner() {
         if inner.is_array() {
             // For arrays, get the length directly
             inner.as_array().map(|arr| arr.len()).unwrap_or(0)
@@ -51,9 +51,6 @@ pub unsafe extern "C" fn container_length(container: *const c_void) -> c_int {
         }
     } else {
         // If we couldn't access the inner object
-        0
-    }) else {
-        // For other container types, check for a length method
         debug!("Unknown container type");
         0
     };
@@ -188,10 +185,10 @@ pub unsafe extern "C" fn map_iterator_create(map: *const c_void) -> *mut c_void 
     // Check if it's a map
     if let Some(inner) = obj.inner() {
         if !matches!(inner, Object::HashTable(_)) {
-        debug!("Object is not a map");
-        std::mem::forget(obj);
-        return std::ptr::null_mut();
-    }
+            debug!("Object is not a map");
+            std::mem::forget(obj);
+            return std::ptr::null_mut();
+        }
     
         // Get the map and create an iterator state
         let map_obj = match inner {

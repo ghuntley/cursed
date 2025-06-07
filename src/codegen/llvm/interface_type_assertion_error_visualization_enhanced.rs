@@ -84,10 +84,10 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Get type names for better visualization
         let expected_name = self.get_type_name_by_id(expected_type_id)
-            .unwrap_or_else(|| format!("Type#{}", expected_type_id));
+            .unwrap_or_else(|_| format!("Type#{}", expected_type_id));
         
         let actual_name = self.get_type_name_by_id(actual_type_id)
-            .unwrap_or_else(|| format!("Type#{}", actual_type_id));
+            .unwrap_or_else(|_| format!("Type#{}", actual_type_id));
         
         debug!("Detecting diamond patterns between {} and {}", actual_name, expected_name);
         
@@ -98,7 +98,10 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         let finder = self;
         if let Some(interface_path_finder) = self.interface_path_finder() {
             // Find paths from actual to expected
-            if let Ok(found_paths) = interface_path_finder.find_all_paths(actual_type_id, expected_type_id) {
+            if let Ok(Some(found_path)) = interface_path_finder.find_path(actual_type_id, expected_type_id) {
+                let found_paths = vec![crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath {
+                    path: found_path,
+                }];
                 paths.extend(found_paths);
                 debug!("Found {} inheritance paths", paths.len());
             }

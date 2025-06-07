@@ -98,7 +98,10 @@ fn test_specialized_container_layout() {
 
     // Verify that the specialized container has the expected fields
     // Updated API - struct_type().get_field_types() vs. get_field_types()
-    let fields = specialized_vec_type.into_struct_type().get_field_types();
+    let fields = match specialized_vec_type {
+        inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type.get_field_types(),
+        _ => panic!("Expected specialized_vec_type to be a struct type"),
+    };
     assert_eq!(
         fields.len(),
         4,

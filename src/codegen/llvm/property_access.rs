@@ -38,7 +38,7 @@ impl<'ctx> PropertyAccessCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         let result = self.get_struct_type_from_ptr(object_ptr);
         
         if let Ok((struct_type, struct_name)) = result {
-            tracing::debug!(struct_name = struct_name, field_name = field_name, "Looking up field in struct");
+            tracing::debug!(struct_name = struct_name.as_str(), field_name = field_name, "Looking up field in struct");
             
             // Try to find the field index by name using our improved field registry
             if let Ok((field_idx, _)) = self.get_field_index(&struct_name, &field_name) {
@@ -69,7 +69,7 @@ impl<'ctx> PropertyAccessCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
                     &format!("load_{}", field_name)
                 ).map_err(|e| Error::from_str(&format!("Failed to load field: {}", e)))?;
                 
-                tracing::debug!(field_name = field_name, struct_name = struct_name, "Successfully loaded field");
+                tracing::debug!(field_name = field_name, struct_name = struct_name.as_str(), "Successfully loaded field");
                 return Ok(loaded_value);
             } else {
                 return Err(Error::from_str(&format!("Field '{}' not found in struct '{}'", field_name, struct_name)));

@@ -32,7 +32,7 @@ pub fn hash(data: &str, algorithm: &str) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the MD5 hash
-pub fn md5sum(args: &[Arc<Object>]) -> Result<Object, Error> {
+pub fn md5sum(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("md5sum expects exactly one argument"));
     }
@@ -43,7 +43,7 @@ pub fn md5sum(args: &[Arc<Object>]) -> Result<Object, Error> {
     };
 
     let hash_value = format!("md5sum_of_{}", input);
-    Ok(Object::String(hash_value))
+    Ok(Arc::new(Object::String(hash_value)))
 }
 
 /// Hash a string using the SHA1 algorithm
@@ -55,7 +55,7 @@ pub fn md5sum(args: &[Arc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the SHA1 hash
-pub fn sha1sum(args: &[Arc<Object>]) -> Result<Object, Error> {
+pub fn sha1sum(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("sha1sum expects exactly one argument"));
     }
@@ -66,7 +66,7 @@ pub fn sha1sum(args: &[Arc<Object>]) -> Result<Object, Error> {
     };
 
     let hash_value = format!("sha1sum_of_{}", input);
-    Ok(Object::String(hash_value))
+    Ok(Arc::new(Object::String(hash_value)))
 }
 
 /// Hash a string using the SHA256 algorithm
@@ -78,7 +78,7 @@ pub fn sha1sum(args: &[Arc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the SHA256 hash
-pub fn sha256sum(args: &[Arc<Object>]) -> Result<Object, Error> {
+pub fn sha256sum(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("sha256sum expects exactly one argument"));
     }
@@ -89,7 +89,7 @@ pub fn sha256sum(args: &[Arc<Object>]) -> Result<Object, Error> {
     };
 
     let hash_value = format!("sha256sum_of_{}", input);
-    Ok(Object::String(hash_value))
+    Ok(Arc::new(Object::String(hash_value)))
 }
 
 /// Create an HMAC signature
@@ -101,7 +101,7 @@ pub fn sha256sum(args: &[Arc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A hexadecimal string representation of the HMAC
-pub fn hmac(args: &[Arc<Object>]) -> Result<Object, Error> {
+pub fn hmac(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() < 2 || args.len() > 3 {
         return Err(Error::from_str("hmac expects 2 or 3 arguments: key, message, [algorithm]"));
     }
@@ -126,7 +126,7 @@ pub fn hmac(args: &[Arc<Object>]) -> Result<Object, Error> {
     };
 
     let hmac_value = format!("hmac_of_{}_with_key_{}_using_{}", message, key, algorithm);
-    Ok(Object::String(hmac_value))
+    Ok(Arc::new(Object::String(hmac_value)))
 }
 
 /// Generate random bytes of the specified length
@@ -138,7 +138,7 @@ pub fn hmac(args: &[Arc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// A string of random bytes represented as hex
-pub fn random_bytes(args: &[Arc<Object>]) -> Result<Object, Error> {
+pub fn random_bytes(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     if args.len() != 1 {
         return Err(Error::from_str("random_bytes expects exactly one argument"));
     }
@@ -153,7 +153,7 @@ pub fn random_bytes(args: &[Arc<Object>]) -> Result<Object, Error> {
     }
 
     let random_value = format!("random_bytes_of_length_{}", length);
-    Ok(Object::String(random_value))
+    Ok(Arc::new(Object::String(random_value)))
 }
 
 /// Verify a hash against data
@@ -167,10 +167,10 @@ pub fn random_bytes(args: &[Arc<Object>]) -> Result<Object, Error> {
 /// # Returns
 ///
 /// Boolean indicating if the hash matches
-pub fn verify(data: &str, hash: &str, algorithm: &str) -> Result<Object, Error> {
+pub fn verify(data: &str, hash: &str, algorithm: &str) -> Result<Arc<Object>, Error> {
     // Simple stub implementation
     let computed = format!("hash_of_{}_using_{}", data, algorithm);
-    Ok(Object::Boolean(computed == hash))
+    Ok(Arc::new(Object::Boolean(computed == hash)))
 }
 
 /// Encrypt data using a symmetric key
@@ -184,10 +184,10 @@ pub fn verify(data: &str, hash: &str, algorithm: &str) -> Result<Object, Error> 
 /// # Returns
 ///
 /// The encrypted data
-pub fn encrypt(data: &str, key: &str, algorithm: &str) -> Result<Object, Error> {
+pub fn encrypt(data: &str, key: &str, algorithm: &str) -> Result<Arc<Object>, Error> {
     // Simple stub implementation
     let encrypted = format!("encrypted_{}_with_{}_using_{}", data, key, algorithm);
-    Ok(Object::String(encrypted))
+    Ok(Arc::new(Object::String(encrypted)))
 }
 
 /// Decrypt data using a symmetric key
@@ -201,7 +201,7 @@ pub fn encrypt(data: &str, key: &str, algorithm: &str) -> Result<Object, Error> 
 /// # Returns
 ///
 /// The decrypted data
-pub fn decrypt(data: &str, key: &str, algorithm: &str) -> Result<Object, Error> {
+pub fn decrypt(data: &str, key: &str, algorithm: &str) -> Result<Arc<Object>, Error> {
     // Simple stub implementation
     // In a real implementation, this would actually decrypt the data
     // Here we just extract the original data from our format string
@@ -209,7 +209,7 @@ pub fn decrypt(data: &str, key: &str, algorithm: &str) -> Result<Object, Error> 
         let parts: Vec<&str> = data.split("_with_").collect();
         if parts.len() > 1 {
             let original = parts[0].replace("encrypted_", "");
-            return Ok(Object::String(original));
+            return Ok(Arc::new(Object::String(original)));
         }
     }
     
@@ -226,8 +226,8 @@ pub fn decrypt(data: &str, key: &str, algorithm: &str) -> Result<Object, Error> 
 /// # Returns
 ///
 /// A new cryptographic key
-pub fn generate_key(algorithm: &str, size: i64) -> Result<Object, Error> {
+pub fn generate_key(algorithm: &str, size: i64) -> Result<Arc<Object>, Error> {
     // Simple stub implementation
     let key = format!("key_for_{}_size_{}", algorithm, size);
-    Ok(Object::String(key))
+    Ok(Arc::new(Object::String(key)))
 }

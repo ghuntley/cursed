@@ -363,4 +363,42 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             }
         }
     }
+    
+    /// Detect reversed inheritance relationship with enhanced error messages
+    #[instrument(skip(self), level = "debug")]
+    pub fn detect_reversed_inheritance_enhanced(
+        &self,
+        source_interface: &str,
+        target_interface: &str,
+    ) -> Result<(bool, String), Error> {
+        let _span = span!(Level::DEBUG, "detect_reversed_inheritance_enhanced").entered();
+        debug!("Checking for enhanced reversed inheritance between {} and {}", 
+               source_interface, target_interface);
+        
+        // Use the simple method as the base implementation
+        match self.detect_reversed_inheritance_simple(source_interface, target_interface) {
+            Ok((is_reversed, base_message)) => {
+                if is_reversed {
+                    // Enhance the message with more detailed information
+                    let enhanced_message = format!(
+                        "{}\nNote: This is a common mistake. Interface '{}' extends '{}', not the reverse.\nTo fix: Use '({}: {})' instead of '({}: {})'",
+                        base_message,
+                        target_interface,
+                        source_interface,
+                        target_interface,
+                        source_interface,
+                        source_interface,
+                        target_interface
+                    );
+                    Ok((true, enhanced_message))
+                } else {
+                    Ok((false, base_message))
+                }
+            },
+            Err(e) => {
+                debug!("Error in enhanced reversed inheritance detection: {}", e);
+                Err(e)
+            }
+        }
+    }
 }

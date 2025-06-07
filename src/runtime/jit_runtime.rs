@@ -125,7 +125,7 @@ pub extern "C" fn cursed_print_bool(val: i32) -> i32 {
 pub extern "C" fn cursed_print_char(val: i32) -> i32 {
     if let Some(c) = std::char::from_u32(val as u32) {
         println!("{}", c);
-        debug!(char = c, code_point = val, "JIT printed character");
+        debug!(char = %c, code_point = val, "JIT printed character");
     } else {
         println!("<invalid character>");
         debug!(invalid_code_point = val, "JIT encountered invalid character code point");

@@ -118,7 +118,7 @@ impl SourceLocation {
 }
 
 /// The file system integration for interface type assertions
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InterfaceTypeAssertionFilesystemIntegration {
     /// Maps file paths to their cached source lines
     source_cache: Arc<Mutex<HashMap<PathBuf, HashMap<usize, String>>>>,

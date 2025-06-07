@@ -17,7 +17,6 @@ use crate::core::interface_registry_visualization::{ThreadSafeInterfaceRegistryV
 use crate::error::Error;
 
 /// Provides integration between the standard interface registry and the visualization system
-#[derive(Debug)]
 pub struct InterfaceRegistryVisualizationIntegration {
     /// The interface extension registry
     pub registry: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>,
@@ -25,12 +24,24 @@ pub struct InterfaceRegistryVisualizationIntegration {
     pub visualization: ThreadSafeInterfaceRegistryVisualization,
 }
 
+impl std::fmt::Debug for InterfaceRegistryVisualizationIntegration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InterfaceRegistryVisualizationIntegration")
+            .field("registry", &"Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>")
+            .field("visualization", &"Box<dyn InterfaceRegistryVisualization>")
+            .finish()
+    }
+}
+
 impl InterfaceRegistryVisualizationIntegration {
     /// Creates a new instance of the integration system
     pub fn new() -> Self {
+        let registry = ThreadSafeInterfaceExtensionRegistry::new();
+        let visualization = Box::new(crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(registry.clone()));
+        
         Self {
-            registry: ThreadSafeInterfaceExtensionRegistry::new(),
-            visualization: ThreadSafeInterfaceRegistryVisualization::new(),
+            registry,
+            visualization,
         }
     }
     
@@ -39,11 +50,8 @@ impl InterfaceRegistryVisualizationIntegration {
     pub fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
         debug!("Registering extension in integrated system: {} extends {}", source, target);
         
-        // Register in the regular registry
+        // Register in the regular registry (the visualization shares the same registry)
         self.registry.write().map_err(|_| Error::Internal("Failed to acquire registry write lock".to_string()))?.register_extension(source, target)?;
-        
-        // Register in the visualization system
-        self.visualization.register_extension(source, target)?;
         
         Ok(())
     }
@@ -53,8 +61,8 @@ impl InterfaceRegistryVisualizationIntegration {
     pub fn visualize(&self, format: VisualizationFormat, options: &VisualizationOptions) -> Result<String, Error> {
         debug!("Generating visualization in format: {:?}", format);
         
-        // Get the extension hierarchy from both systems
-        let registry_hierarchy = self.registry.get_extension_hierarchy()?;
+        // Get the extension hierarchy from the registry
+        let registry_hierarchy = self.registry.read().map_err(|_| Error::Internal("Failed to acquire registry read lock".to_string()))?.get_extension_hierarchy()?;
         
         // Convert to the format expected by the visualization system
         let mut visualization_hierarchy = HashMap::new();
@@ -100,7 +108,17 @@ impl InterfaceRegistryVisualizationIntegration {
     ) -> Result<Vec<Vec<String>>, Error> {
         debug!("Finding paths from {} to {}", source, target);
         
-        // Try to use the registry's built-in path finding
-        self.registry.find_interface_paths(source, target, max_paths)
+        // Use the registry's path finding capabilities
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire registry read lock".to_string()))?;
+        let paths = registry.find_all_inheritance_paths(source, target)?;
+        
+        // Limit the number of paths if requested
+        let limited_paths = if max_paths > 0 && paths.len() > max_paths {
+            paths.into_iter().take(max_paths).collect()
+        } else {
+            paths
+        };
+        
+        Ok(limited_paths)
     }
 }

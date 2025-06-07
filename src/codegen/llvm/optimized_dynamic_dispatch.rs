@@ -150,14 +150,12 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // 1. Check if we have a cached method entry
         let cache_key = (interface_name.to_string(), method_name.to_string());
-        let mut method_info = None;
         let mut cache_hit = false;
         
         // Use a block to ensure we release the reference to method_dispatch_cache before the next mutable borrow
         {
             if let Some(cache) = &mut self.method_dispatch_cache {
                 if let Some(cached_method) = cache.method_cache.get_mut(&cache_key) {
-                    method_info = Some(cached_method);
                     cached_method.call_count += 1;
                     cache_hit = true;
                     cache.cache_hits += 1;
@@ -168,7 +166,7 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // If we don't have a cached entry, create one
-        if method_info.is_none() {
+        if !cache_hit {
             debug!("Cache miss for method {}::{}", interface_name, method_name);
             
             // Get interface and vtable info to create a cache entry
@@ -230,8 +228,9 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             return self.call_interface_method_enhanced(interface_ptr.into(), interface_name, method_name, args.to_vec()).map(Some);
         }
         
-        // 2. For frequently called methods, try speculative dispatch
-        if let Some(ref cached_method) = method_info {
+        // 2. For frequently called methods, try speculative dispatch  
+        if cache_hit {
+            let cached_method = self.method_dispatch_cache.as_ref().unwrap().method_cache.get(&cache_key).unwrap();
             if cached_method.call_count > 10 && cached_method.observed_types.len() <= 3 {
                 debug!("Using speculative dispatch for frequently called method");
                 
@@ -579,21 +578,9 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             let struct_type = CursedType::Struct(struct_name.clone(), Vec::new());
             
             // Register the implementation with the interface manager
-            let has_interface_manager = self.interface_manager.is_some();
-            if has_interface_manager {
-                // Extract context and module
-                let context = self.context();
-                let module = self.module();
-                
-                // This is safe because we already checked that interface_manager is Some
-                let interface_manager = unsafe { self.interface_manager.as_mut().unwrap_unchecked() };
-                interface_manager.create_vtable_for_implementation(
-                    context,
-                    module,
-                    &interface_name,
-                    &struct_type,
-                    methods,
-                )?;
+            if self.interface_manager.is_some() {
+                // We need to work around the borrow checker by separating the logic
+                self.register_interface_implementation(&interface_name, &struct_type, methods)?;
             }
             
             // Update our cache of implementing types
@@ -622,6 +609,39 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         Ok(())
+    }
+
+}
+
+/// Implementation of helper methods for LlvmCodeGenerator
+impl<'ctx> LlvmCodeGenerator<'ctx> {
+    /// Helper method to register interface implementation, separated to avoid borrow conflicts
+    fn register_interface_implementation(
+        &mut self,
+        interface_name: &str,
+        struct_type: &CursedType,
+        methods: HashMap<String, FunctionValue<'ctx>>,
+    ) -> Result<(), Error> {
+        // Take ownership of the interface manager temporarily to avoid borrow conflicts
+        if let Some(mut interface_manager) = self.interface_manager.take() {
+            let context = self.context();
+            let module = self.module();
+            
+            let result = interface_manager.create_vtable_for_implementation(
+                context,
+                module,
+                interface_name,
+                struct_type,
+                methods,
+            );
+            
+            // Put the interface manager back
+            self.interface_manager = Some(interface_manager);
+            
+            result
+        } else {
+            Ok(())
+        }
     }
 }
 

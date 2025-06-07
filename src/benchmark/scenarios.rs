@@ -7,7 +7,7 @@ use tracing::{debug, error, info, trace, warn, instrument};
 use crate::memory::{GarbageCollector, Gc, Traceable, Visitor, Tag};
 use crate::memory::thread_safe_gc::ThreadSafeGc;
 use crate::object::Object;
-use crate::object_thread_safe::ThreadSafeValue;
+use crate::object_thread_safe::{ThreadSafeValue, ThreadSafeObject};
 
 use super::harness::{Benchmark, BenchmarkSuite, BenchmarkConfig};
 use super::metrics::{Metric, TimingMetric, MemoryMetric, ThroughputMetric};
@@ -451,7 +451,7 @@ pub fn concurrency_suite() -> BenchmarkSuite {
             // Spawn a sender thread
             let sender = thread::spawn(move || {
                 for i in 0..NUM_MESSAGES {
-                    tx.send(ThreadSafeValue::Integer(i as i64)).unwrap();
+                    tx.send(Arc::new(ThreadSafeObject::Integer(i as i64))).unwrap();
                 }
             });
             

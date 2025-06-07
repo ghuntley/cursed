@@ -21,8 +21,11 @@ use tracing::{debug, error, info, instrument, span, Level, trace, warn};
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::core::interface_registry_visualization::{VisualizationFormat, VisualizationOptions};
 use crate::codegen::llvm::expression::ExpressionCompilation;
+use crate::codegen::llvm::path_utils::PathStringRepresentation;
 use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
+use crate::codegen::llvm::interface_registry_visualization_integration::InterfaceRegistryVisualizationIntegration;
 use crate::codegen::llvm::interface_type_assertion_errors::TypeAssertionErrorHandler;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
@@ -132,7 +135,13 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
                             return Err(Error::Compilation(format!(
                                 "Type assertion failed: The interface relationship is reversed. {}\n{}\nAt: {}",
                                 message, 
-                                self.visualize_interface_hierarchy(target_type_name, 2)?,
+                                self.visualize_interface_hierarchy(
+                                    VisualizationFormat::Ascii,
+                                    &VisualizationOptions {
+                                        max_depth: Some(2),
+                                        include_cycles: true,
+                                    }
+                                )?,
                                 source_location
                             )));
                         }
@@ -178,7 +187,13 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
             };
             
             // Generate an error with the hierarchy visualization
-            let hierarchy = self.visualize_interface_hierarchy(target_type_name, 2)?;
+            let hierarchy = self.visualize_interface_hierarchy(
+                VisualizationFormat::Ascii,
+                &VisualizationOptions {
+                    max_depth: Some(2),
+                    include_cycles: true,
+                }
+            )?;
             
             error!("Type assertion failed: {} is not a {}", runtime_type_name, target_type_name);
             return Err(Error::Compilation(format!(

@@ -24,7 +24,7 @@ use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
-use crate::error::Error;
+use crate::error::{Error, SourceLocation};
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
@@ -103,14 +103,14 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         // Check if the interface value is of the target type with proper error propagation
-        let is_instance = self.check_instance_of_with_propagation(
+        let is_instance = self.check_instance_of(
             expr_value, 
             &type_assertion.type_name,
-            &source_location
+            Some(SourceLocation::new(0, 0)) // TODO: Get actual line/column from type_assertion
         )?;
         
         // Branch based on the type check result
-        let condition_value = is_instance.into_int_value(self.context());
+        let condition_value = is_instance.into_int_value();
         self.builder().build_conditional_branch(
             condition_value,
             success_block,
@@ -119,14 +119,11 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Success path - extract and cast the data pointer
         self.builder().position_at_end(success_block);
-        let data_ptr = self.extract_interface_data_with_propagation(
-            expr_value, 
-            &source_location
-        )?;
+        let data_ptr = self.extract_interface_data_ptr(expr_value)?;
         
         // Look up the target type and create appropriate pointer type
         let target_struct_type = self
-            .get_type_by_name(&type_assertion.type_name)
+            .get_struct_type(&self.current_package_name(), &type_assertion.type_name)
             .unwrap_or_else(|| self.context().opaque_struct_type(&type_assertion.type_name));
         
         let target_ptr_type = target_struct_type.ptr_type(AddressSpace::default());
@@ -162,7 +159,7 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
                 self.emit_type_assertion_debug_info(
                     &type_assertion.expression.string(),
                     &type_assertion.type_name,
-                    path,
+                    &path.join(" -> "),
                     &source_location
                 )?;
             }

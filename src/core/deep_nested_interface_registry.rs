@@ -255,7 +255,8 @@ impl DeepNestedInterfaceRegistry {
         }
         
         // First check if we have any nested constraints for this outer type
-        if let Some(constraints) = self.enhanced_registry.get_nested_constraints(outer_type) {
+        let constraints = self.enhanced_registry.get_nested_constraints(outer_type);
+        if !constraints.is_empty() {
             // Find constraints that match our parameters
             for constraint in constraints {
                 if constraint.outer_param == outer_param && 

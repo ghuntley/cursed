@@ -199,11 +199,55 @@ pub struct InterfaceInheritancePath {
 
 impl InterfaceInheritancePath {
     /// Creates a new empty path
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         InterfaceInheritancePath {
             path: Vec::new(),
             names: Vec::new(),
             is_direct: false,
+        }
+    }
+    
+    /// Creates a new path with the given names and source/target information
+    pub fn new(names: Vec<String>, source: String, target: String) -> Self {
+        InterfaceInheritancePath {
+            path: Vec::new(), // Path IDs could be added later if needed
+            names,
+            is_direct: false, // Default to indirect, could be determined from names length
+        }
+    }
+    
+    /// Returns true if the path is empty
+    pub fn is_empty(&self) -> bool {
+        self.names.is_empty()
+    }
+    
+    /// Returns the length of the path
+    pub fn len(&self) -> usize {
+        self.names.len()
+    }
+    
+    /// Converts the path to a string representation for display
+    pub fn to_string_representation(&self) -> String {
+        if self.names.is_empty() {
+            // If we have source and target information, we could use it here
+            // For now, return a generic empty path message
+            "No path from 'Source' to 'Target'.".to_string()
+        } else {
+            self.names.join(" -> ")
+        }
+    }
+    
+    /// Provides a visual representation of the path
+    pub fn to_visual_representation(&self) -> String {
+        if self.names.is_empty() {
+            "Interface Inheritance Path: No path found".to_string()
+        } else {
+            format!("Interface Inheritance Path:\n{}", 
+                   self.names.iter()
+                           .enumerate()
+                           .map(|(i, name)| format!("  {}. {}", i + 1, name))
+                           .collect::<Vec<_>>()
+                           .join("\n"))
         }
     }
     
@@ -231,6 +275,9 @@ pub trait EnhancedInterfacePathFinder {
     
     /// Visualize the path between interfaces
     fn visualize_path(&self, source: &str, target: &str) -> Result<Option<String>, Error>;
+    
+    /// Detect if inheritance relationship is reversed between interfaces
+    fn detect_reversed_inheritance_enhanced(&self, source: &str, target: &str) -> Result<(bool, String), Error>;
     
     /// Clone the trait object into a Box
     fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder>;
@@ -302,7 +349,7 @@ impl<'ctx> EnhancedInterfacePathFinderImpl<'ctx> {
         let path_result = self.registry.find_path(source_id, target_id)?;
         
         if let Some(path) = path_result {
-            let mut inheritance_path = InterfaceInheritancePath::new();
+            let mut inheritance_path = InterfaceInheritancePath::empty();
             inheritance_path.path = path.clone();
             
             // Get names for the interfaces in the path
@@ -351,6 +398,21 @@ impl<'ctx> EnhancedInterfacePathFinder for EnhancedInterfacePathFinderImpl<'ctx>
     fn visualize_path(&self, source: &str, target: &str) -> Result<Option<String>, Error> {
         let path = self.find_path_by_name(source, target)?;
         Ok(path.map(|p| p.to_string()))
+    }
+    
+    fn detect_reversed_inheritance_enhanced(&self, source: &str, target: &str) -> Result<(bool, String), Error> {
+        // Check if target actually extends source (reverse of what was attempted)
+        let reverse_path = self.find_path_by_name(target, source)?;
+        
+        if reverse_path.is_some() {
+            let message = format!(
+                "The inheritance relationship is reversed. '{}' extends '{}', not the other way around. Try asserting '{}' to '{}' instead.",
+                target, source, target, source
+            );
+            Ok((true, message))
+        } else {
+            Ok((false, String::new()))
+        }
     }
     
     fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder> {

@@ -98,7 +98,8 @@ impl DeepNestedAsyncChecker {
         let mut path = ConstraintPath::new();
         
         // First check if we have any nested constraints for this outer type
-        if let Some(constraints) = self.deep_registry.enhanced_registry.get_nested_constraints(outer_type) {
+        let constraints = self.deep_registry.enhanced_registry.get_nested_constraints(outer_type);
+        if !constraints.is_empty() {
             let matching_constraints: Vec<_> = constraints.iter()
                 .filter(|c| c.outer_param == outer_param && 
                         (c.interface == interface || c.interface == "DependentConstraint"))

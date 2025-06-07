@@ -21,6 +21,8 @@ use tracing::{debug, error, info, instrument, span, trace, warn, Level};
 
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry as InterfaceTypeRegistryTrait;
+use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
 // This will be implemented in a future version when the runtime module is ready
 // use crate::codegen::llvm::runtime::RuntimeFunction;
 
@@ -604,5 +606,110 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
             hash = hash.wrapping_mul(0x100000001b3);
         }
         hash
+    }
+
+    /// Check if source interface extends target interface (alias for extends)
+    pub fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        if let Some(registry) = &self.extension_registry {
+            let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
+            reg.extends(source, target)
+        } else {
+            Ok(false)
+        }
+    }
+}
+
+/// Implementation of the InterfaceTypeRegistry trait for the concrete struct
+impl<'ctx> InterfaceTypeRegistryTrait for InterfaceTypeRegistry<'ctx> {
+    fn register_interface(&mut self, name: &str) -> Result<(), Error> {
+        // Register as a type with a generated ID
+        let type_id = self.next_type_id;
+        self.next_type_id += 1;
+        self.register_type(type_id, name.to_string());
+        Ok(())
+    }
+    
+    fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        // This would be handled by the extension registry if available
+        if let Some(registry) = &self.extension_registry {
+            let mut reg = registry.write().map_err(|_| Error::Compilation("Failed to acquire write lock".to_string()))?;
+            reg.register_extension(source, target)?;
+        }
+        Ok(())
+    }
+    
+    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        if let Some(registry) = &self.extension_registry {
+            let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
+            reg.extends(source, target)
+        } else {
+            Ok(false)
+        }
+    }
+    
+    fn find_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        if let Some(registry) = &self.extension_registry {
+            let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
+            // Use find_longest_path as a fallback since find_path is not in the trait
+            reg.find_longest_path(source, target)
+        } else {
+            Ok(None)
+        }
+    }
+    
+    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+        let mut interfaces = HashSet::new();
+        for (_, name) in &self.type_id_to_name {
+            interfaces.insert(name.clone());
+        }
+        Ok(interfaces)
+    }
+    
+    fn interface_exists(&self, name: &str) -> Result<bool, Error> {
+        Ok(self.type_id_to_name.values().any(|n| n == name))
+    }
+    
+    fn get_type_name(&self, type_id: u64) -> Result<String, Error> {
+        self.type_id_to_name.get(&type_id)
+            .cloned()
+            .ok_or_else(|| Error::Compilation(format!("Type name not found for ID {}", type_id)))
+    }
+    
+    fn lookup_type_id(&self, type_name: &str) -> Result<u64, Error> {
+        for (id, name) in &self.type_id_to_name {
+            if name == type_name {
+                return Ok(*id);
+            }
+        }
+        Err(Error::Compilation(format!("Type ID not found for name {}", type_name)))
+    }
+    
+    fn get_inheritance_map(&self) -> Option<HashMap<String, HashSet<String>>> {
+        if let Some(registry) = &self.extension_registry {
+            if let Ok(reg) = registry.read() {
+                // Convert from HashMap<String, Vec<String>> to HashMap<String, HashSet<String>>
+                if let Ok(hierarchy) = reg.get_extension_hierarchy() {
+                    let mut inheritance_map = HashMap::new();
+                    for (key, values) in hierarchy {
+                        let hash_set: HashSet<String> = values.into_iter().collect();
+                        inheritance_map.insert(key, hash_set);
+                    }
+                    return Some(inheritance_map);
+                }
+            }
+        }
+        None
+    }
+    
+    fn all_types(&self) -> Vec<(u64, String)> {
+        self.type_id_to_name
+            .iter()
+            .map(|(id, name)| (*id, name.clone()))
+            .collect()
+    }
+    
+    fn is_interface(&self, type_id: u32) -> Result<bool, Error> {
+        // For now, assume all registered types could be interfaces
+        Ok(self.type_id_to_name.contains_key(&(type_id as u64)))
     }
 }

@@ -44,6 +44,10 @@ use crate::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensio
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
 use crate::codegen::llvm::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
+use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
+use crate::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
+use crate::codegen::llvm::pointer_type_extension::PointerTypeExtension;
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers as error_helpers};
 use crate::error::SourceLocation;
@@ -150,7 +154,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         // Extract comprehensive source location information
         let source_location = self.create_enhanced_source_location(
             type_assertion,
-            self.current_file_path().as_deref()
+            Some(self.current_file_path())
         )?;
         
         debug!("Compiling type assertion with ? operator and comprehensive filesystem integration: {}", 
@@ -429,11 +433,11 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         
         // Call the error propagation function with the enhanced message and location
         self.call_error_propagation_function(
-            error_message_ptr.into(),
-            self.create_string_constant(source_type).into(),
-            self.create_string_constant(target_type).into(),
+            error_message_ptr?.into(),
+            self.create_string_constant(source_type)?.into(),
+            self.create_string_constant(target_type)?.into(),
             location_struct,
-            self.create_string_constant("").into()
+            self.create_string_constant("")?.into()
         )
     }
 }

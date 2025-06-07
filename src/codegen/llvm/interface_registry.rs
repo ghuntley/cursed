@@ -18,6 +18,11 @@ pub trait InterfaceTypeRegistry {
     /// Check if source extends target (directly or indirectly)
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error>;
     
+    /// Check if source interface extends target interface (alias for extends)
+    fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
+    }
+    
     /// Find inheritance path from source to target
     fn find_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error>;
     
@@ -67,6 +72,13 @@ pub trait InterfaceTypeRegistry {
     fn type_implements_interface(&self, concrete_id: u32, interface_id: u32) -> bool {
         // Default implementation delegates to type_implements_by_id
         self.type_implements_by_id(concrete_id, interface_id).unwrap_or(false)
+    }
+
+    /// Get extension relationships as a map of interface IDs to sets of extended interface IDs
+    fn get_extension_relationships(&self) -> Result<HashMap<u64, HashSet<u64>>, Error> {
+        // Default implementation returns an empty map
+        // Override in concrete implementations to provide actual extension relationships
+        Ok(HashMap::new())
     }
 }
 
@@ -267,6 +279,25 @@ impl InterfaceTypeRegistry for BasicInterfaceRegistry {
         } else {
             false
         }
+    }
+
+    fn get_extension_relationships(&self) -> Result<HashMap<u64, HashSet<u64>>, Error> {
+        let mut extension_map = HashMap::new();
+        
+        // Convert string-based extension relationships to ID-based relationships
+        for (source_name, target_names) in &self.direct_extensions {
+            let source_id = self.hash_name(source_name);
+            let mut target_ids = HashSet::new();
+            
+            for target_name in target_names {
+                let target_id = self.hash_name(target_name);
+                target_ids.insert(target_id);
+            }
+            
+            extension_map.insert(source_id, target_ids);
+        }
+        
+        Ok(extension_map)
     }
 }
 

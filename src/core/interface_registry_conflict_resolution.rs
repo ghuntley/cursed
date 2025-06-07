@@ -21,12 +21,20 @@ use crate::core::interface_registry_visualization::{
 use crate::error::Error;
 
 /// Resolver for the conflicting implementations of InterfaceRegistryExtensionWithVisualization
-#[derive(Debug)]
 pub struct InterfaceRegistryAdapter {
     /// The extension registry to delegate to
     extension_registry: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>,
     /// Optional visualization registry to delegate to when available
-    visualization_registry: Option<Box<dyn InterfaceRegistryVisualization + Send + Sync>>,
+    visualization_registry: Option<Box<dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization + Send + Sync>>,
+}
+
+impl std::fmt::Debug for InterfaceRegistryAdapter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InterfaceRegistryAdapter")
+            .field("extension_registry", &"Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>")
+            .field("visualization_registry", &self.visualization_registry.is_some())
+            .finish()
+    }
 }
 
 impl InterfaceRegistryAdapter {
@@ -40,9 +48,14 @@ impl InterfaceRegistryAdapter {
     }
 
     /// Add visualization registry to the adapter
-    pub fn with_visualization(mut self, visualization: Box<dyn InterfaceRegistryVisualization + Send + Sync>) -> Self {
+    pub fn with_visualization(mut self, visualization: Box<dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization + Send + Sync>) -> Self {
         self.visualization_registry = Some(visualization);
         self
+    }
+
+    /// Get a reference to the underlying extension registry
+    pub fn extension_registry(&self) -> Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
+        self.extension_registry.clone()
     }
 }
 
@@ -61,47 +74,47 @@ impl Clone for InterfaceRegistryAdapter {
 impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     /// Register a new interface
     fn register_interface(&mut self, name: &str) {
-        self.extension_registry.register_interface(name);
+        self.extension_registry.write().unwrap().register_interface(name);
     }
     
     /// Register an extension relationship between interfaces
     fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
-        self.extension_registry.register_extension(source, target)
+        self.extension_registry.write().unwrap().register_extension(source, target)
     }
     
     /// Check if an extension relationship exists between interfaces
     fn has_extension(&self, source: &str, target: &str) -> Result<bool, Error> {
-        self.extension_registry.has_extension(source, target)
+        self.extension_registry.read().unwrap().has_extension(source, target)
     }
     
     /// Get all registered interfaces
-    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
-        InterfaceRegistryExtension::get_all_interfaces(&*self.extension_registry)
+    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+        self.extension_registry.read().unwrap().get_all_interfaces()
     }
     
     /// Get all direct extensions of an interface
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        InterfaceRegistryExtension::get_direct_extensions(&*self.extension_registry, interface)
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        self.extension_registry.read().unwrap().get_direct_extensions(interface)
     }
     
     /// Get all direct implementers of an interface
-    fn get_direct_implementers(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        self.extension_registry.get_direct_implementers(interface)
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        self.extension_registry.read().unwrap().get_direct_implementers(interface)
     }
     
     /// Check if an interface extends another interface (direct or indirect)
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
-        InterfaceRegistryExtension::extends(&*self.extension_registry, source, target)
+        InterfaceRegistryExtension::extends(&*self.extension_registry.read().unwrap(), source, target)
     }
     
     /// Find a common ancestor between two interfaces
     fn find_common_ancestor(&self, a: &str, b: &str) -> Result<Option<String>, Error> {
-        self.extension_registry.find_common_ancestor(a, b)
+        self.extension_registry.read().unwrap().find_common_ancestor(a, b)
     }
     
     /// Find the longest path between two interfaces
     fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
-        self.extension_registry.find_longest_path(source, target)
+        self.extension_registry.read().unwrap().find_longest_path(source, target)
     }
     
     fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
@@ -115,10 +128,10 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
         use std::collections::HashMap;
         let mut hierarchy = HashMap::new();
         
-        if let Some(interfaces) = self.get_all_interfaces() {
+        if let Ok(interfaces) = self.get_all_interfaces() {
             for interface in interfaces {
                 if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
-                    hierarchy.insert(interface, extensions.into_iter().collect());
+                    hierarchy.insert(interface, extensions);
                 }
             }
         }
@@ -130,7 +143,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     /// Create a new adapter with both registries
     pub fn new_with_visualization(
         extension_registry: ThreadSafeInterfaceExtensionRegistry,
-        visualization_registry: Box<dyn InterfaceRegistryVisualization + Send + Sync>,
+        visualization_registry: Box<dyn crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization + Send + Sync>,
     ) -> InterfaceRegistryAdapter {
         InterfaceRegistryAdapter {
             extension_registry: Arc::new(RwLock::new(extension_registry)),
@@ -166,16 +179,16 @@ impl InterfaceRegistryAdapter {
     #[instrument(level = "debug")]
     fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
         // Always delegate to the extension registry
-        self.extension_registry.register_extension(source, target)
+        self.extension_registry.write().unwrap().register_extension(source, target)
     }
 
     #[instrument(level = "debug")]
     fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.get_extension_hierarchy()
+            InterfaceRegistryExtension::get_extension_hierarchy(&*vis_registry)
         } else {
-            InterfaceRegistryExtension::get_extension_hierarchy(&*self.extension_registry)
+            self.extension_registry.read().unwrap().get_extension_hierarchy()
         }
     }
 
@@ -183,9 +196,9 @@ impl InterfaceRegistryAdapter {
     fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.get_all_interfaces()
+            InterfaceRegistryExtension::get_all_interfaces(&*vis_registry)
         } else {
-            InterfaceRegistryExtension::get_all_interfaces(&*self.extension_registry).ok_or_else(|| Error::from_str("Failed to get interfaces from extension registry"))
+            self.extension_registry.read().unwrap().get_all_interfaces()
         }
     }
 
@@ -193,10 +206,9 @@ impl InterfaceRegistryAdapter {
     fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.get_direct_extensions(interface)
+            InterfaceRegistryExtension::get_direct_extensions(&*vis_registry, interface)
         } else {
-            InterfaceRegistryExtension::get_direct_extensions(&*self.extension_registry, interface)
-                .map(|opt| opt.map(|set| set.into_iter().collect()))
+            self.extension_registry.read().unwrap().get_direct_extensions(interface)
         }
     }
 
@@ -204,10 +216,9 @@ impl InterfaceRegistryAdapter {
     fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.get_direct_implementors(interface)
+            InterfaceRegistryExtension::get_direct_implementors(&*vis_registry, interface)
         } else {
-            InterfaceRegistryExtension::get_direct_implementors(&*self.extension_registry, interface)
-                .map(|opt| opt.map(|set| set.into_iter().collect()))
+            self.extension_registry.read().unwrap().get_direct_implementors(interface)
         }
     }
 
@@ -215,9 +226,9 @@ impl InterfaceRegistryAdapter {
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.extends(source, target)
+            InterfaceRegistryExtension::extends(&*vis_registry, source, target)
         } else {
-            InterfaceRegistryExtension::extends(&*self.extension_registry, source, target)
+            InterfaceRegistryExtension::extends(&*self.extension_registry.read().unwrap(), source, target)
         }
     }
 
@@ -225,9 +236,9 @@ impl InterfaceRegistryAdapter {
     fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.get_all_extensions(interface)
+            InterfaceRegistryExtension::get_all_extensions(&*vis_registry, interface)
         } else {
-            self.extension_registry.get_all_extensions(interface)
+            InterfaceRegistryExtension::get_all_extensions(&*self.extension_registry.read().unwrap(), interface)
         }
     }
 
@@ -235,9 +246,9 @@ impl InterfaceRegistryAdapter {
     fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.get_all_implementors(interface)
+            InterfaceRegistryExtension::get_all_implementors(&*vis_registry, interface)
         } else {
-            self.extension_registry.get_all_implementors(interface)
+            InterfaceRegistryExtension::get_all_implementors(&*self.extension_registry.read().unwrap(), interface)
         }
     }
 
@@ -245,9 +256,9 @@ impl InterfaceRegistryAdapter {
     fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.find_inheritance_path(source, target)
+            InterfaceRegistryExtension::find_inheritance_path(&*vis_registry, source, target)
         } else {
-            self.extension_registry.find_inheritance_path(source, target)
+            InterfaceRegistryExtension::find_inheritance_path(&*self.extension_registry.read().unwrap(), source, target)
         }
     }
 
@@ -259,9 +270,9 @@ impl InterfaceRegistryAdapter {
     ) -> Result<Vec<Vec<String>>, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.find_all_inheritance_paths(source, target)
+            InterfaceRegistryExtension::find_all_inheritance_paths(&*vis_registry, source, target)
         } else {
-            self.extension_registry.find_all_inheritance_paths(source, target)
+            InterfaceRegistryExtension::find_all_inheritance_paths(&*self.extension_registry.read().unwrap(), source, target)
         }
     }
 
