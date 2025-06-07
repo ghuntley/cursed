@@ -6,7 +6,6 @@ use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ContainerLayoutExtension;
-use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
@@ -38,10 +37,10 @@ fn test_if_statement_compilation() {
 
     // Create the if statement
     let if_stmt = IfStatement {
-        token: Token::Lowkey,
+        token: "if".to_string(),
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: "token".to_string(),
+            token: Token::LBrace,
             statements: Vec::new(),
         }),
         alternative: None,
@@ -86,10 +85,10 @@ fn test_while_statement_compilation() {
 
     // Create the while statement
     let while_stmt = WhileStatement {
-        token: Token::Periodt,
+        token: "periodt".to_string(),
         condition: Box::new(condition),
         body: Box::new(BlockStatement {
-            token: "token".to_string(),
+            token: Token::LBrace,
             statements: Vec::new(),
         }),
     };

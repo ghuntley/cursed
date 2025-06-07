@@ -2,7 +2,7 @@ use cursed::stdlib::quick_test::*;
 use cursed::stdlib::quick_test_generators::*;
 use cursed::stdlib::{combine_gen, weighted_gen};
 use cursed::object::Object;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -36,36 +36,36 @@ fn test_state_machine() {
     }
     
     // Create a state machine for the counter
-    let counter = Rc::new(RefCell::new(Counter::new()));
-    let mut machine = StateMachineImpl::new(counter.clone());
+    let counter = RefCell::new(Counter::new());
+    let mut machine = StateMachineImpl::new(Arc::new(counter));
     
     // Add increment action
     machine.add_action("increment", 
-        Box::new(move |state: &Rc<RefCell<Counter>>| {
-            state.borrow_mut().increment());
+        Box::new(move |state: &Arc<RefCell<Counter>>| {
+            state.borrow_mut().increment();
             true // Action was successful
         }),
-        Box::new(|_: &Rc<RefCell<Counter>>| true) // No precondition
+        Box::new(|_: &Arc<RefCell<Counter>>| true) // No precondition
     );
     
     // Add reset action
     machine.add_action("reset", 
-        Box::new(move |state: &Rc<RefCell<Counter>>| {
-            state.borrow_mut().reset());
+        Box::new(move |state: &Arc<RefCell<Counter>>| {
+            state.borrow_mut().reset();
             true // Action was successful
         }),
-        Box::new(|state: &Rc<RefCell<Counter>>| {
+        Box::new(|state: &Arc<RefCell<Counter>>| {
             state.borrow().value > 0 // Only reset if counter is greater than 0
         })
     );
     
     // Add double action
     machine.add_action("double", 
-        Box::new(move |state: &Rc<RefCell<Counter>>| {
-            state.borrow_mut().double());
+        Box::new(move |state: &Arc<RefCell<Counter>>| {
+            state.borrow_mut().double();
             true // Action was successful
         }),
-        Box::new(|state: &Rc<RefCell<Counter>>| {
+        Box::new(|state: &Arc<RefCell<Counter>>| {
             state.borrow().value > 0 // Only double if counter is greater than 0
         })
     );
@@ -94,8 +94,8 @@ fn test_combine_generators() {
     
     // Combine them into a Person generator
     // Use Box::new to erase the specific generator types
-    let name_boxed: Box<dyn Fn() -> Rc<Object>> = Box::new(name_gen);
-    let age_boxed: Box<dyn Fn() -> Rc<Object>> = Box::new(age_gen);
+    let name_boxed: Box<dyn Fn() -> Arc<Object>> = Box::new(name_gen);
+    let age_boxed: Box<dyn Fn() -> Arc<Object>> = Box::new(age_gen);
     let person_gen = combine_gen(
         vec![name_boxed, age_boxed],
         Box::new(|values| {

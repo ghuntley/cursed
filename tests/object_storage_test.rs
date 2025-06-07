@@ -102,7 +102,7 @@ fn test_object_storage_basic() {
     
     // Create an object with finalization tracking
     debug!("Creating test object with finalization tracking");
-    let finalized = Arc::new(Mutex::new(false);
+    let finalized = Arc::new(Mutex::new(false));
     let obj = TestObject {
         id: 1,
         value: "test".to_string(),
@@ -113,7 +113,7 @@ fn test_object_storage_basic() {
     
     // Store the object
     debug!("Storing test object in global storage");
-    let addr = storage.store(obj.clone();
+    let addr = storage.store(obj.clone());
     debug!(address = ?addr, "Object stored at address");
     
     // Verify we can retrieve it
@@ -164,7 +164,7 @@ fn test_storage_wrapper() {
     info!("Starting storage wrapper test");
     // Create an object with finalization tracking
     debug!("Creating test object with finalization tracking");
-    let finalized = Arc::new(Mutex::new(false);
+    let finalized = Arc::new(Mutex::new(false));
     let obj = TestObject {
         id: 2,
         value: "wrapper_test".to_string(),
@@ -239,7 +239,7 @@ fn test_integration_with_gc() {
     
     // Create an object with finalization tracking
     debug!("Creating test object for GC integration");
-    let finalized = Arc::new(Mutex::new(false);
+    let finalized = Arc::new(Mutex::new(false));
     let obj = TestObject {
         id: 3,
         value: "gc_integration".to_string(),
@@ -289,8 +289,8 @@ fn test_multiple_objects() {
     
     // Create multiple objects
     debug!("Creating multiple test objects");
-    let finalized1 = Arc::new(Mutex::new(false);
-    let finalized2 = Arc::new(Mutex::new(false);
+    let finalized1 = Arc::new(Mutex::new(false));
+    let finalized2 = Arc::new(Mutex::new(false));
     
     let obj1 = TestObject {
         id: 4,
