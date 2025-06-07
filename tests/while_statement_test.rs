@@ -6,10 +6,8 @@ mod common;
 
 #[test]
 fn test_while_statement() -> Result<(), Error> {
-    // Initialize tracing if available
-    if let Some(setup) = common::tracing::setup() {
-        setup();
-    }
+    // Initialize tracing
+    common::tracing::setup();
 
     // Test a basic while loop that counts from 0 to 9
     let program = r#"
@@ -33,10 +31,8 @@ fn test_while_statement() -> Result<(), Error> {
 
 #[test]
 fn test_while_statement_with_break() -> Result<(), Error> {
-    // Initialize tracing if available
-    if let Some(setup) = common::tracing::setup() {
-        setup();
-    }
+    // Initialize tracing
+    common::tracing::setup();
 
     // Test a while loop with a break statement
     let program = r#"

@@ -32,19 +32,19 @@ fn test_basic_assignment() {
 
     // Create the integer value to assign
     let int_lit = IntegerLiteral {
-        token: Token::new(TokenType::Int, "42"),
+        token: "42".to_string(),
         value: 42,
     };
 
     // Create the variable identifier
     let ident = Identifier {
-        token: Token::new(TokenType::Identifier, var_name),
+        token: var_name.to_string(),
         value: var_name.to_string(),
     };
 
     // Create the assignment expression
     let assign_expr = AssignmentExpression {
-        token: Token::new(TokenType::Assign, "="),
+        token: "=".to_string(),
         name: ident,
         value: Box::new(int_lit),
     };

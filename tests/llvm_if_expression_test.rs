@@ -28,49 +28,49 @@ fn test_simple_if_expression() {
     
     // Create a simple condition: true
     let condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "true").token_literal(),
+        token: Token::Based.token_literal(),
         value: true,
     };
     
     // Create the then expression: 42
     let then_expr = IntegerLiteral {
-        token: Token::new(TokenType::Int, "42").token_literal(),
+        token: Token::Int(42).token_literal(),
         value: 42,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: Token::new(TokenType::Int, "42").token_literal(),
+        token: Token::Int(42).token_literal(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 24
     let else_expr = IntegerLiteral {
-        token: Token::new(TokenType::Int, "24").token_literal(),
+        token: Token::Int(24).token_literal(),
         value: 24,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: Token::new(TokenType::Int, "24").token_literal(),
+        token: Token::Int(24).token_literal(),
         expression: Some(Box::new(else_expr)),
     };
     
     // Create the BlockStatement for consequence
     let consequence = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::LBrace,
         statements: vec![Box::new(then_stmt)],
     };
     
     // Create the BlockStatement for alternative
     let alternative = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::LBrace,
         statements: vec![Box::new(else_stmt)],
     };
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: Token::new(TokenType::If, "if").token_literal(),
+        token: Token::Lowkey.token_literal(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),

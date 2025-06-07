@@ -12,7 +12,7 @@ impl AstFactory {
     /// Create a new integer literal expression
     pub fn int_literal(value: i64) -> Box<dyn Expression> {
         Box::new(IntegerLiteral {
-            token: Token::Number(value.to_string()),
+            token: value.to_string(),
             value,
         })
     }
@@ -20,7 +20,7 @@ impl AstFactory {
     /// Create a new string literal expression  
     pub fn string_literal(value: String) -> Box<dyn Expression> {
         Box::new(StringLiteral {
-            token: Token::String(value.clone()),
+            token: value.clone(),
             value,
         })
     }
@@ -28,7 +28,7 @@ impl AstFactory {
     /// Create a new boolean literal expression
     pub fn bool_literal(value: bool) -> Box<dyn Expression> {
         Box::new(BooleanLiteral {
-            token: if value { Token::True } else { Token::False },
+            token: if value { "based".to_string() } else { "cap".to_string() },
             value,
         })
     }
@@ -36,7 +36,7 @@ impl AstFactory {
     /// Create a new identifier expression
     pub fn identifier(name: String) -> Box<dyn Expression> {
         Box::new(Identifier {
-            token: Token::Identifier(name.clone()),
+            token: name.clone(),
             value: name,
         })
     }

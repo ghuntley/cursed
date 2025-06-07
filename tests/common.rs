@@ -24,15 +24,15 @@ pub mod tracing {
             }
         });
     }
-    
-    /// Macro to initialize tracing in tests
-    #[macro_export]
-    macro_rules! init_tracing {
-        () => {
-            // Initialize tracing if not already done
-            $crate::common::tracing::setup();
-        };
-    }
+}
+
+/// Macro to initialize tracing in tests
+#[macro_export]
+macro_rules! init_tracing {
+    () => {
+        // Initialize tracing if not already done
+        common::tracing::setup();
+    };
 }
 
 /// Benchmark timer utility
@@ -215,7 +215,7 @@ pub fn test_generic_constraint(function_code: &str, type_args: &[&str], args: &[
 #[macro_export]
 macro_rules! assert_expr {
     ($expr:expr, $expected:expr) => {
-        $crate::common::test_expression($expr, $expected).unwrap();
+        common::test_expression($expr, $expected).unwrap();
     };
 }
 
