@@ -8,7 +8,6 @@ mod tests {
     
     use cursed::codegen::llvm::LlvmCodeGenerator;
     use cursed::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
-    use cursed::codegen::llvm::interface_type_assertion_enhanced::EnhancedTypeAssertion;
     use cursed::error::Error;
     
     // Helper to initialize tracing for tests

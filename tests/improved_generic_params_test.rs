@@ -3,16 +3,11 @@
 //! This test verifies that generic type parameters properly check interface constraints
 //! using the improved monomorphization system.
 
-use cursed::ast::base::*;
-use cursed::ast::declarations::*;
-use cursed::ast::expressions::*;
-use cursed::ast::literals::*;
 use cursed::ast::traits::Node;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::error::Error;
-use std::sync::Arc;
-use std::cell::RefCell;
+use std::sync::{Arc, RwLock};
 
 // Import test helpers
 #[path = "common.rs"]
@@ -61,7 +56,7 @@ fn test_constraint_checking_with_type_checker() {
         ("push".to_string(), vec![Type::Tea], None),
         ("pop".to_string(), vec![], Some(Type::Tea)),
     ];
-    type_checker.register_interface("Stack", vec![], methods);
+    type_checker.register_interface("Stack", methods, vec![]);
     
     // Register a struct that implements the interface
     let struct_methods = vec![
@@ -72,7 +67,7 @@ fn test_constraint_checking_with_type_checker() {
     type_checker.register_methods_for_struct("StringStack", struct_methods);
     
     // Create a monomorphization manager with the type checker
-    let type_checker_rc = Rc::new(RefCell::new(type_checker));
+    let type_checker_rc = Arc::new(RwLock::new(type_checker));
     let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Check if the struct implements the interface
@@ -97,7 +92,7 @@ fn test_constraint_checking_missing_interface() {
         ("add".to_string(), vec![Type::Normie], None),
         ("remove".to_string(), vec![Type::Normie], None),
     ];
-    type_checker.register_interface("Collection", vec![], methods);
+    type_checker.register_interface("Collection", methods, vec![]);
     
     // Register a struct that does NOT implement the interface correctly
     let struct_methods = vec![
@@ -107,7 +102,7 @@ fn test_constraint_checking_missing_interface() {
     type_checker.register_methods_for_struct("PartialCollection", struct_methods);
     
     // Create a monomorphization manager with the type checker
-    let type_checker_rc = Rc::new(RefCell::new(type_checker));
+    let type_checker_rc = Arc::new(RwLock::new(type_checker));
     let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Check if the struct implements the interface

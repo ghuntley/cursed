@@ -6,6 +6,7 @@
 
 use std::collections::{HashMap, HashSet};
 use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
 use cursed::error::Error;
 
 mod common;

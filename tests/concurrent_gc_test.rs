@@ -11,7 +11,7 @@ use cursed::memory::concurrent_gc::ConcurrentGcConfig;
 
 // Use tracing module
 // Import common modules
-mod common;
+// mod common; // Already declared above
 
 // Test object for the concurrent GC test
 #[derive(Debug, Clone)]
