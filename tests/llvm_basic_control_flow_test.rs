@@ -4,7 +4,6 @@ use cursed::ast::traits::{Statement, Expression};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
-use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
@@ -59,7 +58,7 @@ fn test_while_with_break_continue() {
     
     // This should succeed even though the code isn't practical
     // (break followed by unreachable continue)
-    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err());
     
     // Terminate the function with a return
     let return_val = i32_type.const_int(0, false);

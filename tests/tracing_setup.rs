@@ -24,3 +24,11 @@ pub fn init_test_tracing() {
         tracing::debug!("Test tracing initialized");
     });
 }
+
+/// Macro for initializing tracing in tests
+#[macro_export]
+macro_rules! init_test_tracing {
+    () => {
+        tracing_setup::init_test_tracing();
+    };
+}
