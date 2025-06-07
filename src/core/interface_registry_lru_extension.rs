@@ -132,6 +132,11 @@ impl ThreadSafeLruRegistry {
     pub fn cache_stats(&self) -> (usize, usize, usize, usize, usize) {
         self.cache.stats()
     }
+    
+    /// Get cache hit rate
+    pub fn cache_hit_rate(&self) -> f64 {
+        self.cache.hit_rate()
+    }
 }
 
 // Implement CachedInterfaceRegistry for LruCachedRegistry

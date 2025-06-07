@@ -5,6 +5,8 @@
 
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
+use cursed::codegen::llvm::{InterfaceTypeRegistryAccess, InterfaceRegistryVisualizationIntegration};
+use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
 use cursed::error::Error;
 
 use inkwell::context::Context;
@@ -54,11 +56,11 @@ fn test_interface_path_finder_enhanced() {
     assert_eq!(paths.len(), 1); // Only one path exists in our test setup
     
     // Test checking extension relationship
-    assert!(codegen.check_extension_relationship_enhanced("JSONFileReader", "Reader").unwrap());
-    assert!(!codegen.check_extension_relationship_enhanced("JSONFileReader", "Serializable").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Reader").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Serializable").unwrap());
     
     // Test reversed inheritance detection
-    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced("Reader", "JSONFileReader").unwrap();
+    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "JSONFileReader").unwrap();
     assert!(reversed);
     assert!(message.contains("Reversed inheritance detected"));
     
@@ -142,7 +144,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
     assert!(err.to_string().contains("No alternative paths found"));
     
     // Test reversed inheritance message
-    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced("Reader", "FileReader").unwrap();
+    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "FileReader").unwrap();
     assert!(reversed);
     assert!(message.contains("Reversed inheritance detected"));
     assert!(message.contains("The actual inheritance path is"));

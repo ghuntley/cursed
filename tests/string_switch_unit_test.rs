@@ -9,6 +9,7 @@ use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::declarations::ReturnStatement;
 use cursed::ast::{Expression, Node, Statement};
 use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::StringUtilsExtension;
 use inkwell::context::Context;
 use std::any::Any;
 use std::path::PathBuf;

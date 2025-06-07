@@ -90,6 +90,20 @@ pub struct ConcurrentGarbageCollector {
     collector_thread: Option<JoinHandle<()>>,
 }
 
+impl Clone for ConcurrentGarbageCollector {
+    fn clone(&self) -> Self {
+        // Create a new instance with the same configuration
+        // but without copying the thread handle
+        Self {
+            gc: self.gc.clone(),
+            state: self.state.clone(),
+            collector_signal: self.collector_signal.clone(),
+            running: self.running.clone(),
+            collector_thread: None, // New instance needs its own thread
+        }
+    }
+}
+
 impl ConcurrentGarbageCollector {
     /// Create a new concurrent garbage collector with default configuration
     pub fn new(gc: Arc<GarbageCollector>) -> Self {

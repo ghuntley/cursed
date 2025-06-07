@@ -7,6 +7,7 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::auto_interface_dispatcher::{AutoInterfaceDispatcher, AutoInterfaceDispatchExtension};
 use cursed::codegen::llvm::auto_interface_dispatcher_integration::AutoInterfaceDispatcherIntegration;
 use cursed::codegen::llvm::interface_implementation::InterfaceImplementation;
+use cursed::codegen::llvm::string_utils::StringUtilsExtension;
 use cursed::core::type_checker::Type as CursedType;
 use cursed::error::Error;
 use inkwell::context::Context;
@@ -21,10 +22,10 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"))?;
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Initialize the auto interface dispatcher with comprehensive integration
-    codegen.init_auto_interface_dispatcher_integration()?
+    codegen.init_auto_interface_dispatcher_integration()?;
     
     // Define an interface with a single method
     let greeter_methods = vec![
@@ -77,7 +78,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Create Person instance and convert to Greeter interface
     let person_struct_type = context.struct_type(&[], false);
-    let person_instance = codegen.builder.build_alloca(person_struct_type, "person_instance").unwrap();
+    let person_instance = codegen.builder().build_alloca(person_struct_type, "person_instance").unwrap();
     
     let person_type = CursedType::Struct(struct_name.to_string(), vec![]);
     let greeter_interface = codegen.create_interface_value(
@@ -120,10 +121,10 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg", std::path::PathBuf::from("test.csd"))?;
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg", std::path::PathBuf::from("test.csd"));
     
     // Initialize the auto interface dispatcher with comprehensive integration
-    codegen.init_auto_interface_dispatcher_integration()?
+    codegen.init_auto_interface_dispatcher_integration()?;
     
     // Define an interface with methods
     let shape_methods = vec![
@@ -189,11 +190,11 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     codegen.discover_and_register_interface_implementations(
         struct_name,
         "Shape",
-    )?
+    )?;
     
     // Create Rectangle instance and convert to Shape interface
     let rect_struct_type = context.struct_type(&[], false);
-    let rect_instance = codegen.builder.build_alloca(rect_struct_type, "rect_instance").unwrap();
+    let rect_instance = codegen.builder().build_alloca(rect_struct_type, "rect_instance").unwrap();
     
     let rect_type = CursedType::Struct(struct_name.to_string(), vec![]);
     let shape_interface = codegen.create_interface_value(
@@ -233,10 +234,10 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer", std::path::PathBuf::from("test.csd"))?;
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer", std::path::PathBuf::from("test.csd"));
     
     // Initialize the auto interface dispatcher with comprehensive integration
-    codegen.init_auto_interface_dispatcher_integration()?
+    codegen.init_auto_interface_dispatcher_integration()?;
     
     // Define an interface with a method
     let speaker_methods = vec![
@@ -290,7 +291,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create Dog instance
     let dog_struct_type = context.struct_type(&[], false);
-    let dog_instance = codegen.builder.build_alloca(dog_struct_type, "dog_instance").unwrap();
+    let dog_instance = codegen.builder().build_alloca(dog_struct_type, "dog_instance").unwrap();
     
     // Create types for testing
     let dog_type = CursedType::Struct(struct_name.to_string(), vec![]);

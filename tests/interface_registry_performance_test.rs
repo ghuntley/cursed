@@ -237,7 +237,7 @@ fn benchmark_thread_safe_lru(types: &[Type], interfaces: &[String]) -> (Duration
     }
     
     let elapsed = start_time.elapsed();
-    let hit_rate = lru_registry.cache.hit_rate();
+    let hit_rate = lru_registry.cache_hit_rate();
     let eviction_rate = lru_registry.eviction_stats();
     
     (elapsed, successful_checks, hit_rate, eviction_rate)

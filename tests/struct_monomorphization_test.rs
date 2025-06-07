@@ -77,7 +77,7 @@ fn test_basic_struct_specialization() {
     
     // Specialize the struct with concrete type Int (normie)
     let specialized_name = "Pair_normie";
-    let type_args = vec![Type::Int];
+    let type_args = vec![Type::Normie];
     
     // Generate the specialized struct
     let result = generator.generate_specialized_struct(&pair_struct, specialized_name, &type_args);
@@ -86,7 +86,7 @@ fn test_basic_struct_specialization() {
     assert!(result.is_ok(), "Failed to specialize struct: {:?}", result.err());
     
     // Verify the struct was registered correctly
-    assert!(generator.get_struct_type(&generator.current_package_name, specialized_name).is_some(),
+    assert!(generator.get_struct_type(generator.current_package_name(), specialized_name).is_some(),
             "Specialized struct was not registered");
 }
 
@@ -119,7 +119,7 @@ fn test_nested_struct_specialization() {
     
     // Specialize the Pair struct with concrete type Int (normie)
     let specialized_pair_name = "Pair_normie";
-    let pair_type_args = vec![Type::Int];
+    let pair_type_args = vec![Type::Normie];
     
     // Generate the specialized Pair struct
     let result = generator.generate_specialized_struct(&pair_struct, specialized_pair_name, &pair_type_args);
@@ -127,7 +127,7 @@ fn test_nested_struct_specialization() {
     
     // Specialize the Box struct with concrete type Int (normie)
     let specialized_box_name = "Box_normie";
-    let box_type_args = vec![Type::Int];
+    let box_type_args = vec![Type::Normie];
     
     // Generate the specialized Box struct
     let result = generator.generate_specialized_struct(&box_struct, specialized_box_name, &box_type_args);
@@ -156,11 +156,11 @@ fn test_type_parameter_substitution() {
     
     // Specialize with different types
     let type_variants = vec![
-        ("Container_normie", Type::Int),
-        ("Container_thicc", Type::Int64),
-        ("Container_snack", Type::Float),
-        ("Container_lit", Type::Bool),
-        ("Container_tea", Type::String),
+        ("Container_normie", Type::Normie),
+        ("Container_thicc", Type::Thicc),
+        ("Container_snack", Type::Snack),
+        ("Container_lit", Type::Lit),
+        ("Container_tea", Type::Tea),
     ];
     
     for (specialized_name, type_arg) in type_variants {
@@ -176,7 +176,7 @@ fn test_type_parameter_substitution() {
             type_arg, result.err());
         
         // Verify the struct was registered correctly
-        assert!(generator.get_struct_type(&generator.current_package_name, specialized_name).is_some(),
+        assert!(generator.get_struct_type(generator.current_package_name(), specialized_name).is_some(),
             "Specialized struct {} was not registered", specialized_name);
     }
 }
@@ -199,7 +199,7 @@ fn test_invalid_specialization() {
     
     // Try to specialize with wrong number of type arguments
     let specialized_name = "Pair_wrong_args";
-    let type_args = vec![Type::Int];  // Only one, but we need two
+    let type_args = vec![Type::Normie];  // Only one, but we need two
     
     // Generate the specialized struct - should fail
     let result = generator.generate_specialized_struct(&pair_struct, specialized_name, &type_args);

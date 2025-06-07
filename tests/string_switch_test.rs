@@ -5,6 +5,7 @@
 
 use cursed::ast::{Expression, StringLiteral, Statement, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::StringUtilsExtension;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use std::any::Any;
@@ -27,6 +28,12 @@ impl Expression for TestStringLiteral {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(TestStringLiteral {
+            value: self.value.clone(),
+        })
     }
 }
 
