@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::info;
 
-//! Integration test for language comparison benchmarks
+// Integration test for language comparison benchmarks
 
 
 mod tracing_setup {

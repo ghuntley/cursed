@@ -7,11 +7,11 @@ use cursed::error::SourceLocation;
 use cursed::error::Error;
 use cursed::lexer::Token;
 
-//! Integration test for interface type assertion error propagation with filesystem integration
-//!
-//! This test verifies that the enhanced error propagation system properly uses
-//! filesystem source location tracking to provide detailed error messages with
-//! source code context when interface type assertions with the ? operator fail.
+// Integration test for interface type assertion error propagation with filesystem integration
+//
+// This test verifies that the enhanced error propagation system properly uses
+// filesystem source location tracking to provide detailed error messages with
+// source code context when interface type assertions with the ? operator fail.
 
 
 // Import the necessary modules and traits
@@ -29,16 +29,16 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
     let context = inkwell::context::Context::create();
     
     // Create an LlvmCodeGenerator with enhanced filesystem integration
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
     
     // Initialize filesystem integration with the tests directory as root
     let _ = code_gen.init_filesystem_integration();
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: Token::Identifier("test.csd:10:15".to_string()),
+        token: Token::Identifier("test.csd:10:15".to_string(),
         expression: Box::new(MockExpression { token: "token".to_string() }),
-        type_name: "ExpectedType".to_string()),
+        type_name: "ExpectedType".to_string(),
     };
     
     // Test basic source location creation
@@ -103,16 +103,16 @@ fn test_interface_filesystem_error_propagation_integration() {
     let context = inkwell::context::Context::create();
     
     // Create an LlvmCodeGenerator with enhanced filesystem integration
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
     
     // Initialize filesystem integration
     let _ = code_gen.init_filesystem_integration();
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: Token::Identifier("interface_type_assertion_question_op.csd:98:20".to_string()),
+        token: Token::Identifier("interface_type_assertion_question_op.csd:98:20".to_string(),
         expression: Box::new(MockExpression { token: "token".to_string() }),
-        type_name: "Circle".to_string()),
+        type_name: "Circle".to_string(),
     };
     
     // Test basic source location creation with specific file

@@ -38,7 +38,7 @@ fn test_jit_pointer_basic() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     // Set up LLVM JIT execution

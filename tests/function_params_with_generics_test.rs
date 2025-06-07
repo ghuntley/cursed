@@ -15,13 +15,13 @@ slay add[T](x T, y T) T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
     
     // Print all statements for debugging
     println!("Found {} statements", program.statements.len());
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("Statement {}: {}", i, stmt.string());
+        println!("Statement {}: {}", i, stmt.string();
         
         // Print the type of each statement
         if stmt.as_any().is::<ast::FunctionStatement>() {
@@ -29,7 +29,7 @@ slay add[T](x T, y T) T {
         } else if stmt.as_any().is::<ast::statements::PackageStatement>() {
             println!("  Type: PackageStatement");
         } else {
-            println!("  Type: Other - {}", std::any::type_name_of_val(stmt.as_any()));
+            println!("  Type: Other - {}", std::any::type_name_of_val(stmt.as_any());
         }
     }
     
@@ -66,7 +66,7 @@ slay add[T](x T, y T) T {
     
     // Check return type
     assert!(func_stmt.return_type.is_some(), "Should have a return type");
-    let return_type = func_stmt.return_type.as_ref().unwrap();
+    let return_type = func_stmt.return_type.as_ref().unwrap());
     assert_eq!(return_type, "T", "Return type should be 'T'");
 }
 
@@ -81,8 +81,8 @@ slay pair[A, B](first A, second B) {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
     
     // Find the function statement by searching through all statements
     let func_stmt = program.statements.iter()
@@ -124,8 +124,8 @@ slay sort[T: Comparable](items []T) []T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
     
     // Find the function statement by searching through all statements
     let func_stmt = program.statements.iter()

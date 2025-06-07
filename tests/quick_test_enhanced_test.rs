@@ -35,13 +35,13 @@ fn test_state_machine() {
     }
     
     // Create a state machine for the counter
-    let counter = Rc::new(RefCell::new(Counter::new()));
-    let mut machine = StateMachineImpl::new(counter.clone());
+    let counter = Rc::new(RefCell::new(Counter::new());
+    let mut machine = StateMachineImpl::new(counter.clone();
     
     // Add increment action
     machine.add_action("increment", 
         Box::new(move |state: &Rc<RefCell<Counter>>| {
-            state.borrow_mut().increment();
+            state.borrow_mut().increment());
             true // Action was successful
         }),
         Box::new(|_: &Rc<RefCell<Counter>>| true) // No precondition
@@ -50,7 +50,7 @@ fn test_state_machine() {
     // Add reset action
     machine.add_action("reset", 
         Box::new(move |state: &Rc<RefCell<Counter>>| {
-            state.borrow_mut().reset();
+            state.borrow_mut().reset());
             true // Action was successful
         }),
         Box::new(|state: &Rc<RefCell<Counter>>| {
@@ -61,7 +61,7 @@ fn test_state_machine() {
     // Add double action
     machine.add_action("double", 
         Box::new(move |state: &Rc<RefCell<Counter>>| {
-            state.borrow_mut().double();
+            state.borrow_mut().double());
             true // Action was successful
         }),
         Box::new(|state: &Rc<RefCell<Counter>>| {
@@ -118,8 +118,8 @@ fn test_combine_generators() {
             
             // For testing purposes, we'll just return the components
             let mut map = std::collections::HashMap::new();
-            map.insert("name".to_string()), Object::String(person.name));
-            map.insert("age".to_string()), Object::Integer(person.age));
+            map.insert("name".to_string(, Object::String(person.name);
+            map.insert("age".to_string(, Object::Integer(person.age);
             Object::HashTable(map)
         })
     );

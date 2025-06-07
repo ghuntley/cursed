@@ -54,7 +54,7 @@ mod tests {
         info!("Starting basic allocation test");
         
         // Create a new GC
-        let gc = Arc::new(GarbageCollector::new());
+        let gc = Arc::new(GarbageCollector::new();
         debug!(gc = ?gc, "Created garbage collector");
         
         // Create a scope for allocation
@@ -81,7 +81,7 @@ mod tests {
             gc.collect_garbage();
             
             // Object should still be alive
-            let is_alive = obj.inner().is_some();
+            let is_alive = obj.inner().is_some());
             if !is_alive {
                 error!("Object should still be alive but was collected");
             }
@@ -92,14 +92,14 @@ mod tests {
         }
         
         // Sleep briefly to ensure drop handlers run
-        thread::sleep(Duration::from_millis(10));
+        thread::sleep(Duration::from_millis(10);
         
         // Run GC to collect the now-unreferenced object
         info!("Running GC after object out of scope");
         gc.collect_garbage();
         
         // Check final GC stats - allow time for stats to refresh
-        thread::sleep(Duration::from_millis(10));
+        thread::sleep(Duration::from_millis(10);
         let stats = gc.stats();
         debug!(stats = ?stats, "Final GC stats");
         

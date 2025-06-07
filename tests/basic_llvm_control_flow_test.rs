@@ -10,14 +10,14 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Basic test for LLVM control flow support
+// Basic test for LLVM control flow support
 
 
 #[test]
 fn test_if_statement_compilation() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if", PathBuf::from("test.csd");
 
     // Create a function to add the if statement to
     let i32_type = context.i32_type();
@@ -32,7 +32,7 @@ fn test_if_statement_compilation() {
 
     // Create condition: true
     let condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
 
@@ -41,7 +41,7 @@ fn test_if_statement_compilation() {
         token: Token::Lowkey,
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             statements: Vec::new(),
         }),
         alternative: None,
@@ -57,7 +57,7 @@ fn test_if_statement_compilation() {
         .expect("Failed to build return");
 
     // Verify the module
-    let result = generator.module().verify();
+    let result = generator.module().verify());
     assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
 }
 
@@ -65,7 +65,7 @@ fn test_if_statement_compilation() {
 fn test_while_statement_compilation() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_while", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_while", PathBuf::from("test.csd");
 
     // Create a function to add the while statement to
     let i32_type = context.i32_type();
@@ -80,7 +80,7 @@ fn test_while_statement_compilation() {
 
     // Create condition: true
     let condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
 
@@ -89,7 +89,7 @@ fn test_while_statement_compilation() {
         token: Token::Periodt,
         condition: Box::new(condition),
         body: Box::new(BlockStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             statements: Vec::new(),
         }),
     };
@@ -104,7 +104,7 @@ fn test_while_statement_compilation() {
         .expect("Failed to build return");
 
     // Verify the module
-    let result = generator.module().verify();
+    let result = generator.module().verify());
     assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
 }
 
@@ -112,7 +112,7 @@ fn test_while_statement_compilation() {
 fn test_container_layout() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_container", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_container", PathBuf::from("test.csd");
 
     // Create a function where we'll create a container
     let i32_type = context.i32_type();
@@ -135,6 +135,6 @@ fn test_container_layout() {
         .expect("Failed to build return");
 
     // Verify the module
-    let result = generator.module().verify();
+    let result = generator.module().verify());
     assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
 }

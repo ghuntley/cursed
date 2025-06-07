@@ -31,8 +31,8 @@ fn test_goroutine_object_created() {
 
     // Create a basic identifier expression
     let identifier = Box::new(Identifier {
-        token: "token".to_string()),
-        value: "func".to_string()),
+        token: "token".to_string(),
+        value: "func".to_string(),
     }) as Box<dyn Expression>;
 
     // Create a stan expression with the identifier

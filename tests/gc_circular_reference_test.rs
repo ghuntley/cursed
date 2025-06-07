@@ -5,7 +5,7 @@ use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, ThreadSafeTraceable};
 use tracing::{debug, error, info, instrument, trace, warn};
 
-//! Test for circular reference handling in the garbage collector
+// Test for circular reference handling in the garbage collector
 
 
 
@@ -75,7 +75,7 @@ fn test_circular_references() {
     // Allocate a single object without circular references
     // Create a basic CircularNode instead of a ThreadSafeTraceable version
     // to avoid Clone trait issues for ThreadSafeTraceable<CircularNode>
-    let node = gc.allocate(CircularNode::new(1));
+    let node = gc.allocate(CircularNode::new(1);
     
     // Let the node go out of scope
     drop(node);
@@ -99,7 +99,7 @@ fn test_weak_references() {
     {
         // Create a basic CircularNode instead of a ThreadSafeTraceable version
         // to avoid Clone trait issues for ThreadSafeTraceable<CircularNode>
-        let node = gc.allocate(CircularNode::new(42));
+        let node = gc.allocate(CircularNode::new(42);
         
         // Create a weak reference to it
         let weak_node = node.downgrade();
@@ -145,7 +145,7 @@ fn test_no_memory_leaks() {
     // Create a basic CircularNode instead of a ThreadSafeTraceable version
     // to avoid Clone trait issues for ThreadSafeTraceable<CircularNode>
     debug!("Allocating test node");
-    let node = gc.allocate(CircularNode::new(1));
+    let node = gc.allocate(CircularNode::new(1);
     
     debug!("Dropping test node");
     drop(node);

@@ -21,13 +21,13 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register some test interfaces
-        code_generator.interface_registry().register_interface("Animal").unwrap();
-        code_generator.interface_registry().register_interface("Mammal").unwrap();
-        code_generator.interface_registry().register_interface("Dog").unwrap();
+        code_generator.interface_registry().register_interface("Animal").unwrap());
+        code_generator.interface_registry().register_interface("Mammal").unwrap());
+        code_generator.interface_registry().register_interface("Dog").unwrap());
         
         // Register the inheritance relationships
-        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap();
-        code_generator.interface_registry().register_extension("Mammal", "Dog").unwrap();
+        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap());
+        code_generator.interface_registry().register_extension("Mammal", "Dog").unwrap());
         
         // Test finding a path
         let path_result = code_generator.find_interface_path_simple("Animal", "Dog");
@@ -61,16 +61,16 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register some test interfaces with multiple paths
-        code_generator.interface_registry().register_interface("Animal").unwrap();
-        code_generator.interface_registry().register_interface("Mammal").unwrap();
-        code_generator.interface_registry().register_interface("Pet").unwrap();
-        code_generator.interface_registry().register_interface("Dog").unwrap();
+        code_generator.interface_registry().register_interface("Animal").unwrap());
+        code_generator.interface_registry().register_interface("Mammal").unwrap());
+        code_generator.interface_registry().register_interface("Pet").unwrap());
+        code_generator.interface_registry().register_interface("Dog").unwrap());
         
         // Register the inheritance relationships to create multiple paths
-        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap();
-        code_generator.interface_registry().register_extension("Animal", "Pet").unwrap();
-        code_generator.interface_registry().register_extension("Mammal", "Dog").unwrap();
-        code_generator.interface_registry().register_extension("Pet", "Dog").unwrap();
+        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap());
+        code_generator.interface_registry().register_extension("Animal", "Pet").unwrap());
+        code_generator.interface_registry().register_extension("Mammal", "Dog").unwrap());
+        code_generator.interface_registry().register_extension("Pet", "Dog").unwrap());
         
         // Test finding alternative paths
         let paths_result = code_generator.find_alternative_paths_simple("Animal", "Dog", 3);
@@ -81,13 +81,13 @@ mod tests {
         
         // Verify first path
         let first_path = &paths[0];
-        assert!(first_path.contains(&"Animal".to_string()), "First path should contain Animal");
-        assert!(first_path.contains(&"Dog".to_string()), "First path should contain Dog");
+        assert!(first_path.contains(&"Animal".to_string(), "First path should contain Animal");
+        assert!(first_path.contains(&"Dog".to_string(), "First path should contain Dog");
         
         // Verify second path
         let second_path = &paths[1];
-        assert!(second_path.contains(&"Animal".to_string()), "Second path should contain Animal");
-        assert!(second_path.contains(&"Dog".to_string()), "Second path should contain Dog");
+        assert!(second_path.contains(&"Animal".to_string(), "Second path should contain Animal");
+        assert!(second_path.contains(&"Dog".to_string(), "Second path should contain Dog");
         
         // Verify paths are different
         assert_ne!(first_path, second_path, "Paths should be different");
@@ -102,15 +102,15 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register some test interfaces
-        code_generator.interface_registry().register_interface("Vehicle").unwrap();
-        code_generator.interface_registry().register_interface("LandVehicle").unwrap();
-        code_generator.interface_registry().register_interface("Car").unwrap();
-        code_generator.interface_registry().register_interface("Boat").unwrap();
+        code_generator.interface_registry().register_interface("Vehicle").unwrap());
+        code_generator.interface_registry().register_interface("LandVehicle").unwrap());
+        code_generator.interface_registry().register_interface("Car").unwrap());
+        code_generator.interface_registry().register_interface("Boat").unwrap());
         
         // Register the inheritance relationships
-        code_generator.interface_registry().register_extension("Vehicle", "LandVehicle").unwrap();
-        code_generator.interface_registry().register_extension("LandVehicle", "Car").unwrap();
-        code_generator.interface_registry().register_extension("Vehicle", "Boat").unwrap();
+        code_generator.interface_registry().register_extension("Vehicle", "LandVehicle").unwrap());
+        code_generator.interface_registry().register_extension("LandVehicle", "Car").unwrap());
+        code_generator.interface_registry().register_extension("Vehicle", "Boat").unwrap());
         
         // Test direct extension relationship
         let direct_result = code_generator.check_extension_relationship_simple("Vehicle", "LandVehicle");
@@ -142,11 +142,11 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register test interfaces
-        code_generator.interface_registry().register_interface("Vehicle").unwrap();
-        code_generator.interface_registry().register_interface("Car").unwrap();
+        code_generator.interface_registry().register_interface("Vehicle").unwrap());
+        code_generator.interface_registry().register_interface("Car").unwrap());
         
         // Register inheritance relationship: Vehicle -> Car (Car extends Vehicle)
-        code_generator.interface_registry().register_extension("Vehicle", "Car").unwrap();
+        code_generator.interface_registry().register_extension("Vehicle", "Car").unwrap());
         
         // Test reversed inheritance detection - when trying to assert Car extends Vehicle (which is backwards)
         let reversed_result = code_generator.detect_reversed_inheritance_simple("Car", "Vehicle");
@@ -166,7 +166,7 @@ mod tests {
         assert!(!is_reversed, "Should not detect reversed inheritance for Vehicle, Car");
         
         // Test with non-related interfaces
-        code_generator.interface_registry().register_interface("Boat").unwrap();
+        code_generator.interface_registry().register_interface("Boat").unwrap());
         let unrelated_result = code_generator.detect_reversed_inheritance_simple("Boat", "Car");
         assert!(unrelated_result.is_ok(), "Unrelated inheritance check failed: {:?}", unrelated_result);
         

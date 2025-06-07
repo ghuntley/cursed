@@ -5,10 +5,10 @@ use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
 use std::sync::{Arc, Mutex};
 use std::cell::RefCell;
 
-//! Tests for the object storage system.
-//!
-//! This file tests the functionality of direct storage and access to
-//! Traceable objects for proper finalization during garbage collection.
+// Tests for the object storage system.
+//
+// This file tests the functionality of direct storage and access to
+// Traceable objects for proper finalization during garbage collection.
 
 // Temporarily disabled while we update the API
 #[cfg(not(test))]
@@ -45,7 +45,7 @@ impl Traceable for TestObject {
     
     fn finalize(&mut self) {
         // Mark as finalized
-        let mut finalized = self.finalized.lock().unwrap();
+        let mut finalized = self.finalized.lock().unwrap());
         *finalized = true;
         info!(id = self.id, "TestObject finalized");
     }
@@ -102,10 +102,10 @@ fn test_object_storage_basic() {
     
     // Create an object with finalization tracking
     debug!("Creating test object with finalization tracking");
-    let finalized = Arc::new(Mutex::new(false));
+    let finalized = Arc::new(Mutex::new(false);
     let obj = TestObject {
         id: 1,
-        value: "test".to_string()),
+        value: "test".to_string(),
         finalized: finalized.clone(),
         depends_on: Vec::new(),
     };
@@ -113,7 +113,7 @@ fn test_object_storage_basic() {
     
     // Store the object
     debug!("Storing test object in global storage");
-    let addr = storage.store(obj.clone());
+    let addr = storage.store(obj.clone();
     debug!(address = ?addr, "Object stored at address");
     
     // Verify we can retrieve it
@@ -138,7 +138,7 @@ fn test_object_storage_basic() {
     
     // Verify finalization happened
     debug!("Checking if object was finalized");
-    let was_finalized = *finalized.lock().unwrap();
+    let was_finalized = *finalized.lock().unwrap());
     if !was_finalized {
         error!("Object was not finalized properly");
     }
@@ -164,10 +164,10 @@ fn test_storage_wrapper() {
     info!("Starting storage wrapper test");
     // Create an object with finalization tracking
     debug!("Creating test object with finalization tracking");
-    let finalized = Arc::new(Mutex::new(false));
+    let finalized = Arc::new(Mutex::new(false);
     let obj = TestObject {
         id: 2,
-        value: "wrapper_test".to_string()),
+        value: "wrapper_test".to_string(),
         finalized: finalized.clone(),
         depends_on: Vec::new(),
     };
@@ -215,7 +215,7 @@ fn test_storage_wrapper() {
     
     // Verify finalization happened
     debug!("Checking if object was finalized");
-    let was_finalized = *finalized.lock().unwrap();
+    let was_finalized = *finalized.lock().unwrap());
     if !was_finalized {
         error!("Object was not finalized properly");
     }
@@ -239,10 +239,10 @@ fn test_integration_with_gc() {
     
     // Create an object with finalization tracking
     debug!("Creating test object for GC integration");
-    let finalized = Arc::new(Mutex::new(false));
+    let finalized = Arc::new(Mutex::new(false);
     let obj = TestObject {
         id: 3,
-        value: "gc_integration".to_string()),
+        value: "gc_integration".to_string(),
         finalized: finalized.clone(),
         depends_on: Vec::new(),
     };
@@ -269,7 +269,7 @@ fn test_integration_with_gc() {
     
     // Verify finalization happened
     debug!("Checking if object was finalized");
-    let was_finalized = *finalized.lock().unwrap();
+    let was_finalized = *finalized.lock().unwrap());
     if !was_finalized {
         error!("Object was not finalized properly");
     }
@@ -289,12 +289,12 @@ fn test_multiple_objects() {
     
     // Create multiple objects
     debug!("Creating multiple test objects");
-    let finalized1 = Arc::new(Mutex::new(false));
-    let finalized2 = Arc::new(Mutex::new(false));
+    let finalized1 = Arc::new(Mutex::new(false);
+    let finalized2 = Arc::new(Mutex::new(false);
     
     let obj1 = TestObject {
         id: 4,
-        value: "multiple1".to_string()),
+        value: "multiple1".to_string(),
         finalized: finalized1.clone(),
         depends_on: Vec::new(),
     };
@@ -302,7 +302,7 @@ fn test_multiple_objects() {
     
     let obj2 = TestObject {
         id: 5,
-        value: "multiple2".to_string()),
+        value: "multiple2".to_string(),
         finalized: finalized2.clone(),
         depends_on: Vec::new(),
     };
@@ -333,8 +333,8 @@ fn test_multiple_objects() {
     
     // Verify both were finalized
     debug!("Checking if both objects were finalized");
-    let was_finalized1 = *finalized1.lock().unwrap();
-    let was_finalized2 = *finalized2.lock().unwrap();
+    let was_finalized1 = *finalized1.lock().unwrap());
+    let was_finalized2 = *finalized2.lock().unwrap());
     if !was_finalized1 || !was_finalized2 {
         error!("One or both objects were not finalized properly");
     }

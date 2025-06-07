@@ -39,7 +39,7 @@ fn test_string_generation() {
 #[test]
 fn test_generator_trait() {
     // Creating a simple constant generator
-    let const_gen = value(Object::Integer(42));
+    let const_gen = value(Object::Integer(42);
     let mut rand = RandGen::new(1234);
     
     // The generator should return the constant value
@@ -51,7 +51,7 @@ fn test_generator_trait() {
     
     // Create a one_of generator
     let values = vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)];
-    let one_of_gen = one_of(values.clone());
+    let one_of_gen = one_of(values.clone();
     
     for _ in 0..10 {
         let result = one_of_gen.generate(&mut rand, 100);

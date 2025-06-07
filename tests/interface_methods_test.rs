@@ -7,7 +7,7 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use inkwell::context::Context;
 
-//! Test for interface methods implementation in the LLVM code generator
+// Test for interface methods implementation in the LLVM code generator
 
 
 #[test]
@@ -110,13 +110,13 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         lit is_circle = s1 is Circle;
         if (is_circle) {
             Circle c2 = (Circle)s1;
-            vibez printf("Circle area: %f\n", c2.area());
+            vibez printf("Circle area: %f\n", c2.area();
         }
         
         lit is_rectangle = s2 is Rectangle;
         if (is_rectangle) {
             Rectangle r2 = (Rectangle)s2;
-            vibez printf("Rectangle area: %f\n", r2.area());
+            vibez printf("Rectangle area: %f\n", r2.area();
         }
         
         yolo 0;

@@ -38,7 +38,7 @@ fn test_simple_jit() -> Result<(), Error> {
     // Ensure no parser errors
     if !parser.errors().is_empty() {
         error!(errors = ?parser.errors(), "Parser errors encountered");
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -51,7 +51,7 @@ fn test_simple_jit() -> Result<(), Error> {
     // Manually create and register the 'puts' function
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(Linkage::External));
+    code_gen.module().add_function("puts", puts_type, Some(Linkage::External);
 
     // Manually create the 'main' function
     let main_fn_type = i32_type.fn_type(&[], false);
@@ -63,15 +63,15 @@ fn test_simple_jit() -> Result<(), Error> {
     let x_value = i32_type.const_int(42, false);
 
     // Create a function call to puts
-    let puts_fn = code_gen.module().get_function("puts").unwrap();
-    code_gen.builder().build_call(puts_fn, &[x_value.into()], "putscall").unwrap();
+    let puts_fn = code_gen.module().get_function("puts").unwrap());
+    code_gen.builder().build_call(puts_fn, &[x_value.into()], "putscall").unwrap());
 
     // Return the value from main
-    code_gen.builder().build_return(Some(&x_value)).unwrap();
+    code_gen.builder().build_return(Some(&x_value)).unwrap());
 
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine

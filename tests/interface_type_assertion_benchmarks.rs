@@ -49,7 +49,7 @@ mod tests {
             let max_duration_ns = durations.iter().map(|d| d.as_nanos() as u64).max().unwrap_or(0);
             
             BenchmarkResult {
-                name: name.to_string()),
+                name: name.to_string(),
                 iterations,
                 total_duration,
                 avg_duration_ns,
@@ -346,9 +346,9 @@ mod tests {
             // Create a minimal TypeAssertion instance for benchmarking
             // In a real implementation, this would be properly constructed
             TypeAssertion {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 expression: Box::new(cursed::ast::expressions::Empty{}),
-                type_name: "DummyType".to_string()),
+                type_name: "DummyType".to_string(),
             }
         }
     }

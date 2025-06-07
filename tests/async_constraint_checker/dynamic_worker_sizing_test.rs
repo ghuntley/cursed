@@ -31,10 +31,10 @@ fn test_dynamic_worker_sizing() {
     
     // Create constraints to check
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string()),
-        (Type::Tea, "Comparable".to_string()),
-        (Type::Thicc, "Numeric".to_string()),
-        (Type::Lit, "Comparable".to_string()),
+        (Type::Normie, "Numeric".to_string(),
+        (Type::Tea, "Comparable".to_string(),
+        (Type::Thicc, "Numeric".to_string(),
+        (Type::Lit, "Comparable".to_string(),
     ];
     
     // Check constraints and verify results
@@ -64,10 +64,10 @@ fn test_extension_trait_with_worker_config() {
     
     // Use the extension trait to create a custom worker configuration
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string()),
-        (Type::Tea, "Comparable".to_string()),
-        (Type::Thicc, "Numeric".to_string()),
-        (Type::Lit, "Comparable".to_string()),
+        (Type::Normie, "Numeric".to_string(),
+        (Type::Tea, "Comparable".to_string(),
+        (Type::Thicc, "Numeric".to_string(),
+        (Type::Lit, "Comparable".to_string(),
     ];
     
     // Test the check_constraints_with_config method
@@ -120,10 +120,10 @@ fn test_cpu_detection_and_scaling() {
     
     // Create constraints to check
     let constraints = vec![
-        (Type::Normie, "Numeric".to_string()),
-        (Type::Tea, "Comparable".to_string()),
-        (Type::Thicc, "Numeric".to_string()),
-        (Type::Lit, "Comparable".to_string()),
+        (Type::Normie, "Numeric".to_string(),
+        (Type::Tea, "Comparable".to_string(),
+        (Type::Thicc, "Numeric".to_string(),
+        (Type::Lit, "Comparable".to_string(),
     ];
     
     // Check constraints

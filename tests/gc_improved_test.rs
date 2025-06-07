@@ -4,7 +4,7 @@ use cursed::memory::{Gc, Tag, Traceable, Visitor};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
 
-//! Improved test for circular reference handling in the garbage collector
+// Improved test for circular reference handling in the garbage collector
 
 
 
@@ -107,16 +107,16 @@ fn test_circular_references_simplified() {
     info!("Starting circular references test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!(garbage_collector = ?gc, "Created garbage collector");
     
     // Allocate two nodes
     debug!("Allocating node 1");
-    let mut node1 = gc.allocate(CircularNode::new(1));
+    let mut node1 = gc.allocate(CircularNode::new(1);
     debug!(node = ?node1, "Allocated node 1");
     
     debug!("Allocating node 2");
-    let mut node2 = gc.allocate(CircularNode::new(2));
+    let mut node2 = gc.allocate(CircularNode::new(2);
     debug!(node = ?node2, "Allocated node 2");
     
     // Create a circular reference
@@ -124,7 +124,7 @@ fn test_circular_references_simplified() {
     {
         if let Some(inner1) = node1.inner_mut() {
             debug!(id = inner1.id, "Got mutable reference to node1");
-            inner1.set_next(node2.clone());
+            inner1.set_next(node2.clone();
             debug!("Set node1.next = node2");
             
             // Verify reference was set correctly
@@ -138,7 +138,7 @@ fn test_circular_references_simplified() {
     {
         if let Some(inner2) = node2.inner_mut() {
             debug!(id = inner2.id, "Got mutable reference to node2");
-            inner2.set_next(node1.clone());
+            inner2.set_next(node1.clone();
             debug!("Set node2.next = node1");
             
             // Verify reference was set correctly
@@ -181,13 +181,13 @@ fn test_circular_references_simplified() {
     debug!("Garbage collection completed");
     
     // Give GC a moment to finish any background work
-    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::thread::sleep(std::time::Duration::from_millis(50);
     
     // Check if the weak references are still alive
     info!("Checking weak references");
     debug!("Checking if weak references are still alive");
-    let weak1_alive = weak_node1.upgrade().is_some();
-    let weak2_alive = weak_node2.upgrade().is_some();
+    let weak1_alive = weak_node1.upgrade().is_some());
+    let weak2_alive = weak_node2.upgrade().is_some());
     debug!(weak1_alive = weak1_alive, weak2_alive = weak2_alive, "Weak references alive status");
     
     // Note: This will fail if the GC can't properly handle circular references
@@ -226,14 +226,14 @@ fn test_multiple_circular_references() {
     info!("Starting multiple circular references test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a more complex structure with multiple circular references
     debug!("Allocating multiple nodes");
-    let mut node1 = gc.allocate(CircularNode::new(1));
-    let mut node2 = gc.allocate(CircularNode::new(2));
-    let mut node3 = gc.allocate(CircularNode::new(3));
+    let mut node1 = gc.allocate(CircularNode::new(1);
+    let mut node2 = gc.allocate(CircularNode::new(2);
+    let mut node3 = gc.allocate(CircularNode::new(3);
     debug!("Allocated 3 nodes");
     
     // Create a circular structure: 1 -> 2 -> 3 -> 1
@@ -241,7 +241,7 @@ fn test_multiple_circular_references() {
     {
         if let Some(inner1) = node1.inner_mut() {
             debug!(from = 1, to = 2, "Setting node link");
-            inner1.set_next(node2.clone());
+            inner1.set_next(node2.clone();
             
             // Verify the reference was set correctly
             assert!(inner1.get_next().is_some(), "Node 1 should have a reference to Node 2");
@@ -253,7 +253,7 @@ fn test_multiple_circular_references() {
     {
         if let Some(inner2) = node2.inner_mut() {
             debug!(from = 2, to = 3, "Setting node link");
-            inner2.set_next(node3.clone());
+            inner2.set_next(node3.clone();
             
             // Verify the reference was set correctly
             assert!(inner2.get_next().is_some(), "Node 2 should have a reference to Node 3");
@@ -265,7 +265,7 @@ fn test_multiple_circular_references() {
     {
         if let Some(inner3) = node3.inner_mut() {
             debug!(from = 3, to = 1, "Setting node link");
-            inner3.set_next(node1.clone());
+            inner3.set_next(node1.clone();
             
             // Verify the reference was set correctly
             assert!(inner3.get_next().is_some(), "Node 3 should have a reference to Node 1");
@@ -301,7 +301,7 @@ fn test_multiple_circular_references() {
     debug!("Garbage collection completed");
     
     // Give GC a moment to finish any background work
-    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::thread::sleep(std::time::Duration::from_millis(50);
     
     // Verify all objects have been collected
     info!("Verifying objects have been collected");
@@ -353,7 +353,7 @@ fn test_incremental_gc_with_circular_refs() {
     info!("Starting incremental GC with circular references test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     let mut nodes = Vec::<Gc<CircularNode>>::new();
@@ -361,13 +361,13 @@ fn test_incremental_gc_with_circular_refs() {
     // Create a chain of nodes with occasional circular references
     debug!("Creating chain of nodes with circular references");
     for i in 0..50 {
-        let mut new_node = gc.allocate(CircularNode::new(i));
+        let mut new_node = gc.allocate(CircularNode::new(i);
         
         if i > 0 {
             // Connect to previous node
-            let prev_node = nodes.last().unwrap();
+            let prev_node = nodes.last().unwrap());
             if let Some(inner) = new_node.inner_mut() {
-                inner.set_next(prev_node.clone());
+                inner.set_next(prev_node.clone();
                 trace!(from = i, to = i-1, "Created link between nodes");
                 
                 // Verify the reference was set
@@ -378,7 +378,7 @@ fn test_incremental_gc_with_circular_refs() {
                     let target_idx = (i / 2) as usize;
                     let mut prev_clone = prev_node.clone();
                     if let Some(prev_inner) = prev_clone.inner_mut() {
-                        prev_inner.set_next(nodes[target_idx].clone());
+                        prev_inner.set_next(nodes[target_idx].clone();
                         debug!(from = i-1, to = target_idx, "Created additional circular reference");
                         
                         // Verify the additional reference was set
@@ -421,17 +421,17 @@ fn test_incremental_gc_with_circular_refs() {
         debug!(collection_number = i + 1, "Running collection");
         gc.collect_garbage();
         // Give GC a moment to process between collections
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(std::time::Duration::from_millis(10);
     }
     debug!("Completed all incremental collections");
     
     // Give GC additional time to finish any pending work
-    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::thread::sleep(std::time::Duration::from_millis(50);
     
     // Verify all weak references are no longer alive
     info!("Verifying all objects have been collected");
     for (i, weak_ref) in weak_refs.iter().enumerate() {
-        let is_upgradeable = weak_ref.upgrade().is_some();
+        let is_upgradeable = weak_ref.upgrade().is_some());
         if is_upgradeable {
             error!(node_index = i, "Node should have been collected but is still upgradeable");
         }

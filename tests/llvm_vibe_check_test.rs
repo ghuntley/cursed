@@ -5,7 +5,7 @@ use cursed::ast::traits::Node;
 use std::sync::Arc;
 use tracing::{debug, error, info, instrument, trace, warn};
 
-//! Integration tests for the vibe_check statement codegen
+// Integration tests for the vibe_check statement codegen
 
 
 // Import common test utilities for setting up tracing
@@ -37,8 +37,8 @@ fn test_simple_vibe_check_codegen() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // No errors should be reported during parsing
     if !parser.errors().is_empty() {
@@ -124,8 +124,8 @@ fn test_multiple_case_values() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // No errors should be reported during parsing
     if !parser.errors().is_empty() {
@@ -207,8 +207,8 @@ fn test_fallthrough_behavior() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // No errors should be reported during parsing
     if !parser.errors().is_empty() {

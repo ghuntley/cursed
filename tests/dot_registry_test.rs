@@ -1,7 +1,7 @@
 use cursed::stdlib::dot_registry::{DOT_REGISTRY, is_supported, execute_dot, get_packages, get_functions};
 use cursed::error::Error;
 
-//! Tests for the dot expression registry
+// Tests for the dot expression registry
 
 #[cfg(test)]
 mod tests {
@@ -9,9 +9,9 @@ mod tests {
     #[test]
     fn test_default_handlers_registered() {
         // Check that our default handlers are registered
-        assert!(is_supported("vibez", "spill"));
-        assert!(is_supported("htmlrizzler", "escape_html"));
-        assert!(is_supported("timez", "Now"));
+        assert!(is_supported("vibez", "spill");
+        assert!(is_supported("htmlrizzler", "escape_html");
+        assert!(is_supported("timez", "Now");
     }
     
     #[test]
@@ -39,7 +39,7 @@ mod tests {
         // We can't assert on the exact value since it'll be different each time,
         // but we can check that it's a number followed by 's'
         let time_str = result.unwrap();
-        assert!(time_str.ends_with('s'));
+        assert!(time_str.ends_with('s');
         let time_value = time_str.trim_end_matches('s');
         assert!(time_value.parse::<u64>().is_ok());
     }
@@ -80,7 +80,7 @@ mod tests {
             });
             
             // Check that our custom handler is registered
-            assert!(registry.has_handler("testz", "hello"));
+            assert!(registry.has_handler("testz", "hello");
             
             // Test with no arguments
             let result = registry.execute("testz", "hello", vec![]);

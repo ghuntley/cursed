@@ -6,10 +6,10 @@ use std::thread;
 use std::sync::Arc;
 use std::time::Instant;
 
-//! Test for the interface registry LRU cache implementation
-//!
-//! These tests validate the functionality of the LRU (Least Recently Used) caching
-//! mechanism for interface implementation checks.
+// Test for the interface registry LRU cache implementation
+//
+// These tests validate the functionality of the LRU (Least Recently Used) caching
+// mechanism for interface implementation checks.
 
 
 mod common;
@@ -75,22 +75,22 @@ fn test_lru_cache_generic_types() {
     
     // Create some generic type instances
     let stack_string = Type::Struct(
-        "Stack".to_string()),
+        "Stack".to_string(),
         vec![Box::new(Type::Tea)]
     );
     
     let stack_int = Type::Struct(
-        "Stack".to_string()),
+        "Stack".to_string(),
         vec![Box::new(Type::Normie)]
     );
     
     let list_string = Type::Struct(
-        "List".to_string()),
+        "List".to_string(),
         vec![Box::new(Type::Tea)]
     );
     
     let map_string_int = Type::Struct(
-        "Map".to_string()),
+        "Map".to_string(),
         vec![Box::new(Type::Tea), Box::new(Type::Normie)]
     );
     
@@ -105,12 +105,12 @@ fn test_lru_cache_generic_types() {
     cache.store(&map_string_int, "Map", true);
     
     // Verify correct cache hits
-    assert_eq!(cache.lookup(&stack_string, "Container"), Some(true));
-    assert_eq!(cache.lookup(&stack_int, "Container"), Some(true));
-    assert_eq!(cache.lookup(&list_string, "Container"), Some(true));
-    assert_eq!(cache.lookup(&map_string_int, "Container"), Some(true));
-    assert_eq!(cache.lookup(&list_string, "List"), Some(true));
-    assert_eq!(cache.lookup(&map_string_int, "Map"), Some(true));
+    assert_eq!(cache.lookup(&stack_string, "Container"), Some(true);
+    assert_eq!(cache.lookup(&stack_int, "Container"), Some(true);
+    assert_eq!(cache.lookup(&list_string, "Container"), Some(true);
+    assert_eq!(cache.lookup(&map_string_int, "Container"), Some(true);
+    assert_eq!(cache.lookup(&list_string, "List"), Some(true);
+    assert_eq!(cache.lookup(&map_string_int, "Map"), Some(true);
     
     // These should be cache misses
     assert_eq!(cache.lookup(&stack_string, "List"), None);
@@ -170,18 +170,18 @@ fn test_lru_eviction_policy() {
     cache.lookup(&types[5], "Comparable");
     
     // Add one more entry, which should evict the entry at index 6 (least recently used)
-    let new_type = Type::Struct("NewStruct".to_string()), vec![]);
+    let new_type = Type::Struct("NewStruct".to_string(), vec![]);
     cache.store(&new_type, "Comparable", true);
     
     // Check that index 6 was evicted
     assert_eq!(cache.lookup(&types[6], "Comparable"), None, "Type at index 6 should have been evicted");
     
     // Other entries should still be in the cache
-    assert_eq!(cache.lookup(&types[5], "Comparable"), Some(true));
-    assert_eq!(cache.lookup(&types[7], "Comparable"), Some(true));
-    assert_eq!(cache.lookup(&types[8], "Comparable"), Some(false));
-    assert_eq!(cache.lookup(&types[9], "Comparable"), Some(false));
-    assert_eq!(cache.lookup(&new_type, "Comparable"), Some(true));
+    assert_eq!(cache.lookup(&types[5], "Comparable"), Some(true);
+    assert_eq!(cache.lookup(&types[7], "Comparable"), Some(true);
+    assert_eq!(cache.lookup(&types[8], "Comparable"), Some(false);
+    assert_eq!(cache.lookup(&types[9], "Comparable"), Some(false);
+    assert_eq!(cache.lookup(&new_type, "Comparable"), Some(true);
 }
 
 /// Test cache performance compared to the original cache
@@ -214,7 +214,7 @@ fn test_lru_cache_performance() {
                     8 => Type::Sip,
                     _ => Type::Extra,
                 })]
-            ));
+            );
         }
     }
     
@@ -247,7 +247,7 @@ fn test_lru_cache_performance() {
                     // Use the cached result
                 } else {
                     // Cache miss, perform the check and store result
-                    let result = registry.check_implementation(type_, interface).unwrap();
+                    let result = registry.check_implementation(type_, interface).unwrap());
                     lru_cache.store(type_, interface, result);
                 }
             }
@@ -284,7 +284,7 @@ fn test_thread_safe_lru_cache() {
     tracing_setup::init_test_tracing();
     
     // Create a thread-safe LRU cache
-    let cache = Arc::new(ThreadSafeLruCache::with_capacity(1000));
+    let cache = Arc::new(ThreadSafeLruCache::with_capacity(1000);
     
     // Create some common types to test with
     let types = vec![
@@ -307,8 +307,8 @@ fn test_thread_safe_lru_cache() {
         
         let handle = thread::spawn(move || {
             for i in 0..100 {
-                let type_index = (i + thread_id) % types_clone.len();
-                let interface_index = (i + thread_id) % interfaces_clone.len();
+                let type_index = (i + thread_id) % types_clone.len());
+                let interface_index = (i + thread_id) % interfaces_clone.len());
                 
                 let type_ = &types_clone[type_index];
                 let interface = interfaces_clone[interface_index];
@@ -332,7 +332,7 @@ fn test_thread_safe_lru_cache() {
     
     // Wait for all threads to complete
     for handle in handles {
-        handle.join().unwrap();
+        handle.join().unwrap());
     }
     
     // Get final cache statistics

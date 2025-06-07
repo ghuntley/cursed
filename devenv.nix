@@ -56,15 +56,18 @@
     export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:$LD_LIBRARY_PATH"
     export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
     export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:$LIBRARY_PATH"
-    # Force use of GNU ld and disable mold completely
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="gcc"
-    export RUSTFLAGS="-C link-arg=-fuse-ld=bfd -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib -C link-arg=-B${pkgs.binutils}/bin"
-    export RUSTDOCFLAGS="-C link-arg=-fuse-ld=bfd -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib -C link-arg=-B${pkgs.binutils}/bin"
-    # Override any system mold linker
-    export PATH="${pkgs.llvmPackages_17.clang}/bin:${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"
+    # Completely disable mold and force GNU linker
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.gcc}/bin/gcc"
+    export RUSTFLAGS="-C link-arg=-fuse-ld=ld -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
+    export RUSTDOCFLAGS="-C link-arg=-fuse-ld=ld -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
+    # Override any system mold linker - put our binutils first in PATH
+    export PATH="${pkgs.binutils}/bin:${pkgs.gcc}/bin:${pkgs.llvmPackages_17.clang}/bin:$PATH"
     # Ensure we find the libraries by name
     export C_INCLUDE_PATH="${pkgs.libffi.dev}/include:${pkgs.zlib.dev}/include:${pkgs.ncurses.dev}/include:${pkgs.libxml2.dev}/include/libxml2:$C_INCLUDE_PATH"
     export CPLUS_INCLUDE_PATH="${pkgs.libffi.dev}/include:${pkgs.zlib.dev}/include:${pkgs.ncurses.dev}/include:${pkgs.libxml2.dev}/include/libxml2:$CPLUS_INCLUDE_PATH"
+    # Also try to force the linker through environment variables that override system defaults
+    export LINKER="${pkgs.binutils}/bin/ld"
+    export LD="${pkgs.binutils}/bin/ld"
   '';
 
 

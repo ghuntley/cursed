@@ -13,8 +13,8 @@ mod tests {
 
     #[test]
     fn test_type_of() {
-        let obj = Arc::new(Object::Integer(42));
-        let result = reflectz::type_of(&[obj]).unwrap();
+        let obj = Arc::new(Object::Integer(42);
+        let result = reflectz::type_of(&[obj]).unwrap());
         
         if let Object::Struct { name, fields } = &*result {
             assert_eq!(name, "Type", "Expected a Type object");
@@ -33,10 +33,10 @@ mod tests {
 
     #[test]
     fn test_is_type() {
-        let obj = Arc::new(Object::Integer(42));
+        let obj = Arc::new(Object::Integer(42);
         let type_name = Arc::new(Object::String("integer".to_string());
         
-        let result = reflectz::is_type(&[obj.clone(), type_name]).unwrap();
+        let result = reflectz::is_type(&[obj.clone(), type_name]).unwrap());
         
         if let Object::Boolean(is_int) = &*result {
             assert!(*is_int, "Should identify object as an integer");
@@ -46,7 +46,7 @@ mod tests {
         
         // Test wrong type
         let wrong_type = Arc::new(Object::String("string".to_string());
-        let result = reflectz::is_type(&[obj, wrong_type]).unwrap();
+        let result = reflectz::is_type(&[obj, wrong_type]).unwrap());
         
         if let Object::Boolean(is_int) = &*result {
             assert!(!*is_int, "Should not identify integer as string");
@@ -59,15 +59,15 @@ mod tests {
     fn test_get_field() {
         // Create a struct object with fields for testing
         let person = Arc::new(Object::Struct {
-            name: "Person".to_string()),
+            name: "Person".to_string(),
             fields: vec![
-                ("Name".to_string()), "John".to_string()),
-                ("Age".to_string()), "30".to_string()),
+                ("Name".to_string(), "John".to_string(),
+                ("Age".to_string(), "30".to_string(),
             ],
         });
         
         let field_name = Arc::new(Object::String("Name".to_string());
-        let result = reflectz::get_field(&[person.clone(), field_name]).unwrap();
+        let result = reflectz::get_field(&[person.clone(), field_name]).unwrap());
         
         if let Object::String(name) = &*result {
             assert_eq!(name, "John", "Field value doesn't match expected");
@@ -77,7 +77,7 @@ mod tests {
         
         // Test getting integer field
         let age_field = Arc::new(Object::String("Age".to_string());
-        let result = reflectz::get_field(&[person, age_field]).unwrap();
+        let result = reflectz::get_field(&[person, age_field]).unwrap());
         
         if let Object::Integer(age) = &*result {
             assert_eq!(*age, 30, "Age field value doesn't match expected");
@@ -92,10 +92,10 @@ mod tests {
     fn test_set_field() {
         // Create a struct object with fields for testing
         let person = Arc::new(Object::Struct {
-            name: "Person".to_string()),
+            name: "Person".to_string(),
             fields: vec![
-                ("Name".to_string()), "John".to_string()),
-                ("Age".to_string()), "30".to_string()),
+                ("Name".to_string(), "John".to_string(),
+                ("Age".to_string(), "30".to_string(),
             ],
         });
         
@@ -118,10 +118,10 @@ mod tests {
     fn test_call_method() {
         // This test would require more complex setup with method info
         // For now we'll just test the basic interface
-        let obj = Arc::new(Object::Integer(42));
+        let obj = Arc::new(Object::Integer(42);
         let method_name = Arc::new(Object::String("toString".to_string());
         
-        let result = reflectz::call_method(&[obj, method_name]).unwrap();
+        let result = reflectz::call_method(&[obj, method_name]).unwrap());
         
         // We expect null in the simplified implementation
         assert!(matches!(*result, Object::Null), "Expected Null result from unimplemented call_method");
@@ -131,25 +131,25 @@ mod tests {
     fn test_implements() {
         // Create a struct type
         let rect_struct = Arc::new(Object::Struct {
-            name: "Type".to_string()),
+            name: "Type".to_string(),
             fields: vec![
-                ("Name".to_string()), "Rectangle".to_string()),
-                ("Kind".to_string()), "Struct".to_string()),
-                ("isStruct".to_string()), "true".to_string()),
+                ("Name".to_string(), "Rectangle".to_string(),
+                ("Kind".to_string(), "Struct".to_string(),
+                ("isStruct".to_string(), "true".to_string(),
             ],
         });
         
         // Create an interface type
         let shape_interface = Arc::new(Object::Struct {
-            name: "Type".to_string()),
+            name: "Type".to_string(),
             fields: vec![
-                ("Name".to_string()), "Shape".to_string()),
-                ("Kind".to_string()), "Interface".to_string()),
+                ("Name".to_string(), "Shape".to_string(),
+                ("Kind".to_string(), "Interface".to_string(),
             ],
         });
         
         // Test that struct implements interface
-        let result = reflectz::implements(&[rect_struct, shape_interface]).unwrap();
+        let result = reflectz::implements(&[rect_struct, shape_interface]).unwrap());
         
         if let Object::Boolean(implements) = &*result {
             assert!(*implements, "Rectangle should implement Shape interface");

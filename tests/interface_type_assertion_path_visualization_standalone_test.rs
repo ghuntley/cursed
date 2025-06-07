@@ -4,11 +4,11 @@ use cursed::codegen::llvm::interface_type_assertion_path_visualization::Interfac
 use cursed::error::Error;
 use common::setup_test_environment;
 
-//! Tests for the interface type assertion path visualization
-//!
-//! This module tests the standalone functionality of the path visualization system
-//! for interface type assertions, verifying that it correctly analyzes and visualizes
-//! type relationships for error reporting and debugging.
+// Tests for the interface type assertion path visualization
+//
+// This module tests the standalone functionality of the path visualization system
+// for interface type assertions, verifying that it correctly analyzes and visualizes
+// type relationships for error reporting and debugging.
 
 
 
@@ -149,7 +149,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
         } else {
             result.push_str("  Directly implements:\n");
             for interface in &interfaces {
-                result.push_str(&format!("    - {}\n", interface));
+                result.push_str(&format!("    - {}\n", interface);
             }
         }
         
@@ -169,7 +169,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
             .map_err(|e| Error::Compilation(format!("Failed to get interfaces: {}", e)))?;
         
         if source_interfaces.contains(&target_type.to_string() {
-            paths.push(format!("{} -> {}", source_type, target_type));
+            paths.push(format!("{} -> {}", source_type, target_type);
         }
         
         // Check common interfaces
@@ -208,14 +208,14 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
     ) -> Result<Option<Vec<String>>, Error> {
         // Simple implementation for testing
         if source_type == target_type {
-            return Ok(Some(vec![source_type.to_string())]));
+            return Ok(Some(vec![source_type.to_string())]);
         }
         
         let interfaces = self.registry.get_implemented_interfaces(source_type)
             .map_err(|e| Error::Compilation(format!("Failed to get interfaces: {}", e)))?;
         
         if interfaces.contains(&target_type.to_string() {
-            return Ok(Some(vec![source_type.to_string()), target_type.to_string())]));
+            return Ok(Some(vec![source_type.to_string(), target_type.to_string())]);
         }
         
         Ok(None)
@@ -231,7 +231,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
             .map_err(|e| Error::Compilation(format!("Failed to get interfaces: {}", e)))?;
         
         for interface in interfaces {
-            result.push_str(&format!("└── {}\n", interface));
+            result.push_str(&format!("└── {}\n", interface);
         }
         
         Ok(result)
@@ -276,11 +276,11 @@ fn test_visualize_interface_path() {
     
     let mut generator = MockGenerator::new();
     
-    let visualization = generator.visualize_interface_path("Dog", 2).unwrap();
+    let visualization = generator.visualize_interface_path("Dog", 2).unwrap());
     println!("{}", visualization);
     
-    assert!(visualization.contains("Animal"));
-    assert!(visualization.contains("Pet"));
+    assert!(visualization.contains("Animal");
+    assert!(visualization.contains("Pet");
 }
 
 #[test]
@@ -290,19 +290,19 @@ fn test_find_alternative_paths() {
     let mut generator = MockGenerator::new();
     
     // Test finding paths between types
-    let paths = generator.find_alternative_paths("Dog", "Cat", 3).unwrap();
+    let paths = generator.find_alternative_paths("Dog", "Cat", 3).unwrap());
     println!("Paths between Dog and Cat: {:?}", paths);
     
     // Should have common interfaces
-    assert!(paths.iter().any(|p| p.contains("Animal")));
-    assert!(paths.iter().any(|p| p.contains("Pet")));
+    assert!(paths.iter().any(|p| p.contains("Animal"));
+    assert!(paths.iter().any(|p| p.contains("Pet"));
     
     // Test finding paths between unrelated types
-    let paths = generator.find_alternative_paths("Dog", "Car", 3).unwrap();
+    let paths = generator.find_alternative_paths("Dog", "Car", 3).unwrap());
     println!("Paths between Dog and Car: {:?}", paths);
     
     // Should be empty - no relationship
-    assert!(paths.is_empty());
+    assert!(paths.is_empty().is_empty());
 }
 
 #[test]
@@ -324,7 +324,7 @@ fn test_get_implementors() {
     
     let mut generator = MockGenerator::new();
     
-    let animal_implementors = generator.get_implementors("Animal").unwrap();
+    let animal_implementors = generator.get_implementors("Animal").unwrap());
     println!("Animal implementors: {:?}", animal_implementors);
     
     assert!(animal_implementors.contains(&"Dog".to_string());
@@ -339,9 +339,9 @@ fn test_inheritance_tree() {
     
     let mut generator = MockGenerator::new();
     
-    let tree = generator.generate_inheritance_tree("Dog", 2).unwrap();
+    let tree = generator.generate_inheritance_tree("Dog", 2).unwrap());
     println!("{}", tree);
     
-    assert!(tree.contains("Animal"));
-    assert!(tree.contains("Pet"));
+    assert!(tree.contains("Animal");
+    assert!(tree.contains("Pet");
 }

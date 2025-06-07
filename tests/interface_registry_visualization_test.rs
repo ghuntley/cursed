@@ -12,7 +12,7 @@ use tracing::{debug, info};
 use std::sync::Arc;
 use std::thread;
 
-//! Test for interface registry visualization
+// Test for interface registry visualization
 
 
 // We need to call init_test_tracing only once
@@ -38,49 +38,49 @@ fn test_registry_visualization_extension_hierarchy() {
     
     // Create a registry and populate it with some test data
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
-    registry.register_extension("Dog", "Mammal").unwrap();
-    registry.register_extension("Cat", "Mammal").unwrap();
-    registry.register_extension("Mammal", "Animal").unwrap();
-    registry.register_extension("Bird", "Animal").unwrap();
-    registry.register_extension("Animal", "LivingThing").unwrap();
+    registry.register_extension("Dog", "Mammal").unwrap());
+    registry.register_extension("Cat", "Mammal").unwrap());
+    registry.register_extension("Mammal", "Animal").unwrap());
+    registry.register_extension("Bird", "Animal").unwrap());
+    registry.register_extension("Animal", "LivingThing").unwrap());
     
     // Test the visualization extension
-    let hierarchy = registry.get_extension_hierarchy().unwrap();
+    let hierarchy = registry.get_extension_hierarchy().unwrap());
     
     // Verify the hierarchy contains the expected relationships
-    assert!(hierarchy.contains_key("Dog"));
-    assert!(hierarchy.contains_key("Cat"));
-    assert!(hierarchy.contains_key("Mammal"));
-    assert!(hierarchy.contains_key("Bird"));
-    assert!(hierarchy.contains_key("Animal"));
+    assert!(hierarchy.contains_key("Dog");
+    assert!(hierarchy.contains_key("Cat");
+    assert!(hierarchy.contains_key("Mammal");
+    assert!(hierarchy.contains_key("Bird");
+    assert!(hierarchy.contains_key("Animal");
     
     // Verify specific relationships
-    let mammal_extensions = hierarchy.get("Mammal").unwrap();
-    assert!(mammal_extensions.contains("Animal"));
+    let mammal_extensions = hierarchy.get("Mammal").unwrap());
+    assert!(mammal_extensions.contains("Animal");
     
-    let animal_extensions = hierarchy.get("Animal").unwrap();
-    assert!(animal_extensions.contains("LivingThing"));
+    let animal_extensions = hierarchy.get("Animal").unwrap());
+    assert!(animal_extensions.contains("LivingThing");
     
     // Test the direct extensions method
-    let dog_extensions = registry.get_direct_extensions("Dog").unwrap().unwrap();
+    let dog_extensions = registry.get_direct_extensions("Dog").unwrap().unwrap());
     assert_eq!(dog_extensions.len(), 1);
-    assert!(dog_extensions.contains("Mammal"));
+    assert!(dog_extensions.contains("Mammal");
     
     // Test the direct implementors method
-    let mammal_implementors = registry.get_direct_implementors("Mammal").unwrap().unwrap();
+    let mammal_implementors = registry.get_direct_implementors("Mammal").unwrap().unwrap());
     assert_eq!(mammal_implementors.len(), 2);
-    assert!(mammal_implementors.contains("Dog"));
-    assert!(mammal_implementors.contains("Cat"));
+    assert!(mammal_implementors.contains("Dog");
+    assert!(mammal_implementors.contains("Cat");
     
     // Test getting all interfaces
-    let all_interfaces = registry.get_all_interfaces().unwrap();
+    let all_interfaces = registry.get_all_interfaces().unwrap());
     assert_eq!(all_interfaces.len(), 5);
-    assert!(all_interfaces.contains("Dog"));
-    assert!(all_interfaces.contains("Cat"));
-    assert!(all_interfaces.contains("Mammal"));
-    assert!(all_interfaces.contains("Bird"));
-    assert!(all_interfaces.contains("Animal"));
-    assert!(all_interfaces.contains("LivingThing"));
+    assert!(all_interfaces.contains("Dog");
+    assert!(all_interfaces.contains("Cat");
+    assert!(all_interfaces.contains("Mammal");
+    assert!(all_interfaces.contains("Bird");
+    assert!(all_interfaces.contains("Animal");
+    assert!(all_interfaces.contains("LivingThing");
 }
 
 #[test]
@@ -97,21 +97,21 @@ fn test_registry_visualization_error_propagation() {
     let registry = &code_gen.registry_extensions;
     
     // Register some test interfaces
-    registry.register_extension("Interface1", "BaseInterface").unwrap();
-    registry.register_extension("Interface2", "BaseInterface").unwrap();
+    registry.register_extension("Interface1", "BaseInterface").unwrap());
+    registry.register_extension("Interface2", "BaseInterface").unwrap());
     
     // The registry should properly propagate errors when using the ? operator
-    let hierarchy = registry.get_extension_hierarchy().unwrap();
-    assert!(hierarchy.contains_key("Interface1"));
-    assert!(hierarchy.contains_key("Interface2"));
+    let hierarchy = registry.get_extension_hierarchy().unwrap());
+    assert!(hierarchy.contains_key("Interface1");
+    assert!(hierarchy.contains_key("Interface2");
     
-    let extensions = registry.get_direct_extensions("Interface1").unwrap().unwrap();
+    let extensions = registry.get_direct_extensions("Interface1").unwrap().unwrap());
     assert_eq!(extensions.len(), 1);
-    assert!(extensions.contains("BaseInterface"));
+    assert!(extensions.contains("BaseInterface");
     
     // Test error propagation format with proper context
-    let non_existent = registry.get_direct_extensions("NonExistentInterface").unwrap();
-    assert!(non_existent.is_none());
+    let non_existent = registry.get_direct_extensions("NonExistentInterface").unwrap());
+    assert!(non_existent.is_none();
 }
 
 #[test]
@@ -121,11 +121,11 @@ fn test_registry_thread_safety() {
     
     
     // Create a shared registry
-    let registry = Arc::new(ThreadSafeInterfaceExtensionRegistry::new());
+    let registry = Arc::new(ThreadSafeInterfaceExtensionRegistry::new();
     
     // Register some base interfaces
-    registry.register_extension("BaseInterface1", "Root").unwrap();
-    registry.register_extension("BaseInterface2", "Root").unwrap();
+    registry.register_extension("BaseInterface1", "Root").unwrap());
+    registry.register_extension("BaseInterface2", "Root").unwrap());
     
     // Create multiple threads that add and query interface relationships
     let mut handles = vec![];
@@ -137,15 +137,15 @@ fn test_registry_thread_safety() {
             let base_name = if i % 2 == 0 { "BaseInterface1" } else { "BaseInterface2" };
             
             // Register a new extension
-            registry_clone.register_extension(&interface_name, base_name).unwrap();
+            registry_clone.register_extension(&interface_name, base_name).unwrap());
             
             // Query the registry using visualization methods
-            let hierarchy = registry_clone.get_extension_hierarchy().unwrap();
-            assert!(hierarchy.contains_key(&interface_name));
+            let hierarchy = registry_clone.get_extension_hierarchy().unwrap());
+            assert!(hierarchy.contains_key(&interface_name);
             
-            let extensions = registry_clone.get_direct_extensions(&interface_name).unwrap().unwrap();
+            let extensions = registry_clone.get_direct_extensions(&interface_name).unwrap().unwrap());
             assert_eq!(extensions.len(), 1);
-            assert!(extensions.contains(base_name));
+            assert!(extensions.contains(base_name);
             
             // Return success indicator
             true
@@ -160,6 +160,6 @@ fn test_registry_thread_safety() {
     }
     
     // Verify final state with all interfaces
-    let all_interfaces = registry.get_all_interfaces().unwrap();
+    let all_interfaces = registry.get_all_interfaces().unwrap());
     assert_eq!(all_interfaces.len(), 13); // 10 test interfaces + 2 base interfaces + Root
 }

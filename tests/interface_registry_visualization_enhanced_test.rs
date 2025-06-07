@@ -4,7 +4,7 @@ use cursed::core::interface_registry_visualization_enhanced::EnhancedVisualizati
 use cursed::error::Error;
 use tracing::{debug, info};
 
-//! Test for enhanced interface registry visualization integration
+// Test for enhanced interface registry visualization integration
 
 
 // We need to call init_test_tracing only once
@@ -30,11 +30,11 @@ fn test_enhanced_detailed_error_message() {
     
     // Create a registry with test data
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
-    registry.register_extension("Dog", "Mammal").unwrap();
-    registry.register_extension("Cat", "Mammal").unwrap();
-    registry.register_extension("Mammal", "Animal").unwrap();
-    registry.register_extension("Bird", "Animal").unwrap();
-    registry.register_extension("Animal", "LivingThing").unwrap();
+    registry.register_extension("Dog", "Mammal").unwrap());
+    registry.register_extension("Cat", "Mammal").unwrap());
+    registry.register_extension("Mammal", "Animal").unwrap());
+    registry.register_extension("Bird", "Animal").unwrap());
+    registry.register_extension("Animal", "LivingThing").unwrap());
     
     // Test with inheritance relationship in the wrong direction
     let error_message = EnhancedVisualizationIntegration::generate_detailed_error_message(
@@ -45,10 +45,10 @@ fn test_enhanced_detailed_error_message() {
     ).unwrap();
     
     // Verify error message contains expected information
-    assert!(error_message.contains("Type Assertion Error"));
-    assert!(error_message.contains("test.csd:42:10"));
-    assert!(error_message.contains("Cannot assert type 'Animal' as 'Dog'!"));
-    assert!(error_message.contains("inheritance relationship is reversed"));
+    assert!(error_message.contains("Type Assertion Error");
+    assert!(error_message.contains("test.csd:42:10");
+    assert!(error_message.contains("Cannot assert type 'Animal' as 'Dog'!");
+    assert!(error_message.contains("inheritance relationship is reversed");
     
     // Test with interfaces that have no relationship
     let error_message = EnhancedVisualizationIntegration::generate_detailed_error_message(
@@ -59,8 +59,8 @@ fn test_enhanced_detailed_error_message() {
     ).unwrap();
     
     // Verify error message for unrelated interfaces
-    assert!(error_message.contains("No inheritance relationship exists"));
-    assert!(error_message.contains("To fix this error"));
+    assert!(error_message.contains("No inheritance relationship exists");
+    assert!(error_message.contains("To fix this error");
 }
 
 #[test]
@@ -70,21 +70,21 @@ fn test_enhanced_ascii_hierarchy() {
     
     // Create a registry with test data
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
-    registry.register_extension("Dog", "Mammal").unwrap();
-    registry.register_extension("Cat", "Mammal").unwrap();
-    registry.register_extension("Mammal", "Animal").unwrap();
-    registry.register_extension("Bird", "Animal").unwrap();
-    registry.register_extension("Animal", "LivingThing").unwrap();
+    registry.register_extension("Dog", "Mammal").unwrap());
+    registry.register_extension("Cat", "Mammal").unwrap());
+    registry.register_extension("Mammal", "Animal").unwrap());
+    registry.register_extension("Bird", "Animal").unwrap());
+    registry.register_extension("Animal", "LivingThing").unwrap());
     
     // Test ASCII visualization
-    let ascii = EnhancedVisualizationIntegration::generate_ascii_hierarchy(&registry).unwrap();
+    let ascii = EnhancedVisualizationIntegration::generate_ascii_hierarchy(&registry).unwrap());
     
     // Verify output contains expected content
-    assert!(ascii.contains("Interface Hierarchy Tree"));
-    assert!(ascii.contains("LivingThing"));
-    assert!(ascii.contains("Animal"));
-    assert!(ascii.contains("Mammal"));
-    assert!(ascii.contains("Dog"));
-    assert!(ascii.contains("Cat"));
-    assert!(ascii.contains("Bird"));
+    assert!(ascii.contains("Interface Hierarchy Tree");
+    assert!(ascii.contains("LivingThing");
+    assert!(ascii.contains("Animal");
+    assert!(ascii.contains("Mammal");
+    assert!(ascii.contains("Dog");
+    assert!(ascii.contains("Cat");
+    assert!(ascii.contains("Bird");
 }

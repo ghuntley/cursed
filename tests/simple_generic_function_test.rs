@@ -14,8 +14,8 @@ slay identity[T](x) {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // Should have a package declaration and a function declaration
     assert_eq!(

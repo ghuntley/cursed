@@ -7,11 +7,11 @@ use std::sync::Arc;
 use inkwell::context::Context;
 use crate::common;
 
-//! Test module for interface type assertion error propagation
-//!
-//! This module tests the implementation of interface type assertion error propagation
-//! with Result types and the ? operator. It verifies that error propagation works
-//! correctly in various interface type assertion scenarios.
+// Test module for interface type assertion error propagation
+//
+// This module tests the implementation of interface type assertion error propagation
+// with Result types and the ? operator. It verifies that error propagation works
+// correctly in various interface type assertion scenarios.
 
 #[cfg(test)]
 mod tests {
@@ -51,7 +51,7 @@ mod tests {
         codegen.builder().position_at_end(basic_block);
         
         // Create a dummy value (i8* null pointer) to use in the Result
-        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
+        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null());
         
         // Create a successful Result
         let success_result = codegen.create_type_assertion_result(
@@ -131,7 +131,7 @@ mod tests {
         
         // In the return block, return the unwrapped value
         codegen.builder().position_at_end(return_block);
-        codegen.builder().build_return(Some(&unwrapped.unwrap()))
+        codegen.builder().build_return(Some(&unwrapped.unwrap())
             .expect("Failed to build return instruction");
         
         info!("Successfully unwrapped Result structure");

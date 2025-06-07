@@ -8,10 +8,10 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::core::jit::JitCompiler;
 use cursed::error::Error;
 
-//! # Interface Type Registry with Assertions Test
-//!
-//! Tests the enhanced interface type registry with better error messages
-//! during type assertions.
+// # Interface Type Registry with Assertions Test
+//
+// Tests the enhanced interface type registry with better error messages
+// during type assertions.
 
 
 #[path = "common.rs"]

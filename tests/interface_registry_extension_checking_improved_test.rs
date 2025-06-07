@@ -3,11 +3,11 @@ use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
 use cursed::error::Error;
 
-//! # Improved Interface Registry Extension Checking Tests
-//!
-//! This module tests the enhanced implementation of interface registry extension checking
-//! with proper string comparison in type lookups, robust error handling, and enhanced interface
-//! inheritance relationship verification.
+// # Improved Interface Registry Extension Checking Tests
+//
+// This module tests the enhanced implementation of interface registry extension checking
+// with proper string comparison in type lookups, robust error handling, and enhanced interface
+// inheritance relationship verification.
 
 
 mod common;
@@ -24,7 +24,7 @@ fn test_improved_interface_extension_checking() {
     registry.register_type(1003, "JSONFileReader".to_string());
     
     // Test checking extension by name with improved string comparison
-    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap();
+    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap());
     
     // The relationship will be false because we haven't added real relationship data to the registry
     // but the most important thing is that the function doesn't crash due to string comparison issues
@@ -41,8 +41,8 @@ fn test_implementors_error_handling() {
     
     // Test getting implementors for non-existent interface ID
     // This should return an empty set rather than an error
-    let implementors = registry.get_implementors(9999).unwrap();
-    assert!(implementors.is_empty());
+    let implementors = registry.get_implementors(9999).unwrap());
+    assert!(implementors.is_empty().is_empty());
 }
 
 /// Test sample relationships from the enhanced get_extension_relationships method
@@ -57,7 +57,7 @@ fn test_extension_relationships_sample_data() {
     registry.register_type(1003, "JSONFileReader".to_string());
     
     // Get the extension relationships
-    let relationships = registry.get_extension_relationships().unwrap();
+    let relationships = registry.get_extension_relationships().unwrap());
     
     // The implementation now generates sample test relationship data if at least
     // Reader and FileReader interfaces are registered
@@ -75,7 +75,7 @@ fn test_real_registry_integration() {
     );
     
     // Create a test registry with the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
     
     // Register some interface types
     registry.register_type(1001, "Reader".to_string());
@@ -83,11 +83,11 @@ fn test_real_registry_integration() {
     registry.register_type(1003, "JSONFileReader".to_string());
     
     // Add relationship data to the extension registry
-    extension_registry.register_extension("FileReader", "Reader").unwrap();
-    extension_registry.register_extension("JSONFileReader", "FileReader").unwrap();
+    extension_registry.register_extension("FileReader", "Reader").unwrap());
+    extension_registry.register_extension("JSONFileReader", "FileReader").unwrap());
     
     // Get the extension relationships
-    let relationships = registry.get_extension_relationships().unwrap();
+    let relationships = registry.get_extension_relationships().unwrap());
     
     // Verify the relationships were properly extracted from the registry
     assert!(!relationships.is_empty(), "Expected relationships from registry");
@@ -103,6 +103,6 @@ fn test_real_registry_integration() {
     }
     
     // Check that FileReader extends Reader using the wrapper method
-    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap();
+    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap());
     assert!(extension, "FileReader should extend Reader via registry check");
 }

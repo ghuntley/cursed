@@ -11,7 +11,7 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Tests for property access (field access) in the LLVM code generator
+// Tests for property access (field access) in the LLVM code generator
 
 
 #[test]
@@ -47,14 +47,14 @@ fn test_property_access() {
     
     // Create expression to access test_obj.value
     let object_ident = Identifier {
-        token: "token".to_string()),
-        value: "test_obj".to_string()),
+        token: "token".to_string(),
+        value: "test_obj".to_string(),
     };
     
     let dot_expr = DotExpression {
-        token: "token".to_string()),
+        token: "token".to_string(),
         object: Box::new(object_ident),
-        property: "value".to_string()),
+        property: "value".to_string(),
     };
     
     // Test the property access

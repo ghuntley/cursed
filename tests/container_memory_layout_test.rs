@@ -8,7 +8,7 @@ use inkwell::context::Context;
 use inkwell::types::BasicTypeEnum;
 use std::path::PathBuf;
 
-//! Tests for specialized container memory layout optimizations
+// Tests for specialized container memory layout optimizations
 
 // Import the extension traits
 
@@ -39,15 +39,22 @@ fn test_specialized_container_layout() {
 
     // Create specialized container through our container_layout implementation
     // Updated API signature now returns a Result<BasicTypeEnum, Error>
-    let specialized_vec_type = generator
-        .container_layout_manager()
-        .create_specialized_container(element_type.into(), ContainerKind::Vector)
-        .expect("Failed to create specialized container");
+    let specialized_vec_type = {
+        let mut manager = generator.container_layout_manager();
+        manager.create_specialized_container(element_type.into(), ContainerKind::Vector)
+            .expect("Failed to create specialized container")
+    };
 
     // Compute sizes and alignment
     // Updated API now uses memory_layout_manager().get_type_size() instead of get_abi_size
-    let regular_size = generator.memory_layout_manager().get_type_size(&vec_type.into());
-    let specialized_size = generator.memory_layout_manager().get_type_size(&specialized_vec_type.into());
+    let regular_size = {
+        let manager = generator.memory_layout_manager();
+        manager.get_type_size(&vec_type.into())
+    };
+    let specialized_size = {
+        let manager = generator.memory_layout_manager();
+        manager.get_type_size(&specialized_vec_type.into())
+    };
 
     // Since we're returning constant u64 values, we can directly use them
     let regular_size_val = regular_size;
@@ -70,23 +77,25 @@ fn test_specialized_container_layout() {
     // Create a container with our optimized container creation function
     // Convert capacity to u64 for our function
     let capacity: u64 = 10;
-    let container_ptr = generator
-        .container_layout_manager()
-        .create_container_instance(element_type.into(), capacity, ContainerKind::Vector)
-        .expect("Failed to create container instance");
+    let container_ptr = {
+        let mut manager = generator.container_layout_manager();
+        manager.create_container_instance(element_type.into(), capacity, ContainerKind::Vector)
+            .expect("Failed to create container instance")
+    };
 
     // Create a pointer to an element using our optimized access function
     let index = context.i32_type().const_int(5, false);
     // Updated API now takes element_ptr first followed by index, element_type, and container_kind
-    let element_ptr = generator
-        .container_layout_manager()
-        .get_element_pointer(
+    let element_ptr = {
+        let mut manager = generator.container_layout_manager();
+        manager.get_element_pointer(
             container_ptr,
             index.into(), 
             element_type.into(),
             ContainerKind::Vector
         )
-        .expect("Failed to get element pointer");
+        .expect("Failed to get element pointer")
+    };
 
     // Load the element value - using standard build_load API
     let element_value = generator
@@ -95,7 +104,7 @@ fn test_specialized_container_layout() {
         .expect("Failed to load element");
 
     // Return the element value
-    let _ = generator.builder_mut().build_return(Some(&element_value));
+    let _ = generator.builder_mut().build_return(Some(&element_value);
 
     // Verify that the specialized container has the expected fields
     // Updated API - struct_type().get_field_types() vs. get_field_types()

@@ -5,7 +5,7 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, error, info, trace, warn};
 
-//! Test file for range clause functionality in Cursed
+// Test file for range clause functionality in Cursed
 
 
 // Generate a unique ID for test files
@@ -85,7 +85,7 @@ printn(yolo)\n", code);
         .map_err(|e| format!("Failed to run test: {}", e))?;
     
     if !success {
-        return Err(format!("Test execution failed:\n{}", output));
+        return Err(format!("Test execution failed:\n{}", output);
     }
     
     // Check if the output contains the expected value

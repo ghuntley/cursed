@@ -8,26 +8,26 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Basic test for function monomorphization
+// Basic test for function monomorphization
 
 
 #[test]
 fn test_function_monomorphization_basic() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_monomorphization", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_monomorphization", PathBuf::from("test.csd");
 
     // Create a generic function AST
     let type_param = Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     };
 
     let function = FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "identity".to_string()),
+            token: "token".to_string(),
+            value: "identity".to_string(),
         },
         parameters: vec![],
         body: BlockStatement {
@@ -35,8 +35,8 @@ fn test_function_monomorphization_basic() {
             statements: vec![],
         },
         return_type: Some(Box::new(Identifier {
-            token: "token".to_string()),
-            value: "T".to_string()),
+            token: "token".to_string(),
+            value: "T".to_string(),
         })),
         type_parameters: vec![type_param],
         generic_constraints: vec![],
@@ -50,7 +50,7 @@ fn test_function_monomorphization_basic() {
     ).expect("Failed to generate specialized i32 function");
 
     // Verify the module
-    let verify_result = generator.module().verify();
+    let verify_result = generator.module().verify());
     assert!(verify_result.is_ok(), "Module verification failed: {:?}", verify_result.err());
 
     // Check that the specialized function exists

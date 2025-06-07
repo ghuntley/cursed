@@ -11,10 +11,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Once;
 
-//! Tests for interface type assertion result type and ? operator integration
-//!
-//! This test file verifies the correct implementation of interface type assertions
-//! with Result type and ? operator integration for error propagation.
+// Tests for interface type assertion result type and ? operator integration
+//
+// This test file verifies the correct implementation of interface type assertions
+// with Result type and ? operator integration for error propagation.
 
 #[cfg(test)]
 mod tests {
@@ -36,14 +36,14 @@ mod tests {
     // Helper to create a type assertion
     fn create_test_assertion(expr_value: &str, type_name: &str) -> TypeAssertion {
         let expr = Box::new(Identifier {
-            token: "token".to_string()),
-            value: expr_value.to_string()),
+            token: "token".to_string(),
+            value: expr_value.to_string(),
         });
         
         TypeAssertion {
-            token: "token".to_string()),
+            token: "token".to_string(),
             expression: expr,
-            type_name: type_name.to_string()),
+            type_name: type_name.to_string(),
         }
     }
     
@@ -64,7 +64,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -84,7 +84,7 @@ mod tests {
             Ok(_) => {},
             Err(err) => {
                 // Check that we get a compilation error, not a panic
-                assert!(matches!(err, Error::Compilation(_)));
+                assert!(matches!(err, Error::Compilation(_));
             }
         }
     }
@@ -106,16 +106,16 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
         
         // Create a test value (a null pointer in this case)
-        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
+        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null());
         
         // Create a success result
-        let result = codegen.create_success_result(null_ptr.into());
+        let result = codegen.create_success_result(null_ptr.into();
         
         // Verify that the result is created successfully
         assert!(result.is_ok());
@@ -138,7 +138,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -149,8 +149,8 @@ mod tests {
             .with_location(SourceLocation {
                 line: 42,
                 column: 10,
-                file: Some("test.csd".to_string()),
-                source_line: "val, ok = obj.(ConcreteType)".to_string()),
+                file: Some("test.csd".to_string(),
+                source_line: "val, ok = obj.(ConcreteType)".to_string(),
             });
         
         // Create an error result
@@ -178,7 +178,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
         
         // Set the current function for the code generator
         codegen.set_current_function(function);

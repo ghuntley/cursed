@@ -2,7 +2,7 @@ use cursed::memory::{Traceable, Tag, Visitor, register_dependency};
 use cursed::memory::{global_object_storage, finalize_objects_ordered};
 use std::sync::{Arc, Mutex};
 
-//! Test for integration between finalization ordering and object storage
+// Test for integration between finalization ordering and object storage
 
 
 // Create a test-specific traceable type with finalization tracking
@@ -30,14 +30,14 @@ impl Traceable for DependentObject {
     fn finalize(&mut self) {
         // Mark as finalized
         {
-            let mut finalized = self.finalized.lock().unwrap();
+            let mut finalized = self.finalized.lock().unwrap());
             *finalized = true;
             println!("DependentObject {} finalized", self.id);
         }
         
         // Add to finalization order
         {
-            let mut order = self.finalization_order.lock().unwrap();
+            let mut order = self.finalization_order.lock().unwrap());
             order.push(self.id);
         }
     }
@@ -56,7 +56,7 @@ impl Clone for DependentObject {
 #[test]
 fn test_finalization_order_with_object_storage() {
     // Create a finalization order tracker
-    let finalization_order = Arc::new(Mutex::new(Vec::new()));
+    let finalization_order = Arc::new(Mutex::new(Vec::new());
     let storage = global_object_storage();
     
     // Create objects with dependencies: 0 depends on 1, 1 depends on 2
@@ -93,7 +93,7 @@ fn test_finalization_order_with_object_storage() {
     finalize_objects_ordered(&addresses);
     
     // Check finalization order
-    let order = finalization_order.lock().unwrap();
+    let order = finalization_order.lock().unwrap());
     
     // Order should be correct (dependencies should be finalized first)
     assert_eq!(order.len(), 3, "All objects should be finalized");

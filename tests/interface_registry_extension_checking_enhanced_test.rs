@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
-use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use cursed::codegen::llvm::InterfaceTypeRegistry;
 use cursed::error::Error;
 
-//! # Enhanced Interface Registry Extension Checking Tests
-//!
-//! This module tests the enhanced implementation of interface registry extension checking
-//! with proper error handling and consistent error propagation throughout the implementation.
+// # Enhanced Interface Registry Extension Checking Tests
+//
+// This module tests the enhanced implementation of interface registry extension checking
+// with proper error handling and consistent error propagation throughout the implementation.
 
 
 mod common;
@@ -25,18 +25,18 @@ fn test_basic_interface_extension_checking() {
     registry.register_type(1006, "JSONSerializable".to_string());
     
     // Test getting extension relationships
-    let relationships = registry.get_extension_relationships().unwrap();
+    let relationships = registry.get_extension_relationships().unwrap());
     
     // Since the registry doesn't actually contain any extension data yet,
     // the relationships map should be empty
-    assert!(relationships.is_empty());
+    assert!(relationships.is_empty().is_empty());
     
     // Test finding implementors - this will also be empty for the same reason
-    let implementors = registry.get_implementors(1001).unwrap();
+    let implementors = registry.get_implementors(1001).unwrap());
     assert!(implementors.is_empty());
     
     // Test checking extension by name
-    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap();
+    let extension = registry.check_interface_extension_by_name("FileReader", "Reader").unwrap());
     assert!(!extension);
 }
 
@@ -51,13 +51,13 @@ fn test_extension_checking_non_existent_interfaces() {
     registry.register_type(1002, "FileReader".to_string());
     
     // Test checking extension with non-existent interface
-    let extension = registry.check_interface_extension_by_name("NonExistentInterface", "Reader").unwrap();
+    let extension = registry.check_interface_extension_by_name("NonExistentInterface", "Reader").unwrap());
     assert!(!extension);
     
-    let extension = registry.check_interface_extension_by_name("FileReader", "NonExistentInterface").unwrap();
+    let extension = registry.check_interface_extension_by_name("FileReader", "NonExistentInterface").unwrap());
     assert!(!extension);
     
     // Test getting implementors for non-existent interface
-    let implementors = registry.get_implementors(9999).unwrap();
+    let implementors = registry.get_implementors(9999).unwrap());
     assert!(implementors.is_empty());
 }

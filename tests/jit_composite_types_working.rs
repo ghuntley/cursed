@@ -14,8 +14,8 @@ fn test_array_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let left_bracket = lexer.next_token().unwrap();
-    let right_bracket = lexer.next_token().unwrap();
+    let left_bracket = lexer.next_token().unwrap());
+    let right_bracket = lexer.next_token().unwrap());
 
     // Assert correct bracket tokens
     assert_eq!(
@@ -42,9 +42,9 @@ fn test_struct_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let be_like = lexer.next_token().unwrap();
-    let identifier = lexer.next_token().unwrap();
-    let squad = lexer.next_token().unwrap();
+    let be_like = lexer.next_token().unwrap());
+    let identifier = lexer.next_token().unwrap());
+    let squad = lexer.next_token().unwrap());
 
     // Assert correct tokens
     assert_eq!(
@@ -76,11 +76,11 @@ fn test_map_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let tea = lexer.next_token().unwrap();
-    let lbracket = lexer.next_token().unwrap();
-    let k = lexer.next_token().unwrap();
-    let rbracket = lexer.next_token().unwrap();
-    let v = lexer.next_token().unwrap();
+    let tea = lexer.next_token().unwrap());
+    let lbracket = lexer.next_token().unwrap());
+    let k = lexer.next_token().unwrap());
+    let rbracket = lexer.next_token().unwrap());
+    let v = lexer.next_token().unwrap());
 
     // Assert correct tokens
     assert_eq!(tea, Token::Tea, "Expected Token::Tea, got {:?}", tea);
@@ -118,10 +118,10 @@ fn test_channel_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let dm = lexer.next_token().unwrap();
-    let lt = lexer.next_token().unwrap();
-    let t = lexer.next_token().unwrap();
-    let gt = lexer.next_token().unwrap();
+    let dm = lexer.next_token().unwrap());
+    let lt = lexer.next_token().unwrap());
+    let t = lexer.next_token().unwrap());
+    let gt = lexer.next_token().unwrap());
 
     // Assert correct tokens
     assert_eq!(dm, Token::Dm, "Expected Token::Dm, got {:?}", dm);
@@ -144,13 +144,13 @@ fn test_function_as_value_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let slay = lexer.next_token().unwrap();
-    let lparen = lexer.next_token().unwrap();
-    let normie1 = lexer.next_token().unwrap();
-    let comma = lexer.next_token().unwrap();
-    let normie2 = lexer.next_token().unwrap();
-    let rparen = lexer.next_token().unwrap();
-    let normie3 = lexer.next_token().unwrap();
+    let slay = lexer.next_token().unwrap());
+    let lparen = lexer.next_token().unwrap());
+    let normie1 = lexer.next_token().unwrap());
+    let comma = lexer.next_token().unwrap());
+    let normie2 = lexer.next_token().unwrap());
+    let rparen = lexer.next_token().unwrap());
+    let normie3 = lexer.next_token().unwrap());
 
     // Assert correct tokens
     assert_eq!(slay, Token::Slay, "Expected Token::Slay, got {:?}", slay);
@@ -202,9 +202,9 @@ fn test_interface_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let be_like = lexer.next_token().unwrap();
-    let identifier = lexer.next_token().unwrap();
-    let collab = lexer.next_token().unwrap();
+    let be_like = lexer.next_token().unwrap());
+    let identifier = lexer.next_token().unwrap());
+    let collab = lexer.next_token().unwrap());
 
     // Assert correct tokens
     assert_eq!(
@@ -236,8 +236,8 @@ fn test_pointer_tokens() {
     let mut lexer = Lexer::new(input);
 
     // Get the tokens
-    let at = lexer.next_token().unwrap();
-    let t = lexer.next_token().unwrap();
+    let at = lexer.next_token().unwrap());
+    let t = lexer.next_token().unwrap());
 
     // Assert correct tokens
     assert_eq!(at, Token::At, "Expected Token::At, got {:?}", at);

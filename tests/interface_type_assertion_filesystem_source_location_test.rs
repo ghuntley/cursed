@@ -9,10 +9,10 @@ use cursed::error::SourceLocation;
 use cursed::lexer::Token;
 use std::io::Write;
 
-//! Tests for the filesystem integration with interface type assertions
-//!
-//! These tests verify that the source location tracking with filesystem integration
-//! works correctly for interface type assertions.
+// Tests for the filesystem integration with interface type assertions
+//
+// These tests verify that the source location tracking with filesystem integration
+// works correctly for interface type assertions.
 
 
 // Initialize test tracing
@@ -34,7 +34,7 @@ fn test_filesystem_integration_initialization() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Initialize filesystem integration
     let _ = code_gen.init_filesystem_integration();
@@ -51,33 +51,33 @@ fn test_source_line_retrieval() {
     init_tracing();
     
     // Create a temporary test file
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap());
     let file_path = temp_dir.path().join("test_source.csd");
-    let mut file = std::fs::File::create(&file_path).unwrap();
+    let mut file = std::fs::File::create(&file_path).unwrap());
     
     // Write a simple interface type assertion example
     writeln!(file, "vibe main;").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "collab Shape {{").unwrap();
-    writeln!(file, "    slay area() meal;").unwrap();
+    writeln!(file, "    slay area() meal;").unwrap());
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "squad Circle {{").unwrap();
     writeln!(file, "    radius meal,").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
-    writeln!(file, "slay (c Circle) area() meal {{").unwrap();
+    writeln!(file, "slay (c Circle) area() meal {{").unwrap());
     writeln!(file, "    return 3.14159 * c.radius * c.radius;").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
-    writeln!(file, "slay main() {{").unwrap();
-    writeln!(file, "    sus shape Shape = Circle{{radius: 5.0}};").unwrap();
+    writeln!(file, "slay main() {{").unwrap());
+    writeln!(file, "    sus shape Shape = Circle{{radius: 5.0};").unwrap();
     writeln!(file, "    sus circle = shape.(Circle)?;").unwrap();
     writeln!(file, "}}").unwrap();
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Initialize filesystem integration with the temp directory
     let _ = code_gen.init_filesystem_integration();
@@ -91,7 +91,7 @@ fn test_source_line_retrieval() {
     
     // Verify we got the correct lines
     assert_eq!(source_lines.len(), 5);
-    assert!(source_lines[2].1.contains("shape.(Circle)?"));
+    assert!(source_lines[2].1.contains("shape.(Circle)?");
 }
 
 #[test]
@@ -99,15 +99,15 @@ fn test_formatting_error_with_source_context() {
     init_tracing();
     
     // Create a temporary test file
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap());
     let file_path = temp_dir.path().join("test_error.csd");
-    let mut file = std::fs::File::create(&file_path).unwrap();
+    let mut file = std::fs::File::create(&file_path).unwrap());
     
     // Write a simple interface type assertion example with an error
     writeln!(file, "vibe main;").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "collab Shape {{").unwrap();
-    writeln!(file, "    slay area() meal;").unwrap();
+    writeln!(file, "    slay area() meal;").unwrap());
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "squad Circle {{").unwrap();
@@ -119,14 +119,14 @@ fn test_formatting_error_with_source_context() {
     writeln!(file, "    height meal").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
-    writeln!(file, "slay main() {{").unwrap();
-    writeln!(file, "    sus shape Shape = Rectangle{{width: 10.0, height: 5.0}};").unwrap();
+    writeln!(file, "slay main() {{").unwrap());
+    writeln!(file, "    sus shape Shape = Rectangle{{width: 10.0, height: 5.0};").unwrap();
     writeln!(file, "    sus circle = shape.(Circle)?; // This will fail at runtime").unwrap();
     writeln!(file, "}}").unwrap();
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Initialize filesystem integration with the temp directory
     let _ = code_gen.init_filesystem_integration();
@@ -135,7 +135,7 @@ fn test_formatting_error_with_source_context() {
     let location = SourceLocation {
         line: 18,
         column: 15,
-        file: Some(file_path.to_str().unwrap().to_string()),
+        file: Some(file_path.to_str().unwrap().to_string(),
         source_line: String::new(), // We'll let it be populated by format_error_with_source_context
     };
     
@@ -143,19 +143,19 @@ fn test_formatting_error_with_source_context() {
     let error_message = "Type assertion failed: value of type 'Rectangle' is not of type 'Circle'";
     let formatted = code_gen.format_error_with_source_context(
         error_message,
-        Some(std::path::Path::new(&location.file.as_ref().unwrap())),
+        Some(std::path::Path::new(&location.file.as_ref().unwrap()),
         Some(location.line)
     );
     
     // Verify the formatted error includes the file, line, and source context
-    assert!(formatted.contains("Type assertion failed"));
-    assert!(formatted.contains(file_path.to_str().unwrap()));
-    assert!(formatted.contains("18"));
-    assert!(formatted.contains("shape.(Circle)?"));
-    assert!(formatted.contains("Source:"));
+    assert!(formatted.contains("Type assertion failed");
+    assert!(formatted.contains(file_path.to_str().unwrap());
+    assert!(formatted.contains("18");
+    assert!(formatted.contains("shape.(Circle)?");
+    assert!(formatted.contains("Source:");
     
     // Verify it has the correct marker for the exact column
-    assert!(formatted.contains("^"));
+    assert!(formatted.contains("^");
 }
 
 #[test]
@@ -188,9 +188,9 @@ fn test_source_location_with_node() {
     }
     
     // Create a temporary test file
-    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap());
     let file_path = temp_dir.path().join("test_node.csd");
-    let mut file = std::fs::File::create(&file_path).unwrap();
+    let mut file = std::fs::File::create(&file_path).unwrap());
     
     // Write a simple test file
     writeln!(file, "line 1").unwrap();
@@ -199,14 +199,14 @@ fn test_source_location_with_node() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Initialize filesystem integration with the temp directory
     let _ = code_gen.init_filesystem_integration();
     
     // Create a mock node
     let node = MockNode {
-        token_str: "shape.(Circle)?".to_string()),
+        token_str: "shape.(Circle)?".to_string(),
     };
     
     // Create a source location with context

@@ -63,7 +63,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     // Set up LLVM JIT execution
@@ -76,7 +76,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
         Ok(_) => println!("Program compiled successfully"),
         Err(e) => {
             println!("Compilation error: {}", e);
-            return Err(Error::Compilation(format!("Error compiling program: {}", e)));
+            return Err(Error::Compilation(format!("Error compiling program: {}", e));
         }
     }
 
@@ -118,7 +118,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
             execution_engine.add_global_mapping(&puts_fn, addr);
         }
     } else {
-        return Err(Error::from_str("Failed to find 'puts' function in module"));
+        return Err(Error::from_str("Failed to find 'puts' function in module");
     }
 
     // Execute the main function
@@ -133,7 +133,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
                 if let Some(f) = code_gen.module().get_function("_test_main") {
                     println!("Found mangled main: {}", f.get_name().to_string_lossy());
                 } else {
-                    return Err(Error::from_str("No main function found in module"));
+                    return Err(Error::from_str("No main function found in module");
                 }
             }
         };
@@ -170,14 +170,14 @@ fn test_null_pointer_handling() -> Result<(), Error> {
         sus ptr @normie;  // Null pointer to normie type
         
         // Check if it's null (we'll use a special runtime function for this)
-        puts(is_null_ptr(ptr));  // Should print 1 (true)
+        puts(is_null_ptr(ptr);  // Should print 1 (true)
         
         // Create a non-null pointer
         sus x normie = 42;
         sus valid_ptr = @x;
         
         // Check if it's null
-        puts(is_null_ptr(valid_ptr));  // Should print 0 (false)
+        puts(is_null_ptr(valid_ptr);  // Should print 0 (false)
         
         // Success
         yolo 0;

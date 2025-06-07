@@ -13,13 +13,13 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Tests for if expressions in the LLVM code generator
+// Tests for if expressions in the LLVM code generator
 
 
 #[test]
 fn test_simple_if_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
 
     // Create a function context for testing
     let i32_type = context.i32_type();
@@ -101,7 +101,7 @@ fn test_simple_if_expression() {
     let int_value = value.into_int_value();
     
     // Print the value for debugging
-    println!("DEBUG TEST: Int value: {:?}", int_value.get_zero_extended_constant());
+    println!("DEBUG TEST: Int value: {:?}", int_value.get_zero_extended_constant();
     
     // For this test, we're not interested in the actual value yet, just that it works
     // The PHI node should select 42 since the condition is true

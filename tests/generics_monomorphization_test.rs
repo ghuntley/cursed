@@ -18,7 +18,7 @@ use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-//! Comprehensive test for generic function monomorphization in LLVM code generation
+// Comprehensive test for generic function monomorphization in LLVM code generation
 
 
 /// This test creates a generic function with multiple type parameters 
@@ -46,15 +46,15 @@ fn test_multi_parameter_generic_function_monomorphization() {
         vec![Type::Normie, Type::Normie],
         vec![
             Box::new(cursed::ast::expressions::BooleanLiteral {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 value: true,
             }),
             Box::new(IntegerLiteral {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 value: 42,
             }),
             Box::new(IntegerLiteral {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 value: 24,
             }),
         ],
@@ -66,15 +66,15 @@ fn test_multi_parameter_generic_function_monomorphization() {
         vec![Type::Tea, Type::Normie],
         vec![
             Box::new(cursed::ast::expressions::BooleanLiteral {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 value: false,
             }),
             Box::new(StringLiteral {
-                token: "token".to_string()),
-                value: "hello".to_string()),
+                token: "token".to_string(),
+                value: "hello".to_string(),
             }),
             Box::new(IntegerLiteral {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 value: 99,
             }),
         ],
@@ -85,8 +85,8 @@ fn test_multi_parameter_generic_function_monomorphization() {
     let result2 = code_gen.specialized_function_builder().compile_generic_call(&call2);
 
     // Verify that both compilations succeeded
-    assert!(result1.is_ok(), "First generic call compilation should succeed: {:?}", result1.err());
-    assert!(result2.is_ok(), "Second generic call compilation should succeed: {:?}", result2.err());
+    assert!(result1.is_ok(), "First generic call compilation should succeed: {:?}", result1.err();
+    assert!(result2.is_ok(), "Second generic call compilation should succeed: {:?}", result2.err();
 
     // Verify the specialized functions exist in the module
     let specialized_name1 = code_gen
@@ -130,20 +130,20 @@ fn test_cross_module_generic_function_usage() {
         vec![
             // Create a simple function as mapper (identity function)
             Box::new(Identifier {
-                token: "token".to_string()),
-                value: "identity".to_string()),
+                token: "token".to_string(),
+                value: "identity".to_string(),
             }),
             // Create an array as input
             Box::new(Identifier {
-                token: "token".to_string()),
-                value: "numbers".to_string()),
+                token: "token".to_string(),
+                value: "numbers".to_string(),
             }),
         ],
     );
 
     // Compile the generic call in module A
     let result_a = code_gen_a.specialized_function_builder().compile_generic_call(&map_call_a);
-    assert!(result_a.is_ok(), "Module A generic call compilation should succeed: {:?}", result_a.err());
+    assert!(result_a.is_ok(), "Module A generic call compilation should succeed: {:?}", result_a.err();
 
     // Create a specialization name for map<normie, normie>
     let specialized_map_name = code_gen_a
@@ -172,20 +172,20 @@ fn test_cross_module_generic_function_usage() {
         vec![
             // Create a simple function as mapper (uppercase function)
             Box::new(Identifier {
-                token: "token".to_string()),
-                value: "uppercase".to_string()),
+                token: "token".to_string(),
+                value: "uppercase".to_string(),
             }),
             // Create an array as input
             Box::new(Identifier {
-                token: "token".to_string()),
-                value: "names".to_string()),
+                token: "token".to_string(),
+                value: "names".to_string(),
             }),
         ],
     );
 
     // Compile the generic call in module B
     let result_b = code_gen_b.specialized_function_builder().compile_generic_call(&map_call_b);
-    assert!(result_b.is_ok(), "Module B generic call compilation should succeed: {:?}", result_b.err());
+    assert!(result_b.is_ok(), "Module B generic call compilation should succeed: {:?}", result_b.err();
 
     // Create a specialization name for map<tea, tea>
     let specialized_map_name_b = code_gen_b
@@ -210,12 +210,12 @@ fn create_generic_function_call(
 ) -> CallExpression {
     // Create the function identifier
     let function = Box::new(Identifier {
-        token: "token".to_string()),
-        value: function_name.to_string()),
+        token: "token".to_string(),
+        value: function_name.to_string(),
     });
 
     CallExpression {
-        token: "token".to_string()),
+        token: "token".to_string(),
         function,
         arguments,
         type_arguments: type_args,
@@ -227,48 +227,48 @@ fn create_generic_select_function() -> FunctionStatement {
     // Create type parameters T and U
     let type_parameters = vec![
         Identifier {
-            token: "token".to_string()),
-            value: "T".to_string()),
+            token: "token".to_string(),
+            value: "T".to_string(),
         },
         Identifier {
-            token: "token".to_string()),
-            value: "U".to_string()),
+            token: "token".to_string(),
+            value: "U".to_string(),
         },
     ];
 
     // Create parameters: condition: lit, first: T, second: U
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("param".to_string()),
+            token: Token::Identifier("param".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "condition".to_string()),
+                token: "token".to_string(),
+                value: "condition".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "lit".to_string()),
+                token: "token".to_string(),
+                value: "lit".to_string(),
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("param".to_string()),
+            token: Token::Identifier("param".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "first".to_string()),
+                token: "token".to_string(),
+                value: "first".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("param".to_string()),
+            token: Token::Identifier("param".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "second".to_string()),
+                token: "token".to_string(),
+                value: "second".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "U".to_string()),
+                token: "token".to_string(),
+                value: "U".to_string(),
             }),
         },
     ];
@@ -277,17 +277,17 @@ fn create_generic_select_function() -> FunctionStatement {
     // In a real implementation, this would be a proper union type expression
     // For this test, we'll use T as the return type for simplicity
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
-    }));
+        token: "token".to_string(),
+        value: "T".to_string(),
+    });
 
     // Create body: { if condition { return first; } else { return second; } }
     // For simplicity, we'll just return the first parameter
     let return_statement = ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: Some(Box::new(Identifier {
-            token: "token".to_string()),
-            value: "first".to_string()),
+            token: "token".to_string(),
+            value: "first".to_string(),
         })),
     };
 
@@ -300,8 +300,8 @@ fn create_generic_select_function() -> FunctionStatement {
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "select".to_string()),
+            token: "token".to_string(),
+            value: "select".to_string(),
         },
         parameters,
         body: body,
@@ -318,55 +318,55 @@ fn create_generic_map_function() -> FunctionStatement {
     // Create type parameters T and U
     let type_parameters = vec![
         Identifier {
-            token: "token".to_string()),
-            value: "T".to_string()),
+            token: "token".to_string(),
+            value: "T".to_string(),
         },
         Identifier {
-            token: "token".to_string()),
-            value: "U".to_string()),
+            token: "token".to_string(),
+            value: "U".to_string(),
         },
     ];
 
     // Create parameters: mapper: (T) -> U, elements: array<T>
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("param".to_string()),
+            token: Token::Identifier("param".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "mapper".to_string()),
+                token: "token".to_string(),
+                value: "mapper".to_string(),
             },
             // Function type (T) -> U simplified for this test
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "Function".to_string()),
+                token: "token".to_string(),
+                value: "Function".to_string(),
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("param".to_string()),
+            token: Token::Identifier("param".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "elements".to_string()),
+                token: "token".to_string(),
+                value: "elements".to_string(),
             },
             // Array<T> type simplified for this test
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "Array".to_string()),
+                token: "token".to_string(),
+                value: "Array".to_string(),
             }),
         },
     ];
 
     // Return type: Array<U>
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
-        token: "token".to_string()),
-        value: "Array".to_string()),
-    }));
+        token: "token".to_string(),
+        value: "Array".to_string(),
+    });
 
     // Create simple body for testing
     let return_statement = ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: Some(Box::new(Identifier {
-            token: "token".to_string()), // Just return the input for simplicity
-            value: "elements".to_string()),
+            token: "token".to_string(), // Just return the input for simplicity
+            value: "elements".to_string(),
         })),
     };
 
@@ -379,8 +379,8 @@ fn create_generic_map_function() -> FunctionStatement {
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "map".to_string()),
+            token: "token".to_string(),
+            value: "map".to_string(),
         },
         parameters,
         body: body,

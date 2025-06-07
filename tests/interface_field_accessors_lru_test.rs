@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use tracing::*;
 
-//! Test for LRU cached interface field accessors implementation
+// Test for LRU cached interface field accessors implementation
 
 
 #[path = "common.rs"]
@@ -58,8 +58,8 @@ slay main() {
     sus v = Vector{elements: []normie{1, 2, 3}, capacity: 3};
     sus m = Map{keys: []tea{"a", "b"}, values: []normie{1, 2}, count: 2};
     
-    vibez.spill(v.size());
-    vibez.spill(m.size());
+    vibez.spill(v.size();
+    vibez.spill(m.size();
 }
 "#;
 
@@ -73,22 +73,22 @@ fn test_interface_field_accessors_lru() {
     let mut lexer = Lexer::new(TEST_CODE);
     let tokens = lexer.lex().expect("Lexing failed");
     
-    let mut parser = Parser::new(tokens, PathBuf::from("test.csd"));
+    let mut parser = Parser::new(tokens, PathBuf::from("test.csd");
     let program = parser.parse().expect("Parsing failed");
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd");
     
     // Ensure LRU cache is initialized
     codegen.ensure_lru_field_accessor_cache();
     
     // Create field mappings for interfaces
     let mut vector_mappings = HashMap::new();
-    vector_mappings.insert("size".to_string()), "capacity".to_string());
+    vector_mappings.insert("size".to_string(), "capacity".to_string());
     
     let mut map_mappings = HashMap::new();
-    map_mappings.insert("size".to_string()), "count".to_string());
+    map_mappings.insert("size".to_string(), "count".to_string());
     
     // Simulate struct types
     let vector_type = codegen.context().opaque_struct_type("Vector");

@@ -7,15 +7,15 @@ use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 
-//! Test helpers for LLVM code generation tests
-//!
-//! This module provides common functionality for setting up and running tests
-//! with the LLVM code generator, including JIT execution testing.
+// Test helpers for LLVM code generation tests
+//
+// This module provides common functionality for setting up and running tests
+// with the LLVM code generator, including JIT execution testing.
 
 
 /// Set up a code generator with a basic configuration for testing
 pub fn setup_code_generator<'ctx>(context: &'ctx Context, module_name: &str) -> LlvmCodeGenerator<'ctx> {
-    let dummy_path = PathBuf::from(format!("./dummy_{}.csd", module_name));
+    let dummy_path = PathBuf::from(format!("./dummy_{}.csd", module_name);
     LlvmCodeGenerator::new(context, module_name, dummy_path)
 }
 
@@ -27,7 +27,7 @@ pub fn parse_code(input: &str) -> Result<Program, Error> {
     
     // Check for parser errors
     if !parser.errors().is_empty() {
-        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors())));
+        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors()));
     }
     
     Ok(program)
@@ -101,16 +101,16 @@ where
                     .get_function::<unsafe extern "C" fn() -> R>("main")
                     .map_err(|e| Error::from_str(&format!("Failed to find any suitable function (tried {}, {}, main): {}", 
                                                                function_name, mangled_name, e)))
-                    .map(|f| f.call());
+                    .map(|f| f.call();
             } else {
                 return mangled_result
                     .map(|f| f.call())
-                    .map_err(|e| Error::from_str(&format!("Failed to call function {}: {}", mangled_name, e)));
+                    .map_err(|e| Error::from_str(&format!("Failed to call function {}: {}", mangled_name, e));
             }
         } else {
             return function_result
                 .map(|f| f.call())
-                .map_err(|e| Error::from_str(&format!("Failed to call function {}: {}", function_name, e)));
+                .map_err(|e| Error::from_str(&format!("Failed to call function {}: {}", function_name, e));
         }
     }
 }

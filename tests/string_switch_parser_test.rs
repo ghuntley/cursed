@@ -21,7 +21,7 @@ fn test_basic_string_switch_parsing() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     // Need to access the statement parsing differently, through public API
     let result = parser.parse_program();
     
@@ -39,5 +39,5 @@ fn test_basic_string_switch_parsing() {
     assert!(switch_any.is::<SwitchStatement>(), "Expected a SwitchStatement, got something else");
     
     // Verify no remaining errors
-    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors());
+    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors();
 }

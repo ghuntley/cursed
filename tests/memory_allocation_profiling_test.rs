@@ -1,18 +1,69 @@
-use std::thread;
-use std::time::Duration;
-
-//! Memory allocation profiling tests
-//!
-//! This test module verifies the memory allocation profiling functionality
-//! by creating various allocation patterns and checking the results.
+// Memory allocation profiling tests
+//
+// This test module verifies the memory allocation profiling functionality
+// by creating various allocation patterns and checking the results.
 
 extern crate cursed;
 
+use std::thread;
+use std::time::Duration;
 
 use cursed::memory::{
     GarbageCollector, Traceable, Tag, Visitor,
     enable_profiling, disable_profiling, reset_profiling, global_profiler
 };
+
+// Wrapper types for testing - these implement Traceable
+#[derive(Debug, Clone)]
+struct GcString(pub String);
+
+impl Traceable for GcString {
+    fn trace(&self, _visitor: &mut dyn Visitor) {
+        // Strings don't contain references to other GC objects
+    }
+    
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>() + self.0.capacity()
+    }
+    
+    fn tag(&self) -> Tag {
+        Tag::String
+    }
+}
+
+#[derive(Debug, Clone)]
+struct GcVecU8(pub Vec<u8>);
+
+impl Traceable for GcVecU8 {
+    fn trace(&self, _visitor: &mut dyn Visitor) {
+        // Vec<u8> doesn't contain references to other GC objects
+    }
+    
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>() + self.0.capacity()
+    }
+    
+    fn tag(&self) -> Tag {
+        Tag::Array
+    }
+}
+
+#[derive(Debug, Clone)]
+struct GcVecInt(pub Vec<i32>);
+
+impl Traceable for GcVecInt {
+    fn trace(&self, _visitor: &mut dyn Visitor) {
+        // Vec<i32> doesn't contain references to other GC objects
+    }
+    
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>() + (self.0.capacity() * std::mem::size_of::<i32>())
+    }
+    
+    fn tag(&self) -> Tag {
+        Tag::Array
+    }
+}
 
 #[test]
 fn test_memory_profiling_basic() {
@@ -49,7 +100,7 @@ fn test_memory_profiling_basic() {
         // Create objects of different sizes
         let obj = TestObject {
             data: vec![0; i * 100],
-            value: i,
+            value: i as i32,
         };
         
         // Allocate in different patterns
@@ -99,31 +150,32 @@ fn test_memory_profiling_patterns() {
     // Helper functions to create different allocation patterns
     let create_string_pattern = || {
         for _ in 0..20 {
-            let s = "x".repeat(100);
+            let s = GcString("x".repeat(100);
             let _ = gc.allocate(s);
         }
     };
     
     let create_vector_pattern = || {
         for i in 0..15 {
-            let v = vec![0; i * 10];
+            let v = GcVecU8(vec![0; i * 10]);
             let _ = gc.allocate(v);
         }
     };
     
     // Create distinct patterns
     create_string_pattern();
-    thread::sleep(Duration::from_millis(10)); // Small pause between patterns
+    thread::sleep(Duration::from_millis(10); // Small pause between patterns
     create_vector_pattern();
-    thread::sleep(Duration::from_millis(10));
+    thread::sleep(Duration::from_millis(10);
     create_string_pattern();
     
     // The profiler should have detected these patterns
     let profiler = global_profiler();
     
-    // We should see String and Vec<u8> in the stats
+    // We should see GcString and GcVecU8 in the stats
     let stats = profiler.get_stats_by_type();
-    assert!(stats.contains_key("alloc::string::String"), "String should be in stats");
+    let gcstring_key = std::any::type_name::<GcString>();
+    assert!(stats.contains_key(gcstring_key), "GcString should be in stats");
     
     // Check for allocation patterns
     let patterns = profiler.get_allocation_patterns();
@@ -131,7 +183,7 @@ fn test_memory_profiling_patterns() {
     
     // Check the report
     let report = profiler.generate_report();
-    assert!(report.contains("String"), "Report should mention String allocations");
+    assert!(report.contains("GcString") || report.contains("string"), "Report should mention string-related allocations");
     
     // Clean up
     drop(profiler);
@@ -150,7 +202,7 @@ fn test_memory_hot_paths() {
     // A function that allocates a lot in a tight loop (hot path)
     fn hot_allocation_path(gc: &GarbageCollector) {
         for i in 0..50 {
-            let data = vec![i as u8; 64]; // Small allocations, but many of them
+            let data = GcVecU8(vec![i as u8; 64]); // Small allocations, but many of them
             let _ = gc.allocate(data);
         }
     }
@@ -196,9 +248,11 @@ fn test_optimize_allocation_pattern() {
         
         for i in 0..30 {
             // This allocates a new string for each iteration
-            let s = format!("Item {}", i);
+            let s = GcString(format!("Item {}", i);
             let gc_s = gc.allocate(s);
-            result.push(gc_s.inner().unwrap().clone());
+            if let Some(inner) = gc_s.inner() {
+                result.push(inner.0.clone();
+            }
         }
         
         result
@@ -217,8 +271,10 @@ fn test_optimize_allocation_pattern() {
             buffer.push_str(&i.to_string());
             
             // Clone only when we need to store it
-            let gc_s = gc.allocate(buffer.clone());
-            result.push(gc_s.inner().unwrap().clone());
+            let gc_s = gc.allocate(GcString(buffer.clone());
+            if let Some(inner) = gc_s.inner() {
+                result.push(inner.0.clone();
+            }
         }
         
         result
@@ -232,7 +288,8 @@ fn test_optimize_allocation_pattern() {
     // Check profiling results for unoptimized version
     let profiler = global_profiler();
     let unopt_stats = profiler.get_stats_by_type();
-    let unopt_string_count = unopt_stats.get("alloc::string::String")
+    let gcstring_key = std::any::type_name::<GcString>();
+    let unopt_string_count = unopt_stats.get(gcstring_key)
         .map(|s| s.count)
         .unwrap_or(0);
     
@@ -244,7 +301,8 @@ fn test_optimize_allocation_pattern() {
     // Check profiling results for optimized version
     let profiler = global_profiler();
     let opt_stats = profiler.get_stats_by_type();
-    let opt_string_count = opt_stats.get("alloc::string::String")
+    let gcstring_key = std::any::type_name::<GcString>();
+    let opt_string_count = opt_stats.get(gcstring_key)
         .map(|s| s.count)
         .unwrap_or(0);
     

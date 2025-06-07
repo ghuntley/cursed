@@ -18,7 +18,7 @@ fn test_thread_safe_goroutines() {
     thread_safe_goroutine::init_goroutine_runtime();
     
     // Create a shared counter that goroutines will increment
-    let counter = Arc::new(Mutex::new(0));
+    let counter = Arc::new(Mutex::new(0);
     
     // Create a callable that increments the counter
     struct Incrementer {
@@ -40,7 +40,7 @@ fn test_thread_safe_goroutines() {
             };
             
             // Increment the counter
-            let mut counter = self.counter.lock().unwrap();
+            let mut counter = self.counter.lock().unwrap());
             *counter += increment;
             
             // Return the new value
@@ -59,15 +59,15 @@ fn test_thread_safe_goroutines() {
         let args = vec![ThreadSafeObject::new(i)]; // Each increments by its index
         // Convert to the correct trait object type
         let callable: Arc<dyn ThreadSafeCallable> = Arc::clone(&incrementer) as Arc<dyn ThreadSafeCallable>;
-        thread_safe_goroutine::run_goroutine(callable, args).unwrap();
+        thread_safe_goroutine::run_goroutine(callable, args).unwrap());
     }
     
     // Wait for all goroutines to complete
-    thread_safe_goroutine::wait_all_goroutines(1000).unwrap();
+    thread_safe_goroutine::wait_all_goroutines(1000).unwrap());
     
     // Verify the counter was incremented by all goroutines
     // The sum of 0+1+2+3+4 = 10
-    let final_count = *counter.lock().unwrap();
+    let final_count = *counter.lock().unwrap());
     assert_eq!(final_count, 10, "Counter should be incremented by all goroutines");
 }
 
@@ -80,8 +80,8 @@ fn test_thread_safe_goroutine_channels() {
     thread_safe_goroutine::init_goroutine_runtime();
     
     // Create channels for communication
-    thread_safe_goroutine::create_channel("request", 10).unwrap();
-    thread_safe_goroutine::create_channel("response", 10).unwrap();
+    thread_safe_goroutine::create_channel("request", 10).unwrap());
+    thread_safe_goroutine::create_channel("response", 10).unwrap());
     
     // Create a producer callable that sends values on the request channel
     struct Producer;
@@ -91,10 +91,10 @@ fn test_thread_safe_goroutine_channels() {
             // Send 5 values on the request channel
             for i in 0..5 {
                 let value = ThreadSafeValue::Integer(i);
-                thread_safe_goroutine::send_on_channel("request", value).unwrap();
+                thread_safe_goroutine::send_on_channel("request", value).unwrap());
                 
                 // Simulate some work
-                thread::sleep(Duration::from_millis(10));
+                thread::sleep(Duration::from_millis(10);
             }
             
             Ok(ThreadSafeValue::Integer(5)) // Return the count of items sent
@@ -112,7 +112,7 @@ fn test_thread_safe_goroutine_channels() {
             // Process 5 values
             for _ in 0..5 {
                 // Receive a value, blocking with timeout
-                let value = thread_safe_goroutine::receive_from_channel("request", true, 1000).unwrap();
+                let value = thread_safe_goroutine::receive_from_channel("request", true, 1000).unwrap());
                 
                 // Process the value (double it)
                 let response = match value {
@@ -121,7 +121,7 @@ fn test_thread_safe_goroutine_channels() {
                 };
                 
                 // Send the response
-                thread_safe_goroutine::send_on_channel("response", response).unwrap();
+                thread_safe_goroutine::send_on_channel("response", response).unwrap());
                 
                 count += 1;
             }
@@ -133,11 +133,11 @@ fn test_thread_safe_goroutine_channels() {
     // Launch the producer and consumer goroutines
     let producer: Arc<dyn ThreadSafeCallable> = Arc::new(Producer);
     let consumer: Arc<dyn ThreadSafeCallable> = Arc::new(Consumer);
-    thread_safe_goroutine::run_goroutine(producer, vec![]).unwrap();
-    thread_safe_goroutine::run_goroutine(consumer, vec![]).unwrap();
+    thread_safe_goroutine::run_goroutine(producer, vec![]).unwrap());
+    thread_safe_goroutine::run_goroutine(consumer, vec![]).unwrap());
     
     // Wait for all goroutines to complete
-    thread_safe_goroutine::wait_all_goroutines(2000).unwrap();
+    thread_safe_goroutine::wait_all_goroutines(2000).unwrap());
     
     // Collect all responses
     let mut responses = Vec::new();
@@ -151,7 +151,7 @@ fn test_thread_safe_goroutine_channels() {
             }
         } else {
             // If non-blocking failed, try blocking with timeout
-            let value = thread_safe_goroutine::receive_from_channel("response", true, 100).unwrap();
+            let value = thread_safe_goroutine::receive_from_channel("response", true, 100).unwrap());
             if let ThreadSafeValue::Integer(i) = value {
                 responses.push(i);
             }
@@ -175,25 +175,25 @@ fn test_thread_safe_closure_goroutines() {
     thread_safe_goroutine::init_goroutine_runtime();
     
     // Create a shared counter
-    let counter = Arc::new(Mutex::new(0));
+    let counter = Arc::new(Mutex::new(0);
     
     // Launch multiple goroutines using the closure-based API
     for _ in 0..10 {
         let counter_clone = Arc::clone(&counter);
         thread_safe_goroutine::run_goroutine_fn(move || {
             // Increment the counter
-            let mut guard = counter_clone.lock().unwrap();
+            let mut guard = counter_clone.lock().unwrap());
             *guard += 1;
             
             // Simulate some work
-            thread::sleep(Duration::from_millis(10));
+            thread::sleep(Duration::from_millis(10);
         }).unwrap();
     }
     
     // Wait for all goroutines to complete
-    thread_safe_goroutine::wait_all_goroutines(1000).unwrap();
+    thread_safe_goroutine::wait_all_goroutines(1000).unwrap());
     
     // Verify the counter was incremented by all goroutines
-    let final_count = *counter.lock().unwrap();
+    let final_count = *counter.lock().unwrap());
     assert_eq!(final_count, 10, "Counter should be incremented by all goroutines");
 }

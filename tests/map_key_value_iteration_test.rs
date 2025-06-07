@@ -5,7 +5,7 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, error, info, trace, warn};
 
-//! Tests for key-value iteration with maps in range clauses
+// Tests for key-value iteration with maps in range clauses
 
 
 // Generate a unique ID for test files
@@ -38,8 +38,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["shell", "./target/debug/cursed", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     // Combine stdout and stderr for debugging
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
@@ -89,7 +89,7 @@ printn(yolo)\n", code);
     }
     
     // Check if the output contains the expected value
-    let expected_str = expected_value.to_string());
+    let expected_str = expected_value.to_string();
     assert_output_contains(&output, &expected_str)
 }
 

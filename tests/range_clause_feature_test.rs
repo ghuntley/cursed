@@ -2,10 +2,10 @@ use cursed::object::Object;
 use cursed::error::Error;
 use cursed::codegen::llvm::RangeClauseCompilation;
 
-//! Feature flag integration test for the enhanced range clause implementation
-//!
-//! This test demonstrates how to conditionally use the enhanced implementation
-//! based on the feature flag.
+// Feature flag integration test for the enhanced range clause implementation
+//
+// This test demonstrates how to conditionally use the enhanced implementation
+// based on the feature flag.
 
 
 #[path = "common.rs"]
@@ -35,7 +35,7 @@ fn test_range_implementation() {
     
     // Run the test with the currently active implementation
     // Using a mock test helper for now
-    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(45));
+    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(45);
     match result {
         Ok(result) => {
             // Use as_int() which is the correct method

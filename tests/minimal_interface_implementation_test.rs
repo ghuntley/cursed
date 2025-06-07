@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use inkwell::values::AnyValue;
 use inkwell::AddressSpace;
 
-//! Test for a very basic interface-like implementation with structs
+// Test for a very basic interface-like implementation with structs
 
 
 #[path = "tracing_setup.rs"]
@@ -67,7 +67,7 @@ fn test_minimal_interface_implementation() {
         self_param,
         person_type.ptr_type(AddressSpace::default()),
         "person_ptr"
-    ).unwrap().into_pointer_value();
+    ).unwrap().into_pointer_value());
     
     // Get pointer to name field
     let name_ptr = unsafe {
@@ -87,7 +87,7 @@ fn test_minimal_interface_implementation() {
     ).unwrap();
     
     // Return the name string
-    builder.build_return(Some(&name)).unwrap();
+    builder.build_return(Some(&name)).unwrap());
     
     // Create the Stringer vtable for Person
     let stringer_person_vtable = module.add_global(
@@ -114,7 +114,7 @@ fn test_minimal_interface_implementation() {
     builder.position_at_end(test_entry);
     
     // Create a Person
-    let person_ptr = builder.build_alloca(person_type, "person").unwrap();
+    let person_ptr = builder.build_alloca(person_type, "person").unwrap());
     
     // Initialize name field with "Alice"
     let name_ptr = unsafe {
@@ -127,8 +127,8 @@ fn test_minimal_interface_implementation() {
     };
     
     // Create a global string constant for "Alice"
-    let alice = builder.build_global_string_ptr("Alice", "alice_str").unwrap();
-    builder.build_store(name_ptr, alice.as_pointer_value()).unwrap();
+    let alice = builder.build_global_string_ptr("Alice", "alice_str").unwrap());
+    builder.build_store(name_ptr, alice.as_pointer_value()).unwrap());
     
     // Initialize age field with 30
     let age_ptr = unsafe {
@@ -141,7 +141,7 @@ fn test_minimal_interface_implementation() {
     };
     
     let thirty = context.i32_type().const_int(30, false);
-    builder.build_store(age_ptr, thirty).unwrap();
+    builder.build_store(age_ptr, thirty).unwrap());
     
     // Get the vtable pointer
     let vtable_ptr = stringer_person_vtable.as_pointer_value();
@@ -151,7 +151,7 @@ fn test_minimal_interface_implementation() {
         person_ptr,
         context.i8_type().ptr_type(AddressSpace::default()),
         "person_void_ptr"
-    ).unwrap().into_pointer_value();
+    ).unwrap().into_pointer_value());
     
     // Get the to_string function pointer from the vtable (first field)
     let to_string_ptr_ptr = unsafe {
@@ -168,7 +168,7 @@ fn test_minimal_interface_implementation() {
         person_to_string_type.ptr_type(AddressSpace::default()),
         to_string_ptr_ptr,
         "to_string_ptr"
-    ).unwrap().into_pointer_value();
+    ).unwrap().into_pointer_value());
     
     // Call the to_string function with the person object (dynamic dispatch)
     // Need to use build_indirect_call for function pointers
@@ -180,7 +180,7 @@ fn test_minimal_interface_implementation() {
     ).unwrap();
     
     // Return the result
-    builder.build_return(Some(&result.try_as_basic_value().left().unwrap())).unwrap();
+    builder.build_return(Some(&result.try_as_basic_value().left().unwrap()).unwrap());
     
     // Verify the module
     if let Err(err) = module.verify() {

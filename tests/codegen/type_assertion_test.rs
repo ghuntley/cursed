@@ -15,14 +15,14 @@ use std::sync::Arc;
 fn test_compile_type_assertion() {
     // Create a simple mock type assertion: myInterface.(ConcreteType)
     let interface_value = Identifier {
-        token: "token".to_string()),
-        value: "myInterface".to_string()),
+        token: "token".to_string(),
+        value: "myInterface".to_string(),
     };
     
     let assertion = TypeAssertion {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Box::new(interface_value),
-        type_name: "ConcreteType".to_string()),
+        type_name: "ConcreteType".to_string(),
     };
     
     // In a real test, you would use a more complete test harness

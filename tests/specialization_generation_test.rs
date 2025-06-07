@@ -14,7 +14,7 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Tests for the specialization generation of generic functions
+// Tests for the specialization generation of generic functions
 
 
 /// Test that specialization generation works correctly
@@ -40,7 +40,7 @@ fn test_function_specialization() {
     assert_eq!(specialized_name, "add__Normie");
 
     // Verify the function is in the instantiation cache
-    assert!(mono_manager.is_function_instantiated("add", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("add", &[Type::Normie]);
 
     // Try specializing with a different type
     let specialized_name2 = mono_manager
@@ -96,7 +96,7 @@ fn test_struct_specialization() {
     assert_eq!(specialized_name, "Pair__Normie");
 
     // Verify it's in the cache
-    assert!(mono_manager.is_function_instantiated("Pair", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("Pair", &[Type::Normie]);
 
     // Specializing again should return the same name
     let specialized_name2 = mono_manager
@@ -113,59 +113,59 @@ fn test_struct_specialization() {
 fn create_generic_add_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     }];
 
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string()),
+            token: Token::Identifier("IDENT".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "a".to_string()),
+                token: "token".to_string(),
+                value: "a".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string()),
+            token: Token::Identifier("IDENT".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "b".to_string()),
+                token: "token".to_string(),
+                value: "b".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             }),
         },
     ];
 
     // Create return type T
     let return_type = Some(Box::new(Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     }) as Box<dyn Expression>);
 
     // Create an infix expression for a + b
     let infix_expr = InfixExpression {
         token: Token::Plus,
         left: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "a".to_string()),
+            token: "token".to_string(),
+            value: "a".to_string(),
         }),
-        operator: "+".to_string()),
+        operator: "+".to_string(),
         right: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "b".to_string()),
+            token: "token".to_string(),
+            value: "b".to_string(),
         }),
     };
 
     // Create body: { return a + b; }
     let return_statement = ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: Some(Box::new(infix_expr)),
     };
 
@@ -178,8 +178,8 @@ fn create_generic_add_function() -> FunctionStatement {
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "add".to_string()),
+            token: "token".to_string(),
+            value: "add".to_string(),
         },
         parameters,
         body,
@@ -193,42 +193,42 @@ fn create_generic_add_function() -> FunctionStatement {
 fn create_generic_pair_struct() -> cursed::ast::SquadStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     }];
 
     // Create fields first: T, second: T
     let fields = vec![
         FieldStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "first".to_string()),
+                token: "token".to_string(),
+                value: "first".to_string(),
             },
             type_name: Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             },
         },
         FieldStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "second".to_string()),
+                token: "token".to_string(),
+                value: "second".to_string(),
             },
             type_name: Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             },
         },
     ];
 
     // Create the struct statement
     cursed::ast::SquadStatement {
-        token: Token::Identifier("squad".to_string()),
+        token: Token::Identifier("squad".to_string(),
         name: Identifier {
-            token: "token".to_string()),
-            value: "Pair".to_string()),
+            token: "token".to_string(),
+            value: "Pair".to_string(),
         },
         type_parameters,
         fields,

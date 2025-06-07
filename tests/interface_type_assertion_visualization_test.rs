@@ -15,7 +15,7 @@ fn test_enhanced_visualization() {
     
     // Create a simple test context
     let context = inkwell::context::Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Create a mock diamond inheritance pattern
     let diamond = DiamondInheritancePattern {
@@ -27,22 +27,22 @@ fn test_enhanced_visualization() {
     
     // Test diamond inheritance visualization
     let visualization = code_generator.visualize_diamond_inheritance(&diamond);
-    assert!(visualization.contains("Diamond Inheritance Pattern"));
-    assert!(visualization.contains("Type#101"));
-    assert!(visualization.contains("Type#102"));
+    assert!(visualization.contains("Diamond Inheritance Pattern");
+    assert!(visualization.contains("Type#101");
+    assert!(visualization.contains("Type#102");
     
     // Test enhanced error visualization
     let source_location = SourceLocation {
         line: 10,
         column: 15,
-        file: Some("test.csd".to_string()),
-        source_line: "    let x = y.(SomeType)?".to_string()),
+        file: Some("test.csd".to_string(),
+        source_line: "    let x = y.(SomeType)?".to_string(),
     };
     
     let context_lines = vec![
-        (9, "    // This is a test".to_string()),
-        (10, "    let x = y.(SomeType)?".to_string()),
-        (11, "    vibez.spill(x)".to_string()),
+        (9, "    // This is a test".to_string(),
+        (10, "    let x = y.(SomeType)?".to_string(),
+        (11, "    vibez.spill(x)".to_string(),
     ];
     
     let error = code_generator.create_enhanced_visual_error(
@@ -56,8 +56,8 @@ fn test_enhanced_visualization() {
     );
     
     let formatted = code_generator.format_visual_error_message(&error);
-    assert!(formatted.contains("Error"));
-    assert!(formatted.contains("SomeType"));
-    assert!(formatted.contains("ActualType"));
-    assert!(formatted.contains("test.csd"));
+    assert!(formatted.contains("Error");
+    assert!(formatted.contains("SomeType");
+    assert!(formatted.contains("ActualType");
+    assert!(formatted.contains("test.csd");
 }

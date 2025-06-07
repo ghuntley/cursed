@@ -19,8 +19,8 @@ use cursed::error::Error;
 use inkwell::context::Context;
 use tracing::{debug, info, warn};
 
-//! Extended integration tests for the improved error propagation in interface type assertions
-//! with actual interface hierarchies and type assertion scenarios
+// Extended integration tests for the improved error propagation in interface type assertions
+// with actual interface hierarchies and type assertion scenarios
 
 
 
@@ -71,42 +71,42 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
     
     // Create a type assertion AST node for Dog as Animal (should succeed)
     let valid_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
         expression: Box::new(Identifier {
-            token: "token".to_string()), 1, 1),
-            value: "pet".to_string()),
+            token: "token".to_string(), 1, 1),
+            value: "pet".to_string(),
         }),
-        type_name: "Animal".to_string()),
+        type_name: "Animal".to_string(),
     };
     
     // Create a type assertion AST node for Dog as Countable (should fail)
     let invalid_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
         expression: Box::new(Identifier {
-            token: "token".to_string()), 1, 1),
-            value: "pet".to_string()),
+            token: "token".to_string(), 1, 1),
+            value: "pet".to_string(),
         }),
-        type_name: "Countable".to_string()),
+        type_name: "Countable".to_string(),
     };
     
     // Create a type assertion AST node for Dog as Bird (should fail but with informative error)
     let cross_hierarchy_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
         expression: Box::new(Identifier {
-            token: "token".to_string()), 1, 1),
-            value: "pet".to_string()),
+            token: "token".to_string(), 1, 1),
+            value: "pet".to_string(),
         }),
-        type_name: "Bird".to_string()),
+        type_name: "Bird".to_string(),
     };
     
     // Create a type assertion AST node for Mammal as Dog (reversed, should fail)
     let reversed_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
         expression: Box::new(Identifier {
-            token: "token".to_string()), 1, 1),
-            value: "pet".to_string()),
+            token: "token".to_string(), 1, 1),
+            value: "pet".to_string(),
         }),
-        type_name: "Dog".to_string()),
+        type_name: "Dog".to_string(),
     };
     
     // Test error message for invalid type assertion
@@ -120,8 +120,8 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
     // Verify the error contains the correct information
     assert_eq!(error_result.source_type, "Dog");
     assert_eq!(error_result.target_type, "Countable");
-    assert!(error_result.message.contains("cannot be asserted"));
-    assert!(error_result.recovery_hint.is_some());
+    assert!(error_result.message.contains("cannot be asserted");
+    assert!(error_result.recovery_hint.is_some();
     
     // Test error message for cross-hierarchy assertion
     let cross_hierarchy_error = code_gen.generate_type_assertion_error(
@@ -132,7 +132,7 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
     ).expect("Failed to generate error");
     
     // Should suggest common ancestor (Animal)
-    assert!(cross_hierarchy_error.message.contains("Animal"));
+    assert!(cross_hierarchy_error.message.contains("Animal");
     
     // Test error message for reversed inheritance
     let reversed_error = code_gen.generate_type_assertion_error(
@@ -144,7 +144,7 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
     
     // Should suggest the correct direction
     assert!(reversed_error.message.contains("inheritance direction") || 
-           reversed_error.recovery_hint.as_ref().unwrap().contains("inheritance direction"));
+           reversed_error.recovery_hint.as_ref().unwrap().contains("inheritance direction");
 }
 
 #[test]
@@ -188,7 +188,7 @@ fn test_improved_error_propagation_with_complex_interfaces() {
     ).expect("Failed to generate error");
     
     // Should identify common ancestor (Drawable)
-    assert!(error_message.message.contains("Drawable"));
+    assert!(error_message.message.contains("Drawable");
     
     // Create error for Rectangle -> Circle (siblings relationship)
     let sibling_error = code_gen.generate_type_assertion_error(
@@ -199,7 +199,7 @@ fn test_improved_error_propagation_with_complex_interfaces() {
     ).expect("Failed to generate error");
     
     // Should suggest multiple common interfaces
-    assert!(sibling_error.message.contains("Shape") && sibling_error.message.contains("Colorable"));
+    assert!(sibling_error.message.contains("Shape") && sibling_error.message.contains("Colorable");
     
     // Test diamond inheritance path suggestions
     let path_suggestions = code_gen.suggest_recovery_options("Circle", "Drawable")
@@ -207,7 +207,7 @@ fn test_improved_error_propagation_with_complex_interfaces() {
         .expect("Should have suggestions");
     
     // Should mention multiple paths
-    assert!(path_suggestions.contains("multiple paths") || path_suggestions.contains("multiple inheritance"));
+    assert!(path_suggestions.contains("multiple paths") || path_suggestions.contains("multiple inheritance");
 }
 
 #[test]
@@ -240,15 +240,15 @@ fn test_detailed_error_context_in_propagation() {
     ).expect("Failed to generate error");
     
     // Check that additional context is included
-    assert!(error_with_context.message.contains("Expected D but got C at runtime"));
+    assert!(error_with_context.message.contains("Expected D but got C at runtime");
     
     // Check that source location is included
-    assert!(error_with_context.message.contains("test.csd:20:15"));
+    assert!(error_with_context.message.contains("test.csd:20:15");
     
     // Check that runtime information is included
-    assert!(error_with_context.message.contains("C is not a D"));
+    assert!(error_with_context.message.contains("C is not a D");
     
     // Check that recovery suggestion points to the unrelated interfaces
     let hint = error_with_context.recovery_hint.expect("Should have recovery hint");
-    assert!(hint.contains("implement the 'D' interface"));
+    assert!(hint.contains("implement the 'D' interface");
 }

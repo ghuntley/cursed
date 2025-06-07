@@ -15,7 +15,7 @@ fn test_type_assertion_debug_configuration() {
     
     // Create a code generator with debug context
     let context = inkwell::context::Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Configure debug settings
     let config = TypeAssertionDebugConfig {
@@ -45,7 +45,7 @@ fn test_register_runtime_type() {
     
     // Create a code generator with debug context
     let context = inkwell::context::Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Enable debugging
     let config = TypeAssertionDebugConfig {
@@ -71,12 +71,12 @@ fn test_register_runtime_type() {
     let source_location = SourceLocation {
         line: 42,
         column: 10,
-        file: Some("test.csd".to_string()),
-        source_line: "person, ok = animal.(Person)".to_string()),
+        file: Some("test.csd".to_string(),
+        source_line: "person, ok = animal.(Person)".to_string(),
     };
     
     // Create a dummy LLVM value for testing
-    let dummy_value = code_generator.context.i32_type().const_int(0, false).into();
+    let dummy_value = code_generator.context.i32_type().const_int(0, false).into());
     
     // Debug a type assertion  
     let _ = code_generator.debug_type_assertion(

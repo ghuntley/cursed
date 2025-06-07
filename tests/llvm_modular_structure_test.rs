@@ -4,8 +4,8 @@ use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 
-//! Test for the modular LLVM code generator structure
-//! This test ensures that the new modular structure works correctly
+// Test for the modular LLVM code generator structure
+// This test ensures that the new modular structure works correctly
 
 
 #[test]

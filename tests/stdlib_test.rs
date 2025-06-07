@@ -1,8 +1,8 @@
 use super::stdlib_test_wrapper::*;
 use cursed::stdlib::dot_registry::DOT_REGISTRY;
 
-//! Test for standard library functionality
-//! Tests various standard library packages and functions
+// Test for standard library functionality
+// Tests various standard library packages and functions
 
 mod stdlib_test_wrapper;
 
@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn test_dot_registry() {
         // Get a lock on the registry
-        let registry = DOT_REGISTRY.lock().unwrap();
+        let registry = DOT_REGISTRY.lock().unwrap());
         
         // Check that some standard functions are registered
         assert!(registry.has_handler("vibez", "spill"), "vibez.spill should be registered");
@@ -92,11 +92,11 @@ mod tests {
         
         // Test getting the list of packages
         let packages = registry.packages();
-        assert!(packages.contains(&"vibez".to_string()), "vibez package should be listed");
-        assert!(packages.contains(&"timez".to_string()), "timez package should be listed");
+        assert!(packages.contains(&"vibez".to_string(), "vibez package should be listed");
+        assert!(packages.contains(&"timez".to_string(), "timez package should be listed");
         
         // Test getting functions for a package
         let vibez_functions = registry.functions("vibez");
-        assert!(vibez_functions.contains(&"spill".to_string()), "spill function should be listed");
+        assert!(vibez_functions.contains(&"spill".to_string(), "spill function should be listed");
     }
 }

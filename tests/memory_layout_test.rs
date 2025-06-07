@@ -4,8 +4,7 @@ use inkwell::types::BasicMetadataTypeEnum;
 use std::path::PathBuf;
 use tracing::{debug, error, info, instrument, trace, warn};
 
-//! Tests for memory layout of specialized generic types
-
+// Tests for memory layout of specialized generic types
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
@@ -39,7 +38,7 @@ fn test_memory_layout() {
     // Compute and compare type sizes using module data layout
     debug!("Getting module data layout");
     // Get the data layout from the module
-    let data_layout = generator.module().get_data_layout();
+    let data_layout = generator.module().get_data_layout());
     
     // Drop data_layout so it doesn't cause borrow issues with later mutable borrows
     debug!("Dropping data_layout to avoid borrow issues");
@@ -101,7 +100,7 @@ fn test_memory_layout() {
 
     // Return the size difference
     debug!("Building return instruction");
-    let _ = generator.builder_mut().build_return(Some(&size_diff));
+    let _ = generator.builder_mut().build_return(Some(&size_diff);
     debug!("Added return instruction successfully");
 
     let size_difference = normal_size_val as i64 - specialized_size_val as i64;

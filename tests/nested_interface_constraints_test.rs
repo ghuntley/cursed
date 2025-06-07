@@ -9,10 +9,10 @@ use cursed::error_enhanced::ErrorKind;
 use cursed::core::type_checker::Type;
 use cursed::core::nested_interface_registry::{EnhancedInterfaceRegistry, NestedInterfaceRegistry, NestedConstraint};
 
-//! Tests for nested interface constraints in the registration system
-//!
-//! This module tests the enhanced interface registry that supports
-//! nested constraints for generic types.
+// Tests for nested interface constraints in the registration system
+//
+// This module tests the enhanced interface registry that supports
+// nested constraints for generic types.
 
 
 // Init tracing once
@@ -44,7 +44,7 @@ fn test_enhanced_registry_basic_operations() {
     
     // Check that the enhanced registry respects existing constraints
     let container_type = Type::Struct(
-        "GenericStack".to_string()),
+        "GenericStack".to_string(),
         vec![Box::new(Type::Tea)]
     );
     
@@ -59,24 +59,24 @@ fn test_nested_constraint_registration_and_checking() {
     
     // Register a nested constraint for containers of collections
     let constraint = NestedConstraint {
-        outer_type: "NestedContainer".to_string()),
-        outer_param: "T".to_string()),
-        inner_type: "Collection".to_string()),
+        outer_type: "NestedContainer".to_string(),
+        outer_param: "T".to_string(),
+        inner_type: "Collection".to_string(),
         inner_params: vec!["E".to_string())],
-        interface: "Comparable".to_string()),
+        interface: "Comparable".to_string(),
     };
     
     registry.register_nested_constraint(constraint);
     
     // Create test types
     let collection_of_int = Type::Struct(
-        "Collection".to_string()),
+        "Collection".to_string(),
         vec![Box::new(Type::Normie)]
     );
     
     let collection_of_non_comparable = Type::Struct(
-        "Collection".to_string()),
-        vec![Box::new(Type::Struct("NonComparable".to_string()), vec![]))]
+        "Collection".to_string(),
+        vec![Box::new(Type::Struct("NonComparable".to_string(), vec![]))]
     );
     
     // Test the constraint checking
@@ -87,7 +87,7 @@ fn test_nested_constraint_registration_and_checking() {
             &collection_of_int, 
             "Comparable"
         )
-        .unwrap());
+        .unwrap();
         
     assert!(!registry
         .check_nested_implementation(
@@ -96,7 +96,7 @@ fn test_nested_constraint_registration_and_checking() {
             &collection_of_non_comparable, 
             "Comparable"
         )
-        .unwrap());
+        .unwrap();
 }
 
 #[test]
@@ -107,19 +107,19 @@ fn test_multiple_nested_constraints() {
     
     // Register two different nested constraints for the same type
     let constraint1 = NestedConstraint {
-        outer_type: "MultiContainer".to_string()),
-        outer_param: "A".to_string()),
-        inner_type: "ListA".to_string()),
+        outer_type: "MultiContainer".to_string(),
+        outer_param: "A".to_string(),
+        inner_type: "ListA".to_string(),
         inner_params: vec!["EA".to_string())],
-        interface: "Comparable".to_string()),
+        interface: "Comparable".to_string(),
     };
     
     let constraint2 = NestedConstraint {
-        outer_type: "MultiContainer".to_string()),
-        outer_param: "B".to_string()),
-        inner_type: "ListB".to_string()),
+        outer_type: "MultiContainer".to_string(),
+        outer_param: "B".to_string(),
+        inner_type: "ListB".to_string(),
         inner_params: vec!["EB".to_string())],
-        interface: "Numeric".to_string()),
+        interface: "Numeric".to_string(),
     };
     
     registry.register_nested_constraint(constraint1);
@@ -127,12 +127,12 @@ fn test_multiple_nested_constraints() {
     
     // Create test types
     let list_a_int = Type::Struct(
-        "ListA".to_string()),
+        "ListA".to_string(),
         vec![Box::new(Type::Normie)]
     );
     
     let list_b_non_numeric = Type::Struct(
-        "ListB".to_string()),
+        "ListB".to_string(),
         vec![Box::new(Type::Tea)]
     );
     
@@ -144,7 +144,7 @@ fn test_multiple_nested_constraints() {
             &list_a_int, 
             "Comparable"
         )
-        .unwrap());
+        .unwrap();
         
     assert!(!registry
         .check_nested_implementation(
@@ -153,7 +153,7 @@ fn test_multiple_nested_constraints() {
             &list_b_non_numeric, 
             "Numeric"
         )
-        .unwrap());
+        .unwrap();
 }
 
 #[test]
@@ -230,11 +230,11 @@ fn test_integration_with_code_generation() {
         info!("Got expected error: {}", error_str);
         
         // Verify it's a constraint error
-        assert!(error_str.contains("constraint") || error_str.contains("implement"));
-        assert!(error_str.contains("NonComparable"));
+        assert!(error_str.contains("constraint") || error_str.contains("implement");
+        assert!(error_str.contains("NonComparable");
         
         // Check for nested constraint information in the error
-        assert!(error_str.contains("Collection") || error_str.contains("NestedContainer"));
+        assert!(error_str.contains("Collection") || error_str.contains("NestedContainer");
     } else {
         panic!("Expected a constraint error but the test passed");
     }

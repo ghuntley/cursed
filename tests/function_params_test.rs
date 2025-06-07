@@ -14,7 +14,7 @@ slay empty() {
     
     println!("Testing input:\n{}", input);
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     let program = parser.parse_program();
     
     assert!(program.is_ok(), "Failed to parse basic function: {}", program.err().unwrap());
@@ -28,7 +28,7 @@ slay add(x, y) {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     let program = parser.parse_program();
     
     assert!(program.is_ok(), "Failed to parse function with parameters: {}", program.err().unwrap());
@@ -42,7 +42,7 @@ slay add(x normie, y normie) normie {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     let program = parser.parse_program();
     
     assert!(program.is_ok(), "Failed to parse function with type annotations: {}", program.err().unwrap());
@@ -56,7 +56,7 @@ slay identity[T](x T) T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     let program = parser.parse_program();
     
     assert!(program.is_ok(), "Failed to parse generic function: {}", program.err().unwrap());
@@ -70,7 +70,7 @@ slay map[K, V](key K) V {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     let program = parser.parse_program();
     
     assert!(program.is_ok(), "Failed to parse function with multiple generic parameters: {}", program.err().unwrap());
@@ -84,7 +84,7 @@ slay convert[T, U](source T, converter stan(T) U) U {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
     let program = parser.parse_program();
     
     assert!(program.is_ok(), "Failed to parse complex generic function: {}", program.err().unwrap());

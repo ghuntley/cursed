@@ -20,25 +20,25 @@ fn test_map_type_inference_unit() {
     
     // Create "name" key
     let name_key = StringLiteral {
-        token: "token".to_string()),
-        value: "name".to_string()),
+        token: "token".to_string(),
+        value: "name".to_string(),
     };
     
     // Create 1 value
     let name_value = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 1,
     };
     
     // Create "age" key
     let age_key = StringLiteral {
-        token: "token".to_string()),
-        value: "age".to_string()),
+        token: "token".to_string(),
+        value: "age".to_string(),
     };
     
     // Create 30 value
     let age_value = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 30,
     };
     
@@ -48,7 +48,7 @@ fn test_map_type_inference_unit() {
     
     // Create the hash literal
     let hash_literal = HashLiteral {
-        token: Token::new(TokenType::LBrace, "{".to_string()),
+        token: Token::new(TokenType::LBrace, "{".to_string(),
         pairs,
     };
     

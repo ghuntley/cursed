@@ -40,7 +40,7 @@ fn test_standardized_address_of() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     // Set up LLVM JIT execution with the standardized implementation

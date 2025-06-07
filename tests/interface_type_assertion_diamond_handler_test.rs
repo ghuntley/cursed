@@ -8,10 +8,10 @@ use cursed::codegen::llvm::DiamondInheritanceHandler;
 use cursed::codegen::llvm::interface_registry::{InterfaceTypeRegistry, InterfaceImplementation};
 use cursed::codegen::llvm::InterfaceTypeRegistryExtensionCheckingAccess;
 
-//! Integration test for the DiamondInheritanceHandler implementation
-//!
-//! This test verifies that the diamond inheritance pattern handler can correctly
-//! detect, visualize, and report diamond inheritance patterns in interface type assertions.
+// Integration test for the DiamondInheritanceHandler implementation
+//
+// This test verifies that the diamond inheritance pattern handler can correctly
+// detect, visualize, and report diamond inheritance patterns in interface type assertions.
 
 
 #[path = "common.rs"]
@@ -24,11 +24,11 @@ fn setup_test_registry() -> InterfaceTypeRegistry<'static> {
     let mut registry = InterfaceTypeRegistry::new();
     
     // Register types for our diamond pattern
-    registry.register_type(1, "Player", false).unwrap();
-    registry.register_type(2, "GameObject", true).unwrap();
-    registry.register_type(3, "Movable", true).unwrap();
-    registry.register_type(4, "Drawable", true).unwrap();
-    registry.register_type(5, "AnimatedObject", true).unwrap();
+    registry.register_type(1, "Player", false).unwrap());
+    registry.register_type(2, "GameObject", true).unwrap());
+    registry.register_type(3, "Movable", true).unwrap());
+    registry.register_type(4, "Drawable", true).unwrap());
+    registry.register_type(5, "AnimatedObject", true).unwrap());
     
     // Set up inheritance relationships for the diamond pattern
     // GameObject is the base interface (top of diamond)
@@ -37,20 +37,20 @@ fn setup_test_registry() -> InterfaceTypeRegistry<'static> {
     // Player implements AnimatedObject (concrete type below diamond)
     
     // Movable extends GameObject
-    registry.register_extension(3, 2).unwrap();
+    registry.register_extension(3, 2).unwrap());
     
     // Drawable extends GameObject
-    registry.register_extension(4, 2).unwrap();
+    registry.register_extension(4, 2).unwrap());
     
     // AnimatedObject extends both Movable and Drawable
-    registry.register_extension(5, 3).unwrap();
-    registry.register_extension(5, 4).unwrap();
+    registry.register_extension(5, 3).unwrap());
+    registry.register_extension(5, 4).unwrap());
     
     // Player implements all interfaces in the diamond
-    registry.register_implementation(1, 2).unwrap(); // Player implements GameObject
-    registry.register_implementation(1, 3).unwrap(); // Player implements Movable
-    registry.register_implementation(1, 4).unwrap(); // Player implements Drawable
-    registry.register_implementation(1, 5).unwrap(); // Player implements AnimatedObject
+    registry.register_implementation(1, 2).unwrap()); // Player implements GameObject
+    registry.register_implementation(1, 3).unwrap()); // Player implements Movable
+    registry.register_implementation(1, 4).unwrap()); // Player implements Drawable
+    registry.register_implementation(1, 5).unwrap()); // Player implements AnimatedObject
     
     registry
 }
@@ -69,7 +69,7 @@ fn test_diamond_inheritance_handler_detection() {
     // Set up the registry
     let registry = setup_test_registry();
     code_gen.internal_fields.insert(
-        "interface_registry".to_string()),
+        "interface_registry".to_string(),
         Box::new(registry)
     );
     
@@ -90,39 +90,39 @@ fn test_diamond_inheritance_handler_detection() {
     
     // Test visualization of the diamond pattern
     let visualization = code_gen.visualize_diamond_inheritance("Player", "GameObject", &diamond_info);
-    assert!(visualization.is_ok(), "Visualization failed: {:?}", visualization.err());
+    assert!(visualization.is_ok(), "Visualization failed: {:?}", visualization.err();
     
     let viz_text = visualization.unwrap();
     debug!("Diamond visualization: {}", viz_text);
     
     // Verify visualization contains expected content
-    assert!(viz_text.contains("Diamond Inheritance Pattern"));
-    assert!(viz_text.contains("GameObject"));
-    assert!(viz_text.contains("Movable"));
-    assert!(viz_text.contains("Drawable"));
-    assert!(viz_text.contains("Player"));
-    assert!(viz_text.contains("All inheritance paths:"));
+    assert!(viz_text.contains("Diamond Inheritance Pattern");
+    assert!(viz_text.contains("GameObject");
+    assert!(viz_text.contains("Movable");
+    assert!(viz_text.contains("Drawable");
+    assert!(viz_text.contains("Player");
+    assert!(viz_text.contains("All inheritance paths:");
     
     // Test finding all diamond patterns for Player
     let all_patterns = code_gen.find_all_diamond_patterns("Player");
-    assert!(all_patterns.is_ok(), "Finding all diamond patterns failed: {:?}", all_patterns.err());
+    assert!(all_patterns.is_ok(), "Finding all diamond patterns failed: {:?}", all_patterns.err();
     
     let patterns = all_patterns.unwrap();
     assert!(!patterns.is_empty(), "No diamond patterns found when at least one should exist");
     
     // Test has_diamond_inheritance
     let has_diamond = code_gen.has_diamond_inheritance("Player");
-    assert!(has_diamond.is_ok(), "has_diamond_inheritance failed: {:?}", has_diamond.err());
+    assert!(has_diamond.is_ok(), "has_diamond_inheritance failed: {:?}", has_diamond.err();
     assert!(has_diamond.unwrap(), "Player should have diamond inheritance");
     
     // Test generating a full report
     let report = code_gen.generate_diamond_inheritance_report();
-    assert!(report.is_ok(), "Report generation failed: {:?}", report.err());
+    assert!(report.is_ok(), "Report generation failed: {:?}", report.err();
     
     let report_text = report.unwrap();
     debug!("Diamond inheritance report: {}", report_text);
-    assert!(report_text.contains("Diamond Inheritance Pattern Report"));
-    assert!(report_text.contains("Player"));
+    assert!(report_text.contains("Diamond Inheritance Pattern Report");
+    assert!(report_text.contains("Player");
     
     info!(test_case = "diamond_inheritance_handler_detection", "Test completed successfully");
 }

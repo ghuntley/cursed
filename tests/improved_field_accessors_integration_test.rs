@@ -15,7 +15,7 @@ use cursed::memory::gc::GarbageCollector;
 use std::path::PathBuf;
 use tracing::*;
 
-//! Test for improved field accessors integration with the monomorphization system
+// Test for improved field accessors integration with the monomorphization system
 
 
 #[path = "common.rs"]
@@ -55,8 +55,8 @@ slay main() {
     sus id2 Identifiable<lit> = int_user;
     
     // Call interface methods
-    vibez.spill(id1.id());
-    vibez.spill(id2.id());
+    vibez.spill(id1.id();
+    vibez.spill(id2.id();
 }
 "#;
 
@@ -74,10 +74,10 @@ fn test_improved_field_accessors_integration() {
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd");
     
     // Compile the program
-    let result = codegen.compile_program(&program, &Default::default());
+    let result = codegen.compile_program(&program, &Default::default();
     info!("Compilation result: {:?}", result);
     assert!(result.is_ok(), "Compilation failed: {:?}", result);
     
@@ -86,8 +86,8 @@ fn test_improved_field_accessors_integration() {
     let int_user_specialized = "User<lit>";
     
     // Verify that accessors have been generated for both specializations
-    let string_user_exists = codegen.module().get_function(&format!("{}_get_name", string_user_specialized)).is_some();
-    let int_user_exists = codegen.module().get_function(&format!("{}_get_name", int_user_specialized)).is_some();
+    let string_user_exists = codegen.module().get_function(&format!("{}_get_name", string_user_specialized)).is_some());
+    let int_user_exists = codegen.module().get_function(&format!("{}_get_name", int_user_specialized)).is_some());
     
     assert!(string_user_exists, "Field accessor for string_user name not found");
     assert!(int_user_exists, "Field accessor for int_user name not found");
@@ -95,8 +95,8 @@ fn test_improved_field_accessors_integration() {
     info!("Generated field accessors for specialized structs");
     
     // Verify that id_value accessors are also generated
-    let string_id_accessor = codegen.module().get_function(&format!("{}_get_id_value", string_user_specialized)).is_some();
-    let int_id_accessor = codegen.module().get_function(&format!("{}_get_id_value", int_user_specialized)).is_some();
+    let string_id_accessor = codegen.module().get_function(&format!("{}_get_id_value", string_user_specialized)).is_some());
+    let int_id_accessor = codegen.module().get_function(&format!("{}_get_id_value", int_user_specialized)).is_some());
     
     assert!(string_id_accessor, "Field accessor for string_user id_value not found");
     assert!(int_id_accessor, "Field accessor for int_user id_value not found");
@@ -112,11 +112,11 @@ fn test_field_accessor_error_propagation() {
     
     // Create a struct definition with an invalid field type
     let squad_stmt = SquadStatement {
-        name: Identifier { value: "InvalidStruct".to_string()), span: Span::default() },
+        name: Identifier { value: "InvalidStruct".to_string(), span: Span::default() },
         fields: vec![
             Field {
-                name: Identifier { value: "invalid_field".to_string()), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "NonExistentType".to_string()), span: Span::default() }),
+                name: Identifier { value: "invalid_field".to_string(), span: Span::default() },
+                type_name: TypeName::Named(Identifier { value: "NonExistentType".to_string(), span: Span::default() }),
                 span: Span::default(),
             }
         ],
@@ -127,7 +127,7 @@ fn test_field_accessor_error_propagation() {
     
     // Create the code generator
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "error_test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "error_test_module", PathBuf::from("test.csd");
     
     // Attempt to generate field accessors for the invalid struct
     let result = codegen.generate_improved_field_accessors(

@@ -7,10 +7,10 @@ use cursed::error::Error;
 use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 use crate::common;
 
-//! # Tests for Enhanced Interface Type Assertion Path Visualization
-//!
-//! This module tests the enhanced interface type assertion path visualization system
-//! with improved error handling and consistent error propagation through the `?` operator.
+// # Tests for Enhanced Interface Type Assertion Path Visualization
+//
+// This module tests the enhanced interface type assertion path visualization system
+// with improved error handling and consistent error propagation through the `?` operator.
 
 
 // Import the modules we need to test
@@ -34,17 +34,17 @@ fn setup_interface_hierarchy() -> ThreadSafeInterfaceExtensionRegistry {
     // E -> F ---+
     // Simple diamond-like inheritance pattern
     
-    registry.register_extension("A", "B").unwrap();
-    registry.register_extension("A", "E").unwrap();
-    registry.register_extension("B", "C").unwrap();
-    registry.register_extension("B", "F").unwrap();
-    registry.register_extension("E", "F").unwrap();
-    registry.register_extension("F", "C").unwrap();
-    registry.register_extension("C", "D").unwrap();
+    registry.register_extension("A", "B").unwrap());
+    registry.register_extension("A", "E").unwrap());
+    registry.register_extension("B", "C").unwrap());
+    registry.register_extension("B", "F").unwrap());
+    registry.register_extension("E", "F").unwrap());
+    registry.register_extension("F", "C").unwrap());
+    registry.register_extension("C", "D").unwrap());
     
     // Add some isolated interfaces for testing error cases
-    registry.register_extension("X", "Y").unwrap();
-    registry.register_extension("Y", "Z").unwrap();
+    registry.register_extension("X", "Y").unwrap());
+    registry.register_extension("Y", "Z").unwrap());
     
     registry
 }
@@ -80,21 +80,21 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
         
         // Collect all interface names
         for (source, targets) in &hierarchy {
-            all_interfaces.insert(source.clone());
+            all_interfaces.insert(source.clone();
             for target in targets {
-                all_interfaces.insert(target.clone());
+                all_interfaces.insert(target.clone();
             }
         }
         
         // Add nodes to DOT
         for interface in &all_interfaces {
-            dot.push_str(&format!("  \"{}\" [label=\"{}\"];\n", interface, interface));
+            dot.push_str(&format!("  \"{}\" [label=\"{}\"];\n", interface, interface);
         }
         
         // Add edges
         for (source, targets) in &hierarchy {
             for target in targets {
-                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", source, target));
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", source, target);
             }
         }
         
@@ -121,7 +121,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
                 self.find_interface_path("C", target_interface)
             ) {
                 let mut combined = p1;
-                combined.extend(p2.into_iter().skip(1));
+                combined.extend(p2.into_iter().skip(1);
                 paths.push(combined);
             }
         }
@@ -133,7 +133,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
                 self.find_interface_path("F", target_interface)
             ) {
                 let mut combined = p1;
-                combined.extend(p2.into_iter().skip(1));
+                combined.extend(p2.into_iter().skip(1);
                 paths.push(combined);
             }
         }
@@ -162,13 +162,13 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
             message.push_str("\n\nAlternative paths between these interfaces:");
             
             for (i, path) in paths.iter().enumerate() {
-                message.push_str(&format!("\n\nPath {}:", i + 1));
+                message.push_str(&format!("\n\nPath {}:", i + 1);
                 
                 for (j, interface) in path.iter().enumerate() {
                     if j > 0 {
                         message.push_str("\n  u2193 extends");
                     }
-                    message.push_str(&format!("\n  [{}]", interface));
+                    message.push_str(&format!("\n  [{}]", interface);
                 }
             }
             
@@ -179,9 +179,9 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
             // List all interfaces that the source implements
             if let Ok(Some(implementations)) = self.interface_registry().get_direct_extensions(source_interface) {
                 if !implementations.is_empty() {
-                    message.push_str(&format!("\n\n'{}' directly extends these interfaces:", source_interface));
+                    message.push_str(&format!("\n\n'{}' directly extends these interfaces:", source_interface);
                     for impl_interface in &implementations {
-                        message.push_str(&format!("\n  - {}", impl_interface));
+                        message.push_str(&format!("\n  - {}", impl_interface);
                     }
                 }
             }
@@ -189,9 +189,9 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
             // List all interfaces that extend the target
             if let Ok(Some(implementors)) = self.interface_registry().get_direct_implementors(target_interface) {
                 if !implementors.is_empty() {
-                    message.push_str(&format!("\n\nThese interfaces directly extend '{}':", target_interface));
+                    message.push_str(&format!("\n\nThese interfaces directly extend '{}':", target_interface);
                     for impl_interface in &implementors {
-                        message.push_str(&format!("\n  - {}", impl_interface));
+                        message.push_str(&format!("\n  - {}", impl_interface);
                     }
                 }
             }
@@ -214,7 +214,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
             if i > 0 {
                 result.push_str("  u2193 extends\n");
             }
-            result.push_str(&format!("  [{}]\n", interface));
+            result.push_str(&format!("  [{}]\n", interface);
         }
         
         // Add DOT representation for testing
@@ -223,10 +223,10 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
         result.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n");
         
         for i in 0..path.len() {
-            result.push_str(&format!("  \"{}\" [label=\"{}\"];\n", path[i], path[i]));
+            result.push_str(&format!("  \"{}\" [label=\"{}\"];\n", path[i], path[i]);
             
             if i < path.len() - 1 {
-                result.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i + 1]));
+                result.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i + 1]);
             }
         }
         
@@ -263,7 +263,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
         // Start BFS from source_interface
         queue.push_back(source_interface.to_string());
         visited.insert(source_interface.to_string());
-        path_map.insert(source_interface.to_string()), (None, vec![source_interface.to_string())]));
+        path_map.insert(source_interface.to_string(), (None, vec![source_interface.to_string())]);
         
         // Perform BFS to find the shortest path
         while let Some(current) = queue.pop_front() {
@@ -272,13 +272,13 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
                 Ok(Some(direct_extensions)) => {
                     for next in direct_extensions {
                         if !visited.contains(&next) {
-                            visited.insert(next.clone());
-                            queue.push_back(next.clone());
+                            visited.insert(next.clone();
+                            queue.push_back(next.clone();
                             
                             // Update path
                             let mut new_path = path_map.get(&current).cloned().unwrap_or_else(|| (None, Vec::new())).1;
-                            new_path.push(next.clone());
-                            path_map.insert(next.clone(), (Some(current.clone()), new_path.clone()));
+                            new_path.push(next.clone();
+                            path_map.insert(next.clone(), (Some(current.clone()), new_path.clone());
                             
                             // Check if we've reached the target
                             if &next == target_interface {
@@ -352,25 +352,25 @@ fn test_generate_interface_hierarchy_dot_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test the enhanced dot generation with proper error handling
-    let dot = generator.generate_interface_hierarchy_dot_enhanced().unwrap();
+    let dot = generator.generate_interface_hierarchy_dot_enhanced().unwrap());
     
     // Check that the DOT graph contains all the expected interfaces
-    assert!(dot.contains("digraph interface_hierarchy"));
-    assert!(dot.contains("\"A\" [label=\"A\"];"));
-    assert!(dot.contains("\"B\" [label=\"B\"];"));
-    assert!(dot.contains("\"C\" [label=\"C\"];"));
-    assert!(dot.contains("\"D\" [label=\"D\"];"));
-    assert!(dot.contains("\"E\" [label=\"E\"];"));
-    assert!(dot.contains("\"F\" [label=\"F\"];"));
+    assert!(dot.contains("digraph interface_hierarchy");
+    assert!(dot.contains("\"A\" [label=\"A\"];");
+    assert!(dot.contains("\"B\" [label=\"B\"];");
+    assert!(dot.contains("\"C\" [label=\"C\"];");
+    assert!(dot.contains("\"D\" [label=\"D\"];");
+    assert!(dot.contains("\"E\" [label=\"E\"];");
+    assert!(dot.contains("\"F\" [label=\"F\"];");
     
     // Check that the DOT graph contains all the expected edges
-    assert!(dot.contains("\"A\" -> \"B\";"));
-    assert!(dot.contains("\"A\" -> \"E\";"));
-    assert!(dot.contains("\"B\" -> \"C\";"));
-    assert!(dot.contains("\"C\" -> \"D\";"));
-    assert!(dot.contains("\"B\" -> \"F\";"));
-    assert!(dot.contains("\"E\" -> \"F\";"));
-    assert!(dot.contains("\"F\" -> \"C\";"));
+    assert!(dot.contains("\"A\" -> \"B\";");
+    assert!(dot.contains("\"A\" -> \"E\";");
+    assert!(dot.contains("\"B\" -> \"C\";");
+    assert!(dot.contains("\"C\" -> \"D\";");
+    assert!(dot.contains("\"B\" -> \"F\";");
+    assert!(dot.contains("\"E\" -> \"F\";");
+    assert!(dot.contains("\"F\" -> \"C\";");
 }
 
 #[test]
@@ -378,7 +378,7 @@ fn test_find_interface_path_success() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding a path in a simple case
-    let path = generator.find_interface_path("A", "D").unwrap();
+    let path = generator.find_interface_path("A", "D").unwrap());
     
     // Verify the path is correct (should be A -> B -> C -> D)
     assert_eq!(path, vec!["A", "B", "C", "D"]);
@@ -396,7 +396,7 @@ fn test_find_interface_path_failure() {
     let err = result.unwrap_err();
     match err {
         Error::Compilation(msg) => {
-            assert!(msg.contains("No path found from interface 'A' to interface 'Z'"));
+            assert!(msg.contains("No path found from interface 'A' to interface 'Z'");
         },
         _ => panic!("Expected Compilation error")
     }
@@ -407,21 +407,21 @@ fn test_visualize_interface_path_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test the enhanced path visualization
-    let visualization = generator.visualize_interface_path_enhanced("A", "D").unwrap();
+    let visualization = generator.visualize_interface_path_enhanced("A", "D").unwrap());
     
     // Check that the visualization contains the expected content
-    assert!(visualization.contains("Interface Inheritance Path:"));
-    assert!(visualization.contains("  [A]"));
-    assert!(visualization.contains("  ↓ extends"));
-    assert!(visualization.contains("  [B]"));
-    assert!(visualization.contains("  [C]"));
-    assert!(visualization.contains("  [D]"));
+    assert!(visualization.contains("Interface Inheritance Path:");
+    assert!(visualization.contains("  [A]");
+    assert!(visualization.contains("  ↓ extends");
+    assert!(visualization.contains("  [B]");
+    assert!(visualization.contains("  [C]");
+    assert!(visualization.contains("  [D]");
     
     // Check DOT representation
-    assert!(visualization.contains("digraph path"));
-    assert!(visualization.contains("\"A\" -> \"B\";"));
-    assert!(visualization.contains("\"B\" -> \"C\";"));
-    assert!(visualization.contains("\"C\" -> \"D\";"));
+    assert!(visualization.contains("digraph path");
+    assert!(visualization.contains("\"A\" -> \"B\";");
+    assert!(visualization.contains("\"B\" -> \"C\";");
+    assert!(visualization.contains("\"C\" -> \"D\";");
 }
 
 #[test]
@@ -429,10 +429,10 @@ fn test_find_alternative_paths_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding alternative paths
-    let paths = generator.find_alternative_paths_enhanced("A", "D", 3).unwrap();
+    let paths = generator.find_alternative_paths_enhanced("A", "D", 3).unwrap());
     
     // Should find at least one alternative path in our test data
-    assert!(!paths.is_empty());
+    assert!(!paths.is_empty().is_empty());
     
     // Verify the alternative paths are valid
     for path in &paths {
@@ -446,24 +446,24 @@ fn test_generate_path_error_message_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test generating enhanced error message with alternatives
-    let error_msg = generator.generate_path_error_message_enhanced("A", "X", "test.csd:123").unwrap();
+    let error_msg = generator.generate_path_error_message_enhanced("A", "X", "test.csd:123").unwrap());
     
     // Verify error message contains expected content
-    assert!(error_msg.contains("Type assertion error at test.csd:123"));
-    assert!(error_msg.contains("Value of type 'A' cannot be asserted as type 'X'"));
-    assert!(error_msg.contains("No viable inheritance path exists"));
+    assert!(error_msg.contains("Type assertion error at test.csd:123");
+    assert!(error_msg.contains("Value of type 'A' cannot be asserted as type 'X'");
+    assert!(error_msg.contains("No viable inheritance path exists");
     
     // It should list what A extends
-    assert!(error_msg.contains("'A' directly extends these interfaces:"));
-    assert!(error_msg.contains("- B"));
-    assert!(error_msg.contains("- E"));
+    assert!(error_msg.contains("'A' directly extends these interfaces:");
+    assert!(error_msg.contains("- B");
+    assert!(error_msg.contains("- E");
     
     // Test with interfaces that have alternatives
-    let error_msg = generator.generate_path_error_message_enhanced("A", "D", "test.csd:123").unwrap();
+    let error_msg = generator.generate_path_error_message_enhanced("A", "D", "test.csd:123").unwrap());
     
     // Verify error message contains alternatives
-    assert!(error_msg.contains("Alternative paths between these interfaces:"));
-    assert!(error_msg.contains("Path 1:"));
+    assert!(error_msg.contains("Alternative paths between these interfaces:");
+    assert!(error_msg.contains("Path 1:");
 }
 
 #[test]

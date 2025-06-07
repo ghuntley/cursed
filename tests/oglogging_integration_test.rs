@@ -1,7 +1,7 @@
 use cursed::object::Object;
 use cursed::stdlib::oglogging;
 
-//! Integration test for oglogging package
+// Integration test for oglogging package
 
 
 #[test]

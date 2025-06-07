@@ -12,10 +12,10 @@ use inkwell::context::Context;
 use common::tracing::setup as init_tracing;
 use common::timing::Timer;
 
-//! # Interface Type Assertion Question Operator Comprehensive Test
-//!
-//! This test verifies the end-to-end functionality of interface type assertions
-//! with the ? operator for automatic error propagation.
+// # Interface Type Assertion Question Operator Comprehensive Test
+//
+// This test verifies the end-to-end functionality of interface type assertions
+// with the ? operator for automatic error propagation.
 
 
 
@@ -190,7 +190,7 @@ fn test_interface_type_assertion_error_propagation() {
     slay getPrinterOutput(obj any) Result<tea, Error> {
         // This will fail if obj is not a Printer
         sus printer = obj.(Printer)?;
-        return ok<tea, Error>(printer.print());
+        return ok<tea, Error>(printer.print();
     }
     
     // Function that chains multiple assertions
@@ -209,7 +209,7 @@ fn test_interface_type_assertion_error_propagation() {
         
         // This should show the error was properly propagated
         lowkey !result.isOk {
-            vibez.spill("Error properly propagated: " + result.err.error());
+            vibez.spill("Error properly propagated: " + result.err.error();
         } no cap {
             vibez.spill("Error: expected failure but got success");
         }
@@ -221,7 +221,7 @@ fn test_interface_type_assertion_error_propagation() {
         lowkey result2.isOk {
             vibez.spill("Success properly handled: " + result2.value);
         } no cap {
-            vibez.spill("Error: expected success but got failure: " + result2.err.error());
+            vibez.spill("Error: expected success but got failure: " + result2.err.error();
         }
     }
     "#;
@@ -383,19 +383,19 @@ fn test_nested_interface_type_assertion_propagation() {
     // First level function - requires Dog
     slay processDog(animal Animal) Result<tea, Error> {
         sus dog = animal.(Dog)?;
-        return ok<tea, Error>(dog.bark());
+        return ok<tea, Error>(dog.bark();
     }
     
     // Second level function - requires Cat
     slay processCat(animal Animal) Result<tea, Error> {
         sus cat = animal.(Cat)?;
-        return ok<tea, Error>(cat.meow());
+        return ok<tea, Error>(cat.meow();
     }
     
     // Third level function - requires Bird
     slay processBird(animal Animal) Result<tea, Error> {
         sus bird = animal.(Bird)?;
-        return ok<tea, Error>(bird.chirp());
+        return ok<tea, Error>(bird.chirp();
     }
     
     // Top level function that tries each animal type
@@ -440,7 +440,7 @@ fn test_nested_interface_type_assertion_propagation() {
         lowkey dogResult.isOk {
             vibez.spill("Success: " + dogResult.value);
         } no cap {
-            vibez.spill("Error: " + dogResult.err.error());
+            vibez.spill("Error: " + dogResult.err.error();
         }
         
         vibez.spill("\nProcessing cat:");
@@ -448,7 +448,7 @@ fn test_nested_interface_type_assertion_propagation() {
         lowkey catResult.isOk {
             vibez.spill("Success: " + catResult.value);
         } no cap {
-            vibez.spill("Error: " + catResult.err.error());
+            vibez.spill("Error: " + catResult.err.error();
         }
         
         vibez.spill("\nProcessing bird:");
@@ -456,7 +456,7 @@ fn test_nested_interface_type_assertion_propagation() {
         lowkey birdResult.isOk {
             vibez.spill("Success: " + birdResult.value);
         } no cap {
-            vibez.spill("Error: " + birdResult.err.error());
+            vibez.spill("Error: " + birdResult.err.error();
         }
         
         // Create an anonymous struct that implements Animal but not any specific type
@@ -476,7 +476,7 @@ fn test_nested_interface_type_assertion_propagation() {
         lowkey genericResult.isOk {
             vibez.spill("Success: " + genericResult.value);
         } no cap {
-            vibez.spill("Error properly propagated: " + genericResult.err.error());
+            vibez.spill("Error properly propagated: " + genericResult.err.error();
         }
     }
     "#;

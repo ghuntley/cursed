@@ -2,10 +2,10 @@ use cursed::object::Object;
 use cursed::error::Error;
 use std::sync::Arc;
 
-//! Test wrappers for stdlib functions
-//! 
-//! This file provides wrapper functions for the standard library tests
-//! to convert between raw string/number inputs and the Object-based API.
+// Test wrappers for stdlib functions
+// 
+// This file provides wrapper functions for the standard library tests
+// to convert between raw string/number inputs and the Object-based API.
 
 
 /// Wrapper for vibez::spill
@@ -17,8 +17,8 @@ pub fn spill(message: &str) -> Result<(), Error> {
 /// Wrapper for stringz::contains
 pub fn contains(s: &str, substr: &str) -> bool {
     let args = vec![
-        Arc::new(Object::String(s.to_string())),
-        Arc::new(Object::String(substr.to_string())),
+        Arc::new(Object::String(s.to_string(),
+        Arc::new(Object::String(substr.to_string(),
     ];
     match cursed::stdlib::stringz::contains(&args) {
         Ok(obj) => {
@@ -222,7 +222,7 @@ pub fn now() -> i64 {
 pub fn format_time(timestamp: i64, format: &str) -> String {
     let args = vec![
         Arc::new(Object::Integer(timestamp)),
-        Arc::new(Object::String(format.to_string())),
+        Arc::new(Object::String(format.to_string(),
     ];
     match cursed::stdlib::timez::format_time(&args) {
         Ok(obj) => {

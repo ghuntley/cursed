@@ -6,10 +6,10 @@ use cursed::object::{Object, ObjectRef};
 use cursed::error_enhanced::CursedError;
 use cursed::error_enhanced::ErrorKind;
 
-//! Tests for detailed constraint error messages
-//!
-//! This module tests the enhanced error messages generated
-//! when type constraints are not satisfied.
+// Tests for detailed constraint error messages
+//
+// This module tests the enhanced error messages generated
+// when type constraints are not satisfied.
 
 
 // Init tracing once
@@ -42,7 +42,7 @@ fn test_constraint_error(input: &str) -> Option<CursedError> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().join("\n");
-        return Some(CursedError::new(ErrorKind::Parser, error_msg));
+        return Some(CursedError::new(ErrorKind::Parser, error_msg);
     }
     
     // Run the program with default JIT options
@@ -155,7 +155,7 @@ fn test_direct_interface_implementation_error() {
     if let Some(error) = test_constraint_error(input) {
         // Verify it's a type error
         assert!(error.is_kind(&ErrorKind::Type) || error.is_kind(&ErrorKind::TypeAssertion),
-                "Error should be a type error, got: {:?}", error.kind());
+                "Error should be a type error, got: {:?}", error.kind();
         
         // Verify it contains detailed information
         let error_msg = error.to_string());

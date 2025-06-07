@@ -1,6 +1,5 @@
 use cursed::ast::declarations::{SquadStatement, TypeParameter};
 use cursed::ast::expressions::Identifier;
-use cursed::ast::Token;
 use cursed::ast::FieldStatement;
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -11,7 +10,7 @@ use inkwell::context::Context;
 use std::time::Instant;
 use crate::common::tracing::setup;
 
-//! Integration tests for field accessor generation in the monomorphization system
+// Integration tests for field accessor generation in the monomorphization system
 
 
 mod common;
@@ -20,7 +19,7 @@ mod common;
 fn test_field_accessors_integration() {
     setup();
     let context = Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd");
     
     // Create a simple generic struct for testing
     let generic_struct = create_test_generic_struct();
@@ -59,7 +58,7 @@ fn test_field_accessors_integration() {
         &type_args2,
     );
     
-    assert!(result2.is_ok(), "Failed to generate second specialized struct with accessors: {:?}", result2.err());
+    assert!(result2.is_ok(), "Failed to generate second specialized struct with accessors: {:?}", result2.err();
     
     // Verify the field accessors were created for the second specialization
     assert!(code_gen.module().get_function("Point_Thicc_Lit_get_x").is_some(), 
@@ -90,45 +89,48 @@ fn test_field_accessors_integration() {
 /// Helper function to create a test generic struct
 fn create_test_generic_struct() -> SquadStatement {
     SquadStatement {
-        token: Token::BeLike,
+        token: "squad".to_string(),
         name: Identifier {
-            token: "token".to_string(),
+            token: "Point".to_string(),
             value: "Point".to_string(),
         },
         type_parameters: vec![
             TypeParameter {
-                token: "token".to_string(),
+                token: Token::Identifier("T".to_string(),
                 name: "T".to_string(),
                 value: "T".to_string(),
+                constraints: Vec::new(),
             },
             TypeParameter {
-                token: "token".to_string(),
+                token: Token::Identifier("U".to_string(),
                 name: "U".to_string(),
                 value: "U".to_string(),
+                constraints: Vec::new(),
             },
         ],
+        generic_constraints: Vec::new(),
         fields: vec![
             FieldStatement {
-                token: "token".to_string(),
+                token: "x".to_string(),
                 name: Identifier {
-                    token: "token".to_string(),
+                    token: "x".to_string(),
                     value: "x".to_string(),
                 },
-                type_name: Box::new(Identifier {
-                    token: "token".to_string(),
+                type_name: Identifier {
+                    token: "T".to_string(),
                     value: "T".to_string(),
-                }),
+                },
             },
             FieldStatement {
-                token: "token".to_string(),
+                token: "name".to_string(),
                 name: Identifier {
-                    token: "token".to_string(),
+                    token: "name".to_string(),
                     value: "name".to_string(),
                 },
-                type_name: Box::new(Identifier {
-                    token: "token".to_string(),
+                type_name: Identifier {
+                    token: "U".to_string(),
                     value: "U".to_string(),
-                }),
+                },
             },
         ],
     }

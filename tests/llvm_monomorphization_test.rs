@@ -29,7 +29,7 @@ fn test_monomorphization_manager_creation() {
     let manager = MonomorphizationManager::new();
 
     // Verify it's initially empty - now using public methods
-    assert!(!manager.is_function_instantiated("test", &[Type::Normie]));
+    assert!(!manager.is_function_instantiated("test", &[Type::Normie]);
 }
 
 #[test]
@@ -61,10 +61,10 @@ fn test_monomorphization_function_specialization() {
         "max",
         vec!["T"],
         vec![
-            Type::TypeParam("T".to_string()),
-            Type::TypeParam("T".to_string()),
+            Type::TypeParam("T".to_string(),
+            Type::TypeParam("T".to_string(),
         ],
-        Type::TypeParam("T".to_string()),
+        Type::TypeParam("T".to_string(),
     );
 
     // Specialize with concrete type Normie (i32)
@@ -108,8 +108,8 @@ fn create_generic_function(
     let type_parameters: Vec<Identifier> = type_params
         .iter()
         .map(|param| Identifier {
-            token: "token".to_string()),
-            value: param.to_string()),
+            token: "token".to_string(),
+            value: param.to_string(),
         })
         .collect();
 
@@ -120,14 +120,14 @@ fn create_generic_function(
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
             ParameterStatement {
-                token: Token::Identifier("IDENT".to_string()),
+                token: Token::Identifier("IDENT".to_string(),
                 name: Identifier {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: param_name,
                 },
                 type_name: Box::new(Identifier {
-                    token: "token".to_string()),
-                    value: param_type.to_string()),
+                    token: "token".to_string(),
+                    value: param_type.to_string(),
                 }),
             }
         })
@@ -135,8 +135,8 @@ fn create_generic_function(
 
     // Create return type expression
     let return_type_expr = Box::new(Identifier {
-        token: "token".to_string()),
-        value: return_type.to_string()),
+        token: "token".to_string(),
+        value: return_type.to_string(),
     }) as Box<dyn Expression>;
 
     // Create function body (empty for this test)
@@ -149,8 +149,8 @@ fn create_generic_function(
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: name.to_string()),
+            token: "token".to_string(),
+            value: name.to_string(),
         },
         parameters,
         body,
@@ -175,7 +175,7 @@ fn test_monomorphization_manager_in_llvm_generator() {
         "map",
         vec!["T", "U"],
         vec![Type::TypeParam("T".to_string())],
-        Type::TypeParam("U".to_string()),
+        Type::TypeParam("U".to_string(),
     );
 
     // Specialize with concrete types

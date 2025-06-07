@@ -7,10 +7,10 @@ use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRe
 use cursed::error::Error;
 use crate::common;
 
-//! # Tests for Interface Type Assertion Path Visualization Adapter
-//!
-//! This module tests the adapter that ensures proper method exposure between the
-//! interface type assertion path visualization traits.
+// # Tests for Interface Type Assertion Path Visualization Adapter
+//
+// This module tests the adapter that ensures proper method exposure between the
+// interface type assertion path visualization traits.
 
 
 // Import the modules we need to test
@@ -25,7 +25,7 @@ fn setup_interface_hierarchy() -> Arc<RwLock<ThreadSafeInterfaceExtensionRegistr
     // Initialize tracing for this test
     common::tracing::setup();
     
-    let registry = Arc::new(RwLock::new(ThreadSafeInterfaceExtensionRegistry::new()));
+    let registry = Arc::new(RwLock::new(ThreadSafeInterfaceExtensionRegistry::new());
     
     // Set up a simple diamond inheritance pattern
     // A -> B -> D
@@ -33,14 +33,14 @@ fn setup_interface_hierarchy() -> Arc<RwLock<ThreadSafeInterfaceExtensionRegistr
     // v         |
     // C ---------+
     
-    registry.write().unwrap().register_extension("A", "B").unwrap();
-    registry.write().unwrap().register_extension("A", "C").unwrap();
-    registry.write().unwrap().register_extension("B", "D").unwrap();
-    registry.write().unwrap().register_extension("C", "D").unwrap();
+    registry.write().unwrap().register_extension("A", "B").unwrap());
+    registry.write().unwrap().register_extension("A", "C").unwrap());
+    registry.write().unwrap().register_extension("B", "D").unwrap());
+    registry.write().unwrap().register_extension("C", "D").unwrap());
     
     // Add some isolated interfaces for testing error cases
-    registry.write().unwrap().register_extension("X", "Y").unwrap();
-    registry.write().unwrap().register_extension("Y", "Z").unwrap();
+    registry.write().unwrap().register_extension("X", "Y").unwrap());
+    registry.write().unwrap().register_extension("Y", "Z").unwrap());
     
     registry
 }
@@ -123,7 +123,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockCodeGenerator {
         target_interface: &str,
         _max_alternatives: usize,
     ) -> Result<Vec<Vec<String>>, Error> {
-        Ok(vec![vec![source_interface.to_string()), target_interface.to_string())]])
+        Ok(vec![vec![source_interface.to_string(), target_interface.to_string())]])
     }
     
     fn generate_path_error_message_enhanced(
@@ -161,7 +161,7 @@ fn test_adapter_forward_find_interface_path() {
     let generator = MockCodeGenerator::new();
     
     // Test that the adapter correctly forwards to the registry's path finding
-    let path = generator.forward_find_interface_path("A", "D").unwrap();
+    let path = generator.forward_find_interface_path("A", "D").unwrap());
     
     // The actual path should be determined by the registry we set up
     assert!(path.contains(&"A".to_string());
@@ -175,10 +175,10 @@ fn test_adapter_forward_visualize_interface_path() {
     let generator = MockCodeGenerator::new();
     
     // Test that the adapter correctly forwards to the enhanced implementation
-    let visualization = generator.forward_visualize_interface_path("A", "D").unwrap();
+    let visualization = generator.forward_visualize_interface_path("A", "D").unwrap());
     
     // Should be using the enhanced implementation which has this format
-    assert!(visualization.contains("Enhanced path visualization: A -> D"));
+    assert!(visualization.contains("Enhanced path visualization: A -> D");
 }
 
 #[test]
@@ -186,7 +186,7 @@ fn test_adapter_forward_generate_interface_hierarchy_dot() {
     let generator = MockCodeGenerator::new();
     
     // Test that the adapter correctly forwards to the enhanced implementation
-    let dot = generator.forward_generate_interface_hierarchy_dot().unwrap();
+    let dot = generator.forward_generate_interface_hierarchy_dot().unwrap());
     
     // Should be using the enhanced implementation
     assert_eq!(dot, "Enhanced DOT graph visualization");
@@ -197,10 +197,10 @@ fn test_adapter_forward_generate_path_error_message() {
     let generator = MockCodeGenerator::new();
     
     // Test that the adapter correctly forwards to the enhanced implementation
-    let error_message = generator.forward_generate_path_error_message("A", "X", "test.csd:123").unwrap();
+    let error_message = generator.forward_generate_path_error_message("A", "X", "test.csd:123").unwrap());
     
     // Should be using the enhanced implementation
-    assert!(error_message.contains("Enhanced error message: A -> X at test.csd:123"));
+    assert!(error_message.contains("Enhanced error message: A -> X at test.csd:123");
 }
 
 #[test]
@@ -208,14 +208,14 @@ fn test_adapter_ensure_registry_access() {
     let generator = MockCodeGenerator::new();
     
     // Test that the adapter correctly provides access to the registry
-    let registry = generator.ensure_registry_access().unwrap();
+    let registry = generator.ensure_registry_access().unwrap());
     
     // Verify registry has our test data
-    let interfaces = registry.get_all_interfaces().unwrap();
-    assert!(interfaces.contains("A"));
-    assert!(interfaces.contains("B"));
-    assert!(interfaces.contains("C"));
-    assert!(interfaces.contains("D"));
+    let interfaces = registry.get_all_interfaces().unwrap());
+    assert!(interfaces.contains("A");
+    assert!(interfaces.contains("B");
+    assert!(interfaces.contains("C");
+    assert!(interfaces.contains("D");
 }
 
 #[test]
@@ -223,14 +223,14 @@ fn test_trait_compatibility() {
     let generator = MockCodeGenerator::new();
     
     // Verify that we can call both base trait and enhanced trait methods directly
-    let base_result = InterfaceTypeAssertionPathVisualization::visualize_type_path(&generator, "A", "D").unwrap();
-    let enhanced_result = EnhancedInterfaceTypeAssertionPathVisualization::visualize_interface_path_enhanced(&generator, "A", "D").unwrap();
+    let base_result = InterfaceTypeAssertionPathVisualization::visualize_type_path(&generator, "A", "D").unwrap());
+    let enhanced_result = EnhancedInterfaceTypeAssertionPathVisualization::visualize_interface_path_enhanced(&generator, "A", "D").unwrap());
     
     // Verify different implementations were called
-    assert!(base_result.contains("Base visualization"));
-    assert!(enhanced_result.contains("Enhanced path visualization"));
+    assert!(base_result.contains("Base visualization");
+    assert!(enhanced_result.contains("Enhanced path visualization");
     
     // Verify adapter methods work
-    let adapter_result = InterfaceTypeAssertionPathVisualizationAdapter::forward_visualize_interface_path(&generator, "A", "D").unwrap();
-    assert!(adapter_result.contains("Enhanced path visualization"));
+    let adapter_result = InterfaceTypeAssertionPathVisualizationAdapter::forward_visualize_interface_path(&generator, "A", "D").unwrap());
+    assert!(adapter_result.contains("Enhanced path visualization");
 }

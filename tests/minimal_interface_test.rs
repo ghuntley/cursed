@@ -4,7 +4,7 @@ use cursed::codegen::llvm::InterfaceImplementation;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-//! Minimal test for interface implementation
+// Minimal test for interface implementation
 
 
 #[path = "tracing_setup.rs"]
@@ -23,7 +23,7 @@ fn test_minimal_interface() {
     // Test registering an interface
     let result = codegen.register_interface(
         "Stringer",
-        vec![("to_string".to_string()), vec![], Some(cursed::core::type_checker::Type::Tea))],
+        vec![("to_string".to_string(), vec![], Some(cursed::core::type_checker::Type::Tea))],
         Vec::new(),
     );
     
@@ -47,7 +47,7 @@ fn test_minimal_interface() {
     
     // Register implementation
     let mut methods = HashMap::new();
-    methods.insert("to_string".to_string()), function);
+    methods.insert("to_string".to_string(, function);
     
     let result = codegen.register_interface_implementation(
         "Person",

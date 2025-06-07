@@ -34,7 +34,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     // Set up LLVM JIT execution
@@ -45,14 +45,14 @@ fn test_jit_map_basic() -> Result<(), Error> {
     // Register puts function which is used in the test
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
 
     // Compile the program
     code_gen.compile_program(&program)?;
 
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -124,7 +124,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     // Set up LLVM JIT execution
@@ -135,14 +135,14 @@ fn test_jit_map_mutation() -> Result<(), Error> {
     // Register puts function which is used in the test
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
 
     // Compile the program
     code_gen.compile_program(&program)?;
 
     // Log the generated LLVM IR for debugging at debug level
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -213,7 +213,7 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors();
     }
 
     // Set up LLVM JIT execution
@@ -224,14 +224,14 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
     // Register puts function which is used in the test
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
 
     // Compile the program
     code_gen.compile_program(&program)?;
 
     // Log the generated LLVM IR for debugging at debug level
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine

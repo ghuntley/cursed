@@ -8,7 +8,7 @@ use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::error::Error;
 use std::sync::Arc;
 
-//! Integration test for interface code generation in LLVM
+// Integration test for interface code generation in LLVM
 
 
 #[path = "tracing_setup.rs"]
@@ -30,24 +30,24 @@ fn test_interface_code_generation() -> Result<(), Error> {
     // 1. Register the Printable interface
     type_checker.register_interface(
         "Printable",
-        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
         Vec::new(),
     );
     
     // Register the interface with the code generator as well
     codegen.register_interface(
         "Printable",
-        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
         Vec::new(),
     )?;
     
     // 2. Register a Person struct
     let person_fields = HashMap::from([
-        ("name".to_string()), Type::Tea),
-        ("age".to_string()), Type::Normie),
+        ("name".to_string(), Type::Tea),
+        ("age".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("Person", person_fields, Vec::new());
+    type_checker.register_struct("Person", person_fields, Vec::new();
     
     // 3. Register a to_string method for Person
     type_checker.register_struct_method(
@@ -58,8 +58,8 @@ fn test_interface_code_generation() -> Result<(), Error> {
     )?;
     
     // 4. Verify that Person implements Printable
-    let person_type = Type::Struct("Person".to_string()), Vec::new());
-    let printable_type = Type::Interface("Printable".to_string()), Vec::new());
+    let person_type = Type::Struct("Person".to_string(), Vec::new();
+    let printable_type = Type::Interface("Printable".to_string(), Vec::new();
     
     let implements = type_checker.check_interface_implementation(&person_type, &printable_type)?;
     assert!(implements, "Person should implement Printable");
@@ -89,7 +89,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // 6. Register Person as implementing Printable
     let mut person_methods = HashMap::new();
-    person_methods.insert("to_string".to_string()), function);
+    person_methods.insert("to_string".to_string(, function);
     
     codegen.register_interface_implementation(
         "Person",
@@ -102,7 +102,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     codegen.builder().position_at_end(entry_block);
     
     // Allocate a Person struct
-    let person_ptr = codegen.builder().build_alloca(person_llvm_type, "person").unwrap();
+    let person_ptr = codegen.builder().build_alloca(person_llvm_type, "person").unwrap());
     
     // Create an interface value from the Person
     let interface_value = codegen.create_interface_value(
@@ -121,7 +121,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // Return the result
     if let Some(result) = method_result {
-        let _ = codegen.builder().build_return(Some(&result));
+        let _ = codegen.builder().build_return(Some(&result);
     } else {
         let _ = codegen.builder().build_return(None);
     }
@@ -173,14 +173,14 @@ fn test_interface_code_generation() -> Result<(), Error> {
     let success_result = codegen.context().i8_type()
         .ptr_type(inkwell::AddressSpace::default())
         .const_null();
-    let _ = codegen.builder().build_return(Some(&success_result));
+    let _ = codegen.builder().build_return(Some(&success_result);
     
     codegen.builder().position_at_end(is_false_block);
-    let _ = codegen.builder().build_return(Some(&success_result));
+    let _ = codegen.builder().build_return(Some(&success_result);
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string());
     }
     
     Ok(())

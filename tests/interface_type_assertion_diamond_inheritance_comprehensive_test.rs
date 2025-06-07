@@ -9,25 +9,24 @@ use tracing::{debug, info, warn, instrument};
 use common::tracing::setup as init_tracing;
 use common::timing::Timer;
 
-//! # Diamond Inheritance Interface Type Assertion Test
-//!
-//! This test verifies the correctness of interface type assertions when dealing with
-//! diamond inheritance patterns, where a type implements multiple interfaces that
-//! share a common ancestor.
-//!
-//! ## Key Test Scenarios
-//!
-//! 1. Asserting a concrete type through different interface paths
-//! 2. Proper error handling when assertions fail in diamond inheritance
-//! 3. Using the ? operator for clean error propagation across complex type hierarchies
-//! 4. Visualizing type assertion paths in diamond inheritance relationships
+// # Diamond Inheritance Interface Type Assertion Test
+//
+// This test verifies the correctness of interface type assertions when dealing with
+// diamond inheritance patterns, where a type implements multiple interfaces that
+// share a common ancestor.
+//
+// ## Key Test Scenarios
+//
+// 1. Asserting a concrete type through different interface paths
+// 2. Proper error handling when assertions fail in diamond inheritance
+// 3. Using the ? operator for clean error propagation across complex type hierarchies
+// 4. Visualizing type assertion paths in diamond inheritance relationships
 
 
 // JIT compiler not used in this simplified test
 
 // Import common test utilities
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 
 /// Test interface type assertions with diamond inheritance patterns
@@ -313,18 +312,18 @@ fn test_diamond_inheritance_type_assertions() {
     
     // Test assertion through base interface
     slay getEntityId(entity Entity) Result<tea, Error> {
-        return ok<tea, Error>(entity.id());
+        return ok<tea, Error>(entity.id();
     }
     
     // Test assertion through middle layer interfaces
     slay getPhysicalLocation(entity Entity) Result<tea, Error> {
         sus physical = entity.(Physical)?;
-        return ok<tea, Error>(physical.position());
+        return ok<tea, Error>(physical.position();
     }
     
     slay getLogicalName(entity Entity) Result<tea, Error> {
         sus logical = entity.(Logical)?;
-        return ok<tea, Error>(logical.name());
+        return ok<tea, Error>(logical.name();
     }
     
     // Test assertion through diamond interfaces
@@ -335,7 +334,7 @@ fn test_diamond_inheritance_type_assertions() {
         sus asset1, assetOk1 = entity.(Asset);
         lowkey assetOk1 {
             vibez.spill("Direct Asset assertion succeeded");
-            return ok<normie, Error>(asset1.value());
+            return ok<normie, Error>(asset1.value();
         }
         
         // Path 2: First as Physical, then as Asset
@@ -343,7 +342,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey physicalOk {
             sus asset2 = physical.(Asset)?;
             vibez.spill("Physical->Asset assertion path succeeded");
-            return ok<normie, Error>(asset2.value());
+            return ok<normie, Error>(asset2.value();
         }
         
         // Path 3: First as Logical, then as Asset
@@ -351,7 +350,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey logicalOk {
             sus asset3 = logical.(Asset)?;
             vibez.spill("Logical->Asset assertion path succeeded");
-            return ok<normie, Error>(asset3.value());
+            return ok<normie, Error>(asset3.value();
         }
         
         // If all paths failed, return error
@@ -398,14 +397,14 @@ fn test_diamond_inheritance_type_assertions() {
     
     // Complex function that tries multiple assertion paths
     slay processEntity(entity Entity) Result<tea, Error> {
-        vibez.spill("\nProcessing entity: " + entity.id() + " of type " + entity.type());
+        vibez.spill("\nProcessing entity: " + entity.id() + " of type " + entity.type();
         
         // Check if it's an asset
         sus assetResult = getAssetValue(entity);
         lowkey assetResult.isOk {
             vibez.spill("Entity is an Asset with value: " + assetResult.value);
         } no cap {
-            vibez.spill("Entity is not an Asset: " + assetResult.err.error());
+            vibez.spill("Entity is not an Asset: " + assetResult.err.error();
         }
         
         // Check if it's interactive
@@ -413,10 +412,10 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey interactResult.isOk {
             vibez.spill("Entity is Interactive: " + interactResult.value);
         } no cap {
-            vibez.spill("Entity is not Interactive: " + interactResult.err.error());
+            vibez.spill("Entity is not Interactive: " + interactResult.err.error();
         }
         
-        return ok<tea, Error>("Processed entity " + entity.id());
+        return ok<tea, Error>("Processed entity " + entity.id();
     }
     
     // Main test function
@@ -507,7 +506,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey buildingValue.isOk {
             vibez.spill("Building value: " + buildingValue.value);
         } no cap {
-            vibez.spill("Error getting building value: " + buildingValue.err.error());
+            vibez.spill("Error getting building value: " + buildingValue.err.error();
         }
         
         // Device doesn't implement Asset - should fail
@@ -515,7 +514,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey deviceValue.isOk {
             vibez.spill("Device value: " + deviceValue.value);
         } no cap {
-            vibez.spill("Error getting device value: " + deviceValue.err.error());
+            vibez.spill("Error getting device value: " + deviceValue.err.error();
         }
         
         // SmartDevice implements Asset - should succeed
@@ -523,7 +522,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey smartDeviceValue.isOk {
             vibez.spill("Smart Device value: " + smartDeviceValue.value);
         } no cap {
-            vibez.spill("Error getting smart device value: " + smartDeviceValue.err.error());
+            vibez.spill("Error getting smart device value: " + smartDeviceValue.err.error();
         }
         
         // Test Interactive interface
@@ -534,7 +533,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey buildingInteract.isOk {
             vibez.spill("Building interaction: " + buildingInteract.value);
         } no cap {
-            vibez.spill("Error interacting with building: " + buildingInteract.err.error());
+            vibez.spill("Error interacting with building: " + buildingInteract.err.error();
         }
         
         // Device implements Interactive - should succeed
@@ -542,7 +541,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey deviceInteract.isOk {
             vibez.spill("Device interaction: " + deviceInteract.value);
         } no cap {
-            vibez.spill("Error interacting with device: " + deviceInteract.err.error());
+            vibez.spill("Error interacting with device: " + deviceInteract.err.error();
         }
         
         // SmartDevice implements Interactive - should succeed
@@ -550,7 +549,7 @@ fn test_diamond_inheritance_type_assertions() {
         lowkey smartDeviceInteract.isOk {
             vibez.spill("Smart Device interaction: " + smartDeviceInteract.value);
         } no cap {
-            vibez.spill("Error interacting with smart device: " + smartDeviceInteract.err.error());
+            vibez.spill("Error interacting with smart device: " + smartDeviceInteract.err.error();
         }
         
         // Test complex processing with multiple assertion paths
@@ -582,7 +581,7 @@ fn test_diamond_inheritance_type_assertions() {
     info!("Diamond inheritance type assertion test program parsed successfully");
     
     // Verify some key elements exist in the parsed program
-    let statement_count = program.statements.len();
+    let statement_count = program.statements.len());
     assert!(statement_count > 10, "Expected many statements in complex diamond inheritance test, got {}", statement_count);
     
     info!("Diamond inheritance type assertion test completed successfully with {} statements", statement_count);

@@ -11,9 +11,9 @@ use cursed::ast::{Expression, DerefExpression, StatementExtensions, Node};
 fn test_dereference_expression_parsing() {
     let input = "*variable";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
 
-    let program = parser.parse_program().unwrap();
+    let program = parser.parse_program().unwrap());
 
     // Ensure there are no parser errors
     if !parser.errors().is_empty() {
@@ -30,7 +30,7 @@ fn test_dereference_expression_parsing() {
     // Check the first statement is an expression statement with a dereference expression
     if let Some(expr) = program.statements[0].expression() {
         let deref_expr = expr.as_any().downcast_ref::<DerefExpression>();
-        assert!(deref_expr.is_some(), "Expected DerefExpression, got {:?}", expr.string());
+        assert!(deref_expr.is_some(), "Expected DerefExpression, got {:?}", expr.string();
 
         if let Some(deref_expr) = deref_expr {
             // Check the referenced value is 'variable'
@@ -38,7 +38,7 @@ fn test_dereference_expression_parsing() {
             assert_eq!(deref_expr.string(), "*variable");
         }
     } else {
-        panic!("Expected expression statement, got {:?}", program.statements[0].string());
+        panic!("Expected expression statement, got {:?}", program.statements[0].string();
     }
 }
 */

@@ -16,10 +16,10 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::lexer::Token;
 
-//! Integration test for the standardized LLVM code generator structure
-//!
-//! This test verifies that the standardized LLVM code generator structure works
-//! correctly, with a particular focus on the pointer operations implementation.
+// Integration test for the standardized LLVM code generator structure
+//
+// This test verifies that the standardized LLVM code generator structure works
+// correctly, with a particular focus on the pointer operations implementation.
 
 
 
@@ -72,8 +72,8 @@ fn test_standardized_structure() -> Result<(), Error> {
     
     // Test the get_address_of method
     let var1_ident = Rc::new(Identifier {
-        token: "token".to_string()),
-        value: "var1".to_string()),
+        token: "token".to_string(),
+        value: "var1".to_string(),
     });
     
     let ptr1 = code_gen.get_address_of(&*var1_ident)?;
@@ -99,7 +99,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     // Test compilation of pointer operations using AST nodes
     // Instead of using Rc<PointerType>, create a PointerType directly
     let ptr_type = PointerType {
-        token: "token".to_string()),
+        token: "token".to_string(),
         // Unbox the Rc<Identifier> to create a new Identifier
         target_type: Box::new(Identifier {
             token: var1_ident.token.clone(),
@@ -113,7 +113,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     // Testing the full standardized implementation through the mod.rs exports
     // Create a new pointer type since we don't have Clone
     let ptr_type2 = PointerType {
-        token: "token".to_string()),
+        token: "token".to_string(),
         target_type: Box::new(Identifier {
             token: var1_ident.token.clone(),
             value: var1_ident.value.clone(),
@@ -121,7 +121,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     };
     
     let deref_expr = PointerDereference {
-        token: "token".to_string()),
+        token: "token".to_string(),
         pointer: Box::new(ptr_type2),
     };
     
@@ -173,7 +173,7 @@ slay test_pointer_ops() normie {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors())));
+        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors()));
     }
 
     // Set up LLVM JIT execution

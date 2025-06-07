@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock, Mutex};
 use cursed::memory::gc::GarbageCollector;
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
 
-//! Simple thread-safe test for circular reference handling in the garbage collector
+// Simple thread-safe test for circular reference handling in the garbage collector
 
 
 #[derive(Clone, Debug)]
@@ -23,7 +23,7 @@ impl CircNode {
     }
     
     fn add_reference(&self, other: Gc<CircNode>) {
-        self.references.write().unwrap().push(Some(other));
+        self.references.write().unwrap().push(Some(other);
     }
     
     fn was_finalized(&self) -> bool {
@@ -34,7 +34,7 @@ impl CircNode {
 impl Traceable for CircNode {
     fn trace(&self, visitor: &mut dyn Visitor) {
         // Trace all references
-        let refs = self.references.read().unwrap();
+        let refs = self.references.read().unwrap());
         for ref_opt in refs.iter() {
             if let Some(node_ref) = ref_opt {
                 if let Some(inner) = node_ref.inner() {
@@ -66,21 +66,21 @@ impl Traceable for CircNode {
 #[test]
 fn test_simple_circular_reference_collection() {
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create two nodes with a circular reference
-    let node1 = gc.allocate(CircNode::new(1));
-    let node2 = gc.allocate(CircNode::new(2));
+    let node1 = gc.allocate(CircNode::new(1);
+    let node2 = gc.allocate(CircNode::new(2);
     
     // Create circular references: node1 -> node2 -> node1
     {
-        let inner1 = node1.inner_mut().unwrap();
-        inner1.add_reference(node2.clone());
+        let inner1 = node1.inner_mut().unwrap());
+        inner1.add_reference(node2.clone();
     }
     
     {
-        let inner2 = node2.inner_mut().unwrap();
-        inner2.add_reference(node1.clone());
+        let inner2 = node2.inner_mut().unwrap());
+        inner2.add_reference(node1.clone();
     }
     
     // Get initial stats
@@ -97,7 +97,7 @@ fn test_simple_circular_reference_collection() {
     
     // Give the GC a chance to run its collection cycle fully
     // In some implementations, GC might run incrementally or in background
-    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::thread::sleep(std::time::Duration::from_millis(50);
     
     // Force another collection to be sure
     gc.collect_garbage();
