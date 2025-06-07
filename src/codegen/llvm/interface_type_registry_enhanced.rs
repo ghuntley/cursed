@@ -214,8 +214,8 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Store the globals in the registry
         let registry = self.interface_type_registry_mut();
-        registry.type_ids_global = Some(id_global);
-        registry.type_names_global = Some(str_global);
+        registry.set_type_ids_global(Some(id_global));
+        registry.set_type_names_global(Some(str_global));
         
         debug!("Successfully initialized type registry globals with {} types", type_count);
         Ok(())
@@ -229,13 +229,17 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         debug!("Enhanced type name lookup for ID: {:?}", type_id);
         
         // Ensure we've initialized the type registry globals
-        let registry = self.interface_type_registry();
-        if registry.type_ids_global.is_none() || registry.type_names_global.is_none() {
+        let needs_initialization = {
+            let registry = self.interface_type_registry();
+            registry.type_ids_global().is_none() || registry.type_names_global().is_none()
+        };
+        
+        if needs_initialization {
             self.initialize_type_registry_globals()?;
         }
         
         // Get the type count
-        let type_count = registry.type_count();
+        let type_count = self.interface_type_registry().type_count();
         if type_count == 0 {
             debug!("No types in registry, returning unknown type");
             return self.create_unknown_type_string();
@@ -250,7 +254,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // If we have a constant ID, we can do a compile-time lookup
         if let Some(id_val) = const_id {
-            if let Some(type_name) = registry.get_type_name(id_val) {
+            if let Some(type_name) = self.interface_type_registry().get_type_name(id_val) {
                 debug!("Compile-time lookup for ID {} found: {}", id_val, type_name);
                 
                 // Create a global string constant for the type name
@@ -283,7 +287,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         debug!("Using runtime lookup for type ID");
         
         // Get the globals from the registry
-        let (ids_global, names_global) = match (registry.type_ids_global, registry.type_names_global) {
+        let (ids_global, names_global) = match (self.interface_type_registry().type_ids_global(), self.interface_type_registry().type_names_global()) {
             (Some(ids), Some(names)) => (ids, names),
             _ => {
                 debug!("Missing type registry globals, returning unknown type");
@@ -384,8 +388,8 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Mark the registry globals as invalid so they'll be regenerated
         let registry = self.interface_type_registry_mut();
-        registry.type_ids_global = None;
-        registry.type_names_global = None;
+        registry.set_type_ids_global(None);
+        registry.set_type_names_global(None);
         
         // Initialize the globals if we have a valid current function
         if self.current_function().is_some() {

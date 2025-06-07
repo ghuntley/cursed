@@ -87,8 +87,12 @@ pub fn execute(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // For now, we'll just return the template name
     match &args[0] {
         obj if obj.is_template() => {
-            if let Object::Template(template) = &**obj {
-                Ok(Arc::new(Object::String(template.name.clone())))
+            if let Object::Template(template_any) = &**obj {
+                if let Some(template) = template_any.downcast_ref::<Template>() {
+                    Ok(Arc::new(Object::String(template.name.clone())))
+                } else {
+                    Err(Error::new("InvalidArguments", "Invalid template type", None))
+                }
             } else {
                 Err(Error::new("InvalidArguments", "Not a template", None))
             }

@@ -112,44 +112,7 @@ impl<'ctx> StructMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                         }
                     } else {
                         // Nested generic struct that needs specialization
-                        // First, find the generic struct definition
-                        if let Some(generic_nested_struct) = self.get_generic_struct_info(&struct_name) {
-                            // Recursively specialize the nested struct
-                            let specialized_nested_name = self.mono_manager
-                                .get_specialized_function_name(&struct_name, &nested_type_args.iter().map(|b| (**b).clone()).collect::<Vec<_>>())
-                                .ok_or_else(|| {
-                                    Error::new(
-                                        "GNRC-003",
-                                        format!(
-                                            "Failed to generate specialized name for {} with {:?}",
-                                            struct_name, nested_type_args
-                                        ),
-                                        None,
-                                    )
-                                })?;
-                            
-                            // Check if we've already created this specialized struct
-                            let nested_struct_type = if let Some(existing) = 
-                                self.get_struct_type(&self.current_package_name, &specialized_nested_name) {
-                                existing
-                            } else {
-                                // Generate the specialized struct recursively
-                                let nested_type_args_vec = nested_type_args.iter().map(|b| (**b).clone()).collect::<Vec<_>>();
-                                self.generate_specialized_struct(
-                                    &generic_nested_struct,
-                                    &specialized_nested_name,
-                                    &nested_type_args_vec,
-                                )?
-                            };
-                            
-                            nested_struct_type.ptr_type(inkwell::AddressSpace::default()).into()
-                        } else {
-                            return Err(Error::new(
-                                "GNRC-004",
-                                format!("Unknown generic struct type: {}", struct_name),
-                                None,
-                            ));
-                        }
+                        return self.handle_nested_generic_struct(&struct_name, nested_type_args);
                     }
                 },
                 Type::Named(name) => {
@@ -228,5 +191,54 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             
         // Insert the struct type into the package entry
         pkg_structs.insert(struct_name.to_string(), struct_type);
+    }
+
+    fn handle_nested_generic_struct(&mut self, struct_name: &str, nested_type_args: &[Box<Type>]) -> Result<BasicTypeEnum<'ctx>, Error> {
+        // First, find the generic struct definition and clone it immediately
+        let generic_nested_struct = {
+            if let Some(generic_nested_struct) = self.get_generic_struct_info(struct_name) {
+                generic_nested_struct.clone()
+            } else {
+                return Err(Error::new(
+                    "GNRC-004",
+                    format!("Unknown generic struct type: {}", struct_name),
+                    None,
+                ));
+            }
+        };
+        
+        // Recursively specialize the nested struct
+        let nested_type_args_vec = nested_type_args.iter().map(|b| (**b).clone()).collect::<Vec<_>>();
+        
+        // Get specialized name
+        let specialized_nested_name = {
+            self.mono_manager
+                .get_specialized_function_name(struct_name, &nested_type_args_vec)
+                .ok_or_else(|| {
+                    Error::new(
+                        "GNRC-003",
+                        format!(
+                            "Failed to generate specialized name for {} with {:?}",
+                            struct_name, nested_type_args
+                        ),
+                        None,
+                    )
+                })?
+        };
+        
+        // Check if we've already created this specialized struct
+        let package_name = self.current_package_name.clone();
+        let nested_struct_type = if let Some(existing) = self.get_struct_type(&package_name, &specialized_nested_name) {
+            existing
+        } else {
+            // Generate the specialized struct recursively
+            self.generate_specialized_struct(
+                &generic_nested_struct,
+                &specialized_nested_name,
+                &nested_type_args_vec,
+            )?
+        };
+        
+        Ok(nested_struct_type.ptr_type(inkwell::AddressSpace::default()).into())
     }
 }

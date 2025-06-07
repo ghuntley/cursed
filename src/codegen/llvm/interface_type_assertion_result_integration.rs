@@ -16,6 +16,7 @@
 use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
 use inkwell::AddressSpace;
+use inkwell::types::StructType;
 use tracing::{debug, error, info, trace, warn, instrument, span, Level};
 use crate::codegen::llvm::basic_value_extensions::{BasicValueExt, BoolValueExt, StructTypeExt};
 
@@ -92,7 +93,7 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // Use PathVisualization if available to get more detailed type information
-        let type_path = if let Ok(path) = self.find_interface_type_path(
+        let type_path = if let Ok(path) = self.find_interface_path(
             &type_assertion.expression.node_type(),
             &type_assertion.type_name
         ) {
@@ -153,7 +154,7 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
                 "Type assertion failed: {} is not of type {}. Path information: {}", 
                 type_assertion.expression.string(), 
                 type_assertion.type_name,
-                path
+                path.join(" -> ")
             );
             
             // Emit runtime diagnostics in debug builds
@@ -262,8 +263,8 @@ impl<'ctx> TypeAssertionResultIntegration<'ctx> for LlvmCodeGenerator<'ctx> {
         report.push_str(&format!("Attempted conversion: {} -> {}\n\n", interface_type, target_type));
         
         // Find any available type path information
-        if let Ok(path) = self.find_interface_type_path(interface_type, target_type) {
-            report.push_str(&format!("Type path information: {}\n\n", path));
+        if let Ok(path) = self.find_interface_path(interface_type, target_type) {
+            report.push_str(&format!("Type path information: {}\n\n", path.join(" -> ")));
         } else {
             report.push_str("No type path information available.\n\n");
         }

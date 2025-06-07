@@ -92,7 +92,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGen
         })?;
         
         // Get the complete hierarchy from the registry with proper error propagation
-        let hierarchy = self.interface_registry().get_extension_hierarchy()?;
+        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(&*self.interface_registry())?;
         
         // Add all nodes first with consistent error handling
         let mut all_interfaces = HashSet::new();
@@ -140,7 +140,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGen
                source_interface, target_interface);
         
         // Get all interfaces with proper error propagation
-        let all_interfaces = self.interface_registry().get_all_interfaces()?;
+        let all_interfaces = InterfaceRegistryExtensionWithVisualization::get_all_interfaces(&*self.interface_registry())?;
         
         let mut alternative_paths = Vec::new();
         
@@ -244,7 +244,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGen
             })?;
             
             // List all interfaces that the source implements with proper error propagation
-            match self.interface_registry().get_direct_extensions(source_interface) {
+            match InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*self.interface_registry(), source_interface) {
                 Ok(Some(implementations)) if !implementations.is_empty() => {
                     writeln!(message, "\n'{}' directly extends these interfaces:", source_interface).map_err(|e| {
                         Error::Compilation(format!("Failed to write to error message: {}", e))
@@ -271,7 +271,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGen
             }
             
             // List all interfaces that extend the target with proper error propagation
-            match self.interface_registry().get_direct_implementors(target_interface) {
+            match InterfaceRegistryExtensionWithVisualization::get_direct_implementors(&*self.interface_registry(), target_interface) {
                 Ok(Some(implementors)) if !implementors.is_empty() => {
                     writeln!(message, "\nThese interfaces directly extend '{}':", target_interface).map_err(|e| {
                         Error::Compilation(format!("Failed to write to error message: {}", e))

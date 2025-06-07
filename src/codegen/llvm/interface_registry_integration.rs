@@ -79,7 +79,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get direct extensions for an interface from the registry visualization system
     pub fn get_interface_extensions(&self, interface_name: &str) -> Result<Option<Vec<String>>, Error> {
         match self.registry_visualization() {
-            Some(registry) => registry.get_direct_extensions(interface_name),
+            Some(registry) => InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*registry, interface_name),
             None => Err(Error::from_str("No registry visualization system available"))
         }
     }
@@ -152,9 +152,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         self.ensure_registry_visualization_initialized()?;
         
         // Get current hierarchy from visualization registry
-        let hierarchy = self.registry_visualization()
-            .ok_or_else(|| Error::from_str("No registry visualization system available"))?  
-            .get_extension_hierarchy()?;
+        let registry = self.registry_visualization()
+            .ok_or_else(|| Error::from_str("No registry visualization system available"))?;
+        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry.as_ref())?;
         
         // Update the type registry with the hierarchy information
         if let Some(registry) = &mut self.interface_type_registry {

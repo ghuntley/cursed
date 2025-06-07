@@ -9,7 +9,8 @@ use crate::ast::expressions::range_expression::RangeExpression;
 use crate::ast::expressions::{IntegerLiteral, StringLiteral};
 use crate::ast::Node;
 use crate::error::Error;
-use crate::lexer::TokenType;
+use crate::lexer::{Token, TokenType};
+use super::precedence::Precedence;
 use std::any::Any;
 use tracing::{debug, error, info, instrument, warn};
 
@@ -92,7 +93,7 @@ impl<'a> RangeExpressionErrorRecovery<'a> for Parser<'a> {
         let start_token = self.current_token.clone();
         
         // Expect the 'flex' token (which is our 'range' keyword)
-        if !self.current_token_is(TokenType::Flex) {
+        if !self.current_token_is(Token::Flex) {
             let err = Error::Parsing(format!(
                 "Expected 'flex' keyword for range expression, got '{}'", 
                 self.current_token.token_literal()
@@ -117,7 +118,7 @@ impl<'a> RangeExpressionErrorRecovery<'a> for Parser<'a> {
         // - Start, end, and step: flex 1, 10, 2
         
         // First, try to parse the end (which could be the only parameter)
-        let end_expr = match self.parse_expression(0) {
+        let end_expr = match self.parse_expression(Precedence::Lowest) {
             Ok(expr) => expr,
             Err(err) => {
                 warn!(error = %err, "Error parsing range end parameter, using fallback");
@@ -129,7 +130,7 @@ impl<'a> RangeExpressionErrorRecovery<'a> for Parser<'a> {
         };
         
         // If there's no comma after this, it's just a single parameter range
-        if !self.peek_token_is(TokenType::Comma) {
+        if !self.peek_token_is(Token::Comma) {
             // Just end parameter, return Range { end }
             return Ok(Box::new(RangeExpression::Range { end: end_expr }));
         }
@@ -143,7 +144,7 @@ impl<'a> RangeExpressionErrorRecovery<'a> for Parser<'a> {
         self.next_token()?; // Move past the comma
         
         // Now parse the end expression
-        let end_expr = match self.parse_expression(0) {
+        let end_expr = match self.parse_expression(Precedence::Lowest) {
             Ok(expr) => expr,
             Err(err) => {
                 warn!(error = %err, "Error parsing range end parameter (after start), using fallback");

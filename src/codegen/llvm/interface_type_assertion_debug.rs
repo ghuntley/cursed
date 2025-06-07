@@ -195,24 +195,8 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         &mut self,
         interface_value: BasicValueEnum<'ctx>,
     ) -> Result<String, Error> {
-        // Extract and get type ID
-        let type_id = self.get_interface_type_id(interface_value)?;
-        
-        // Get constant if possible
-        let const_id = match type_id.as_int_value().get_zero_extended_constant() {
-            Some(id) => id,
-            None => return Ok(format!("Type ID Extraction Debug:\n- Type ID: <dynamic at runtime>\n")),
-        };
-        
-        // Try to get type name from registry
-        let type_name = if let Some(registry) = &self.interface_type_registry {
-            match registry.get_type_name(const_id) {
-                Ok(name) => name,
-                Err(_) => format!("unknown(0x{:x})", const_id),
-            }
-        } else {
-            format!("unknown(0x{:x})", const_id)
-        };
+        // Extract and get type ID using the runtime type extraction method
+        let (const_id, type_name) = self.get_runtime_type_id(interface_value, None)?;
         
         // Build debug info
         let mut debug_info = String::new();
@@ -278,21 +262,24 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Add hierarchy information if enabled
         if config.include_hierarchy {
-            if let Ok(hierarchy) = self.trace_type_hierarchy(&actual_type_name) {
-                debug_info.push_str("\n\nType Hierarchy Information:\n");
-                debug_info.push_str(&hierarchy);
+            // Get the actual type name again for hierarchy tracing
+            if let Ok((_, type_name)) = self.get_runtime_type_id(interface_value, source_location.clone()) {
+                if let Ok(hierarchy) = self.trace_type_hierarchy(&type_name) {
+                    debug_info.push_str("\n\nType Hierarchy Information:\n");
+                    debug_info.push_str(&hierarchy);
+                }
             }
         }
         
         // Create detailed error with debug information
         let detailed_error = TypeAssertionError::new("interface", target_type)
             .with_message(format!("Type assertion failed with detailed debugging:\n\n{}", debug_info))
-            .with_actual_type(actual_type_name, Some(actual_type_id))
+            .with_actual_type(actual_type_name.clone(), Some(actual_type_id))
             .with_target_type_id(target_type_id);
             
         if let Some(loc) = source_location {
             return Err(Error::TypeAssertion(
-                detailed_error.with_location(loc)
+                detailed_error.with_location(loc).into()
             ));
         }
         
@@ -335,7 +322,7 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         for (interface_id, implementers) in inheritance_map.iter() {
             if implementers.contains(&type_id) {
                 let interface_name = registry.get_type_name(*interface_id)
-                    .unwrap_or_else(|_| format!("unknown(0x{:x})", interface_id));
+                    .unwrap_or_else(|| format!("unknown(0x{:x})", interface_id));
                 result.push_str(&format!("- {}\n", interface_name));
                 found_implementations = true;
             }

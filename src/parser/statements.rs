@@ -321,7 +321,7 @@ impl<'a> Parser<'a> {
         self.pop_context();
 
         Ok(ast::statements::block::BlockStatement {
-            token: token.token_literal(),
+            token,
             statements,
         })
     }
@@ -421,7 +421,7 @@ impl<'a> Parser<'a> {
                 let mut stmts = Vec::new();
                 stmts.push(if_stmt);
                 alternative = Some(ast::statements::block::BlockStatement {
-                    token: "{".to_string(),
+                    token: Token::LBrace,
                     statements: stmts,
                 });
             } else {
@@ -669,10 +669,10 @@ impl<'a> Parser<'a> {
 
                 // Add type parameter
                 let param = match &self.current_token {
-                    Token::Identifier(ident) => ast::Identifier {
-                        token: self.current_token.token_literal(),
-                        value: ident.clone(),
-                    },
+                    Token::Identifier(ident) => ast::TypeParameter::new(
+                        self.current_token.clone(),
+                        ident.clone(),
+                    ),
                     _ => unreachable!(),
                 };
                 type_parameters.push(param);
@@ -807,10 +807,10 @@ impl<'a> Parser<'a> {
 
                 // Add type parameter
                 let param = match &self.current_token {
-                    Token::Identifier(ident) => ast::Identifier {
-                        token: self.current_token.token_literal(),
-                        value: ident.clone(),
-                    },
+                    Token::Identifier(ident) => ast::TypeParameter::new(
+                        self.current_token.clone(),
+                        ident.clone(),
+                    ),
                     _ => unreachable!(),
                 };
                 type_parameters.push(param);

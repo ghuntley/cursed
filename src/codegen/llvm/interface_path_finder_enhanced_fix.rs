@@ -133,8 +133,8 @@ impl<'ctx> EnhancedInterfacePathFinder for MultiPathFinder<'ctx> {
             path.path = vec![source_id];
             
             // Get the type name
-            if let Some(name) = self.registry.get_type_name(source_id) {
-                path.names = vec![name.clone()];
+            if let Ok(name) = self.registry.get_type_name(source_id) {
+                path.names = vec![name];
             } else {
                 path.names = vec![format!("Type#{}", source_id)];
             }
@@ -168,8 +168,8 @@ impl<'ctx> EnhancedInterfacePathFinder for MultiPathFinder<'ctx> {
             
             // Get names for the interfaces in the path
             for &id in &path {
-                if let Some(name) = self.registry.get_type_name(id) {
-                    inheritance_path.names.push(name.clone());
+                if let Ok(name) = self.registry.get_type_name(id) {
+                    inheritance_path.names.push(name);
                 } else {
                     inheritance_path.names.push(format!("Interface#{}", id));
                 }
@@ -218,11 +218,11 @@ impl<'ctx> EnhancedInterfacePathFinder for MultiPathFinder<'ctx> {
         if paths.is_empty() {
             let source_name = self.registry.get_type_name(source_id)
                 .map(String::clone)
-                .unwrap_or_else(|| format!("Type#{}", source_id));
+                .unwrap_or_else(|_| format!("Type#{}", source_id));
                 
             let target_name = self.registry.get_type_name(target_id)
                 .map(String::clone)
-                .unwrap_or_else(|| format!("Type#{}", target_id));
+                .unwrap_or_else(|_| format!("Type#{}", target_id));
                 
             return Ok(format!("No paths exist from {} to {}", source_name, target_name));
         }

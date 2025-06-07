@@ -187,6 +187,28 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceRegistryCache {
         
         Ok(result)
     }
+    
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        match self.get_direct_implementers(interface)? {
+            Some(implementers) => Ok(Some(implementers.into_iter().collect())),
+            None => Ok(None),
+        }
+    }
+    
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+        use std::collections::HashMap;
+        let mut hierarchy = HashMap::new();
+        
+        if let Some(interfaces) = self.get_all_interfaces() {
+            for interface in interfaces {
+                if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
+                    hierarchy.insert(interface, extensions.into_iter().collect());
+                }
+            }
+        }
+        
+        Ok(hierarchy)
+    }
 }
 
 /// Cache-related helper functions

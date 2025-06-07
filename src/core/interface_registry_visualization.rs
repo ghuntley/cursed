@@ -11,6 +11,7 @@ use crate::error::Error;
 use tracing::{debug, info, instrument};
 
 /// Options for visualization output
+#[derive(Debug, Clone)]
 pub struct VisualizationOptions {
     /// Maximum depth for tree visualization
     pub max_depth: Option<usize>,
@@ -28,6 +29,7 @@ impl Default for VisualizationOptions {
 }
 
 /// Format for visualization output
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VisualizationFormat {
     /// ASCII tree format
     Ascii,
@@ -453,7 +455,7 @@ impl<T: InterfaceRegistryExtension + ?Sized> InterfaceRegistryExtensionWithVisua
     }
     
     #[instrument(skip(self), level = "debug")]
-    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         let interfaces = match self.get_all_interfaces() {
             Some(ifs) => ifs,
             None => return Err(Error::Internal("No interfaces found".to_string())),
@@ -487,7 +489,7 @@ impl<T: InterfaceRegistryExtension + ?Sized> InterfaceRegistryExtensionWithVisua
     }
     
     #[instrument(skip(self), level = "debug")]
-    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         match InterfaceRegistryExtension::get_direct_implementers(self, interface)? {
             Some(implementers) => Ok(Some(implementers.into_iter().collect())),
             None => Ok(None),

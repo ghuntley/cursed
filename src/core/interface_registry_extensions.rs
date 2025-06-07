@@ -36,6 +36,12 @@ pub trait InterfaceRegistryExtension: Send + Sync {
     
     /// Find the longest path between two interfaces
     fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error>;
+    
+    /// Get direct implementors (Vec version for compatibility)
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
+    
+    /// Get extension hierarchy
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error>;
 }
 
 /// A thread-safe implementation of InterfaceRegistryExtension
@@ -58,6 +64,21 @@ impl ThreadSafeInterfaceExtensionRegistry {
             direct_implementers: RwLock::new(HashMap::new()),
             interfaces: RwLock::new(HashSet::new()),
         }))
+    }
+    
+    /// Get access to direct extensions
+    pub fn direct_extensions(&self) -> &RwLock<HashMap<String, HashSet<String>>> {
+        &self.direct_extensions
+    }
+    
+    /// Get access to direct implementers
+    pub fn direct_implementers(&self) -> &RwLock<HashMap<String, HashSet<String>>> {
+        &self.direct_implementers
+    }
+    
+    /// Get access to interfaces
+    pub fn interfaces(&self) -> &RwLock<HashSet<String>> {
+        &self.interfaces
     }
 }
 
@@ -107,12 +128,12 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
     }
     
     #[instrument(skip(self), level = "trace")]
-    pub fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
         Some(self.interfaces.read().unwrap().clone())
     }
     
     #[instrument(skip(self), level = "trace")]
-    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
         if let Some(extensions) = self.direct_extensions.read().unwrap().get(interface) {
             Ok(Some(extensions.clone()))
         } else {
@@ -137,7 +158,7 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
     
     /// Public method for get_direct_implementors (Vec version for compatibility)
     #[instrument(skip(self), level = "trace")]
-    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         match self.get_direct_implementers(interface)? {
             Some(implementers) => Ok(Some(implementers.into_iter().collect())),
             None => Ok(None),
@@ -146,14 +167,14 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceExtensionRegistry {
     
     /// Public method for getting extension hierarchy
     #[instrument(skip(self), level = "trace")]
-    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         use std::collections::HashMap;
         let mut hierarchy = HashMap::new();
         
         if let Some(interfaces) = self.get_all_interfaces() {
-            for interface in interfaces {
-                if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
-                    hierarchy.insert(interface, extensions.into_iter().collect());
+            for interface in interfaces.iter() {
+                if let Ok(Some(extensions)) = self.get_direct_extensions(interface) {
+                    hierarchy.insert(interface.clone(), extensions.into_iter().collect());
                 }
             }
         }
@@ -238,11 +259,11 @@ impl InterfaceRegistryExtension for Arc<RwLock<ThreadSafeInterfaceExtensionRegis
         self.read().unwrap().has_extension(source, target)
     }
     
-    pub fn get_all_interfaces(&self) -> Option<HashSet<String>> {
+    fn get_all_interfaces(&self) -> Option<HashSet<String>> {
         self.read().unwrap().get_all_interfaces()
     }
     
-    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
         self.read().unwrap().get_direct_extensions(interface)
     }
     
@@ -250,21 +271,21 @@ impl InterfaceRegistryExtension for Arc<RwLock<ThreadSafeInterfaceExtensionRegis
         self.read().unwrap().get_direct_implementers(interface)
     }
     
-    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         match self.get_direct_implementers(interface)? {
             Some(implementers) => Ok(Some(implementers.into_iter().collect())),
             None => Ok(None),
         }
     }
     
-    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         use std::collections::HashMap;
         let mut hierarchy = HashMap::new();
         
         if let Some(interfaces) = self.get_all_interfaces() {
-            for interface in interfaces {
-                if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
-                    hierarchy.insert(interface, extensions.into_iter().collect());
+            for interface in interfaces.iter() {
+                if let Ok(Some(extensions)) = self.get_direct_extensions(interface) {
+                    hierarchy.insert(interface.clone(), extensions.into_iter().collect());
                 }
             }
         }
@@ -285,7 +306,11 @@ impl InterfaceRegistryExtension for Arc<RwLock<ThreadSafeInterfaceExtensionRegis
     }
 }
 
+// Note: Cannot implement on Arc<RwLock<T>> as it's outside our crate
+// Users can call .extends() directly on the Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>
+
 impl ThreadSafeInterfaceExtensionRegistry {
+    
     /// Helper method to collect all ancestors of an interface
     #[instrument(skip(self, ancestors), level = "trace")]
     fn collect_ancestors(&self, interface: &str, ancestors: &mut HashSet<String>) -> Result<(), Error> {

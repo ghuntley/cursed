@@ -140,7 +140,7 @@ impl<'ctx> ImprovedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
             );
         }
         
-        Ok(()); // We just log and don't perform any actual LLVM operations
+        Ok(()) // We just log and don't perform any actual LLVM operations
     }
 }
 

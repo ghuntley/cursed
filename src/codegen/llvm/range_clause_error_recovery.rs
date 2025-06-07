@@ -477,8 +477,8 @@ impl<'ctx> RangeClauseCompilationWithRecovery<'ctx> for LlvmCodeGenerator<'ctx> 
                 // Fallback to common types
                 warn!("Could not determine map key/value types, using fallback types");
                 (
-                    self.context.i8_type().ptr_type(inkwell::AddressSpace::default()), // string/tea for key
-                    self.context.i64_type() // int64/lit for value
+                    self.context.i8_type().ptr_type(inkwell::AddressSpace::default()).into(), // string/tea for key
+                    self.context.i64_type().into() // int64/lit for value
                 )
             }
         };

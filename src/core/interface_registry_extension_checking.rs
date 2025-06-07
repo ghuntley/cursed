@@ -189,7 +189,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
             }
             
             // Get direct extensions of the current interface
-            if let Some(extensions) = registry.get_direct_extensions(&current_interface)? {
+            if let Some(extensions) = InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*registry, &current_interface)? {
                 for extension in extensions {
                     // Avoid cycles and already visited paths
                     if !current_path.contains(&extension) {
@@ -209,7 +209,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         // Check if we found any paths
         if paths.is_empty() {
             // Try finding paths through a common parent
-            let all_interfaces = registry.get_all_interfaces()?;
+            let all_interfaces = InterfaceRegistryExtensionWithVisualization::get_all_interfaces(&*registry)?;
             
             for interface in all_interfaces {
                 if interface == source || interface == target {
@@ -217,12 +217,12 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
                 }
                 
                 // Check if both source and target extend this interface
-                let source_extends = match registry.extends(source, &interface) {
+                let source_extends = match InterfaceRegistryExtensionWithVisualization::extends(&*registry, source, &interface) {
                     Ok(extends) => extends,
                     Err(_) => continue,
                 };
                 
-                let target_extends = match registry.extends(target, &interface) {
+                let target_extends = match InterfaceRegistryExtensionWithVisualization::extends(&*registry, target, &interface) {
                     Ok(extends) => extends,
                     Err(_) => continue,
                 };
@@ -352,7 +352,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
             ancestors.insert(interface.to_string());
             
             // Add all interfaces that this interface extends
-            if let Some(extensions) = registry.get_direct_extensions(interface)? {
+            if let Some(extensions) = InterfaceRegistryExtensionWithVisualization::get_direct_extensions(registry, interface)? {
                 for extension in extensions {
                     ancestors.insert(extension.clone());
                     find_ancestors(registry, &extension, ancestors)?;

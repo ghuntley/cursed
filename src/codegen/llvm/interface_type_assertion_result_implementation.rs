@@ -484,7 +484,7 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
                 } else {
                     let mut result = format!("Found {} possible inheritance path(s):", paths.len());
                     for (i, path) in paths.iter().enumerate() {
-                        result.push_str(&format!("\n  Path {}: {}", i + 1, path));
+                        result.push_str(&format!("\n  Path {}: {}", i + 1, path.join(" -> ")));
                     }
                     result
                 }
@@ -663,7 +663,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Helper to convert between error types
     fn convert_to_type_assertion_error(&self, error: Error, source_type: &str, target_type: &str) -> TypeAssertionError {
         match error {
-            Error::TypeAssertion(assertion_error) => assertion_error.into(),
+            Error::TypeAssertion(assertion_error) => {
+                TypeAssertionError::new(source_type, target_type)
+                    .with_message(assertion_error.message().to_string())
+            },
             Error::Compilation(msg) => {
                 TypeAssertionError::new(source_type, target_type)
                     .with_message(format!("Compilation error: {}", msg))

@@ -33,6 +33,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::error::Error;
@@ -104,8 +105,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
     ) -> SourceLocation {
         let file = file_path
             .map(|s| s.to_string())
-            .or_else(|| self.current_file_path())
-            .unwrap_or_else(|| "<unknown>".to_string());
+            .or_else(|| Some(self.current_file_path().to_string_lossy().to_string()));
             
         let source = source_line
             .map(|s| s.to_string())
@@ -145,24 +145,25 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // Extract source location from the type assertion node
         let source_location = self.extract_source_location_from_node(type_assertion);
-        debug!("Type assertion at {}:{} in file {}", 
+        debug!("Type assertion at {}:{} in file {:?}", 
               source_location.line, source_location.column, source_location.file);
               
         // Compile the expression that will be type-asserted
-        let expr_value = self.compile_expression(&type_assertion.expression)?;
+        let expr_value = self.compile_expression(&*type_assertion.expression)?;
         
         // Check if the value is actually an interface
-        let is_interface = self.is_interface_value(expr_value)?;
+        let is_interface = self.is_interface_type(expr_value)?;
         if !is_interface {
             return Err(Error::TypeAssertion(
-                TypeAssertionError::new(&type_assertion.expression.node_type(), &type_assertion.type_name)
+                TypeAssertionError::new(type_assertion.expression.node_type(), &type_assertion.type_name)
                     .with_message(format!("Cannot perform type assertion on non-interface value"))
                     .with_location(source_location)
+                    .into()
             ));
         }
         
         // Get the runtime type ID of the interface value
-        let actual_type_id = self.get_runtime_type_id(expr_value, Some(source_location.clone()))?;
+        let (actual_type_id, actual_type_name) = self.get_runtime_type_id(expr_value, Some(source_location.clone()))?;
         
         // Get the target type ID
         let target_type_id = match self.get_type_id(&type_assertion.type_name) {
@@ -176,9 +177,8 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         
         // Set the type IDs for error reporting
         self.set_expected_type_id(target_type_id as u32);
-        if let Ok(actual_id) = actual_type_id.try_into() {
-            self.set_actual_type_id(actual_id);
-        }
+        let (actual_id, _) = actual_type_id;
+        self.set_actual_type_id(actual_id as u32);
         
         // Check if the types match
         let is_match = self.check_instanceof(expr_value, &type_assertion.type_name)?;
@@ -203,11 +203,11 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
                 data_ptr,
                 target_ptr_type,
                 "casted_data_ptr"
-            );
+            )?;
             
             // Create a successful Result with the value
             self.create_type_assertion_result(
-                casted_ptr.into(),
+                casted_ptr,
                 true,
                 None,
                 Some(source_location)
@@ -323,16 +323,17 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         // Extract source location from the type assertion node
         let source_location = self.extract_source_location_from_node(type_assertion);
         debug!("Type assertion with ? at {}:{} in file {}", 
-              source_location.line, source_location.column, source_location.file);
+              source_location.line, source_location.column, 
+              source_location.file.as_deref().unwrap_or("<unknown>"));
               
         // Compile the expression that will be type-asserted
-        let expr_value = self.compile_expression(&type_assertion.expression)?;
+        let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
         
         // Check if the value is actually an interface
         let is_interface = self.is_interface_value(expr_value)?;
         if !is_interface {
             return Err(Error::TypeAssertion(
-                TypeAssertionError::new(&type_assertion.expression.node_type(), &type_assertion.type_name)
+                TypeAssertionError::new(type_assertion.expression.node_type(), &type_assertion.type_name)
                     .with_message(format!("Cannot perform type assertion on non-interface value"))
                     .with_location(source_location)
             ));
@@ -353,9 +354,8 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         
         // Set the type IDs for error reporting
         self.set_expected_type_id(target_type_id as u32);
-        if let Ok(actual_id) = actual_type_id.try_into() {
-            self.set_actual_type_id(actual_id);
-        }
+        let (actual_id, _) = actual_type_id;
+        self.set_actual_type_id(actual_id as u32);
         
         // Check if the types match
         let is_match = self.check_instanceof(expr_value, &type_assertion.type_name)?;

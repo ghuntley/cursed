@@ -46,6 +46,17 @@ impl InterfaceRegistryAdapter {
     }
 }
 
+impl Clone for InterfaceRegistryAdapter {
+    fn clone(&self) -> Self {
+        Self {
+            extension_registry: Arc::clone(&self.extension_registry),
+            // Note: visualization_registry cannot be cloned since it's a trait object
+            // For the clone, we omit it and let the user re-add if needed
+            visualization_registry: None,
+        }
+    }
+}
+
 /// Implementation of InterfaceRegistryExtension for the adapter
 impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     /// Register a new interface
@@ -65,12 +76,12 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     
     /// Get all registered interfaces
     fn get_all_interfaces(&self) -> Option<HashSet<String>> {
-        self.extension_registry.get_all_interfaces()
+        InterfaceRegistryExtension::get_all_interfaces(&*self.extension_registry)
     }
     
     /// Get all direct extensions of an interface
     fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
-        self.extension_registry.get_direct_extensions(interface)
+        InterfaceRegistryExtension::get_direct_extensions(&*self.extension_registry, interface)
     }
     
     /// Get all direct implementers of an interface
@@ -80,7 +91,7 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     
     /// Check if an interface extends another interface (direct or indirect)
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
-        self.extension_registry.extends(source, target)
+        InterfaceRegistryExtension::extends(&*self.extension_registry, source, target)
     }
     
     /// Find a common ancestor between two interfaces
@@ -91,6 +102,28 @@ impl InterfaceRegistryExtension for InterfaceRegistryAdapter {
     /// Find the longest path between two interfaces
     fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
         self.extension_registry.find_longest_path(source, target)
+    }
+    
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        match self.get_direct_implementers(interface)? {
+            Some(implementers) => Ok(Some(implementers.into_iter().collect())),
+            None => Ok(None),
+        }
+    }
+    
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+        use std::collections::HashMap;
+        let mut hierarchy = HashMap::new();
+        
+        if let Some(interfaces) = self.get_all_interfaces() {
+            for interface in interfaces {
+                if let Ok(Some(extensions)) = self.get_direct_extensions(&interface) {
+                    hierarchy.insert(interface, extensions.into_iter().collect());
+                }
+            }
+        }
+        
+        Ok(hierarchy)
     }
 }
 
@@ -142,7 +175,7 @@ impl InterfaceRegistryAdapter {
         if let Some(vis_registry) = &self.visualization_registry {
             vis_registry.get_extension_hierarchy()
         } else {
-            self.extension_registry.get_extension_hierarchy()
+            InterfaceRegistryExtension::get_extension_hierarchy(&*self.extension_registry)
         }
     }
 
@@ -152,7 +185,7 @@ impl InterfaceRegistryAdapter {
         if let Some(vis_registry) = &self.visualization_registry {
             vis_registry.get_all_interfaces()
         } else {
-            self.extension_registry.get_all_interfaces()
+            InterfaceRegistryExtension::get_all_interfaces(&*self.extension_registry).ok_or_else(|| Error::from_str("Failed to get interfaces from extension registry"))
         }
     }
 
@@ -162,7 +195,8 @@ impl InterfaceRegistryAdapter {
         if let Some(vis_registry) = &self.visualization_registry {
             vis_registry.get_direct_extensions(interface)
         } else {
-            self.extension_registry.get_direct_extensions(interface)
+            InterfaceRegistryExtension::get_direct_extensions(&*self.extension_registry, interface)
+                .map(|opt| opt.map(|set| set.into_iter().collect()))
         }
     }
 
@@ -172,7 +206,8 @@ impl InterfaceRegistryAdapter {
         if let Some(vis_registry) = &self.visualization_registry {
             vis_registry.get_direct_implementors(interface)
         } else {
-            self.extension_registry.get_direct_implementors(interface)
+            InterfaceRegistryExtension::get_direct_implementors(&*self.extension_registry, interface)
+                .map(|opt| opt.map(|set| set.into_iter().collect()))
         }
     }
 
@@ -182,7 +217,7 @@ impl InterfaceRegistryAdapter {
         if let Some(vis_registry) = &self.visualization_registry {
             vis_registry.extends(source, target)
         } else {
-            self.extension_registry.extends(source, target)
+            InterfaceRegistryExtension::extends(&*self.extension_registry, source, target)
         }
     }
 
@@ -237,7 +272,7 @@ impl InterfaceRegistryAdapter {
             vis_registry.detect_cycles()
         } else {
             // Get the hierarchy from extension registry
-            let hierarchy = self.get_extension_hierarchy()?;
+            let hierarchy = Self::get_extension_hierarchy(self)?;
             
             // Run cycle detection on the hierarchy
             let mut cycles = Vec::new();
@@ -316,7 +351,7 @@ impl InterfaceRegistryAdapter {
             vis_registry.visualize_hierarchy_ascii()
         } else {
             // Get the extension hierarchy
-            let hierarchy = self.get_extension_hierarchy()?;
+            let hierarchy = Self::get_extension_hierarchy(self)?;
             
             // Create default visualization options
             let options = VisualizationOptions::default();
@@ -333,7 +368,7 @@ impl InterfaceRegistryAdapter {
             vis_registry.visualize_hierarchy_dot()
         } else {
             // Get the extension hierarchy
-            let hierarchy = self.get_extension_hierarchy()?;
+            let hierarchy = Self::get_extension_hierarchy(self)?;
             
             // Create default visualization options
             let options = VisualizationOptions::default();
@@ -402,7 +437,7 @@ impl InterfaceRegistryAdapter {
             vis_registry.interface_exists(interface)
         } else {
             // Get all interfaces
-            let all_interfaces = self.get_all_interfaces()?;
+            let all_interfaces = Self::get_all_interfaces(self)?;
             
             // Check if the interface exists
             Ok(all_interfaces.contains(interface))
@@ -676,12 +711,19 @@ impl InterfaceRegistryAdapter {
             vis_registry.is_visualization_initialized()
         } else {
             // For the extension registry, we consider it initialized if it has any entries
-            let registry = self.extension_registry.registry.read().map_err(|e| {
+            let registry = self.extension_registry.read().map_err(|e| {
                 Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
             })?;
             
+            let direct_extensions = registry.direct_extensions().read().map_err(|e| {
+                Error::Compilation(format!("Failed to acquire read lock on direct extensions: {}", e))
+            })?;
+            let direct_implementers = registry.direct_implementers().read().map_err(|e| {
+                Error::Compilation(format!("Failed to acquire read lock on direct implementers: {}", e))
+            })?;
+            
             // Check if there are any entries in the registry
-            Ok(!registry.direct_extensions.is_empty() || !registry.reverse_extensions.is_empty())
+            Ok(!direct_extensions.is_empty() || !direct_implementers.is_empty())
         }
     }
 

@@ -423,6 +423,10 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         // Create a constant string for the error message
         let error_message_ptr = self.create_string_constant(&enhanced_message);
         
+        // Default type information for error reporting
+        let source_type = "interface";
+        let target_type = "unknown";
+        
         // Call the error propagation function with the enhanced message and location
         self.call_error_propagation_function(
             error_message_ptr.into(),
