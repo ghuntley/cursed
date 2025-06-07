@@ -68,8 +68,7 @@ pub use crate::core::interface_registry_lru_cache;
 // pub use crate::core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
 
 // Re-export nested interface registry
-// This module is not yet implemented
-// pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
+pub use crate::core::nested_interface_registry::{NestedInterfaceRegistry, EnhancedInterfaceRegistry, NestedConstraint};
 
 // Re-export deep nested interface registry
 // These modules are not yet implemented

@@ -1,12 +1,9 @@
-use cursed::object::Object;
-use std::sync::Arc;
-use cursed::stdlib;
-
 // Test character functions in is_uppercase.rs
 
-// Temporarily disabled while we update the API
-#[cfg(not(test))]
 mod tests {
+    use cursed::object::Object;
+    use std::sync::Arc;
+    use cursed::stdlib;
 
 #[test]
 fn test_is_uppercase() {
@@ -97,14 +94,14 @@ fn test_is_alpha() {
 #[test]
 fn test_to_uppercase() {
     // Test to_uppercase
-    let result = stdlib::to_uppercase(&[Arc::new(Object::String("a".to_string()))]);
+    let result = stdlib::char_to_uppercase(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "A"),
         _ => panic!("Expected string result")
     }
     
-    let result = stdlib::to_uppercase(&[Arc::new(Object::String("A".to_string()))]);
+    let result = stdlib::char_to_uppercase(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "A"),
@@ -115,14 +112,14 @@ fn test_to_uppercase() {
 #[test]
 fn test_to_lowercase() {
     // Test to_lowercase
-    let result = stdlib::to_lowercase(&[Arc::new(Object::String("A".to_string()))]);
+    let result = stdlib::char_to_lowercase(&[Arc::new(Object::String("A".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "a"),
         _ => panic!("Expected string result")
     }
     
-    let result = stdlib::to_lowercase(&[Arc::new(Object::String("a".to_string()))]);
+    let result = stdlib::char_to_lowercase(&[Arc::new(Object::String("a".to_string()))]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::String(s) => assert_eq!(s, "a"),

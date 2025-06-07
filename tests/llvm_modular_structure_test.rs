@@ -1,4 +1,5 @@
 use cursed::ast::base::Program;
+use cursed::ast::traits::Statement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
@@ -17,7 +18,7 @@ fn test_modular_structure_basic() {
 
     // Create an empty program
     let program = Program {
-        statements: Vec::new(),
+        statements: Vec::<Box<dyn Statement>>::new(),
     };
 
     // Compile the program

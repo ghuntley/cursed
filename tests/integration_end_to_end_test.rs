@@ -42,10 +42,10 @@ func test_switch(string day) -> string {
 }
 
 func main() -> thicc {
-    vibez.spill(test_switch("Monday");
-    vibez.spill(test_switch("Friday");
-    vibez.spill(test_switch("Saturday");
-    vibez.spill(test_switch("Tuesday");
+    vibez.spill(test_switch("Monday"));
+    vibez.spill(test_switch("Friday"));
+    vibez.spill(test_switch("Saturday"));
+    vibez.spill(test_switch("Tuesday"));
     return 0;
 }
 "#;
@@ -78,7 +78,7 @@ fn test_end_to_end_compile_and_run() {
     if !parser.errors().is_empty() {
         error!(errors = ?parser.errors(), "Parser encountered errors");
     }
-    assert!(parser.errors().is_empty(), "Parser errors: {:?}", parser.errors();
+    assert!(parser.errors().is_empty(), "Parser errors: {:?}", parser.errors());
     
     // Initialize the code generator
     let mut codegen = LlvmCodeGenerator::new("test_module");
@@ -88,7 +88,7 @@ fn test_end_to_end_compile_and_run() {
     
     // Generate code
     let result = codegen.generate_code(&program);
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
     
     // Verify the generated module
     let module = codegen.module();
@@ -96,7 +96,7 @@ fn test_end_to_end_compile_and_run() {
     
     // Execute the JIT compiled code
     let main_fn = codegen.jit_function::<fn() -> i64>("main");
-    assert!(main_fn.is_ok(), "Failed to compile main function: {:?}", main_fn.err();
+    assert!(main_fn.is_ok(), "Failed to compile main function: {:?}", main_fn.err());
     
     // Call the function and verify result
     let result = unsafe { main_fn.unwrap()() };
@@ -112,7 +112,7 @@ fn test_string_switch_compilation() {
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Verify there are no parser errors
-    assert!(parser.errors().is_empty(), "Parser errors: {:?}", parser.errors();
+    assert!(parser.errors().is_empty(), "Parser errors: {:?}", parser.errors());
     
     // Initialize the code generator
     let mut codegen = LlvmCodeGenerator::new("switch_module");
@@ -122,14 +122,14 @@ fn test_string_switch_compilation() {
     
     // Generate code
     let result = codegen.generate_code(&program);
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
     
     // Verify the generated module
     let module = codegen.module();
     assert!(!module.to_string().is_empty(), "Generated module is empty");
     
     // Verify the module contains string comparison logic
-    let module_str = module.to_string());
+    let module_str = module.to_string();
     assert!(module_str.contains("strcmp") || 
            module_str.contains("string_compare") || 
            module_str.contains("str_eq"),
@@ -138,7 +138,7 @@ fn test_string_switch_compilation() {
     // Note: For this test, we don't execute the JIT compilation as it would
     // produce output. Instead, we just verify the compilation succeeds.
     let main_fn = codegen.jit_function::<fn() -> i64>("main");
-    assert!(main_fn.is_ok(), "Failed to compile main function: {:?}", main_fn.err();
+    assert!(main_fn.is_ok(), "Failed to compile main function: {:?}", main_fn.err());
 }
 }
 
@@ -158,7 +158,7 @@ fn test_dot_expression_compilation() {
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Verify there are no parser errors
-    assert!(parser.errors().is_empty(), "Parser errors: {:?}", parser.errors();
+    assert!(parser.errors().is_empty(), "Parser errors: {:?}", parser.errors());
     
     // Initialize the code generator
     let mut codegen = LlvmCodeGenerator::new("dot_expr_module");
@@ -168,14 +168,14 @@ fn test_dot_expression_compilation() {
     
     // Generate code
     let result = codegen.generate_code(&program);
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
     
     // Verify the generated module
     let module = codegen.module();
     assert!(!module.to_string().is_empty(), "Generated module is empty");
     
     // Verify the module contains calls to the standard library functions
-    let module_str = module.to_string());
+    let module_str = module.to_string();
     assert!(module_str.contains("vibez_spill") || module_str.contains("print"), 
             "Module does not contain vibez.spill function");
     
@@ -186,5 +186,5 @@ fn test_dot_expression_compilation() {
     // Note: For this test, we don't execute the JIT compilation as it would
     // produce output. Instead, we just verify the compilation succeeds.
     let main_fn = codegen.jit_function::<fn() -> i64>("main");
-    assert!(main_fn.is_ok(), "Failed to compile main function: {:?}", main_fn.err();
+    assert!(main_fn.is_ok(), "Failed to compile main function: {:?}", main_fn.err());
 }
