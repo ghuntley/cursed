@@ -4,6 +4,7 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::prelude::*;
 
+
 // Test pointer types and operations in the parser
 #[test]
 #[ignore = "Pointer implementation needs further parser work"]

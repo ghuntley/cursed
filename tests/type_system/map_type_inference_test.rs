@@ -1,9 +1,10 @@
-//! Unit tests for map type inference
-
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
+
+//! Unit tests for map type inference
+
 
 #[test]
 fn test_map_type_inference() {

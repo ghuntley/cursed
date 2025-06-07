@@ -1,9 +1,10 @@
+use cursed::memory::gc::GarbageCollector;
+use cursed::memory::{Gc, Tag, Traceable, Visitor};
+use tracing::{debug, error, info, trace, warn};
+use tracing_subscriber;
+
 #[cfg(test)]
 mod tests {
-    use cursed::memory::gc::GarbageCollector;
-    use cursed::memory::{Gc, Tag, Traceable, Visitor};
-    use tracing::{debug, error, info, trace, warn};
-    use tracing_subscriber;
     
     mod tracing_setup {
         pub fn setup() {

@@ -1,12 +1,13 @@
-#[path = "common.rs"]
-mod common;
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::EnhancedErrorVisualization;
 use cursed::codegen::llvm::DiamondInheritanceDetection;
 use cursed::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondInheritancePattern;
 use cursed::error::SourceLocation;
 use common::tracing::init_test_tracing;
+
+#[path = "common.rs"]
+mod common;
+
 
 #[test]
 fn test_enhanced_visualization() {
@@ -35,7 +36,7 @@ fn test_enhanced_visualization() {
         line: 10,
         column: 15,
         file: Some("test.csd".to_string()),
-        source_line: "    let x = y.(SomeType)?".to_string(),
+        source_line: "    let x = y.(SomeType)?".to_string()),
     };
     
     let context_lines = vec![

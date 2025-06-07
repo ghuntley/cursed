@@ -1,26 +1,29 @@
-//! Test cases for array bounds checking in the CURSED compiler.
-//!
-//! These tests verify that the compiler correctly implements runtime bounds
-//! checking for array access operations, ensuring memory safety.  
-
 use std::io;
 use std::path::Path;
 use std::process::{Command, Child};
 use std::fs;
 use std::time::Duration;
+use tracing::{debug, error, info, warn};
+use std::process::Stdio;
+use std::thread;
+use std::time::Instant;
+
+//! Test cases for array bounds checking in the CURSED compiler.
+//!
+//! These tests verify that the compiler correctly implements runtime bounds
+//! checking for array access operations, ensuring memory safety.  
+
 
 // Import tracing setup
 #[path = "tracing_setup.rs"]
 #[macro_use]
 pub mod tracing_setup;
-use tracing::{debug, error, info, warn};
 
 /// Runs a CURSED file through the compiler and returns the output and exit status
 #[tracing::instrument(level = "debug")]
 fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
     debug!("Running CURSED file: {}", file_path);
     
-    use std::process::Stdio;
     
     // Start the command with a timeout
     let mut child = Command::new("devenv")
@@ -85,8 +88,6 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
 
 /// Helper function to wait for a process with a timeout
 fn wait_timeout(child: &mut Child, timeout: Duration) -> io::Result<Option<std::process::ExitStatus>> {
-    use std::thread;
-    use std::time::Instant;
     
     let start = Instant::now();
     let sleep_duration = Duration::from_millis(100); // Check every 100ms

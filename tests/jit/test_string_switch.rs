@@ -1,26 +1,28 @@
-//! Standalone test for string switch functionality
-
 use cursed::ast::control_flow::{CaseStatement, SwitchStatement};
 use cursed::ast::expressions::StringLiteral;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::declarations::ReturnStatement;
 use cursed::ast::{Expression, Node, Statement};
 use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Standalone test for string switch functionality
+
 
 // Helper function to create a string literal expression
 fn create_string_literal(value: &str) -> Box<dyn Expression> {
     Box::new(StringLiteral {
-        token: "\"string\"".to_string(),
-        value: value.to_string(),
+        token: "\"string\"".to_string()),
+        value: value.to_string()),
     })
 }
 
 // Helper function to create a return statement
 fn create_return_statement(value: Option<Box<dyn Expression>>) -> Box<dyn Statement> {
     Box::new(ReturnStatement {
-        token: "yolo".to_string(),
+        token: "token".to_string()),
         return_value: value,
     })
 }
@@ -28,7 +30,7 @@ fn create_return_statement(value: Option<Box<dyn Expression>>) -> Box<dyn Statem
 // Helper function to create a block with a return statement
 fn create_block_with_return(value: &str) -> BlockStatement {
     BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![create_return_statement(Some(create_string_literal(value)))],
     }
 }
@@ -41,13 +43,13 @@ fn main() {
     
     // Create case statements
     let monday_case = CaseStatement {
-        token: "mood".to_string(),
+        token: "token".to_string()),
         expressions: vec![create_string_literal("Monday")],
         body: create_block_with_return("Start of week"),
     };
     
     let friday_case = CaseStatement {
-        token: "mood".to_string(),
+        token: "token".to_string()),
         expressions: vec![create_string_literal("Friday")],
         body: create_block_with_return("End of week"),
     };
@@ -57,7 +59,7 @@ fn main() {
     
     // Create the switch statement
     let switch_stmt = SwitchStatement {
-        token: "vibe_check".to_string(),
+        token: "token".to_string()),
         value: switch_value,
         cases: vec![monday_case, friday_case],
         default: Some(default_case),
@@ -110,7 +112,7 @@ fn main() {
     }
     
     // Get the IR code and print it
-    let ir_code = code_generator.module.print_to_string().to_string();
+    let ir_code = code_generator.module.print_to_string().to_string());
     println!("\n--- Generated LLVM IR ---");
     println!("{}", ir_code);
     println!("-------------------------");

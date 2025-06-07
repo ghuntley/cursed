@@ -1,6 +1,19 @@
+use std::sync::Once;
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceRegistryExtensionWithVisualization;
+use cursed::codegen::llvm::interface_registry_visualization_integration::InterfaceRegistryVisualizationIntegration;
+use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
+use cursed::core::interface_registry_visualization::InterfaceRegistryVisualization;
+use cursed::error::Error;
+use inkwell::context::Context;
+use tracing::{debug, info};
+use std::sync::Arc;
+use std::thread;
+
 //! Test for interface registry visualization
 
-use std::sync::Once;
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -17,16 +30,6 @@ macro_rules! init_tracing {
     };
 }
 
-use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceRegistryExtensionWithVisualization;
-use cursed::codegen::llvm::interface_registry_visualization_integration::InterfaceRegistryVisualizationIntegration;
-use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
-use cursed::core::interface_registry_visualization::InterfaceRegistryVisualization;
-use cursed::error::Error;
-use inkwell::context::Context;
-use tracing::{debug, info};
 
 #[test]
 fn test_registry_visualization_extension_hierarchy() {
@@ -116,8 +119,6 @@ fn test_registry_thread_safety() {
     init_tracing!();
     info!("Testing registry thread safety with visualization");
     
-    use std::sync::Arc;
-    use std::thread;
     
     // Create a shared registry
     let registry = Arc::new(ThreadSafeInterfaceExtensionRegistry::new());

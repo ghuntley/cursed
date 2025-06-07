@@ -1,3 +1,6 @@
+use std::thread;
+use std::time::Duration;
+
 //! Memory allocation profiling tests
 //!
 //! This test module verifies the memory allocation profiling functionality
@@ -5,8 +8,6 @@
 
 extern crate cursed;
 
-use std::thread;
-use std::time::Duration;
 
 use cursed::memory::{
     GarbageCollector, Traceable, Tag, Visitor,

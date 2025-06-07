@@ -1,13 +1,14 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use cursed::core::goroutine;
+use cursed::object::Object;
+use cursed::object_thread_safe::{ThreadSafeObject, ThreadSafeCallable, ThreadSafeValue};
+use cursed::error::Error;
+use cursed::core::thread_safe_goroutine;
+
 #[cfg(test)]
 mod goroutine_implementation_tests {
-    use std::sync::{Arc, Mutex};
-    use std::thread;
-    use std::time::Duration;
-    use cursed::core::goroutine;
-    use cursed::object::Object;
-    use cursed::object_thread_safe::{ThreadSafeObject, ThreadSafeCallable, ThreadSafeValue};
-    use cursed::error::Error;
-    use cursed::core::thread_safe_goroutine;
 
     // Helper struct for testing callable objects
     struct TestCallable {

@@ -1,9 +1,10 @@
+use cursed::ast::*;
+use cursed::lexer::Token;
+
 //! AST factory for creating test AST nodes
 //!
 //! This module provides utilities for creating AST nodes for testing purposes.
 
-use cursed::ast::*;
-use cursed::lexer::Token;
 
 /// Factory for creating test AST nodes
 pub struct AstFactory;
@@ -12,7 +13,7 @@ impl AstFactory {
     /// Create a new integer literal expression
     pub fn int_literal(value: i64) -> Box<dyn Expression> {
         Box::new(IntegerLiteral {
-            token: value.to_string(),
+            token: value.to_string()),
             value,
         })
     }

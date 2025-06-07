@@ -1,6 +1,7 @@
+use cursed::lexer::{Lexer, Token};
+
 // Tests for composite type token implementation in the JIT
 
-use cursed::lexer::{Lexer, Token};
 
 /// Test for array-related tokens
 #[test]

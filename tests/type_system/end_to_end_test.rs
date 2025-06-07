@@ -1,5 +1,3 @@
-//! Comprehensive end-to-end tests for the CURSED type system
-
 use cursed::ast::base::Program;
 use cursed::ast::expressions::{Identifier, IntegerLiteral, StringLiteral};
 use cursed::ast::statements::block::BlockStatement;
@@ -11,6 +9,9 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use std::path::PathBuf;
+
+//! Comprehensive end-to-end tests for the CURSED type system
+
 
 /// A full end-to-end test for type checking and code generation of
 /// a complete CURSED program with various type features
@@ -216,7 +217,7 @@ fn test_interface_implementation_end_to_end() {
     }
     
     slay Person_print(Person self) normie {
-        tea str = self.to_string();
+        tea str = self.to_string());
         vibez printf("%s\n", str);
         yolo 0;
     }
@@ -233,7 +234,7 @@ fn test_interface_implementation_end_to_end() {
     }
     
     slay Book_print(Book self) normie {
-        tea str = self.to_string();
+        tea str = self.to_string());
         vibez printf("%s\n", str);
         yolo 0;
     }

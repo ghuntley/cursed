@@ -2,6 +2,11 @@ use std::fs;
 use std::io::Write;
 use std::path::Path;
 use std::process::Command;
+use cursed::ast::StanExpression;
+use cursed::ast::*;
+use cursed::object::Object;
+use cursed::lexer::Token;
+
 
 // This test is very basic: it just verifies that the parser doesn't error
 // when it sees a 'stan' keyword in the code, simulating a basic goroutine call
@@ -23,18 +28,14 @@ fn test_basic_goroutine_parsing() {
 #[test]
 fn test_goroutine_object_created() {
     // Import the Object and StanExpression types
-    use cursed::ast::StanExpression;
-    use cursed::ast::*;
-    use cursed::object::Object;
 
     // Create a basic identifier expression
     let identifier = Box::new(Identifier {
-        token: "func".to_string(),
-        value: "func".to_string(),
+        token: "token".to_string()),
+        value: "func".to_string()),
     }) as Box<dyn Expression>;
 
     // Create a stan expression with the identifier
-    use cursed::lexer::token::Token;
     let stan_expr = StanExpression {
         token: Token::Stan,
         expression: identifier,

@@ -1,19 +1,20 @@
-//! Tests for the enhanced range clause error recovery functionality
-//! 
-//! This module tests the ability to recover from various types of errors
-//! in range clauses and range expressions.
-
 use std::fs;
 use std::path::Path;
 use std::io;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tracing::{debug, error, info, trace, warn};
+
+//! Tests for the enhanced range clause error recovery functionality
+//! 
+//! This module tests the ability to recover from various types of errors
+//! in range clauses and range expressions.
+
 
 // Import tracing setup 
 #[path = "tracing_setup.rs"]
 #[macro_use]
 mod tracing_setup;
-use tracing::{debug, error, info, trace, warn};
 
 // Generate a unique ID for test files
 fn generate_id() -> u64 {
@@ -40,8 +41,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["run", "--bin", "cursed", "--", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
 
     // Combine stdout and stderr for debugging
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);

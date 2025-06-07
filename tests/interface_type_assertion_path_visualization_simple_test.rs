@@ -1,4 +1,13 @@
 use std::sync::Once;
+use cursed::error::Error;
+use inkwell::context::Context;
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
+use tracing::{debug, error, info, warn};
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -16,15 +25,7 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities and framework
-use cursed::error::Error;
-use inkwell::context::Context;
-use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
-use tracing::{debug, error, info, warn};
 
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
-use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 
 // Helper function to set up a test interface registry
 fn setup_test_registry(registry: &ThreadSafeInterfaceExtensionRegistry) -> Result<(), Error> {
@@ -120,7 +121,7 @@ fn test_find_alternative_paths() {
     
     // Check that the alternative path goes through Animal
     let found = paths.iter().any(|path| {
-        path.len() >= 4 && path.contains(&"Animal".to_string())
+        path.len() >= 4 && path.contains(&"Animal".to_string()
     });
     
     assert!(found, "Should find a path through the common ancestor (Animal)");

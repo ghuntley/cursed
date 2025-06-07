@@ -1,8 +1,9 @@
-//! Simple thread-safe test for circular reference handling in the garbage collector
-
 use std::sync::{Arc, RwLock, Mutex};
 use cursed::memory::gc::GarbageCollector;
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
+
+//! Simple thread-safe test for circular reference handling in the garbage collector
+
 
 #[derive(Clone, Debug)]
 struct CircNode {

@@ -1,3 +1,13 @@
+use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::traits::{Expression, Node};
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
+use cursed::codegen::llvm::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
+use cursed::error::Error;
+use cursed::lexer::Token;
+use inkwell::context::Context;
+use std::collections::{HashMap, HashSet};
+
 //! # Interface Type Assertion with Registry Integration Tests
 //!
 //! This module tests the enhanced interface type assertion implementation
@@ -5,15 +15,7 @@
 //! It verifies that type assertions correctly handle inheritance relationships
 //! and provide useful error messages for debugging.
 
-use cursed::ast::expressions::TypeAssertion;
-use cursed::ast::traits::{Expression, Node};
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
-use cursed::codegen::llvm::interface_type_assertion_with_registry::InterfaceTypeAssertionWithRegistry;
-use cursed::error::Error;
 
-use inkwell::context::Context;
-use std::collections::{HashMap, HashSet};
 
 mod common;
 
@@ -68,14 +70,14 @@ fn test_interface_type_assertion_with_registry() {
     // Create a test expression with a FileReader type
     let file_reader_expr = TestExpression {
         type_id: 1002,  // FileReader ID
-        name: "fileReader".to_string(),
+        name: "fileReader".to_string()),
     };
     
     // Create a type assertion: fileReader.(Reader)
     let type_assertion = TypeAssertion {
-        token: "test".to_string(),
+        token: "token".to_string()),
         expression: Box::new(file_reader_expr),
-        type_name: "Reader".to_string(),
+        type_name: "Reader".to_string()),
     };
     
     // Mock the codegen methods to return our test values
@@ -91,7 +93,7 @@ fn test_interface_type_assertion_with_registry() {
     
     // Test that the path finder can find the correct path
     let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap();
-    assert_eq!(path.path(), &vec!["JSONFileReader".to_string(), "FileReader".to_string(), "Reader".to_string()]);
+    assert_eq!(path.path(), &vec!["JSONFileReader".to_string()), "FileReader".to_string()), "Reader".to_string())]);
     
     // Test reversed relationship detection
     let (reversed, _) = codegen.detect_reversed_inheritance_enhanced("Reader", "FileReader").unwrap();
@@ -122,8 +124,8 @@ fn test_interface_type_assertion_path_registry() {
     
     // Test that the path finder can find the correct path for multi-level inheritance
     let path = codegen.find_interface_path_enhanced("Jet", "Vehicle").unwrap();
-    assert_eq!(path.path(), &vec!["Jet".to_string(), "Plane".to_string(), 
-                               "AirVehicle".to_string(), "Vehicle".to_string()]);
+    assert_eq!(path.path(), &vec!["Jet".to_string()), "Plane".to_string()), 
+                               "AirVehicle".to_string()), "Vehicle".to_string())]);
     
     // Test visualization of interface hierarchies
     let hierarchy = codegen.visualize_interface_hierarchy("Vehicle", 3).unwrap();
@@ -154,14 +156,14 @@ fn setup_test_interfaces(codegen: &mut LlvmCodeGenerator) {
     let mut reader_extensions = HashSet::new();
     reader_extensions.insert("FileReader".to_string());
     reader_extensions.insert("NetworkReader".to_string());
-    test_inheritance_map.insert("Reader".to_string(), reader_extensions);
+    test_inheritance_map.insert("Reader".to_string()), reader_extensions);
     
     // JSONFileReader, XMLFileReader and BinaryFileReader extend FileReader
     let mut filereader_extensions = HashSet::new();
     filereader_extensions.insert("JSONFileReader".to_string());
     filereader_extensions.insert("XMLFileReader".to_string());
     filereader_extensions.insert("BinaryFileReader".to_string());
-    test_inheritance_map.insert("FileReader".to_string(), filereader_extensions);
+    test_inheritance_map.insert("FileReader".to_string()), filereader_extensions);
     
     // Store inheritance map in codegen
     codegen.test_inheritance_map = Some(test_inheritance_map);
@@ -189,33 +191,33 @@ fn setup_vehicle_interfaces(codegen: &mut LlvmCodeGenerator) {
     vehicle_extensions.insert("LandVehicle".to_string());
     vehicle_extensions.insert("WaterVehicle".to_string());
     vehicle_extensions.insert("AirVehicle".to_string());
-    test_inheritance_map.insert("Vehicle".to_string(), vehicle_extensions);
+    test_inheritance_map.insert("Vehicle".to_string()), vehicle_extensions);
     
     // LandVehicle extends to Car
     let mut land_vehicle_extensions = HashSet::new();
     land_vehicle_extensions.insert("Car".to_string());
-    test_inheritance_map.insert("LandVehicle".to_string(), land_vehicle_extensions);
+    test_inheritance_map.insert("LandVehicle".to_string()), land_vehicle_extensions);
     
     // WaterVehicle extends to Boat and Submarine
     let mut water_vehicle_extensions = HashSet::new();
     water_vehicle_extensions.insert("Boat".to_string());
     water_vehicle_extensions.insert("Submarine".to_string());
-    test_inheritance_map.insert("WaterVehicle".to_string(), water_vehicle_extensions);
+    test_inheritance_map.insert("WaterVehicle".to_string()), water_vehicle_extensions);
     
     // AirVehicle extends to Plane
     let mut air_vehicle_extensions = HashSet::new();
     air_vehicle_extensions.insert("Plane".to_string());
-    test_inheritance_map.insert("AirVehicle".to_string(), air_vehicle_extensions);
+    test_inheritance_map.insert("AirVehicle".to_string()), air_vehicle_extensions);
     
     // Car extends to SportsCar
     let mut car_extensions = HashSet::new();
     car_extensions.insert("SportsCar".to_string());
-    test_inheritance_map.insert("Car".to_string(), car_extensions);
+    test_inheritance_map.insert("Car".to_string()), car_extensions);
     
     // Plane extends to Jet
     let mut plane_extensions = HashSet::new();
     plane_extensions.insert("Jet".to_string());
-    test_inheritance_map.insert("Plane".to_string(), plane_extensions);
+    test_inheritance_map.insert("Plane".to_string()), plane_extensions);
     
     // Store inheritance map in codegen
     codegen.test_inheritance_map = Some(test_inheritance_map);

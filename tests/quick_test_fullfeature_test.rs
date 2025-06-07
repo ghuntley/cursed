@@ -3,6 +3,7 @@ use cursed::object::Object;
 use std::sync::Arc;
 use std::cell::RefCell;
 
+
 // Temporarily disabled while API is upgraded
 #[cfg(not(test))]
 mod tests {
@@ -40,9 +41,9 @@ fn test_combined_generators() {
             
             // Create a hash map to represent our user
             let mut map = std::collections::HashMap::new();
-            map.insert("id".to_string(), Object::Integer(id));
-            map.insert("name".to_string(), Object::String(name));
-            map.insert("active".to_string(), Object::Boolean(active));
+            map.insert("id".to_string()), Object::Integer(id));
+            map.insert("name".to_string()), Object::String(name));
+            map.insert("active".to_string()), Object::Boolean(active));
             
             Object::HashTable(map)
         })

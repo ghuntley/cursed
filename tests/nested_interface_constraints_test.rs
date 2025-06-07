@@ -1,16 +1,25 @@
+use std::sync::Once;
+use tracing::{debug, error, info};
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::object::{Object, ObjectRef};
+use cursed::error_enhanced::CursedError;
+use cursed::error_enhanced::ErrorKind;
+use cursed::core::type_checker::Type;
+use cursed::core::nested_interface_registry::{EnhancedInterfaceRegistry, NestedInterfaceRegistry, NestedConstraint};
+
 //! Tests for nested interface constraints in the registration system
 //!
 //! This module tests the enhanced interface registry that supports
 //! nested constraints for generic types.
 
-use std::sync::Once;
 
 // Init tracing once
 static INIT: Once = Once::new();
 
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
-use tracing::{debug, error, info};
 
 // Macro for initializing tracing in tests
 macro_rules! init_tracing {
@@ -22,14 +31,6 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities
-use cursed::core::{JitOptions, InterpretOptions};
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::object::{Object, ObjectRef};
-use cursed::error_enhanced::CursedError;
-use cursed::error_enhanced::ErrorKind;
-use cursed::core::type_checker::Type;
-use cursed::core::nested_interface_registry::{EnhancedInterfaceRegistry, NestedInterfaceRegistry, NestedConstraint};
 
 #[test]
 fn test_enhanced_registry_basic_operations() {
@@ -43,7 +44,7 @@ fn test_enhanced_registry_basic_operations() {
     
     // Check that the enhanced registry respects existing constraints
     let container_type = Type::Struct(
-        "GenericStack".to_string(),
+        "GenericStack".to_string()),
         vec![Box::new(Type::Tea)]
     );
     
@@ -58,24 +59,24 @@ fn test_nested_constraint_registration_and_checking() {
     
     // Register a nested constraint for containers of collections
     let constraint = NestedConstraint {
-        outer_type: "NestedContainer".to_string(),
-        outer_param: "T".to_string(),
-        inner_type: "Collection".to_string(),
-        inner_params: vec!["E".to_string()],
-        interface: "Comparable".to_string(),
+        outer_type: "NestedContainer".to_string()),
+        outer_param: "T".to_string()),
+        inner_type: "Collection".to_string()),
+        inner_params: vec!["E".to_string())],
+        interface: "Comparable".to_string()),
     };
     
     registry.register_nested_constraint(constraint);
     
     // Create test types
     let collection_of_int = Type::Struct(
-        "Collection".to_string(),
+        "Collection".to_string()),
         vec![Box::new(Type::Normie)]
     );
     
     let collection_of_non_comparable = Type::Struct(
-        "Collection".to_string(),
-        vec![Box::new(Type::Struct("NonComparable".to_string(), vec![]))]
+        "Collection".to_string()),
+        vec![Box::new(Type::Struct("NonComparable".to_string()), vec![]))]
     );
     
     // Test the constraint checking
@@ -106,19 +107,19 @@ fn test_multiple_nested_constraints() {
     
     // Register two different nested constraints for the same type
     let constraint1 = NestedConstraint {
-        outer_type: "MultiContainer".to_string(),
-        outer_param: "A".to_string(),
-        inner_type: "ListA".to_string(),
-        inner_params: vec!["EA".to_string()],
-        interface: "Comparable".to_string(),
+        outer_type: "MultiContainer".to_string()),
+        outer_param: "A".to_string()),
+        inner_type: "ListA".to_string()),
+        inner_params: vec!["EA".to_string())],
+        interface: "Comparable".to_string()),
     };
     
     let constraint2 = NestedConstraint {
-        outer_type: "MultiContainer".to_string(),
-        outer_param: "B".to_string(),
-        inner_type: "ListB".to_string(),
-        inner_params: vec!["EB".to_string()],
-        interface: "Numeric".to_string(),
+        outer_type: "MultiContainer".to_string()),
+        outer_param: "B".to_string()),
+        inner_type: "ListB".to_string()),
+        inner_params: vec!["EB".to_string())],
+        interface: "Numeric".to_string()),
     };
     
     registry.register_nested_constraint(constraint1);
@@ -126,12 +127,12 @@ fn test_multiple_nested_constraints() {
     
     // Create test types
     let list_a_int = Type::Struct(
-        "ListA".to_string(),
+        "ListA".to_string()),
         vec![Box::new(Type::Normie)]
     );
     
     let list_b_non_numeric = Type::Struct(
-        "ListB".to_string(),
+        "ListB".to_string()),
         vec![Box::new(Type::Tea)]
     );
     
@@ -225,7 +226,7 @@ fn test_integration_with_code_generation() {
     
     // We expect this to fail with a constraint error for the nested type
     if let Err(err) = result {
-        let error_str = err.to_string();
+        let error_str = err.to_string());
         info!("Got expected error: {}", error_str);
         
         // Verify it's a constraint error

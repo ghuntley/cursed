@@ -1,10 +1,13 @@
-//! Comprehensive test for improved handling of circular references in the garbage collector
-
 use std::sync::{Arc, RwLock, Mutex};
-
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
 use tracing::{debug, error, info, trace, warn};
+use std::time::{Duration, Instant};
+use super::*;
+
+//! Comprehensive test for improved handling of circular references in the garbage collector
+
+
 
 // Set up proper tracing for the test
 mod common {
@@ -18,8 +21,6 @@ mod common {
     }
     
     pub mod timing {
-        use std::time::{Duration, Instant};
-        use tracing::info;
         
         pub struct Timer {
             name: String,
@@ -29,7 +30,7 @@ mod common {
         impl Timer {
             pub fn new(name: &str) -> Self {
                 Self {
-                    name: name.to_string(),
+                    name: name.to_string()),
                     start: Instant::now(),
                 }
             }
@@ -54,7 +55,6 @@ macro_rules! init_tracing {
 
 // Complex nested structure to test circular references
 mod test_objects {
-    use super::*;
     
     // A node in a complex graph structure
     #[derive(Debug, Clone)]
@@ -69,7 +69,7 @@ mod test_objects {
         pub fn new(id: usize, name: &str) -> Self {
             Self {
                 id,
-                name: name.to_string(),
+                name: name.to_string()),
                 edges: Arc::new(RwLock::new(Vec::new())),
                 was_finalized: Arc::new(Mutex::new(false)),
             }
@@ -147,7 +147,7 @@ mod test_objects {
         pub fn new(id: usize, name: &str) -> Self {
             Self {
                 id,
-                name: name.to_string(),
+                name: name.to_string()),
                 parent: Arc::new(RwLock::new(None)),
                 children: Arc::new(RwLock::new(Vec::new())),
                 was_finalized: Arc::new(Mutex::new(false)),

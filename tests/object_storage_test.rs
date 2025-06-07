@@ -1,3 +1,10 @@
+use tracing::{debug, error, info, instrument, trace, warn};
+use cursed::memory::{Traceable, Tag, Visitor, global_object_storage, ObjectStorage, StorageWrapper};
+use cursed::memory::gc::GarbageCollector;
+use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
+use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+
 //! Tests for the object storage system.
 //!
 //! This file tests the functionality of direct storage and access to
@@ -7,17 +14,11 @@
 #[cfg(not(test))]
 mod tests {
 
-use tracing::{debug, error, info, instrument, trace, warn};
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
 
-use cursed::memory::{Traceable, Tag, Visitor, global_object_storage, ObjectStorage, StorageWrapper};
-use cursed::memory::gc::GarbageCollector;
-use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
-use std::sync::{Arc, Mutex};
-use std::cell::RefCell;
 
 // Create a test-specific traceable type with finalization tracking
 struct TestObject {
@@ -104,7 +105,7 @@ fn test_object_storage_basic() {
     let finalized = Arc::new(Mutex::new(false));
     let obj = TestObject {
         id: 1,
-        value: "test".to_string(),
+        value: "test".to_string()),
         finalized: finalized.clone(),
         depends_on: Vec::new(),
     };
@@ -166,7 +167,7 @@ fn test_storage_wrapper() {
     let finalized = Arc::new(Mutex::new(false));
     let obj = TestObject {
         id: 2,
-        value: "wrapper_test".to_string(),
+        value: "wrapper_test".to_string()),
         finalized: finalized.clone(),
         depends_on: Vec::new(),
     };
@@ -241,7 +242,7 @@ fn test_integration_with_gc() {
     let finalized = Arc::new(Mutex::new(false));
     let obj = TestObject {
         id: 3,
-        value: "gc_integration".to_string(),
+        value: "gc_integration".to_string()),
         finalized: finalized.clone(),
         depends_on: Vec::new(),
     };
@@ -293,7 +294,7 @@ fn test_multiple_objects() {
     
     let obj1 = TestObject {
         id: 4,
-        value: "multiple1".to_string(),
+        value: "multiple1".to_string()),
         finalized: finalized1.clone(),
         depends_on: Vec::new(),
     };
@@ -301,7 +302,7 @@ fn test_multiple_objects() {
     
     let obj2 = TestObject {
         id: 5,
-        value: "multiple2".to_string(),
+        value: "multiple2".to_string()),
         finalized: finalized2.clone(),
         depends_on: Vec::new(),
     };

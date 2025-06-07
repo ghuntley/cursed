@@ -1,3 +1,16 @@
+use cursed::ast::expressions::{TypeAssertion, Identifier};
+use cursed::ast::traits::{Expression, Node};
+use cursed::error::Error;
+use cursed::error::type_assertion_error::TypeAssertionError;
+use cursed::codegen::llvm::{LlvmCodeGenerator, InterfaceTypeAssertionResult, ResultPropagation};
+use cursed::error::SourceLocation;
+use cursed::lexer::Token;
+use inkwell::context::Context;
+use inkwell::OptimizationLevel;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::Once;
+
 //! Tests for interface type assertion result type and ? operator integration
 //!
 //! This test file verifies the correct implementation of interface type assertions
@@ -5,21 +18,10 @@
 
 #[cfg(test)]
 mod tests {
-    use cursed::ast::expressions::{TypeAssertion, Identifier};
-    use cursed::ast::traits::{Expression, Node};
-    use cursed::error::Error;
-    use cursed::error::type_assertion_error::TypeAssertionError;
-    use cursed::codegen::llvm::{LlvmCodeGenerator, InterfaceTypeAssertionResult, ResultPropagation};
-    use cursed::error::SourceLocation;
-    use inkwell::context::Context;
-    use inkwell::OptimizationLevel;
-    use std::path::PathBuf;
-    use std::sync::Arc;
     
     // Setup test utilities
     mod common {
         // Import common test utilities
-        use std::sync::Once;
         static INIT: Once = Once::new();
         
         pub fn setup() {
@@ -34,14 +36,14 @@ mod tests {
     // Helper to create a type assertion
     fn create_test_assertion(expr_value: &str, type_name: &str) -> TypeAssertion {
         let expr = Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: expr_value.to_string(),
+            token: "token".to_string()),
+            value: expr_value.to_string()),
         });
         
         TypeAssertion {
-            token: ".".to_string(),
+            token: "token".to_string()),
             expression: expr,
-            type_name: type_name.to_string(),
+            type_name: type_name.to_string()),
         }
     }
     
@@ -148,7 +150,7 @@ mod tests {
                 line: 42,
                 column: 10,
                 file: Some("test.csd".to_string()),
-                source_line: "val, ok = obj.(ConcreteType)".to_string(),
+                source_line: "val, ok = obj.(ConcreteType)".to_string()),
             });
         
         // Create an error result

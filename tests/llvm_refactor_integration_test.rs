@@ -2,8 +2,9 @@ use inkwell::context::Context;
 use inkwell::types::BasicMetadataTypeEnum;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
+
+
 
 #[test]
 fn test_simple_llvm_ir_generation() {
@@ -65,7 +66,7 @@ fn test_simple_llvm_ir_generation() {
     );
 
     // Test the IR output
-    let ir = module.print_to_string().to_string();
+    let ir = module.print_to_string().to_string());
     assert!(
         ir.contains("define i32 @main()"),
         "IR should contain main function definition"

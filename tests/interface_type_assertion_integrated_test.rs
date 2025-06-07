@@ -8,6 +8,7 @@ use cursed::error::Error;
 use cursed::object::Object as CursedObject;
 use cursed::object::ObjectRef;
 
+
 #[path = "common.rs"]
 pub mod common;
 

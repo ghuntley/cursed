@@ -1,9 +1,10 @@
-//! Tests for parsing struct declarations with type inference
-
 use cursed::ast::statements::fields::FieldStatement;
 use cursed::lexer::Lexer;
 use cursed::parser::parser::Parser;
 use cursed::parser::struct_field_inference::StructFieldTypeInference;
+
+//! Tests for parsing struct declarations with type inference
+
 
 #[test]
 fn test_parse_struct_with_inferred_fields() {

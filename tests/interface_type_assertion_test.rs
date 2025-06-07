@@ -1,4 +1,9 @@
 use std::sync::Once;
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::object::{Object, ObjectRef};
+
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -16,10 +21,6 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities
-use cursed::core::{JitOptions, InterpretOptions};
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::object::{Object, ObjectRef};
 
 // Helper function to run JIT tests on Cursed code
 fn run_jit_test(input: &str) -> Result<ObjectRef, String> {
@@ -87,7 +88,7 @@ fn test_interface_type_assertion_basic() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Alice".to_string()));
+            assert_eq!(result.as_string(), Some("Alice".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -151,7 +152,7 @@ fn test_interface_type_assertion_failed() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Assertion failed as expected".to_string()));
+            assert_eq!(result.as_string(), Some("Assertion failed as expected".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -220,7 +221,7 @@ fn test_interface_type_assertion_multiple() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Both assertions succeeded".to_string()));
+            assert_eq!(result.as_string(), Some("Both assertions succeeded".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -294,7 +295,7 @@ fn test_interface_type_assertion_error_handling() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("String: hello | 50".to_string()));
+            assert_eq!(result.as_string(), Some("String: hello | 50".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }

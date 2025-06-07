@@ -1,5 +1,3 @@
-//! Test for improved field accessors integration with the monomorphization system
-
 use cursed::prelude::*;
 use cursed::ast::declarations::*;
 use cursed::ast::statements::*;
@@ -16,6 +14,9 @@ use cursed::codegen::llvm::interface_field_accessors::InterfaceFieldAccessors;
 use cursed::memory::gc::GarbageCollector;
 use std::path::PathBuf;
 use tracing::*;
+
+//! Test for improved field accessors integration with the monomorphization system
+
 
 #[path = "common.rs"]
 mod common;
@@ -111,11 +112,11 @@ fn test_field_accessor_error_propagation() {
     
     // Create a struct definition with an invalid field type
     let squad_stmt = SquadStatement {
-        name: Identifier { value: "InvalidStruct".to_string(), span: Span::default() },
+        name: Identifier { value: "InvalidStruct".to_string()), span: Span::default() },
         fields: vec![
             Field {
-                name: Identifier { value: "invalid_field".to_string(), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "NonExistentType".to_string(), span: Span::default() }),
+                name: Identifier { value: "invalid_field".to_string()), span: Span::default() },
+                type_name: TypeName::Named(Identifier { value: "NonExistentType".to_string()), span: Span::default() }),
                 span: Span::default(),
             }
         ],

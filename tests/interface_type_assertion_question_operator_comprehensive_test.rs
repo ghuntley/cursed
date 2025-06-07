@@ -1,13 +1,7 @@
-//! # Interface Type Assertion Question Operator Comprehensive Test
-//!
-//! This test verifies the end-to-end functionality of interface type assertions
-//! with the ? operator for automatic error propagation.
-
 use std::sync::Arc;
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::Read;
-
 use cursed::codegen::jit::JitCompiler;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::parser::Parser;
@@ -15,13 +9,20 @@ use cursed::lexer::Lexer;
 use cursed::error::Error;
 use tracing::{debug, info, warn, instrument};
 use inkwell::context::Context;
+use common::tracing::setup as init_tracing;
+use common::timing::Timer;
+
+//! # Interface Type Assertion Question Operator Comprehensive Test
+//!
+//! This test verifies the end-to-end functionality of interface type assertions
+//! with the ? operator for automatic error propagation.
+
+
 
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
 
-use common::tracing::setup as init_tracing;
-use common::timing::Timer;
 
 /// Test the full end-to-end compilation and execution of the interface type 
 /// assertion example with ? operator

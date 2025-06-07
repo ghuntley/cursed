@@ -1,6 +1,7 @@
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 
+
 #[test]
 #[ignore = "Parser tests need further work"]
 fn test_generics_parsing() {

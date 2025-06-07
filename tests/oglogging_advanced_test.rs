@@ -1,7 +1,8 @@
-//! Integration tests for advanced oglogging features
-
 use cursed::object::Object;
 use cursed::stdlib::oglogging;
+
+//! Integration tests for advanced oglogging features
+
 
 #[test]
 fn test_advanced_formatting() {

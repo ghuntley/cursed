@@ -1,10 +1,11 @@
-//! Test for improved circular reference detection in garbage collector
-
 use std::sync::Arc;
-
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
 use tracing::{debug, error, info, instrument, trace, warn};
+
+//! Test for improved circular reference detection in garbage collector
+
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]

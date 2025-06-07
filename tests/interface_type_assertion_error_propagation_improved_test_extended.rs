@@ -1,10 +1,5 @@
-//! Extended integration tests for the improved error propagation in interface type assertions
-//! with actual interface hierarchies and type assertion scenarios
-
-use std::sync::Arc;
 use std::sync::Arc;
 use std::cell::RefCell;
-
 use cursed::ast::expressions::TypeAssertion;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::traits::{Expression, Node};
@@ -21,13 +16,18 @@ use cursed::codegen::llvm::interface_type_assertion_path_visualization::Interfac
 use cursed::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
+use inkwell::context::Context;
+use tracing::{debug, info, warn};
+
+//! Extended integration tests for the improved error propagation in interface type assertions
+//! with actual interface hierarchies and type assertion scenarios
+
+
 
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
 
-use inkwell::context::Context;
-use tracing::{debug, info, warn};
 
 /// Helper function to create a simple JIT compiler for testing
 fn create_test_compiler<'ctx>(context: &'ctx Context) -> LlvmCodeGenerator<'ctx> {
@@ -71,42 +71,42 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
     
     // Create a type assertion AST node for Dog as Animal (should succeed)
     let valid_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
         expression: Box::new(Identifier {
-            token: Token::new(TokenType::Ident, "pet".to_string(), 1, 1),
-            value: "pet".to_string(),
+            token: "token".to_string()), 1, 1),
+            value: "pet".to_string()),
         }),
-        type_name: "Animal".to_string(),
+        type_name: "Animal".to_string()),
     };
     
     // Create a type assertion AST node for Dog as Countable (should fail)
     let invalid_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
         expression: Box::new(Identifier {
-            token: Token::new(TokenType::Ident, "pet".to_string(), 1, 1),
-            value: "pet".to_string(),
+            token: "token".to_string()), 1, 1),
+            value: "pet".to_string()),
         }),
-        type_name: "Countable".to_string(),
+        type_name: "Countable".to_string()),
     };
     
     // Create a type assertion AST node for Dog as Bird (should fail but with informative error)
     let cross_hierarchy_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
         expression: Box::new(Identifier {
-            token: Token::new(TokenType::Ident, "pet".to_string(), 1, 1),
-            value: "pet".to_string(),
+            token: "token".to_string()), 1, 1),
+            value: "pet".to_string()),
         }),
-        type_name: "Bird".to_string(),
+        type_name: "Bird".to_string()),
     };
     
     // Create a type assertion AST node for Mammal as Dog (reversed, should fail)
     let reversed_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
+        token: Token::new(TokenType::Assert, ".".to_string()), 1, 1),
         expression: Box::new(Identifier {
-            token: Token::new(TokenType::Ident, "pet".to_string(), 1, 1),
-            value: "pet".to_string(),
+            token: "token".to_string()), 1, 1),
+            value: "pet".to_string()),
         }),
-        type_name: "Dog".to_string(),
+        type_name: "Dog".to_string()),
     };
     
     // Test error message for invalid type assertion
@@ -236,7 +236,7 @@ fn test_detailed_error_context_in_propagation() {
         "C",
         "D",
         "test.csd:20:15",
-        Some("Expected D but got C at runtime".to_string())
+        Some("Expected D but got C at runtime".to_string()
     ).expect("Failed to generate error");
     
     // Check that additional context is included

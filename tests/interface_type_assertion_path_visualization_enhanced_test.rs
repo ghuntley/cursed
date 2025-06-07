@@ -1,20 +1,21 @@
+use std::sync::Arc;
+use std::collections::{HashMap, HashSet};
+use std::error::Error as StdError;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::*;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::error::Error;
+use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::common;
+
 //! # Tests for Enhanced Interface Type Assertion Path Visualization
 //!
 //! This module tests the enhanced interface type assertion path visualization system
 //! with improved error handling and consistent error propagation through the `?` operator.
 
-use std::sync::Arc;
-use std::collections::{HashMap, HashSet};
-use std::error::Error as StdError;
 
 // Import the modules we need to test
-use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::*;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::error::Error;
-use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 
 // Import the common test utilities
-use crate::common;
 
 #[path = "common.rs"]
 mod common;
@@ -252,7 +253,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
     ) -> Result<Vec<String>, Error> {
         // Simple BFS implementation for finding paths
         if source_interface == target_interface {
-            return Ok(vec![source_interface.to_string()]);
+            return Ok(vec![source_interface.to_string())]);
         }
         
         let mut visited = HashSet::new();
@@ -262,7 +263,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
         // Start BFS from source_interface
         queue.push_back(source_interface.to_string());
         visited.insert(source_interface.to_string());
-        path_map.insert(source_interface.to_string(), (None, vec![source_interface.to_string()]));
+        path_map.insert(source_interface.to_string()), (None, vec![source_interface.to_string())]));
         
         // Perform BFS to find the shortest path
         while let Some(current) = queue.pop_front() {
@@ -469,11 +470,11 @@ fn test_generate_path_error_message_enhanced() {
 fn test_extract_source_type_from_error() {
     // Test the enhanced extractor with standard format
     let error = "Type assertion error at test.csd:123: Value of type 'Foo' cannot be asserted as type 'Bar'";
-    assert_eq!(extract_source_type_from_error(error), Some("Foo".to_string()));
+    assert_eq!(extract_source_type_from_error(error), Some("Foo".to_string());
     
     // Test with alternative format
     let error = "Cannot convert from 'Foo' to 'Bar' at test.csd:123";
-    assert_eq!(extract_source_type_from_error(error), Some("Foo".to_string()));
+    assert_eq!(extract_source_type_from_error(error), Some("Foo".to_string());
     
     // Test with malformed error
     let error = "Type assertion error: value cannot be asserted";
@@ -484,11 +485,11 @@ fn test_extract_source_type_from_error() {
 fn test_extract_target_type_from_error() {
     // Test the enhanced extractor with standard format
     let error = "Type assertion error at test.csd:123: Value of type 'Foo' cannot be asserted as type 'Bar'";
-    assert_eq!(extract_target_type_from_error(error), Some("Bar".to_string()));
+    assert_eq!(extract_target_type_from_error(error), Some("Bar".to_string());
     
     // Test with alternative format
     let error = "Cannot convert from 'Foo' to 'Bar' at test.csd:123";
-    assert_eq!(extract_target_type_from_error(error), Some("Bar".to_string()));
+    assert_eq!(extract_target_type_from_error(error), Some("Bar".to_string());
     
     // Test with malformed error
     let error = "Type assertion error: value cannot be asserted";

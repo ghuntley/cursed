@@ -1,3 +1,14 @@
+use std::sync::Arc;
+use std::path::Path;
+use std::fs::File;
+use std::io::Read;
+use cursed::codegen::llvm::jit::JitCompiler;
+use cursed::parser::Parser;
+use cursed::error::Error;
+use tracing::{debug, info, warn, instrument};
+use common::tracing::setup as init_tracing;
+use common::timing::Timer;
+
 //! # Complex Interface Type Assertion Error Chaining Test
 //!
 //! This test verifies the robustness of interface type assertions with the ? operator
@@ -7,22 +18,12 @@
 //! - Error recovery and handling at different levels
 //! - Type hierarchy navigation during assertions
 
-use std::sync::Arc;
-use std::path::Path;
-use std::fs::File;
-use std::io::Read;
 
-use cursed::codegen::llvm::jit::JitCompiler;
-use cursed::parser::Parser;
-use cursed::error::Error;
-use tracing::{debug, info, warn, instrument};
 
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
 
-use common::tracing::setup as init_tracing;
-use common::timing::Timer;
 
 /// Test complex error chaining scenarios with interface type assertions and ? operator
 #[test]

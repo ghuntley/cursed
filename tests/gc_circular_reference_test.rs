@@ -1,12 +1,13 @@
-//! Test for circular reference handling in the garbage collector
-
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::{Arc, Mutex};
-
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, ThreadSafeTraceable};
 use tracing::{debug, error, info, instrument, trace, warn};
+
+//! Test for circular reference handling in the garbage collector
+
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]

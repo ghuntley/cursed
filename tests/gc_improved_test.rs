@@ -1,11 +1,12 @@
-//! Improved test for circular reference handling in the garbage collector
-
 use std::sync::{Arc, RwLock, Mutex};
-
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
+
+//! Improved test for circular reference handling in the garbage collector
+
+
 
 mod tracing_setup {
     pub fn setup() {

@@ -1,5 +1,3 @@
-//! Full tests for interface dynamic dispatch in LLVM code generation
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use inkwell::context::Context;
@@ -9,6 +7,9 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::InterfaceImplementation;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::error::Error;
+
+//! Full tests for interface dynamic dispatch in LLVM code generation
+
 
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
@@ -30,7 +31,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     // 1. Register Reader interface with a read method that takes a buffer and returns bytes read
     type_checker.register_interface(
         "Reader",
-        vec![("read".to_string(), 
+        vec![("read".to_string()), 
              vec![Type::Pointer(Box::new(Type::Tea)),  // buffer
                  Type::Normie],                       // offset
              Some(Type::Normie))],                    // returns bytes read
@@ -40,7 +41,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     // Register interface with code generator
     codegen.register_interface(
         "Reader",
-        vec![("read".to_string(), 
+        vec![("read".to_string()), 
               vec![Type::Pointer(Box::new(Type::Tea)),
                   Type::Normie],
               Some(Type::Normie))],
@@ -49,8 +50,8 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // 2. Register FileReader struct
     let file_reader_fields = HashMap::from([
-        ("path".to_string(), Type::Tea),
-        ("position".to_string(), Type::Normie),
+        ("path".to_string()), Type::Tea),
+        ("position".to_string()), Type::Normie),
     ]);
     
     type_checker.register_struct("FileReader", file_reader_fields, Vec::new());
@@ -64,8 +65,8 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     )?;
     
     // 4. Verify FileReader implements Reader
-    let file_reader_type = Type::Struct("FileReader".to_string(), Vec::new());
-    let reader_interface_type = Type::Interface("Reader".to_string(), Vec::new());
+    let file_reader_type = Type::Struct("FileReader".to_string()), Vec::new());
+    let reader_interface_type = Type::Interface("Reader".to_string()), Vec::new());
     
     let implements = type_checker.check_interface_implementation(
         &file_reader_type,
@@ -110,7 +111,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // 7. Register FileReader as implementing Reader
     let mut reader_methods = HashMap::new();
-    reader_methods.insert("read".to_string(), read_function);
+    reader_methods.insert("read".to_string()), read_function);
     
     codegen.register_interface_implementation(
         "FileReader",
@@ -215,7 +216,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
     }
     
     Ok(())
@@ -238,20 +239,20 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     // 1. Register Stringer interface
     type_checker.register_interface(
         "Stringer",
-        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
         Vec::new()
     );
     
     codegen.register_interface(
         "Stringer",
-        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
         Vec::new()
     )?;
     
     // 2. Register Person struct
     let person_fields = HashMap::from([
-        ("name".to_string(), Type::Tea),
-        ("age".to_string(), Type::Normie),
+        ("name".to_string()), Type::Tea),
+        ("age".to_string()), Type::Normie),
     ]);
     
     type_checker.register_struct("Person", person_fields, Vec::new());
@@ -318,7 +319,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // 6. Register Person as implementing Stringer
     let mut stringer_methods = HashMap::new();
-    stringer_methods.insert("to_string".to_string(), to_string_function);
+    stringer_methods.insert("to_string".to_string()), to_string_function);
     
     codegen.register_interface_implementation(
         "Person",
@@ -376,7 +377,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     codegen.builder().build_store(age_ptr, age).unwrap();
     
     // Convert Person to Stringer interface
-    let person_type = Type::Struct("Person".to_string(), Vec::new());
+    let person_type = Type::Struct("Person".to_string()), Vec::new());
     let stringer_interface = codegen.create_interface_value(
         person_ptr,
         &person_type,
@@ -437,7 +438,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
     }
     
     Ok(())

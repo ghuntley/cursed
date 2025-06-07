@@ -1,11 +1,13 @@
-//! Unit tests for map literal type inference in the type checker
-
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::ast::expressions::collections::HashLiteral;
 use cursed::ast::expressions::{StringLiteral, IntegerLiteral};
 use cursed::ast::Expression;
 use cursed::ast::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
+
+//! Unit tests for map literal type inference in the type checker
+
 
 #[test]
 fn test_map_type_inference_unit() {
@@ -18,25 +20,25 @@ fn test_map_type_inference_unit() {
     
     // Create "name" key
     let name_key = StringLiteral {
-        token: Token::new(TokenType::String, "\"name\"".to_string()),
-        value: "name".to_string(),
+        token: "token".to_string()),
+        value: "name".to_string()),
     };
     
     // Create 1 value
     let name_value = IntegerLiteral {
-        token: Token::new(TokenType::Int, "1".to_string()),
+        token: "token".to_string()),
         value: 1,
     };
     
     // Create "age" key
     let age_key = StringLiteral {
-        token: Token::new(TokenType::String, "\"age\"".to_string()),
-        value: "age".to_string(),
+        token: "token".to_string()),
+        value: "age".to_string()),
     };
     
     // Create 30 value
     let age_value = IntegerLiteral {
-        token: Token::new(TokenType::Int, "30".to_string()),
+        token: "token".to_string()),
         value: 30,
     };
     

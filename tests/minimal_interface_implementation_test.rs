@@ -1,9 +1,10 @@
-//! Test for a very basic interface-like implementation with structs
-
 use inkwell::context::Context;
 use std::path::PathBuf;
 use inkwell::values::AnyValue;
 use inkwell::AddressSpace;
+
+//! Test for a very basic interface-like implementation with structs
+
 
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;

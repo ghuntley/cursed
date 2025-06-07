@@ -1,5 +1,3 @@
-//! Tests for enhanced generic function monomorphization
-
 use cursed::ast::declarations::FunctionStatement;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::block::BlockStatement;
@@ -8,8 +6,12 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{FunctionMonomorphization, EnhancedMonomorphization};
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::type_checker::Type;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for enhanced generic function monomorphization
+
 
 /// Helper function to create a generic function AST
 fn create_generic_function(
@@ -22,8 +24,8 @@ fn create_generic_function(
     let type_parameters: Vec<Identifier> = type_params
         .iter()
         .map(|param| Identifier {
-            token: "IDENT".to_string(),
-            value: param.to_string(),
+            token: "token".to_string()),
+            value: param.to_string()),
         })
         .collect();
 
@@ -34,14 +36,14 @@ fn create_generic_function(
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
             cursed::ast::ParameterStatement {
-                token: "IDENT".to_string(),
+                token: Token::Identifier("IDENT".to_string()),
                 name: Identifier {
-                    token: "IDENT".to_string(),
+                    token: "token".to_string()),
                     value: param_name,
                 },
                 type_name: Box::new(Identifier {
-                    token: "IDENT".to_string(),
-                    value: param_type.to_string(),
+                    token: "token".to_string()),
+                    value: param_type.to_string()),
                 }),
             }
         })
@@ -49,22 +51,22 @@ fn create_generic_function(
 
     // Create return type expression
     let return_type_expr = Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: return_type.to_string(),
+        token: "token".to_string()),
+        value: return_type.to_string()),
     }) as Box<dyn Expression>;
 
     // Create function body (empty for this test)
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: Vec::new(),
     };
 
     // Create the function statement
     FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: name.to_string(),
+            token: "token".to_string()),
+            value: name.to_string()),
         },
         parameters,
         body,
@@ -131,13 +133,13 @@ fn test_multiple_type_parameter_specialization() {
         vec!["T", "U"],          // Type parameters
         vec![                   // Parameter types
             Type::TypeParam("T".to_string()),
-            Type::TypeParam("U".to_string())
+            Type::TypeParam("U".to_string()
         ],
         Type::Struct(           // Return type is a Pair<T, U>
-            "Pair".to_string(),
+            "Pair".to_string()),
             vec![
                 Box::new(Type::TypeParam("T".to_string())),
-                Box::new(Type::TypeParam("U".to_string()))
+                Box::new(Type::TypeParam("U".to_string())
             ]
         ),
     );

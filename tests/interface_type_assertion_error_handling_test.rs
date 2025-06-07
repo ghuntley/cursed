@@ -1,19 +1,21 @@
+use std::collections::HashSet;
+use inkwell::context::Context;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::interface_type_assertion_error_handling::*;
+use cursed::error::Error;
+use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::expressions::Identifier;
+use cursed::ast::traits::{Expression, Node};
+use cursed::lexer::Token;
+use common::test_utils::create_test_code_generator;
+use common::tracing::setup as setup_tracing;
+
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-    use inkwell::context::Context;
     
-    use cursed::codegen::llvm::LlvmCodeGenerator;
-    use cursed::codegen::llvm::interface_type_assertion_error_handling::*;
-    use cursed::error::Error;
-    use cursed::ast::expressions::TypeAssertion;
-    use cursed::ast::expressions::Identifier;
-    use cursed::ast::traits::{Expression, Node};
     
     // Import common test utilities
     mod common;
-    use common::test_utils::create_test_code_generator;
-    use common::tracing::setup as setup_tracing;
     
     #[test]
     fn test_enhanced_error_handling_creation() {
@@ -51,7 +53,7 @@ mod tests {
         assert!(error.message.contains("Additional error info"));
         
         // Verify error conversion to string works
-        let error_str = error.to_string();
+        let error_str = error.to_string());
         assert!(error_str.contains("Cat is not a Dog"));
     }
     
@@ -155,14 +157,14 @@ mod tests {
         
         // Create a simple type assertion expression
         let obj_expr = Box::new(Identifier {
-            token: "Article".to_string(),
-            value: "article".to_string(),
+            token: "token".to_string()),
+            value: "article".to_string()),
         }) as Box<dyn Expression>;
         
         let type_assertion = TypeAssertion {
-            token: "test.csd:42".to_string(),
+            token: "token".to_string()),
             expression: obj_expr,
-            type_name: "Book".to_string(),
+            type_name: "Book".to_string()),
         };
         
         // Try compiling the type assertion - it should fail but with enhanced error

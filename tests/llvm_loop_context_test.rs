@@ -1,9 +1,10 @@
 use cursed::codegen::llvm::LlvmCodeGenerator;
-// use cursed::codegen::llvm::control_flow::ControlFlowCompilation; // Module is private
 use cursed::codegen::llvm::LoopContext;
 use cursed::error::Error;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+// use cursed::codegen::llvm::control_flow::ControlFlowCompilation; // Module is private
 
 #[test]
 #[ignore = "Needs trait impl for control_flow"]
@@ -45,7 +46,7 @@ fn test_loop_context_management() {
     
     // Push the loop context with separate blocks
     let loop_context = LoopContext {
-        name: "test_loop".to_string(),
+        name: "test_loop".to_string()),
         break_block: block2,
         continue_block: block1,
     };

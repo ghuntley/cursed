@@ -1,8 +1,9 @@
-//! Tests for the enhanced generic parameter substitution
-
 use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::core::type_checker::Type;
 use std::collections::HashMap;
+
+//! Tests for the enhanced generic parameter substitution
+
 
 #[test]
 fn test_simple_parameter_substitution() {
@@ -11,8 +12,8 @@ fn test_simple_parameter_substitution() {
     
     // Define a simple generic type: Vec<T>
     let vec_type = Type::Struct(
-        "Vec".to_string(),
-        vec![Box::new(Type::TypeParam("T".to_string()))]
+        "Vec".to_string()),
+        vec![Box::new(Type::TypeParam("T".to_string())]
     );
     
     // Add type mapping
@@ -40,17 +41,17 @@ fn test_nested_type_parameter_substitution() {
     
     // Define a nested generic type: Result<T, E>
     let result_type = Type::Struct(
-        "Result".to_string(),
+        "Result".to_string()),
         vec![
             Box::new(Type::TypeParam("T".to_string())),
-            Box::new(Type::TypeParam("E".to_string()))
+            Box::new(Type::TypeParam("E".to_string())
         ]
     );
     
     // Add type mappings
     instantiator.add_type_param("T", Type::Tea);
     instantiator.add_type_param("E", Type::Struct(
-        "Error".to_string(),
+        "Error".to_string()),
         vec![Box::new(Type::Tea)]
     ));
     
@@ -87,13 +88,13 @@ fn test_recursive_generic_type() {
     
     // Define a recursive generic type: TreeNode<T>
     let tree_node_type = Type::Struct(
-        "TreeNode".to_string(),
-        vec![Box::new(Type::TypeParam("T".to_string()))]
+        "TreeNode".to_string()),
+        vec![Box::new(Type::TypeParam("T".to_string())]
     );
     
     // Create a type that refers to itself: TreeNode<TreeNode<Normie>>
     let recursive_type = Type::Struct(
-        "TreeNode".to_string(),
+        "TreeNode".to_string()),
         vec![Box::new(tree_node_type.clone())]
     );
     
@@ -135,15 +136,15 @@ fn test_complex_nested_generics() {
     // Define Map<K, V>
     let map_type = Type::Map(
         Box::new(Type::TypeParam("K".to_string())),
-        Box::new(Type::TypeParam("V".to_string()))
+        Box::new(Type::TypeParam("V".to_string())
     );
     
     // Define a complex nested type: Map<K, List<V>>
     let nested_map_type = Type::Map(
         Box::new(Type::TypeParam("K".to_string())),
         Box::new(Type::Struct(
-            "List".to_string(),
-            vec![Box::new(Type::TypeParam("V".to_string()))]
+            "List".to_string()),
+            vec![Box::new(Type::TypeParam("V".to_string())]
         ))
     );
     

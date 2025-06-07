@@ -6,6 +6,7 @@ use cursed::codegen::jit::JitCompiler;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
+
 // Test for JIT integration with improved print support
 #[test]
 fn test_jit_print_support() -> Result<(), Error> {

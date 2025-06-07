@@ -1,17 +1,18 @@
-//! Test for proper function specialization implementation
-
 use cursed::ast::declarations::FunctionStatement;
 use cursed::ast::expressions::{CallExpression, Identifier, IntegerLiteral, StringLiteral};
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::ReturnStatement;
-use cursed::ast::declarations::FunctionStatement;
 use cursed::ast::declarations::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::FunctionMonomorphization;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::type_checker::Type;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Test for proper function specialization implementation
+
 
 /// Test the specialization of a simple identity function with different types
 #[test]
@@ -27,15 +28,15 @@ fn test_identity_function_specialization() {
     // Create generic function calls with different type parameters
     let int_call = create_generic_call(&identity_function.name.value, vec![Type::Normie], vec![Box::new(
         IntegerLiteral {
-            token: "42".to_string(),
+            token: "token".to_string()),
             value: 42,
         }
     )]);
     
     let string_call = create_generic_call(&identity_function.name.value, vec![Type::Tea], vec![Box::new(
         StringLiteral {
-            token: "\"hello\"".to_string(),
-            value: "hello".to_string(),
+            token: "token".to_string()),
+            value: "hello".to_string()),
         }
     )]);
     
@@ -69,49 +70,49 @@ fn test_identity_function_specialization() {
 fn create_generic_identity_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "T".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }];
     
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: "param".to_string(),
+        token: Token::Identifier("param".to_string()),
         name: Identifier {
-            token: "x".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         },
         type_name: Box::new(Identifier {
-            token: "T".to_string(),
-            value: "T".to_string(),
+            token: "token".to_string()),
+            value: "T".to_string()),
         }),
     }];
     
     // Create return type T
     let return_type = Some(Box::new(Identifier {
-        token: "T".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }));
     
     // Create body: { return x; }
     let return_statement = ReturnStatement {
-        token: "return".to_string(),
+        token: "token".to_string()),
         return_value: Some(Box::new(Identifier {
-            token: "x".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         })),
     };
     
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![Box::new(return_statement)],
     };
     
     // Create the function statement
     FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "identity".to_string(),
-            value: "identity".to_string(),
+            token: "token".to_string()),
+            value: "identity".to_string()),
         },
         params: parameters,
         body,
@@ -128,10 +129,10 @@ fn create_generic_call(
     args: Vec<Box<dyn cursed::ast::Expression>>,
 ) -> CallExpression {
     CallExpression {
-        token: "(".to_string(),
+        token: "token".to_string()),
         function: Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: function_name.to_string(),
+            token: "token".to_string()),
+            value: function_name.to_string()),
         }),
         args,
         type_args,

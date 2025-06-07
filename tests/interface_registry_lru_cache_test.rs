@@ -1,8 +1,3 @@
-//! Test for the interface registry LRU cache implementation
-//!
-//! These tests validate the functionality of the LRU (Least Recently Used) caching
-//! mechanism for interface implementation checks.
-
 use cursed::core::interface_registry::InterfaceRegistry;
 use cursed::core::interface_registry_lru_cache::{LruInterfaceCache, ThreadSafeLruCache};
 use cursed::core::type_checker::Type;
@@ -10,6 +5,12 @@ use cursed::error::Error;
 use std::thread;
 use std::sync::Arc;
 use std::time::Instant;
+
+//! Test for the interface registry LRU cache implementation
+//!
+//! These tests validate the functionality of the LRU (Least Recently Used) caching
+//! mechanism for interface implementation checks.
+
 
 mod common;
 
@@ -74,22 +75,22 @@ fn test_lru_cache_generic_types() {
     
     // Create some generic type instances
     let stack_string = Type::Struct(
-        "Stack".to_string(),
+        "Stack".to_string()),
         vec![Box::new(Type::Tea)]
     );
     
     let stack_int = Type::Struct(
-        "Stack".to_string(),
+        "Stack".to_string()),
         vec![Box::new(Type::Normie)]
     );
     
     let list_string = Type::Struct(
-        "List".to_string(),
+        "List".to_string()),
         vec![Box::new(Type::Tea)]
     );
     
     let map_string_int = Type::Struct(
-        "Map".to_string(),
+        "Map".to_string()),
         vec![Box::new(Type::Tea), Box::new(Type::Normie)]
     );
     
@@ -169,7 +170,7 @@ fn test_lru_eviction_policy() {
     cache.lookup(&types[5], "Comparable");
     
     // Add one more entry, which should evict the entry at index 6 (least recently used)
-    let new_type = Type::Struct("NewStruct".to_string(), vec![]);
+    let new_type = Type::Struct("NewStruct".to_string()), vec![]);
     cache.store(&new_type, "Comparable", true);
     
     // Check that index 6 was evicted

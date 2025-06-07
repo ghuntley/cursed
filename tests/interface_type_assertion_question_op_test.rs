@@ -1,13 +1,14 @@
-//! Integration test for interface type assertions with the ? operator
-
 use std::process::Command;
 use std::io::{self, Write};
 use std::path::Path;
+use super::*;
+use std::fs;
+
+//! Integration test for interface type assertions with the ? operator
+
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::fs;
     
     #[test]
     #[ignore] // Run with --ignored flag to execute this test

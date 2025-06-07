@@ -1,11 +1,12 @@
+use cursed::ast::expressions::DotExpression;
+use cursed::ast::traits::Expression;
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::Node;
+use cursed::ast::StatementExtensions;
+
 #[cfg(test)]
 mod tests {
-    use cursed::ast::expressions::DotExpression;
-    use cursed::ast::traits::Expression;
-    use cursed::lexer::Lexer;
-    use cursed::parser::Parser;
-    use cursed::Node;
-    use cursed::ast::StatementExtensions;
 
     #[test]
     fn test_dot_expression_parsing() {

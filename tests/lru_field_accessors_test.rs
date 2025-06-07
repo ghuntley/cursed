@@ -1,5 +1,3 @@
-//! Test for LRU cached field accessors implementation
-
 use cursed::prelude::*;
 use cursed::ast::declarations::*;
 use cursed::ast::statements::*;
@@ -15,6 +13,9 @@ use cursed::codegen::llvm::lru_field_accessors::*;
 use cursed::memory::gc::GarbageCollector;
 use std::path::PathBuf;
 use tracing::*;
+
+//! Test for LRU cached field accessors implementation
+
 
 #[path = "common.rs"]
 mod common;
@@ -185,16 +186,16 @@ fn test_multi_instance_cache_coherence() {
     
     // Create a simple struct for testing
     let struct_stmt = SquadStatement {
-        name: Identifier { value: "TestStruct".to_string(), span: Span::default() },
+        name: Identifier { value: "TestStruct".to_string()), span: Span::default() },
         fields: vec![
             Field {
-                name: Identifier { value: "field1".to_string(), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "normie".to_string(), span: Span::default() }),
+                name: Identifier { value: "field1".to_string()), span: Span::default() },
+                type_name: TypeName::Named(Identifier { value: "normie".to_string()), span: Span::default() }),
                 span: Span::default(),
             },
             Field {
-                name: Identifier { value: "field2".to_string(), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "tea".to_string(), span: Span::default() }),
+                name: Identifier { value: "field2".to_string()), span: Span::default() },
+                type_name: TypeName::Named(Identifier { value: "tea".to_string()), span: Span::default() }),
                 span: Span::default(),
             }
         ],

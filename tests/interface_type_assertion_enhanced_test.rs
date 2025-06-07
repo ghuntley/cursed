@@ -1,34 +1,35 @@
+use inkwell::context::Context;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use crate::ast::traits::{Expression, Node};
+use crate::error::Error;
+use crate::error::SourceLocation;
+use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+use crate::codegen::llvm::interface_type_assertion_error_propagation_enhanced::EnhancedInterfaceTypeAssertionErrorPropagation;
+use crate::codegen::llvm::interface_type_assertion_enhanced_integration::EnhancedTypeAssertionIntegration;
+use tracing::{debug, error, info};
+
 #[cfg(test)]
 mod tests {
-    use inkwell::context::Context;
-    use crate::codegen::llvm::LlvmCodeGenerator;
-    use crate::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
-    use crate::ast::traits::{Expression, Node};
-    use crate::error::Error;
-    use crate::error::SourceLocation;
-    use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
-    use crate::codegen::llvm::interface_type_assertion_error_propagation_enhanced::EnhancedInterfaceTypeAssertionErrorPropagation;
-    use crate::codegen::llvm::interface_type_assertion_enhanced_integration::EnhancedTypeAssertionIntegration;
     
     #[path = "tracing_setup.rs"]
     pub mod tracing_setup;
-    use tracing::{debug, error, info};
     
     // Helper function to create a simple type assertion
     fn create_test_type_assertion() -> Box<TypeAssertion> {
         Box::new(TypeAssertion {
-            token: "test.go:42:10".to_string(),
+            token: "token".to_string()),
             expression: Box::new(MockExpr { name: "testExpr".to_string() }),
-            type_name: "TestType".to_string(),
+            type_name: "TestType".to_string()),
         })
     }
     
     // Helper function to create a question operator type assertion
     fn create_test_type_assertion_question() -> Box<TypeAssertionQuestion> {
         Box::new(TypeAssertionQuestion {
-            token: "test.go:45:15".to_string(),
+            token: "token".to_string()),
             expression: Box::new(MockExpr { name: "testExpr".to_string() }),
-            type_name: "TestType".to_string(),
+            type_name: "TestType".to_string()),
         })
     }
     
@@ -82,7 +83,7 @@ mod tests {
             line: 42,
             column: 10,
             file: Some("test.go".to_string()),
-            source_line: "testExpr.(TestType)".to_string(),
+            source_line: "testExpr.(TestType)".to_string()),
         };
         
         // Set the source location
@@ -120,12 +121,12 @@ mod tests {
         // Verify the inheritance paths
         let rectangle_path = llvm_gen.current_inheritance_path("Rectangle").unwrap();
         assert_eq!(rectangle_path.len(), 2);
-        assert!(rectangle_path.contains(&"Shape".to_string()));
-        assert!(rectangle_path.contains(&"Drawable".to_string()));
+        assert!(rectangle_path.contains(&"Shape".to_string());
+        assert!(rectangle_path.contains(&"Drawable".to_string());
         
         let circle_path = llvm_gen.current_inheritance_path("Circle").unwrap();
         assert_eq!(circle_path.len(), 1);
-        assert!(circle_path.contains(&"Shape".to_string()));
+        assert!(circle_path.contains(&"Shape".to_string());
         
         // Try a non-existent type
         assert!(llvm_gen.current_inheritance_path("Triangle").is_none());
@@ -146,12 +147,12 @@ mod tests {
         let (line, column, file) = llvm_gen.extract_location_from_token("file.go:123:45");
         assert_eq!(line, 123);
         assert_eq!(column, 45);
-        assert_eq!(file, Some("file.go".to_string()));
+        assert_eq!(file, Some("file.go".to_string());
         
         let (line, column, file) = llvm_gen.extract_location_from_token("path/to/file.go:123:45");
         assert_eq!(line, 123);
         assert_eq!(column, 45);
-        assert_eq!(file, Some("path/to/file.go".to_string()));
+        assert_eq!(file, Some("path/to/file.go".to_string());
         
         let (line, column, file) = llvm_gen.extract_location_from_token("invalid_format");
         assert_eq!(line, 0);

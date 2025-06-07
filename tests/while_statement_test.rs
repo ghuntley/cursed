@@ -1,6 +1,7 @@
 use cursed::error::Error;
 use std::path::Path;
 
+
 #[path = "common.rs"]
 mod common;
 

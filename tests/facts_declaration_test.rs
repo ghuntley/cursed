@@ -4,6 +4,7 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use std::path::Path;
 
+
 #[test]
 fn test_facts_declaration_parsing() {
     let input = r#"

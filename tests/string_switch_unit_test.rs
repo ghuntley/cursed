@@ -1,8 +1,3 @@
-//! Unit tests for the string-based switch implementation
-//! 
-//! These tests directly test the string switch functionality in the LLVM code generator
-//! without requiring the parser to work properly.
-
 use cursed::ast::control_flow::{CaseStatement, SwitchStatement, SwitchCase};
 use cursed::ast::expressions::StringLiteral;
 use cursed::ast::statements::block::BlockStatement;
@@ -10,25 +5,32 @@ use cursed::ast::statements::declarations::ReturnStatement;
 use cursed::ast::{Expression, Node, Statement};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::StringUtilsExtension;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::any::Any;
 use std::path::PathBuf;
+use switch_test_helper::{convert_to_switch_case, convert_block_to_default_case};
+
+//! Unit tests for the string-based switch implementation
+//! 
+//! These tests directly test the string switch functionality in the LLVM code generator
+//! without requiring the parser to work properly.
+
 
 mod switch_test_helper;
-use switch_test_helper::{convert_to_switch_case, convert_block_to_default_case};
 
 // Helper function to create a string literal expression
 fn create_string_literal(value: &str) -> Box<dyn Expression> {
     Box::new(StringLiteral {
-        token: "\"string\"".to_string(),
-        value: value.to_string(),
+        token: "\"string\"".to_string()),
+        value: value.to_string()),
     })
 }
 
 // Helper function to create a return statement
 fn create_return_statement(value: Option<Box<dyn Expression>>) -> Box<dyn Statement> {
     Box::new(ReturnStatement {
-        token: "yolo".to_string(),
+        token: "token".to_string()),
         return_value: value,
     })
 }
@@ -36,7 +38,7 @@ fn create_return_statement(value: Option<Box<dyn Expression>>) -> Box<dyn Statem
 // Helper function to create a block with a return statement
 fn create_block_with_return(value: &str) -> BlockStatement {
     BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![create_return_statement(Some(create_string_literal(value)))],
     }
 }
@@ -48,13 +50,13 @@ fn test_string_switch_statement() {
     
     // Create case statements
     let monday_case = CaseStatement {
-        token: "mood".to_string(),
+        token: "token".to_string()),
         expressions: vec![create_string_literal("Monday")],
         body: create_block_with_return("Start of week"),
     };
     
     let friday_case = CaseStatement {
-        token: "mood".to_string(),
+        token: "token".to_string()),
         expressions: vec![create_string_literal("Friday")],
         body: create_block_with_return("End of week"),
     };
@@ -64,7 +66,7 @@ fn test_string_switch_statement() {
     
     // Create the switch statement
     let switch_stmt = SwitchStatement {
-        token: "vibe_check".to_string(),
+        token: "token".to_string()),
         value: switch_value,
         cases: vec![convert_to_switch_case(monday_case), convert_to_switch_case(friday_case)],
         default: Some(convert_block_to_default_case(default_case, create_string_literal("default"))),
@@ -99,7 +101,7 @@ fn test_string_switch_statement() {
     assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
     
     // Get the IR code and check for expected components
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     
     // Verify that strcmp is used in the IR
     assert!(ir_code.contains("@strcmp"), "IR should include strcmp function call");
@@ -122,14 +124,14 @@ fn test_string_switch_with_multiple_case_values() {
     
     // Create case with multiple values
     let monday_case = CaseStatement {
-        token: "mood".to_string(),
+        token: "token".to_string()),
         expressions: vec![create_string_literal("Monday"), create_string_literal("Mon")],
         body: create_block_with_return("Start of week"),
     };
     
     // Create the switch statement
     let switch_stmt = SwitchStatement {
-        token: "vibe_check".to_string(),
+        token: "token".to_string()),
         value: switch_value,
         cases: vec![convert_to_switch_case(monday_case)],
         default: Some(convert_block_to_default_case(create_block_with_return("Unknown day"), create_string_literal("default"))),
@@ -164,7 +166,7 @@ fn test_string_switch_with_multiple_case_values() {
     assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
     
     // Get the IR code and check for expected components
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     
     // Verify both case values are included
     assert!(ir_code.contains("Monday"), "IR should contain 'Monday' string constant");

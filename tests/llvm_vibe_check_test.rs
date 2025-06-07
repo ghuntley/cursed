@@ -1,11 +1,12 @@
-//! Integration tests for the vibe_check statement codegen
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::ast::traits::Node;
 use std::sync::Arc;
 use tracing::{debug, error, info, instrument, trace, warn};
+
+//! Integration tests for the vibe_check statement codegen
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
@@ -73,7 +74,7 @@ fn test_simple_vibe_check_codegen() {
     assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     // Get the resulting IR code
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     debug!("Generated LLVM IR successfully");
     trace!(ir_code = %ir_code, "Generated LLVM IR");
 
@@ -152,7 +153,7 @@ fn test_multiple_case_values() {
     assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     // Get the resulting IR code
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     debug!("Generated LLVM IR successfully");
     trace!(ir_code = %ir_code, "Generated LLVM IR");
 

@@ -1,22 +1,23 @@
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use inkwell::context::Context;
+use cursed::ast::expressions::{Expression, TypeAssertion};
+use cursed::ast::statements::ExpressionStatement;
+use cursed::codegen::llvm::interface_registry_visualization_integration::*;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::*;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, VisualizationFormat, VisualizationOptions};
+use cursed::error::Error;
+use common::test_utils::create_test_code_generator;
+use common::tracing;
+
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::sync::{Arc, RwLock};
     
-    use inkwell::context::Context;
     
-    use cursed::ast::expressions::{Expression, TypeAssertion};
-    use cursed::ast::statements::ExpressionStatement;
-    use cursed::codegen::llvm::interface_registry_visualization_integration::*;
-    use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::*;
-    use cursed::codegen::llvm::LlvmCodeGenerator;
-    use cursed::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, VisualizationFormat, VisualizationOptions};
-    use cursed::error::Error;
     
     // Import common test utilities
     mod common;
-    use common::test_utils::create_test_code_generator;
-    use common::tracing;
     
     #[test]
     fn test_registry_initialization() {

@@ -1,6 +1,11 @@
+use std::sync::Once;
+use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use cursed::core::interface_registry_visualization_enhanced::EnhancedVisualizationIntegration;
+use cursed::error::Error;
+use tracing::{debug, info};
+
 //! Test for enhanced interface registry visualization integration
 
-use std::sync::Once;
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -17,10 +22,6 @@ macro_rules! init_tracing {
     };
 }
 
-use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
-use cursed::core::interface_registry_visualization_enhanced::EnhancedVisualizationIntegration;
-use cursed::error::Error;
-use tracing::{debug, info};
 
 #[test]
 fn test_enhanced_detailed_error_message() {

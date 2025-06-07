@@ -1,5 +1,3 @@
-//! Tests for assignment operations in the LLVM code generator
-
 use cursed::ast::expressions::literals::IntegerLiteral;
 use cursed::ast::expressions::AssignmentExpression;
 use cursed::ast::expressions::Identifier;
@@ -8,10 +6,13 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::AssignmentCompilation;
 use cursed::codegen::llvm::VariableHandling;
 use cursed::codegen::llvm::ExpressionCompilation;
-use cursed::lexer::token::Token;
+use cursed::lexer::Token;
 use cursed::lexer::TokenType;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for assignment operations in the LLVM code generator
+
 
 #[test]
 fn test_basic_assignment() {
@@ -32,19 +33,19 @@ fn test_basic_assignment() {
 
     // Create the integer value to assign
     let int_lit = IntegerLiteral {
-        token: "42".to_string(),
+        token: "token".to_string()),
         value: 42,
     };
 
     // Create the variable identifier
     let ident = Identifier {
-        token: var_name.to_string(),
-        value: var_name.to_string(),
+        token: var_name.to_string()),
+        value: var_name.to_string()),
     };
 
     // Create the assignment expression
     let assign_expr = AssignmentExpression {
-        token: "=".to_string(),
+        token: "token".to_string()),
         name: ident,
         value: Box::new(int_lit),
     };

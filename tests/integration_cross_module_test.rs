@@ -1,3 +1,6 @@
+use llvm_test_helpers::*;
+use cursed::error::Error;
+
 //! Integration test for cross-module functionality
 //!
 //! This test verifies that different modules of the standardized LLVM code generator
@@ -5,8 +8,6 @@
 //! expression compilation, pointer operations, and variable handling.
 
 mod llvm_test_helpers;
-use llvm_test_helpers::*;
-use cursed::error::Error;
 
 #[test]
 fn test_cross_module_integration() -> Result<(), Error> {

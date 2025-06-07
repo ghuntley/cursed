@@ -4,6 +4,7 @@ use cursed::object::Object;
 use std::sync::Arc;
 use std::time::Instant;
 
+
 /// Test the quick_test implementation
 
 #[test]

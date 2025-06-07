@@ -1,8 +1,12 @@
+use std::time::{Duration, Instant};
+use tracing::{debug, info};
+use inkwell;
+use cursed::lexer::Token;
+use common::tracing::setup as setup_tracing;
+use common::timing::Timer;
+
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, Instant};
-    use tracing::{debug, info};
-    use inkwell;
     
     use cursed::{
         ast::expressions::TypeAssertion,
@@ -23,8 +27,6 @@ mod tests {
     // Import common testing utils
     #[path = "common.rs"]
     mod common;
-    use common::tracing::setup as setup_tracing;
-    use common::timing::Timer;
     
     const BENCHMARK_ITERATIONS: u32 = 1000;
     const WARMUP_ITERATIONS: u32 = 100;
@@ -48,7 +50,7 @@ mod tests {
             let max_duration_ns = durations.iter().map(|d| d.as_nanos() as u64).max().unwrap_or(0);
             
             BenchmarkResult {
-                name: name.to_string(),
+                name: name.to_string()),
                 iterations,
                 total_duration,
                 avg_duration_ns,
@@ -398,36 +400,36 @@ mod tests {
         pub fn simple_for_testing() -> Self {
             // Simple interface -> struct assertion
             TypeAssertion {
-                token: "(".to_string(),
+                token: "token".to_string()),
                 expression: Box::new(cursed::ast::expressions::Empty{}),
-                type_name: "SimpleType".to_string(),
+                type_name: "SimpleType".to_string()),
             }
         }
         
         pub fn nested_for_testing() -> Self {
             // Nested interface (interface A -> interface B -> struct) assertion
             TypeAssertion {
-                token: "(".to_string(),
+                token: "token".to_string()),
                 expression: Box::new(cursed::ast::expressions::Empty{}),
-                type_name: "NestedType".to_string(),
+                type_name: "NestedType".to_string()),
             }
         }
         
         pub fn diamond_for_testing() -> Self {
             // Diamond inheritance (interface A, B -> interface C -> struct) assertion
             TypeAssertion {
-                token: "(".to_string(),
+                token: "token".to_string()),
                 expression: Box::new(cursed::ast::expressions::Empty{}),
-                type_name: "DiamondType".to_string(),
+                type_name: "DiamondType".to_string()),
             }
         }
         
         pub fn deep_nested_for_testing() -> Self {
             // Deep nested interface hierarchy
             TypeAssertion {
-                token: "(".to_string(),
+                token: "token".to_string()),
                 expression: Box::new(cursed::ast::expressions::Empty{}),
-                type_name: "DeepNestedType".to_string(),
+                type_name: "DeepNestedType".to_string()),
             }
         }
     }

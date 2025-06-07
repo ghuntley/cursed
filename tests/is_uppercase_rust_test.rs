@@ -2,10 +2,11 @@ use std::sync::Arc;
 use cursed::object::Object;
 use cursed::stdlib::is_uppercase;
 
+
 #[test]
 fn test_is_uppercase() {
     // Test uppercase letter
-    let result = is_uppercase::is_uppercase(&[Arc::new(Object::String("A".to_string()))]);
+    let result = is_uppercase::is_uppercase(&[Arc::new(Object::String("A".to_string())]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, true),
@@ -13,7 +14,7 @@ fn test_is_uppercase() {
     }
     
     // Test lowercase letter
-    let result = is_uppercase::is_uppercase(&[Arc::new(Object::String("a".to_string()))]);
+    let result = is_uppercase::is_uppercase(&[Arc::new(Object::String("a".to_string())]);
     assert!(result.is_ok());
     match result.unwrap().as_ref() {
         Object::Boolean(b) => assert_eq!(*b, false),

@@ -1,12 +1,13 @@
-//! Test for LLVM Code Generator Refactoring
-//! This test ensures that the refactored LLVM code generator maintains the same functionality
-
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+
+//! Test for LLVM Code Generator Refactoring
+//! This test ensures that the refactored LLVM code generator maintains the same functionality
+
 
 // Import the original llvm module
-use cursed::codegen::llvm::LlvmCodeGenerator;
 
 #[test]
 fn test_llvm_refactor_basic_functionality() {

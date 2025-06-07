@@ -1,3 +1,5 @@
+use cursed::test_common;
+
 //! Tests for the diamond inheritance pattern detection in interface type assertions
 
 use cursed::codegen::llvm::{
@@ -8,7 +10,6 @@ use cursed::codegen::llvm::{
 };
 
 // Import test utilities
-use cursed::test_common;
 
 #[path = "common.rs"]
 mod common;

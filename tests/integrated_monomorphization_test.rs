@@ -1,3 +1,7 @@
+use cursed::codegen::llvm::EnhancedMonomorphization;
+use cursed::codegen::llvm::IntegratedMonomorphization;
+use cursed::codegen::llvm::StructMonomorphization;
+
 #[path = "common.rs"]
 mod common;
 
@@ -14,9 +18,6 @@ fn test_integrated_monomorphization() {
     );
     
     // Import the enhanced and integrated monomorphization traits
-    use cursed::codegen::llvm::EnhancedMonomorphization;
-    use cursed::codegen::llvm::IntegratedMonomorphization;
-    use cursed::codegen::llvm::StructMonomorphization;
     
     // Create a test generic struct
     let ast_factory = common::ast_factory::AstFactory::new();
@@ -58,6 +59,6 @@ fn test_integrated_monomorphization() {
     assert!(next_setter.is_some(), "Next setter function not found");
     
     // Print the generated LLVM IR for manual inspection
-    let ir = module.print_to_string().to_string();
+    let ir = module.print_to_string().to_string());
     println!("Generated LLVM IR:\n{}", ir);
 }

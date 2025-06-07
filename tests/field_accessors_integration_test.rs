@@ -1,5 +1,3 @@
-//! Integration tests for field accessor generation in the monomorphization system
-
 use cursed::ast::declarations::{SquadStatement, TypeParameter};
 use cursed::ast::expressions::Identifier;
 use cursed::ast::Token;
@@ -8,9 +6,13 @@ use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::integrated_monomorphization::IntegratedMonomorphization;
 use cursed::codegen::llvm::lru_field_accessors::LruCachedFieldAccessors;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::time::Instant;
 use crate::common::tracing::setup;
+
+//! Integration tests for field accessor generation in the monomorphization system
+
 
 mod common;
 
@@ -88,43 +90,43 @@ fn test_field_accessors_integration() {
 /// Helper function to create a test generic struct
 fn create_test_generic_struct() -> SquadStatement {
     SquadStatement {
-        token: "be_like".to_string(),
+        token: Token::BeLike,
         name: Identifier {
-            token: "Point".to_string(),
+            token: "token".to_string(),
             value: "Point".to_string(),
         },
         type_parameters: vec![
             TypeParameter {
-                token: Token::new(cursed::lexer::TokenType::Identifier, "T"),
+                token: "token".to_string(),
                 name: "T".to_string(),
                 value: "T".to_string(),
             },
             TypeParameter {
-                token: Token::new(cursed::lexer::TokenType::Identifier, "U"),
+                token: "token".to_string(),
                 name: "U".to_string(),
                 value: "U".to_string(),
             },
         ],
         fields: vec![
             FieldStatement {
-                token: "field".to_string(),
+                token: "token".to_string(),
                 name: Identifier {
-                    token: "x".to_string(),
+                    token: "token".to_string(),
                     value: "x".to_string(),
                 },
                 type_name: Box::new(Identifier {
-                    token: "T".to_string(),
+                    token: "token".to_string(),
                     value: "T".to_string(),
                 }),
             },
             FieldStatement {
-                token: "field".to_string(),
+                token: "token".to_string(),
                 name: Identifier {
-                    token: "name".to_string(),
+                    token: "token".to_string(),
                     value: "name".to_string(),
                 },
                 type_name: Box::new(Identifier {
-                    token: "U".to_string(),
+                    token: "token".to_string(),
                     value: "U".to_string(),
                 }),
             },

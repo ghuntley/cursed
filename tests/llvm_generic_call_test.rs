@@ -1,5 +1,3 @@
-//! Test for generic function call compilation in LLVM code generator
-
 use cursed::ast::base::Program;
 use cursed::ast::expressions::{CallExpression, Identifier, IntegerLiteral};
 use cursed::ast::statements::block::BlockStatement;
@@ -14,9 +12,13 @@ use cursed::codegen::MonomorphizationManager;
 use cursed::codegen::llvm::MonomorphizationManagerExtension;
 use cursed::codegen::llvm::SpecializedFunctionBuilderExtension;
 use cursed::core::type_checker::Type;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 use std::sync::Arc;
+
+//! Test for generic function call compilation in LLVM code generator
+
 
 #[test]
 fn test_compile_generic_call_expression() {
@@ -40,7 +42,7 @@ fn test_compile_generic_call_expression() {
         &identity_function.name.value,
         vec![Type::Normie],
         vec![Box::new(IntegerLiteral {
-            token: "42".to_string(),
+            token: "token".to_string()),
             value: 42,
         })],
     );
@@ -75,14 +77,14 @@ fn create_generic_function_call(
 ) -> CallExpression {
     // Create the function identifier
     let function = Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: function_name.to_string(),
+        token: "token".to_string()),
+        value: function_name.to_string()),
     });
 
     // For testing, create a simple CallExpression instead of GenericCallExpression
     // In a real implementation, we'd use GenericCallExpression for generic calls
     CallExpression {
-        token: "(".to_string(),
+        token: "token".to_string()),
         function,
         arguments,
         // New fields for updated CallExpression struct
@@ -94,49 +96,49 @@ fn create_generic_function_call(
 fn create_generic_identity_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "T".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }];
 
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: "param".to_string(),
+        token: Token::Identifier("param".to_string()),
         name: Identifier {
-            token: "x".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         },
         type_name: Box::new(Identifier {
-            token: "T".to_string(),
-            value: "T".to_string(),
+            token: "token".to_string()),
+            value: "T".to_string()),
         }),
     }];
 
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::Expression>> = Some(Box::new(Identifier {
-        token: "T".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }));
 
     // Create body: { return x; }
     let return_statement = ReturnStatement {
-        token: "return".to_string(),
+        token: "token".to_string()),
         return_value: Some(Box::new(Identifier {
-            token: "x".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         })),
     };
 
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![Box::new(return_statement)],
     };
 
     // Create the function statement
     FunctionStatement {
-        token: "slay".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "identity".to_string(),
-            value: "identity".to_string(),
+            token: "token".to_string()),
+            value: "identity".to_string()),
         },
         parameters,
         body: body,

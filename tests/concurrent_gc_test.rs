@@ -1,13 +1,14 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use cursed::memory::{Traceable, Tag, Visitor, GarbageCollector, ThreadSafeGc, ConcurrentGarbageCollector};
+use cursed::memory::concurrent_gc::ConcurrentGcConfig;
+
 extern crate cursed;
 
 mod common;
 
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
 
-use cursed::memory::{Traceable, Tag, Visitor, GarbageCollector, ThreadSafeGc, ConcurrentGarbageCollector};
-use cursed::memory::concurrent_gc::ConcurrentGcConfig;
 
 // Use tracing module
 // Import common modules

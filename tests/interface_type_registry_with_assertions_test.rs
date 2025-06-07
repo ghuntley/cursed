@@ -1,22 +1,23 @@
-//! # Interface Type Registry with Assertions Test
-//!
-//! Tests the enhanced interface type registry with better error messages
-//! during type assertions.
-
 use std::env;
-
-#[path = "common.rs"]
-mod common;
-
 use common::tracing;
 use tracing::{debug, error, info, trace, warn};
-
 use cursed::ast::types::{InterfaceType, StructType, Type};
 use cursed::ast::expressions::TypeAssertion;
 use cursed::parser::Parser;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::core::jit::JitCompiler;
 use cursed::error::Error;
+
+//! # Interface Type Registry with Assertions Test
+//!
+//! Tests the enhanced interface type registry with better error messages
+//! during type assertions.
+
+
+#[path = "common.rs"]
+mod common;
+
+
 
 /// Initialize tracing for tests
 macro_rules! init_tracing {

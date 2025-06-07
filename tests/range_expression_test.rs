@@ -1,11 +1,12 @@
+use cursed::ast::expressions::range_expression::RangeExpression;
+use cursed::ast::expressions::IntegerLiteral;
+use cursed::ast::{Expression, Node};
+
 //! Tests for RangeExpression Node implementation
 //!
 //! These tests verify that the RangeExpression struct correctly implements
 //! the Node trait, ensuring it can be properly used in the AST.
 
-use cursed::ast::expressions::range_expression::RangeExpression;
-use cursed::ast::expressions::IntegerLiteral;
-use cursed::ast::{Expression, Node};
 
 #[test]
 fn test_range_expression_node_implementation() {

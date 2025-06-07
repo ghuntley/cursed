@@ -1,3 +1,7 @@
+use cursed::error::Error;
+use cursed::ast::BoxedStatement;
+use crate::common;
+
 //! Enhanced range clause implementation tests
 //!
 //! This module contains tests for the enhanced range clause implementation
@@ -6,9 +10,6 @@
 //! These tests focus on verifying the correctness of the implementation without
 //! introducing conflicts with the original implementation.
 
-use cursed::error::Error;
-use cursed::ast::BoxedStatement;
-use crate::common;
 
 #[path = "common.rs"]
 mod common;

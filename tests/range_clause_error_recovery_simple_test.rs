@@ -1,9 +1,10 @@
-//! Simple tests for range clause error recovery
-
 use cursed::parser::{Parser, RangeClauseErrorRecoverySimple};
 use cursed::lexer::Lexer;
 use cursed::error::Error;
 use std::sync::Arc;
+
+//! Simple tests for range clause error recovery
+
 
 #[test]
 fn test_range_error_recovery_simple() {

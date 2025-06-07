@@ -1,15 +1,16 @@
-//! # Enhanced Interface Path Finder Tests
-//!
-//! This module tests the enhanced implementation of the interface path finder with
-//! proper error handling, visualizations, and registry integration.
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::interface_path_finder_enhanced::{InterfaceInheritancePath, EnhancedInterfacePathFinder};
 use cursed::codegen::llvm::{InterfaceTypeRegistryAccess, InterfaceRegistryVisualizationIntegration};
 use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
 use cursed::error::Error;
-
 use inkwell::context::Context;
+
+//! # Enhanced Interface Path Finder Tests
+//!
+//! This module tests the enhanced implementation of the interface path finder with
+//! proper error handling, visualizations, and registry integration.
+
+
 
 mod common;
 
@@ -39,7 +40,7 @@ fn test_interface_path_finder_enhanced() {
     
     // Test finding a simple path
     let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap();
-    assert_eq!(path.path(), &vec!["JSONFileReader".to_string(), "FileReader".to_string(), "Reader".to_string()]);
+    assert_eq!(path.path(), &vec!["JSONFileReader".to_string()), "FileReader".to_string()), "Reader".to_string())]);
     
     // Test finding path between unrelated interfaces
     let result = codegen.find_interface_path_enhanced("JSONFileReader", "Serializable");
@@ -93,17 +94,17 @@ fn setup_test_inheritance_relationships(codegen: &mut LlvmCodeGenerator) {
     let mut reader_extensions = std::collections::HashSet::new();
     reader_extensions.insert("FileReader".to_string());
     reader_extensions.insert("NetworkReader".to_string());
-    test_inheritance_map.insert("Reader".to_string(), reader_extensions);
+    test_inheritance_map.insert("Reader".to_string()), reader_extensions);
     
     // Set up JSONFileReader extends FileReader
     let mut filereader_extensions = std::collections::HashSet::new();
     filereader_extensions.insert("JSONFileReader".to_string());
-    test_inheritance_map.insert("FileReader".to_string(), filereader_extensions);
+    test_inheritance_map.insert("FileReader".to_string()), filereader_extensions);
     
     // Set up JSONSerializable extends Serializable
     let mut serializable_extensions = std::collections::HashSet::new();
     serializable_extensions.insert("JSONSerializable".to_string());
-    test_inheritance_map.insert("Serializable".to_string(), serializable_extensions);
+    test_inheritance_map.insert("Serializable".to_string()), serializable_extensions);
     
     // Store this in the code generator for testing
     // This would be implemented differently in a real system
@@ -127,7 +128,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
     let mut test_inheritance_map = std::collections::HashMap::new();
     let mut reader_extensions = std::collections::HashSet::new();
     reader_extensions.insert("FileReader".to_string());
-    test_inheritance_map.insert("Reader".to_string(), reader_extensions);
+    test_inheritance_map.insert("Reader".to_string()), reader_extensions);
     codegen.test_inheritance_map = Some(test_inheritance_map);
     
     // Test error message for non-existent interface
@@ -155,8 +156,8 @@ fn test_interface_path_finder_enhanced_error_messages() {
 fn test_interface_inheritance_path_visualization() {
     // Test the InterfaceInheritancePath struct directly
     let path = InterfaceInheritancePath::new(
-        vec!["Child".to_string(), "Parent".to_string(), "GrandParent".to_string()],
-        "Child".to_string(),
+        vec!["Child".to_string()), "Parent".to_string()), "GrandParent".to_string())],
+        "Child".to_string()),
         "GrandParent".to_string()
     );
     
@@ -173,7 +174,7 @@ fn test_interface_inheritance_path_visualization() {
     // Test empty path
     let empty_path = InterfaceInheritancePath::new(
         vec![],
-        "Source".to_string(),
+        "Source".to_string()),
         "Target".to_string()
     );
     assert_eq!(empty_path.to_string_representation(), "No path from 'Source' to 'Target'.");
@@ -205,18 +206,18 @@ fn test_interface_hierarchy_dot_graph() {
     let mut animal_extensions = std::collections::HashSet::new();
     animal_extensions.insert("Mammal".to_string());
     animal_extensions.insert("Bird".to_string());
-    test_inheritance_map.insert("Animal".to_string(), animal_extensions);
+    test_inheritance_map.insert("Animal".to_string()), animal_extensions);
     
     // Mammal extensions
     let mut mammal_extensions = std::collections::HashSet::new();
     mammal_extensions.insert("Dog".to_string());
     mammal_extensions.insert("Cat".to_string());
-    test_inheritance_map.insert("Mammal".to_string(), mammal_extensions);
+    test_inheritance_map.insert("Mammal".to_string()), mammal_extensions);
     
     // Bird extensions
     let mut bird_extensions = std::collections::HashSet::new();
     bird_extensions.insert("Eagle".to_string());
-    test_inheritance_map.insert("Bird".to_string(), bird_extensions);
+    test_inheritance_map.insert("Bird".to_string()), bird_extensions);
     
     codegen.test_inheritance_map = Some(test_inheritance_map);
     

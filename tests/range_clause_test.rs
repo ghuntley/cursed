@@ -1,10 +1,12 @@
-//! Test file for range clause functionality in Cursed
-
 use std::fs;
 use std::path::Path;
 use std::io;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tracing::{debug, error, info, trace, warn};
+
+//! Test file for range clause functionality in Cursed
+
 
 // Generate a unique ID for test files
 fn generate_id() -> u64 {
@@ -18,7 +20,6 @@ fn generate_id() -> u64 {
 #[path = "tracing_setup.rs"]
 #[macro_use]
 mod tracing_setup;
-use tracing::{debug, error, info, trace, warn};
 
 // Create a temporary directory for test files if it doesn't exist
 fn ensure_temp_dir() -> std::io::Result<()> {
@@ -37,8 +38,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["shell", "./target/debug/cursed", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
 
     // Combine stdout and stderr for debugging
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
@@ -88,7 +89,7 @@ printn(yolo)\n", code);
     }
     
     // Check if the output contains the expected value
-    let expected_str = expected_value.to_string();
+    let expected_str = expected_value.to_string());
     assert_output_contains(&output, &expected_str)
 }
 

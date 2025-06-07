@@ -3,6 +3,7 @@ use cursed::object::Object;
 use std::sync::Arc;
 use std::cell::RefCell;
 
+
 /// Test new functionality added to complete the quick_test implementation
 
 // Temporarily disabled while API is upgraded
@@ -164,9 +165,9 @@ fn test_composite_generators() {
 fn test_struct_generator() {
     // Test struct generator
     let mut field_gens = std::collections::HashMap::new();
-    field_gens.insert("name".to_string(), string_of_n_from(1, 10, alpha_numeric()));
-    field_gens.insert("age".to_string(), int_range_gen(0, 120));
-    field_gens.insert("is_active".to_string(), boolean_gen());
+    field_gens.insert("name".to_string()), string_of_n_from(1, 10, alpha_numeric()));
+    field_gens.insert("age".to_string()), int_range_gen(0, 120));
+    field_gens.insert("is_active".to_string()), boolean_gen());
     
     let struct_gen = struct_of(field_gens);
     let mut rand = Rand::new(42); // Fixed seed for reproducibility

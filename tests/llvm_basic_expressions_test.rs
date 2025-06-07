@@ -1,15 +1,17 @@
-//! Tests for basic expression compilation in the LLVM code generator
-
 use cursed::ast::expressions::literals::{IntegerLiteral, BooleanLiteral};
 use cursed::ast::expressions::operators::{InfixExpression, PrefixExpression};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::ExpressionCompilation; // Updated import
 use cursed::error::Error;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for basic expression compilation in the LLVM code generator
+
+use cursed::codegen::llvm::ExpressionCompilation; // Updated import
 
 #[test]
 fn test_expression_compilation() {
@@ -25,7 +27,7 @@ fn test_expression_compilation() {
 
     // Test integer literal
     let int_lit = IntegerLiteral {
-        token: "42".to_string(),
+        token: "token".to_string()),
         value: 42,
     };
     
@@ -37,7 +39,7 @@ fn test_expression_compilation() {
     
     // Test boolean literal
     let bool_lit = BooleanLiteral {
-        token: "based".to_string(),
+        token: "token".to_string()),
         value: true,
     };
     
@@ -49,12 +51,12 @@ fn test_expression_compilation() {
     
     // Test infix expression
     let left = IntegerLiteral {
-        token: "10".to_string(),
+        token: "token".to_string()),
         value: 10,
     };
     
     let right = IntegerLiteral {
-        token: "5".to_string(),
+        token: "token".to_string()),
         value: 5,
     };
     
@@ -73,7 +75,7 @@ fn test_expression_compilation() {
     
     // Test prefix expression
     let inner = IntegerLiteral {
-        token: "5".to_string(),
+        token: "token".to_string()),
         value: 5,
     };
     

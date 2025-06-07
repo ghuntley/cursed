@@ -1,13 +1,14 @@
+use std::collections::{HashMap, HashSet};
+use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
+use cursed::error::Error;
+
 //! # Improved Interface Registry Extension Checking Tests
 //!
 //! This module tests the enhanced implementation of interface registry extension checking
 //! with proper string comparison in type lookups, robust error handling, and enhanced interface
 //! inheritance relationship verification.
 
-use std::collections::{HashMap, HashSet};
-use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
-use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
-use cursed::error::Error;
 
 mod common;
 

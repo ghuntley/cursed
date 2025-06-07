@@ -6,8 +6,10 @@ use cursed::codegen::llvm::ExpressionCompilation;
 use cursed::error::Error;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
 
 #[test]
 fn test_integer_literal_expression() {
@@ -23,7 +25,7 @@ fn test_integer_literal_expression() {
 
     // Create a simple expression: 42
     let mut int_lit = IntegerLiteral {
-        token: Token::Int(42).token_literal(),
+        token: "token".to_string().token_literal(),
         value: 42,
     };
 
@@ -57,12 +59,12 @@ fn test_infix_expression() {
 
     // Create left and right expressions
     let left = IntegerLiteral {
-        token: Token::Int(10).token_literal(),
+        token: "token".to_string().token_literal(),
         value: 10,
     };
 
     let right = IntegerLiteral {
-        token: Token::Int(5).token_literal(),
+        token: "token".to_string().token_literal(),
         value: 5,
     };
 
@@ -107,7 +109,7 @@ fn test_prefix_expression() {
 
     // Create the inner expression
     let inner = IntegerLiteral {
-        token: Token::Int(5).token_literal(),
+        token: "token".to_string().token_literal(),
         value: 5,
     };
 

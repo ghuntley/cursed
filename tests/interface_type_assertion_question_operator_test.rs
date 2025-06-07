@@ -1,12 +1,5 @@
-//! Integration test for interface type assertions with ? operator support
-//!
-//! This test verifies that the interface type assertion system properly supports
-//! the ? operator for automatic error propagation with Result types.
-
-use std::sync::Arc;
 use std::sync::Arc;
 use std::cell::RefCell;
-
 use cursed::ast::expressions::TypeAssertion;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::traits::{Expression, Node};
@@ -18,17 +11,24 @@ use cursed::error::Error;
 use cursed::error::SourceLocation;
 use cursed::error::type_assertion_error::TypeAssertionError;
 use tracing::{debug, info, warn, trace};
-
-// Import common test utilities
-#[path = "common.rs"]
-pub mod common;
-
 use common::tracing::setup as init_tracing;
 use common::timing::Timer;
 use inkwell::context::Context;
 use inkwell::types::BasicTypeEnum;
 use inkwell::values::{BasicValueEnum, FunctionValue};
 use inkwell::module::Module;
+
+//! Integration test for interface type assertions with ? operator support
+//!
+//! This test verifies that the interface type assertion system properly supports
+//! the ? operator for automatic error propagation with Result types.
+
+
+
+// Import common test utilities
+#[path = "common.rs"]
+pub mod common;
+
 
 /// Create a mock test module for testing the ? operator with type assertions
 fn create_test_module<'ctx>(context: &'ctx Context, name: &str) -> Module<'ctx> {
@@ -550,7 +550,7 @@ fn test_question_mark_operator_propagation() {
     assert!(propagate_result.is_ok());
     
     // Verify the module structure
-    let module_str = module.print_to_string().to_string();
+    let module_str = module.print_to_string().to_string());
     debug!("Generated module: {}", module_str);
     
     // The module should contain blocks for propagation logic

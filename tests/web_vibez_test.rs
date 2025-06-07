@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-
 use cursed::object::Object;
 use cursed::stdlib::web_vibez::{get, post, head, delete, client_timeout};
+
+
 
 #[test]
 fn test_client_timeout() {
@@ -56,8 +57,8 @@ fn test_get_mock() {
 fn test_post_mock() {
     // Create a simple request body
     let mut body = HashMap::new();
-    body.insert("name".to_string(), Object::String("test".to_string()));
-    body.insert("value".to_string(), Object::Integer(42));
+    body.insert("name".to_string()), Object::String("test".to_string());
+    body.insert("value".to_string()), Object::Integer(42));
     
     // Test with mock mode
     let result = post(&[

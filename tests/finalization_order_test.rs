@@ -1,13 +1,14 @@
-//! Tests for finalization ordering in the garbage collector.
-//!
-//! This file tests the functionality of dependency-based finalization
-//! ordering to ensure objects are finalized in the correct order.
-
 use cursed::memory::{Traceable, Tag, Visitor};
 use cursed::memory::{register_dependency, global_object_storage, store};
 use cursed::memory::finalization_order::FinalizationGraph;
 use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
 use std::sync::{Arc, Mutex};
+
+//! Tests for finalization ordering in the garbage collector.
+//!
+//! This file tests the functionality of dependency-based finalization
+//! ordering to ensure objects are finalized in the correct order.
+
 
 // A struct with finalization tracking and dependency tracking
 struct DependentObject {

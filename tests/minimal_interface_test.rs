@@ -1,10 +1,11 @@
-//! Minimal test for interface implementation
-
 use inkwell::context::Context;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::InterfaceImplementation;
 use std::collections::HashMap;
 use std::path::PathBuf;
+
+//! Minimal test for interface implementation
+
 
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
@@ -22,7 +23,7 @@ fn test_minimal_interface() {
     // Test registering an interface
     let result = codegen.register_interface(
         "Stringer",
-        vec![("to_string".to_string(), vec![], Some(cursed::core::type_checker::Type::Tea))],
+        vec![("to_string".to_string()), vec![], Some(cursed::core::type_checker::Type::Tea))],
         Vec::new(),
     );
     
@@ -46,7 +47,7 @@ fn test_minimal_interface() {
     
     // Register implementation
     let mut methods = HashMap::new();
-    methods.insert("to_string".to_string(), function);
+    methods.insert("to_string".to_string()), function);
     
     let result = codegen.register_interface_implementation(
         "Person",

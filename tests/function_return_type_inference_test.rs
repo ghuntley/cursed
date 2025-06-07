@@ -1,5 +1,3 @@
-//! Tests for function return type inference in the LLVM code generator
-
 use cursed::ast::expressions::identifiers::Identifier;
 use cursed::ast::expressions::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral};
 use cursed::ast::statements::block::BlockStatement;
@@ -13,9 +11,13 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation};
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
+
+//! Tests for function return type inference in the LLVM code generator
+
 
 #[test]
 fn test_function_return_type_inference_int() {
@@ -24,15 +26,15 @@ fn test_function_return_type_inference_int() {
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
-        token: Token::new(TokenType::Identifier, "test_fn").token_literal(),
-        value: "test_fn".to_string(),
+        token: "token".to_string().token_literal(),
+        value: "test_fn".to_string()),
     };
     
     // Return statement with integer literal
     let return_stmt = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: "token".to_string().token_literal(),
         return_value: Some(Box::new(IntegerLiteral {
-            token: Token::new(TokenType::Int, "42").token_literal(),
+            token: "token".to_string().token_literal(),
             value: 42,
         })),
     };
@@ -47,13 +49,13 @@ fn test_function_return_type_inference_int() {
     // in order to match the return values we're using
     // In a proper implementation, this would be inferred automatically
     let explicit_i32_type = Some(Box::new(IntegerLiteral {
-        token: Token::new(TokenType::Int, "42").token_literal(),
+        token: "token".to_string().token_literal(),
         value: 42,
     }) as Box<dyn Expression>);
     
     // Create function with explicit return type for testing
     let function = FunctionStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: "token".to_string().token_literal(),
         parameters: vec![],
         body: body,
         name: fn_name.clone(),
@@ -111,15 +113,15 @@ fn test_function_return_type_inference_float() {
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
-        token: Token::new(TokenType::Identifier, "test_fn").token_literal(),
-        value: "test_fn".to_string(),
+        token: "token".to_string().token_literal(),
+        value: "test_fn".to_string()),
     };
     
     // Return statement with float literal
     let return_stmt = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: "token".to_string().token_literal(),
         return_value: Some(Box::new(FloatLiteral {
-            token: Token::new(TokenType::Float, "3.14").token_literal(),
+            token: "token".to_string().token_literal(),
             value: 3.14,
         })),
     };
@@ -134,13 +136,13 @@ fn test_function_return_type_inference_float() {
     // in order to match the return values we're using
     // In a proper implementation, this would be inferred automatically
     let explicit_f64_type = Some(Box::new(FloatLiteral {
-        token: Token::new(TokenType::Float, "3.14").token_literal(),
+        token: "token".to_string().token_literal(),
         value: 3.14,
     }) as Box<dyn Expression>);
     
     // Create function with explicit return type for testing
     let function = FunctionStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: "token".to_string().token_literal(),
         parameters: vec![],
         body: body,
         name: fn_name.clone(),
@@ -198,30 +200,30 @@ fn test_function_return_type_inference_mixed() {
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
-        token: Token::new(TokenType::Identifier, "test_fn").token_literal(),
-        value: "test_fn".to_string(),
+        token: "token".to_string().token_literal(),
+        value: "test_fn".to_string()),
     };
     
     // Create a condition for if statement
     let condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "true").token_literal(),
+        token: "token".to_string().token_literal(),
         value: true,
     };
     
     // Return statement with integer literal (first branch)
     let return_int = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: "token".to_string().token_literal(),
         return_value: Some(Box::new(IntegerLiteral {
-            token: Token::new(TokenType::Int, "42").token_literal(),
+            token: "token".to_string().token_literal(),
             value: 42,
         })),
     };
     
     // Return statement with float literal (second branch)
     let return_float = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: "token".to_string().token_literal(),
         return_value: Some(Box::new(FloatLiteral {
-            token: Token::new(TokenType::Float, "3.14").token_literal(),
+            token: "token".to_string().token_literal(),
             value: 3.14,
         })),
     };
@@ -231,7 +233,7 @@ fn test_function_return_type_inference_mixed() {
         token: Token::new(TokenType::If, "if").token_literal(),
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: Token::new(TokenType::LBrace, "{"),
+            token: "token".to_string()),
             statements: vec![Box::new(return_int)],
         }),
         alternative: Some(Box::new(BlockStatement {
@@ -250,13 +252,13 @@ fn test_function_return_type_inference_mixed() {
     // in order to match the return values we're using
     // In a proper implementation, this would be inferred automatically
     let explicit_f64_type = Some(Box::new(FloatLiteral {
-        token: Token::new(TokenType::Float, "3.14").token_literal(),
+        token: "token".to_string().token_literal(),
         value: 3.14,
     }) as Box<dyn Expression>);
     
     // Create function with explicit return type for testing
     let function = FunctionStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: "token".to_string().token_literal(),
         parameters: vec![],
         body: body,
         name: fn_name.clone(),

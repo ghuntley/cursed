@@ -4,6 +4,7 @@ use cursed::core::type_checker::Type;
 use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::error::Error;
 
+
 #[test]
 fn test_type_system_integration() {
     // Test code with various type system features

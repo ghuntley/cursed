@@ -1,5 +1,3 @@
-//! Test for the MonomorphizationManager integration with LLVM code generator
-
 use cursed::ast::base::Program;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::block::BlockStatement;
@@ -10,8 +8,12 @@ use cursed::ast::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::type_checker::Type;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+// Test for the MonomorphizationManager integration with LLVM code generator
+
 
 /// A helper struct for MonomorphizationManager testing
 struct TestGenericFunction {
@@ -106,8 +108,8 @@ fn create_generic_function(
     let type_parameters: Vec<Identifier> = type_params
         .iter()
         .map(|param| Identifier {
-            token: "IDENT".to_string(),
-            value: param.to_string(),
+            token: "token".to_string()),
+            value: param.to_string()),
         })
         .collect();
 
@@ -118,14 +120,14 @@ fn create_generic_function(
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
             ParameterStatement {
-                token: "IDENT".to_string(),
+                token: Token::Identifier("IDENT".to_string()),
                 name: Identifier {
-                    token: "IDENT".to_string(),
+                    token: "token".to_string()),
                     value: param_name,
                 },
                 type_name: Box::new(Identifier {
-                    token: "IDENT".to_string(),
-                    value: param_type.to_string(),
+                    token: "token".to_string()),
+                    value: param_type.to_string()),
                 }),
             }
         })
@@ -133,22 +135,22 @@ fn create_generic_function(
 
     // Create return type expression
     let return_type_expr = Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: return_type.to_string(),
+        token: "token".to_string()),
+        value: return_type.to_string()),
     }) as Box<dyn Expression>;
 
     // Create function body (empty for this test)
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: Vec::new(),
     };
 
     // Create the function statement
     FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: name.to_string(),
+            token: "token".to_string()),
+            value: name.to_string()),
         },
         parameters,
         body,

@@ -1,9 +1,10 @@
-//! Tests for constraint recovery strategies
-
 use cursed::core::interface_registry::InterfaceRegistry;
 use cursed::core::constraint_recovery::{ConstraintRecovery, ConstraintRecoveryExtension, RecoveryStrategy, ConstraintFailureSeverity};
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
+
+//! Tests for constraint recovery strategies
+
 
 #[path = "common.rs"]
 mod common;
@@ -16,7 +17,7 @@ fn test_recovery_for_comparable_interface() {
     registry.populate_with_defaults();
     
     // Create a custom type that doesn't implement Comparable
-    let custom_type = Type::Struct("CustomType".to_string(), vec![]);
+    let custom_type = Type::Struct("CustomType".to_string()), vec![]);
     
     // Get recovery context
     let context = registry.create_recovery_context(&custom_type, "Comparable");
@@ -55,7 +56,7 @@ fn test_recovery_for_numeric_interface() {
     registry.populate_with_defaults();
     
     // Create a vector type that doesn't implement Numeric
-    let vector_type = Type::Struct("Vector3D".to_string(), vec![]);
+    let vector_type = Type::Struct("Vector3D".to_string()), vec![]);
     
     // Get recovery context
     let context = registry.create_recovery_context(&vector_type, "Numeric");
@@ -98,7 +99,7 @@ fn test_recovery_for_container_interface() {
     registry.populate_with_defaults();
     
     // Create a custom collection that doesn't implement Container
-    let collection_type = Type::Struct("CustomCollection".to_string(), vec![]);
+    let collection_type = Type::Struct("CustomCollection".to_string()), vec![]);
     
     // Check constraint with recovery
     let result = registry.check_constraint_with_recovery(&collection_type, "Container");
@@ -134,7 +135,7 @@ fn test_error_message_formatting() {
     
     // Create an error for a type that doesn't implement Comparable
     let error = registry.create_constraint_error(
-        &Type::Struct("NonComparable".to_string(), vec![]),
+        &Type::Struct("NonComparable".to_string()), vec![]),
         "Comparable"
     );
     
@@ -163,14 +164,14 @@ fn test_recovery_strategy_recommendation() {
     
     // For struct types with common interfaces, generate stubs
     let strategy = registry.recommend_strategy(
-        &Type::Struct("Point".to_string(), vec![]),
+        &Type::Struct("Point".to_string()), vec![]),
         "Comparable"
     );
     assert_eq!(strategy, RecoveryStrategy::GenerateStub);
     
     // For struct types with Container interface, generate placeholders
     let strategy = registry.recommend_strategy(
-        &Type::Struct("CustomCollection".to_string(), vec![]),
+        &Type::Struct("CustomCollection".to_string()), vec![]),
         "Container"
     );
     assert_eq!(strategy, RecoveryStrategy::GeneratePlaceholder);
@@ -185,7 +186,7 @@ fn test_registry_extension_methods() {
     
     // Register interface methods
     let mut custom_methods = std::collections::HashMap::new();
-    custom_methods.insert("CustomMethod".to_string(), "self Custom, param Tea".to_string());
+    custom_methods.insert("CustomMethod".to_string()), "self Custom, param Tea".to_string());
     registry.register_interface_methods("CustomInterface", custom_methods);
     
     // Register recovery strategy
@@ -194,12 +195,12 @@ fn test_registry_extension_methods() {
     // Register alternative implementation
     registry.register_alternative_for_interface(
         "CustomInterface",
-        Type::Struct("StandardImpl".to_string(), vec![])
+        Type::Struct("StandardImpl".to_string()), vec![])
     );
     
     // Verify the alternative was registered
     let implementers = registry.get_interface_implementers("CustomInterface");
-    assert!(implementers.contains(&Type::Struct("StandardImpl".to_string(), vec![])));
+    assert!(implementers.contains(&Type::Struct("StandardImpl".to_string()), vec![])));
 }
 
 #[test]

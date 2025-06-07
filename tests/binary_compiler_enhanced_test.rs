@@ -1,14 +1,16 @@
 use std::path::Path;
 use std::fs;
 use std::process::Command;
-
 use cursed::ast::Program;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
-// Commented out for now while binary compiler is being refactored
-// use cursed::codegen::llvm::BinaryCompiler;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
+use cursed::codegen::llvm::binary_compiler::DebugInfoLevel;
+
+
+// Commented out for now while binary compiler is being refactored
+// use cursed::codegen::llvm::BinaryCompiler;
 
 // Define binary compiler for compatibility
 #[allow(dead_code)]
@@ -131,7 +133,6 @@ slay main() {
     }
     
     // Import the necessary types
-    use cursed::codegen::llvm::binary_compiler::DebugInfoLevel;
     
     // Enable debug information
     debug_compiler.enable_debug_info(DebugInfoLevel::Full);

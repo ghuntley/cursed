@@ -1,10 +1,11 @@
+use std::sync::Arc;
+use cursed::object::Object;
+use cursed::stdlib::quick_test;
+
 //! Unit tests for the quick_test module
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use cursed::object::Object;
-    use cursed::stdlib::quick_test;
 
     #[test]
     fn test_int_range() {

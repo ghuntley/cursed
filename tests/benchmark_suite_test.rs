@@ -1,9 +1,10 @@
-//! Integration test for the benchmark suite
-
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::info;
 use cursed::benchmark::BenchmarkReporter;
+
+//! Integration test for the benchmark suite
+
 
 mod tracing_setup {
     pub fn init_test_tracing() {
@@ -35,7 +36,7 @@ fn test_benchmark_harness() {
             
             // Return metrics
             vec![Box::new(cursed::benchmark::metrics::TimingMetric {
-                name: "sleep_time".to_string(),
+                name: "sleep_time".to_string()),
                 duration: Duration::from_millis(5),
             })]
         },

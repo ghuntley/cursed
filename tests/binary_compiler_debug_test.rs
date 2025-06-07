@@ -1,15 +1,16 @@
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::process::Command;
-
 use cursed::ast::Program;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
+use inkwell::context::Context;
+use inkwell::OptimizationLevel;
+
+
 // Commented out for now while binary compiler is being refactored
 // use cursed::codegen::llvm::BinaryCompiler;
 // use cursed::codegen::llvm::binary_compiler::DebugInfoLevel;
-use inkwell::context::Context;
-use inkwell::OptimizationLevel;
 
 // Define debug info level enum for compatibility
 #[allow(dead_code)]

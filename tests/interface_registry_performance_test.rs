@@ -1,3 +1,11 @@
+use cursed::core::interface_registry::InterfaceRegistry;
+use cursed::core::interface_registry_cache::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
+use cursed::core::interface_registry_lru_cache::{LruInterfaceCache, ThreadSafeLruCache};
+use cursed::core::interface_registry_lru_extension::{LruCachedRegistry, ThreadSafeLruRegistry};
+use cursed::core::type_checker::Type;
+use cursed::error::Error;
+use std::time::{Duration, Instant};
+
 //! Performance comparison test for different interface registry implementations
 //!
 //! This test compares the performance of different interface registry caching mechanisms:
@@ -8,13 +16,6 @@
 //! The test measures the time taken for a large number of interface implementation checks
 //! and reports detailed statistics.
 
-use cursed::core::interface_registry::InterfaceRegistry;
-use cursed::core::interface_registry_cache::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
-use cursed::core::interface_registry_lru_cache::{LruInterfaceCache, ThreadSafeLruCache};
-use cursed::core::interface_registry_lru_extension::{LruCachedRegistry, ThreadSafeLruRegistry};
-use cursed::core::type_checker::Type;
-use cursed::error::Error;
-use std::time::{Duration, Instant};
 
 mod common;
 
@@ -30,16 +31,16 @@ const NUM_ITERATIONS: usize = 3;
 fn generate_test_data() -> (Vec<Type>, Vec<String>) {
     let mut types = Vec::with_capacity(NUM_TYPES);
     let interfaces = vec![
-        "Numeric".to_string(),
-        "Comparable".to_string(),
-        "Container".to_string(),
-        "List".to_string(),
-        "Map".to_string(),
-        "Iterable".to_string(),
-        "Serializable".to_string(),
-        "Cloneable".to_string(),
-        "Printable".to_string(),
-        "Equatable".to_string(),
+        "Numeric".to_string()),
+        "Comparable".to_string()),
+        "Container".to_string()),
+        "List".to_string()),
+        "Map".to_string()),
+        "Iterable".to_string()),
+        "Serializable".to_string()),
+        "Cloneable".to_string()),
+        "Printable".to_string()),
+        "Equatable".to_string()),
     ];
     
     // Create simple types
@@ -77,7 +78,7 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
             ));
             types.push(Type::Struct(
                 name.clone(),
-                vec![Box::new(Type::Struct("Nested".to_string(), vec![Box::new(Type::Lit)]))]
+                vec![Box::new(Type::Struct("Nested".to_string()), vec![Box::new(Type::Lit)]))]
             ));
         }
     }

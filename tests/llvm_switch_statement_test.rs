@@ -5,9 +5,10 @@ use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use std::path::PathBuf;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+
 
 // Import the LLVM code generator using the exposed public API
-use cursed::codegen::llvm::LlvmCodeGenerator;
 
 #[test]
 fn test_switch_statement_compilation() {

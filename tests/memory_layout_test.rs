@@ -1,10 +1,11 @@
-//! Tests for memory layout of specialized generic types
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;
 use inkwell::types::BasicMetadataTypeEnum;
 use std::path::PathBuf;
 use tracing::{debug, error, info, instrument, trace, warn};
+
+//! Tests for memory layout of specialized generic types
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]

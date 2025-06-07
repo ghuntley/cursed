@@ -1,5 +1,3 @@
-//! Test for optimized dynamic dispatch for interfaces
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use inkwell::context::Context;
@@ -10,6 +8,9 @@ use cursed::codegen::llvm::InterfaceImplementation;
 use cursed::codegen::llvm::OptimizedDynamicDispatch;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::error::Error;
+
+//! Test for optimized dynamic dispatch for interfaces
+
 
 #[path = "common/mod.rs"]
 mod common;
@@ -22,23 +23,23 @@ fn setup_shape_hierarchy() -> Result<TypeChecker, Error> {
     type_checker.register_interface(
         "Shape",
         vec![
-            ("area".to_string(), vec![], Some(Type::Meal)),
-            ("perimeter".to_string(), vec![], Some(Type::Meal)),
+            ("area".to_string()), vec![], Some(Type::Meal)),
+            ("perimeter".to_string()), vec![], Some(Type::Meal)),
         ],
         Vec::new(),
     );
     
     // Register Circle struct
     let circle_fields = HashMap::from([
-        ("radius".to_string(), Type::Meal),
+        ("radius".to_string()), Type::Meal),
     ]);
     
     type_checker.register_struct("Circle", circle_fields, Vec::new());
     
     // Register Circle methods
     let circle_methods = vec![
-        ("area".to_string(), vec![], Some(Type::Meal)),
-        ("perimeter".to_string(), vec![], Some(Type::Meal)),
+        ("area".to_string()), vec![], Some(Type::Meal)),
+        ("perimeter".to_string()), vec![], Some(Type::Meal)),
     ];
     
     for (method_name, param_types, return_type) in circle_methods {
@@ -47,16 +48,16 @@ fn setup_shape_hierarchy() -> Result<TypeChecker, Error> {
     
     // Register Rectangle struct
     let rectangle_fields = HashMap::from([
-        ("width".to_string(), Type::Meal),
-        ("height".to_string(), Type::Meal),
+        ("width".to_string()), Type::Meal),
+        ("height".to_string()), Type::Meal),
     ]);
     
     type_checker.register_struct("Rectangle", rectangle_fields, Vec::new());
     
     // Register Rectangle methods
     let rectangle_methods = vec![
-        ("area".to_string(), vec![], Some(Type::Meal)),
-        ("perimeter".to_string(), vec![], Some(Type::Meal)),
+        ("area".to_string()), vec![], Some(Type::Meal)),
+        ("perimeter".to_string()), vec![], Some(Type::Meal)),
     ];
     
     for (method_name, param_types, return_type) in rectangle_methods {
@@ -88,8 +89,8 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
     codegen.register_interface(
         "Shape",
         vec![
-            ("area".to_string(), vec![], Some(Type::Meal)),
-            ("perimeter".to_string(), vec![], Some(Type::Meal)),
+            ("area".to_string()), vec![], Some(Type::Meal)),
+            ("perimeter".to_string()), vec![], Some(Type::Meal)),
         ],
         Vec::new(),
     )?;
@@ -232,8 +233,8 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
     
     // Register Circle as implementing Shape
     let mut circle_methods = HashMap::new();
-    circle_methods.insert("area".to_string(), circle_area_function);
-    circle_methods.insert("perimeter".to_string(), circle_perimeter_function);
+    circle_methods.insert("area".to_string()), circle_area_function);
+    circle_methods.insert("perimeter".to_string()), circle_perimeter_function);
     
     codegen.register_interface_implementation(
         "Circle",
@@ -272,7 +273,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
     codegen.builder().build_store(radius_ptr, radius_value).unwrap();
     
     // Convert Circle to Shape interface
-    let circle_type = Type::Struct("Circle".to_string(), Vec::new());
+    let circle_type = Type::Struct("Circle".to_string()), Vec::new());
     let shape_interface = codegen.create_interface_value(
         circle_ptr,
         &circle_type,
@@ -319,7 +320,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
     }
     
     tracing::info!("Completed optimized dynamic dispatch test");
@@ -348,8 +349,8 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     codegen.register_interface(
         "Shape",
         vec![
-            ("area".to_string(), vec![], Some(Type::Meal)),
-            ("perimeter".to_string(), vec![], Some(Type::Meal)),
+            ("area".to_string()), vec![], Some(Type::Meal)),
+            ("perimeter".to_string()), vec![], Some(Type::Meal)),
         ],
         Vec::new(),
     )?;
@@ -639,8 +640,8 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     
     // Register Circle as implementing Shape
     let mut circle_methods = HashMap::new();
-    circle_methods.insert("area".to_string(), circle_area_function);
-    circle_methods.insert("perimeter".to_string(), circle_perimeter_function);
+    circle_methods.insert("area".to_string()), circle_area_function);
+    circle_methods.insert("perimeter".to_string()), circle_perimeter_function);
     
     codegen.register_interface_implementation(
         "Circle",
@@ -650,8 +651,8 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     
     // Register Rectangle as implementing Shape
     let mut rectangle_methods = HashMap::new();
-    rectangle_methods.insert("area".to_string(), rectangle_area_function);
-    rectangle_methods.insert("perimeter".to_string(), rectangle_perimeter_function);
+    rectangle_methods.insert("area".to_string()), rectangle_area_function);
+    rectangle_methods.insert("perimeter".to_string()), rectangle_perimeter_function);
     
     codegen.register_interface_implementation(
         "Rectangle",
@@ -723,7 +724,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     codegen.builder().build_store(height_ptr, height_value).unwrap();
     
     // Convert Circle to Shape interface
-    let circle_type = Type::Struct("Circle".to_string(), Vec::new());
+    let circle_type = Type::Struct("Circle".to_string()), Vec::new());
     let circle_shape = codegen.create_interface_value(
         circle_ptr,
         &circle_type,
@@ -731,7 +732,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     )?;
     
     // Convert Rectangle to Shape interface
-    let rectangle_type = Type::Struct("Rectangle".to_string(), Vec::new());
+    let rectangle_type = Type::Struct("Rectangle".to_string()), Vec::new());
     let rectangle_shape = codegen.create_interface_value(
         rectangle_ptr,
         &rectangle_type,
@@ -889,7 +890,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
     }
     
     tracing::info!("Completed speculative dispatch test");

@@ -1,11 +1,19 @@
+use std::fs;
+use std::path::Path;
+use std::sync::Once;
+use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::traits::Node;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
+use cursed::error::SourceLocation;
+use cursed::lexer::Token;
+use std::io::Write;
+
 //! Tests for the filesystem integration with interface type assertions
 //!
 //! These tests verify that the source location tracking with filesystem integration
 //! works correctly for interface type assertions.
 
-use std::fs;
-use std::path::Path;
-use std::sync::Once;
 
 // Initialize test tracing
 static INIT: Once = Once::new();
@@ -19,11 +27,6 @@ pub fn init_tracing() {
     });
 }
 
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
-use cursed::ast::traits::Node;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
-use cursed::error::SourceLocation;
 
 #[test]
 fn test_filesystem_integration_initialization() {
@@ -48,7 +51,6 @@ fn test_source_line_retrieval() {
     init_tracing();
     
     // Create a temporary test file
-    use std::io::Write;
     let temp_dir = tempfile::tempdir().unwrap();
     let file_path = temp_dir.path().join("test_source.csd");
     let mut file = std::fs::File::create(&file_path).unwrap();
@@ -97,7 +99,6 @@ fn test_formatting_error_with_source_context() {
     init_tracing();
     
     // Create a temporary test file
-    use std::io::Write;
     let temp_dir = tempfile::tempdir().unwrap();
     let file_path = temp_dir.path().join("test_error.csd");
     let mut file = std::fs::File::create(&file_path).unwrap();
@@ -187,7 +188,6 @@ fn test_source_location_with_node() {
     }
     
     // Create a temporary test file
-    use std::io::Write;
     let temp_dir = tempfile::tempdir().unwrap();
     let file_path = temp_dir.path().join("test_node.csd");
     let mut file = std::fs::File::create(&file_path).unwrap();
@@ -206,7 +206,7 @@ fn test_source_location_with_node() {
     
     // Create a mock node
     let node = MockNode {
-        token_str: "shape.(Circle)?".to_string(),
+        token_str: "shape.(Circle)?".to_string()),
     };
     
     // Create a source location with context

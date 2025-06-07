@@ -1,5 +1,6 @@
 use cursed::lexer::{Lexer, Token};
 
+
 #[test]
 fn test_generic_syntax_lexing() {
     let input = "be_like Stack[T] squad { items []T; }";

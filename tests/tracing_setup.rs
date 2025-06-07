@@ -1,9 +1,10 @@
+use std::sync::Once;
+use tracing_subscriber::{fmt, EnvFilter};
+
 //! Tracing setup for integration tests
 //!
 //! This module provides initialization code for setting up tracing in tests.
 
-use std::sync::Once;
-use tracing_subscriber::{fmt, EnvFilter};
 
 /// Initialize tracing for tests
 pub fn init_test_tracing() {

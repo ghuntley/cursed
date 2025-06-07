@@ -1,5 +1,3 @@
-//! Integration test for interface code generation in LLVM
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use inkwell::context::Context;
@@ -9,6 +7,9 @@ use cursed::codegen::llvm::InterfaceImplementation;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::error::Error;
 use std::sync::Arc;
+
+//! Integration test for interface code generation in LLVM
+
 
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
@@ -29,21 +30,21 @@ fn test_interface_code_generation() -> Result<(), Error> {
     // 1. Register the Printable interface
     type_checker.register_interface(
         "Printable",
-        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
         Vec::new(),
     );
     
     // Register the interface with the code generator as well
     codegen.register_interface(
         "Printable",
-        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
         Vec::new(),
     )?;
     
     // 2. Register a Person struct
     let person_fields = HashMap::from([
-        ("name".to_string(), Type::Tea),
-        ("age".to_string(), Type::Normie),
+        ("name".to_string()), Type::Tea),
+        ("age".to_string()), Type::Normie),
     ]);
     
     type_checker.register_struct("Person", person_fields, Vec::new());
@@ -57,8 +58,8 @@ fn test_interface_code_generation() -> Result<(), Error> {
     )?;
     
     // 4. Verify that Person implements Printable
-    let person_type = Type::Struct("Person".to_string(), Vec::new());
-    let printable_type = Type::Interface("Printable".to_string(), Vec::new());
+    let person_type = Type::Struct("Person".to_string()), Vec::new());
+    let printable_type = Type::Interface("Printable".to_string()), Vec::new());
     
     let implements = type_checker.check_interface_implementation(&person_type, &printable_type)?;
     assert!(implements, "Person should implement Printable");
@@ -88,7 +89,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // 6. Register Person as implementing Printable
     let mut person_methods = HashMap::new();
-    person_methods.insert("to_string".to_string(), function);
+    person_methods.insert("to_string".to_string()), function);
     
     codegen.register_interface_implementation(
         "Person",
@@ -179,7 +180,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
     }
     
     Ok(())

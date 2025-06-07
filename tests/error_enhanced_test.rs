@@ -1,6 +1,8 @@
 use cursed::error_enhanced::{CursedError, ErrorKind, test_utils};
 use cursed::error::SourceLocation;
 use std::error::Error;
+use std::io::{Error as IoError, ErrorKind as IoErrorKind};
+
 
 #[test]
 fn test_error_creation() {
@@ -85,7 +87,6 @@ fn test_error_conversion() {
     assert_eq!(err.message(), "String error");
     
     // Test conversion from std::io::Error
-    use std::io::{Error as IoError, ErrorKind as IoErrorKind};
     let io_err = IoError::new(IoErrorKind::NotFound, "File not found");
     let err: CursedError = io_err.into();
     

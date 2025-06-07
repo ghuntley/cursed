@@ -1,15 +1,17 @@
-//! Tests for basic control flow compilation in the LLVM code generator
-
 use cursed::ast::control_flow::{BreakStatement, ContinueStatement, WhileStatement};
-use cursed::ast::statements::block::BlockStatement; // Updated import path
 use cursed::ast::expressions::literals::BooleanLiteral;
 use cursed::ast::traits::{Statement, Expression};
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::StatementCompilation; // Updated import
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for basic control flow compilation in the LLVM code generator
+
+use cursed::ast::statements::block::BlockStatement; // Updated import path
+use cursed::codegen::llvm::StatementCompilation; // Updated import
 
 #[test]
 fn test_while_with_break_continue() {
@@ -25,18 +27,18 @@ fn test_while_with_break_continue() {
 
     // Create a while loop with condition true
     let condition = BooleanLiteral {
-        token: Token::Based,
+        token: "token".to_string()),
         value: true,
     };
     
     // Create a block with break statement
     let break_stmt = BreakStatement {
-        token: "ghosted".to_string(),
+        token: "token".to_string()),
     };
     
     // Create a continue statement
     let continue_stmt = ContinueStatement {
-        token: "simp".to_string(),
+        token: "token".to_string()),
     };
     
     // Create a block with both statements
@@ -47,7 +49,7 @@ fn test_while_with_break_continue() {
     
     // Create the while statement
     let while_stmt = WhileStatement {
-        token: Token::Periodt,
+        token: "token".to_string()),
         condition: Box::new(condition),
         body: Box::new(block),
     };

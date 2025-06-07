@@ -1,8 +1,10 @@
 use cursed::ast;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
+use cursed::lexer::Token;
 use cursed::parser::Parser;
 use tracing::{debug, error, info, instrument, trace, warn};
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
@@ -67,10 +69,10 @@ be_like Box[T] squad {
         
         // Create a dummy struct statement
         &ast::SquadStatement {
-            token: "be_like".to_string(),
+            token: Token::BeLike,
             name: ast::Identifier {
-                token: "Box".to_string(),
-                value: "Box".to_string(),
+                token: "token".to_string()),
+                value: "Box".to_string()),
             },
             type_parameters: vec![ast::declarations::type_parameter::TypeParameter::new(
                 cursed::lexer::token::Token::new(cursed::lexer::TokenType::Identifier, "T"),
@@ -78,14 +80,14 @@ be_like Box[T] squad {
             )],
             generic_constraints: vec![],
             fields: vec![ast::statements::fields::FieldStatement {
-                token: "field".to_string(),
+                token: "token".to_string()),
                 name: ast::Identifier {
-                    token: "value".to_string(),
-                    value: "value".to_string(),
+                    token: "token".to_string()),
+                    value: "value".to_string()),
                 },
                 type_name: ast::Identifier {
-                    token: "T".to_string(),
-                    value: "T".to_string(),
+                    token: "token".to_string()),
+                    value: "T".to_string()),
                 },
             }],
         }
@@ -237,32 +239,32 @@ slay foo[T](x normie) T {
         // Create a dummy function statement with expected values
         // This is just for test verification purposes
         let dummy_function = ast::FunctionStatement {
-            token: "slay".to_string(),
+            token: "token".to_string()),
             name: ast::Identifier {
-                token: func_name.to_string(),
-                value: func_name.to_string(),
+                token: func_name.to_string()),
+                value: func_name.to_string()),
             },
             type_parameters: vec![ast::Identifier {
-                token: type_param.to_string(),
-                value: type_param.to_string(),
+                token: type_param.to_string()),
+                value: type_param.to_string()),
             }],
             parameters: vec![ast::declarations::ParameterStatement {
-                token: param_name.to_string(),
+                token: param_name.to_string()),
                 name: ast::Identifier {
-                    token: param_name.to_string(),
-                    value: param_name.to_string(),
+                    token: param_name.to_string()),
+                    value: param_name.to_string()),
                 },
                 type_name: Box::new(ast::Identifier {
-                    token: param_type.to_string(),
-                    value: param_type.to_string(),
+                    token: param_type.to_string()),
+                    value: param_type.to_string()),
                 }),
             }],
             return_type: Some(Box::new(ast::Identifier {
-                token: return_type.to_string(),
-                value: return_type.to_string(),
+                token: return_type.to_string()),
+                value: return_type.to_string()),
             })),
             body: ast::statements::block::BlockStatement {
-                token: "{".to_string(),
+                token: Token::LBrace,
                 statements: vec![],
             },
             generic_constraints: vec![],
@@ -358,17 +360,17 @@ sus box_int = Box[normie]{value: 42}
                 
                 // Run assertions on a dummy BeLikeExpression
                 let dummy_be_like = ast::BeLikeExpression {
-                    token: "be_like".to_string(),
+                    token: "token".to_string()),
                     struct_name: ast::Identifier {
-                        token: struct_name.to_string(),
-                        value: struct_name.to_string(),
+                        token: struct_name.to_string()),
+                        value: struct_name.to_string()),
                     },
                     type_arguments: vec![Box::new(ast::Identifier {
-                        token: type_arg.to_string(),
-                        value: type_arg.to_string(),
+                        token: type_arg.to_string()),
+                        value: type_arg.to_string()),
                     })],
-                    fields: vec![(field_name.to_string(), Box::new(ast::IntegerLiteral {
-                        token: field_value.to_string(),
+                    fields: vec![(field_name.to_string()), Box::new(ast::IntegerLiteral {
+                        token: field_value.to_string()),
                         value: field_value,
                     }))],
                 };
@@ -388,24 +390,24 @@ sus box_int = Box[normie]{value: 42}
         
         // Create a dummy let statement with a BeLikeExpression
         let dummy_let = ast::statements::declarations::LetStatement {
-            token: "sus".to_string(),
+            token: "token".to_string()),
             name: ast::Identifier {
-                token: var_name.to_string(),
-                value: var_name.to_string(),
+                token: var_name.to_string()),
+                value: var_name.to_string()),
             },
             type_annotation: None,
             value: Some(Box::new(ast::BeLikeExpression {
-                token: "be_like".to_string(),
+                token: "token".to_string()),
                 struct_name: ast::Identifier {
-                    token: struct_name.to_string(),
-                    value: struct_name.to_string(),
+                    token: struct_name.to_string()),
+                    value: struct_name.to_string()),
                 },
                 type_arguments: vec![Box::new(ast::Identifier {
-                    token: type_arg.to_string(),
-                    value: type_arg.to_string(),
+                    token: type_arg.to_string()),
+                    value: type_arg.to_string()),
                 })],
-                fields: vec![(field_name.to_string(), Box::new(ast::IntegerLiteral {
-                    token: field_value.to_string(),
+                fields: vec![(field_name.to_string()), Box::new(ast::IntegerLiteral {
+                    token: field_value.to_string()),
                     value: field_value,
                 }))],
             })),

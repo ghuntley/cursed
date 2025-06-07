@@ -135,7 +135,8 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
                             return Err(Error::Compilation(format!(
                                 "Type assertion failed: The interface relationship is reversed. {}\n{}\nAt: {}",
                                 message, 
-                                self.visualize_interface_hierarchy(
+                                InterfaceRegistryVisualizationIntegration::visualize_interface_hierarchy(
+                                    self,
                                     VisualizationFormat::Text, 
                                     &VisualizationOptions { max_depth: Some(2), include_cycles: true }
                                 )?,
@@ -184,7 +185,8 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
             };
             
             // Generate an error with the hierarchy visualization
-            let hierarchy = self.visualize_interface_hierarchy(
+            let hierarchy = InterfaceRegistryVisualizationIntegration::visualize_interface_hierarchy(
+                self,
                 VisualizationFormat::Text, 
                 &VisualizationOptions { max_depth: Some(2), include_cycles: true }
             )?;

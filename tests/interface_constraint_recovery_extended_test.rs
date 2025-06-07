@@ -1,14 +1,15 @@
+use cursed::core::constraint_recovery::{ConstraintRecovery, ConstraintFailureSeverity, RecoveryStrategy};
+use cursed::core::constraint_recovery_extension::{InterfaceRegistryExtensionChecking, ConstraintPath};
+use cursed::core::interface_registry::InterfaceRegistry;
+use cursed::core::type_checker::Type;
+use cursed::error::Error;
+
 //! Extended Interface Constraint Recovery System Test
 //!
 //! Tests the advanced features of the constraint recovery system for interface constraints.
 //! This test verifies that the system can properly identify constraint paths, suggest
 //! meaningful fixes, and provide detailed implementation guidance.
 
-use cursed::core::constraint_recovery::{ConstraintRecovery, ConstraintFailureSeverity, RecoveryStrategy};
-use cursed::core::constraint_recovery_extension::{InterfaceRegistryExtensionChecking, ConstraintPath};
-use cursed::core::interface_registry::InterfaceRegistry;
-use cursed::core::type_checker::Type;
-use cursed::error::Error;
 
 #[path = "common.rs"]
 mod common;
@@ -32,19 +33,19 @@ fn test_constraint_path_finding() {
     // Add some more complex relationships for testing
     // CustomList implements Container
     registry.register_implementation(
-        Type::Struct("CustomList".to_string(), vec![]),
+        Type::Struct("CustomList".to_string()), vec![]),
         "Container".to_string()
     );
     
     // Container types can be converted to Sized
     registry.register_implementation(
-        Type::Struct("Container".to_string(), vec![]),
+        Type::Struct("Container".to_string()), vec![]),
         "Sized".to_string()
     );
     
     // Find a path from CustomList to Sized (should be CustomList -> Container -> Sized)
     let path = registry.find_constraint_path(
-        &Type::Struct("CustomList".to_string(), vec![]),
+        &Type::Struct("CustomList".to_string()), vec![]),
         "Sized"
     );
     
@@ -63,7 +64,7 @@ fn test_fix_suggestions() {
     registry.populate_with_defaults();
     
     // Create a custom type
-    let custom_type = Type::Struct("CustomVector".to_string(), vec![]);
+    let custom_type = Type::Struct("CustomVector".to_string()), vec![]);
     
     // It should not implement Numeric
     assert!(!registry.check_implementation(&custom_type, "Numeric").unwrap());
@@ -90,7 +91,7 @@ fn test_implementation_guide_generation() {
     
     // Generate guide for implementing Comparable on a custom type
     let guide = registry.generate_implementation_guide(
-        &Type::Struct("CustomVector".to_string(), vec![]),
+        &Type::Struct("CustomVector".to_string()), vec![]),
         "Comparable"
     );
     
@@ -120,7 +121,7 @@ fn test_extended_error_creation() {
     
     // Create an extended error for a type that doesn't implement Numeric
     let error = registry.create_extended_constraint_error(
-        &Type::Struct("CustomVector".to_string(), vec![]),
+        &Type::Struct("CustomVector".to_string()), vec![]),
         "Numeric"
     );
     
@@ -143,8 +144,8 @@ fn test_similar_type_finding() {
     registry.populate_with_defaults();
     
     // Define two similar struct types
-    let vector_type = Type::Struct("Vector".to_string(), vec![]);
-    let vector3d_type = Type::Struct("Vector".to_string(), vec![]);
+    let vector_type = Type::Struct("Vector".to_string()), vec![]);
+    let vector3d_type = Type::Struct("Vector".to_string()), vec![]);
     
     // Register Vector as implementing Numeric
     registry.register_implementation(vector_type.clone(), "Numeric".to_string());
@@ -167,7 +168,7 @@ fn test_is_close_to_implementing() {
     registry.populate_with_defaults();
     
     // Define a type that implements Container
-    let collection_type = Type::Struct("Collection".to_string(), vec![]);
+    let collection_type = Type::Struct("Collection".to_string()), vec![]);
     registry.register_implementation(collection_type.clone(), "Container".to_string());
     
     // Collection implements Container but not List
@@ -175,7 +176,7 @@ fn test_is_close_to_implementing() {
     assert!(registry.is_close_to_implementing(&collection_type, "List"));
     
     // A type with no implementations should not be close
-    let empty_type = Type::Struct("EmptyType".to_string(), vec![]);
+    let empty_type = Type::Struct("EmptyType".to_string()), vec![]);
     assert!(!registry.is_close_to_implementing(&empty_type, "List"));
 }
 
@@ -187,7 +188,7 @@ fn test_integrated_constraint_recovery() {
     registry.populate_with_defaults();
     
     // Create a custom vector type that should implement Numeric
-    let vector_type = Type::Struct("Vector3D".to_string(), vec![]);
+    let vector_type = Type::Struct("Vector3D".to_string()), vec![]);
     
     // Check constraint with recovery
     let result = registry.check_constraint_with_recovery(&vector_type, "Numeric");

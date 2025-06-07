@@ -1,12 +1,5 @@
-//! Integration tests for the full Result-based interface type assertion implementation
-//!
-//! These tests verify that interface type assertions work correctly with proper
-//! integration of the ? operator for error propagation.
-
-use std::sync::Arc;
 use std::sync::Arc;
 use std::cell::RefCell;
-
 use cursed::ast::expressions::TypeAssertion;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::traits::{Expression, Node};
@@ -18,14 +11,22 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use cursed::error::SourceLocation;
 use cursed::error::type_assertion_error::TypeAssertionError;
+use cursed::lexer::Token;
+use common::tracing::setup as init_tracing;
+use inkwell::context::Context;
+use tracing::{debug, info, warn, trace};
+
+//! Integration tests for the full Result-based interface type assertion implementation
+//!
+//! These tests verify that interface type assertions work correctly with proper
+//! integration of the ? operator for error propagation.
+
+
 
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
 
-use common::tracing::setup as init_tracing;
-use inkwell::context::Context;
-use tracing::{debug, info, warn, trace};
 
 #[test]
 fn test_result_implementation_registration() {
@@ -137,8 +138,8 @@ fn test_generate_type_assertion_error_info() {
             let error_message = format!("Type assertion failed: {} is not a {}", source_type, target_type);
             
             Ok(TypeAssertionErrorInfo {
-                source_type: source_type.to_string(),
-                target_type: target_type.to_string(),
+                source_type: source_type.to_string()),
+                target_type: target_type.to_string()),
                 source_location,
                 source_type_id: Some(12345),
                 target_type_id: Some(67890),
@@ -154,7 +155,7 @@ fn test_generate_type_assertion_error_info() {
             _type_name: &str,
             _depth: usize
         ) -> Result<String, Error> {
-            Ok("Mock interface path visualization".to_string())
+            Ok("Mock interface path visualization".to_string()
         }
         
         fn find_alternative_paths(
@@ -163,7 +164,7 @@ fn test_generate_type_assertion_error_info() {
             _target_type: &str,
             _max_depth: usize
         ) -> Result<Vec<String>, Error> {
-            Ok(vec!["source -> middle -> target".to_string()])
+            Ok(vec!["source -> middle -> target".to_string())])
         }
         
         fn check_extension_relationship(
@@ -183,7 +184,7 @@ fn test_generate_type_assertion_error_info() {
         line: 42,
         column: 10,
         file: Some("test.csd".to_string()),
-        source_line: "x, ok = value.(TargetType)".to_string(),
+        source_line: "x, ok = value.(TargetType)".to_string()),
     };
     
     // Test generating error info
@@ -221,18 +222,18 @@ fn test_type_assertion_error_info_creation() {
     
     // Create a test TypeAssertionErrorInfo directly
     let error_info = TypeAssertionErrorInfo {
-        source_type: "Stringer".to_string(),
-        target_type: "Writer".to_string(),
+        source_type: "Stringer".to_string()),
+        target_type: "Writer".to_string()),
         source_location: Some(SourceLocation {
             line: 100,
             column: 20,
             file: Some("test.csd".to_string()),
-            source_line: "test code".to_string(),
+            source_line: "test code".to_string()),
         }),
         source_type_id: Some(12345),
         target_type_id: Some(67890),
         type_path: Some("Stringer -> io.Writer -> Writer".to_string()),
-        error_message: "Test error message".to_string(),
+        error_message: "Test error message".to_string()),
     };
     
     // Verify the fields
@@ -252,12 +253,12 @@ fn test_type_assertion_compilation() {
     
     // Create a simple test TypeAssertion AST node
     let type_assertion = TypeAssertion {
-        token: ".".to_string(),
+        token: Token::Dot,
         expression: Box::new(Identifier {
-            token: "value".to_string(),
-            value: "value".to_string(),
+            token: "token".to_string()),
+            value: "value".to_string()),
         }),
-        type_name: "TargetType".to_string(),
+        type_name: "TargetType".to_string()),
     };
     
     // Verify the string representation

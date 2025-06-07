@@ -1,27 +1,5 @@
-//! Integration test for interface type assertion path visualization
-//! Verifies that the path visualization system integrates properly
-//! with the interface registry to provide enhanced error messages.
-
-// Initialize standard tracing infrastructure
 use std::sync::Once;
-
-// We need to call init_test_tracing only once
-static INIT: Once = Once::new();
-
-#[path = "tracing_setup.rs"]
-pub mod tracing_setup;
 use tracing::{debug, error, info};
-
-// Macro for initializing tracing in tests
-macro_rules! init_tracing {
-    () => {
-        INIT.call_once(|| {
-            tracing_setup::init_test_tracing();
-        });
-    };
-}
-
-// Import relevant modules for testing
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use std::path::PathBuf;
@@ -36,6 +14,30 @@ use cursed::codegen::llvm::interface_type_assertion_path_visualization::Interfac
 use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use cursed::codegen::llvm::llvm_code_generator_extensions::ErrorPathExtensions;
 use cursed::codegen::llvm::InterfaceTypeAssertionPathVisualizationAdapter;
+use cursed::lexer::Token;
+
+//! Integration test for interface type assertion path visualization
+//! Verifies that the path visualization system integrates properly
+//! with the interface registry to provide enhanced error messages.
+
+// Initialize standard tracing infrastructure
+
+// We need to call init_test_tracing only once
+static INIT: Once = Once::new();
+
+#[path = "tracing_setup.rs"]
+pub mod tracing_setup;
+
+// Macro for initializing tracing in tests
+macro_rules! init_tracing {
+    () => {
+        INIT.call_once(|| {
+            tracing_setup::init_test_tracing();
+        });
+    };
+}
+
+// Import relevant modules for testing
 
 // Simple mock expression for testing
 #[derive(Debug, Clone)]
@@ -75,21 +77,21 @@ impl Expression for MockExpression {
 fn setup_simple_test_types() -> (TypeAssertion, TypeAssertion) {
     // Create simple mock expressions for testing
     let valid_assertion = TypeAssertion {
-        token: "test.csd:10".to_string(),
+        token: Token::Identifier("test.csd:10".to_string()),
         expression: Box::new(MockExpression {
-            token: "test.csd:10".to_string(),
-            type_name: "Dog".to_string(),
+            token: "token".to_string()),
+            type_name: "Dog".to_string()),
         }),
-        type_name: "Animal".to_string(),
+        type_name: "Animal".to_string()),
     };
     
     let invalid_assertion = TypeAssertion {
-        token: "test.csd:15".to_string(),
+        token: Token::Identifier("test.csd:15".to_string()),
         expression: Box::new(MockExpression {
-            token: "test.csd:15".to_string(),
-            type_name: "Animal".to_string(),
+            token: "token".to_string()),
+            type_name: "Animal".to_string()),
         }),
-        type_name: "Plant".to_string(),
+        type_name: "Plant".to_string()),
     };
     
     (valid_assertion, invalid_assertion)

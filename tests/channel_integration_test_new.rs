@@ -1,7 +1,8 @@
-//! Integration tests for channel operations
-
 use std::fs;
 use std::path::Path;
+
+//! Integration tests for channel operations
+
 
 /// Tests that the LLVM codegen uses proper build_load and build_int_compare syntax
 #[test]

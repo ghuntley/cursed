@@ -1,5 +1,3 @@
-//! Tests for complex if expressions in the LLVM code generator
-
 use cursed::ast::expressions::identifiers::Identifier;
 use cursed::ast::expressions::operators::InfixExpression;
 use cursed::ast::expressions::literals::{IntegerLiteral, BooleanLiteral};
@@ -16,9 +14,13 @@ use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation};
 use cursed::codegen::llvm::IfExpressionCompilation;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
+
+//! Tests for complex if expressions in the LLVM code generator
+
 
 #[test]
 #[ignore = "This test needs more work to handle mixed integer types properly"]
@@ -36,17 +38,17 @@ fn test_if_expression_with_variable() {
     
     // Set up a variable 'x' with value 10
     let x_ident = Identifier {
-        token: "x".to_string(),
-        value: "x".to_string(),
+        token: "token".to_string()),
+        value: "x".to_string()),
     };
     
     let x_value = IntegerLiteral {
-        token: Token::Int(10),
+        token: "token".to_string()),
         value: 10,
     };
     
     let let_stmt = LetStatement {
-        token: Token::Sus,
+        token: "token".to_string()),
         name: x_ident.clone(),
         value: Some(Box::new(x_value)),
         // Add explicit i32 type annotation to ensure consistency
@@ -60,7 +62,7 @@ fn test_if_expression_with_variable() {
     // Create a condition that compares x > 5
     let x_expr = x_ident.clone();
     let five = IntegerLiteral {
-        token: Token::Int(5),
+        token: "token".to_string()),
         value: 5,
     };
 
@@ -68,47 +70,47 @@ fn test_if_expression_with_variable() {
     let condition = InfixExpression {
         token: Token::Gt,
         left: Box::new(x_expr),
-        operator: ">".to_string(),
+        operator: ">".to_string()),
         right: Box::new(five),
     };
     
     // Create the then expression: x + 20
     let then_x = x_ident.clone();
     let twenty = IntegerLiteral {
-        token: Token::Int(20),
+        token: "token".to_string()),
         value: 20,
     };
     
     let then_expr = InfixExpression {
         token: Token::Plus,
         left: Box::new(then_x),
-        operator: "+".to_string(),
+        operator: "+".to_string()),
         right: Box::new(twenty),
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "+".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: x - 5
     let else_x = x_ident.clone();
     let five_2 = IntegerLiteral {
-        token: Token::Int(5),
+        token: "token".to_string()),
         value: 5,
     };
     
     let else_expr = InfixExpression {
         token: Token::Minus,
         left: Box::new(else_x),
-        operator: "-".to_string(),
+        operator: "-".to_string()),
         right: Box::new(five_2),
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "-".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -125,7 +127,7 @@ fn test_if_expression_with_variable() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: Token::Lowkey,
+        token: "token".to_string()),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -156,45 +158,45 @@ fn test_nested_if_expressions() {
     
     // Create outer condition: true
     let outer_condition = BooleanLiteral {
-        token: Token::Based,
+        token: "token".to_string()),
         value: true,
     };
     
     // Create inner condition: false
     let inner_condition = BooleanLiteral {
-        token: Token::Lit,
+        token: "token".to_string()),
         value: false,
     };
     
     // Create values for different branches
     let value_1 = IntegerLiteral {
-        token: Token::Int(1),
+        token: "token".to_string()),
         value: 1,
     };
     
     let value_2 = IntegerLiteral {
-        token: Token::Int(2),
+        token: "token".to_string()),
         value: 2,
     };
     
     let value_3 = IntegerLiteral {
-        token: Token::Int(3),
+        token: "token".to_string()),
         value: 3,
     };
     
     // Wrap values in expression statements
     let stmt_1 = ExpressionStatement {
-        token: "1".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(value_1)),
     };
     
     let stmt_2 = ExpressionStatement {
-        token: "2".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(value_2)),
     };
     
     let stmt_3 = ExpressionStatement {
-        token: "3".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(value_3)),
     };
     
@@ -210,7 +212,7 @@ fn test_nested_if_expressions() {
     };
     
     let inner_if = IfStatement {
-        token: Token::Lowkey,
+        token: "token".to_string()),
         condition: Box::new(inner_condition),
         consequence: Box::new(inner_consequence),
         alternative: Some(Box::new(inner_alternative)),
@@ -219,7 +221,7 @@ fn test_nested_if_expressions() {
     // Wrap inner if in expression statement
     let inner_if_expr = IfExpression::new(inner_if);
     let inner_if_stmt = ExpressionStatement {
-        token: "if".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(inner_if_expr)),
     };
     
@@ -235,7 +237,7 @@ fn test_nested_if_expressions() {
     };
     
     let outer_if = IfStatement {
-        token: Token::Lowkey,
+        token: "token".to_string()),
         condition: Box::new(outer_condition),
         consequence: Box::new(outer_consequence),
         alternative: Some(Box::new(outer_alternative)),
