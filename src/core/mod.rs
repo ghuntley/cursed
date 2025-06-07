@@ -23,6 +23,7 @@ pub mod interface_registry;
 pub mod interface_registry_cache;
 pub mod interface_registry_cache_merged;
 pub mod interface_registry_lru_cache;
+pub mod interface_registry_lru_extension;
 pub mod type_checker;
 pub mod type_checker_interface_registry;
 pub mod type_infer;

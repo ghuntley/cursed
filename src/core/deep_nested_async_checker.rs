@@ -412,17 +412,20 @@ mod tests {
         registry.populate_with_defaults();
         let registry_arc = Arc::new(registry);
         
-        let checker = DeepNestedAsyncChecker::new(registry_arc);
-        
-        // Register a deep nested constraint
-        // We'll add it directly to the deep registry
-        checker.deep_registry.as_ref().register_deep_nested_constraint(
+        // Pre-configure the registry with the constraint before creating the checker
+        let mut deep_registry = DeepNestedInterfaceRegistry::new();
+        deep_registry.enhanced_registry.base_registry = registry_arc.as_ref().clone();
+        deep_registry.populate_deep_nested_defaults();
+        deep_registry.register_deep_nested_constraint(
             "Container",
             "T",
             "Stack",
             "E",
             "Comparable"
         );
+        let deep_registry_arc = Arc::new(deep_registry);
+        
+        let checker = DeepNestedAsyncChecker::with_deep_registry(deep_registry_arc);
         
         // Create test types
         let stack_int = Type::Struct(
@@ -467,16 +470,20 @@ mod tests {
         registry.populate_with_defaults();
         
         // Use extension trait to create checker
-        let checker = registry.to_deep_nested_async_checker();
-        
-        // Register a multi-level constraint
-        checker.deep_registry.as_ref().register_deep_multi_level_constraint(
+        // Pre-configure the registry with the constraint before creating the checker
+        let mut deep_registry = DeepNestedInterfaceRegistry::new();
+        deep_registry.enhanced_registry.base_registry = registry.clone();
+        deep_registry.populate_deep_nested_defaults();
+        deep_registry.register_deep_multi_level_constraint(
             "Collection",
             "T",
             vec!["Container", "List"],
             vec!["U", "E"],
             "Comparable"
         );
+        let deep_registry_arc = Arc::new(deep_registry);
+        
+        let checker = DeepNestedAsyncChecker::with_deep_registry(deep_registry_arc);
         
         // Create test types
         let list_int = Type::Struct(

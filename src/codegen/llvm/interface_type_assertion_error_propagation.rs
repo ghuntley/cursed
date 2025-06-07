@@ -662,7 +662,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let location_info_for_call = location_info;
         
         // Release builder borrow and continue with mutable operations
-        std::mem::drop(builder);
+        let _ = builder;
         
         // Note: Type IDs are available in expected_type_id_opt and actual_type_id_opt
         // but we'll skip storing them to avoid borrow conflicts for now
@@ -683,7 +683,7 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let location_info_for_call = location_info;
         
         // Release builder borrow and continue with mutable operations
-        std::mem::drop(builder);
+        let _ = builder;
         
         // Enhance source location with file content if available
         if let Some(location) = &mut source_location {

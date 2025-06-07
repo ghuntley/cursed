@@ -236,7 +236,7 @@ pub mod interface_path {
         target: &str
     ) -> Result<String, Error> {
         // Create code generator
-        let mut code_generator = LlvmCodeGenerator::new_for_test()?;
+        let (_context, mut code_generator) = LlvmCodeGenerator::new_for_test()?;
         
         // Convert interfaces to the expected format
         let mut hierarchy = HashMap::new();
@@ -264,7 +264,7 @@ pub mod interface_path {
         root: Option<&str>
     ) -> Result<String, Error> {
         // Create code generator
-        let mut code_generator = LlvmCodeGenerator::new_for_test()?;
+        let (_context, mut code_generator) = LlvmCodeGenerator::new_for_test()?;
         
         // Convert interfaces to the expected format
         let mut hierarchy = HashMap::new();

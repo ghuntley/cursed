@@ -210,19 +210,22 @@ pub mod test_common {
         let registry = ThreadSafeInterfaceExtensionRegistry::new();
         
         // Add some test interfaces
-        registry.write().unwrap().register_interface("Reader");
-        registry.write().unwrap().register_interface("Writer");
-        registry.write().unwrap().register_interface("Closer");
-        registry.write().unwrap().register_interface("FileReader");
-        registry.write().unwrap().register_interface("FileWriter");
-        registry.write().unwrap().register_interface("File");
-        
-        // Add some inheritance relationships
-        registry.write().unwrap().register_extension("FileReader", "Reader").unwrap();
-        registry.write().unwrap().register_extension("FileWriter", "Writer").unwrap();
-        registry.write().unwrap().register_extension("File", "FileReader").unwrap();
-        registry.write().unwrap().register_extension("File", "FileWriter").unwrap();
-        registry.write().unwrap().register_extension("File", "Closer").unwrap();
+        {
+            let mut reg = registry.write().unwrap();
+            reg.register_interface("Reader");
+            reg.register_interface("Writer");
+            reg.register_interface("Closer");
+            reg.register_interface("FileReader");
+            reg.register_interface("FileWriter");
+            reg.register_interface("File");
+            
+            // Add some inheritance relationships
+            reg.register_extension("FileReader", "Reader").unwrap();
+            reg.register_extension("FileWriter", "Writer").unwrap();
+            reg.register_extension("File", "FileReader").unwrap();
+            reg.register_extension("File", "FileWriter").unwrap();
+            reg.register_extension("File", "Closer").unwrap();
+        }
         
         registry
     }
@@ -234,27 +237,30 @@ pub mod test_common {
         let registry = ThreadSafeInterfaceExtensionRegistry::new();
         
         // Add some test interfaces
-        registry.write().unwrap().register_interface("Reader");
-        registry.write().unwrap().register_interface("Writer");
-        registry.write().unwrap().register_interface("Closer");
-        registry.write().unwrap().register_interface("FileReader");
-        registry.write().unwrap().register_interface("FileWriter");
-        registry.write().unwrap().register_interface("File");
-        registry.write().unwrap().register_interface("NetworkReader");
-        registry.write().unwrap().register_interface("NetworkWriter");
-        registry.write().unwrap().register_interface("Network");
-        
-        // Add some inheritance relationships
-        registry.write().unwrap().register_extension("FileReader", "Reader").unwrap();
-        registry.write().unwrap().register_extension("FileWriter", "Writer").unwrap();
-        registry.write().unwrap().register_extension("File", "FileReader").unwrap();
-        registry.write().unwrap().register_extension("File", "FileWriter").unwrap();
-        registry.write().unwrap().register_extension("File", "Closer").unwrap();
-        registry.write().unwrap().register_extension("NetworkReader", "Reader").unwrap();
-        registry.write().unwrap().register_extension("NetworkWriter", "Writer").unwrap();
-        registry.write().unwrap().register_extension("Network", "NetworkReader").unwrap();
-        registry.write().unwrap().register_extension("Network", "NetworkWriter").unwrap();
-        registry.write().unwrap().register_extension("Network", "Closer").unwrap();
+        {
+            let mut reg = registry.write().unwrap();
+            reg.register_interface("Reader");
+            reg.register_interface("Writer");
+            reg.register_interface("Closer");
+            reg.register_interface("FileReader");
+            reg.register_interface("FileWriter");
+            reg.register_interface("File");
+            reg.register_interface("NetworkReader");
+            reg.register_interface("NetworkWriter");
+            reg.register_interface("Network");
+            
+            // Add some inheritance relationships
+            reg.register_extension("FileReader", "Reader").unwrap();
+            reg.register_extension("FileWriter", "Writer").unwrap();
+            reg.register_extension("File", "FileReader").unwrap();
+            reg.register_extension("File", "FileWriter").unwrap();
+            reg.register_extension("File", "Closer").unwrap();
+            reg.register_extension("NetworkReader", "Reader").unwrap();
+            reg.register_extension("NetworkWriter", "Writer").unwrap();
+            reg.register_extension("Network", "NetworkReader").unwrap();
+            reg.register_extension("Network", "NetworkWriter").unwrap();
+            reg.register_extension("Network", "Closer").unwrap();
+        }
         
         registry
     }
@@ -487,7 +493,9 @@ pub mod test_common {
         #[test]
         fn test_create_registry_with_visualization() {
             let registry = create_test_registry_with_visualization();
-            let registry_arc = registry.clone() as Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>>;
+            // Create a new extension registry to avoid trait upcasting issues
+            let test_extension_registry = ThreadSafeInterfaceExtensionRegistry::new();
+            let registry_arc: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>> = Arc::new(RwLock::new(test_extension_registry));
             assert!(verify_test_registry(&registry_arc).is_ok());
         }
         

@@ -62,13 +62,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(
-            &context,
-            module,
-            builder,
-            PathBuf::from("test_module"),
-            OptimizationLevel::None,
-        );
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -110,13 +104,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(
-            &context,
-            module,
-            builder,
-            PathBuf::from("test_module"),
-            OptimizationLevel::None,
-        );
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -148,13 +136,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(
-            &context,
-            module,
-            builder,
-            PathBuf::from("test_module"),
-            OptimizationLevel::None,
-        );
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -194,13 +176,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(
-            &context,
-            module,
-            builder,
-            PathBuf::from("test_module"),
-            OptimizationLevel::None,
-        );
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);

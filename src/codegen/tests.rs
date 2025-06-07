@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use inkwell::context::Context;
+    use std::path::PathBuf;
     use crate::ast::{Program, Statement, Expression};
     use crate::lexer::Lexer;
     use crate::parser::Parser;
@@ -18,7 +19,7 @@ mod tests {
         let program = parse_program(input);
         
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let result = codegen.compile(&program);
         assert!(result.is_ok(), "Failed to compile integer literal: {:?}", result.err());
@@ -33,7 +34,7 @@ mod tests {
         let program = parse_program(input);
         
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let result = codegen.compile(&program);
         assert!(result.is_ok(), "Failed to compile arithmetic expression: {:?}", result.err());
@@ -49,7 +50,7 @@ mod tests {
         let program = parse_program(input);
         
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let result = codegen.compile(&program);
         assert!(result.is_ok(), "Failed to compile variable declaration: {:?}", result.err());
@@ -65,7 +66,7 @@ mod tests {
         let program = parse_program(input);
         
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let result = codegen.compile(&program);
         assert!(result.is_ok(), "Failed to compile if statement: {:?}", result.err());
@@ -81,7 +82,7 @@ mod tests {
         let program = parse_program(input);
         
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let result = codegen.compile(&program);
         assert!(result.is_ok(), "Failed to compile function definition: {:?}", result.err());

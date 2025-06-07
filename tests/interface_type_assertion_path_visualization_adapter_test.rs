@@ -3,14 +3,14 @@
 //! This module tests the adapter that ensures proper method exposure between the
 //! interface type assertion path visualization traits.
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::collections::{HashMap, HashSet};
 
 // Import the modules we need to test
 use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
 use cursed::codegen::llvm::interface_type_assertion_path_visualization_adapter::InterfaceTypeAssertionPathVisualizationAdapter;
-use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use cursed::error::Error;
 
 // Import the common test utilities
@@ -20,11 +20,11 @@ use crate::common;
 mod common;
 
 /// Set up a fixture for tests with a populated interface hierarchy
-fn setup_interface_hierarchy() -> ThreadSafeInterfaceExtensionRegistry {
+fn setup_interface_hierarchy() -> Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
     // Initialize tracing for this test
     common::tracing::setup();
     
-    let registry = ThreadSafeInterfaceExtensionRegistry::new();
+    let registry = Arc::new(RwLock::new(ThreadSafeInterfaceExtensionRegistry::new()));
     
     // Set up a simple diamond inheritance pattern
     // A -> B -> D
@@ -32,21 +32,21 @@ fn setup_interface_hierarchy() -> ThreadSafeInterfaceExtensionRegistry {
     // v         |
     // C ---------+
     
-    registry.register_extension("A", "B").unwrap();
-    registry.register_extension("A", "C").unwrap();
-    registry.register_extension("B", "D").unwrap();
-    registry.register_extension("C", "D").unwrap();
+    registry.write().unwrap().register_extension("A", "B").unwrap();
+    registry.write().unwrap().register_extension("A", "C").unwrap();
+    registry.write().unwrap().register_extension("B", "D").unwrap();
+    registry.write().unwrap().register_extension("C", "D").unwrap();
     
     // Add some isolated interfaces for testing error cases
-    registry.register_extension("X", "Y").unwrap();
-    registry.register_extension("Y", "Z").unwrap();
+    registry.write().unwrap().register_extension("X", "Y").unwrap();
+    registry.write().unwrap().register_extension("Y", "Z").unwrap();
     
     registry
 }
 
 /// Mock struct that implements both visualization traits to test the adapter
 struct MockCodeGenerator {
-    registry_extensions: ThreadSafeInterfaceExtensionRegistry,
+    registry_extensions: Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>,
 }
 
 impl MockCodeGenerator {

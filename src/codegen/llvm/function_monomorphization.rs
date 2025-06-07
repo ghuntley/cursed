@@ -239,7 +239,7 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
                     .map_err(|e| Error::from_str(&format!("Failed to store parameter: {}", e)))?;
                 
                 // Add the parameter to the symbol table
-                self.add_variable(param_name, alloca, &param_mapping[param_name]);
+                let _ = self.add_variable(param_name, alloca, &param_mapping[param_name]);
                 
                 // Save the allocated pointer for compilation
                 param_values.push((param_name.clone(), alloca));

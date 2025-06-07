@@ -67,9 +67,8 @@ fn test_improved_field_accessors_integration() {
     
     // Parse the program
     let mut lexer = Lexer::new(TEST_CODE);
-    let tokens = lexer.lex().expect("Lexing failed");
     
-    let mut parser = Parser::new(tokens, PathBuf::from("test.csd"));
+    let mut parser = Parser::new(&mut lexer).expect("Parser creation failed");
     let program = parser.parse().expect("Parsing failed");
     
     // Create JIT compiler

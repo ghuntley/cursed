@@ -958,14 +958,25 @@ impl<'ctx> FilesystemSourceLocationIntegration for LlvmCodeGenerator<'ctx> {
 #[cfg(test)]
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new code generator for testing with module name "test_module".
-    pub fn new_for_test() -> Result<Self, Error> {
-        use std::path::PathBuf;
+    /// 
+    /// This is a convenience method that returns the context so the caller
+    /// can manage the lifetime properly.
+    pub fn create_test_context_and_generator() -> Result<Context, Error> {
         use std::env;
         
         let context = Context::create();
+        env::current_dir()?; // Just validate we can get the current dir
+        Ok(context)
+    }
+    
+    /// Creates a new generator from an existing context for testing
+    pub fn new_for_test(context: &'ctx Context) -> Result<Self, Error> {
+        use std::path::PathBuf;
+        use std::env;
+        
         let target_dir = env::current_dir()?;
         let file_path = PathBuf::from(format!("{}/test_module.csd", target_dir.to_string_lossy()));
-        Ok(Self::new(&context, "test_module", file_path))
+        Ok(Self::new(context, "test_module", file_path))
     }
 }
 

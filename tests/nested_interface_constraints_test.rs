@@ -44,7 +44,7 @@ fn test_enhanced_registry_basic_operations() {
     // Check that the enhanced registry respects existing constraints
     let container_type = Type::Struct(
         "GenericStack".to_string(),
-        vec![Type::Tea]
+        vec![Box::new(Type::Tea)]
     );
     
     assert!(registry.base_registry.check_implementation(&container_type, "Container").unwrap());
@@ -70,12 +70,12 @@ fn test_nested_constraint_registration_and_checking() {
     // Create test types
     let collection_of_int = Type::Struct(
         "Collection".to_string(),
-        vec![Type::Normie]
+        vec![Box::new(Type::Normie)]
     );
     
     let collection_of_non_comparable = Type::Struct(
         "Collection".to_string(),
-        vec![Type::Struct("NonComparable".to_string(), vec![])]
+        vec![Box::new(Type::Struct("NonComparable".to_string(), vec![]))]
     );
     
     // Test the constraint checking
@@ -127,12 +127,12 @@ fn test_multiple_nested_constraints() {
     // Create test types
     let list_a_int = Type::Struct(
         "ListA".to_string(),
-        vec![Type::Normie]
+        vec![Box::new(Type::Normie)]
     );
     
     let list_b_non_numeric = Type::Struct(
         "ListB".to_string(),
-        vec![Type::Tea]
+        vec![Box::new(Type::Tea)]
     );
     
     // Test the constraint checking
@@ -207,13 +207,13 @@ fn test_integration_with_code_generation() {
     "#;
     
     // Lex and parse the program
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
+    let mut lexer = Lexer::new(input);
+    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Check for parser errors
     if !parser.errors().is_empty() {
-        let error_msg = parser.errors().join("\n");
+        let error_msg = parser.errors().iter().map(|e| format!("{}", e)).collect::<Vec<_>>().join("\n");
         panic!("Parser errors: {}\n", error_msg);
     }
     

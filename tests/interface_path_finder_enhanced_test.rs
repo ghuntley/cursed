@@ -17,7 +17,7 @@ fn test_interface_path_finder_enhanced() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     // Reader -> FileReader -> JSONFileReader
@@ -115,7 +115,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     codegen.register_type_in_registry(1001, "Reader");
@@ -186,7 +186,7 @@ fn test_interface_hierarchy_dot_graph() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     codegen.register_type_in_registry(1001, "Animal");

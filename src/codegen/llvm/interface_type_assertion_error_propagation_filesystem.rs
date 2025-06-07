@@ -300,7 +300,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         if !self.internal_fields.contains_key("filesystem_integration_initialized") {
             // Initialize with current working directory as root
             let cwd = std::env::current_dir().ok().and_then(|p| p.to_str().map(|s| s.to_string()));
-            self.init_filesystem_integration();
+            let _ = self.init_filesystem_integration();
             
             // Try to add common source paths
             self.add_source_search_path(".");

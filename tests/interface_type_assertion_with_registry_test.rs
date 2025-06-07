@@ -58,7 +58,7 @@ fn test_interface_type_assertion_with_registry() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up a test interface hierarchy
     // Reader -> FileReader -> JSONFileReader
@@ -104,7 +104,7 @@ fn test_interface_type_assertion_path_registry() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up a more complex test interface hierarchy
     // Vehicle -> LandVehicle -> Car -> SportsCar

@@ -70,15 +70,14 @@ fn create_code_generator<'ctx>(
     builder.position_at_end(basic_block);
     
     // Create a registry with LRU cache
-    let registry = Box::new(LruCachedRegistry::new(100));
+    let base_registry = InterfaceRegistry::new();
+    let registry = Box::new(LruCachedRegistry::new(base_registry));
     
     // Create the code generator
     LlvmCodeGenerator::new(
         context,
-        module,
-        &builder,
-        registry,
-        None, // no type_registry needed for test
+        "test_module",
+        PathBuf::from("test_module"),
     )
 }
 

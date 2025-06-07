@@ -66,7 +66,7 @@ fn test_basic_struct_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context);
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Pair[T] with two T fields
     let pair_struct = create_generic_squad_statement(
@@ -97,7 +97,7 @@ fn test_nested_struct_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context);
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Pair[T] with two T fields
     let pair_struct = create_generic_squad_statement(
@@ -141,7 +141,7 @@ fn test_type_parameter_substitution() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context);
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Container[T] with multiple field types
     let container_struct = create_generic_squad_statement(
@@ -188,7 +188,7 @@ fn test_invalid_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context);
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Pair[T, U] with T and U fields
     let pair_struct = create_generic_squad_statement(

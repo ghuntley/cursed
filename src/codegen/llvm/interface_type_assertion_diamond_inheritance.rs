@@ -359,6 +359,7 @@ pub fn register_diamond_inheritance_detection() {
 mod tests {
     use super::*;
     use inkwell::context::Context;
+    use std::path::PathBuf;
     
     #[test]
     fn test_diamond_inheritance_detection_registration() {
@@ -379,7 +380,7 @@ mod tests {
         
         // Create a stub LlvmCodeGenerator
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context);
+        let mut generator = LlvmCodeGenerator::new(&context, "test_diamond_inheritance", PathBuf::from("test.csd"));
         
         // Add type name lookups
         generator.internal_fields.insert("type_name_1".to_string(), Box::new("Concrete".to_string()));

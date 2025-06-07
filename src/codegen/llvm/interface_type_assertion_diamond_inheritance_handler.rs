@@ -9,6 +9,7 @@
 //! provide specific error details when diamond inheritance causes ambiguity in type assertions.
 
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 use tracing::{debug, info, instrument, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
@@ -477,7 +478,7 @@ mod tests {
     #[test]
     fn test_diamond_inheritance_detection() {
         let context = Context::create();
-        let mut generator = LlvmCodeGenerator::new(&context);
+        let mut generator = LlvmCodeGenerator::new(&context, "test_diamond_inheritance_handler", PathBuf::from("test.csd"));
         
         // Set up a test registry with a diamond pattern
         let registry = setup_test_registry();

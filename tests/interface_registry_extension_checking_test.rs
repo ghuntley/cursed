@@ -19,7 +19,7 @@ fn test_interface_registry_extension_checking() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     // Reader -> FileReader -> JSONFileReader
@@ -65,7 +65,7 @@ fn test_partial_extension_relationships() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up just a few test interfaces
     codegen.register_type_in_registry(1001, "Animal");
@@ -103,7 +103,7 @@ fn test_multi_level_inheritance_hierarchies() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module").unwrap();
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up a more complex test interface hierarchy
     // Vehicle -> LandVehicle -> Car -> SportsCar

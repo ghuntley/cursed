@@ -554,7 +554,7 @@ mod tests {
         let mock_registry = Arc::new(MockRegistry::new());
         
         // Create the checker
-        let checker = InterfaceTypeRegistryExtensionChecker::new(Some(mock_registry.clone() as Arc<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>));
+        let checker = InterfaceTypeRegistryExtensionChecker::new(Some(mock_registry.clone()));
         
         // Test basic extension checking
         assert!(checker.check_interface_extension("FileReader", "Reader").unwrap());

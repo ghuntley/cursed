@@ -392,13 +392,14 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::interface_registry_visualization::ThreadSafeInterfaceRegistryVisualization;
+    use crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization;
     use std::sync::Arc;
     
     #[test]
     fn test_check_extension_with_details() {
         // Create a registry with some test interfaces
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let base_registry = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry.clone());
         let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
             Arc::new(RwLock::new(registry));
         
@@ -431,7 +432,8 @@ mod tests {
     #[test]
     fn test_visualize_path() {
         // Create a registry with some test interfaces
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let base_registry = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry.clone());
         let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
             Arc::new(RwLock::new(registry));
         
@@ -462,7 +464,8 @@ mod tests {
     #[test]
     fn test_find_alternative_paths() {
         // Create a registry with interfaces having multiple paths
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let base_registry = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry.clone());
         let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
             Arc::new(RwLock::new(registry));
         
@@ -499,7 +502,8 @@ mod tests {
     #[test]
     fn test_check_reversed_relationship() {
         // Create a registry with some test interfaces
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let base_registry = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry.clone());
         let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
             Arc::new(RwLock::new(registry));
         
@@ -521,17 +525,18 @@ mod tests {
         assert!(message.contains("Parent actually extends Child"), "Should explain the correct order");
         
         // Test unrelated interfaces
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
-        let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
-            Arc::new(RwLock::new(registry));
+        let base_registry2 = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry2 = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry2.clone());
+        let arc_registry2: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
+            Arc::new(RwLock::new(registry2));
         
         {
-            let mut registry = arc_registry.write().unwrap();
+            let mut registry = arc_registry2.write().unwrap();
             registry.register_extension("A", "B").unwrap();
             registry.register_extension("C", "D").unwrap();
         }
         
-        let (reversed, message) = arc_registry.check_reversed_relationship("A", "C").unwrap();
+        let (reversed, message) = arc_registry2.check_reversed_relationship("A", "C").unwrap();
         assert!(!reversed, "A and C are unrelated");
         assert!(message.contains("unrelated"), "Should mention they are unrelated");
     }
@@ -539,7 +544,8 @@ mod tests {
     #[test]
     fn test_generate_hierarchy_visualization() {
         // Create a registry with a simple hierarchy
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let base_registry = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry.clone());
         let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
             Arc::new(RwLock::new(registry));
         
@@ -572,7 +578,8 @@ mod tests {
     #[test]
     fn test_find_common_ancestors() {
         // Create a registry with interfaces having common ancestors
-        let registry = ThreadSafeInterfaceRegistryVisualization::new();
+        let base_registry = crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
+        let registry = crate::core::interface_registry_visualization::DefaultInterfaceRegistryVisualization::new(base_registry.clone());
         let arc_registry: Arc<RwLock<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync>> = 
             Arc::new(RwLock::new(registry));
         
