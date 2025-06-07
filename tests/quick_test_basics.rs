@@ -1,7 +1,7 @@
 //! Basic tests for the quick_test module
 
 // Temporarily disabled while API is upgraded
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 use cursed::object::Object;

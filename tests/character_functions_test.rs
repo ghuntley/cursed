@@ -1,7 +1,7 @@
 // Test character functions in is_uppercase.rs
 
 // Temporarily disabled while we update the API
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 use cursed::object::Object;
 use std::sync::Arc;
