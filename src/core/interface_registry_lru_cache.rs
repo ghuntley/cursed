@@ -15,56 +15,99 @@ use lru::LruCache;
 /// Simple LRU cache wrapper for interface operations
 #[derive(Debug)]
 pub struct LruInterfaceCache {
-    /// Default cache capacity
-    capacity: usize,
+    /// The actual LRU cache storing (Type, interface_name) -> bool
+    cache: std::sync::RwLock<LruCache<(String, String), bool>>,
+    /// Cache statistics
+    stats: std::sync::RwLock<CacheStats>,
+}
+
+#[derive(Debug, Default)]
+struct CacheStats {
+    hits: usize,
+    misses: usize,
+    evictions: usize,
+    updates: usize,
 }
 
 impl LruInterfaceCache {
     /// Create a new LRU interface cache with default capacity
     pub fn new() -> Self {
-        Self { capacity: 1000 }
+        Self::with_capacity(1000)
     }
     
     /// Create a new LRU interface cache with specified capacity
     pub fn with_capacity(capacity: usize) -> Self {
-        Self { capacity }
+        Self {
+            cache: std::sync::RwLock::new(LruCache::new(std::num::NonZero::new(capacity).unwrap())),
+            stats: std::sync::RwLock::new(CacheStats::default()),
+        }
     }
     
     /// Get the cache capacity
     pub fn capacity(&self) -> usize {
-        self.capacity
+        self.cache.read().unwrap().cap().get()
     }
     
     /// Get cache statistics (size, hits, misses, evictions, updates)
     pub fn stats(&self) -> (usize, usize, usize, usize, usize) {
-        // Simple mock implementation
-        (0, 0, 0, 0, 0)
+        let cache = self.cache.read().unwrap();
+        let stats = self.stats.read().unwrap();
+        (cache.len(), stats.hits, stats.misses, stats.evictions, stats.updates)
     }
     
     /// Get the eviction rate
     pub fn eviction_rate(&self) -> f64 {
-        0.0
+        let stats = self.stats.read().unwrap();
+        let total_operations = stats.hits + stats.misses;
+        if total_operations == 0 {
+            0.0
+        } else {
+            stats.evictions as f64 / total_operations as f64
+        }
     }
     
     /// Look up a value in the cache
-    pub fn lookup(&self, _type_: &Type, _interface_name: &str) -> Option<bool> {
-        // Simple mock implementation
-        None
+    pub fn lookup(&self, type_: &Type, interface_name: &str) -> Option<bool> {
+        let key = (format!("{:?}", type_), interface_name.to_string());
+        let mut cache = self.cache.write().unwrap();
+        let mut stats = self.stats.write().unwrap();
+        
+        if let Some(&result) = cache.get(&key) {
+            stats.hits += 1;
+            Some(result)
+        } else {
+            stats.misses += 1;
+            None
+        }
     }
     
     /// Store a value in the cache
-    pub fn store(&self, _type_: &Type, _interface_name: &str, _result: bool) {
-        // Simple mock implementation
+    pub fn store(&self, type_: &Type, interface_name: &str, result: bool) {
+        let key = (format!("{:?}", type_), interface_name.to_string());
+        let mut cache = self.cache.write().unwrap();
+        let mut stats = self.stats.write().unwrap();
+        
+        if cache.put(key, result).is_some() {
+            stats.evictions += 1;
+        }
+        stats.updates += 1;
     }
     
     /// Clear the cache
     pub fn clear(&self) {
-        // Simple mock implementation
+        let mut cache = self.cache.write().unwrap();
+        cache.clear();
     }
     
     /// Get the hit rate
     pub fn hit_rate(&self) -> f64 {
-        0.0
+        let stats = self.stats.read().unwrap();
+        let total_operations = stats.hits + stats.misses;
+        if total_operations == 0 {
+            0.0
+        } else {
+            stats.hits as f64 / total_operations as f64
+        }
     }
 }
 
