@@ -53,7 +53,7 @@ fn test_character_generators() {
 fn test_combination_generators() {
     // Test the one_of generator
     let one_of_vals = vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)];
-    let one_of_gen = one_of(one_of_vals.clone();
+    let one_of_gen = one_of(one_of_vals.clone());
     
     let mut rand = RandGen::new(42); // Fixed seed for reproducibility
     

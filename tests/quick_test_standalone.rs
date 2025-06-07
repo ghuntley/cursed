@@ -1,6 +1,7 @@
 use cursed::stdlib::quick_test;
 use cursed::object::Object;
 use std::sync::Arc;
+use std::rc::Rc;
 
 // Standalone test for the quick_test module
 
@@ -21,11 +22,11 @@ fn test_quick_test_random_generation() {
     
     // Test random boolean generation
     let bool_val = quick_test::boolean();
-    assert!(matches!(bool_val, Object::Boolean(_));
+    assert!(matches!(bool_val, Object::Boolean(_)));
     
     // Test random string generation
     let string_val = quick_test::string();
-    assert!(matches!(string_val, Object::String(_));
+    assert!(matches!(string_val, Object::String(_)));
     
     // Test random array generation
     let array_val = quick_test::int_array(3, 7, 0, 100);
@@ -68,7 +69,7 @@ fn test_property_testing() {
         function: |args: &[Rc<Object>]| {
             if let Some(arg) = args.get(0) {
                 if let Object::Integer(n) = **arg {
-                    return Ok(Arc::new(Object::Boolean(n % 2 == 0));
+                    return Ok(Arc::new(Object::Boolean(n % 2 == 0)));
                 }
             }
             Ok(Arc::new(Object::Boolean(false)))

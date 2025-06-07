@@ -16,8 +16,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["shell", "cargo", "run", "--", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
     
     let success = output.status.success();
     if !success {
@@ -44,7 +44,7 @@ fn test_basic_types_jit() {
     let test_file = "tests/jit/basic_types_test.csd";
     debug!(test_file = %test_file, "Checking test file existence");
     
-    let file_exists = Path::new(test_file).exists());
+    let file_exists = Path::new(test_file).exists();
     if !file_exists {
         error!(test_file = %test_file, "Test file not found");
     }

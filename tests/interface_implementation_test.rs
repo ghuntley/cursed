@@ -56,7 +56,7 @@ fn test_generic_interface_implementation() -> Result<(), Error> {
         "Container",
         vec![
             ("add".to_string(), vec![Type::TypeParam("T".to_string())], None),
-            ("get".to_string(), vec![Type::Normie], Some(Type::TypeParam("T".to_string())))
+            ("get".to_string(), vec![Type::Normie], Some(Type::TypeParam("T".to_string()))),
             ("size".to_string(), vec![], Some(Type::Normie)),
         ],
         vec!["T".to_string()]

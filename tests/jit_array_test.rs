@@ -39,7 +39,7 @@ fn test_jit_array_basic() -> Result<(), Error> {
     // Ensure no parser errors
     if !parser.errors().is_empty() {
         error!(errors = ?parser.errors(), "Parser errors encountered");
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors());
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -50,9 +50,9 @@ fn test_jit_array_basic() -> Result<(), Error> {
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
 
     // Manually create and register the 'vibez.spill' function for string printing
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let spill_type = context.void_type().fn_type(&[i8_ptr_type.into()], false);
-    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the 'main' function
     let i32_type = context.i32_type();
@@ -80,22 +80,22 @@ fn test_jit_array_basic() -> Result<(), Error> {
     let cont_block = context.append_basic_block(main_function, "cont");
     
     // Build the conditional branch
-    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap());
+    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap();
     
     // Build the 'then' block (vibez.spill("Test passed"); yolo 1;)
     code_gen.builder().position_at_end(then_block);
-    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap());
-    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap());
-    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap());
+    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap();
+    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap();
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_return(Some(&one)).unwrap());
+    code_gen.builder().build_return(Some(&one)).unwrap();
     
     // Build the 'else' block (vibez.spill("Test failed"); yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap());
-    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap());
-    code_gen.builder().build_return(Some(&zero)).unwrap());
+    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
+    code_gen.builder().build_return(Some(&zero)).unwrap();
     
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
@@ -164,7 +164,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors());
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -175,9 +175,9 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
 
     // Manually create and register the 'vibez.spill' function for string printing
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let spill_type = context.void_type().fn_type(&[i8_ptr_type.into()], false);
-    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the 'main' function
     let i32_type = context.i32_type();
@@ -204,22 +204,22 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     let else_block = context.append_basic_block(main_function, "else");
     
     // Build the conditional branch
-    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap());
+    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap();
     
     // Build the 'then' block (vibez.spill("Test passed"); yolo 1;)
     code_gen.builder().position_at_end(then_block);
-    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap());
-    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap());
-    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap());
+    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap();
+    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap();
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_return(Some(&one)).unwrap());
+    code_gen.builder().build_return(Some(&one)).unwrap();
     
     // Build the 'else' block (vibez.spill("Test failed"); yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap());
-    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap());
-    code_gen.builder().build_return(Some(&zero)).unwrap());
+    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
+    code_gen.builder().build_return(Some(&zero)).unwrap();
     
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
@@ -289,7 +289,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors());
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -300,9 +300,9 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
 
     // Manually create and register the 'vibez.spill' function for string printing
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let spill_type = context.void_type().fn_type(&[i8_ptr_type.into()], false);
-    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("vibez.spill", spill_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the 'main' function
     let i32_type = context.i32_type();
@@ -334,29 +334,29 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     ).unwrap();
     
     // Combine the comparisons with AND
-    let and_result = code_gen.builder().build_and(comp1, comp2, "and_result").unwrap());
+    let and_result = code_gen.builder().build_and(comp1, comp2, "and_result").unwrap();
     
     // Create if-else blocks
     let then_block = context.append_basic_block(main_function, "then");
     let else_block = context.append_basic_block(main_function, "else");
     
     // Build the conditional branch
-    code_gen.builder().build_conditional_branch(and_result, then_block, else_block).unwrap());
+    code_gen.builder().build_conditional_branch(and_result, then_block, else_block).unwrap();
     
     // Build the 'then' block (vibez.spill("Test passed"); yolo 1;)
     code_gen.builder().position_at_end(then_block);
-    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap());
-    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap());
-    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap());
+    let spill_fn = code_gen.module().get_function("vibez.spill").unwrap();
+    let message = code_gen.builder().build_global_string_ptr("Test passed", "message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[message.as_pointer_value().into()], "spill_call").unwrap();
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_return(Some(&one)).unwrap());
+    code_gen.builder().build_return(Some(&one)).unwrap();
     
     // Build the 'else' block (vibez.spill("Test failed"); yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap());
-    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap());
-    code_gen.builder().build_return(Some(&zero)).unwrap());
+    let fail_message = code_gen.builder().build_global_string_ptr("Test failed", "fail_message").unwrap();
+    code_gen.builder().build_call(spill_fn, &[fail_message.as_pointer_value().into()], "spill_call").unwrap();
+    code_gen.builder().build_return(Some(&zero)).unwrap();
     
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
