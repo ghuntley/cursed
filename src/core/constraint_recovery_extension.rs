@@ -70,54 +70,13 @@ impl InterfaceRegistryExtensionChecking for InterfaceRegistry {
             return path;
         }
         
-        // BFS to find a path through implemented interfaces
-        let mut queue = VecDeque::new();
-        let mut visited = HashSet::new();
-        
-        // Start with interfaces directly implemented by the source type
-        let initial_interfaces = self.get_implemented_interfaces(source_type);
-        for interface in initial_interfaces {
-            queue.push_back((source_type.clone(), interface.clone()));
-            visited.insert((source_type.clone(), interface.clone()));
-        }
-        
-        while let Some((current_type, current_interface)) = queue.pop_front() {
-            debug!("Checking {:?} implements {}", current_type, current_interface);
-            
-            // Check if this interface extends or is related to the target interface
-            if current_interface == target_interface {
-                path.valid = true;
-                path.path.push((current_type, current_interface));
-                return path;
-            }
-            
-            // Get types that implement current_interface
-            let implementing_types = self.get_interface_implementers(&current_interface);
-            
-            // For each type, check what other interfaces it implements
-            for impl_type in &implementing_types {
-                let implemented_interfaces = self.get_implemented_interfaces(impl_type);
-                
-                for interface in &implemented_interfaces {
-                    // Skip if we've already visited this combination
-                    if visited.contains(&(impl_type.clone(), interface.clone())) {
-                        continue;
-                    }
-                    
-                    // If we found the target interface, we've found a path
-                    if interface == target_interface {
-                        path.valid = true;
-                        path.path.push((current_type.clone(), current_interface.clone()));
-                        path.path.push((impl_type.clone(), interface.clone()));
-                        return path;
-                    }
-                    
-                    // Add to queue for further exploration
-                    queue.push_back((impl_type.clone(), interface.clone()));
-                    visited.insert((impl_type.clone(), interface.clone()));
-                }
-            }
-        }
+        // For constraint paths, we only consider direct implementations.
+        // The BFS logic was incorrectly creating paths through unrelated types
+        // that happened to implement the same interfaces. This is not a valid
+        // constraint path - just because Type A and Type B both implement 
+        // Interface X doesn't mean there's a constraint path from A to B.
+        //
+        // The direct implementation check above already handles the valid case.
         
         // If we got here, no path was found
         // Identify the missing link - find the closest we got
@@ -183,9 +142,11 @@ impl InterfaceRegistryExtensionChecking for InterfaceRegistry {
         let mut alternatives = Vec::new();
         let implementers = self.get_interface_implementers(target_interface);
         
-        // Filter to include only "similar" types
+        // Return all types that implement the target interface as alternatives
+        // This gives users all their options when they need a type that implements a specific interface
         for impl_type in implementers {
-            if self.are_types_similar(source_type, &impl_type) {
+            // Don't include the source type itself if it already implements the interface
+            if impl_type != *source_type {
                 alternatives.push(impl_type);
             }
         }

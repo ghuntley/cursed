@@ -127,6 +127,11 @@ impl ThreadSafeLruRegistry {
     pub fn eviction_stats(&self) -> f64 {
         self.cache.eviction_rate()
     }
+    
+    /// Get cache statistics (size, hits, misses, evictions, updates)
+    pub fn cache_stats(&self) -> (usize, usize, usize, usize, usize) {
+        self.cache.stats()
+    }
 }
 
 // Implement CachedInterfaceRegistry for LruCachedRegistry
@@ -222,7 +227,7 @@ mod tests {
         assert!(result, "Normie should implement Numeric");
         
         // Check that cache stats have been updated
-        let stats = registry.cache.stats();
+        let stats = registry.cache_stats();
         assert_eq!(stats.0, 1); // size
         assert_eq!(stats.1, 1); // hits
         assert_eq!(stats.2, 1); // misses
