@@ -100,7 +100,7 @@ impl<'ctx> InterfaceTypeAssertionResult<'ctx> for LlvmCodeGenerator<'ctx> {
         let expected_type_id = self.context().i64_type().const_int(target_type_id, false);
         let is_match = self.builder().build_int_compare(
             IntPredicate::EQ,
-            actual_type_id.into_int_value(self.context()),
+            actual_type_id.into_int_value(),
             expected_type_id,
             "is_target_type"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
@@ -140,7 +140,7 @@ impl<'ctx> InterfaceTypeAssertionResult<'ctx> for LlvmCodeGenerator<'ctx> {
             None, // Interface type ID not available
             Some(target_type_id),
             None, // Actual type name not known at compile time
-            Some(actual_type_id.into_int_value(self.context()).get_zero_extended_constant().unwrap_or(0)),
+            Some(actual_type_id.into_int_value().get_zero_extended_constant().unwrap_or(0)),
             source_location.clone(),
         );
         

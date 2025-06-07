@@ -76,7 +76,7 @@ impl TypeInference for TypeChecker {
                 let new_struct_type = Type::new_struct(&name, field_types);
                 
                 // Register the updated struct type
-                self.register_type(struct_name, new_struct_type);
+                self.register_type(struct_name.to_string(), new_struct_type);
                 return Ok(());
             }
         }

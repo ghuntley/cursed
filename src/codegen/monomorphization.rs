@@ -256,15 +256,15 @@ impl MonomorphizationManager {
             // Get available methods for the concrete type (if possible)
             let available_methods = match concrete_type {
                 Type::Struct(struct_name, _) => {
-                    type_checker.read().unwrap().get_struct_methods(struct_name)
-                        .map(|methods| methods.keys().cloned().collect::<Vec<_>>())
+                    type_checker.read().unwrap().struct_methods_map.get(struct_name)
+                        .map(|methods| methods.iter().map(|(name, _, _)| name.clone()).collect::<Vec<_>>())
                 },
                 _ => None
             };
             
             // Get required methods for the interface (if possible)
             let required_methods = type_checker.read().unwrap().get_interface_methods(interface_name)
-                .map(|methods| methods.keys().cloned().collect::<Vec<_>>());
+                .map(|methods| methods.iter().map(|(name, _, _)| name.clone()).collect::<Vec<_>>());
             
             match type_checker.write().unwrap().check_interface_implementation(concrete_type, &interface_type) {
                 Ok(true) => {

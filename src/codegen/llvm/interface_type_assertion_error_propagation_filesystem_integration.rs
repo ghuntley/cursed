@@ -67,7 +67,7 @@ pub trait ComprehensiveErrorFilesystemIntegration<'ctx>:
     
     /// Create a comprehensive error message with detailed source code context
     fn create_comprehensive_error_message(
-        &self,
+        &mut self,
         type_assertion: &dyn Node,
         expected_type: &str,
         actual_type: Option<&str>,
@@ -76,7 +76,7 @@ pub trait ComprehensiveErrorFilesystemIntegration<'ctx>:
     
     /// Extract source code context from filesystem for error messages
     fn extract_source_code_context(
-        &self,
+        &mut self,
         file_path: &str,
         line: usize,
         context_lines: usize
@@ -84,7 +84,7 @@ pub trait ComprehensiveErrorFilesystemIntegration<'ctx>:
     
     /// Format an error message with source code context and highlighting
     fn format_error_with_source_highlighting(
-        &self,
+        &mut self,
         error_message: &str,
         source_location: &SourceLocation,
         context_lines: usize
@@ -92,7 +92,7 @@ pub trait ComprehensiveErrorFilesystemIntegration<'ctx>:
     
     /// Call error propagation function with comprehensive context
     fn call_error_propagation_with_comprehensive_context(
-        &self,
+        &mut self,
         error_message: &str,
         source_location: &SourceLocation,
         expected_type_id: u32,
@@ -244,7 +244,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
     
     #[instrument(skip(self, type_assertion, source_location), level = "debug")]
     fn create_comprehensive_error_message(
-        &self,
+        &mut self,
         type_assertion: &dyn Node,
         expected_type: &str,
         actual_type: Option<&str>,
@@ -313,7 +313,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
     
     #[instrument(skip(self), level = "debug")]
     fn extract_source_code_context(
-        &self,
+        &mut self,
         file_path: &str,
         line: usize,
         context_lines: usize
@@ -362,7 +362,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
     
     #[instrument(skip(self, error_message, source_location), level = "debug")]
     fn format_error_with_source_highlighting(
-        &self,
+        &mut self,
         error_message: &str,
         source_location: &SourceLocation,
         context_lines: usize
@@ -397,7 +397,7 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
     
     #[instrument(skip(self, error_message, source_location, type_assertion), level = "debug")]
     fn call_error_propagation_with_comprehensive_context(
-        &self,
+        &mut self,
         error_message: &str,
         source_location: &SourceLocation,
         expected_type_id: u32,
@@ -440,7 +440,10 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
             self.create_string_constant(target_type)?.into(),
             location_struct,
             self.create_string_constant("")?.into()
-        )
+        )?;
+        
+        // Return a null pointer value to indicate error
+        Ok(self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into())
     }
 }
 
@@ -454,7 +457,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Update the source code cache with new file lines
-    fn update_source_code_cache(&self, file_path: &str, lines: Vec<String>) -> Result<(), Error> {
+    fn update_source_code_cache(&mut self, file_path: &str, lines: Vec<String>) -> Result<(), Error> {
         let mut cache = self.internal_fields.get_mut("source_code_cache")
             .and_then(|boxed| boxed.downcast_mut::<HashMap<String, Vec<String>>>())
             .ok_or_else(|| Error::Compilation("Source code cache not initialized".to_string()))?;

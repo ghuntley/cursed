@@ -25,13 +25,13 @@ use crate::core::interface_registry::InterfaceRegistry;
 /// Improved interface registry visualization with comprehensive error handling
 pub trait ImprovedInterfaceRegistryVisualization {
     /// Get a map of all interface extension relationships for visualization
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error>;
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error>;
     
-    /// Get the set of interfaces that a given interface directly extends
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    /// Get the list of interfaces that a given interface directly extends
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
     
-    /// Get the set of interfaces that directly extend a given interface
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error>;
+    /// Get the list of interfaces that directly extend a given interface
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
     
     /// Get all interfaces in the registry
     fn get_all_interfaces(&self) -> Result<HashSet<String>, Error>;
@@ -78,36 +78,36 @@ pub trait ImprovedInterfaceRegistryVisualization {
 /// Implementation of improved interface registry visualization
 impl ImprovedInterfaceRegistryVisualization for InterfaceRegistry {
     #[instrument(skip(self), level = "debug")]
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, HashSet<String>>, Error> {
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         // InterfaceRegistry doesn't store extension hierarchy directly
         // We need to build it from the implementations data
         let mut hierarchy = HashMap::new();
         
         // For each interface that has implementers, collect those types
         for (interface_name, _) in self.implementations() {
-            hierarchy.insert(interface_name.clone(), HashSet::new());
+            hierarchy.insert(interface_name.clone(), Vec::new());
         }
         
         Ok(hierarchy)
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // InterfaceRegistry doesn't have direct extension tracking
-        // Return empty set for now - this would need proper extension tracking
-        Ok(Some(HashSet::new()))
+        // Return empty list for now - this would need proper extension tracking
+        Ok(Some(Vec::new()))
     }
     
     #[instrument(skip(self), level = "trace")]
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<HashSet<String>>, Error> {
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         // Work directly with the implementations field
         
         // Find all types that implement this interface
-        let mut implementors = HashSet::new();
+        let mut implementors = Vec::new();
         
         if let Some(types) = self.implementations().get(interface) {
             for type_impl in types {
-                implementors.insert(format!("{:?}", type_impl));
+                implementors.push(format!("{:?}", type_impl));
             }
         }
         
@@ -151,7 +151,7 @@ impl ImprovedInterfaceRegistryVisualization for InterfaceRegistry {
             // Get direct extensions
             if let Some(extensions) = self.get_direct_extensions(&current)? {
                 // Check if the target interface is directly extended
-                if extensions.contains(extends) {
+                if extensions.iter().any(|ext| ext == extends) {
                     debug!("Found extension path from '{}' to '{}'", interface, extends);
                     return Ok(true);
                 }
@@ -178,7 +178,7 @@ impl ImprovedInterfaceRegistryVisualization for InterfaceRegistry {
         max_paths: usize,
     ) -> Result<Vec<Vec<String>>, Error> {
         // Helper function to get extensions with proper error propagation
-        let get_extensions = |interface: &str| -> Result<Option<HashSet<String>>, Error> {
+        let get_extensions = |interface: &str| -> Result<Option<Vec<String>>, Error> {
             self.get_direct_extensions(interface)
         };
         
@@ -422,15 +422,17 @@ impl ImprovedInterfaceRegistryVisualization for InterfaceRegistry {
         // Find common interfaces both types implement
         let source_extensions = match self.get_direct_extensions(source)? {
             Some(exts) => exts,
-            None => HashSet::new(),
+            None => Vec::new(),
         };
         
         let target_extensions = match self.get_direct_extensions(target)? {
             Some(exts) => exts,
-            None => HashSet::new(),
+            None => Vec::new(),
         };
         
-        let common_interfaces: Vec<_> = source_extensions.intersection(&target_extensions).collect();
+        let common_interfaces: Vec<_> = source_extensions.iter()
+            .filter(|ext| target_extensions.contains(ext))
+            .collect();
         
         if !common_interfaces.is_empty() {
             suggestions.push(format!(
@@ -463,7 +465,7 @@ impl InterfaceRegistry {
         &self,
         result: &mut String,
         interface: &str,
-        hierarchy: &HashMap<String, HashSet<String>>,
+        hierarchy: &HashMap<String, Vec<String>>,
         depth: usize,
     ) -> Result<(), Error> {
         // Add indentation based on depth
@@ -478,7 +480,7 @@ impl InterfaceRegistry {
         let mut implementors = Vec::new();
         
         for (impl_interface, extensions) in hierarchy {
-            if extensions.contains(interface) {
+            if extensions.iter().any(|ext| ext == interface) {
                 implementors.push(impl_interface.clone());
             }
         }

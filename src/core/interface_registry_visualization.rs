@@ -261,7 +261,7 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
         // Add interfaces that extend this interface
         for other in &interfaces {
             if let Ok(Some(extensions)) = registry.get_direct_extensions(other) {
-                if extensions.contains(interface) {
+                if extensions.iter().any(|ext| ext == interface) {
                     related.insert(other.clone());
                 }
             }
@@ -333,7 +333,7 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
             let mut implementers = Vec::new();
             for other in &interfaces {
                 if let Ok(Some(extensions)) = self.get_direct_extensions(other) {
-                    if extensions.contains(interface) {
+                    if extensions.iter().any(|ext| ext == interface) {
                         implementers.push(other);
                     }
                 }

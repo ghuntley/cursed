@@ -100,10 +100,10 @@ impl GenericInstantiator {
             let concrete_type_expr = self.create_expression_from_type(&concrete_param_type)?;
 
             // Create the specialized parameter
-            let specialized_param = ast::ParameterStatement {
+            let specialized_param = ast::Parameter {
                 token: param.token.clone(),
                 name: param.name.clone(),
-                type_name: concrete_type_expr,
+                param_type: concrete_type_expr,
             };
 
             specialized_params.push(specialized_param);
@@ -667,6 +667,7 @@ impl GenericInstantiator {
             token: generic_interface.token.clone(),
             name: specialized_ident,
             type_parameters: Vec::new(), // No type parameters in specialized version
+            generic_constraints: Vec::new(), // No constraints in specialized version
             methods: Vec::new(), // In a real implementation, we would process methods with concrete types
         };
 

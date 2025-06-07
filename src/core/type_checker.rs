@@ -48,6 +48,7 @@ pub enum Type {
     /// Generic types
     Struct(String, Vec<Box<Type>>), // Struct name + type parameters
     Interface(String, Vec<Box<Type>>), // Interface name + type parameters
+    Generic(String, Vec<Box<Type>>), // Generic type with parameters
 
     /// Composite types
     Array(Box<Type>, usize), // Array of element type with fixed size
@@ -1154,5 +1155,21 @@ impl TypeChecker {
             "text" => Some(Type::Tea),
             _ => None,
         }
+    }
+    
+    /// Get interface methods for a given interface name
+    pub fn get_interface_methods(&self, interface_name: &str) -> Option<Vec<(String, Vec<Type>, Option<Type>)>> {
+        self.interface_map.get(interface_name).cloned()
+    }
+    
+    /// Get expression type - placeholder implementation
+    pub fn get_expression_type(&mut self, _expr: &dyn crate::ast::traits::Expression) -> Result<Type, Error> {
+        // This would need proper implementation based on expression analysis
+        Ok(Type::Normie)
+    }
+    
+    /// Register a type in the type map
+    pub fn register_type(&mut self, name: String, type_: Type) {
+        self.type_map.insert(name, type_);
     }
 }

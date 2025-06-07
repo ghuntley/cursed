@@ -16,8 +16,8 @@ pub struct ThreadSafeInterfaceRegistryLruCache {
     /// The underlying registry to delegate to
     registry: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>>,
     
-    /// Cache for direct extensions (interface -> set of direct extensions)
-    direct_extensions_cache: RwLock<LruCache<String, HashSet<String>>>,
+    /// Cache for direct extensions (interface -> list of direct extensions)
+    direct_extensions_cache: RwLock<LruCache<String, Vec<String>>>,
     
     /// Cache for extends relationship (source, target) -> bool
     extends_cache: RwLock<LruCache<(String, String), bool>>,
@@ -235,6 +235,14 @@ impl InterfaceRegistryExtension for ThreadSafeInterfaceRegistryLruCache {
         }
         
         Ok(hierarchy)
+    }
+    
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
+        self.registry.read().unwrap().find_interface_paths(source, target, max_paths)
+    }
+    
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
     }
 }
 

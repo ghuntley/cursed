@@ -8,7 +8,7 @@
 //! locks and ensuring thread safety throughout the codebase.
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tracing::{debug, info, instrument, trace, warn};
 
 use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
@@ -109,7 +109,7 @@ impl ThreadSafeInterfaceExtensionRegistry {
         let mut all_interfaces = HashSet::new();
         
         // Collect all interfaces from the hierarchy
-        for (source, targets) in hierarchy {
+        for (source, targets) in &hierarchy {
             all_interfaces.insert(source.clone());
             for target in targets {
                 all_interfaces.insert(target.clone());
@@ -155,7 +155,7 @@ impl ThreadSafeInterfaceExtensionRegistry {
         for interface in all_interfaces {
             if !visited.contains(&interface) {
                 dfs_cycle(
-                    hierarchy,
+                    &hierarchy,
                     &interface,
                     &mut visited,
                     &mut path,
@@ -421,7 +421,7 @@ impl ThreadSafeInterfaceExtensionRegistry {
         
         // If include_cycles is enabled, detect and highlight cycles
         if options.include_cycles {
-            match self.detect_cycles(hierarchy) {
+            match self.detect_cycles() {
                 Ok(cycles) if !cycles.is_empty() => {
                     dot.push_str("\n  // Cycles\n");
                     
@@ -506,7 +506,7 @@ impl ThreadSafeInterfaceExtensionRegistry {
         if options.include_cycles {
             result.push_str("  \"cycles\": [");
             
-            match self.detect_cycles(hierarchy) {
+            match self.detect_cycles() {
                 Ok(cycles) => {
                     for (i, cycle) in cycles.iter().enumerate() {
                         if i > 0 {

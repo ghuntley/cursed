@@ -4,15 +4,15 @@ use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 /// Interface registry helpers for type name lookups
 pub trait TypeNameRegistry {
     /// Get a type name by its ID
-    fn get_type_name_by_id(&self, type_id: u32) -> Option<String>;
+    fn get_type_name_by_id(&self, type_id: u64) -> Option<String>;
     
     /// Get a type name from the registry
-    fn get_type_name_from_registry(&self, type_id: u32) -> Option<String>;
+    fn get_type_name_from_registry(&self, type_id: u64) -> Option<String>;
 }
 
 /// Default implementation for LlvmCodeGenerator
 impl<'ctx> TypeNameRegistry for crate::codegen::llvm::LlvmCodeGenerator<'ctx> {
-    fn get_type_name_by_id(&self, type_id: u32) -> Option<String> {
+    fn get_type_name_by_id(&self, type_id: u64) -> Option<String> {
         // First try to get from the registry
         self.get_type_name_from_registry(type_id)
             .or_else(|| {
@@ -25,7 +25,7 @@ impl<'ctx> TypeNameRegistry for crate::codegen::llvm::LlvmCodeGenerator<'ctx> {
             .or_else(|| Some(format!("Type#{}", type_id)))
     }
     
-    fn get_type_name_from_registry(&self, type_id: u32) -> Option<String> {
+    fn get_type_name_from_registry(&self, type_id: u64) -> Option<String> {
         if let Some(registry) = InterfaceRegistryAccess::get_interface_registry(self) {
             if let Ok(name) = registry.get_type_name(type_id) {
                 return Some(name);

@@ -112,7 +112,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 let hierarchy = HashMap::new();
                 let options = VisualizationOptions::default();
                 use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
-                InterfaceRegistryExtensionWithVisualization::generate_dot_graph(registry, &hierarchy, &options)
+                <dyn InterfaceRegistryExtensionWithVisualization>::generate_dot_graph(registry, &hierarchy, &options)
             },
             None => Err(Error::from_str("No registry visualization system available"))
         }

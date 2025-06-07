@@ -34,8 +34,8 @@ pub trait EnhancedErrorVisualization<'ctx>: ErrorVisualization<'ctx> {
     /// Detect and visualize diamond inheritance patterns
     fn detect_and_visualize_diamond_pattern(
         &self,
-        expected_type_id: u32,
-        actual_type_id: u32
+        expected_type_id: u64,
+        actual_type_id: u64
     ) -> Option<String>;
     
     /// Create enhanced visual error with diamond pattern detection
@@ -46,14 +46,14 @@ pub trait EnhancedErrorVisualization<'ctx>: ErrorVisualization<'ctx> {
         expected_type: &str,
         actual_type: Option<&str>,
         context_lines: Vec<(usize, String)>,
-        expected_type_id: u32,
-        actual_type_id: u32
+        expected_type_id: u64,
+        actual_type_id: u64
     ) -> VisualTypeAssertionError;
     
     /// Generate comprehensive visualization of type relationships
     fn generate_type_relationship_graph(
         &self,
-        type_id: u32,
+        type_id: u64,
         max_depth: usize
     ) -> Option<String>;
     
@@ -74,8 +74,8 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
     #[instrument(skip(self), level = "debug")]
     fn detect_and_visualize_diamond_pattern(
         &self,
-        expected_type_id: u32,
-        actual_type_id: u32
+        expected_type_id: u64,
+        actual_type_id: u64
     ) -> Option<String> {
         // Skip if either type ID is invalid
         if expected_type_id == 0 || actual_type_id == 0 {
@@ -83,10 +83,10 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         }
         
         // Get type names for better visualization
-        let expected_name = self.get_type_name_by_id(expected_type_id)
+        let expected_name = self.get_type_name_by_id(expected_type_id as u32)
             .unwrap_or_else(|_| format!("Type#{}", expected_type_id));
         
-        let actual_name = self.get_type_name_by_id(actual_type_id)
+        let actual_name = self.get_type_name_by_id(actual_type_id as u32)
             .unwrap_or_else(|_| format!("Type#{}", actual_type_id));
         
         debug!("Detecting diamond patterns between {} and {}", actual_name, expected_name);
@@ -97,10 +97,16 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         // Helper method to find paths
         let finder = self;
         if let Some(interface_path_finder) = self.interface_path_finder() {
+            // Convert IDs to names for path finding
+            let actual_name = actual_name.clone();
+            let expected_name = expected_name.clone();
+            
             // Find paths from actual to expected
-            if let Ok(Some(found_path)) = interface_path_finder.find_path(actual_type_id, expected_type_id) {
+            if let Ok(Some(found_path)) = interface_path_finder.find_path(&actual_name, &expected_name) {
                 let found_paths = vec![crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath {
-                    path: found_path,
+                    path: vec![actual_type_id, expected_type_id], // Convert back to IDs
+                    names: found_path,
+                    is_direct: false,
                 }];
                 paths.extend(found_paths);
                 debug!("Found {} inheritance paths", paths.len());
@@ -152,8 +158,8 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         expected_type: &str,
         actual_type: Option<&str>,
         context_lines: Vec<(usize, String)>,
-        expected_type_id: u32,
-        actual_type_id: u32
+        expected_type_id: u64,
+        actual_type_id: u64
     ) -> VisualTypeAssertionError {
         // Try to create a diamond pattern visualization
         let type_path = self.detect_and_visualize_diamond_pattern(expected_type_id, actual_type_id);
@@ -171,14 +177,14 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
     #[instrument(skip(self), level = "debug")]
     fn generate_type_relationship_graph(
         &self,
-        type_id: u32,
+        type_id: u64,
         max_depth: usize
     ) -> Option<String> {
         if type_id == 0 {
             return None;
         }
         
-        let type_name = self.get_type_name_by_id(type_id)
+        let type_name = self.get_type_name_by_id(type_id as u32)
             .unwrap_or_else(|_| format!("Type#{}", type_id));
         
         // Create a graph visualization of inheritance relationships
@@ -193,27 +199,27 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         result.push_str(&format!("Type Inheritance Graph for {}:\n", type_name));
         
         while let Some((current_id, depth)) = queue.pop_front() {
-            // Stop if we've reached max depth
-            if depth > max_depth {
-                continue;
-            }
-            
-            let current_name = self.get_type_name_by_id(current_id)
-                .unwrap_or_else(|_| format!("Type#{}", current_id));
-            
-            // Add indentation based on depth
-            let indent = "  ".repeat(depth);
-            let prefix = if depth == 0 { "".to_string() } else { format!("{}{}", indent, "└─ ") };
-            result.push_str(&format!("{}{}{}", indent, prefix, current_name));
-            
-            if depth == 0 {
-                result.push_str(" (root)\n");
-            } else {
-                result.push_str("\n");
-            }
-            
-            // Get child types (interfaces implemented by this type)
-            if let Some(interfaces) = self.get_implemented_interfaces(current_id) {
+        // Stop if we've reached max depth
+        if depth > max_depth {
+        continue;
+        }
+        
+        let current_name = self.get_type_name_by_id(current_id as u32)
+        .unwrap_or_else(|_| format!("Type#{}", current_id));
+        
+        // Add indentation based on depth
+        let indent = "  ".repeat(depth);
+        let prefix = if depth == 0 { "".to_string() } else { format!("{}{}", indent, "└─ ") };
+        result.push_str(&format!("{}{}{}", indent, prefix, current_name));
+        
+        if depth == 0 {
+        result.push_str(" (root)\n");
+        } else {
+        result.push_str("\n");
+        }
+        
+        // Get child types (interfaces implemented by this type)
+        if let Some(interfaces) = self.get_implemented_interfaces(current_id) {
                 for interface_id in interfaces {
                     if !visited.contains(&interface_id) {
                         queue.push_back((interface_id, depth + 1));
@@ -268,12 +274,12 @@ impl<'ctx> EnhancedErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
         let mut result = String::new();
         result.push_str("Merged Inheritance Paths:\n");
         
-        for &type_id in &sorted_types {
-            let type_name = self.get_type_name_by_id(type_id)
+        for type_id in &sorted_types {
+            let type_name = self.get_type_name_by_id(**type_id as u32)
             .unwrap_or_else(|_| format!("Type#{}", type_id));
             
             // Determine in which paths this type appears
-            let positions = type_positions.get(&type_id).unwrap();
+            let positions = type_positions.get(type_id).unwrap();
             let path_markers = (0..paths.len())
                 .map(|path_idx| {
                     if positions.iter().any(|(idx, _)| *idx == path_idx) {
@@ -432,7 +438,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Get the interfaces implemented by a type
-    fn get_implemented_interfaces(&self, type_id: u32) -> Option<Vec<u32>> {
+    fn get_implemented_interfaces(&self, type_id: u64) -> Option<Vec<u64>> {
         // In a real implementation, we would look up the interfaces
         // implemented by this type in the registry
         // This is a placeholder that returns a dummy list
