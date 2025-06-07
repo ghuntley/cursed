@@ -16,7 +16,7 @@ use tracing::{debug, error, info, instrument, trace, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceInheritancePath;
-use crate::codegen::llvm::interface_path_finder_enhanced_fix::EnhancedInterfacePathFinder;
+use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
 use crate::InterfaceTypeRegistry;
 use crate::codegen::llvm::interface_type_registry_helpers::TypeNameRegistry;
 use crate::codegen::llvm::interface_type_registry_common;
@@ -89,8 +89,8 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
             }
             
             // Find where paths diverge
-            let root_type_id = first_path[0];
-            let base_type_id = first_path[first_path.len()-1];
+            let root_type_id = first_path[0] as u32;
+            let base_type_id = first_path[first_path.len()-1] as u32;
             
             // Ensure paths are not identical
             if first_path == second_path {
@@ -109,8 +109,8 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
                 }
                 
                 // Get the intermediate types
-                let left_intermediate_id = first_path[diverge_idx];
-                let right_intermediate_id = second_path[diverge_idx];
+                let left_intermediate_id = first_path[diverge_idx] as u32;
+                let right_intermediate_id = second_path[diverge_idx] as u32;
                 
                 return Ok(Some(DiamondInheritancePattern {
                     root_type_id,
@@ -142,7 +142,8 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
         if source_type_id == target_type_id {
             results.push(InterfaceInheritancePath {
                 path: vec![source_type_id as u64],
-                interfaces: HashMap::new(),
+                names: vec![format!("Type#{}", source_type_id)],
+                is_direct: true,
             });
             return Ok(results);
         }
@@ -153,7 +154,8 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
                 // Create a simple path
                 results.push(InterfaceInheritancePath {
                     path: vec![source_type_id as u64, target_type_id as u64],
-                    interfaces: HashMap::new(),
+                    names: vec![format!("Type#{}", source_type_id), format!("Type#{}", target_type_id)],
+                    is_direct: true,
                 });
             }
         }
@@ -229,21 +231,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     // rather than being defined here
     
     /// Get the interface path finder - delegates to common implementation
-    fn get_interface_path_finder(&self) -> Option<Box<dyn EnhancedInterfacePathFinder + '_>> {
+    pub fn get_interface_path_finder(&self) -> Option<Box<dyn EnhancedInterfacePathFinder + '_>> {
         // Import the common implementation
         use crate::codegen::llvm::interface_type_registry_common::get_interface_path_finder_impl;
         get_interface_path_finder_impl(self)
     }
     
     /// Check if a type implements an interface - delegates to common implementation
-    fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> Option<bool> {
+    pub fn type_implements(&self, concrete_type_id: u32, interface_type_id: u32) -> Option<bool> {
         // Import the common implementation
         use crate::codegen::llvm::interface_type_registry_common::type_implements_impl;
         type_implements_impl(self, concrete_type_id, interface_type_id)
     }
     
     /// Get the interface registry - delegates to common implementation
-    fn get_interface_registry(&self) -> Option<&dyn InterfaceTypeRegistry> {
+    pub fn get_interface_registry(&self) -> Option<&dyn InterfaceTypeRegistry> {
         // Import the common implementation
         use crate::codegen::llvm::interface_type_registry_common::get_interface_registry_impl;
         get_interface_registry_impl(self)
@@ -277,7 +279,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 if let Some(path) = path_map.get(&current_id) {
                     let inheritance_path = InterfaceInheritancePath {
                         path: path.iter().map(|&id| id as u64).collect(),
-                        interfaces: HashMap::new(),
+                        names: path.iter().map(|&id| format!("Type#{}", id)).collect(),
+                        is_direct: path.len() == 2,
                     };
                     results.push(inheritance_path);
                 }
@@ -285,7 +288,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             }
             
             // Get parent interfaces for the current type
-            let interfaces = match registry.get_implemented_interfaces(current_id) {
+            let interfaces = match registry.get_extended_interfaces(current_id) {
                 Ok(ifaces) => ifaces,
                 Err(_) => vec![], // Handle error by returning empty vec
             };
@@ -312,7 +315,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                         // This is a new path to the target
                         let inheritance_path = InterfaceInheritancePath {
                             path: new_path.iter().map(|&id| id as u64).collect(),
-                            interfaces: HashMap::new(),
+                            names: new_path.iter().map(|&id| format!("Type#{}", id)).collect(),
+                            is_direct: new_path.len() == 2,
                         };
                         results.push(inheritance_path);
                     }

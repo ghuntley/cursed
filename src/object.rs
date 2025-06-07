@@ -29,7 +29,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 use std::sync::{Arc, RwLock};
-use std::rc::Rc;
+// Note: Rc usage replaced with Arc for thread safety
 
 use crate::prelude::{StrExt, VecExt, VecStrJoinExt};
 // use crate::prelude_ext::{RawPtrExt, VecStrJoinExt, StrCharsExt, SliceExt};

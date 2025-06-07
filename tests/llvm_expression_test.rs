@@ -23,7 +23,7 @@ fn test_integer_literal_expression() {
 
     // Create a simple expression: 42
     let mut int_lit = IntegerLiteral {
-        token: Token::new(TokenType::Int, "42").token_literal(),
+        token: Token::new(TokenType::Int, "42"),
         value: 42,
     };
 
@@ -57,12 +57,12 @@ fn test_infix_expression() {
 
     // Create left and right expressions
     let left = IntegerLiteral {
-        token: Token::new(TokenType::Int, "10").token_literal(),
+        token: Token::new(TokenType::Int, "10"),
         value: 10,
     };
 
     let right = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
 
@@ -107,7 +107,7 @@ fn test_prefix_expression() {
 
     // Create the inner expression
     let inner = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
 

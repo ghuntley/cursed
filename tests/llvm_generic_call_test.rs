@@ -16,7 +16,7 @@ use cursed::codegen::llvm::SpecializedFunctionBuilderExtension;
 use cursed::core::type_checker::Type;
 use inkwell::context::Context;
 use std::path::PathBuf;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_compile_generic_call_expression() {

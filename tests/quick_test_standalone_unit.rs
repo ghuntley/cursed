@@ -2,7 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
+    use std::sync::Arc;
     use cursed::object::Object;
     use cursed::stdlib::quick_test;
 

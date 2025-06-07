@@ -11,7 +11,7 @@ use cursed::ast::traits::Node;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::error::Error;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 // Import test helpers

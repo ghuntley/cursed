@@ -8,7 +8,7 @@
 //! - Null pointer handling
 
 use inkwell::context::Context;
-use std::rc::Rc;
+use std::sync::Arc;
 use cursed::lexer::TokenType;
 use cursed::lexer::Token;
 

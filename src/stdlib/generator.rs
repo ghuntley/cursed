@@ -5,7 +5,7 @@
 
 use crate::object::Object;
 use rand::{Rng, thread_rng};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Simple random number generator for testing
 #[derive(Clone)]

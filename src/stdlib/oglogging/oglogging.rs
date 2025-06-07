@@ -2,10 +2,10 @@ use crate::lexer::token::Token;
 use crate::memory::{Traceable, HeapObject, GcHeapObject, Trace};
 use crate::object::{Environment, Object, ObjectType};
 use crate::prelude::*;
-use std::cell::RefCell;
+use std::sync::RwLock;
 use std::fmt;
 use std::io::{self, Write};
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::path::Path;
 
@@ -22,18 +22,18 @@ pub const LSTDFLAGS: i64 = LDATE | LTIME; // initial values for the standard log
 // WriterObject represents any type that implements Write
 #[derive(Clone)]
 pub struct WriterObject {
-    pub writer: Rc<RefCell<dyn Write>>,
+    pub writer: Arc<RwLock<dyn Write>>,
 }
 
 impl WriterObject {
     pub fn new<W: Write + 'static>(writer: W) -> Self {
         WriterObject {
-            writer: Rc::new(RefCell::new(writer)),
+            writer: Arc::new(RwLock::new(writer)),
         }
     }
 
     pub fn write(&self, buf: &[u8]) -> io::Result<usize> {
-        self.writer.borrow_mut().write(buf)
+        self.writer.write().unwrap().write(buf)
     }
 }
 

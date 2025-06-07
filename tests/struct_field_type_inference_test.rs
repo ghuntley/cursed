@@ -46,21 +46,21 @@ fn test_struct_field_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x").token_literal(),
+                    token: Token::new(TokenType::Identifier, "x"),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
-                    token: Token::new(TokenType::Int, "10").token_literal(),
+                    token: Token::new(TokenType::Int, "10"),
                     value: 10,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "y").token_literal(),
+                    token: Token::new(TokenType::Identifier, "y"),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: Token::new(TokenType::Float, "20.5").token_literal(),
+                    token: Token::new(TokenType::Float, "20.5"),
                     value: 20.5,
                 }),
             },
@@ -79,12 +79,12 @@ fn test_struct_field_type_inference() {
     
     // Store the struct in a variable
     let var_name = Identifier {
-        token: Token::new(TokenType::Identifier, "p").token_literal(),
+        token: Token::new(TokenType::Identifier, "p"),
         value: "p".to_string(),
     };
     
     let let_stmt = LetStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: Token::new(TokenType::Sus, "sus"),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(struct_literal)),
@@ -140,21 +140,21 @@ fn test_nested_struct_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x").token_literal(),
+                    token: Token::new(TokenType::Identifier, "x"),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: Token::new(TokenType::Int, "0").token_literal(),
+                    token: Token::new(TokenType::Int, "0"),
                     value: 0,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "y").token_literal(),
+                    token: Token::new(TokenType::Identifier, "y"),
                     value: "y".to_string(),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: Token::new(TokenType::Int, "0").token_literal(),
+                    token: Token::new(TokenType::Int, "0"),
                     value: 0,
                 }),
             },
@@ -167,21 +167,21 @@ fn test_nested_struct_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x").token_literal(),
+                    token: Token::new(TokenType::Identifier, "x"),
                     value: "x".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: Token::new(TokenType::Float, "100.0").token_literal(),
+                    token: Token::new(TokenType::Float, "100.0"),
                     value: 100.0,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "y").token_literal(),
+                    token: Token::new(TokenType::Identifier, "y"),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: Token::new(TokenType::Float, "100.0").token_literal(),
+                    token: Token::new(TokenType::Float, "100.0"),
                     value: 100.0,
                 }),
             },
@@ -194,14 +194,14 @@ fn test_nested_struct_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "top_left").token_literal(),
+                    token: Token::new(TokenType::Identifier, "top_left"),
                     value: "top_left".to_string(),
                 },
                 value: Box::new(top_left),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "bottom_right").token_literal(),
+                    token: Token::new(TokenType::Identifier, "bottom_right"),
                     value: "bottom_right".to_string(),
                 },
                 value: Box::new(bottom_right),
@@ -255,21 +255,21 @@ fn test_struct_field_incompatible_types() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "name").token_literal(),
+                    token: Token::new(TokenType::Identifier, "name"),
                     value: "name".to_string(),
                 },
                 value: Box::new(StringLiteral {
-                    token: Token::new(TokenType::String, "\"John\"").token_literal(),
+                    token: Token::new(TokenType::String, "\"John\""),
                     value: "John".to_string(),
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "age").token_literal(),
+                    token: Token::new(TokenType::Identifier, "age"),
                     value: "age".to_string(),
                 },
                 value: Box::new(StringLiteral { // String assigned to int field - should fail
-                    token: Token::new(TokenType::String, "\"30\"").token_literal(),
+                    token: Token::new(TokenType::String, "\"30\""),
                     value: "30".to_string(),
                 }),
             },

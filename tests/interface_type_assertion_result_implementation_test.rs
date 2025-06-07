@@ -4,7 +4,7 @@
 //! integration of the ? operator for error propagation.
 
 use std::sync::Arc;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 use cursed::ast::expressions::TypeAssertion;
@@ -264,5 +264,5 @@ fn test_type_assertion_compilation() {
     assert_eq!(type_assertion.string(), "value.(TargetType)");
     
     // Verify token literal
-    assert_eq!(type_assertion.token_literal(), ".");
+    assert_eq!(type_assertion, ".");
 }

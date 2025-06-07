@@ -24,22 +24,22 @@ fn test_function_return_type_inference_int() {
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
-        token: Token::new(TokenType::Identifier, "test_fn").token_literal(),
+        token: Token::new(TokenType::Identifier, "test_fn"),
         value: "test_fn".to_string(),
     };
     
     // Return statement with integer literal
     let return_stmt = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: Token::new(TokenType::Return, "return"),
         return_value: Some(Box::new(IntegerLiteral {
-            token: Token::new(TokenType::Int, "42").token_literal(),
+            token: Token::new(TokenType::Int, "42"),
             value: 42,
         })),
     };
     
     // Create function body
     let body = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(return_stmt)],
     };
     
@@ -47,13 +47,13 @@ fn test_function_return_type_inference_int() {
     // in order to match the return values we're using
     // In a proper implementation, this would be inferred automatically
     let explicit_i32_type = Some(Box::new(IntegerLiteral {
-        token: Token::new(TokenType::Int, "42").token_literal(),
+        token: Token::new(TokenType::Int, "42"),
         value: 42,
     }) as Box<dyn Expression>);
     
     // Create function with explicit return type for testing
     let function = FunctionStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: Token::new(TokenType::Sus, "sus"),
         parameters: vec![],
         body: body,
         name: fn_name.clone(),
@@ -111,22 +111,22 @@ fn test_function_return_type_inference_float() {
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
-        token: Token::new(TokenType::Identifier, "test_fn").token_literal(),
+        token: Token::new(TokenType::Identifier, "test_fn"),
         value: "test_fn".to_string(),
     };
     
     // Return statement with float literal
     let return_stmt = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: Token::new(TokenType::Return, "return"),
         return_value: Some(Box::new(FloatLiteral {
-            token: Token::new(TokenType::Float, "3.14").token_literal(),
+            token: Token::new(TokenType::Float, "3.14"),
             value: 3.14,
         })),
     };
     
     // Create function body
     let body = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(return_stmt)],
     };
     
@@ -134,13 +134,13 @@ fn test_function_return_type_inference_float() {
     // in order to match the return values we're using
     // In a proper implementation, this would be inferred automatically
     let explicit_f64_type = Some(Box::new(FloatLiteral {
-        token: Token::new(TokenType::Float, "3.14").token_literal(),
+        token: Token::new(TokenType::Float, "3.14"),
         value: 3.14,
     }) as Box<dyn Expression>);
     
     // Create function with explicit return type for testing
     let function = FunctionStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: Token::new(TokenType::Sus, "sus"),
         parameters: vec![],
         body: body,
         name: fn_name.clone(),
@@ -198,51 +198,51 @@ fn test_function_return_type_inference_mixed() {
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
-        token: Token::new(TokenType::Identifier, "test_fn").token_literal(),
+        token: Token::new(TokenType::Identifier, "test_fn"),
         value: "test_fn".to_string(),
     };
     
     // Create a condition for if statement
     let condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "true").token_literal(),
+        token: Token::new(TokenType::True, "true"),
         value: true,
     };
     
     // Return statement with integer literal (first branch)
     let return_int = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: Token::new(TokenType::Return, "return"),
         return_value: Some(Box::new(IntegerLiteral {
-            token: Token::new(TokenType::Int, "42").token_literal(),
+            token: Token::new(TokenType::Int, "42"),
             value: 42,
         })),
     };
     
     // Return statement with float literal (second branch)
     let return_float = ReturnStatement {
-        token: Token::new(TokenType::Return, "return").token_literal(),
+        token: Token::new(TokenType::Return, "return"),
         return_value: Some(Box::new(FloatLiteral {
-            token: Token::new(TokenType::Float, "3.14").token_literal(),
+            token: Token::new(TokenType::Float, "3.14"),
             value: 3.14,
         })),
     };
     
     // Create if statement for the function body
     let if_stmt = cursed::ast::control_flow::conditionals::IfStatement {
-        token: Token::new(TokenType::If, "if").token_literal(),
+        token: Token::new(TokenType::If, "if"),
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: Token::new(TokenType::LBrace, "{").token_literal(),
+            token: Token::new(TokenType::LBrace, "{"),
             statements: vec![Box::new(return_int)],
         }),
         alternative: Some(Box::new(BlockStatement {
-            token: Token::new(TokenType::LBrace, "{").token_literal(), 
+            token: Token::new(TokenType::LBrace, "{"), 
             statements: vec![Box::new(return_float)],
         })),
     };
     
     // Create function body with the if statement
     let body = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(if_stmt)],
     };
     
@@ -250,13 +250,13 @@ fn test_function_return_type_inference_mixed() {
     // in order to match the return values we're using
     // In a proper implementation, this would be inferred automatically
     let explicit_f64_type = Some(Box::new(FloatLiteral {
-        token: Token::new(TokenType::Float, "3.14").token_literal(),
+        token: Token::new(TokenType::Float, "3.14"),
         value: 3.14,
     }) as Box<dyn Expression>);
     
     // Create function with explicit return type for testing
     let function = FunctionStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: Token::new(TokenType::Sus, "sus"),
         parameters: vec![],
         body: body,
         name: fn_name.clone(),

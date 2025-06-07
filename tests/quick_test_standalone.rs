@@ -6,7 +6,7 @@
 mod tests {
 use cursed::stdlib::quick_test;
 use cursed::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn test_quick_test_random_generation() {
@@ -67,10 +67,10 @@ fn test_property_testing() {
         function: |args: &[Rc<Object>]| {
             if let Some(arg) = args.get(0) {
                 if let Object::Integer(n) = **arg {
-                    return Ok(Rc::new(Object::Boolean(n % 2 == 0)));
+                    return Ok(Arc::new(Object::Boolean(n % 2 == 0)));
                 }
             }
-            Ok(Rc::new(Object::Boolean(false)))
+            Ok(Arc::new(Object::Boolean(false)))
         },
     };
     
@@ -78,7 +78,7 @@ fn test_property_testing() {
     let mock_generator = Object::Builtin {
         name: "even_number_generator".to_string(),
         function: |_args: &[Rc<Object>]| {
-            Ok(Rc::new(Object::Integer(2)))
+            Ok(Arc::new(Object::Integer(2)))
         },
     };
     

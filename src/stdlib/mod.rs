@@ -416,7 +416,7 @@ pub mod reflectz_impl {
             Object::Array(_) => "array",
             Object::HashTable(_) => "map",
             Object::Function(_) => "function",
-            Object::Builtin(_) => "builtin",
+            Object::Builtin { .. } => "builtin",
             Object::Null => "null",
             _ => "unknown",
         };
@@ -438,7 +438,7 @@ pub mod reflectz_impl {
             Object::Array(_) => "collection",
             Object::HashTable(_) => "collection",
             Object::Function(_) => "callable",
-            Object::Builtin(_) => "callable",
+            Object::Builtin { .. } => "callable",
             Object::Null => "null",
             _ => "unknown",
         };
@@ -571,10 +571,10 @@ pub fn errorf(args: &[std::sync::Arc<crate::object::Object>]) -> Result<std::syn
     spillf(args)
 }
 pub fn scan(_args: &[std::sync::Arc<crate::object::Object>]) -> Result<std::sync::Arc<crate::object::Object>, crate::error::Error> {
-    Ok(std::rc::Arc::new(crate::object::Object::Null))
+    Ok(std::sync::Arc::new(crate::object::Object::Null))
 }
 pub fn fscan(_args: &[std::sync::Arc<crate::object::Object>]) -> Result<std::sync::Arc<crate::object::Object>, crate::error::Error> {
-    Ok(std::rc::Arc::new(crate::object::Object::Null))
+    Ok(std::sync::Arc::new(crate::object::Object::Null))
 }
 
 // web_vibez exports

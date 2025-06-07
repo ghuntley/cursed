@@ -1,6 +1,6 @@
 use cursed::object::Object;
 use cursed::stdlib::chadlogging;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 /// Tests for the chadlogging module

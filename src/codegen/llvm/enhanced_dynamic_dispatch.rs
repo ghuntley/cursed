@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::codegen::llvm::interface_implementation::InterfaceImplementation;
 use inkwell::values::{BasicValueEnum, PointerValue};
 
 /// Enhanced dynamic dispatch for interfaces
@@ -181,6 +182,18 @@ impl<'ctx> EnhancedDynamicDispatch<'ctx> for crate::codegen::llvm::LlvmCodeGener
         args: Vec<BasicValueEnum<'ctx>>
     ) -> Result<BasicValueEnum<'ctx>, Error> {
         // For now, delegate to the standard interface method call
-        self.call_interface_method(interface_ptr, interface_name, method_name, args)
+        // Convert BasicValueEnum to PointerValue if it's a pointer
+        let ptr = if let BasicValueEnum::PointerValue(ptr) = interface_ptr {
+            ptr
+        } else {
+            return Err(Error::from_str("Interface value must be a pointer"));
+        };
+        
+        // Call with correct signature and handle Option result
+        let result = self.call_interface_method(ptr, interface_name, method_name, &args)?;
+        match result {
+            Some(value) => Ok(value),
+            None => Err(Error::from_str("Interface method returned no value")),
+        }
     }
 }

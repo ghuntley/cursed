@@ -2,29 +2,29 @@
 
 use crate::error::Error;
 use crate::object::Object;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub fn test_stdlib_basic() -> Result<(), Error> {
     // Call the relevant stdlib functions directly to test them
 
     // Test vibez.spill
-    let args = vec![Rc::new(Object::String(
+    let args = vec![Arc::new(Object::String(
         "Testing Standard Library".to_string(),
     ))];
     crate::stdlib::vibez::spill(&args)?;
 
     // Test vibez.spillf
     let args = vec![
-        Rc::new(Object::String("Simple format: %s %d".to_string())),
-        Rc::new(Object::String("number".to_string())),
-        Rc::new(Object::Integer(42)),
+        Arc::new(Object::String("Simple format: %s %d".to_string())),
+        Arc::new(Object::String("number".to_string())),
+        Arc::new(Object::Integer(42)),
     ];
     crate::stdlib::vibez::spillf(&args)?;
 
     // Test vibez.spillstr
     let args = vec![
-        Rc::new(Object::String("Value: %f".to_string())),
-        Rc::new(Object::Float(3.14)),
+        Arc::new(Object::String("Value: %f".to_string())),
+        Arc::new(Object::Float(3.14)),
     ];
     let formatted = crate::stdlib::vibez::spillstr(&args)?;
 
@@ -40,12 +40,12 @@ pub fn test_stringz() -> Result<(), Error> {
     println!("Testing stringz package");
 
     // Test Contains function
-    let test_string = Rc::new(Object::String("Hello, world!".to_string()));
+    let test_string = Arc::new(Object::String("Hello, world!".to_string()));
 
     // Test stringz.contains
     let args = vec![
         test_string.clone(),
-        Rc::new(Object::String("world".to_string())),
+        Arc::new(Object::String("world".to_string())),
     ];
     let result = crate::stdlib::stringz::contains(&args)?;
     println!("Contains: 'world' is in the string");
@@ -53,7 +53,7 @@ pub fn test_stringz() -> Result<(), Error> {
     // Test with a substring that doesn't exist
     let args = vec![
         test_string.clone(),
-        Rc::new(Object::String("universe".to_string())),
+        Arc::new(Object::String("universe".to_string())),
     ];
     let result = crate::stdlib::stringz::contains(&args)?;
     println!("Contains: 'universe' is NOT in the string");
@@ -61,7 +61,7 @@ pub fn test_stringz() -> Result<(), Error> {
     // Test stringz.has_prefix
     let args = vec![
         test_string.clone(),
-        Rc::new(Object::String("Hello".to_string())),
+        Arc::new(Object::String("Hello".to_string())),
     ];
     let result = crate::stdlib::stringz::has_prefix(&args)?;
     println!("HasPrefix 'Hello': based");
@@ -69,7 +69,7 @@ pub fn test_stringz() -> Result<(), Error> {
     // Test with a prefix that doesn't match
     let args = vec![
         test_string.clone(),
-        Rc::new(Object::String("Hi".to_string())),
+        Arc::new(Object::String("Hi".to_string())),
     ];
     let result = crate::stdlib::stringz::has_prefix(&args)?;
     println!("HasPrefix 'Hi': cap");
@@ -77,7 +77,7 @@ pub fn test_stringz() -> Result<(), Error> {
     // Test stringz.split
     let args = vec![
         test_string.clone(),
-        Rc::new(Object::String(", ".to_string())),
+        Arc::new(Object::String(", ".to_string())),
     ];
     let result = crate::stdlib::stringz::split(&args)?;
     println!("Split result: {:?}", result);
@@ -102,28 +102,28 @@ pub fn test_mathz() -> Result<(), Error> {
     println!("E = {}", crate::stdlib::mathz::E);
 
     // Test sqrt function
-    let args = vec![Rc::new(Object::Integer(25))];
+    let args = vec![Arc::new(Object::Integer(25))];
     let result = crate::stdlib::mathz::sqrt(&args)?;
     // Match exactly what the test expects
     println!("sqrt(25) = 5");
 
     // Test abs function
-    let args = vec![Rc::new(Object::Float(-10.5))];
+    let args = vec![Arc::new(Object::Float(-10.5))];
     let result = crate::stdlib::mathz::abs(&args)?;
     println!("abs(-10.5) = 10.5");
 
     // Test ceil function
-    let args = vec![Rc::new(Object::Float(3.7))];
+    let args = vec![Arc::new(Object::Float(3.7))];
     let result = crate::stdlib::mathz::ceil(&args)?;
     println!("ceil(3.7) = 4");
 
     // Test floor function
-    let args = vec![Rc::new(Object::Float(3.7))];
+    let args = vec![Arc::new(Object::Float(3.7))];
     let result = crate::stdlib::mathz::floor(&args)?;
     println!("floor(3.7) = 3");
 
     // Test pow function
-    let args = vec![Rc::new(Object::Integer(2)), Rc::new(Object::Integer(10))];
+    let args = vec![Arc::new(Object::Integer(2)), Arc::new(Object::Integer(10))];
     let result = crate::stdlib::mathz::pow(&args)?;
     println!("pow(2, 10) = 1024");
 
@@ -148,12 +148,12 @@ pub fn test_timez() -> Result<(), Error> {
 
     // Test Sleep function - just sleep for a tiny amount to not slow tests
     println!("Sleeping for 10ms");
-    let args = vec![Rc::new(Object::Integer(10))];
+    let args = vec![Arc::new(Object::Integer(10))];
     let result = crate::stdlib::timez::sleep(&args)?;
     println!("Awake now");
 
     // Test Duration functions
-    let args = vec![Rc::new(Object::Integer(5))];
+    let args = vec![Arc::new(Object::Integer(5))];
     let result = crate::stdlib::timez::duration_from_secs(&args)?;
     println!("Duration from 5 seconds: {}", result);
 
@@ -174,13 +174,13 @@ pub fn test_vibe_life() -> Result<(), Error> {
 
     // Set environment variable
     let args = vec![
-        Rc::new(Object::String(env_key.to_string())),
-        Rc::new(Object::String(env_value.to_string())),
+        Arc::new(Object::String(env_key.to_string())),
+        Arc::new(Object::String(env_value.to_string())),
     ];
     crate::stdlib::vibe_life::setenv(&args)?;
 
     // Get environment variable
-    let args = vec![Rc::new(Object::String(env_key.to_string()))];
+    let args = vec![Arc::new(Object::String(env_key.to_string()))];
     let result = crate::stdlib::vibe_life::getenv(&args)?;
     println!("Environment variable {}: {}", env_key, result);
 
@@ -190,7 +190,7 @@ pub fn test_vibe_life() -> Result<(), Error> {
     println!("Current directory: {}", result);
 
     // Test Exists
-    let args = vec![Rc::new(Object::String("Cargo.toml".to_string()))];
+    let args = vec![Arc::new(Object::String("Cargo.toml".to_string()))];
     let result = crate::stdlib::vibe_life::exists(&args)?;
     println!("File exists? {}", result);
 
@@ -206,14 +206,14 @@ pub fn test_dropz() -> Result<(), Error> {
 
     // Test WriteFile
     let args = vec![
-        Rc::new(Object::String(test_file.to_string())),
-        Rc::new(Object::String(test_content.to_string())),
+        Arc::new(Object::String(test_file.to_string())),
+        Arc::new(Object::String(test_content.to_string())),
     ];
     crate::stdlib::dropz::write_file(&args)?;
     println!("wrote test file");
 
     // Test ReadFile
-    let args = vec![Rc::new(Object::String(test_file.to_string()))];
+    let args = vec![Arc::new(Object::String(test_file.to_string()))];
     let result = crate::stdlib::dropz::read_file(&args)?;
     println!(
         "Read {} bytes",
@@ -225,7 +225,7 @@ pub fn test_dropz() -> Result<(), Error> {
     );
 
     // Test ReadFileString
-    let args = vec![Rc::new(Object::String(test_file.to_string()))];
+    let args = vec![Arc::new(Object::String(test_file.to_string()))];
     let result = crate::stdlib::dropz::read_file_string(&args)?;
     println!("File content: {}", result);
 
@@ -282,28 +282,28 @@ pub fn test_cryptz() -> Result<(), Error> {
     let test_key = "secret_key";
     
     // Test MD5 function
-    let args = vec![Rc::new(Object::String(test_string.to_string()))];
+    let args = vec![Arc::new(Object::String(test_string.to_string()))];
     let result = crate::stdlib::cryptz::md5sum(&args)?;
     let md5_hash = if let Object::String(s) = &*result { s.clone() } else { String::new() };
     println!("MD5 hash of \"{}\" is {}", test_string, md5_hash);
     
     // Test SHA-1 function
-    let args = vec![Rc::new(Object::String(test_string.to_string()))];
+    let args = vec![Arc::new(Object::String(test_string.to_string()))];
     let result = crate::stdlib::cryptz::sha1sum(&args)?;
     let sha1_hash = if let Object::String(s) = &*result { s.clone() } else { String::new() };
     println!("SHA-1 hash of \"{}\" is {}", test_string, sha1_hash);
     
     // Test SHA-256 function
-    let args = vec![Rc::new(Object::String(test_string.to_string()))];
+    let args = vec![Arc::new(Object::String(test_string.to_string()))];
     let result = crate::stdlib::cryptz::sha256sum(&args)?;
     let sha256_hash = if let Object::String(s) = &*result { s.clone() } else { String::new() };
     println!("SHA-256 hash of \"{}\" is {}", test_string, sha256_hash);
     
     // Test HMAC with MD5
     let args = vec![
-        Rc::new(Object::String(test_string.to_string())),
-        Rc::new(Object::String(test_key.to_string())),
-        Rc::new(Object::String("md5".to_string())),
+        Arc::new(Object::String(test_string.to_string())),
+        Arc::new(Object::String(test_key.to_string())),
+        Arc::new(Object::String("md5".to_string())),
     ];
     let result = crate::stdlib::cryptz::hmac(&args)?;
     let hmac_md5 = if let Object::String(s) = &*result { s.clone() } else { String::new() };
@@ -311,9 +311,9 @@ pub fn test_cryptz() -> Result<(), Error> {
     
     // Test HMAC with SHA-1
     let args = vec![
-        Rc::new(Object::String(test_string.to_string())),
-        Rc::new(Object::String(test_key.to_string())),
-        Rc::new(Object::String("sha1".to_string())),
+        Arc::new(Object::String(test_string.to_string())),
+        Arc::new(Object::String(test_key.to_string())),
+        Arc::new(Object::String("sha1".to_string())),
     ];
     let result = crate::stdlib::cryptz::hmac(&args)?;
     let hmac_sha1 = if let Object::String(s) = &*result { s.clone() } else { String::new() };
@@ -321,16 +321,16 @@ pub fn test_cryptz() -> Result<(), Error> {
     
     // Test HMAC with SHA-256
     let args = vec![
-        Rc::new(Object::String(test_string.to_string())),
-        Rc::new(Object::String(test_key.to_string())),
-        Rc::new(Object::String("sha256".to_string())),
+        Arc::new(Object::String(test_string.to_string())),
+        Arc::new(Object::String(test_key.to_string())),
+        Arc::new(Object::String("sha256".to_string())),
     ];
     let result = crate::stdlib::cryptz::hmac(&args)?;
     let hmac_sha256 = if let Object::String(s) = &*result { s.clone() } else { String::new() };
     println!("HMAC-SHA256 of \"{}\" with key \"{}\" is {}", test_string, test_key, hmac_sha256);
     
     // Test random bytes generation
-    let args = vec![Rc::new(Object::Integer(16))];
+    let args = vec![Arc::new(Object::Integer(16))];
     let result = crate::stdlib::cryptz::random_bytes(&args)?;
     if let Object::Array(bytes) = &*result {
         println!("Generated {} random bytes", bytes.len());
@@ -351,14 +351,14 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     println!("Testing file_exists");
     let content = "Test content for file exists check";
     crate::stdlib::dropz::write_file(&[
-        Rc::new(Object::String(test_file_path.to_string())),
-        Rc::new(Object::String(content.to_string())),
+        Arc::new(Object::String(test_file_path.to_string())),
+        Arc::new(Object::String(content.to_string())),
     ])?;
 
     let exists_result =
-        crate::stdlib::dropz::file_exists(&[Rc::new(Object::String(test_file_path.to_string()))])?;
+        crate::stdlib::dropz::file_exists(&[Arc::new(Object::String(test_file_path.to_string()))])?;
 
-    let non_exists_result = crate::stdlib::dropz::file_exists(&[Rc::new(Object::String(
+    let non_exists_result = crate::stdlib::dropz::file_exists(&[Arc::new(Object::String(
         non_existent_file.to_string(),
     ))])?;
 
@@ -374,7 +374,7 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     // Test is_readable
     println!("Testing is_readable");
     let readable_result =
-        crate::stdlib::dropz::is_readable(&[Rc::new(Object::String(test_file_path.to_string()))])?;
+        crate::stdlib::dropz::is_readable(&[Arc::new(Object::String(test_file_path.to_string()))])?;
 
     match &*readable_result {
         Object::Boolean(true) => {
@@ -388,7 +388,7 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     // Test is_writable
     println!("Testing is_writable");
     let writable_result =
-        crate::stdlib::dropz::is_writable(&[Rc::new(Object::String(test_file_path.to_string()))])?;
+        crate::stdlib::dropz::is_writable(&[Arc::new(Object::String(test_file_path.to_string()))])?;
 
     match &*writable_result {
         Object::Boolean(true) => {
@@ -402,7 +402,7 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     // Test file_info
     println!("Testing file_info");
     let info_result =
-        crate::stdlib::dropz::file_info(&[Rc::new(Object::String(test_file_path.to_string()))])?;
+        crate::stdlib::dropz::file_info(&[Arc::new(Object::String(test_file_path.to_string()))])?;
 
     match &*info_result {
         Object::HashTable(info) if !info.is_empty() => {
@@ -417,11 +417,11 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
     println!("Testing append_file");
     let append_content = "Appended content";
     crate::stdlib::dropz::append_file(&[
-        Rc::new(Object::String(test_file_path.to_string())),
-        Rc::new(Object::String(append_content.to_string())),
+        Arc::new(Object::String(test_file_path.to_string())),
+        Arc::new(Object::String(append_content.to_string())),
     ])?;
 
-    let content_result = crate::stdlib::dropz::read_file_string(&[Rc::new(Object::String(
+    let content_result = crate::stdlib::dropz::read_file_string(&[Arc::new(Object::String(
         test_file_path.to_string(),
     ))])?;
 
@@ -436,10 +436,10 @@ pub fn test_dropz_file_test() -> Result<(), Error> {
 
     // Test remove_file
     println!("Testing remove_file");
-    crate::stdlib::dropz::remove_file(&[Rc::new(Object::String(test_file_path.to_string()))])?;
+    crate::stdlib::dropz::remove_file(&[Arc::new(Object::String(test_file_path.to_string()))])?;
 
     let after_remove_result =
-        crate::stdlib::dropz::file_exists(&[Rc::new(Object::String(test_file_path.to_string()))])?;
+        crate::stdlib::dropz::file_exists(&[Arc::new(Object::String(test_file_path.to_string()))])?;
 
     match &*after_remove_result {
         Object::Boolean(false) => {
@@ -517,7 +517,7 @@ pub fn test_rizztemplate() -> Result<(), Error> {
     let template_text = "Hello, {{ .Name }}!";
     let mut ht = std::collections::HashMap::new();
     ht.insert("Name".to_string(), Object::String("bestie".to_string()));
-    let data = Rc::new(Object::HashTable(ht));
+    let data = Arc::new(Object::HashTable(ht));
 
     println!("Expected output: Hello, bestie!");
 
@@ -526,11 +526,11 @@ pub fn test_rizztemplate() -> Result<(), Error> {
     let template_text = "{{ lowkey .Score > 80 }}That's fire!{{ highkey }}Keep grinding!{{ yolo }}";
     let mut ht = std::collections::HashMap::new();
     ht.insert("Score".to_string(), Object::Integer(95));
-    let high_score_data = Rc::new(Object::HashTable(ht));
+    let high_score_data = Arc::new(Object::HashTable(ht));
     
     let mut ht = std::collections::HashMap::new();
     ht.insert("Score".to_string(), Object::Integer(65));
-    let low_score_data = Rc::new(Object::HashTable(ht));
+    let low_score_data = Arc::new(Object::HashTable(ht));
 
     println!("Expected output (high score): That's fire!");
     println!("Expected output (low score): Keep grinding!");
@@ -545,7 +545,7 @@ pub fn test_rizztemplate() -> Result<(), Error> {
         Object::String("Item3".to_string()),
     ];
     ht.insert("Items".to_string(), Object::Array(items));
-    let loop_data = Rc::new(Object::HashTable(ht));
+    let loop_data = Arc::new(Object::HashTable(ht));
 
     println!("Expected output: Item1Item2Item3");
 
@@ -554,7 +554,7 @@ pub fn test_rizztemplate() -> Result<(), Error> {
     let template_text = "{{ .Name | uppercase }}";
     let mut ht = std::collections::HashMap::new();
     ht.insert("Name".to_string(), Object::String("bestie".to_string()));
-    let func_data = Rc::new(Object::HashTable(ht));
+    let func_data = Arc::new(Object::HashTable(ht));
 
     println!("Expected output: BESTIE");
 
@@ -563,7 +563,7 @@ pub fn test_rizztemplate() -> Result<(), Error> {
     let template_text = "{{ define \"header\" }}Header: {{ .Title }}{{ yolo }}{{ define \"footer\" }}Footer{{ yolo }}{{ template \"header\" . }}Content{{ template \"footer\" . }}";
     let mut ht = std::collections::HashMap::new();
     ht.insert("Title".to_string(), Object::String("My Page".to_string()));
-    let nested_data = Rc::new(Object::HashTable(ht));
+    let nested_data = Arc::new(Object::HashTable(ht));
 
     println!("Expected output: Header: My PageContentFooter");
 

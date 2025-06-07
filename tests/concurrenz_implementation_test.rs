@@ -5,7 +5,7 @@ use std::time::Duration;
 use cursed::object::Object;
 use cursed::stdlib::concurrenz;
 use cursed::stdlib::concurrenz::{CursedMutex, CursedRWMutex, CursedWaitGroup, CursedOnce};
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Test that we can create and use a mutex
 #[test]

@@ -1,7 +1,7 @@
 //! Comprehensive test suite for the garbage collector
 
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;

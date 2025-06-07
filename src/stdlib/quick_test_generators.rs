@@ -48,8 +48,8 @@ pub fn combine(
         let values: Vec<Object> = generators
             .iter()
             .map(|gen| {
-                let rc = gen();
-                match &*rc {
+                let arc = gen();
+                match &*arc {
                     Object::Integer(i) => Object::Integer(*i),
                     Object::Float(f) => Object::Float(*f),
                     Object::Boolean(b) => Object::Boolean(*b),
@@ -67,12 +67,12 @@ pub fn combine(
 
 /// StateMachine implementation for property testing
 pub struct StateMachineImpl<T: Clone> {
-    state: Rc<T>,
-    actions: Vec<(String, Box<dyn Fn(&Rc<T>) -> bool>, Box<dyn Fn(&Rc<T>) -> bool>)>,
+    state: Arc<T>,
+    actions: Vec<(String, Box<dyn Fn(&Arc<T>) -> bool>, Box<dyn Fn(&Arc<T>) -> bool>)>,
 }
 
 impl<T: Clone> StateMachineImpl<T> {
-    pub fn new(initial_state: Rc<T>) -> Self {
+    pub fn new(initial_state: Arc<T>) -> Self {
         StateMachineImpl {
             state: initial_state,
             actions: Vec::new(),
@@ -82,8 +82,8 @@ impl<T: Clone> StateMachineImpl<T> {
     pub fn add_action(
         &mut self,
         name: &str,
-        action: Box<dyn Fn(&Rc<T>) -> bool>,
-        precondition: Box<dyn Fn(&Rc<T>) -> bool>,
+        action: Box<dyn Fn(&Arc<T>) -> bool>,
+        precondition: Box<dyn Fn(&Arc<T>) -> bool>,
     ) {
         self.actions.push((name.to_string(), action, precondition));
     }
@@ -94,7 +94,7 @@ impl<T: Clone> StateMachineImpl<T> {
         
         for i in 0..config.max_count {
             // Select a random action that satisfies preconditions
-            let valid_actions: Vec<&(String, Box<dyn Fn(&Rc<T>) -> bool>, Box<dyn Fn(&Rc<T>) -> bool>)> = 
+            let valid_actions: Vec<&(String, Box<dyn Fn(&Arc<T>) -> bool>, Box<dyn Fn(&Arc<T>) -> bool>)> = 
                 self.actions.iter()
                     .filter(|(_, _, precond)| precond(&self.state))
                     .collect();

@@ -36,17 +36,17 @@ fn test_if_expression_with_variable() {
     
     // Set up a variable 'x' with value 10
     let x_ident = Identifier {
-        token: Token::new(TokenType::Identifier, "x").token_literal(),
+        token: Token::new(TokenType::Identifier, "x"),
         value: "x".to_string(),
     };
     
     let x_value = IntegerLiteral {
-        token: Token::new(TokenType::Int, "10").token_literal(),
+        token: Token::new(TokenType::Int, "10"),
         value: 10,
     };
     
     let let_stmt = LetStatement {
-        token: Token::new(TokenType::Sus, "sus").token_literal(),
+        token: Token::new(TokenType::Sus, "sus"),
         name: x_ident.clone(),
         value: Some(Box::new(x_value)),
         // Add explicit i32 type annotation to ensure consistency
@@ -60,13 +60,13 @@ fn test_if_expression_with_variable() {
     // Create a condition that compares x > 5
     let x_expr = x_ident.clone();
     let five = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
     
     // Make sure we use consistent integer types
     let five = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
 
@@ -81,7 +81,7 @@ fn test_if_expression_with_variable() {
     // Create the then expression: x + 20
     let then_x = x_ident.clone();
     let twenty = IntegerLiteral {
-        token: Token::new(TokenType::Int, "20").token_literal(),
+        token: Token::new(TokenType::Int, "20"),
         value: 20,
     };
     
@@ -94,14 +94,14 @@ fn test_if_expression_with_variable() {
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: then_expr.token_literal(),
+        token: then_expr,
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: x - 5
     let else_x = x_ident.clone();
     let five_2 = IntegerLiteral {
-        token: Token::new(TokenType::Int, "5").token_literal(),
+        token: Token::new(TokenType::Int, "5"),
         value: 5,
     };
     
@@ -114,24 +114,24 @@ fn test_if_expression_with_variable() {
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: else_expr.token_literal(),
+        token: else_expr,
         expression: Some(Box::new(else_expr)),
     };
     
     // Create block statements
     let consequence = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(then_stmt)],
     };
     
     let alternative = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(else_stmt)],
     };
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: Token::new(TokenType::If, "if").token_literal(),
+        token: Token::new(TokenType::If, "if"),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -162,29 +162,29 @@ fn test_nested_if_expressions() {
     
     // Create outer condition: true
     let outer_condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "true").token_literal(),
+        token: Token::new(TokenType::True, "true"),
         value: true,
     };
     
     // Create inner condition: false
     let inner_condition = BooleanLiteral {
-        token: Token::new(TokenType::Lit, "false").token_literal(),
+        token: Token::new(TokenType::Lit, "false"),
         value: false,
     };
     
     // Create values for different branches
     let value_1 = IntegerLiteral {
-        token: Token::new(TokenType::Int, "1").token_literal(),
+        token: Token::new(TokenType::Int, "1"),
         value: 1,
     };
     
     let value_2 = IntegerLiteral {
-        token: Token::new(TokenType::Int, "2").token_literal(),
+        token: Token::new(TokenType::Int, "2"),
         value: 2,
     };
     
     let value_3 = IntegerLiteral {
-        token: Token::new(TokenType::Int, "3").token_literal(),
+        token: Token::new(TokenType::Int, "3"),
         value: 3,
     };
     
@@ -206,17 +206,17 @@ fn test_nested_if_expressions() {
     
     // Create inner if blocks
     let inner_consequence = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(stmt_1)],
     };
     
     let inner_alternative = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(stmt_2)],
     };
     
     let inner_if = IfStatement {
-        token: Token::new(TokenType::If, "if").token_literal(),
+        token: Token::new(TokenType::If, "if"),
         condition: Box::new(inner_condition),
         consequence: Box::new(inner_consequence),
         alternative: Some(Box::new(inner_alternative)),
@@ -225,23 +225,23 @@ fn test_nested_if_expressions() {
     // Wrap inner if in expression statement
     let inner_if_expr = IfExpression::new(inner_if);
     let inner_if_stmt = ExpressionStatement {
-        token: Token::new(TokenType::If, "if").token_literal(),
+        token: Token::new(TokenType::If, "if"),
         expression: Some(Box::new(inner_if_expr)),
     };
     
     // Create outer if blocks
     let outer_consequence = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(inner_if_stmt)],
     };
     
     let outer_alternative = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(),
+        token: Token::new(TokenType::LBrace, "{"),
         statements: vec![Box::new(stmt_3)],
     };
     
     let outer_if = IfStatement {
-        token: Token::new(TokenType::If, "if").token_literal(),
+        token: Token::new(TokenType::If, "if"),
         condition: Box::new(outer_condition),
         consequence: Box::new(outer_consequence),
         alternative: Some(Box::new(outer_alternative)),

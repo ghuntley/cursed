@@ -30,16 +30,16 @@ fn test_if_statement_compilation() {
 
     // Create condition: true
     let condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "based").token_literal(),
+        token: Token::new(TokenType::True, "based"),
         value: true,
     };
 
     // Create the if statement
     let if_stmt = IfStatement {
-        token: Token::new(TokenType::If, "lowkey").token_literal(),
+        token: Token::new(TokenType::If, "lowkey"),
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: Token::new(TokenType::LBrace, "{").token_literal(),
+            token: Token::new(TokenType::LBrace, "{"),
             statements: Vec::new(),
         }),
         alternative: None,
@@ -78,16 +78,16 @@ fn test_while_statement_compilation() {
 
     // Create condition: true
     let condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "based").token_literal(),
+        token: Token::new(TokenType::True, "based"),
         value: true,
     };
 
     // Create the while statement
     let while_stmt = WhileStatement {
-        token: Token::new(TokenType::While, "periodt").token_literal(),
+        token: Token::new(TokenType::While, "periodt"),
         condition: Box::new(condition),
         body: Box::new(BlockStatement {
-            token: Token::new(TokenType::LBrace, "{").token_literal(),
+            token: Token::new(TokenType::LBrace, "{"),
             statements: Vec::new(),
         }),
     };

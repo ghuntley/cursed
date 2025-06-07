@@ -3,14 +3,14 @@ use cursed::{
     stdlib::reflectz::{self, *},
     error::Error,
 };
-use std::rc::Rc;
+use std::sync::Arc;
 
 // Tests for the reflectz module
 mod tests {
 
 #[test]
 fn test_type_of() {
-    let obj = Rc::new(Object::Integer(42));
+    let obj = Arc::new(Object::Integer(42));
     let result = reflectz::type_of(&[obj]).unwrap();
     
     if let Object::String(type_name) = &*result {
@@ -23,8 +23,8 @@ fn test_type_of() {
 
 #[test]
 fn test_is_type() {
-    let obj = Rc::new(Object::Integer(42));
-    let type_name = Rc::new(Object::String("integer".to_string()));
+    let obj = Arc::new(Object::Integer(42));
+    let type_name = Arc::new(Object::String("integer".to_string()));
     
     let result = reflectz::is_type(&[obj.clone(), type_name]).unwrap();
     
@@ -35,7 +35,7 @@ fn test_is_type() {
     }
     
     // Test wrong type
-    let wrong_type = Rc::new(Object::String("string".to_string()));
+    let wrong_type = Arc::new(Object::String("string".to_string()));
     let result = reflectz::is_type(&[obj, wrong_type]).unwrap();
     
     if let Object::Boolean(is_int) = &*result {
@@ -48,15 +48,15 @@ fn test_is_type() {
 #[test]
 fn test_get_field() {
     // Create a struct object with fields for testing
-    let person = Rc::new(Object::Struct {
+    let person = Arc::new(Object::Struct {
         name: "Person".to_string(),
         fields: vec![
-            ("Name".to_string(), Rc::new(Object::String("John".to_string()))),
-            ("Age".to_string(), Rc::new(Object::Integer(30))),
+            ("Name".to_string(), Arc::new(Object::String("John".to_string()))),
+            ("Age".to_string(), Arc::new(Object::Integer(30))),
         ],
     });
     
-    let field_name = Rc::new(Object::String("Name".to_string()));
+    let field_name = Arc::new(Object::String("Name".to_string()));
     let result = reflectz::get_field(&[person.clone(), field_name]).unwrap();
     
     if let Object::String(name) = &*result {
@@ -66,7 +66,7 @@ fn test_get_field() {
     }
     
     // Test getting integer field
-    let age_field = Rc::new(Object::String("Age".to_string()));
+    let age_field = Arc::new(Object::String("Age".to_string()));
     let result = reflectz::get_field(&[person, age_field]).unwrap();
     
     if let Object::Integer(age) = &*result {
@@ -79,16 +79,16 @@ fn test_get_field() {
 #[test]
 fn test_set_field() {
     // Create a struct object with fields for testing
-    let person = Rc::new(Object::Struct {
+    let person = Arc::new(Object::Struct {
         name: "Person".to_string(),
         fields: vec![
-            ("Name".to_string(), Rc::new(Object::String("John".to_string()))),
-            ("Age".to_string(), Rc::new(Object::Integer(30))),
+            ("Name".to_string(), Arc::new(Object::String("John".to_string()))),
+            ("Age".to_string(), Arc::new(Object::Integer(30))),
         ],
     });
     
-    let field_name = Rc::new(Object::String("Name".to_string()));
-    let new_value = Rc::new(Object::String("Jane".to_string()));
+    let field_name = Arc::new(Object::String("Name".to_string()));
+    let new_value = Arc::new(Object::String("Jane".to_string()));
     
     let _ = reflectz::set_field(&[person.clone(), field_name.clone(), new_value]).unwrap();
     
@@ -106,8 +106,8 @@ fn test_set_field() {
 fn test_call_method() {
     // This test would require more complex setup with method info
     // For now we'll just test the basic interface
-    let obj = Rc::new(Object::Integer(42));
-    let method_name = Rc::new(Object::String("toString".to_string()));
+    let obj = Arc::new(Object::Integer(42));
+    let method_name = Arc::new(Object::String("toString".to_string()));
     
     let result = reflectz::call_method(&[obj, method_name]).unwrap();
     

@@ -484,10 +484,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                     use crate::ast::literals::*;
                     
                     // Create a dummy generic function for testing
-                    let type_param = Token::new(TokenType::Identifier, "T");
-                    let param_name = Token::new(TokenType::Identifier, "value");
-                    let param_type = Token::new(TokenType::Identifier, "T");
-                    let return_type = Token::new(TokenType::Identifier, "T");
+                    use crate::lexer::TokenType;
                     
                     let param = Parameter {
                         token: "value".to_string(),
@@ -500,8 +497,6 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                             value: "T".to_string(),
                         }),
                     };
-                    
-                    let fn_name = Token::new(TokenType::Identifier, "test_generic_fn");
                     
                     TEST_FN = Some(FunctionStatement {
                         token: "slay".to_string(),

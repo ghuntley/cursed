@@ -6,6 +6,7 @@ use inkwell::values::{BasicValueEnum, PointerValue};
 use inkwell::IntPredicate;
 use inkwell::basic_block::BasicBlock;
 use inkwell::AddressSpace;
+use crate::codegen::llvm::pointer_type_extension::PointerTypeExtension;
 
 use crate::ast::expressions::TypeAssertion;
 use crate::codegen::llvm::LlvmCodeGenerator;

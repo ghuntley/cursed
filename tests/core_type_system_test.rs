@@ -89,7 +89,7 @@ mod core_type_system_tests {
         // Assert that conversion works properly now
         assert!(result1.is_ok());
         let expr1 = result1.unwrap();
-        assert_eq!(expr1.token_literal(), "IDENT");
+        assert_eq!(expr1, "IDENT");
         assert!(expr1.as_any().downcast_ref::<Identifier>().is_some());
         assert_eq!(
             expr1.as_any().downcast_ref::<Identifier>().unwrap().value,
@@ -98,7 +98,7 @@ mod core_type_system_tests {
         
         assert!(result2.is_ok());
         let expr2 = result2.unwrap();
-        assert_eq!(expr2.token_literal(), "IDENT");
+        assert_eq!(expr2, "IDENT");
         assert!(expr2.as_any().downcast_ref::<Identifier>().is_some());
         assert_eq!(
             expr2.as_any().downcast_ref::<Identifier>().unwrap().value, 
@@ -107,7 +107,7 @@ mod core_type_system_tests {
         
         assert!(result3.is_ok());
         let expr3 = result3.unwrap();
-        assert_eq!(expr3.token_literal(), "IDENT");
+        assert_eq!(expr3, "IDENT");
         assert!(expr3.as_any().downcast_ref::<Identifier>().is_some());
         assert_eq!(
             expr3.as_any().downcast_ref::<Identifier>().unwrap().value,

@@ -17,9 +17,9 @@ use crate::error::Error;
 use crate::object::{Object, self};
 use crate::core::channel::{create_channel, send_to_channel, receive_from_channel, try_send_to_channel, try_receive_from_channel};
 use crate::memory::{Traceable, Tag, Visitor};
-use std::rc::Rc;
+// Note: Using Arc instead of Rc for thread safety
 use std::cell::RefCell;
-use std::sync::{Mutex as StdMutex, RwLock as StdRwLock, Once as StdOnce, Arc};
+use std::sync::{Mutex as StdMutex, RwLock as StdRwLock, RwLock, Once as StdOnce, Arc};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 // Wrapper type for CURSED mutex
@@ -243,7 +243,7 @@ impl CursedOnce {
 /// A new mutex object
 pub fn new_mutex(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let mutex = CursedMutex::new();
-    Ok(Arc::new(Object::Mutex(RwLock::new(mutex))))
+    Ok(Arc::new(Object::Mutex(StdRwLock::new(mutex))))
 }
 
 /// Locks a mutex
@@ -311,7 +311,7 @@ pub fn mutex_unlock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
 /// A new RWMutex object
 pub fn new_rwmutex(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let rwmutex = CursedRWMutex::new();
-    Ok(Arc::new(Object::RWMutex(RwLock::new(rwmutex))))
+    Ok(Arc::new(Object::RWMutex(StdRwLock::new(rwmutex))))
 }
 
 /// Locks a read-write mutex for writing
@@ -432,7 +432,7 @@ pub fn rwmutex_runlock(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
 /// A new WaitGroup object
 pub fn new_waitgroup(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let waitgroup = CursedWaitGroup::new();
-    Ok(Arc::new(Object::WaitGroup(RwLock::new(waitgroup))))
+    Ok(Arc::new(Object::WaitGroup(StdRwLock::new(waitgroup))))
 }
 
 /// Adds delta to the WaitGroup counter
@@ -535,7 +535,7 @@ pub fn waitgroup_wait(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
 /// A new Once object
 pub fn new_once(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     let once = CursedOnce::new();
-    Ok(Arc::new(Object::Once(RwLock::new(once))))
+    Ok(Arc::new(Object::Once(StdRwLock::new(once))))
 }
 
 /// Performs a function execution exactly once

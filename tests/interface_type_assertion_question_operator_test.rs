@@ -4,7 +4,7 @@
 //! the ? operator for automatic error propagation with Result types.
 
 use std::sync::Arc;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 
 use cursed::ast::expressions::TypeAssertion;

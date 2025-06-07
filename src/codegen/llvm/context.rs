@@ -79,7 +79,7 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Default integer type to use
     pub(crate) default_integer_type: Option<inkwell::types::IntType<'ctx>>,
     // Cache for type IDs to improve performance of type assertions
-    pub(crate) type_id_cache: Option<std::rc::Rc<std::cell::RefCell<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
+    pub(crate) type_id_cache: Option<std::sync::Arc<std::sync::RwLock<crate::codegen::llvm::enhanced_type_assertion::TypeIdCache>>>,
     // Interface type registry for runtime type information
     pub(crate) interface_type_registry: Option<crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry<'ctx>>,
     // Global arrays for type names in the enhanced type registry 
@@ -107,6 +107,9 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Test-only field for inheritance relationships in unit tests
     #[cfg(test)]
     pub test_inheritance_map: Option<HashMap<String, HashSet<String>>>,
+    
+    // Internal fields for dynamic storage of extension data
+    pub(crate) internal_fields: HashMap<String, Box<dyn std::any::Any + Send + Sync>>,
     
 }
 
@@ -225,6 +228,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             test_all_interfaces: None,
             #[cfg(test)]
             test_inheritance_map: None,
+            
+            // Initialize internal fields for dynamic storage
+            internal_fields: HashMap::new(),
             
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality
@@ -615,7 +621,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// 
     /// This connects the monomorphization system to the type checker for proper
     /// interface implementation checking during generic code specialization.
-    pub fn setup_monomorphization_manager(&mut self, type_checker: std::rc::Rc<std::cell::RefCell<crate::core::type_checker::TypeChecker>>) {
+    pub fn setup_monomorphization_manager(&mut self, type_checker: std::sync::Arc<std::sync::RwLock<crate::core::type_checker::TypeChecker>>) {
         tracing::info!("Setting up monomorphization manager with type checker");
         // Configure the main monomorphization manager with the type checker
         self.mono_manager = self.mono_manager.clone().with_type_checker(type_checker.clone());

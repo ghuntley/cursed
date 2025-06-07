@@ -1,7 +1,7 @@
 //! Test for circular reference handling in the garbage collector
 
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::sync::{Arc, Mutex};
 
 use cursed::memory::gc::{GarbageCollector, MemoryStats};

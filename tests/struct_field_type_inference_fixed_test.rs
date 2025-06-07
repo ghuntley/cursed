@@ -74,21 +74,21 @@ fn test_struct_field_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "x").token_literal(),
+                    token: new_token(TokenType::Identifier, "x"),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
-                    token: new_token(TokenType::Int, "10").token_literal(),
+                    token: new_token(TokenType::Int, "10"),
                     value: 10,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "y").token_literal(),
+                    token: new_token(TokenType::Identifier, "y"),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: new_token(TokenType::Float, "20.5").token_literal(),
+                    token: new_token(TokenType::Float, "20.5"),
                     value: 20.5,
                 }),
             },
@@ -111,7 +111,7 @@ fn test_struct_field_type_inference() {
     
     // Store the struct in a variable
     let var_name = Identifier {
-        token: new_token(TokenType::Identifier, "p").token_literal(),
+        token: new_token(TokenType::Identifier, "p"),
         value: "p".to_string(),
     };
     
@@ -122,21 +122,21 @@ fn test_struct_field_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "x").token_literal(),
+                    token: new_token(TokenType::Identifier, "x"),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Using integer for float field (type coercion)
-                    token: new_token(TokenType::Int, "15").token_literal(),
+                    token: new_token(TokenType::Int, "15"),
                     value: 15,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "y").token_literal(),
+                    token: new_token(TokenType::Identifier, "y"),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: new_token(TokenType::Float, "25.5").token_literal(),
+                    token: new_token(TokenType::Float, "25.5"),
                     value: 25.5,
                 }),
             },
@@ -144,7 +144,7 @@ fn test_struct_field_type_inference() {
     };
     
     let let_stmt = LetStatement {
-        token: new_token(TokenType::Sus, "sus").token_literal(),
+        token: new_token(TokenType::Sus, "sus"),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(new_struct_literal)),
@@ -196,21 +196,21 @@ fn test_struct_field_incompatible_types() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "name").token_literal(),
+                    token: new_token(TokenType::Identifier, "name"),
                     value: "name".to_string(),
                 },
                 value: Box::new(StringLiteral {
-                    token: new_token(TokenType::String, "\"John\"").token_literal(),
+                    token: new_token(TokenType::String, "\"John\""),
                     value: "John".to_string(),
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "age").token_literal(),
+                    token: new_token(TokenType::Identifier, "age"),
                     value: "age".to_string(),
                 },
                 value: Box::new(StringLiteral { // String assigned to int field - should fail
-                    token: new_token(TokenType::String, "\"30\"").token_literal(),
+                    token: new_token(TokenType::String, "\"30\""),
                     value: "30".to_string(),
                 }),
             },

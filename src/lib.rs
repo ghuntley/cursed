@@ -139,7 +139,7 @@ use crate::object::Object;
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
-use std::rc::Rc;
+use std::sync::Arc;
 
 // Channel operations for JIT execution
 #[no_mangle]
@@ -499,7 +499,7 @@ pub fn run_program(input: &str, _debug: bool, file_path: std::path::PathBuf) -> 
     let context = inkwell::context::Context::create();
     
     // Create a type checker instance for interface implementation checking
-    let type_checker = std::rc::Rc::new(std::cell::RefCell::new(crate::core::type_checker::TypeChecker::new()));
+    let type_checker = std::sync::Arc::new(std::sync::RwLock::new(crate::core::type_checker::TypeChecker::new()));
     
     // Create the code generator
     let mut code_gen = codegen::llvm::LlvmCodeGenerator::new(&context, &package_name, file_path.clone());

@@ -7,7 +7,7 @@ mod tests {
     use crate::error::Error;
     use inkwell::context::Context;
     use std::cell::RefCell;
-    use std::rc::Rc;
+    use std::sync::Arc;
     use tracing::{info, debug};
     
     // Include common test utilities

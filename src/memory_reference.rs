@@ -1,17 +1,16 @@
 // CURSED Memory Management Reference
 // This file contains a reference implementation for memory management in the CURSED language.
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use crate::object::Object;
 
 /// Memory management for the CURSED language
 pub struct Memory {
     /// All allocated objects
-    objects: Vec<Rc<RefCell<Object>>>,
+    objects: Vec<Arc<RwLock<Object>>>,
     /// Objects that are visible to the garbage collector
-    roots: Vec<Rc<RefCell<Object>>>,
+    roots: Vec<Arc<RwLock<Object>>>,
     /// Object allocation count for statistics
     allocation_count: usize,
     /// Next scheduled garbage collection threshold
@@ -50,28 +49,28 @@ impl Memory {
 
     
     /// Allocate a new object in memory
-    pub fn allocate(&mut self, obj: Object) -> Rc<RefCell<Object>> {
-        let rc_obj = Rc::new(RefCell::new(obj));
-        self.objects.push(Rc::clone(&rc_obj));
+    pub fn allocate(&mut self, obj: Object) -> Arc<RwLock<Object>> {
+        let arc_obj = Arc::new(RwLock::new(obj));
+        self.objects.push(Arc::clone(&arc_obj));
         
         self.allocation_count += 1;
         if self.allocation_count >= self.next_gc {
             self.collect_garbage();
         }
         
-        rc_obj
+        arc_obj
     }
     
     /// Add an object to the root set (protected from GC)
-    pub fn add_root(&mut self, obj: Rc<RefCell<Object>>) {
-        if !self.roots.iter().any(|root| Rc::ptr_eq(root, &obj)) {
-            self.roots.push(Rc::clone(&obj));
+    pub fn add_root(&mut self, obj: Arc<RwLock<Object>>) {
+        if !self.roots.iter().any(|root| Arc::ptr_eq(root, &obj)) {
+            self.roots.push(Arc::clone(&obj));
         }
     }
     
     /// Remove an object from the root set
-    pub fn remove_root(&mut self, obj: &Rc<RefCell<Object>>) {
-        self.roots.retain(|root| !Rc::ptr_eq(root, obj));
+    pub fn remove_root(&mut self, obj: &Arc<RwLock<Object>>) {
+        self.roots.retain(|root| !Arc::ptr_eq(root, obj));
     }
     
     /// Mark and sweep garbage collection
@@ -86,7 +85,7 @@ impl Memory {
         
         // Sweep phase: remove unmarked objects
         self.objects.retain(|obj| {
-            let is_marked = marked.contains_key(&(Rc::as_ptr(obj) as usize));
+            let is_marked = marked.contains_key(&(Arc::as_ptr(obj) as usize));
             is_marked
         });
         
@@ -108,8 +107,8 @@ impl Memory {
     }
     
     /// Mark an object and its children
-    fn mark_object(&self, obj: &Rc<RefCell<Object>>, marked: &mut HashMap<usize, bool>) {
-        let ptr = Rc::as_ptr(obj) as usize;
+    fn mark_object(&self, obj: &Arc<RwLock<Object>>, marked: &mut HashMap<usize, bool>) {
+        let ptr = Arc::as_ptr(obj) as usize;
         
         // If already marked, return to avoid cycles
         if marked.contains_key(&ptr) {
@@ -120,53 +119,53 @@ impl Memory {
         marked.insert(ptr, true);
         
         // Mark children based on object type
-        match &*obj.borrow() {
+        match &*obj.read().unwrap() {
             Object::Array(elements) => {
                 for elem in elements {
-                    if let Some(rc_elem) = elem.as_rc_refcell() {
-                        self.mark_object(rc_elem, marked);
+                    if let Some(arc_elem) = elem.as_arc_rwlock() {
+                        self.mark_object(arc_elem, marked);
                     }
                 }
             },
             Object::Hash(pairs) => {
                 for (key, value) in pairs {
-                    if let Some(rc_key) = key.as_rc_refcell() {
-                        self.mark_object(rc_key, marked);
+                    if let Some(arc_key) = key.as_arc_rwlock() {
+                        self.mark_object(arc_key, marked);
                     }
-                    if let Some(rc_value) = value.as_rc_refcell() {
-                        self.mark_object(rc_value, marked);
+                    if let Some(arc_value) = value.as_arc_rwlock() {
+                        self.mark_object(arc_value, marked);
                     }
                 }
             },
             Object::Function { body, env, .. } => {
-                if let Some(rc_env) = env.as_rc_refcell() {
-                    self.mark_object(rc_env, marked);
+                if let Some(arc_env) = env.as_arc_rwlock() {
+                    self.mark_object(arc_env, marked);
                 }
             },
             Object::Closure { .. } => {
                 // Mark captured variables in the closure
-                if let Object::Closure { function, free } = &*obj.borrow() {
-                    if let Some(rc_fn) = function.as_rc_refcell() {
-                        self.mark_object(rc_fn, marked);
+                if let Object::Closure { function, free } = &*obj.read().unwrap() {
+                    if let Some(arc_fn) = function.as_arc_rwlock() {
+                        self.mark_object(arc_fn, marked);
                     }
                     for free_var in free {
-                        if let Some(rc_var) = free_var.as_rc_refcell() {
-                            self.mark_object(rc_var, marked);
+                        if let Some(arc_var) = free_var.as_arc_rwlock() {
+                            self.mark_object(arc_var, marked);
                         }
                     }
                 }
             },
             Object::Environment(env) => {
                 // Mark all values in the environment
-                for (_, value) in env.store.borrow().iter() {
-                    if let Some(rc_value) = value.as_rc_refcell() {
-                        self.mark_object(rc_value, marked);
+                for (_, value) in env.store.read().unwrap().iter() {
+                    if let Some(arc_value) = value.as_arc_rwlock() {
+                        self.mark_object(arc_value, marked);
                     }
                 }
                 // Mark outer environment if it exists
                 if let Some(outer) = &env.outer {
-                    if let Some(rc_outer) = outer.as_rc_refcell() {
-                        self.mark_object(rc_outer, marked);
+                    if let Some(arc_outer) = outer.as_arc_rwlock() {
+                        self.mark_object(arc_outer, marked);
                     }
                 }
             },
@@ -205,14 +204,14 @@ pub struct MemoryStats {
 }
 
 /// Extension trait for Object to support memory management
-pub trait AsRcRefCell {
-    fn as_rc_refcell(&self) -> Option<&Rc<RefCell<Object>>>;
+pub trait AsArcRwLock {
+    fn as_arc_rwlock(&self) -> Option<&Arc<RwLock<Object>>>;
 }
 
-impl AsRcRefCell for Object {
-    fn as_rc_refcell(&self) -> Option<&Rc<RefCell<Object>>> {
+impl AsArcRwLock for Object {
+    fn as_arc_rwlock(&self) -> Option<&Arc<RwLock<Object>>> {
         match self {
-            Object::Reference(rc) => Some(rc),
+            Object::Reference(arc) => Some(arc),
             _ => None,
         }
     }
@@ -222,7 +221,7 @@ impl AsRcRefCell for Object {
 // This would be defined in the actual object.rs file
 impl Object {
     // This would be defined in the actual object implementation
-    pub fn reference(obj: Rc<RefCell<Object>>) -> Self {
+    pub fn reference(obj: Arc<RwLock<Object>>) -> Self {
         Object::Reference(obj)
     }
 }
@@ -230,5 +229,5 @@ impl Object {
 // This enum variant would be added to the real Object enum
 #[derive(Debug, Clone)]
 pub enum ObjectVariant {
-    Reference(Rc<RefCell<Object>>),
+    Reference(Arc<RwLock<Object>>),
 } 
