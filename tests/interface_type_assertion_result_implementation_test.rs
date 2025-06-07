@@ -143,7 +143,7 @@ fn test_generate_type_assertion_error_info() {
                 source_location,
                 source_type_id: Some(12345),
                 target_type_id: Some(67890),
-                type_path: Some("source -> middle -> target".to_string(),
+                type_path: Some("source -> middle -> target".to_string()),
                 error_message,
             })
         }
@@ -155,7 +155,7 @@ fn test_generate_type_assertion_error_info() {
             _type_name: &str,
             _depth: usize
         ) -> Result<String, Error> {
-            Ok("Mock interface path visualization".to_string()
+            Ok("Mock interface path visualization".to_string())
         }
         
         fn find_alternative_paths(
@@ -164,7 +164,7 @@ fn test_generate_type_assertion_error_info() {
             _target_type: &str,
             _max_depth: usize
         ) -> Result<Vec<String>, Error> {
-            Ok(vec!["source -> middle -> target".to_string())])
+            Ok(vec!["source -> middle -> target".to_string())]
         }
         
         fn check_extension_relationship(

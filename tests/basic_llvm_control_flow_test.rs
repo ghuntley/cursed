@@ -57,8 +57,8 @@ fn test_if_statement_compilation() {
         .expect("Failed to build return");
 
     // Verify the module
-    let result = generator.module().verify());
-    assert!(result.is_ok(), "Module verification failed: {:?}", result.err())
+    let result = generator.module().verify();
+    assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
 }
 
 #[test]
@@ -104,8 +104,8 @@ fn test_while_statement_compilation() {
         .expect("Failed to build return");
 
     // Verify the module
-    let result = generator.module().verify());
-    assert!(result.is_ok(), "Module verification failed: {:?}", result.err())
+    let result = generator.module().verify();
+    assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
 }
 
 #[test]
@@ -135,6 +135,6 @@ fn test_container_layout() {
         .expect("Failed to build return");
 
     // Verify the module
-    let result = generator.module().verify());
-    assert!(result.is_ok(), "Module verification failed: {:?}", result.err())
+    let result = generator.module().verify();
+    assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
 }

@@ -32,7 +32,7 @@ impl TypeChecker {
         struct_name: &str,
         methods: Vec<(String, Vec<Type>, Option<Type>)>,
     ) -> Vec<(String, Vec<Type>, Option<Type>)> {
-        self.struct_methods_map.insert(struct_name.to_string(, methods.clone();
+        self.struct_methods_map.insert(struct_name.to_string(), methods.clone());
         methods
     }
     

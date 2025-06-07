@@ -1,29 +1,26 @@
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
-use cursed::code::jit_compile_and_run;
-use cursed::core::JitOptions;
-use cursed::object::ObjectRef;
-use super::*;
+use cursed::interpreter;
+use cursed::object::Object;
 
 
 #[cfg(test)]
 mod property_access_tests {
 
     // Helper function to run code and get the result
-    fn run_code(code: &str) -> Result<ObjectRef, Error> {
+    fn run_code(code: &str) -> Result<Object, Error> {
         let lexer = Lexer::new(code);
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program()?;
         
-        let options = JitOptions::default().with_main_args(vec![]);
-        jit_compile_and_run(&program, options)
+        interpreter::run(&program)
     }
 
     // Helper to run code and extract the integer result
     fn run_code_int(code: &str) -> Result<i64, Error> {
         let result = run_code(code)?;
-        match result.as_i64() {
+        match result.as_int() {
             Some(i) => Ok(i),
             None => Err(Error::from_str(&format!("Expected integer, got {:?}", result)))
         }

@@ -39,8 +39,8 @@ fn test_enhanced_registry_basic_operations() {
     let mut registry = EnhancedInterfaceRegistry::new_with_defaults();
     
     // Base operations should still work
-    assert!(registry.base_registry.check_implementation(&Type::Normie, "Numeric").unwrap();
-    assert!(!registry.base_registry.check_implementation(&Type::Lit, "Numeric").unwrap();
+    assert!(registry.base_registry.check_implementation(&Type::Normie, "Numeric").unwrap());
+    assert!(!registry.base_registry.check_implementation(&Type::Lit, "Numeric").unwrap());
     
     // Check that the enhanced registry respects existing constraints
     let container_type = Type::Struct(

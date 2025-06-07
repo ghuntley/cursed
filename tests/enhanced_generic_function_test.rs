@@ -91,7 +91,7 @@ fn test_specialization_with_primitive_types() {
         "identity",                        // Function name
         vec!["T"],                         // Type parameters
         vec![Type::TypeParam("T".to_string())], // Parameter types
-        Type::TypeParam("T".to_string(),  // Return type
+        Type::TypeParam("T".to_string()),  // Return type
     );
     
     // Test specializations with different types
@@ -132,14 +132,14 @@ fn test_multiple_type_parameter_specialization() {
         "makePair",              // Function name
         vec!["T", "U"],          // Type parameters
         vec![                   // Parameter types
-            Type::TypeParam("T".to_string(),
-            Type::TypeParam("U".to_string()
+            Type::TypeParam("T".to_string()),
+            Type::TypeParam("U".to_string())
         ],
         Type::Struct(           // Return type is a Pair<T, U>
             "Pair".to_string(),
             vec![
-                Box::new(Type::TypeParam("T".to_string(),
-                Box::new(Type::TypeParam("U".to_string())
+                Box::new(Type::TypeParam("T".to_string())),
+                Box::new(Type::TypeParam("U".to_string()))
             ]
         ),
     );

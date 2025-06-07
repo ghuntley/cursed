@@ -111,7 +111,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // 7. Register FileReader as implementing Reader
     let mut reader_methods = HashMap::new();
-    reader_methods.insert("read".to_string(, read_function);
+    reader_methods.insert("read".to_string(), read_function);
     
     codegen.register_interface_implementation(
         "FileReader",
@@ -434,11 +434,11 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     codegen.builder().position_at_end(failure_block);
     let error_str = codegen.create_string_constant("not a Person");
     // Need to handle the result
-    codegen.builder().build_return(Some(&error_str.unwrap()).unwrap();
+    codegen.builder().build_return(Some(&error_str.unwrap())).unwrap();
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string());
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
     }
     
     Ok(())

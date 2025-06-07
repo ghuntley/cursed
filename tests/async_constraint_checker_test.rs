@@ -54,10 +54,10 @@ fn test_async_constraint_checker_parallel_execution() {
     }
     
     // Check specific results
-    assert_eq!(results[0], Ok(true);  // Normie implements Numeric
-    assert_eq!(results[1], Ok(true);  // Tea implements Comparable
-    assert_eq!(results[2], Ok(true);  // Lit implements Comparable
-    assert_eq!(results[3], Ok(true);  // TestStruct implements Testable
+    assert_eq!(results[0], Ok(true));  // Normie implements Numeric
+    assert_eq!(results[1], Ok(true));  // Tea implements Comparable
+    assert_eq!(results[2], Ok(true));  // Lit implements Comparable
+    assert_eq!(results[3], Ok(true));  // TestStruct implements Testable
     
     // Now use the direct AsyncConstraintChecker
     let registry_arc = Arc::new(registry);
@@ -82,7 +82,7 @@ fn test_parallel_generic_constraint_checking() {
     // Create a generic Dictionary[K, V] where K must be Comparable
     registry.register_generic_implementation(
         "Dictionary".to_string(),
-        vec!["K".to_string(), "V".to_string())],
+        vec!["K".to_string(), "V".to_string()],
         "Map".to_string(),
         vec![("K".to_string(), "Comparable".to_string())]
     );

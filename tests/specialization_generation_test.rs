@@ -1,4 +1,4 @@
-use cursed::ast::expressions::Identifier;
+use cursed::ast::expressions::identifiers::Identifier;
 use cursed::ast::expressions::InfixExpression;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::FieldStatement;
@@ -10,7 +10,7 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::core::type_checker::Type;
-use cursed::lexer::Token;
+use cursed::lexer::token::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
@@ -120,7 +120,7 @@ fn create_generic_add_function() -> FunctionStatement {
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string()),
+            token: "IDENT".to_string(),
             name: Identifier {
                 token: "token".to_string(),
                 value: "a".to_string(),
@@ -131,7 +131,7 @@ fn create_generic_add_function() -> FunctionStatement {
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string()),
+            token: "IDENT".to_string(),
             name: Identifier {
                 token: "token".to_string(),
                 value: "b".to_string(),
@@ -151,7 +151,7 @@ fn create_generic_add_function() -> FunctionStatement {
 
     // Create an infix expression for a + b
     let infix_expr = InfixExpression {
-        token: Token::Plus,
+        token: "+".to_string(),
         left: Box::new(Identifier {
             token: "token".to_string(),
             value: "a".to_string(),
@@ -170,13 +170,13 @@ fn create_generic_add_function() -> FunctionStatement {
     };
 
     let body = BlockStatement {
-        token: Token::LBrace,
+        token: "lbrace".to_string(),
         statements: vec![Box::new(return_statement)],
     };
 
     // Create the function statement
     FunctionStatement {
-        token: Token::Slay,
+        token: "slay".to_string(),
         name: Identifier {
             token: "token".to_string(),
             value: "add".to_string(),
@@ -225,7 +225,7 @@ fn create_generic_pair_struct() -> cursed::ast::SquadStatement {
 
     // Create the struct statement
     cursed::ast::SquadStatement {
-        token: Token::Identifier("squad".to_string()),
+        token: "squad".to_string(),
         name: Identifier {
             token: "token".to_string(),
             value: "Pair".to_string(),

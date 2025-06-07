@@ -96,14 +96,14 @@ fn test_concurrent_gc_basic() {
     
     // Create some links between objects to form chains
     for i in 0..objects.len()-1 {
-        objects[i].inner().unwrap().set_next(objects[i+1].clone();
+        objects[i].inner().unwrap().set_next(objects[i+1].clone());
     }
     
     // Create a cycle to test cycle collection
-    objects.last().unwrap().inner().unwrap().set_next(objects[0].clone();
+    objects.last().unwrap().inner().unwrap().set_next(objects[0].clone());
     
     // Sleep to allow collector to run
-    thread::sleep(Duration::from_millis(300);
+    thread::sleep(Duration::from_millis(300));
     
     // Verify all objects are still accessible
     for (i, obj) in objects.iter().enumerate() {
@@ -117,7 +117,7 @@ fn test_concurrent_gc_basic() {
     drop(objects);
     
     // Sleep to allow collector to run
-    thread::sleep(Duration::from_millis(300);
+    thread::sleep(Duration::from_millis(300));
     
     // The objects should still be accessible through the chain
     // since we have a reference to the first one
@@ -146,7 +146,7 @@ fn test_concurrent_gc_basic() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collector to run multiple times
-    thread::sleep(Duration::from_millis(500);
+    thread::sleep(Duration::from_millis(500));
     
     // Check GC statistics
     let stats = concurrent_gc.stats();
@@ -190,7 +190,7 @@ fn test_concurrent_gc_stress() {
                 
                 // Sometimes create a chain
                 if !local_objects.is_empty() && i % 10 == 0 {
-                    local_objects.last().unwrap().inner().unwrap().set_next(obj.clone();
+                    local_objects.last().unwrap().inner().unwrap().set_next(obj.clone());
                 }
                 
                 local_objects.push(obj);
@@ -202,7 +202,7 @@ fn test_concurrent_gc_stress() {
                 
                 // Small sleep to give other threads a chance
                 if i % 10 == 0 {
-                    thread::sleep(Duration::from_millis(1);
+                    thread::sleep(Duration::from_millis(1));
                 }
             }
             
@@ -232,7 +232,7 @@ fn test_concurrent_gc_stress() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to complete
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200));
     
     // Verify remaining objects are still accessible
     for obj in &all_objects {
@@ -246,7 +246,7 @@ fn test_concurrent_gc_stress() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to complete
-    thread::sleep(Duration::from_millis(200);
+    thread::sleep(Duration::from_millis(200));
     
     // Check GC statistics
     let stats = concurrent_gc.stats();

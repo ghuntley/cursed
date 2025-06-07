@@ -61,10 +61,10 @@ fn test_monomorphization_function_specialization() {
         "max",
         vec!["T"],
         vec![
-            Type::TypeParam("T".to_string(),
-            Type::TypeParam("T".to_string(),
+            Type::TypeParam("T".to_string()),
+            Type::TypeParam("T".to_string()),
         ],
-        Type::TypeParam("T".to_string(),
+        Type::TypeParam("T".to_string()),
     );
 
     // Specialize with concrete type Normie (i32)
@@ -76,7 +76,7 @@ fn test_monomorphization_function_specialization() {
     assert_eq!(specialized_name, "max__Normie");
 
     // Verify the function is in the instantiated map
-    assert!(mono_manager.is_function_instantiated("max", &[Type::Normie]))
+    assert!(mono_manager.is_function_instantiated("max", &[Type::Normie]));
 
     // Specializing again should return the same name
     let specialized_name2 = mono_manager
@@ -175,7 +175,7 @@ fn test_monomorphization_manager_in_llvm_generator() {
         "map",
         vec!["T", "U"],
         vec![Type::TypeParam("T".to_string())],
-        Type::TypeParam("U".to_string(),
+        Type::TypeParam("U".to_string()),
     );
 
     // Specialize with concrete types
@@ -187,7 +187,7 @@ fn test_monomorphization_manager_in_llvm_generator() {
     assert_eq!(spec_name, "map__Thicc_Tea");
 
     // Verify it's cached
-    assert!(mono_manager.is_function_instantiated("map", &[Type::Thicc, Type::Tea]))
+    assert!(mono_manager.is_function_instantiated("map", &[Type::Thicc, Type::Tea]));
 
     // Get the function from the LLVM module
     let function = code_gen.module().get_function(&spec_name);

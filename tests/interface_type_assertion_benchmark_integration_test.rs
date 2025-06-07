@@ -136,7 +136,7 @@ fn test_comprehensive_interface_type_assertion_benchmark() {
             // Verify the benchmark names
             assert_eq!(results[0].name, "Simple Type Assertions");
             assert_eq!(results[1].name, "Diamond Inheritance Type Assertions");
-            assert!(results[2].name.starts_with("Deep Hierarchy Type Assertions");
+            assert!(results[2].name.starts_with("Deep Hierarchy Type Assertions"));
             
             // Verify all have timing data
             for result in &results {
@@ -225,11 +225,11 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
         
         fn get_type_name(&self, id: u32) -> Result<String, Error> {
             if let Some(name) = self.interfaces.get(&id) {
-                return Ok(name.clone();
+                return Ok(name.clone());
             }
             
             if let Some(name) = self.concrete_types.get(&id) {
-                return Ok(name.clone();
+                return Ok(name.clone());
             }
             
             Ok(format!("Type{}", id))

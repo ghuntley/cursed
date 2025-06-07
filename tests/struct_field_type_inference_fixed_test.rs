@@ -8,7 +8,6 @@ use cursed::lexer::TokenType;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation, StructFieldInference};
 use cursed::core::type_checker::Type;
-use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
@@ -99,7 +98,7 @@ fn test_struct_field_type_inference() {
     
     // Compile the struct literal
     let result = generator.compile_struct_literal(&struct_literal);
-    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err());
     
     // Get the result value
     let struct_value = result.unwrap();
@@ -109,7 +108,7 @@ fn test_struct_field_type_inference() {
     
     // Verify struct creation alone
     let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification after struct creation failed: {:?}", verification.err())
+    assert!(verification.is_ok(), "Module verification after struct creation failed: {:?}", verification.err());
     
     // Store the struct in a variable
     let var_name = Identifier {
@@ -154,19 +153,19 @@ fn test_struct_field_type_inference() {
     
     // Compile the declaration
     let decl_result = generator.compile_statement(&let_stmt);
-    assert!(decl_result.is_ok(), "Failed to compile struct variable declaration: {:?}", decl_result.err())
+    assert!(decl_result.is_ok(), "Failed to compile struct variable declaration: {:?}", decl_result.err());
     
     // Verify the module
     let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
     
     // Return a dummy value and finalize function
     let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err())
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Add module verification after return
     let final_verification = generator.module().verify();
-    assert!(final_verification.is_ok(), "Final module verification failed: {:?}", final_verification.err())
+    assert!(final_verification.is_ok(), "Final module verification failed: {:?}", final_verification.err());
 }
 
 #[test]
@@ -232,5 +231,5 @@ fn test_struct_field_incompatible_types() {
     
     // Return a dummy value to finalize function
     let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err())
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
 }
