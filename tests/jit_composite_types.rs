@@ -27,10 +27,10 @@ fn test_jit_array_slice() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string();
+    println!("AST: {}", program.string());
     
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -40,7 +40,7 @@ fn test_jit_array_slice() -> Result<(), Error> {
     // Register puts function which might be used in debugging
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the main function
     println!("Manually creating main function...");
@@ -73,24 +73,24 @@ fn test_jit_array_slice() -> Result<(), Error> {
     ).unwrap();
     
     // Combine the comparisons with AND
-    let and_result = code_gen.builder().build_and(comp1, comp2, "and_result").unwrap());
+    let and_result = code_gen.builder().build_and(comp1, comp2, "and_result").unwrap();
     
     // Create if-else blocks
     let then_block = context.append_basic_block(main_function, "then");
     let else_block = context.append_basic_block(main_function, "else");
     
     // Build the conditional branch
-    code_gen.builder().build_conditional_branch(and_result, then_block, else_block).unwrap());
+    code_gen.builder().build_conditional_branch(and_result, then_block, else_block).unwrap();
     
     // Build the 'then' block (yolo 1;)
     code_gen.builder().position_at_end(then_block);
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_return(Some(&one)).unwrap());
+    code_gen.builder().build_return(Some(&one)).unwrap();
     
     // Build the 'else' block (yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    code_gen.builder().build_return(Some(&zero)).unwrap());
+    code_gen.builder().build_return(Some(&zero)).unwrap();
 
     // Print the generated LLVM IR for debugging
     println!("--- Generated LLVM IR ---");
@@ -157,10 +157,10 @@ fn test_jit_map() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string();
+    println!("AST: {}", program.string());
     
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -170,7 +170,7 @@ fn test_jit_map() -> Result<(), Error> {
     // Register puts function which might be used in debugging
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the main function
     println!("Manually creating main function...");
@@ -201,17 +201,17 @@ fn test_jit_map() -> Result<(), Error> {
     let else_block = context.append_basic_block(main_function, "else");
     
     // Build the conditional branch
-    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap());
+    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap();
     
     // Build the 'then' block (yolo 1;)
     code_gen.builder().position_at_end(then_block);
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_return(Some(&one)).unwrap());
+    code_gen.builder().build_return(Some(&one)).unwrap();
     
     // Build the 'else' block (yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    code_gen.builder().build_return(Some(&zero)).unwrap());
+    code_gen.builder().build_return(Some(&zero)).unwrap();
 
     // Print the generated LLVM IR for debugging
     println!("--- Generated LLVM IR ---");
@@ -278,10 +278,10 @@ fn test_jit_struct() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors());
     }
 
-    println!("AST: {}", program.string();
+    println!("AST: {}", program.string());
     
     // Set up LLVM JIT execution
     let context = Context::create();
@@ -291,7 +291,7 @@ fn test_jit_struct() -> Result<(), Error> {
     // Register puts function which might be used in debugging
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(inkwell::module::Linkage::External));
 
     // Manually create the main function
     println!("Manually creating main function...");
@@ -306,24 +306,24 @@ fn test_jit_struct() -> Result<(), Error> {
     
     // First define field types
     let i8_type = context.i8_type();
-    let i8_ptr_type = i8_type.ptr_type(inkwell::AddressSpace::default();
+    let i8_ptr_type = i8_type.ptr_type(inkwell::AddressSpace::default());
     let field_types = &[i8_ptr_type.into(), i32_type.into()];
     
     // Create the struct type
     let person_struct_type = context.struct_type(field_types, false);
     
     // Allocate space for the struct
-    let person_alloca = code_gen.builder().build_alloca(person_struct_type, "person").unwrap());
+    let person_alloca = code_gen.builder().build_alloca(person_struct_type, "person").unwrap();
     
     // Set the age field (index 1)
-    let age_ptr = code_gen.builder().build_struct_gep(person_struct_type, person_alloca, 1, "age_ptr").unwrap());
+    let age_ptr = code_gen.builder().build_struct_gep(person_struct_type, person_alloca, 1, "age_ptr").unwrap();
     let age_value = i32_type.const_int(30, false);
-    code_gen.builder().build_store(age_ptr, age_value).unwrap());
+    code_gen.builder().build_store(age_ptr, age_value).unwrap();
     
     // For this test, we don't need to set the name field since we're only testing age
     
     // Load the age value
-    let age_load = code_gen.builder().build_load(i32_type, age_ptr, "age_load").unwrap());
+    let age_load = code_gen.builder().build_load(i32_type, age_ptr, "age_load").unwrap();
     
     // Create the comparison (age == 30)
     let thirty = i32_type.const_int(30, false);
@@ -339,17 +339,17 @@ fn test_jit_struct() -> Result<(), Error> {
     let else_block = context.append_basic_block(main_function, "else");
     
     // Build the conditional branch
-    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap());
+    code_gen.builder().build_conditional_branch(comparison, then_block, else_block).unwrap();
     
     // Build the 'then' block (yolo 1;)
     code_gen.builder().position_at_end(then_block);
     let one = i32_type.const_int(1, false);
-    code_gen.builder().build_return(Some(&one)).unwrap());
+    code_gen.builder().build_return(Some(&one)).unwrap();
     
     // Build the 'else' block (yolo 0;)
     code_gen.builder().position_at_end(else_block);
     let zero = i32_type.const_int(0, false);
-    code_gen.builder().build_return(Some(&zero)).unwrap());
+    code_gen.builder().build_return(Some(&zero)).unwrap();
 
     // Print the generated LLVM IR for debugging
     println!("--- Generated LLVM IR ---");

@@ -86,8 +86,8 @@ fn test_interface_implementation_checking() -> Result<(), Error> {
     let mut type_checker = setup_test_hierarchy()?;
     
     // Verify that Person implements Serializable
-    let person_type = Type::Struct("Person".to_string(, Vec::new()));
-    let serializable_type = Type::Interface("Serializable".to_string(, Vec::new()));
+    let person_type = Type::Struct("Person".to_string(), Vec::new());
+    let serializable_type = Type::Interface("Serializable".to_string(), Vec::new());
     
     let person_implements = type_checker.check_interface_implementation(&person_type, &serializable_type)?;
     assert!(person_implements, "Person should implement Serializable");
@@ -150,8 +150,8 @@ fn test_enhanced_dynamic_dispatch() -> Result<(), Error> {
     
     // Register method implementations
     let mut methods = HashMap::new();
-    methods.insert("to_json".to_string(, to_json_fn);
-    methods.insert("from_json".to_string(, from_json_fn);
+    methods.insert("to_json".to_string(), to_json_fn);
+    methods.insert("from_json".to_string(), from_json_fn);
     
     // Register the implementation
     code_gen.register_interface_implementation("Person", "Serializable", methods)?;
@@ -163,8 +163,8 @@ fn test_enhanced_dynamic_dispatch() -> Result<(), Error> {
     code_gen.builder().position_at_end(entry_block);
     
     // Create a dummy Person instance
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
-    let person_ptr = code_gen.builder().build_alloca(i8_ptr_type, "person_ptr").unwrap());
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
+    let person_ptr = code_gen.builder().build_alloca(i8_ptr_type, "person_ptr").unwrap();
     
     // Create interface value
     let interface_val = code_gen.create_interface_value(person_ptr, &person_type, "Serializable")?;
@@ -236,8 +236,8 @@ fn test_integrated_interface_operations() -> Result<(), Error> {
     
     // Register Person method implementations
     let mut person_methods = HashMap::new();
-    person_methods.insert("to_json".to_string(, person_to_json_fn);
-    person_methods.insert("from_json".to_string(, person_from_json_fn);
+    person_methods.insert("to_json".to_string(), person_to_json_fn);
+    person_methods.insert("from_json".to_string(), person_from_json_fn);
     
     // Register the Person implementation
     code_gen.register_interface_implementation("Person", "Serializable", person_methods)?;
@@ -248,8 +248,8 @@ fn test_integrated_interface_operations() -> Result<(), Error> {
     
     // Register Config method implementations
     let mut config_methods = HashMap::new();
-    config_methods.insert("to_json".to_string(, config_to_json_fn);
-    config_methods.insert("from_json".to_string(, config_from_json_fn);
+    config_methods.insert("to_json".to_string(), config_to_json_fn);
+    config_methods.insert("from_json".to_string(), config_from_json_fn);
     
     // Register the Config implementation
     code_gen.register_interface_implementation("Config", "Serializable", config_methods)?;
@@ -261,9 +261,9 @@ fn test_integrated_interface_operations() -> Result<(), Error> {
     code_gen.builder().position_at_end(entry_block);
     
     // Create dummy instances
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
-    let person_ptr = code_gen.builder().build_alloca(i8_ptr_type, "person_ptr").unwrap());
-    let config_ptr = code_gen.builder().build_alloca(i8_ptr_type, "config_ptr").unwrap());
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
+    let person_ptr = code_gen.builder().build_alloca(i8_ptr_type, "person_ptr").unwrap();
+    let config_ptr = code_gen.builder().build_alloca(i8_ptr_type, "config_ptr").unwrap();
     
     // Create interface values
     let serializable_person = code_gen.integrated_create_interface(person_ptr, &person_type, "Serializable")?;

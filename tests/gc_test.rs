@@ -63,7 +63,7 @@ mod tests {
                 assert_eq!(inner_obj.value, 42);
                 
                 debug!("Checking inner object next field");
-                assert!(inner_obj.next.is_none();
+                assert!(inner_obj.next.is_none());
             },
             None => {
                 error!("FAILED! Object inner is None");
@@ -220,7 +220,7 @@ mod tests {
             objects.push(mm.allocate(TestObject {
                 value: i,
                 next: None,
-            });
+            }));
         }
         debug!(object_count = objects.len(), "Objects allocated");
 

@@ -22,7 +22,7 @@ fn test_basic_interface_implementation() -> Result<(), Error> {
         ("age".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("Person", person_fields, Vec::new();
+    type_checker.register_struct("Person", person_fields, Vec::new());
     
     // Mock the Person struct implementing the Greeter interface
     let person_methods = vec![
@@ -38,8 +38,8 @@ fn test_basic_interface_implementation() -> Result<(), Error> {
     }
     
     // Check if Person implements Greeter
-    let person_type = Type::Struct("Person".to_string(), Vec::new();
-    let greeter_type = Type::Interface("Greeter".to_string(), Vec::new();
+    let person_type = Type::Struct("Person".to_string(), Vec::new());
+    let greeter_type = Type::Interface("Greeter".to_string(), Vec::new());
     
     let implements = type_checker.check_interface_implementation(&person_type, &greeter_type)?;
     assert!(implements, "Person should implement Greeter");
@@ -56,10 +56,10 @@ fn test_generic_interface_implementation() -> Result<(), Error> {
         "Container",
         vec![
             ("add".to_string(), vec![Type::TypeParam("T".to_string())], None),
-            ("get".to_string(), vec![Type::Normie], Some(Type::TypeParam("T".to_string(),
+            ("get".to_string(), vec![Type::Normie], Some(Type::TypeParam("T".to_string())))
             ("size".to_string(), vec![], Some(Type::Normie)),
         ],
-        vec!["T".to_string())],
+        vec!["T".to_string()]
     );
     
     // Register a StringList struct
@@ -68,7 +68,7 @@ fn test_generic_interface_implementation() -> Result<(), Error> {
         ("count".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("StringList", string_list_fields, Vec::new();
+    type_checker.register_struct("StringList", string_list_fields, Vec::new());
     
     // Mock the StringList struct implementing the Container<tea> interface
     let string_list_methods = vec![
@@ -83,7 +83,7 @@ fn test_generic_interface_implementation() -> Result<(), Error> {
     }
     
     // Check if StringList implements Container<tea>
-    let string_list_type = Type::Struct("StringList".to_string(), Vec::new();
+    let string_list_type = Type::Struct("StringList".to_string(), Vec::new());
     let container_tea_type = Type::Interface(
         "Container".to_string(),
         vec![Box::new(Type::Tea)]
@@ -115,7 +115,7 @@ fn test_interface_method_mismatch() -> Result<(), Error> {
     
     // Register a DataHandler struct with mismatched method signatures
     let data_handler_fields = HashMap::new();
-    type_checker.register_struct("DataHandler", data_handler_fields, Vec::new();
+    type_checker.register_struct("DataHandler", data_handler_fields, Vec::new());
     
     // Method signatures don't match the interface (wrong return type for process)
     let data_handler_methods = vec![
@@ -129,8 +129,8 @@ fn test_interface_method_mismatch() -> Result<(), Error> {
     }
     
     // Check if DataHandler implements Processor (should fail)
-    let data_handler_type = Type::Struct("DataHandler".to_string(), Vec::new();
-    let processor_type = Type::Interface("Processor".to_string(), Vec::new();
+    let data_handler_type = Type::Struct("DataHandler".to_string(), Vec::new());
+    let processor_type = Type::Interface("Processor".to_string(), Vec::new());
     
     let implements = type_checker.check_interface_implementation(
         &data_handler_type, 

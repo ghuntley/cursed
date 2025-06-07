@@ -1,8 +1,7 @@
+/// Tracing utilities for tests
+
 use std::sync::Once;
 use tracing_subscriber::{fmt, EnvFilter};
-
-//! Tracing utilities for tests
-
 
 static INIT: Once = Once::new();
 

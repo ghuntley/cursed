@@ -31,7 +31,7 @@ fn run_jit_test(input: &str) -> Result<ObjectRef, String> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg);
+        return Err(format!("Parser errors:\n{}", error_msg));
     }
     
     // Enable nesting level tracking for type assertions

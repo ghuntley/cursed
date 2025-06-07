@@ -28,7 +28,7 @@ fn run_test_with_expected(code: &str, expected: Object) -> Result<(), String> {
     init_test_tracing!();
     
     // Run the test
-    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43);
+    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43));
     match result {
         Ok(result) => {
             match (&result, &expected) {
@@ -229,7 +229,7 @@ fn test_break_in_range() -> Result<(), String> {
     "#;
     
     // Could be 10 or 15 depending on if break happens before or after the addition
-    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43);
+    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43));
     match result {
         Ok(result) => {
             match result {
@@ -291,7 +291,7 @@ fn test_advanced_break_continue() -> Result<(), String> {
     "#;
     
     // The exact sum depends on when it breaks, but it should be > 30
-    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43);
+    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43));
     match result {
         Ok(result) => {
             match result {
@@ -367,7 +367,7 @@ fn test_implementation_comparison() -> Result<(), String> {
             if same {
                 Ok(())
             } else {
-                Err("Implementations produced different results".to_string()
+                Err("Implementations produced different results".to_string())
             }
         },
         Err(e) => Err(format!("Test comparison failed: {}", e))

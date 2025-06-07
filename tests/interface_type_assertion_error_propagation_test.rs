@@ -51,7 +51,7 @@ mod tests {
         codegen.builder().position_at_end(basic_block);
         
         // Create a dummy value (i8* null pointer) to use in the Result
-        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null());
+        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
         
         // Create a successful Result
         let success_result = codegen.create_type_assertion_result(
@@ -131,7 +131,7 @@ mod tests {
         
         // In the return block, return the unwrapped value
         codegen.builder().position_at_end(return_block);
-        codegen.builder().build_return(Some(&unwrapped.unwrap())
+        codegen.builder().build_return(Some(&unwrapped.unwrap()))
             .expect("Failed to build return instruction");
         
         info!("Successfully unwrapped Result structure");

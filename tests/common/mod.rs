@@ -3,8 +3,8 @@
 pub mod tracing;
 pub mod timing;
 
-// Re-export tracing for test macros
-pub use ::tracing;
+// Re-export tracing for test macros  
+pub use ::tracing as tracing_crate;
 
 /// Initialize tracing for tests
 #[macro_export]

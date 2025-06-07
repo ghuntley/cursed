@@ -38,7 +38,7 @@ fn test_monomorphization_jit_execution() {
     assert_eq!(specialized_name_i32, "identity__Normie");
 
     // Verify the function is in the instantiated map
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]);
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
 
     // Verify the LLVM module contains the specialized function
     let module = code_gen.module();
@@ -55,8 +55,8 @@ fn test_monomorphization_jit_execution() {
     assert_eq!(specialized_name_tea, "identity__Tea");
 
     // Verify both specialized versions exist
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]);
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]);
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]));
 
     // Make sure they are different specializations
     assert_ne!(specialized_name_i32, specialized_name_tea);
@@ -94,7 +94,7 @@ fn test_complex_generic_function() {
 
     // Verify the function is properly specialized
     assert_eq!(specialized_name, "swap__Normie");
-    assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]);
+    assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]));
 
     // Specialize for a different type
     let specialized_name2 = mono_manager
@@ -107,7 +107,7 @@ fn test_complex_generic_function() {
 
     // Verify the second specialization
     assert_eq!(specialized_name2, "swap__Thicc");
-    assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]);
+    assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]));
 
     // We're using our own mono_manager for testing
 
@@ -130,7 +130,7 @@ fn create_generic_swap_function() -> FunctionStatement {
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string(),
+            token: Token::Identifier("IDENT".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "a".to_string(),
@@ -141,7 +141,7 @@ fn create_generic_swap_function() -> FunctionStatement {
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string(),
+            token: Token::Identifier("IDENT".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "b".to_string(),
@@ -157,7 +157,7 @@ fn create_generic_swap_function() -> FunctionStatement {
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
         token: "token".to_string(),
         value: "T".to_string(),
-    });
+    }));
 
     // Create body: { return a; }
     let return_statement = ReturnStatement {
@@ -198,7 +198,7 @@ fn create_generic_identity_function() -> FunctionStatement {
 
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: Token::Identifier("IDENT".to_string(),
+        token: Token::Identifier("IDENT".to_string()),
         name: Identifier {
             token: "token".to_string(),
             value: "x".to_string(),
@@ -213,7 +213,7 @@ fn create_generic_identity_function() -> FunctionStatement {
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
         token: "token".to_string(),
         value: "T".to_string(),
-    });
+    }));
 
     // Create body: { return x; }
     let return_statement = ReturnStatement {

@@ -79,10 +79,10 @@ fn test_thread_safe_cached_registry() {
     
     // Create a thread-safe cached registry
     let registry = InterfaceRegistry::new_with_defaults();
-    let cached_registry = Arc::new(ThreadSafeCachedRegistry::new(registry);
+    let cached_registry = Arc::new(ThreadSafeCachedRegistry::new(registry));
     
     // Create a counter for successes
-    let successful_checks = Arc::new(AtomicUsize::new(0);
+    let successful_checks = Arc::new(AtomicUsize::new(0));
     
     // Spawn multiple threads to perform lookups concurrently
     let mut handles = vec![];
@@ -106,7 +106,7 @@ fn test_thread_safe_cached_registry() {
             for _ in 0..10 { // 10 iterations per thread
                 for type_ in &types {
                     for interface in &interfaces {
-                        let result = registry_clone.check_implementation(type_, interface).unwrap());
+                        let result = registry_clone.check_implementation(type_, interface).unwrap();
                         if result {
                             success_counter.fetch_add(1, Ordering::SeqCst);
                         }
@@ -120,7 +120,7 @@ fn test_thread_safe_cached_registry() {
     
     // Wait for all threads to complete
     for handle in handles {
-        handle.join().unwrap());
+        handle.join().unwrap();
     }
     
     // Get the number of successful checks
@@ -188,8 +188,8 @@ fn test_interface_registry_cached_implementation() {
     let mut registry = InterfaceRegistry::new_with_defaults();
     
     // Test the cached implementation (this should create a temporary cache internally)
-    let result1 = registry.check_implementation_cached(&Type::Normie, "Numeric").unwrap());
-    let result2 = registry.check_implementation_cached(&Type::Tea, "Numeric").unwrap());
+    let result1 = registry.check_implementation_cached(&Type::Normie, "Numeric").unwrap();
+    let result2 = registry.check_implementation_cached(&Type::Tea, "Numeric").unwrap();
     
     // Verify the results are correct
     assert!(result1, "Normie should implement Numeric");
