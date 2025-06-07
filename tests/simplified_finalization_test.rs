@@ -14,10 +14,10 @@ fn test_finalization_graph() {
     // Set up dependencies: 0 -> 1 -> 2 -> 3
     // Using FinalizationOrderManager = HashMap<usize, HashSet<usize>>
     // Add entries for all objects
-    graph.insert(0, HashSet::new();
-    graph.insert(1, HashSet::new();
-    graph.insert(2, HashSet::new();
-    graph.insert(3, HashSet::new();
+    graph.insert(0, HashSet::new());
+    graph.insert(1, HashSet::new());
+    graph.insert(2, HashSet::new());
+    graph.insert(3, HashSet::new());
     
     // Update with dependencies
     graph.get_mut(&0).unwrap().insert(1); // 0 depends on 1
@@ -54,11 +54,11 @@ fn test_complex_dependencies() {
     let mut graph = FinalizationOrderManager::new();
     
     // Add entries for all objects
-    graph.insert(0, HashSet::new();
-    graph.insert(1, HashSet::new();
-    graph.insert(2, HashSet::new();
-    graph.insert(3, HashSet::new();
-    graph.insert(4, HashSet::new();
+    graph.insert(0, HashSet::new());
+    graph.insert(1, HashSet::new());
+    graph.insert(2, HashSet::new());
+    graph.insert(3, HashSet::new());
+    graph.insert(4, HashSet::new());
     
     // 0 depends on 1 and 2
     graph.get_mut(&0).unwrap().insert(1);
@@ -103,9 +103,9 @@ fn test_cycle_handling() {
     let mut graph = FinalizationOrderManager::new();
     
     // Add entries for all objects
-    graph.insert(0, HashSet::new();
-    graph.insert(1, HashSet::new();
-    graph.insert(2, HashSet::new();
+    graph.insert(0, HashSet::new());
+    graph.insert(1, HashSet::new());
+    graph.insert(2, HashSet::new());
     
     // 0 -> 1 -> 2 -> 0 (cycle)
     graph.get_mut(&0).unwrap().insert(1);

@@ -2,6 +2,7 @@ use cursed::object::Object;
 use cursed::stdlib::chadlogging;
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 
 /// Tests for the chadlogging module
@@ -13,10 +14,10 @@ mod tests {
 #[test]
 fn test_basic_logging() {
     // Create a buffer to capture log output
-    let buffer = Rc::new(RefCell::new(Vec::new());
+    let buffer = Rc::new(RefCell::new(Vec::new()));
     
     // Create a test handler that writes to our buffer
-    let handler = chadlogging::TestHandler::new(buffer.clone();
+    let handler = chadlogging::TestHandler::new(buffer.clone());
     
     // Create a new logger with our test handler
     let logger = chadlogging::new(handler);
@@ -36,7 +37,7 @@ fn test_basic_logging() {
     assert_eq!(record1.message, "server starting");
     assert_eq!(record1.attrs.len(), 1);
     assert_eq!(record1.attrs[0].key, "port");
-    assert_eq!(record1.attrs[0].value, Object::Integer(8080);
+    assert_eq!(record1.attrs[0].value, Object::Integer(8080));
     
     // Verify second log record
     let record2 = &logs[1];
@@ -54,10 +55,10 @@ fn test_basic_logging() {
 #[test]
 fn test_with_attributes() {
     // Create a buffer to capture log output
-    let buffer = Rc::new(RefCell::new(Vec::new());
+    let buffer = Rc::new(RefCell::new(Vec::new()));
     
     // Create a test handler that writes to our buffer
-    let handler = chadlogging::TestHandler::new(buffer.clone();
+    let handler = chadlogging::TestHandler::new(buffer.clone());
     
     // Create a logger with attached attributes
     let logger = chadlogging::new(handler).with(vec!["request_id", "req-123456"]);
@@ -79,17 +80,17 @@ fn test_with_attributes() {
     let request_id_attr = record.attrs.iter().find(|attr| attr.key == "request_id").unwrap();
     let path_attr = record.attrs.iter().find(|attr| attr.key == "path").unwrap();
     
-    assert_eq!(request_id_attr.value, Object::String("req-123456".to_string());
-    assert_eq!(path_attr.value, Object::String("/api/users".to_string());
+    assert_eq!(request_id_attr.value, Object::String("req-123456".to_string()));
+    assert_eq!(path_attr.value, Object::String("/api/users".to_string()));
 }
 
 #[test]
 fn test_groups() {
     // Create a buffer to capture log output
-    let buffer = Rc::new(RefCell::new(Vec::new());
+    let buffer = Rc::new(RefCell::new(Vec::new()));
     
     // Create a test handler that writes to our buffer
-    let handler = chadlogging::TestHandler::new(buffer.clone();
+    let handler = chadlogging::TestHandler::new(buffer.clone());
     
     // Create a logger
     let logger = chadlogging::new(handler);
@@ -123,27 +124,27 @@ fn test_groups() {
     match &group_attr.value {
         Object::HashTable(group_map) if group_map.contains_key("__type") => {
             // Check that it's an attrs type
-            assert_eq!(group_map["__type"], Object::String("attrs".to_string());
+            assert_eq!(group_map["__type"], Object::String("attrs".to_string()));
             
             // For our simplified implementation, we just check that the key values exist
-            assert!(group_map.contains_key("method");
-            assert!(group_map.contains_key("path");
-            assert!(group_map.contains_key("status");
+            assert!(group_map.contains_key("method"));
+            assert!(group_map.contains_key("path"));
+            assert!(group_map.contains_key("status"));
             
-            assert_eq!(group_map["method"], Object::String("GET".to_string());
-            assert_eq!(group_map["path"], Object::String("/api/users".to_string());
-            assert_eq!(group_map["status"], Object::Integer(200);
+            assert_eq!(group_map["method"], Object::String("GET".to_string()));
+            assert_eq!(group_map["path"], Object::String("/api/users".to_string()));
+            assert_eq!(group_map["status"], Object::Integer(200));
         },
         _ => panic!("Expected group to be represented as a special HashTable")
     }
     
-    assert_eq!(duration_attr.value, Object::Integer(45);
+    assert_eq!(duration_attr.value, Object::Integer(45));
 }
 
 #[test]
 fn test_level_filtering() {
     // Create a buffer to capture log output
-    let buffer = Rc::new(RefCell::new(Vec::new());
+    let buffer = Rc::new(RefCell::new(Vec::new()));
     
     // Create a handler with INFO level filtering
     let options = chadlogging::HandlerOptions {
@@ -182,10 +183,10 @@ fn test_level_filtering() {
 #[test]
 fn test_json_handler() {
     // Create a buffer to capture log output
-    let buffer = Rc::new(RefCell::new(Vec::new());
+    let buffer = Rc::new(RefCell::new(Vec::new()));
     
     // Create a JSON handler
-    let handler = chadlogging::JSONHandler::new(buffer.clone();
+    let handler = chadlogging::JSONHandler::new(buffer.clone());
     let logger = chadlogging::new(handler);
     
     // Log a message with attributes

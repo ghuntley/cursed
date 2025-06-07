@@ -77,7 +77,7 @@ impl Expression for MockExpression {
 fn setup_simple_test_types() -> (TypeAssertion, TypeAssertion) {
     // Create simple mock expressions for testing
     let valid_assertion = TypeAssertion {
-        token: Token::Identifier("test.csd:10".to_string()),
+        token: "test.csd:10".to_string(),
         expression: Box::new(MockExpression {
             token: "token".to_string(),
             type_name: "Dog".to_string(),
@@ -86,7 +86,7 @@ fn setup_simple_test_types() -> (TypeAssertion, TypeAssertion) {
     };
     
     let invalid_assertion = TypeAssertion {
-        token: Token::Identifier("test.csd:15".to_string()),
+        token: "test.csd:15".to_string(),
         expression: Box::new(MockExpression {
             token: "token".to_string(),
             type_name: "Animal".to_string(),

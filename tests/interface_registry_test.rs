@@ -21,18 +21,18 @@ fn test_interface_registry_primitive_types() {
     let registry = InterfaceRegistry::new_with_defaults();
     
     // Check primitive types that should implement the Comparable interface
-    assert!(registry.check_implementation(&Type::Normie, "Comparable").unwrap();
-    assert!(registry.check_implementation(&Type::Thicc, "Comparable").unwrap();
-    assert!(registry.check_implementation(&Type::Snack, "Comparable").unwrap();
-    assert!(registry.check_implementation(&Type::Meal, "Comparable").unwrap();
-    assert!(registry.check_implementation(&Type::Tea, "Comparable").unwrap();
-    assert!(registry.check_implementation(&Type::Lit, "Comparable").unwrap();
+    assert!(registry.check_implementation(&Type::Normie, "Comparable").unwrap());
+    assert!(registry.check_implementation(&Type::Thicc, "Comparable").unwrap());
+    assert!(registry.check_implementation(&Type::Snack, "Comparable").unwrap());
+    assert!(registry.check_implementation(&Type::Meal, "Comparable").unwrap());
+    assert!(registry.check_implementation(&Type::Tea, "Comparable").unwrap());
+    assert!(registry.check_implementation(&Type::Lit, "Comparable").unwrap());
     
     // Check primitive types that should implement the Numeric interface
-    assert!(registry.check_implementation(&Type::Normie, "Numeric").unwrap();
-    assert!(registry.check_implementation(&Type::Thicc, "Numeric").unwrap();
-    assert!(registry.check_implementation(&Type::Snack, "Numeric").unwrap();
-    assert!(registry.check_implementation(&Type::Meal, "Numeric").unwrap();
+    assert!(registry.check_implementation(&Type::Normie, "Numeric").unwrap());
+    assert!(registry.check_implementation(&Type::Thicc, "Numeric").unwrap());
+    assert!(registry.check_implementation(&Type::Snack, "Numeric").unwrap());
+    assert!(registry.check_implementation(&Type::Meal, "Numeric").unwrap());
     
     // Check primitive types that should NOT implement certain interfaces
     assert!(!registry.check_implementation(&Type::Tea, "Numeric").unwrap());
@@ -49,15 +49,15 @@ fn test_interface_registry_custom_types() {
     
     // Check custom types that should implement specific interfaces
     let point_type = Type::Struct("Point".to_string(), vec![]);
-    assert!(registry.check_implementation(&point_type, "Comparable").unwrap();
+    assert!(registry.check_implementation(&point_type, "Comparable").unwrap());
     
     // Check that Point doesn't implement Numeric
-    assert!(!registry.check_implementation(&point_type, "Numeric").unwrap();
+    assert!(!registry.check_implementation(&point_type, "Numeric").unwrap());
     
     // Check StringStack with Container and Stack interfaces
     let string_stack = Type::Struct("StringStack".to_string(), vec![]);
-    assert!(registry.check_implementation(&string_stack, "Container").unwrap();
-    assert!(registry.check_implementation(&string_stack, "Stack").unwrap();
+    assert!(registry.check_implementation(&string_stack, "Container").unwrap());
+    assert!(registry.check_implementation(&string_stack, "Stack").unwrap());
     
     // Check IntList with Container, List, and Numeric interfaces
     let int_list = Type::Struct("IntList".to_string(), vec![]);
@@ -79,10 +79,10 @@ fn test_interface_registry_adding_custom_implementations() {
     registry.register_implementation(vector_type.clone(), "Numeric".to_string());
     
     // Check that it works
-    assert!(registry.check_implementation(&vector_type, "Numeric").unwrap();
+    assert!(registry.check_implementation(&vector_type, "Numeric").unwrap());
     
     // Check that it doesn't implement other interfaces
-    assert!(!registry.check_implementation(&vector_type, "Comparable").unwrap();
+    assert!(!registry.check_implementation(&vector_type, "Comparable").unwrap());
     
     // Add another implementation to the same type
     registry.register_implementation(vector_type.clone(), "Comparable".to_string());
@@ -102,15 +102,15 @@ fn test_monomorphization_with_interface_registry() {
     
     // Check constraint for Normie implementing Comparable (should use registry)
     let normie_result = mono_manager.check_constraint(&Type::Normie, "Comparable");
-    assert!(normie_result.is_ok())
+    assert!(normie_result.is_ok());
     
     // Custom struct from registry
     let point_type = Type::Struct("Point".to_string(), vec![]);
     let point_result = mono_manager.check_constraint(&point_type, "Comparable");
-    assert!(point_result.is_ok())
+    assert!(point_result.is_ok());
     
     // Type that doesn't implement interface should return Err
     let point_numeric_result = mono_manager.check_constraint(&point_type, "Numeric");
-    assert!(point_numeric_result.is_err())
-    assert!(point_numeric_result.unwrap_err().to_string().contains("does not implement interface"))
+    assert!(point_numeric_result.is_err());
+    assert!(point_numeric_result.unwrap_err().to_string().contains("does not implement interface"));
 }

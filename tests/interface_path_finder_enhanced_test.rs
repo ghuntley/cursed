@@ -20,7 +20,7 @@ fn test_interface_path_finder_enhanced() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     // Reader -> FileReader -> JSONFileReader
@@ -40,42 +40,42 @@ fn test_interface_path_finder_enhanced() {
     
     // Test finding a simple path
     let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap();
-    assert_eq!(path.path(), &vec!["JSONFileReader".to_string(), "FileReader".to_string(), "Reader".to_string())]);
+    assert_eq!(path.path(), &vec!["JSONFileReader".to_string(), "FileReader".to_string(), "Reader".to_string()]);
     
     // Test finding path between unrelated interfaces
     let result = codegen.find_interface_path_enhanced("JSONFileReader", "Serializable");
-    assert!(result.is_err())
-    assert!(result.unwrap_err().to_string().contains("No path found");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("No path found"));
     
     // Test finding path with non-existent interface
     let result = codegen.find_interface_path_enhanced("NonExistentInterface", "Reader");
-    assert!(result.is_err())
-    assert!(result.unwrap_err().to_string().contains("does not exist");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
     
     // Test finding alternative paths
     let paths = codegen.find_alternative_paths_enhanced("JSONFileReader", "Reader", 5).unwrap();
     assert_eq!(paths.len(), 1); // Only one path exists in our test setup
     
     // Test checking extension relationship
-    assert!(codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Reader").unwrap();
-    assert!(!codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Serializable").unwrap();
+    assert!(codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Reader").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Serializable").unwrap());
     
     // Test reversed inheritance detection
     let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "JSONFileReader").unwrap();
     assert!(reversed);
-    assert!(message.contains("Reversed inheritance detected");
+    assert!(message.contains("Reversed inheritance detected"));
     
     // Test hierarchy visualization
     let hierarchy = codegen.visualize_interface_hierarchy("Reader", 2).unwrap();
-    assert!(hierarchy.contains("Interface Hierarchy for 'Reader'");
-    assert!(hierarchy.contains("FileReader");
-    assert!(hierarchy.contains("NetworkReader");
+    assert!(hierarchy.contains("Interface Hierarchy for 'Reader'"));
+    assert!(hierarchy.contains("FileReader"));
+    assert!(hierarchy.contains("NetworkReader"));
     
     // Test DOT graph generation
     let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap();
-    assert!(dot_graph.contains("digraph interface_hierarchy");
-    assert!(dot_graph.contains("\"FileReader\" -> \"Reader\"");
-    assert!(dot_graph.contains("\"JSONFileReader\" -> \"FileReader\"");
+    assert!(dot_graph.contains("digraph interface_hierarchy"));
+    assert!(dot_graph.contains("\"FileReader\" -> \"Reader\""));
+    assert!(dot_graph.contains("\"JSONFileReader\" -> \"FileReader\""));
 }
 
 /// Test hook to set up inheritance relationships for testing
@@ -94,17 +94,17 @@ fn setup_test_inheritance_relationships(codegen: &mut LlvmCodeGenerator) {
     let mut reader_extensions = std::collections::HashSet::new();
     reader_extensions.insert("FileReader".to_string());
     reader_extensions.insert("NetworkReader".to_string());
-    test_inheritance_map.insert("Reader".to_string(, reader_extensions);
+    test_inheritance_map.insert("Reader".to_string(), reader_extensions);
     
     // Set up JSONFileReader extends FileReader
     let mut filereader_extensions = std::collections::HashSet::new();
     filereader_extensions.insert("JSONFileReader".to_string());
-    test_inheritance_map.insert("FileReader".to_string(, filereader_extensions);
+    test_inheritance_map.insert("FileReader".to_string(), filereader_extensions);
     
     // Set up JSONSerializable extends Serializable
     let mut serializable_extensions = std::collections::HashSet::new();
     serializable_extensions.insert("JSONSerializable".to_string());
-    test_inheritance_map.insert("Serializable".to_string(, serializable_extensions);
+    test_inheritance_map.insert("Serializable".to_string(), serializable_extensions);
     
     // Store this in the code generator for testing
     // This would be implemented differently in a real system
@@ -118,7 +118,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     codegen.register_type_in_registry(1001, "Reader");
@@ -128,27 +128,27 @@ fn test_interface_path_finder_enhanced_error_messages() {
     let mut test_inheritance_map = std::collections::HashMap::new();
     let mut reader_extensions = std::collections::HashSet::new();
     reader_extensions.insert("FileReader".to_string());
-    test_inheritance_map.insert("Reader".to_string(, reader_extensions);
+    test_inheritance_map.insert("Reader".to_string(), reader_extensions);
     codegen.test_inheritance_map = Some(test_inheritance_map);
     
     // Test error message for non-existent interface
-    let err = codegen.find_interface_path_enhanced("NonExistentInterface", "Reader").unwrap_err());
-    assert!(err.to_string().contains("does not exist in the registry");
+    let err = codegen.find_interface_path_enhanced("NonExistentInterface", "Reader").unwrap_err();
+    assert!(err.to_string().contains("does not exist in the registry"));
     
     // Test error message for no path
-    let err = codegen.find_interface_path_enhanced("Reader", "FileReader").unwrap_err());
-    assert!(err.to_string().contains("No path found");
-    assert!(err.to_string().contains("Did you mean to assert as the other way around");
+    let err = codegen.find_interface_path_enhanced("Reader", "FileReader").unwrap_err();
+    assert!(err.to_string().contains("No path found"));
+    assert!(err.to_string().contains("Did you mean to assert as the other way around"));
     
     // Test error message for alternative paths
-    let err = codegen.find_alternative_paths_enhanced("Reader", "FileReader", 5).unwrap_err());
-    assert!(err.to_string().contains("No alternative paths found");
+    let err = codegen.find_alternative_paths_enhanced("Reader", "FileReader", 5).unwrap_err();
+    assert!(err.to_string().contains("No alternative paths found"));
     
     // Test reversed inheritance message
     let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "FileReader").unwrap();
     assert!(reversed);
-    assert!(message.contains("Reversed inheritance detected");
-    assert!(message.contains("The actual inheritance path is");
+    assert!(message.contains("Reversed inheritance detected"));
+    assert!(message.contains("The actual inheritance path is"));
 }
 
 /// Test the path visualization functionality
@@ -156,7 +156,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
 fn test_interface_inheritance_path_visualization() {
     // Test the InterfaceInheritancePath struct directly
     let path = InterfaceInheritancePath::new(
-        vec!["Child".to_string(), "Parent".to_string(), "GrandParent".to_string())],
+        vec!["Child".to_string(), "Parent".to_string(), "GrandParent".to_string()],
         "Child".to_string(),
         "GrandParent".to_string()
     );
@@ -166,10 +166,10 @@ fn test_interface_inheritance_path_visualization() {
     
     // Test visual representation
     let visual = path.to_visual_representation();
-    assert!(visual.contains("Interface Inheritance Path:");
-    assert!(visual.contains("Child");
-    assert!(visual.contains("Parent");
-    assert!(visual.contains("GrandParent");
+    assert!(visual.contains("Interface Inheritance Path:"));
+    assert!(visual.contains("Child"));
+    assert!(visual.contains("Parent"));
+    assert!(visual.contains("GrandParent"));
     
     // Test empty path
     let empty_path = InterfaceInheritancePath::new(
@@ -189,7 +189,7 @@ fn test_interface_hierarchy_dot_graph() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Set up some test interfaces in the registry
     codegen.register_type_in_registry(1001, "Animal");
@@ -206,18 +206,18 @@ fn test_interface_hierarchy_dot_graph() {
     let mut animal_extensions = std::collections::HashSet::new();
     animal_extensions.insert("Mammal".to_string());
     animal_extensions.insert("Bird".to_string());
-    test_inheritance_map.insert("Animal".to_string(, animal_extensions);
+    test_inheritance_map.insert("Animal".to_string(), animal_extensions);
     
     // Mammal extensions
     let mut mammal_extensions = std::collections::HashSet::new();
     mammal_extensions.insert("Dog".to_string());
     mammal_extensions.insert("Cat".to_string());
-    test_inheritance_map.insert("Mammal".to_string(, mammal_extensions);
+    test_inheritance_map.insert("Mammal".to_string(), mammal_extensions);
     
     // Bird extensions
     let mut bird_extensions = std::collections::HashSet::new();
     bird_extensions.insert("Eagle".to_string());
-    test_inheritance_map.insert("Bird".to_string(, bird_extensions);
+    test_inheritance_map.insert("Bird".to_string(), bird_extensions);
     
     codegen.test_inheritance_map = Some(test_inheritance_map);
     
@@ -225,21 +225,21 @@ fn test_interface_hierarchy_dot_graph() {
     let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap();
     
     // Verify DOT graph content
-    assert!(dot_graph.contains("digraph interface_hierarchy");
-    assert!(dot_graph.contains("rankdir=BT"); // Bottom to top direction
+    assert!(dot_graph.contains("digraph interface_hierarchy"));
+    assert!(dot_graph.contains("rankdir=BT")); // Bottom to top direction
     
     // Check nodes
-    assert!(dot_graph.contains("\"Animal\" [label=\"Animal\"]");
-    assert!(dot_graph.contains("\"Mammal\" [label=\"Mammal\"]");
-    assert!(dot_graph.contains("\"Bird\" [label=\"Bird\"]");
-    assert!(dot_graph.contains("\"Dog\" [label=\"Dog\"]");
-    assert!(dot_graph.contains("\"Cat\" [label=\"Cat\"]");
-    assert!(dot_graph.contains("\"Eagle\" [label=\"Eagle\"]");
+    assert!(dot_graph.contains("\"Animal\" [label=\"Animal\"]"));
+    assert!(dot_graph.contains("\"Mammal\" [label=\"Mammal\"]"));
+    assert!(dot_graph.contains("\"Bird\" [label=\"Bird\"]"));
+    assert!(dot_graph.contains("\"Dog\" [label=\"Dog\"]"));
+    assert!(dot_graph.contains("\"Cat\" [label=\"Cat\"]"));
+    assert!(dot_graph.contains("\"Eagle\" [label=\"Eagle\"]"));
     
     // Check edges
-    assert!(dot_graph.contains("\"Mammal\" -> \"Animal\"");
-    assert!(dot_graph.contains("\"Bird\" -> \"Animal\"");
-    assert!(dot_graph.contains("\"Dog\" -> \"Mammal\"");
-    assert!(dot_graph.contains("\"Cat\" -> \"Mammal\"");
-    assert!(dot_graph.contains("\"Eagle\" -> \"Bird\"");
+    assert!(dot_graph.contains("\"Mammal\" -> \"Animal\""));
+    assert!(dot_graph.contains("\"Bird\" -> \"Animal\""));
+    assert!(dot_graph.contains("\"Dog\" -> \"Mammal\""));
+    assert!(dot_graph.contains("\"Cat\" -> \"Mammal\""));
+    assert!(dot_graph.contains("\"Eagle\" -> \"Bird\""));
 }

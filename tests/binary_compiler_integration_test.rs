@@ -298,8 +298,8 @@ slay main() {
     assert!(size_output.exists(), "Size-optimized binary was not created");
     
     // Compare file sizes
-    let default_size = fs::metadata(&default_output).unwrap().len());
-    let optimized_size = fs::metadata(&size_output).unwrap().len());
+    let default_size = fs::metadata(&default_output).unwrap().len();
+    let optimized_size = fs::metadata(&size_output).unwrap().len();
     
     println!("Default size: {} bytes", default_size);
     println!("Optimized size: {} bytes", optimized_size);

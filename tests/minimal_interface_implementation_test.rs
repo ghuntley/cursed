@@ -67,7 +67,7 @@ fn test_minimal_interface_implementation() {
         self_param,
         person_type.ptr_type(AddressSpace::default()),
         "person_ptr"
-    ).unwrap().into_pointer_value());
+    ).unwrap().into_pointer_value();
     
     // Get pointer to name field
     let name_ptr = unsafe {
@@ -151,7 +151,7 @@ fn test_minimal_interface_implementation() {
         person_ptr,
         context.i8_type().ptr_type(AddressSpace::default()),
         "person_void_ptr"
-    ).unwrap().into_pointer_value());
+    ).unwrap().into_pointer_value();
     
     // Get the to_string function pointer from the vtable (first field)
     let to_string_ptr_ptr = unsafe {
@@ -168,7 +168,7 @@ fn test_minimal_interface_implementation() {
         person_to_string_type.ptr_type(AddressSpace::default()),
         to_string_ptr_ptr,
         "to_string_ptr"
-    ).unwrap().into_pointer_value());
+    ).unwrap().into_pointer_value();
     
     // Call the to_string function with the person object (dynamic dispatch)
     // Need to use build_indirect_call for function pointers
@@ -180,7 +180,7 @@ fn test_minimal_interface_implementation() {
     ).unwrap();
     
     // Return the result
-    builder.build_return(Some(&result.try_as_basic_value().left().unwrap()).unwrap();
+    builder.build_return(Some(&result.try_as_basic_value().left().unwrap())).unwrap();
     
     // Verify the module
     if let Err(err) = module.verify() {
