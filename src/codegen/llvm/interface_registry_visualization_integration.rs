@@ -25,6 +25,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::core::interface_registry_visualization::{
     InterfaceRegistryExtensionWithVisualization, VisualizationFormat, VisualizationOptions,
 };
+use crate::core::interface_registry_extensions::InterfaceRegistryExtension;
 use crate::error::Error;
 
 /// Provides integration between the LLVM code generator and interface registry visualization system

@@ -151,8 +151,8 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         // Compile the expression that will be type-asserted
         let expr_value = self.compile_expression(&*type_assertion.expression)?;
         
-        // Check if the value is actually an interface
-        let is_interface = self.is_interface_type(expr_value)?;
+        // Check if the target type is actually an interface
+        let is_interface = self.is_interface_type(&type_assertion.type_name)?;
         if !is_interface {
             return Err(Error::TypeAssertion(
                 TypeAssertionError::new(type_assertion.expression.node_type(), &type_assertion.type_name)
@@ -171,14 +171,13 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             Err(_) => {
                 // Calculate a type ID for the target type if it doesn't exist in the registry
                 let hash = self.hash_type_name(&type_assertion.type_name);
-                hash
+                self.context().i64_type().const_int(hash, false).into()
             }
         };
         
         // Set the type IDs for error reporting
         self.set_expected_type_id(target_type_id as u32);
-        let (actual_id, _) = actual_type_id;
-        self.set_actual_type_id(actual_id as u32);
+        self.set_actual_type_id(actual_type_id as u32);
         
         // Check if the types match
         let is_match = self.check_instanceof(expr_value, &type_assertion.type_name)?;
@@ -189,11 +188,11 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             
             // Cast to the target type
             let target_struct_type = match self.get_type_by_name(&type_assertion.type_name) {
-                Ok(ty) => ty,
-                Err(_) => {
+                Some(ty) => ty,
+                None => {
                     // If we can't find the type, create a placeholder type
                     let placeholder_struct_type = self.context().struct_type(&[], false);
-                    placeholder_struct_type
+                    placeholder_struct_type.into()
                 }
             };
             
@@ -348,7 +347,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             Err(_) => {
                 // Calculate a type ID for the target type if it doesn't exist in the registry
                 let hash = self.hash_type_name(&type_assertion.type_name);
-                hash
+                self.context().i64_type().const_int(hash, false).into()
             }
         };
         
@@ -366,11 +365,11 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             
             // Cast to the target type
             let target_struct_type = match self.get_type_by_name(&type_assertion.type_name) {
-                Ok(ty) => ty,
-                Err(_) => {
+                Some(ty) => ty,
+                None => {
                     // If we can't find the type, create a placeholder type
                     let placeholder_struct_type = self.context().struct_type(&[], false);
-                    placeholder_struct_type
+                    placeholder_struct_type.into()
                 }
             };
             
@@ -383,7 +382,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             );
             
             // For the ? operator, we just return the value directly on success
-            casted_ptr.into()
+            casted_ptr?.into()
         } else {
             // For failure with the ? operator, we need to generate code that will
             // return from the current function with an error

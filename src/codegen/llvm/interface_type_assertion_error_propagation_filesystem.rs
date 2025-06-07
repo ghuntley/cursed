@@ -88,7 +88,7 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         // Extract source location information with filesystem context
         let source_location = self.create_enhanced_source_location(
             type_assertion,
-            Some(self.current_file_path())
+            self.current_file_path().to_str()
         )?;
         
         debug!("Compiling type assertion with ? operator and filesystem integration: {}", type_assertion.string());
@@ -154,11 +154,13 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         )?;
         
         // Propagate the error with enhanced source context
+        let type_id_u32 = type_id.into_int_value().get_zero_extended_constant().unwrap() as u32;
+        let actual_type_id_u32 = actual_type_id as u32;
         self.propagate_error_with_source_context(
             &error_message,
             &source_location,
-            type_id,
-            actual_type_id
+            type_id_u32,
+            actual_type_id_u32
         )?;
         
         // This should be unreachable in the failure path
@@ -263,12 +265,16 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         
         // Call the error propagation function with the enhanced message and location
         self.call_error_propagation_function(
-            self.create_string_constant(&enhanced_message).into(),
-            self.create_string_constant(source_type).into(),
-            self.create_string_constant(target_type).into(),
+            self.create_string_constant(&enhanced_message)?.into(),
+            self.create_string_constant(source_type)?.into(),
+            self.create_string_constant(target_type)?.into(),
             location_struct,
-            self.create_string_constant("").into()
-        )
+            self.create_string_constant("")?.into()
+        )?;
+        
+        // This function should not return normally after error propagation
+        // In a real implementation, this would trigger unwinding
+        Ok(self.context().i8_type().const_zero().into())
     }
 }
 
@@ -302,13 +308,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Create string pointers for file and source line
         let file_ptr = if let Some(file) = &location.file {
-            self.create_string_constant(file).into()
+            self.create_string_constant(file)?.into()
         } else {
             ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
         };
         
         let source_line_ptr = if !location.source_line.is_empty() {
-            self.create_string_constant(&location.source_line).into()
+            self.create_string_constant(&location.source_line)?.into()
         } else {
             ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
         };

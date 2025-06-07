@@ -74,7 +74,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         }
         
         // Try to find an inheritance path
-        match registry.find_inheritance_path(source, target) {
+        match InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), source, target) {
             Ok(path) => {
                 // Create a visual representation of the path
                 let path_visual = registry.visualize_path_ascii(&path)?;
@@ -109,7 +109,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         })?;
         
         // Find the inheritance path
-        let path = registry.find_inheritance_path(source, target)?;
+        let path = InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), source, target)?;
         
         // Generate a visual representation
         let mut result = String::from("Interface Inheritance Path:\n");
@@ -229,8 +229,8 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
                 
                 if source_extends && target_extends {
                     // Found a common parent, create paths
-                    let path_source_to_common = registry.find_inheritance_path(source, &interface)?;
-                    let path_target_to_common = registry.find_inheritance_path(target, &interface)?;
+                    let path_source_to_common = InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), source, &interface)?;
+                    let path_target_to_common = InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), target, &interface)?;
                     
                     // Combine paths
                     let mut full_path = path_source_to_common;
@@ -279,7 +279,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         }
         
         // Try to find a path in the reverse direction
-        match registry.find_inheritance_path(target, source) {
+        match InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), target, source) {
             Ok(path) => {
                 // Found a reversed relationship
                 let path_visual = registry.visualize_path_ascii(&path)?;

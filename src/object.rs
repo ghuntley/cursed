@@ -1063,13 +1063,6 @@ impl Object {
         }
     }
 
-    pub fn as_string(&self) -> Option<&String> {
-        match self {
-            Object::String(val) => Some(val),
-            _ => None,
-        }
-    }
-
     pub fn is_truthy(&self) -> bool {
         match self {
             Object::Integer(n) => *n != 0,

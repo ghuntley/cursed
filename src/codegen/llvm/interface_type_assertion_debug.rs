@@ -300,11 +300,8 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         
         let registry = self.interface_type_registry.as_ref().unwrap();
         
-        // Get type ID
-        let type_id = match registry.get_type_id(type_name) {
-            Ok(id) => id,
-            Err(_) => return Ok(format!("Type Hierarchy Trace for {}:\n- Type not found in registry\n", type_name)),
-        };
+        // Use the type name directly since inheritance map uses strings
+        let type_name_str = type_name.to_string();
         
         // Get inheritance map
         let inheritance_map = match registry.get_inheritance_map() {
@@ -321,9 +318,8 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Find all interfaces this type implements
         for (interface_id, implementers) in inheritance_map.iter() {
-            if implementers.contains(&type_id) {
-                let interface_name = registry.get_type_name(*interface_id)
-                    .unwrap_or_else(|_| format!("unknown(0x{:x})", interface_id));
+            if implementers.contains(&type_name_str) {
+                let interface_name = interface_id.clone();
                 result.push_str(&format!("- {}\n", interface_name));
                 found_implementations = true;
             }
@@ -338,10 +334,9 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         let mut found_implementers = false;
         
         // Find all types that implement this interface
-        if let Some(implementers) = inheritance_map.get(&type_id) {
+        if let Some(implementers) = inheritance_map.get(&type_name_str) {
             for implementer_id in implementers {
-                let implementer_name = registry.get_type_name(*implementer_id)
-                    .unwrap_or_else(|_| format!("unknown(0x{:x})", implementer_id));
+                let implementer_name = implementer_id.clone();
                 result.push_str(&format!("- {}\n", implementer_name));
                 found_implementers = true;
             }

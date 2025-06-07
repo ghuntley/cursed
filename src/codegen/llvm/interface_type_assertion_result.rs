@@ -19,6 +19,7 @@ use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::string_utils::StringUtilsExtension;
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use crate::error::Error;
 use crate::error::type_assertion_error::{TypeAssertionError, helpers};
 use crate::error::SourceLocation;

@@ -14,6 +14,7 @@ use tracing::{debug, trace, instrument};
 pub use crate::core::interface_registry_lru_cache::ThreadSafeInterfaceRegistryLruCache;
 
 /// Thread-safe implementation of a cached interface registry
+#[derive(Debug)]
 pub struct ThreadSafeInterfaceRegistryCache {
     /// The underlying registry to delegate to
     registry: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>>,
