@@ -72,10 +72,11 @@ be_like Box[T] squad {
                 token: "Box".to_string(),
                 value: "Box".to_string(),
             },
-            type_parameters: vec![ast::Identifier {
-                token: "T".to_string(),
-                value: "T".to_string(),
-            }],
+            type_parameters: vec![ast::declarations::type_parameter::TypeParameter::new(
+                cursed::lexer::token::Token::new(cursed::lexer::TokenType::Identifier, "T"),
+                "T".to_string()
+            )],
+            generic_constraints: vec![],
             fields: vec![ast::statements::fields::FieldStatement {
                 token: "field".to_string(),
                 name: ast::Identifier {

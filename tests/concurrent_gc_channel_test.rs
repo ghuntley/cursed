@@ -92,7 +92,11 @@ fn test_channel_with_concurrent_gc() {
         
         // Send the object through the channel
         if let Some(channel) = channel_gc.inner() {
-            match channel.channel_send(obj) {
+            // Convert TestData to ThreadSafeObject::Integer
+            let value = obj.inner().unwrap().get_value();
+            let thread_safe_obj = ThreadSafeObject::Integer(value as i64);
+            let obj_gc = concurrent_gc.allocate(thread_safe_obj);
+            match channel.channel_send(obj_gc) {
                 Ok(_) => {
                     println!("Sent object {} to channel", i);
                 },
@@ -132,10 +136,16 @@ fn test_channel_with_concurrent_gc() {
     // Verify the objects are valid
     for (i, obj) in received_objects.iter().enumerate() {
         if let Some(data) = obj.inner() {
-            assert_eq!(data.get_value(), i as i32, "Object value should match index");
-        } else {
-            panic!("Failed to access object {}", i);
-        }
+        // TestData objects are stored in ThreadSafeObject::Integer form
+            match data {
+            ThreadSafeObject::Integer(val) => {
+                    assert_eq!(*val, i as i64, "Object value should match index");
+                    },
+                    _ => panic!("Expected integer object, got {:?}", data),
+                }
+            } else {
+                panic!("Failed to access object {}", i);
+            }
     }
     
     // Drop all objects except the channel
@@ -194,7 +204,11 @@ fn test_concurrent_channel_operations() {
                 
                 // Send the data through the channel
                 if let Some(channel) = channel_gc_clone.inner() {
-                    match channel.channel_send(data) {
+                    // Convert TestData to ThreadSafeObject::Integer
+                    let value = data.inner().unwrap().get_value();
+                    let thread_safe_obj = ThreadSafeObject::Integer(value as i64);
+                    let obj_gc = concurrent_gc_clone.allocate(thread_safe_obj);
+                    match channel.channel_send(obj_gc) {
                         Ok(_) => {
                             println!("Thread {} sent value {}", thread_id, value);
                         },
@@ -227,9 +241,13 @@ fn test_concurrent_channel_operations() {
                     match channel.channel_receive(&gc_clone) {
                         Ok(obj) => {
                             if let Some(data) = obj.inner() {
-                                let value = data.get_value();
-                                println!("Thread {} received value {}", thread_id, value);
-                                received.push(value);
+                                match data {
+                                    ThreadSafeObject::Integer(val) => {
+                                        println!("Thread {} received value {}", thread_id, val);
+                                        received.push(*val as i32);
+                                    },
+                                    _ => println!("Thread {} received non-integer object", thread_id),
+                                }
                             }
                         },
                         Err(e) => {
@@ -258,7 +276,7 @@ fn test_concurrent_channel_operations() {
     }
     
     // Verify we received all items
-    assert_eq!(all_received.len(), num_threads * items_per_thread, 
+    assert_eq!(all_received.len(), (num_threads * items_per_thread) as usize, 
                "Should have received all items");
     
     // Sort the received values for comparison

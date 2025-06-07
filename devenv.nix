@@ -16,6 +16,7 @@
     pkgs.llvmPackages_17.mlir
     pkgs.llvmPackages_17.stdenv
     pkgs.libffi
+    pkgs.libbfd
     pkgs.libffi.dev
     pkgs.libxml2
     pkgs.libxml2.dev
@@ -57,8 +58,8 @@
     export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:$LIBRARY_PATH"
     # Force use of GNU ld and disable mold completely
     export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="gcc"
-    export RUSTFLAGS="-C link-arg=-fuse-ld=bfd -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
-    export RUSTDOCFLAGS="-C link-arg=-fuse-ld=bfd -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib"
+    export RUSTFLAGS="-C link-arg=-fuse-ld=bfd -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib -C link-arg=-B${pkgs.binutils}/bin"
+    export RUSTDOCFLAGS="-C link-arg=-fuse-ld=bfd -L ${pkgs.libffi}/lib -L ${pkgs.zlib}/lib -L ${pkgs.ncurses}/lib -L ${pkgs.libxml2}/lib -C link-arg=-B${pkgs.binutils}/bin"
     # Override any system mold linker
     export PATH="${pkgs.llvmPackages_17.clang}/bin:${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"
     # Ensure we find the libraries by name

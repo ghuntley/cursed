@@ -4,14 +4,17 @@
 //! with the ? operator for automatic error propagation.
 
 use std::sync::Arc;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::Read;
 
-use cursed::codegen::llvm::jit::JitCompiler;
+use cursed::codegen::jit::JitCompiler;
+use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::parser::Parser;
+use cursed::lexer::Lexer;
 use cursed::error::Error;
 use tracing::{debug, info, warn, instrument};
+use inkwell::context::Context;
 
 // Import common test utilities
 #[path = "common.rs"]
@@ -41,7 +44,11 @@ fn test_interface_type_assertion_question_operator_example() {
     file.read_to_string(&mut content).expect("Failed to read example file");
     
     // Parse the code
-    let mut parser = Parser::new(&content);
+    let mut lexer = Lexer::new(&content);
+    let mut parser = match Parser::new(&mut lexer) {
+        Ok(p) => p,
+        Err(e) => panic!("Failed to create parser: {}", e),
+    };
     let program = match parser.parse_program() {
         Ok(prog) => {
             info!("Successfully parsed program");
@@ -53,30 +60,36 @@ fn test_interface_type_assertion_question_operator_example() {
     };
     
     // Create JIT compiler
-    let mut jit = JitCompiler::new("interface_type_assertion_question_operator_test");
+    let context = Context::create();
+    let module = context.create_module("interface_type_assertion_question_operator_test");
+    let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
+        .expect("Failed to create execution engine");
     
-    // Configure JIT for proper interface type assertions
-    jit.set_enable_debug(true);
-    jit.set_enable_type_debugging(true);
-    jit.set_enable_type_checks(true);
-    jit.set_enable_interface_registry(true);
-    jit.set_enable_enhanced_error_reporting(true);
+    let mut jit = JitCompiler::new(
+        &context,
+        execution_engine,
+        "interface_type_assertion_question_operator_test",
+        PathBuf::from("interface_type_assertion_question_op.csd")
+    );
     
-    // Add enhanced error handlers
-    jit.add_runtime_error_handlers();
+    // Generate code
+    let code_gen = LlvmCodeGenerator::new(&context, "interface_type_assertion_question_operator_test", PathBuf::from("interface_type_assertion_question_op.csd"));
+    *(jit.code_generator_mut()) = Some(code_gen);
     
     // Compile the program
-    match jit.compile(&program) {
-        Ok(_) => {
-            info!("Successfully compiled program");
-        },
-        Err(e) => {
-            panic!("Failed to compile program: {}", e);
+    if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
+        match code_gen.compile_program(&program) {
+            Ok(_) => {
+                info!("Successfully compiled program");
+            },
+            Err(e) => {
+                panic!("Failed to compile program: {}", e);
+            }
         }
-    };
+    }
     
     // Run the program
-    let result = jit.run();
+    let result = jit.execute();
     
     // Check that execution completed successfully
     match result {
@@ -213,37 +226,47 @@ fn test_interface_type_assertion_error_propagation() {
     "#;
     
     // Parse the code
-    let mut parser = Parser::new(code);
+    let mut lexer = Lexer::new(code);
+    let mut parser = match Parser::new(&mut lexer) {
+        Ok(p) => p,
+        Err(e) => panic!("Failed to create parser: {}", e),
+    };
     let program = match parser.parse_program() {
         Ok(prog) => prog,
         Err(e) => panic!("Failed to parse program: {}", e),
     };
     
     // Create JIT compiler
-    let mut jit = JitCompiler::new("interface_type_assertion_error_propagation_test");
+    let context = Context::create();
+    let module = context.create_module("interface_type_assertion_error_propagation_test");
+    let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
+        .expect("Failed to create execution engine");
     
-    // Configure JIT for proper interface type assertions
-    jit.set_enable_debug(true);
-    jit.set_enable_type_debugging(true);
-    jit.set_enable_type_checks(true);
-    jit.set_enable_interface_registry(true);
-    jit.set_enable_enhanced_error_reporting(true);
+    let mut jit = JitCompiler::new(
+        &context,
+        execution_engine,
+        "interface_type_assertion_error_propagation_test",
+        PathBuf::from("error_propagation_test.csd")
+    );
     
-    // Add enhanced error handlers
-    jit.add_runtime_error_handlers();
+    // Generate code
+    let code_gen = LlvmCodeGenerator::new(&context, "interface_type_assertion_error_propagation_test", PathBuf::from("error_propagation_test.csd"));
+    *(jit.code_generator_mut()) = Some(code_gen);
     
     // Compile the program
-    match jit.compile(&program) {
-        Ok(_) => {
-            info!("Successfully compiled error propagation test program");
-        },
-        Err(e) => {
-            panic!("Failed to compile error propagation test program: {}", e);
+    if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
+        match code_gen.compile_program(&program) {
+            Ok(_) => {
+                info!("Successfully compiled error propagation test program");
+            },
+            Err(e) => {
+                panic!("Failed to compile error propagation test program: {}", e);
+            }
         }
-    };
+    }
     
     // Run the program
-    let result = jit.run();
+    let result = jit.execute();
     
     // Check that execution completed successfully
     assert!(result.is_ok(), "Error propagation test execution failed");
@@ -458,37 +481,47 @@ fn test_nested_interface_type_assertion_propagation() {
     "#;
     
     // Parse the code
-    let mut parser = Parser::new(code);
+    let mut lexer = Lexer::new(code);
+    let mut parser = match Parser::new(&mut lexer) {
+        Ok(p) => p,
+        Err(e) => panic!("Failed to create parser: {}", e),
+    };
     let program = match parser.parse_program() {
         Ok(prog) => prog,
         Err(e) => panic!("Failed to parse program: {}", e),
     };
     
     // Create JIT compiler
-    let mut jit = JitCompiler::new("nested_interface_type_assertion_test");
+    let context = Context::create();
+    let module = context.create_module("nested_interface_type_assertion_test");
+    let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
+        .expect("Failed to create execution engine");
     
-    // Configure JIT for proper interface type assertions
-    jit.set_enable_debug(true);
-    jit.set_enable_type_debugging(true);
-    jit.set_enable_type_checks(true);
-    jit.set_enable_interface_registry(true);
-    jit.set_enable_enhanced_error_reporting(true);
+    let mut jit = JitCompiler::new(
+        &context,
+        execution_engine,
+        "nested_interface_type_assertion_test",
+        PathBuf::from("nested_test.csd")
+    );
     
-    // Add enhanced error handlers
-    jit.add_runtime_error_handlers();
+    // Generate code
+    let code_gen = LlvmCodeGenerator::new(&context, "nested_interface_type_assertion_test", PathBuf::from("nested_test.csd"));
+    *(jit.code_generator_mut()) = Some(code_gen);
     
     // Compile the program
-    match jit.compile(&program) {
-        Ok(_) => {
-            info!("Successfully compiled nested propagation test program");
-        },
-        Err(e) => {
-            panic!("Failed to compile nested propagation test program: {}", e);
+    if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {
+        match code_gen.compile_program(&program) {
+            Ok(_) => {
+                info!("Successfully compiled nested propagation test program");
+            },
+            Err(e) => {
+                panic!("Failed to compile nested propagation test program: {}", e);
+            }
         }
-    };
+    }
     
     // Run the program
-    let result = jit.run();
+    let result = jit.execute();
     
     // Check that execution completed successfully
     assert!(result.is_ok(), "Nested propagation test execution failed");

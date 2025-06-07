@@ -3,8 +3,7 @@
 //! This test directly tests the MonomorphizationManager.check_constraint function
 //! without requiring the entire codebase to compile.
 
-use std::sync::Arc;
-use std::cell::RefCell;
+use std::sync::{Arc, RwLock};
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::codegen::monomorphization::MonomorphizationManager;
 
@@ -17,10 +16,10 @@ fn test_special_case_constraint_checking() {
     let comparable_methods = vec![
         ("compare".to_string(), vec![Type::TypeParam("T".to_string())], Some(Type::Normie)),
     ];
-    type_checker.register_interface("Comparable", vec!["T".to_string()], comparable_methods);
+    type_checker.register_interface("Comparable", comparable_methods, vec!["T".to_string()]);
     
     // Create the monomorphization manager with the type checker
-    let type_checker_rc = Rc::new(RefCell::new(type_checker));
+    let type_checker_rc = Arc::new(RwLock::new(type_checker));
     let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Test the special case of Point struct implementing Comparable
