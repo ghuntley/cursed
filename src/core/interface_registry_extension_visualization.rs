@@ -11,12 +11,135 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, info, instrument, trace, warn};
 
-use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use crate::core::interface_registry_visualization::{InterfaceRegistryExtensionWithVisualization, InterfaceRegistryVisualization, VisualizationOptions};
 use crate::error::Error;
 
 /// Extension methods for visualization capabilities of `ThreadSafeInterfaceExtensionRegistry`
 impl ThreadSafeInterfaceExtensionRegistry {
+    /// Helper method to find cycles using DFS
+    fn find_cycles_dfs(
+        &self,
+        current: &str,
+        hierarchy: &HashMap<String, Vec<String>>,
+        visited: &mut HashSet<String>,
+        path: &mut Vec<String>,
+        cycles: &mut Vec<Vec<String>>,
+    ) {
+        if path.contains(&current.to_string()) {
+            // Found a cycle
+            if let Some(start_idx) = path.iter().position(|x| x == current) {
+                let cycle = path[start_idx..].to_vec();
+                if !cycle.is_empty() && !cycles.contains(&cycle) {
+                    cycles.push(cycle);
+                }
+            }
+            return;
+        }
+        
+        if visited.contains(current) {
+            return;
+        }
+        
+        visited.insert(current.to_string());
+        path.push(current.to_string());
+        
+        if let Some(extends) = hierarchy.get(current) {
+            for target in extends {
+                self.find_cycles_dfs(target, hierarchy, visited, path, cycles);
+            }
+        }
+        
+        path.pop();
+    }
+    
+    /// Find all paths between two interfaces
+    fn find_all_paths_between(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        let mut all_paths = Vec::new();
+        let hierarchy = self.get_extension_hierarchy()?;
+        let mut visited = HashSet::new();
+        let mut current_path = vec![source.to_string()];
+        
+        self.find_all_paths_dfs(source, target, &hierarchy, &mut visited, &mut current_path, &mut all_paths);
+        
+        Ok(all_paths)
+    }
+    
+    /// DFS helper for finding all paths
+    fn find_all_paths_dfs(
+        &self,
+        current: &str,
+        target: &str,
+        hierarchy: &HashMap<String, Vec<String>>,
+        visited: &mut HashSet<String>,
+        current_path: &mut Vec<String>,
+        all_paths: &mut Vec<Vec<String>>,
+    ) {
+        if current == target {
+            all_paths.push(current_path.clone());
+            return;
+        }
+        
+        if visited.contains(current) {
+            return;
+        }
+        
+        visited.insert(current.to_string());
+        
+        if let Some(extends) = hierarchy.get(current) {
+            for next in extends {
+                current_path.push(next.clone());
+                self.find_all_paths_dfs(next, target, hierarchy, visited, current_path, all_paths);
+                current_path.pop();
+            }
+        }
+        
+        visited.remove(current);
+    }
+    
+    /// Find shortest path between two interfaces
+    fn find_shortest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        if source == target {
+            return Ok(Some(vec![source.to_string()]));
+        }
+        
+        let hierarchy = self.get_extension_hierarchy()?;
+        let mut queue = VecDeque::new();
+        let mut visited = HashSet::new();
+        let mut parent_map: HashMap<String, String> = HashMap::new();
+        
+        queue.push_back(source.to_string());
+        visited.insert(source.to_string());
+        
+        while let Some(current) = queue.pop_front() {
+            if current == target {
+                // Reconstruct path
+                let mut path = Vec::new();
+                let mut curr = target.to_string();
+                path.push(curr.clone());
+                
+                while let Some(parent) = parent_map.get(&curr) {
+                    path.push(parent.clone());
+                    curr = parent.clone();
+                }
+                
+                path.reverse();
+                return Ok(Some(path));
+            }
+            
+            if let Some(extends) = hierarchy.get(&current) {
+                for next in extends {
+                    if !visited.contains(next) {
+                        visited.insert(next.clone());
+                        parent_map.insert(next.clone(), current.clone());
+                        queue.push_back(next.clone());
+                    }
+                }
+            }
+        }
+        
+        Ok(None)
+    }
 
     
     #[instrument(level = "debug")]
@@ -855,6 +978,164 @@ impl InterfaceRegistryVisualization for ThreadSafeInterfaceExtensionRegistry {
         json.push_str("}\n");
         
         Ok(json)
+    }
+}
+
+/// Implementation of InterfaceRegistryExtensionWithVisualization trait for ThreadSafeInterfaceExtensionRegistry
+impl InterfaceRegistryExtensionWithVisualization for ThreadSafeInterfaceExtensionRegistry {
+    fn get_inheritance_distance(&self, source: &str, target: &str) -> Result<Option<usize>, Error> {
+        // Use shortest path to find distance
+        if let Some(path) = self.find_shortest_path(source, target)? {
+            Ok(Some(path.len() - 1)) // Distance is path length minus 1
+        } else {
+            Ok(None)
+        }
+    }
+    
+    fn find_all_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        self.find_all_paths_between(source, target)
+    }
+    
+    fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error> {
+        let mut patterns = Vec::new();
+        let hierarchy = self.get_extension_hierarchy()?;
+        let interfaces = self.get_all_interfaces()?;
+        
+        // Look for diamond patterns (A -> B, A -> C, B -> D, C -> D)
+        for a in &interfaces {
+            if let Some(a_extends) = hierarchy.get(a) {
+                for b in a_extends {
+                    for c in a_extends {
+                        if b != c {
+                            if let (Some(b_extends), Some(c_extends)) = (hierarchy.get(b), hierarchy.get(c)) {
+                                for d in b_extends {
+                                    if c_extends.contains(d) {
+                                        patterns.push((a.clone(), b.clone(), c.clone(), d.clone()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(patterns)
+    }
+    
+    fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
+        let mut cycles = Vec::new();
+        let hierarchy = self.get_extension_hierarchy()?;
+        let interfaces = self.get_all_interfaces()?;
+        
+        for start in &interfaces {
+            let mut visited = HashSet::new();
+            let mut path = Vec::new();
+            self.find_cycles_dfs(start, &hierarchy, &mut visited, &mut path, &mut cycles);
+        }
+        
+        Ok(cycles)
+    }
+    
+    fn visualize_hierarchy_ascii(&self) -> Result<String, Error> {
+        let hierarchy = self.get_extension_hierarchy()?;
+        let options = VisualizationOptions::default();
+        self.generate_ascii_tree(&hierarchy, &options)
+    }
+    
+    fn visualize_hierarchy_dot(&self) -> Result<String, Error> {
+        self.generate_dot_diagram()
+    }
+    
+    fn visualize_path_ascii(&self, path: &[String]) -> Result<String, Error> {
+        let mut result = String::new();
+        for (i, interface) in path.iter().enumerate() {
+            if i > 0 {
+                result.push_str(" -> ");
+            }
+            result.push_str(interface);
+        }
+        Ok(result)
+    }
+    
+    fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error> {
+        let mut dot = String::from("digraph InheritancePath {\n");
+        dot.push_str("  rankdir=BT;\n");
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
+        
+        for interface in path {
+            dot.push_str(&format!("  \"{}\";\n", interface));
+        }
+        
+        for i in 0..path.len()-1 {
+            dot.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i+1]));
+        }
+        
+        dot.push_str("}\n");
+        Ok(dot)
+    }
+    
+    fn is_visualization_initialized(&self) -> Result<bool, Error> {
+        // For ThreadSafeInterfaceExtensionRegistry, always return true as it doesn't need initialization
+        Ok(true)
+    }
+    
+    fn set_visualization_initialized(&self, _initialized: bool) -> Result<(), Error> {
+        // For ThreadSafeInterfaceExtensionRegistry, this is a no-op
+        Ok(())
+    }
+}
+
+/// Implementation of InterfaceRegistryExtensionWithVisualization trait for Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>>
+impl InterfaceRegistryExtensionWithVisualization for Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
+    fn get_inheritance_distance(&self, source: &str, target: &str) -> Result<Option<usize>, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_inheritance_distance(source, target)
+    }
+    
+    fn find_all_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_all_paths(source, target)
+    }
+    
+    fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_diamond_inheritance_patterns()
+    }
+    
+    fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.detect_cycles()
+    }
+    
+    fn visualize_hierarchy_ascii(&self) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.visualize_hierarchy_ascii()
+    }
+    
+    fn visualize_hierarchy_dot(&self) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.visualize_hierarchy_dot()
+    }
+    
+    fn visualize_path_ascii(&self, path: &[String]) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.visualize_path_ascii(path)
+    }
+    
+    fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.visualize_path_dot(path)
+    }
+    
+    fn is_visualization_initialized(&self) -> Result<bool, Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.is_visualization_initialized()
+    }
+    
+    fn set_visualization_initialized(&self, initialized: bool) -> Result<(), Error> {
+        let registry = self.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.set_visualization_initialized(initialized)
     }
 }
 

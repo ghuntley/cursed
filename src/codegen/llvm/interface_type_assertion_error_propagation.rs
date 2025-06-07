@@ -51,6 +51,11 @@ pub trait InterfaceTypeAssertionErrorPropagation<'ctx> {
     
     /// Clear the current type ID tracking
     fn clear_type_ids(&mut self);
+    
+    /// Set the filesystem integration for enhanced error handling
+    fn set_filesystem_integration(&self, _integration: std::sync::Arc<std::sync::Mutex<()>>) {
+        // Default implementation - do nothing
+    }
     /// Compile a type assertion expression with error propagation support
     /// This version returns a Result type that can be used with the ? operator
     fn compile_type_assertion_with_error_propagation(

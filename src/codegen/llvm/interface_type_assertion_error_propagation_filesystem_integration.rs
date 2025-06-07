@@ -434,12 +434,16 @@ impl<'ctx> ComprehensiveErrorFilesystemIntegration<'ctx> for LlvmCodeGenerator<'
         let target_type = "unknown";
         
         // Call the error propagation function with the enhanced message and location
+        let source_type_ptr = self.create_string_constant(source_type)?;
+        let target_type_ptr = self.create_string_constant(target_type)?;
+        let additional_message_ptr = self.create_string_constant("")?;
+        
         self.call_error_propagation_function(
             error_message_ptr?.into(),
-            self.create_string_constant(source_type)?.into(),
-            self.create_string_constant(target_type)?.into(),
-            location_struct,
-            self.create_string_constant("")?.into()
+            source_type_ptr.into(),
+            target_type_ptr.into(),
+            location_struct?,
+            additional_message_ptr.into()
         )?;
         
         // Return a null pointer value to indicate error

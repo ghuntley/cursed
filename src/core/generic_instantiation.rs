@@ -915,6 +915,18 @@ impl GenericInstantiator {
                     value: name.clone(),
                 }))
             }
+            Type::Generic(name, type_args) => {
+                // Create an identifier representing generic type syntax
+                let type_args_str = type_args
+                    .iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                Ok(Box::new(crate::ast::expressions::Identifier {
+                    token: "IDENT".to_string(),
+                    value: format!("{name}[{type_args_str}]"),
+                }))
+            }
             Type::Unknown => {
                 // Create an identifier for unknown type
                 Ok(Box::new(crate::ast::expressions::Identifier {

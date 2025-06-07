@@ -79,7 +79,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Get direct extensions for an interface from the registry visualization system
     pub fn get_interface_extensions(&self, interface_name: &str) -> Result<Option<Vec<String>>, Error> {
         match self.registry_visualization() {
-            Some(registry) => InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*registry, interface_name),
+            Some(registry) => <dyn InterfaceRegistryExtensionWithVisualization>::get_direct_extensions(&*registry, interface_name),
             None => Err(Error::from_str("No registry visualization system available"))
         }
     }
@@ -155,7 +155,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Get current hierarchy from visualization registry
         let registry = self.registry_visualization()
             .ok_or_else(|| Error::from_str("No registry visualization system available"))?;
-        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry)?;
+        let hierarchy = <dyn InterfaceRegistryExtensionWithVisualization>::get_extension_hierarchy(registry)?;
         
         // Update the type registry with the hierarchy information
         if let Some(registry) = &mut self.interface_type_registry {
@@ -172,7 +172,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Check extension relationship between two interfaces (basic version)
     pub fn check_extension_relationship(&self, source: &str, target: &str) -> Result<bool, Error> {
         match self.registry_visualization() {
-            Some(registry) => registry.check_extension_relationship(source, target),
+            Some(registry) => registry.extends(source, target),
             None => Err(Error::from_str("No registry visualization system available"))
         }
     }
@@ -180,7 +180,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Check extension relationship between two interfaces (enhanced version)
     pub fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error> {
         match self.registry_visualization() {
-            Some(registry) => registry.check_extension_relationship_enhanced(source, target),
+            Some(registry) => registry.extends(source, target),
             None => Err(Error::from_str("No registry visualization system available"))
         }
     }

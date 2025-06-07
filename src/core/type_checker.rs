@@ -171,6 +171,7 @@ impl Type {
             Type::Function(_, _) => 8, // Function pointer size
             Type::Channel(_) => 8,     // Channel is a pointer to runtime structure
 
+            Type::Generic(_, _) => 8, // Generic types assume pointer size
             Type::Tea => 24,    // 3 words: ptr, len, cap
             Type::Unknown => 0, // Unknown type has no size
         }
@@ -228,6 +229,15 @@ impl Type {
                 format!("slay({}) {}", param_types, ret.to_string())
             }
             Type::Channel(elem) => format!("dm<{}>", elem.to_string()),
+
+            Type::Generic(name, type_params) => {
+                let params = type_params
+                    .iter()
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                format!("{name}[{params}]")
+            }
 
             Type::Unknown => "unknown".to_string(),
         }

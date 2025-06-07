@@ -68,7 +68,7 @@ pub trait PointerTypeExt<'ctx> {
 
 impl<'ctx> PointerTypeExt<'ctx> for PointerType<'ctx> {
     fn const_null(&self) -> PointerValue<'ctx> {
-        self.const_null()
+        self.const_zero()
     }
 }
 

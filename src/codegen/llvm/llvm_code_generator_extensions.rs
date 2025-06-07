@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 use inkwell::values::BasicValueEnum;
+use inkwell::types::BasicTypeEnum;
 use tracing::{debug, info, instrument, warn};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
@@ -38,7 +39,7 @@ pub trait SymbolLookupExtensions<'ctx> {
     ) -> Result<bool, Error>;
     
     /// Get a type by name from the type registry
-    fn get_type_by_name(&self, type_name: &str) -> Option<BasicValueEnum<'ctx>>;
+    fn get_type_by_name(&self, type_name: &str) -> Option<BasicTypeEnum<'ctx>>;
 }
 
 /// Extension trait for error handling and path operations
@@ -111,7 +112,7 @@ impl<'ctx> SymbolLookupExtensions<'ctx> for LlvmCodeGenerator<'ctx> {
     }
     
     #[instrument(skip(self), level = "debug")]
-    fn get_type_by_name(&self, type_name: &str) -> Option<BasicValueEnum<'ctx>> {
+    fn get_type_by_name(&self, type_name: &str) -> Option<BasicTypeEnum<'ctx>> {
         debug!("Getting type by name: {}", type_name);
         // TODO: Implement actual type lookup from type registry
         // For now, return None to indicate type not found

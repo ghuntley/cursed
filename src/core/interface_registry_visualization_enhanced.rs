@@ -14,7 +14,7 @@
 use std::fmt::Write;
 use tracing::{debug, trace, instrument};
 
-use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use crate::core::interface_registry_visualization_reference::EnhancedInterfaceRegistryVisualization;
 use crate::core::interface_registry_visualization_improved::ImprovedInterfaceRegistryVisualization;
 use crate::error::Error;

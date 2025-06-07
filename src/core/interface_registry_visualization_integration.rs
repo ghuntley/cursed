@@ -110,7 +110,7 @@ impl InterfaceRegistryVisualizationIntegration {
         
         // Use the registry's path finding capabilities
         let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire registry read lock".to_string()))?;
-        let paths = InterfaceRegistryExtensionWithVisualization::find_all_inheritance_paths(&*registry, source, target)?;
+        let paths = <dyn InterfaceRegistryExtensionWithVisualization>::find_all_inheritance_paths(&*registry, source, target)?;
         
         // Limit the number of paths if requested
         let limited_paths = if max_paths > 0 && paths.len() > max_paths {

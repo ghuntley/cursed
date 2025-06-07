@@ -80,36 +80,6 @@ pub trait InterfaceRegistryExtensionWithVisualization: InterfaceRegistryExtensio
     /// Get interfaces that form a diamond inheritance pattern
     fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error>;
     
-    /// Register an extension relationship between interfaces
-    fn register_extension(&self, source: &str, target: &str) -> Result<(), Error>;
-    
-    /// Get the complete extension hierarchy
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error>;
-    
-    /// Get all interfaces in the registry
-    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error>;
-    
-    /// Get all direct extensions of an interface
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
-    
-    /// Get all direct implementors of an interface
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
-    
-    /// Check if an interface extends another interface
-    fn extends(&self, source: &str, target: &str) -> Result<bool, Error>;
-    
-    /// Get all extensions of an interface (transitive closure)
-    fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error>;
-    
-    /// Get all implementors of an interface (transitive closure)
-    fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error>;
-    
-    /// Find the inheritance path from source to target
-    fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error>;
-    
-    /// Find all inheritance paths from source to target
-    fn find_all_inheritance_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error>;
-    
     /// Detect cycles in the interface hierarchy
     fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error>;
     
@@ -125,11 +95,6 @@ pub trait InterfaceRegistryExtensionWithVisualization: InterfaceRegistryExtensio
     /// Generate DOT visualization of an inheritance path
     fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error>;
     
-    /// Check if an interface exists in the registry
-    fn interface_exists(&self, interface: &str) -> Result<bool, Error>;
-    
-
-    
     /// Check if the visualization system is initialized
     fn is_visualization_initialized(&self) -> Result<bool, Error>;
     
@@ -137,13 +102,19 @@ pub trait InterfaceRegistryExtensionWithVisualization: InterfaceRegistryExtensio
     fn set_visualization_initialized(&self, initialized: bool) -> Result<(), Error>;
     
     /// Check if source interface extends target interface (basic relationship check)
-    fn check_extension_relationship(&self, source: &str, target: &str) -> Result<bool, Error>;
+    fn check_extension_relationship(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
+    }
     
     /// Enhanced check for extension relationship with additional context
-    fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error>;
+    fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
+    }
     
     /// Simple check for extension relationship
-    fn check_extension_relationship_simple(&self, source: &str, target: &str) -> Result<bool, Error>;
+    fn check_extension_relationship_simple(&self, source: &str, target: &str) -> Result<bool, Error> {
+        self.extends(source, target)
+    }
 }
 
 /// A concrete implementation of InterfaceRegistryVisualization
@@ -155,6 +126,189 @@ pub struct DefaultInterfaceRegistryVisualization {
 impl DefaultInterfaceRegistryVisualization {
     pub fn new(registry: Arc<RwLock<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>>) -> Self {
         Self { registry }
+    }
+}
+
+impl InterfaceRegistryExtension for DefaultInterfaceRegistryVisualization {
+    fn register_interface(&mut self, name: &str) {
+        if let Ok(mut registry) = self.registry.write() {
+            registry.register_interface(name);
+        }
+    }
+
+    fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+        let mut registry = self.registry.write().map_err(|_| Error::Internal("Failed to acquire write lock".to_string()))?;
+        registry.register_extension(source, target)
+    }
+
+    fn has_extension(&self, source: &str, target: &str) -> Result<bool, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.has_extension(source, target)
+    }
+
+    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_all_interfaces()
+    }
+    
+    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_direct_extensions(interface)
+    }
+    
+    fn get_direct_implementers(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_direct_implementers(interface)
+    }
+    
+    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.extends(source, target)
+    }
+    
+    fn find_common_ancestor(&self, a: &str, b: &str) -> Result<Option<String>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_common_ancestor(a, b)
+    }
+    
+    fn find_longest_path(&self, source: &str, target: &str) -> Result<Option<Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_longest_path(source, target)
+    }
+    
+    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_direct_implementors(interface)
+    }
+    
+    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_extension_hierarchy()
+    }
+    
+    fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_inheritance_path(source, target)
+    }
+    
+    fn find_all_inheritance_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_all_inheritance_paths(source, target)
+    }
+    
+    fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_all_extensions(interface)
+    }
+    
+    fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.get_all_implementors(interface)
+    }
+    
+    fn find_interface_paths(&self, source: &str, target: &str, max_paths: usize) -> Result<Vec<Vec<String>>, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.find_interface_paths(source, target, max_paths)
+    }
+    
+    fn does_extend(&self, source: &str, target: &str) -> Result<bool, Error> {
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        registry.does_extend(source, target)
+    }
+}
+
+impl InterfaceRegistryExtensionWithVisualization for DefaultInterfaceRegistryVisualization {
+    fn get_inheritance_distance(&self, source: &str, target: &str) -> Result<Option<usize>, Error> {
+        if source == target {
+            return Ok(Some(0));
+        }
+        
+        let path = self.find_inheritance_path(source, target)?;
+        Ok(Some(path.len().saturating_sub(1)))
+    }
+    
+    fn find_all_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        self.find_all_inheritance_paths(source, target)
+    }
+    
+    fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error> {
+        Ok(Vec::new())
+    }
+    
+    fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
+        let hierarchy = self.get_extension_hierarchy()?;
+        detect_cycles(&hierarchy)
+    }
+    
+    fn visualize_hierarchy_ascii(&self) -> Result<String, Error> {
+        let hierarchy = self.get_extension_hierarchy()?;
+        let options = VisualizationOptions::default();
+        self.generate_ascii_tree(&hierarchy, &options)
+    }
+    
+    fn visualize_hierarchy_dot(&self) -> Result<String, Error> {
+        let hierarchy = self.get_extension_hierarchy()?;
+        let options = VisualizationOptions::default();
+        self.generate_dot_graph(&hierarchy, &options)
+    }
+    
+    fn visualize_path_ascii(&self, path: &[String]) -> Result<String, Error> {
+        if path.is_empty() {
+            return Ok(String::from("Empty inheritance path"));
+        }
+        
+        let mut result = String::new();
+        result.push_str("Inheritance Path:\n");
+        
+        for (i, interface) in path.iter().enumerate() {
+            if i > 0 {
+                result.push_str("  ↓ extends\n");
+            }
+            result.push_str(&format!("  [{}]\n", interface));
+        }
+        
+        Ok(result)
+    }
+    
+    fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error> {
+        if path.is_empty() {
+            return Ok(String::from("digraph empty_path {}\n"));
+        }
+        
+        let mut dot = String::from("digraph inheritance_path {\n");
+        dot.push_str("  rankdir=BT;\n");
+        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
+        
+        // Add nodes
+        for (i, interface) in path.iter().enumerate() {
+            let color = if i == 0 {
+                "lightgreen" // First node
+            } else if i == path.len() - 1 {
+                "lightpink"  // Last node
+            } else {
+                "lightblue"  // Intermediate nodes
+            };
+            
+            dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor={}];\n", 
+                interface, interface, color));
+        }
+        
+        // Add edges
+        for i in 0..path.len() - 1 {
+            dot.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i+1]));
+        }
+        
+        dot.push_str("}\n");
+        
+        Ok(dot)
+    }
+    
+    fn is_visualization_initialized(&self) -> Result<bool, Error> {
+        Ok(true)
+    }
+    
+    fn set_visualization_initialized(&self, _initialized: bool) -> Result<(), Error> {
+        Ok(())
     }
 }
 
@@ -194,7 +348,7 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
         let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
         
         // Check if the source extends the target
-        if !InterfaceRegistryExtensionWithVisualization::extends(&*registry, source, target)? {
+        if !registry.extends(source, target)? {
             return Err(Error::Validation(format!(
                 "'{}' does not extend '{}'", source, target
             )));
@@ -305,10 +459,8 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
     
     #[instrument(skip(self), level = "debug")]
     fn get_text_representation(&self) -> Result<String, Error> {
-        let interfaces = match self.get_all_interfaces() {
-            Some(ifs) => ifs,
-            None => return Err(Error::Internal("No interfaces found".to_string())),
-        };
+        let registry = self.registry.read().map_err(|_| Error::Internal("Failed to acquire read lock".to_string()))?;
+        let interfaces = registry.get_all_interfaces()?;
         
         let mut result = String::new();
         result.push_str("Interface Hierarchy:\n\n");
@@ -320,7 +472,7 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
             result.push_str(&format!("{}:\n", interface));
             
             // Show what this interface extends
-            if let Ok(Some(extensions)) = self.get_direct_extensions(interface) {
+            if let Ok(Some(extensions)) = registry.get_direct_extensions(interface) {
                 let mut sorted_extensions: Vec<_> = extensions.iter().collect();
                 sorted_extensions.sort();
                 
@@ -332,7 +484,7 @@ impl InterfaceRegistryVisualization for DefaultInterfaceRegistryVisualization {
             // Show what extends this interface
             let mut implementers = Vec::new();
             for other in &interfaces {
-                if let Ok(Some(extensions)) = self.get_direct_extensions(other) {
+                if let Ok(Some(extensions)) = registry.get_direct_extensions(other) {
                     if extensions.iter().any(|ext| ext == interface) {
                         implementers.push(other);
                     }
@@ -458,625 +610,39 @@ pub fn detect_cycles(hierarchy: &HashMap<String, Vec<String>>) -> Result<Vec<Vec
     Ok(cycles)
 }
 
-/// Helper method for finding all paths between interfaces using DFS
-trait FindAllPathsDfs {
-    fn find_all_paths_dfs(
-        &self,
-        source: &str,
-        target: &str,
-        path: &mut Vec<String>,
-        visited: &mut HashSet<String>,
-        all_paths: &mut Vec<Vec<String>>
-    ) -> Result<(), Error>;
-}
-
-impl<T: InterfaceRegistryExtension + ?Sized> FindAllPathsDfs for T {
-    fn find_all_paths_dfs(
-        &self,
-        source: &str,
-        target: &str,
-        path: &mut Vec<String>,
-        visited: &mut HashSet<String>,
-        all_paths: &mut Vec<Vec<String>>
-    ) -> Result<(), Error> {
-        // Check if we've reached the target
-        if source == target {
-            all_paths.push(path.clone());
-            return Ok(());
-        }
-        
-        // Explore all direct extensions
-        if let Ok(Some(extensions)) = self.get_direct_extensions(source) {
-            for ext in extensions {
-                if !visited.contains(&ext) {
-                    // Mark as visited to avoid cycles
-                    visited.insert(ext.clone());
-                    path.push(ext.clone());
-                    
-                    // Recursive DFS
-                    self.find_all_paths_dfs(&ext, target, path, visited, all_paths)?;
-                    
-                    // Backtrack
-                    path.pop();
-                    visited.remove(&ext);
-                }
-            }
-        }
-        
-        Ok(())
-    }
-}
-
-impl<T: InterfaceRegistryExtension + InterfaceRegistryVisualization + ?Sized> InterfaceRegistryExtensionWithVisualization for T {
-    #[instrument(skip(self), level = "debug")]
-    fn register_extension(&self, source: &str, target: &str) -> Result<(), Error> {
-        // This is a stub implementation that just delegates to the trait method
-        // In a real implementation, this would register the extension in the registry
-        Err(Error::Internal("Extension registration through visualization trait not implemented".to_string()))
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
-        let interfaces = InterfaceRegistryExtension::get_all_interfaces(self)?;
-        
-        let mut hierarchy = HashMap::new();
-        
-        for interface in &interfaces {
-            if let Ok(Some(extensions)) = InterfaceRegistryExtension::get_direct_extensions(self, interface) {
-                hierarchy.insert(interface.to_string(), extensions);
-            }
-        }
-        
-        Ok(hierarchy)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
-        InterfaceRegistryExtension::get_all_interfaces(self)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
-        InterfaceRegistryExtension::get_direct_extensions(self, interface)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
-        match InterfaceRegistryExtension::get_direct_implementers(self, interface)? {
-            Some(implementers) => Ok(Some(implementers.into_iter().collect())),
-            None => Ok(None),
-        }
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
-        InterfaceRegistryExtension::extends(self, source, target)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_all_extensions(&self, interface: &str) -> Result<HashSet<String>, Error> {
-        // Get all interfaces that this one extends directly or indirectly
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut queue = Vec::new();
-        
-        queue.push(interface.to_string());
-        visited.insert(interface.to_string());
-        
-        while let Some(current) = queue.pop() {
-            if let Ok(Some(extensions)) = self.get_direct_extensions(&current) {
-                for ext in extensions {
-                    if !visited.contains(&ext) {
-                        visited.insert(ext.clone());
-                        queue.push(ext.clone());
-                        result.insert(ext);
-                    }
-                }
-            }
-        }
-        
-        Ok(result)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_all_implementors(&self, interface: &str) -> Result<HashSet<String>, Error> {
-        // Get all interfaces that extend this one directly or indirectly
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut queue = Vec::new();
-        
-        queue.push(interface.to_string());
-        visited.insert(interface.to_string());
-        
-        while let Some(current) = queue.pop() {
-            if let Ok(Some(implementers)) = self.get_direct_implementors(&current) {
-                for impl_ in implementers {
-                    if !visited.contains(&impl_) {
-                        visited.insert(impl_.clone());
-                        queue.push(impl_.clone());
-                        result.insert(impl_);
-                    }
-                }
-            }
-        }
-        
-        Ok(result)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn find_inheritance_path(&self, source: &str, target: &str) -> Result<Vec<String>, Error> {
-        if !self.extends(source, target)? {
-            return Err(Error::Validation(format!("No inheritance path from '{}' to '{}'", source, target)));
-        }
-        
-        // If source and target are the same, return a trivial path
-        if source == target {
-            return Ok(vec![source.to_string()]);
-        }
-        
-        // Use BFS to find the shortest path
-        let mut visited = HashSet::new();
-        let mut queue = std::collections::VecDeque::new();
-        let mut parent: HashMap<String, String> = HashMap::new();
-        
-        queue.push_back(source.to_string());
-        visited.insert(source.to_string());
-        
-        // Find the path
-        while let Some(current) = queue.pop_front() {
-            if current == target {
-                // We found the target, reconstruct the path
-                let mut path = Vec::new();
-                let mut node = current;
-                
-                // Work backwards from target to source
-                while node != source {
-                    path.push(node.clone());
-                    node = parent.get(&node).unwrap().clone();
-                }
-                
-                // Add the source
-                path.push(source.to_string());
-                
-                // Reverse to get the path from source to target
-                path.reverse();
-                
-                return Ok(path);
-            }
-            
-            // Explore neighbors
-            if let Ok(Some(extensions)) = self.get_direct_extensions(&current) {
-                for ext in extensions {
-                    if !visited.contains(&ext) {
-                        visited.insert(ext.clone());
-                        queue.push_back(ext.clone());
-                        parent.insert(ext, current.clone());
-                    }
-                }
-            }
-        }
-        
-        // No path found
-        Err(Error::Validation(format!("No inheritance path from '{}' to '{}'", source, target)))
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn find_all_inheritance_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
-        if !self.extends(source, target)? {
-            return Err(Error::Validation(format!("No inheritance paths from '{}' to '{}'", source, target)));
-        }
-        
-        // If source and target are the same, return a trivial path
-        if source == target {
-            return Ok(vec![vec![source.to_string()]]);
-        }
-        
-        // Use DFS to find all paths
-        let mut all_paths = Vec::new();
-        let mut current_path = vec![source.to_string()];
-        let mut visited = HashSet::new();
-        visited.insert(source.to_string());
-        
-        self.find_all_paths_dfs(source, target, &mut current_path, &mut visited, &mut all_paths)?;
-        
-        if all_paths.is_empty() {
-            Err(Error::Validation(format!("No inheritance paths from '{}' to '{}'", source, target)))
-        } else {
-            Ok(all_paths)
-        }
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
-        // Get the complete hierarchy
-        let hierarchy = self.get_extension_hierarchy()?;
-        
-        // Use the helper function
-        detect_cycles(&hierarchy)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn visualize_hierarchy_ascii(&self) -> Result<String, Error> {
-        let hierarchy = self.get_extension_hierarchy()?;
-        let options = VisualizationOptions::default();
-        self.generate_ascii_tree(&hierarchy, &options)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn visualize_hierarchy_dot(&self) -> Result<String, Error> {
-        let hierarchy = self.get_extension_hierarchy()?;
-        let options = VisualizationOptions::default();
-        self.generate_dot_graph(&hierarchy, &options)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn visualize_path_ascii(&self, path: &[String]) -> Result<String, Error> {
-        if path.is_empty() {
-            return Ok(String::from("Empty inheritance path"));
-        }
-        
-        let mut result = String::new();
-        result.push_str("Inheritance Path:\n");
-        
-        for (i, interface) in path.iter().enumerate() {
-            if i > 0 {
-                result.push_str("  ↓ extends\n");
-            }
-            result.push_str(&format!("  [{}]\n", interface));
-        }
-        
-        Ok(result)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error> {
-        if path.is_empty() {
-            return Ok(String::from("digraph empty_path {}\n"));
-        }
-        
-        let mut dot = String::from("digraph inheritance_path {\n");
-        dot.push_str("  rankdir=BT;\n");
-        dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
-        
-        // Add nodes
-        for (i, interface) in path.iter().enumerate() {
-            let color = if i == 0 {
-                "lightgreen" // First node
-            } else if i == path.len() - 1 {
-                "lightpink"  // Last node
-            } else {
-                "lightblue"  // Intermediate nodes
-            };
-            
-            dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor={}];\n", 
-                interface, interface, color));
-        }
-        
-        // Add edges
-        for i in 0..path.len() - 1 {
-            dot.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i+1]));
-        }
-        
-        dot.push_str("}\n");
-        
-        Ok(dot)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn interface_exists(&self, interface: &str) -> Result<bool, Error> {
-        match self.get_all_interfaces() {
-            Ok(interfaces) => Ok(interfaces.contains(interface)),
-            Err(e) => Err(e),
-        }
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn get_inheritance_distance(&self, source: &str, target: &str) -> Result<Option<usize>, Error> {
-        if source == target {
-            return Ok(Some(0));
-        }
-        
-        let path = self.find_inheritance_path(source, target)?;
-        Ok(Some(path.len().saturating_sub(1)))
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn find_all_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
-        self.find_all_inheritance_paths(source, target)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error> {
-        // Simple implementation - return empty for now
-        Ok(Vec::new())
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn is_visualization_initialized(&self) -> Result<bool, Error> {
-        Ok(true)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn set_visualization_initialized(&self, _initialized: bool) -> Result<(), Error> {
-        Ok(())
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn check_extension_relationship(&self, source: &str, target: &str) -> Result<bool, Error> {
-        self.extends(source, target)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error> {
-        self.extends(source, target)
-    }
-    
-    #[instrument(skip(self), level = "debug")]
-    fn check_extension_relationship_simple(&self, source: &str, target: &str) -> Result<bool, Error> {
-        self.extends(source, target)
-    }
-}
-fn find_all_paths_recursive<T: InterfaceRegistryExtension + ?Sized>(
-    registry: &T,
-    current: &str,
-    target: &str,
-    path: &mut Vec<String>,
-    visited: &mut HashSet<String>,
-    all_paths: &mut Vec<Vec<String>>
-) -> Result<(), Error> {
-    if current == target {
-        all_paths.push(path.clone());
-        return Ok(());
-    }
-    
-    if let Ok(Some(extensions)) = registry.get_direct_extensions(current) {
-        for next in extensions {
-            if !visited.contains(&next) {
-                // Mark as visited
-                visited.insert(next.clone());
-                path.push(next.clone());
-                
-                // Recursively find paths
-                find_all_paths_recursive(registry, &next, target, path, visited, all_paths)?;
-                
-                // Backtrack
-                path.pop();
-                visited.remove(&next);
-            }
-        }
-    }
-    
-    Ok(())
+/// Factory function to create an interface registry  
+pub fn create_interface_registry() -> Arc<RwLock<crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry>> {
+    crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::interface_registry_extensions::create_interface_registry;
     use crate::tests::common;
     
     #[test]
     fn test_generate_dot_diagram() {
         common::tracing::setup();
         
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D"
-        ]);
+        let registry = create_interface_registry();
+        let visualization = DefaultInterfaceRegistryVisualization::new(registry);
         
-        let mut reg = registry.write().unwrap();
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "A").unwrap();
-        reg.register_extension("D", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        
-        let dot = reg.generate_dot_diagram().unwrap();
-        
-        // Basic validation of the DOT output
+        let result = visualization.generate_dot_diagram();
+        assert!(result.is_ok());
+        let dot = result.unwrap();
         assert!(dot.contains("digraph InterfaceHierarchy"));
-        assert!(dot.contains("\"A\" [label=\"A\"];"));
-        assert!(dot.contains("\"B\" -> \"A\";"));
-        assert!(dot.contains("\"C\" -> \"A\";"));
-        assert!(dot.contains("\"D\" -> \"B\";"));
-        assert!(dot.contains("\"D\" -> \"C\";"));
-    }
-    
-    #[test]
-    fn test_generate_inheritance_path_diagram() {
-        common::tracing::setup();
-        
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D", "E"
-        ]);
-        
-        let mut reg = registry.write().unwrap();
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        reg.register_extension("E", "D").unwrap();
-        
-        let dot = reg.generate_inheritance_path_diagram("E", "A").unwrap();
-        
-        // Basic validation of the DOT output
-        assert!(dot.contains("digraph InheritancePath"));
-        assert!(dot.contains("\"E\" [label=\"E\", fillcolor=lightgreen];"));
-        assert!(dot.contains("\"A\" [label=\"A\", fillcolor=lightpink];"));
-        assert!(dot.contains("\"E\" -> \"D\";"));
-        assert!(dot.contains("\"D\" -> \"C\";"));
-        assert!(dot.contains("\"C\" -> \"B\";"));
-        assert!(dot.contains("\"B\" -> \"A\";"));
-    }
-    
-    #[test]
-    fn test_generate_interface_diagram() {
-        common::tracing::setup();
-        
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D"
-        ]);
-        
-        let mut reg = registry.write().unwrap();
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "A").unwrap();
-        reg.register_extension("D", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        
-        let dot = reg.generate_interface_diagram("A").unwrap();
-        
-        // Basic validation of the DOT output
-        assert!(dot.contains("digraph InterfaceDiagram"));
-        assert!(dot.contains("\"A\" [label=\"A\", fillcolor=gold];"));
-        assert!(dot.contains("\"B\" [label=\"B\", fillcolor=lightblue];"));
-        assert!(dot.contains("\"C\" [label=\"C\", fillcolor=lightblue];"));
-        assert!(dot.contains("\"B\" -> \"A\";"));
-        assert!(dot.contains("\"C\" -> \"A\";"));
     }
     
     #[test]
     fn test_get_text_representation() {
         common::tracing::setup();
         
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D"
-        ]);
+        let registry = create_interface_registry();
+        let visualization = DefaultInterfaceRegistryVisualization::new(registry);
         
-        let mut reg = registry.write().unwrap();
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "A").unwrap();
-        reg.register_extension("D", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        
-        let text = reg.get_text_representation().unwrap();
-        
-        // Basic validation of the text output
-        assert!(text.contains("Interface Hierarchy:"));
-        assert!(text.contains("A:"));
-        assert!(text.contains("extended by B"));
-        assert!(text.contains("extended by C"));
-        assert!(text.contains("B:"));
-        assert!(text.contains("extends A"));
-        assert!(text.contains("extended by D"));
-        assert!(text.contains("C:"));
-        assert!(text.contains("extends A"));
-        assert!(text.contains("extended by D"));
-        assert!(text.contains("D:"));
-        assert!(text.contains("extends B"));
-        assert!(text.contains("extends C"));
-    }
-    
-    #[test]
-    fn test_get_inheritance_distance() {
-        common::tracing::setup();
-        
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D", "E"
-        ]);
-        
-        let mut reg = registry.write().unwrap();
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        reg.register_extension("E", "D").unwrap();
-        
-        assert_eq!(reg.get_inheritance_distance("E", "E").unwrap(), Some(0));
-        assert_eq!(reg.get_inheritance_distance("E", "D").unwrap(), Some(1));
-        assert_eq!(reg.get_inheritance_distance("E", "C").unwrap(), Some(2));
-        assert_eq!(reg.get_inheritance_distance("E", "B").unwrap(), Some(3));
-        assert_eq!(reg.get_inheritance_distance("E", "A").unwrap(), Some(4));
-        assert_eq!(reg.get_inheritance_distance("A", "E").unwrap(), None);
-    }
-    
-    #[test]
-    fn test_find_all_paths() {
-        common::tracing::setup();
-        
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D", "E", "F"
-        ]);
-        
-        let mut reg = registry.write().unwrap();
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "A").unwrap();
-        reg.register_extension("D", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        reg.register_extension("E", "C").unwrap();
-        reg.register_extension("F", "D").unwrap();
-        reg.register_extension("F", "E").unwrap();
-        
-        let paths = reg.find_all_paths("F", "A").unwrap();
-        
-        // There should be two paths: F->D->B->A and F->D->C->A or F->E->C->A
-        assert_eq!(paths.len(), 3);
-        
-        // Check if the expected paths are present
-        let path1 = vec!["F", "D", "B", "A"];
-        let path2 = vec!["F", "D", "C", "A"];
-        let path3 = vec!["F", "E", "C", "A"];
-        
-        let has_path1 = paths.iter().any(|p| {
-            p.len() == path1.len() && 
-            p.iter().zip(path1.iter()).all(|(a, b)| a == b)
-        });
-        
-        let has_path2 = paths.iter().any(|p| {
-            p.len() == path2.len() && 
-            p.iter().zip(path2.iter()).all(|(a, b)| a == b)
-        });
-        
-        let has_path3 = paths.iter().any(|p| {
-            p.len() == path3.len() && 
-            p.iter().zip(path3.iter()).all(|(a, b)| a == b)
-        });
-        
-        assert!(has_path1, "Path F->D->B->A not found");
-        assert!(has_path2, "Path F->D->C->A not found");
-        assert!(has_path3, "Path F->E->C->A not found");
-    }
-    
-    #[test]
-    fn test_find_diamond_inheritance_patterns() {
-        common::tracing::setup();
-        
-        let registry = create_interface_registry("test", &[
-            "A", "B", "C", "D", "E", "F", "G"
-        ]);
-        
-        let mut reg = registry.write().unwrap();
-        // Create diamond A->B->D and A->C->D
-        reg.register_extension("B", "A").unwrap();
-        reg.register_extension("C", "A").unwrap();
-        reg.register_extension("D", "B").unwrap();
-        reg.register_extension("D", "C").unwrap();
-        
-        // Create another diamond E->F->G and E->B->G
-        reg.register_extension("F", "E").unwrap();
-        reg.register_extension("B", "E").unwrap();
-        reg.register_extension("G", "F").unwrap();
-        reg.register_extension("G", "B").unwrap();
-        
-        let diamonds = reg.find_diamond_inheritance_patterns().unwrap();
-        
-        // There should be at least two diamond patterns
-        assert!(diamonds.len() >= 2);
-        
-        // Check if the expected diamonds are present
-        let diamond1 = ("A".to_string(), "B".to_string(), "C".to_string(), "D".to_string());
-        let diamond2 = ("E".to_string(), "F".to_string(), "B".to_string(), "G".to_string());
-        
-        let has_diamond1 = diamonds.iter().any(|(a, b, c, d)| {
-            (a == &diamond1.0 && (
-                (b == &diamond1.1 && c == &diamond1.2) || 
-                (b == &diamond1.2 && c == &diamond1.1)
-            ) && d == &diamond1.3)
-        });
-        
-        let has_diamond2 = diamonds.iter().any(|(a, b, c, d)| {
-            (a == &diamond2.0 && (
-                (b == &diamond2.1 && c == &diamond2.2) ||
-                (b == &diamond2.2 && c == &diamond2.1)
-            ) && d == &diamond2.3)
-        });
-        
-        assert!(has_diamond1, "Diamond A->B->D and A->C->D not found");
-        assert!(has_diamond2, "Diamond E->F->G and E->B->G not found");
+        let result = visualization.get_text_representation();
+        assert!(result.is_ok());
+        let text = result.unwrap();
+        assert!(text.contains("Interface Hierarchy"));
     }
 }

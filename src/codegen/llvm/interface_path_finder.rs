@@ -48,14 +48,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         debug!("Finding interface path from {} to {}", source_interface, target_interface);
         
         // Check if interfaces exist with proper error handling
-        if !self.interface_registry().interface_exists(source_interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(source_interface) {
             return Err(Error::Compilation(format!(
                 "Source interface '{}' does not exist in the registry", 
                 source_interface
             )));
         }
         
-        if !self.interface_registry().interface_exists(target_interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(target_interface) {
             return Err(Error::Compilation(format!(
                 "Target interface '{}' does not exist in the registry", 
                 target_interface
@@ -137,14 +137,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
               max_paths, source_interface, target_interface);
         
         // Check if interfaces exist with proper error handling
-        if !self.interface_registry().interface_exists(source_interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(source_interface) {
             return Err(Error::Compilation(format!(
                 "Source interface '{}' does not exist in the registry", 
                 source_interface
             )));
         }
         
-        if !self.interface_registry().interface_exists(target_interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(target_interface) {
             return Err(Error::Compilation(format!(
                 "Target interface '{}' does not exist in the registry", 
                 target_interface
@@ -186,14 +186,14 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
               source_interface, target_interface);
         
         // Check if interfaces exist with proper error handling
-        if !self.interface_registry().interface_exists(source_interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(source_interface) {
             return Err(Error::Compilation(format!(
                 "Source interface '{}' does not exist in the registry", 
                 source_interface
             )));
         }
         
-        if !self.interface_registry().interface_exists(target_interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(target_interface) {
             return Err(Error::Compilation(format!(
                 "Target interface '{}' does not exist in the registry", 
                 target_interface
@@ -241,7 +241,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         debug!("Finding all implementors of {}", interface);
         
         // Check if interface exists with proper error handling
-        if !self.interface_registry().interface_exists(interface)? {
+        if !self.interface_registry().get_all_interfaces()?.contains(interface) {
             return Err(Error::Compilation(format!(
                 "Interface '{}' does not exist in the registry", 
                 interface

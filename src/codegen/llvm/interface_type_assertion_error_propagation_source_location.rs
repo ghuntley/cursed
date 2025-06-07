@@ -176,12 +176,20 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         };
         
         // Set the type IDs for error reporting
-        self.set_expected_type_id(target_type_id as u32);
+        let target_type_id_u32 = if let Some(const_int) = target_type_id.into_int_value().get_zero_extended_constant() {
+            const_int as u32
+        } else {
+            0u32 // fallback value
+        };
+        self.set_expected_type_id(target_type_id_u32);
         self.set_actual_type_id(actual_type_id as u32);
         
         // Check if the types match
         let target_type = self.get_type_by_name(&type_assertion.type_name)
-            .ok_or_else(|| Error::Type(format!("Unknown type: {}", type_assertion.type_name)))?;
+            .ok_or_else(|| Error::Type {
+                location: SourceLocation::default(),
+                message: format!("Unknown type: {}", type_assertion.type_name)
+            })?;
         let is_match_value = self.check_instanceof(expr_value, target_type)?;
         let is_match = is_match_value.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0;
         
@@ -191,16 +199,18 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             
             // Cast to the target type
             let target_struct_type = match self.get_type_by_name(&type_assertion.type_name) {
-                Some(ty) => ty,
+                Some(ty) => match ty {
+                    inkwell::types::BasicTypeEnum::StructType(struct_ty) => struct_ty,
+                    _ => self.context().struct_type(&[], false), // fallback to placeholder
+                },
                 None => {
                     // If we can't find the type, create a placeholder type
-                    let placeholder_struct_type = self.context().struct_type(&[], false);
-                    placeholder_struct_type.into()
+                    self.context().struct_type(&[], false)
                 }
             };
             
             // Bitcast the data pointer to the target type pointer
-            let target_ptr_type = target_struct_type.ptr_type();
+            let target_ptr_type = target_struct_type.ptr_type(inkwell::AddressSpace::default());
             let casted_ptr = self.builder().build_bitcast(
                 data_ptr,
                 target_ptr_type,
@@ -287,7 +297,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         };
         
         // Check if there's a reversed relationship (for better error messages)
-        let reversed_relationship = match self.check_extension_relationship_simple(target_type_name, &runtime_type) {
+        let reversed_relationship = match self.check_extension_relationship(target_type_name, &runtime_type) {
             Ok(true) => {
                 Some(format!(
                     "Note: '{}' is actually a supertype of '{}', not a subtype. The assertion direction is reversed.",
@@ -333,7 +343,7 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let expr_value = self.compile_expression(type_assertion.expression.as_ref())?;
         
         // Check if the value is actually an interface
-        let is_interface = self.is_interface_value(expr_value)?;
+        let is_interface = self.is_interface_value(expr_value);
         if !is_interface {
             return Err(Error::TypeAssertion(
                 TypeAssertionError::new(type_assertion.expression.node_type(), &type_assertion.type_name)
@@ -356,13 +366,21 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         };
         
         // Set the type IDs for error reporting
-        self.set_expected_type_id(target_type_id as u32);
+        let target_type_id_u32 = if let Some(const_int) = target_type_id.into_int_value().get_zero_extended_constant() {
+            const_int as u32
+        } else {
+            0u32 // fallback value
+        };
+        self.set_expected_type_id(target_type_id_u32);
         let (actual_id, _) = actual_type_id;
         self.set_actual_type_id(actual_id as u32);
         
         // Check if the types match
         let target_type = self.get_type_by_name(&type_assertion.type_name)
-            .ok_or_else(|| Error::Type(format!("Unknown type: {}", type_assertion.type_name)))?;
+            .ok_or_else(|| Error::Type {
+                location: SourceLocation::default(),
+                message: format!("Unknown type: {}", type_assertion.type_name)
+            })?;
         let is_match_value = self.check_instanceof(expr_value, target_type)?;
         let is_match = is_match_value.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0;
         
@@ -372,16 +390,18 @@ impl<'ctx> EnhancedSourceLocationErrorPropagation<'ctx> for LlvmCodeGenerator<'c
             
             // Cast to the target type
             let target_struct_type = match self.get_type_by_name(&type_assertion.type_name) {
-                Some(ty) => ty,
+                Some(ty) => match ty {
+                    inkwell::types::BasicTypeEnum::StructType(struct_ty) => struct_ty,
+                    _ => self.context().struct_type(&[], false), // fallback to placeholder
+                },
                 None => {
                     // If we can't find the type, create a placeholder type
-                    let placeholder_struct_type = self.context().struct_type(&[], false);
-                    placeholder_struct_type.into()
+                    self.context().struct_type(&[], false)
                 }
             };
             
             // Bitcast the data pointer to the target type pointer
-            let target_ptr_type = target_struct_type.ptr_type();
+            let target_ptr_type = target_struct_type.ptr_type(inkwell::AddressSpace::default());
             let casted_ptr = self.builder().build_bitcast(
                 data_ptr,
                 target_ptr_type,

@@ -182,7 +182,7 @@ impl InterfaceTypeRegistryExtensionChecking for InterfaceTypeRegistryExtensionCh
         
         // Try to use the registry visualization if available
         if let Some(registry) = &self.registry_visualization {
-            return registry.interface_exists(interface);
+            return Ok(registry.get_all_interfaces()?.contains(interface));
         }
         
         // Fallback behavior

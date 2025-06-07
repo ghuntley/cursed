@@ -458,7 +458,8 @@ impl InterfaceRegistryAdapter {
     fn interface_exists(&self, interface: &str) -> Result<bool, Error> {
         // Prefer visualization registry if available
         if let Some(vis_registry) = &self.visualization_registry {
-            vis_registry.interface_exists(interface)
+            let all_interfaces = vis_registry.get_all_interfaces()?;
+            Ok(all_interfaces.contains(interface))
         } else {
             // Get all interfaces
             let all_interfaces = Self::get_all_interfaces(self)?;
@@ -1020,6 +1021,141 @@ impl InterfaceRegistryVisualization for InterfaceRegistryAdapter {
             }
             output.push_str("}\n");
             Ok(output)
+        }
+    }
+}
+
+impl InterfaceRegistryExtensionWithVisualization for InterfaceRegistryAdapter {
+    fn get_inheritance_distance(&self, source: &str, target: &str) -> Result<Option<usize>, Error> {
+        if source == target {
+            return Ok(Some(0));
+        }
+        
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.get_inheritance_distance(source, target)
+        } else {
+            let path = self.find_inheritance_path(source, target)?;
+            Ok(Some(path.len().saturating_sub(1)))
+        }
+    }
+    
+    fn find_all_paths(&self, source: &str, target: &str) -> Result<Vec<Vec<String>>, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.find_all_paths(source, target)
+        } else {
+            self.find_all_inheritance_paths(source, target)
+        }
+    }
+    
+    fn find_diamond_inheritance_patterns(&self) -> Result<Vec<(String, String, String, String)>, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.find_diamond_inheritance_patterns()
+        } else {
+            Ok(Vec::new())
+        }
+    }
+    
+    fn detect_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.detect_cycles()
+        } else {
+            let hierarchy = self.get_extension_hierarchy()?;
+            crate::core::interface_registry_visualization::detect_cycles(&hierarchy)
+        }
+    }
+    
+    fn visualize_hierarchy_ascii(&self) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.visualize_hierarchy_ascii()
+        } else {
+            let hierarchy = self.get_extension_hierarchy()?;
+            let options = VisualizationOptions::default();
+            self.generate_ascii_tree(&hierarchy, &options)
+        }
+    }
+    
+    fn visualize_hierarchy_dot(&self) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.visualize_hierarchy_dot()
+        } else {
+            let hierarchy = self.get_extension_hierarchy()?;
+            let options = VisualizationOptions::default();
+            self.generate_dot_graph(&hierarchy, &options)
+        }
+    }
+    
+    fn visualize_path_ascii(&self, path: &[String]) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.visualize_path_ascii(path)
+        } else {
+            if path.is_empty() {
+                return Ok(String::from("Empty inheritance path"));
+            }
+            
+            let mut result = String::new();
+            result.push_str("Inheritance Path:\n");
+            
+            for (i, interface) in path.iter().enumerate() {
+                if i > 0 {
+                    result.push_str("  ↓ extends\n");
+                }
+                result.push_str(&format!("  [{}]\n", interface));
+            }
+            
+            Ok(result)
+        }
+    }
+    
+    fn visualize_path_dot(&self, path: &[String]) -> Result<String, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.visualize_path_dot(path)
+        } else {
+            if path.is_empty() {
+                return Ok(String::from("digraph empty_path {}\n"));
+            }
+            
+            let mut dot = String::from("digraph inheritance_path {\n");
+            dot.push_str("  rankdir=BT;\n");
+            dot.push_str("  node [shape=box, style=filled, fillcolor=lightblue];\n\n");
+            
+            // Add nodes
+            for (i, interface) in path.iter().enumerate() {
+                let color = if i == 0 {
+                    "lightgreen" // First node
+                } else if i == path.len() - 1 {
+                    "lightpink"  // Last node
+                } else {
+                    "lightblue"  // Intermediate nodes
+                };
+                
+                dot.push_str(&format!("  \"{}\" [label=\"{}\", fillcolor={}];\n", 
+                    interface, interface, color));
+            }
+            
+            // Add edges
+            for i in 0..path.len() - 1 {
+                dot.push_str(&format!("  \"{}\" -> \"{}\";\n", path[i], path[i+1]));
+            }
+            
+            dot.push_str("}\n");
+            
+            Ok(dot)
+        }
+    }
+    
+    fn is_visualization_initialized(&self) -> Result<bool, Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.is_visualization_initialized()
+        } else {
+            Ok(true)
+        }
+    }
+    
+    fn set_visualization_initialized(&self, initialized: bool) -> Result<(), Error> {
+        if let Some(vis_registry) = &self.visualization_registry {
+            vis_registry.set_visualization_initialized(initialized)
+        } else {
+            Ok(())
         }
     }
 }

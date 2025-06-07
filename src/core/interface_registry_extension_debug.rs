@@ -14,7 +14,7 @@ use std::fmt;
 use std::sync::RwLockReadGuard;
 use tracing::{debug, instrument};
 
-use crate::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
+use crate::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use crate::error::Error;
 
 impl fmt::Debug for ThreadSafeInterfaceExtensionRegistry {

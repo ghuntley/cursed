@@ -52,6 +52,15 @@ pub trait InterfaceTypeRegistryExtensionChecking {
     /// # Returns
     /// * `Result<String, Error>` - String representation of the path
     fn visualize_path(&self, source_id: u64, target_id: u64) -> Result<String, Error>;
+    
+    /// Get all interfaces extended by a given interface
+    ///
+    /// # Arguments
+    /// * `interface_id` - ID of the interface to find extended interfaces of
+    ///
+    /// # Returns
+    /// * `Result<HashSet<u64>, Error>` - Set of interfaces that this interface extends
+    fn get_extended_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error>;
 }
 
 /// Implementation of InterfaceTypeRegistryExtensionChecking for InterfaceTypeRegistry
@@ -182,6 +191,14 @@ impl<'ctx> InterfaceTypeRegistryExtensionChecking for InterfaceTypeRegistry<'ctx
             Ok(format!("No path exists from {} to {}", source_name, target_name))
         }
     }
+    
+    fn get_extended_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error> {
+        // Get the extension relationships and find what this interface extends
+        let extension_relationships = self.get_extension_relationships()?;
+        Ok(extension_relationships.get(&interface_id)
+            .cloned()
+            .unwrap_or_else(HashSet::new))
+    }
 }
 
 /// Represents a path between interfaces in the inheritance graph
@@ -280,7 +297,7 @@ pub trait EnhancedInterfacePathFinder: std::fmt::Debug {
     fn detect_reversed_inheritance_enhanced(&self, source: &str, target: &str) -> Result<(bool, String), Error>;
     
     /// Clone the trait object into a Box
-    fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder>;
+    fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder + '_>;
 }
 
 /// Concrete implementation of EnhancedInterfacePathFinder
@@ -415,7 +432,7 @@ impl<'ctx> EnhancedInterfacePathFinder for EnhancedInterfacePathFinderImpl<'ctx>
         }
     }
     
-    fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder> {
+    fn box_clone(&self) -> Box<dyn EnhancedInterfacePathFinder + '_> {
         Box::new(EnhancedInterfacePathFinderImpl {
             registry: self.registry,
         })

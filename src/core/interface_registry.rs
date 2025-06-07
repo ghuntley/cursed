@@ -640,7 +640,7 @@ mod tests {
         // Create a struct type with concrete type arguments
         let generic_stack_tea = Type::Struct(
             "GenericStack".to_string(),
-            vec![Type::Tea]
+            vec![Box::new(Type::Tea)]
         );
         
         // Direct check should work for generic types with concrete type args
@@ -651,7 +651,7 @@ mod tests {
         // Create a SortedList with a comparable type (Tea/String)
         let sorted_list_tea = Type::Struct(
             "SortedList".to_string(),
-            vec![Type::Tea]
+            vec![Box::new(Type::Tea)]
         );
         
         // Check should succeed as Tea implements Comparable
@@ -665,7 +665,7 @@ mod tests {
         
         let sorted_list_non_comparable = Type::Struct(
             "SortedList".to_string(),
-            vec![non_comparable]
+            vec![Box::new(non_comparable)]
         );
         
         // Check should fail as NonComparable doesn't implement Comparable
@@ -683,7 +683,7 @@ mod tests {
         // Dictionary[String, Int] implements Map because String implements Comparable
         let dict_string_int = Type::Struct(
             "Dictionary".to_string(),
-            vec![Type::Tea, Type::Normie]
+            vec![Box::new(Type::Tea), Box::new(Type::Normie)]
         );
         
         assert!(registry
@@ -696,7 +696,7 @@ mod tests {
         
         let dict_non_comparable_int = Type::Struct(
             "Dictionary".to_string(),
-            vec![non_comparable, Type::Normie]
+            vec![Box::new(non_comparable), Box::new(Type::Normie)]
         );
         
         assert!(!registry

@@ -131,7 +131,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
         // Access the interface extension registry to get the real extension relationships
         if let Some(extension_registry) = self.extension_registry.as_ref() {
             // Get the full extension hierarchy from the registry
-            let hierarchy = extension_registry.get_extension_hierarchy().map_err(|e| {
+            let hierarchy = extension_registry.read().unwrap().get_extension_hierarchy().map_err(|e| {
                 warn!("Error accessing extension registry: {}", e);
                 Error::from(REGISTRY_ERROR)
             })?;

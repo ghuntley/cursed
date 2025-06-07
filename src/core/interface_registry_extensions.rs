@@ -22,6 +22,12 @@ pub trait InterfaceRegistryExtension: Send + Sync + std::fmt::Debug {
     /// Get all registered interfaces
     fn get_all_interfaces(&self) -> Result<HashSet<String>, Error>;
     
+    /// Check if an interface exists in the registry
+    fn interface_exists(&self, name: &str) -> Result<bool, Error> {
+        let all_interfaces = self.get_all_interfaces()?;
+        Ok(all_interfaces.contains(name))
+    }
+    
     /// Get all direct extensions of an interface
     fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error>;
     

@@ -132,7 +132,28 @@ impl<'ctx> DiamondInheritanceDetection<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Result<Vec<InterfaceInheritancePath>, Error> {
         // Check if we have an interface path finder available
         if let Some(path_finder) = self.get_interface_path_finder() {
-            return path_finder.find_all_paths(source_type_id as u64, target_type_id as u64);
+            let source_name = format!("Type#{}", source_type_id);
+            let target_name = format!("Type#{}", target_type_id);
+            
+            if let Ok(Some(path_names)) = path_finder.find_path(&source_name, &target_name) {
+                let path_ids: Vec<u64> = path_names.iter()
+                    .filter_map(|name| {
+                        // Extract ID from "Type#<id>" format
+                        if name.starts_with("Type#") {
+                            name[5..].parse::<u64>().ok()
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                
+                let inheritance_path = InterfaceInheritancePath {
+                    path: path_ids,
+                    names: path_names.clone(),
+                    is_direct: path_names.len() <= 2,
+                };
+                return Ok(vec![inheritance_path]);
+            }
         }
         
         // Fallback implementation when path finder is not available
