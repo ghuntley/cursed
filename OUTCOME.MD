@@ -21,11 +21,12 @@
 - **API Mismatches**: Fixed object types and method signatures
 - **Status**: ✅ **RESOLVED** - Test files now compile successfully
 
-**⚠️ RUNTIME STACK OVERFLOW REMAINS**
+**✅ RUNTIME STACK OVERFLOW RESOLVED**
 - **Issue**: Stack overflow in Debug trait for `ThreadSafeInterfaceExtensionRegistry`
-- **Tests Affected**: `test_generate_dot_diagram`, `test_get_text_representation`
-- **Root Cause**: Infinite recursion in Debug formatting
-- **Status**: ⚠️ **PARTIAL** - Tests compile and run but specific tests overflow
+- **Root Cause**: `#[instrument]` macro causing recursive Debug calls
+- **Solution**: Rewrote Debug implementation without instrumentation, using direct accessor methods
+- **Tests Fixed**: `test_generate_dot_diagram`, `test_get_text_representation` now pass
+- **Status**: ✅ **RESOLVED** - All identified tests now compile and run successfully
 
 **✅ RESOLVED: Compilation Errors**
 - Interface type assertion compilation errors resolved
