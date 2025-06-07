@@ -217,7 +217,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGen
                     Error::Compilation(format!("Failed to write to error message: {}", e))
                 })?;
                 
-                for (j, interface) in path.path.iter().enumerate() {
+                for (j, interface) in path.iter().enumerate() {
                     if j > 0 {
                         writeln!(message, "  ↓ extends").map_err(|e| {
                             Error::Compilation(format!("Failed to write to error message: {}", e))
