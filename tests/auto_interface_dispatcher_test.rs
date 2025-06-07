@@ -4,10 +4,10 @@ use inkwell::context::Context;
 use inkwell::values::{BasicValueEnum, FunctionValue};
 use std::collections::HashMap;
 
-//! Test automatic code generation for interface method dispatching
-//!
-//! This test verifies that our automatic interface method dispatch code generation
-//! works correctly, both for static interface implementations and dynamic lookups.
+// Test automatic code generation for interface method dispatching
+//
+// This test verifies that our automatic interface method dispatch code generation
+// works correctly, both for static interface implementations and dynamic lookups.
 
 use cursed::codegen::llvm::{
     LlvmCodeGenerator, 
@@ -26,7 +26,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?;
@@ -34,7 +34,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     // Define an interface with a single method
     let greeter_methods = vec![
         (
-            "greet".to_string()),
+            "greet".to_string(),
             vec![CursedType::Tea],  // Parameters: [name: string]
             Some(CursedType::Tea),   // Return type: string
         ),
@@ -66,12 +66,12 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     builder.position_at_end(basic_block);
     
     // Simply return the name parameter as the result (echo function)
-    let param = greet_fn.get_nth_param(1).unwrap().into_pointer_value();
-    builder.build_return(Some(&param)).unwrap();
+    let param = greet_fn.get_nth_param(1).unwrap().into_pointer_value());
+    builder.build_return(Some(&param)).unwrap());
     
     // Add the method to a map
     let mut methods = HashMap::new();
-    methods.insert("greet".to_string()), greet_fn);
+    methods.insert("greet".to_string(, greet_fn);
     
     // Auto-generate the interface implementation
     codegen.auto_generate_interface_implementation(
@@ -82,9 +82,9 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Create Person instance and convert to Greeter interface
     let person_struct_type = context.struct_type(&[], false);
-    let person_instance = codegen.builder().build_alloca(person_struct_type, "person_instance").unwrap();
+    let person_instance = codegen.builder().build_alloca(person_struct_type, "person_instance").unwrap());
     
-    let person_type = CursedType::Struct(struct_name.to_string()), vec![]);
+    let person_type = CursedType::Struct(struct_name.to_string(), vec![]);
     let greeter_interface = codegen.create_interface_value(
         person_instance,
         &person_type,
@@ -125,7 +125,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg", std::path::PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg", std::path::PathBuf::from("test.csd");
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?;
@@ -133,12 +133,12 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     // Define an interface with methods
     let shape_methods = vec![
         (
-            "area".to_string()),
+            "area".to_string(),
             vec![],  // No parameters besides self
             Some(CursedType::Meal),   // Return type: float64
         ),
         (
-            "perimeter".to_string()),
+            "perimeter".to_string(),
             vec![],  // No parameters besides self
             Some(CursedType::Meal),   // Return type: float64
         ),
@@ -168,7 +168,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     builder.position_at_end(basic_block);
     
     // Return a constant value for area
-    builder.build_return(Some(&context.f64_type().const_float(40.0))).unwrap();
+    builder.build_return(Some(&context.f64_type().const_float(40.0))).unwrap());
     
     // Create the perimeter method
     let perimeter_fn_type = context.f64_type()
@@ -188,7 +188,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     builder.position_at_end(basic_block);
     
     // Return a constant value for perimeter
-    builder.build_return(Some(&context.f64_type().const_float(26.0))).unwrap();
+    builder.build_return(Some(&context.f64_type().const_float(26.0))).unwrap());
     
     // Use the enhanced discovery and registration functionality
     codegen.discover_and_register_interface_implementations(
@@ -198,9 +198,9 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     
     // Create Rectangle instance and convert to Shape interface
     let rect_struct_type = context.struct_type(&[], false);
-    let rect_instance = codegen.builder().build_alloca(rect_struct_type, "rect_instance").unwrap();
+    let rect_instance = codegen.builder().build_alloca(rect_struct_type, "rect_instance").unwrap());
     
-    let rect_type = CursedType::Struct(struct_name.to_string()), vec![]);
+    let rect_type = CursedType::Struct(struct_name.to_string(), vec![]);
     let shape_interface = codegen.create_interface_value(
         rect_instance,
         &rect_type,
@@ -238,7 +238,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer", std::path::PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer", std::path::PathBuf::from("test.csd");
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?;
@@ -246,7 +246,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     // Define an interface with a method
     let speaker_methods = vec![
         (
-            "speak".to_string()),
+            "speak".to_string(),
             vec![],  // No parameters besides self
             Some(CursedType::Tea),   // Return type: string
         ),
@@ -280,11 +280,11 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     let bark_str = codegen.create_string_constant("Woof!")?;
     
     // Return the bark string
-    builder.build_return(Some(&bark_str)).unwrap();
+    builder.build_return(Some(&bark_str)).unwrap());
     
     // Add the method to a map
     let mut methods = HashMap::new();
-    methods.insert("speak".to_string()), speak_fn);
+    methods.insert("speak".to_string(, speak_fn);
     
     // Auto-generate the interface implementation
     codegen.auto_generate_interface_implementation(
@@ -295,11 +295,11 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create Dog instance
     let dog_struct_type = context.struct_type(&[], false);
-    let dog_instance = codegen.builder().build_alloca(dog_struct_type, "dog_instance").unwrap();
+    let dog_instance = codegen.builder().build_alloca(dog_struct_type, "dog_instance").unwrap());
     
     // Create types for testing
-    let dog_type = CursedType::Struct(struct_name.to_string()), vec![]);
-    let speaker_type = CursedType::Interface("Speaker".to_string()), vec![]);
+    let dog_type = CursedType::Struct(struct_name.to_string(), vec![]);
+    let speaker_type = CursedType::Interface("Speaker".to_string(), vec![]);
     
     // Convert Dog to Speaker interface
     let speaker_interface = codegen.create_interface_value(

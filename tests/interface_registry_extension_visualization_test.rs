@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
-use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use cursed::codegen::llvm::InterfaceTypeRegistry;
 use cursed::error::Error;
 
-//! # Interface Registry Extension Visualization Tests
-//!
-//! This module tests the enhanced implementation of interface registry extension visualization
-//! with proper path finding, hierarchy visualization, and cycle detection.
+// # Interface Registry Extension Visualization Tests
+//
+// This module tests the enhanced implementation of interface registry extension visualization
+// with proper path finding, hierarchy visualization, and cycle detection.
 
 
 mod common;

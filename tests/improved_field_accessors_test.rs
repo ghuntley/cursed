@@ -6,10 +6,10 @@ use cursed::ast::FieldDefinition;
 use cursed::ast::expressions::Identifier;
 use cursed::core::type_checker::Type;
 
-//! Tests for the improved field accessors implementation
-//!
-//! This module tests the ImprovedFieldAccessors implementation which provides
-//! better error handling for LLVM operations.
+// Tests for the improved field accessors implementation
+//
+// This module tests the ImprovedFieldAccessors implementation which provides
+// better error handling for LLVM operations.
 
 
 #[path = "common.rs"]
@@ -22,7 +22,7 @@ fn test_improved_field_accessors() {
     
     // Create a context
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd");
     
     // Create a simple struct with a couple of fields
     let struct_name = Identifier { value: "Point".to_string() };

@@ -2,7 +2,7 @@ use inkwell::context::Context;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use std::path::PathBuf;
 
-//! Simplified test for basic interface implementation
+// Simplified test for basic interface implementation
 
 
 #[test]

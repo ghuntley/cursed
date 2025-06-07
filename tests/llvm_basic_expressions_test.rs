@@ -9,7 +9,7 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Tests for basic expression compilation in the LLVM code generator
+// Tests for basic expression compilation in the LLVM code generator
 
 use cursed::codegen::llvm::ExpressionCompilation; // Updated import
 
@@ -27,7 +27,7 @@ fn test_expression_compilation() {
 
     // Test integer literal
     let int_lit = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 42,
     };
     
@@ -39,7 +39,7 @@ fn test_expression_compilation() {
     
     // Test boolean literal
     let bool_lit = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
     
@@ -51,12 +51,12 @@ fn test_expression_compilation() {
     
     // Test infix expression
     let left = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 10,
     };
     
     let right = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 5,
     };
     
@@ -75,7 +75,7 @@ fn test_expression_compilation() {
     
     // Test prefix expression
     let inner = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 5,
     };
     
@@ -102,5 +102,5 @@ fn test_expression_compilation() {
     }
     
     // Terminate the block with a return statement
-    generator.builder().build_return(Some(&i32_type.const_int(0, false))).unwrap();
+    generator.builder().build_return(Some(&i32_type.const_int(0, false))).unwrap());
 }

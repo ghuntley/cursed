@@ -7,7 +7,7 @@ use cursed::core::type_checker::Type;
 use cursed::error::Error;
 use std::sync::Arc;
 
-//! Integration tests for deep nested async constraint checking
+// Integration tests for deep nested async constraint checking
 
 
 #[path = "common.rs"]
@@ -34,7 +34,7 @@ fn test_integrated_deep_nested_async_checker() {
     
     // Test simple type check
     let stack_int = Type::Struct(
-        "Stack".to_string()),
+        "Stack".to_string(),
         vec![Box::new(Type::Normie)] // Int implements Comparable
     );
     
@@ -46,12 +46,12 @@ fn test_integrated_deep_nested_async_checker() {
     );
     
     assert!(result.is_ok());
-    assert!(result.unwrap());
+    assert!(result.unwrap();
     
     // Non-comparable type check
-    let non_comparable = Type::Struct("NonComparable".to_string()), vec![]);
+    let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
     let stack_non_comparable = Type::Struct(
-        "Stack".to_string()),
+        "Stack".to_string(),
         vec![Box::new(non_comparable)]
     );
     
@@ -63,7 +63,7 @@ fn test_integrated_deep_nested_async_checker() {
     );
     
     assert!(result.is_ok());
-    assert!(!result.unwrap());
+    assert!(!result.unwrap();
 }
 
 #[test]
@@ -82,7 +82,7 @@ fn test_extension_trait_direct_usage() {
     );
     
     assert!(result.is_ok());
-    assert!(result.unwrap());
+    assert!(result.unwrap();
 }
 
 #[test]
@@ -107,19 +107,19 @@ fn test_multi_level_constraint_parallel() {
     // Create test types for a complex nested structure
     // Box[Int]
     let box_int = Type::Struct(
-        "Box".to_string()),
+        "Box".to_string(),
         vec![Box::new(Type::Normie)] // Int implements Numeric
     );
     
     // List[Box[Int]]
     let list_box_int = Type::Struct(
-        "List".to_string()),
+        "List".to_string(),
         vec![Box::new(box_int.clone())]
     );
     
     // Container[List[Box[Int]]]
     let container_list_box_int = Type::Struct(
-        "Container".to_string()),
+        "Container".to_string(),
         vec![Box::new(list_box_int.clone())]
     );
     
@@ -132,23 +132,23 @@ fn test_multi_level_constraint_parallel() {
     );
     
     assert!(result.is_ok());
-    assert!(result.unwrap());
+    assert!(result.unwrap();
     
     // Create a version with a non-numeric inner type
-    let non_numeric = Type::Struct("NonNumeric".to_string()), vec![]);
+    let non_numeric = Type::Struct("NonNumeric".to_string(), vec![]);
     
     let box_non_numeric = Type::Struct(
-        "Box".to_string()),
+        "Box".to_string(),
         vec![Box::new(non_numeric.clone())]
     );
     
     let list_box_non_numeric = Type::Struct(
-        "List".to_string()),
+        "List".to_string(),
         vec![Box::new(box_non_numeric.clone())]
     );
     
     let container_list_box_non_numeric = Type::Struct(
-        "Container".to_string()),
+        "Container".to_string(),
         vec![Box::new(list_box_non_numeric.clone())]
     );
     
@@ -161,7 +161,7 @@ fn test_multi_level_constraint_parallel() {
     );
     
     assert!(result.is_ok());
-    assert!(!result.unwrap());
+    assert!(!result.unwrap();
 }
 
 #[test]
@@ -185,7 +185,7 @@ fn test_caching_reuses_results() {
     
     // Create a test type
     let list_int = Type::Struct(
-        "List".to_string()),
+        "List".to_string(),
         vec![Box::new(Type::Normie)] // Int implements Comparable
     );
     
@@ -210,7 +210,7 @@ fn test_caching_reuses_results() {
     let duration2 = start.elapsed();
     
     // Verify correct results
-    assert_eq!(result1.unwrap(), result2.unwrap());
+    assert_eq!(result1.unwrap(), result2.unwrap();
     
     // This test can be flaky, so we'll add a debug print instead of an assertion
     println!("First check took {:?}, second check took {:?}", duration1, duration2);
@@ -242,12 +242,12 @@ fn test_combining_async_and_deep_nested_checks() {
     }
     
     // Use the AsyncConstraintChecking trait
-    let results = registry.check_constraints_parallel(constraints.clone());
+    let results = registry.check_constraints_parallel(constraints.clone();
     
     // All should pass
     assert_eq!(results.len(), 10);
     for result in results {
-        assert_eq!(result, Ok(true));
+        assert_eq!(result, Ok(true);
     }
     
     // Now create a deep nested async checker
@@ -267,10 +267,10 @@ fn test_combining_async_and_deep_nested_checks() {
     
     for i in 0..5 {
         let inner_type = Type::Struct(format!("TestType{}", i), vec![]);
-        let wrapper_type = Type::Struct("Wrapper".to_string()), vec![Box::new(inner_type)]);
-        let box_type = Type::Struct("Box".to_string()), vec![Box::new(wrapper_type)]);
+        let wrapper_type = Type::Struct("Wrapper".to_string(), vec![Box::new(inner_type)]);
+        let box_type = Type::Struct("Box".to_string(), vec![Box::new(wrapper_type)]);
         
-        complex_checks.push(("MultiContainer", "T", box_type, "Testable"));
+        complex_checks.push(("MultiContainer", "T", box_type, "Testable");
     }
     
     // Check them all using the deep nested async checker
@@ -283,6 +283,6 @@ fn test_combining_async_and_deep_nested_checks() {
         );
         
         assert!(result.is_ok());
-        assert!(result.unwrap());
+        assert!(result.unwrap();
     }
 }

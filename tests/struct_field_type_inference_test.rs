@@ -21,7 +21,7 @@ mod token_helper;
 #[test]
 fn test_struct_field_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_inference", PathBuf::from("test_struct_field_inference.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_inference", PathBuf::from("test_struct_field_inference.csd");
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -44,25 +44,25 @@ fn test_struct_field_type_inference() {
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: struct_name.to_string()),
+        struct_name: struct_name.to_string(),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "x".to_string()),
+                    token: "token".to_string(),
+                    value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: 10,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "y".to_string()),
+                    token: "token".to_string(),
+                    value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: 20.5,
                 }),
             },
@@ -81,12 +81,12 @@ fn test_struct_field_type_inference() {
     
     // Store the struct in a variable
     let var_name = Identifier {
-        token: "token".to_string()),
-        value: "p".to_string()),
+        token: "token".to_string(),
+        value: "p".to_string(),
     };
     
     let let_stmt = LetStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(struct_literal)),
@@ -97,18 +97,18 @@ fn test_struct_field_type_inference() {
     assert!(decl_result.is_ok(), "Failed to compile struct variable declaration: {:?}", decl_result.err());
     
     // Verify the module
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
     
     // Return a dummy value and finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
 }
 
 #[test]
 fn test_nested_struct_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_struct_inference", PathBuf::from("test_nested_struct_inference.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_struct_inference", PathBuf::from("test_nested_struct_inference.csd");
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -128,7 +128,7 @@ fn test_nested_struct_type_inference() {
     
     // Register a Rectangle struct type (contains two Points)
     let rect_name = "Rectangle";
-    let opaque_point_ptr = generator.context().i8_type().ptr_type(Default::default()); // Placeholder
+    let opaque_point_ptr = generator.context().i8_type().ptr_type(Default::default(); // Placeholder
     let rect_ty = generator.context().struct_type(&[
         opaque_point_ptr.into(), // top_left: Point
         opaque_point_ptr.into(), // bottom_right: Point
@@ -138,25 +138,25 @@ fn test_nested_struct_type_inference() {
     // Create a nested struct literal 
     let top_left = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: point_name.to_string()),
+        struct_name: point_name.to_string(),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "x".to_string()),
+                    token: "token".to_string(),
+                    value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: 0,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "y".to_string()),
+                    token: "token".to_string(),
+                    value: "y".to_string(),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: 0,
                 }),
             },
@@ -165,25 +165,25 @@ fn test_nested_struct_type_inference() {
     
     let bottom_right = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: point_name.to_string()),
+        struct_name: point_name.to_string(),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "x".to_string()),
+                    token: "token".to_string(),
+                    value: "x".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: 100.0,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "y".to_string()),
+                    token: "token".to_string(),
+                    value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: 100.0,
                 }),
             },
@@ -192,19 +192,19 @@ fn test_nested_struct_type_inference() {
     
     let rect_literal = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: rect_name.to_string()),
+        struct_name: rect_name.to_string(),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "top_left".to_string()),
+                    token: "token".to_string(),
+                    value: "top_left".to_string(),
                 },
                 value: Box::new(top_left),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "bottom_right".to_string()),
+                    token: "token".to_string(),
+                    value: "bottom_right".to_string(),
                 },
                 value: Box::new(bottom_right),
             },
@@ -220,18 +220,18 @@ fn test_nested_struct_type_inference() {
     assert!(struct_value.is_pointer_value(), "Result should be a pointer to a struct");
     
     // Verify the module
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
     
     // Return a dummy value and finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
 }
 
 #[test]
 fn test_struct_field_incompatible_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test_struct_field_incompatible.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test_struct_field_incompatible.csd");
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -243,7 +243,7 @@ fn test_struct_field_incompatible_types() {
     
     // Register a Person struct type
     let person_name = "Person";
-    let string_ptr = generator.context().i8_type().ptr_type(Default::default()); // String pointer
+    let string_ptr = generator.context().i8_type().ptr_type(Default::default(); // String pointer
     let person_ty = generator.context().struct_type(&[
         string_ptr.into(), // name: string
         generator.context().i32_type().into(), // age: i32
@@ -253,26 +253,26 @@ fn test_struct_field_incompatible_types() {
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: person_name.to_string()),
+        struct_name: person_name.to_string(),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "name".to_string()),
+                    token: "token".to_string(),
+                    value: "name".to_string(),
                 },
                 value: Box::new(StringLiteral {
-                    token: "token".to_string()),
-                    value: "John".to_string()),
+                    token: "token".to_string(),
+                    value: "John".to_string(),
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: "token".to_string()),
-                    value: "age".to_string()),
+                    token: "token".to_string(),
+                    value: "age".to_string(),
                 },
                 value: Box::new(StringLiteral { // String assigned to int field - should fail
-                    token: "token".to_string()),
-                    value: "30".to_string()),
+                    token: "token".to_string(),
+                    value: "30".to_string(),
                 }),
             },
         ],
@@ -290,6 +290,6 @@ fn test_struct_field_incompatible_types() {
     }
     
     // Return a dummy value to finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
 }

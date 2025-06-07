@@ -36,7 +36,7 @@ fn test_array_type_inference(input: &str) -> Result<Type, Error> {
             
             // Infer the type of the expression
             // Use the publicly available method to infer types
-            type_checker.infer_type(expr.as_ref())
+            type_checker.get_expression_type(expr.as_ref())
                 .map(|_| ())
         } else {
             Err(Error::from_str("No expression in statement"))

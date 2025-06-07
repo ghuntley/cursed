@@ -8,13 +8,13 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Minimal test for basic expression compilation in the LLVM code generator
+// Minimal test for basic expression compilation in the LLVM code generator
 
 
 #[test]
 fn test_integer_literal_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type();
@@ -25,7 +25,7 @@ fn test_integer_literal_expression() {
 
     // Create a simple expression: 42
     let int_lit = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 42,
     };
 

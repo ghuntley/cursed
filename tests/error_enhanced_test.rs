@@ -14,7 +14,7 @@ fn test_error_creation() {
     // Test error with location
     let location = SourceLocation::new(10, 20);
     let err = CursedError::new(ErrorKind::Parser, "Parse error")
-        .with_location(location.clone());
+        .with_location(location.clone();
     
     assert_eq!(err.location().unwrap().line, 10);
     assert_eq!(err.location().unwrap().column, 20);
@@ -34,7 +34,7 @@ fn test_error_creation() {
     let err = CursedError::new(ErrorKind::Type, "Type mismatch")
         .with_code("E1001");
     
-    assert_eq!(err.code(), Some("E1001"));
+    assert_eq!(err.code(), Some("E1001");
 }
 
 #[test]
@@ -47,15 +47,15 @@ fn test_error_wrapping() {
         .with_cause(cause);
     
     // Check the cause relationship
-    let source_error = wrapper_err.source().unwrap();
+    let source_error = wrapper_err.source().unwrap());
     let cause_error = source_error.downcast_ref::<CursedError>().unwrap();
     
     assert_eq!(cause_error.kind(), &ErrorKind::Lexer);
     assert_eq!(cause_error.message(), "Unexpected character");
     
     // Test is_kind for wrapped errors
-    assert!(wrapper_err.is_kind(&ErrorKind::Parser)); // Direct kind
-    assert!(wrapper_err.is_kind(&ErrorKind::Lexer));  // Kind of wrapped error
+    assert!(wrapper_err.is_kind(&ErrorKind::Parser); // Direct kind
+    assert!(wrapper_err.is_kind(&ErrorKind::Lexer);  // Kind of wrapped error
 }
 
 #[test]
@@ -63,15 +63,15 @@ fn test_error_full_message() {
     let err = CursedError::new(ErrorKind::Runtime, "Division by zero")
         .with_code("E2001")
         .with_context("operation", "division")
-        .with_location(SourceLocation::new(42, 10));
+        .with_location(SourceLocation::new(42, 10);
     
     let message = err.full_message();
     
     // Check that the full message contains all the expected parts
-    assert!(message.contains("[Runtime/E2001]"));
-    assert!(message.contains("Division by zero"));
-    assert!(message.contains("line 42, column 10"));
-    assert!(message.contains("operation: division"));
+    assert!(message.contains("[Runtime/E2001]");
+    assert!(message.contains("Division by zero");
+    assert!(message.contains("line 42, column 10");
+    assert!(message.contains("operation: division");
 }
 
 #[test]
@@ -82,7 +82,7 @@ fn test_error_conversion() {
     assert_eq!(err.message(), "Simple error");
     
     // Test conversion from String
-    let err: CursedError = String::from("String error").into();
+    let err: CursedError = String::from("String error").into());
     assert_eq!(err.kind(), &ErrorKind::Unknown);
     assert_eq!(err.message(), "String error");
     
@@ -91,14 +91,14 @@ fn test_error_conversion() {
     let err: CursedError = io_err.into();
     
     assert_eq!(err.kind(), &ErrorKind::IO);
-    assert!(err.message().contains("File not found"));
+    assert!(err.message().contains("File not found");
 }
 
 #[test]
 fn test_error_utils() {
     // Test assertion utilities
     let err = CursedError::new(ErrorKind::Type, "Expected int, got string")
-        .with_location(SourceLocation::new(5, 10));
+        .with_location(SourceLocation::new(5, 10);
     
     // Test kind assertion
     test_utils::assert_error_kind(err.clone(), ErrorKind::Type);
@@ -111,7 +111,7 @@ fn test_error_utils() {
     
     // Test creating test errors
     let test_err = test_utils::create_test_error(ErrorKind::Semantic, "Test error");
-    assert_eq!(test_err.code(), Some("TEST-001"));
+    assert_eq!(test_err.code(), Some("TEST-001");
     assert_eq!(test_err.context()[0].0, "test");
     assert_eq!(test_err.context()[0].1, "true");
 }

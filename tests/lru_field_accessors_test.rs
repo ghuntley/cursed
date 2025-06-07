@@ -14,7 +14,7 @@ use cursed::memory::gc::GarbageCollector;
 use std::path::PathBuf;
 use tracing::*;
 
-//! Test for LRU cached field accessors implementation
+// Test for LRU cached field accessors implementation
 
 
 #[path = "common.rs"]
@@ -80,18 +80,18 @@ fn test_lru_cached_field_accessors() {
     let mut lexer = Lexer::new(TEST_CODE);
     let tokens = lexer.lex().expect("Lexing failed");
     
-    let mut parser = Parser::new(tokens, PathBuf::from("test.csd"));
+    let mut parser = Parser::new(tokens, PathBuf::from("test.csd");
     let program = parser.parse().expect("Parsing failed");
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd");
     
     // Ensure LRU cache is initialized
     codegen.ensure_lru_field_accessor_cache();
     
     // Compile the program
-    let result = codegen.compile_program(&program, &Default::default());
+    let result = codegen.compile_program(&program, &Default::default();
     info!("Compilation result: {:?}", result);
     assert!(result.is_ok(), "Compilation failed: {:?}", result);
     
@@ -174,8 +174,8 @@ fn test_multi_instance_cache_coherence() {
     // Create two JIT compilers
     let context1 = inkwell::context::Context::create();
     let context2 = inkwell::context::Context::create();
-    let mut codegen1 = LlvmCodeGenerator::new(&context1, "module1", PathBuf::from("test1.csd"));
-    let mut codegen2 = LlvmCodeGenerator::new(&context2, "module2", PathBuf::from("test2.csd"));
+    let mut codegen1 = LlvmCodeGenerator::new(&context1, "module1", PathBuf::from("test1.csd");
+    let mut codegen2 = LlvmCodeGenerator::new(&context2, "module2", PathBuf::from("test2.csd");
     
     // Create a shared LRU cache
     let shared_cache = ThreadSafeFieldAccessorLruCache::default();
@@ -186,16 +186,16 @@ fn test_multi_instance_cache_coherence() {
     
     // Create a simple struct for testing
     let struct_stmt = SquadStatement {
-        name: Identifier { value: "TestStruct".to_string()), span: Span::default() },
+        name: Identifier { value: "TestStruct".to_string(), span: Span::default() },
         fields: vec![
             Field {
-                name: Identifier { value: "field1".to_string()), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "normie".to_string()), span: Span::default() }),
+                name: Identifier { value: "field1".to_string(), span: Span::default() },
+                type_name: TypeName::Named(Identifier { value: "normie".to_string(), span: Span::default() }),
                 span: Span::default(),
             },
             Field {
-                name: Identifier { value: "field2".to_string()), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "tea".to_string()), span: Span::default() }),
+                name: Identifier { value: "field2".to_string(), span: Span::default() },
+                type_name: TypeName::Named(Identifier { value: "tea".to_string(), span: Span::default() }),
                 span: Span::default(),
             }
         ],
@@ -244,7 +244,7 @@ fn find_struct_in_program(program: &Program, struct_name: &str) -> Option<SquadS
     for stmt in &program.statements {
         if let Some(squad_stmt) = stmt.as_any().downcast_ref::<SquadStatement>() {
             if squad_stmt.name.value == struct_name {
-                return Some(squad_stmt.clone());
+                return Some(squad_stmt.clone();
             }
         }
     }

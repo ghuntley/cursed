@@ -14,7 +14,7 @@ use std::path::PathBuf;
 #[test]
 fn test_integer_literal_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type();
@@ -48,7 +48,7 @@ fn test_integer_literal_expression() {
 #[test]
 fn test_infix_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type();
@@ -96,7 +96,7 @@ fn test_infix_expression() {
 #[test]
 fn test_prefix_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type();
@@ -138,7 +138,7 @@ fn test_prefix_expression() {
     // When we get an unsigned constant value, we need to interpret it correctly as signed
     // For a 32-bit integer representation of -5, it's 0xFFFFFFFB or 4294967291 as unsigned
     // Both 4294967291 and -5 are valid representations of the same bit pattern
-    let extended = int_value.get_zero_extended_constant().unwrap();
+    let extended = int_value.get_zero_extended_constant().unwrap());
     // Simple check - for 32-bit values, interpret as a signed integer
     // For a 32-bit integer representation of -5 in 2's complement, the unsigned value is 0xFFFFFFFB or 4294967291
     let signed_value = if extended & 0x80000000 != 0 {

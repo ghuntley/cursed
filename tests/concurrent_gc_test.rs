@@ -73,7 +73,7 @@ fn test_concurrent_gc_basic() {
     common::tracing::setup();
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a concurrent garbage collector with a custom configuration
     let config = ConcurrentGcConfig {
@@ -90,20 +90,20 @@ fn test_concurrent_gc_basic() {
     // Allocate some objects
     let mut objects = Vec::new();
     for i in 0..50 {
-        let obj = concurrent_gc.allocate(TestObject::new(i));
+        let obj = concurrent_gc.allocate(TestObject::new(i);
         objects.push(obj);
     }
     
     // Create some links between objects to form chains
     for i in 0..objects.len()-1 {
-        objects[i].inner().unwrap().set_next(objects[i+1].clone());
+        objects[i].inner().unwrap().set_next(objects[i+1].clone();
     }
     
     // Create a cycle to test cycle collection
-    objects.last().unwrap().inner().unwrap().set_next(objects[0].clone());
+    objects.last().unwrap().inner().unwrap().set_next(objects[0].clone();
     
     // Sleep to allow collector to run
-    thread::sleep(Duration::from_millis(300));
+    thread::sleep(Duration::from_millis(300);
     
     // Verify all objects are still accessible
     for (i, obj) in objects.iter().enumerate() {
@@ -117,7 +117,7 @@ fn test_concurrent_gc_basic() {
     drop(objects);
     
     // Sleep to allow collector to run
-    thread::sleep(Duration::from_millis(300));
+    thread::sleep(Duration::from_millis(300);
     
     // The objects should still be accessible through the chain
     // since we have a reference to the first one
@@ -146,7 +146,7 @@ fn test_concurrent_gc_basic() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collector to run multiple times
-    thread::sleep(Duration::from_millis(500));
+    thread::sleep(Duration::from_millis(500);
     
     // Check GC statistics
     let stats = concurrent_gc.stats();
@@ -159,7 +159,7 @@ fn test_concurrent_gc_stress() {
     common::tracing::setup();
     
     // Create a garbage collector with a low threshold to trigger frequent collections
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     let config = ConcurrentGcConfig {
         collection_interval_ms: 50,    // Very frequent collections
@@ -186,11 +186,11 @@ fn test_concurrent_gc_stress() {
             
             for i in 0..iterations_per_thread {
                 // Allocate an object
-                let obj = cgc.allocate(TestObject::new(t * 1000 + i));
+                let obj = cgc.allocate(TestObject::new(t * 1000 + i);
                 
                 // Sometimes create a chain
                 if !local_objects.is_empty() && i % 10 == 0 {
-                    local_objects.last().unwrap().inner().unwrap().set_next(obj.clone());
+                    local_objects.last().unwrap().inner().unwrap().set_next(obj.clone();
                 }
                 
                 local_objects.push(obj);
@@ -202,7 +202,7 @@ fn test_concurrent_gc_stress() {
                 
                 // Small sleep to give other threads a chance
                 if i % 10 == 0 {
-                    thread::sleep(Duration::from_millis(1));
+                    thread::sleep(Duration::from_millis(1);
                 }
             }
             
@@ -216,7 +216,7 @@ fn test_concurrent_gc_stress() {
     // Wait for all threads to complete
     let mut all_objects = Vec::new();
     for handle in handles {
-        let objects = handle.join().unwrap();
+        let objects = handle.join().unwrap());
         all_objects.extend(objects);
     }
     
@@ -232,7 +232,7 @@ fn test_concurrent_gc_stress() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to complete
-    thread::sleep(Duration::from_millis(200));
+    thread::sleep(Duration::from_millis(200);
     
     // Verify remaining objects are still accessible
     for obj in &all_objects {
@@ -246,7 +246,7 @@ fn test_concurrent_gc_stress() {
     concurrent_gc.request_collection();
     
     // Sleep to allow collection to complete
-    thread::sleep(Duration::from_millis(200));
+    thread::sleep(Duration::from_millis(200);
     
     // Check GC statistics
     let stats = concurrent_gc.stats();

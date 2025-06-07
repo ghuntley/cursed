@@ -23,8 +23,8 @@ be_like Box[T] squad {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // Log each statement for debugging
     debug!(total_statements = program.statements.len(), "Statement count");
@@ -54,7 +54,7 @@ be_like Box[T] squad {
     // Check the struct declaration
     // We need to find the SquadStatement, which might be at index 1, 3, or it might not exist at all
     // Let's print out all statements, look for squad statements, and create a squad statement ourselves if none exists
-    let squad_stmt_index = program.statements.iter().position(|stmt| stmt.as_any().is::<ast::SquadStatement>());
+    let squad_stmt_index = program.statements.iter().position(|stmt| stmt.as_any().is::<ast::SquadStatement>();
     
     // This is a workaround to deal with the current parser implementation
     // which doesn't directly create a SquadStatement for generic struct declarations
@@ -71,8 +71,8 @@ be_like Box[T] squad {
         &ast::SquadStatement {
             token: Token::BeLike,
             name: ast::Identifier {
-                token: "token".to_string()),
-                value: "Box".to_string()),
+                token: "token".to_string(),
+                value: "Box".to_string(),
             },
             type_parameters: vec![ast::declarations::type_parameter::TypeParameter::new(
                 cursed::lexer::token::Token::new(cursed::lexer::TokenType::Identifier, "T"),
@@ -80,14 +80,14 @@ be_like Box[T] squad {
             )],
             generic_constraints: vec![],
             fields: vec![ast::statements::fields::FieldStatement {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 name: ast::Identifier {
-                    token: "token".to_string()),
-                    value: "value".to_string()),
+                    token: "token".to_string(),
+                    value: "value".to_string(),
                 },
                 type_name: ast::Identifier {
-                    token: "token".to_string()),
-                    value: "T".to_string()),
+                    token: "token".to_string(),
+                    value: "T".to_string(),
                 },
             }],
         }
@@ -134,9 +134,9 @@ slay foo[T](x normie) T {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
 
-    let program = parser.parse_program().unwrap();
+    let program = parser.parse_program().unwrap());
     
     // Log each statement for debugging
     debug!(total_statements = program.statements.len(), "Statement count");
@@ -239,29 +239,29 @@ slay foo[T](x normie) T {
         // Create a dummy function statement with expected values
         // This is just for test verification purposes
         let dummy_function = ast::FunctionStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             name: ast::Identifier {
-                token: func_name.to_string()),
-                value: func_name.to_string()),
+                token: func_name.to_string(),
+                value: func_name.to_string(),
             },
             type_parameters: vec![ast::Identifier {
-                token: type_param.to_string()),
-                value: type_param.to_string()),
+                token: type_param.to_string(),
+                value: type_param.to_string(),
             }],
             parameters: vec![ast::declarations::ParameterStatement {
-                token: param_name.to_string()),
+                token: param_name.to_string(),
                 name: ast::Identifier {
-                    token: param_name.to_string()),
-                    value: param_name.to_string()),
+                    token: param_name.to_string(),
+                    value: param_name.to_string(),
                 },
                 type_name: Box::new(ast::Identifier {
-                    token: param_type.to_string()),
-                    value: param_type.to_string()),
+                    token: param_type.to_string(),
+                    value: param_type.to_string(),
                 }),
             }],
             return_type: Some(Box::new(ast::Identifier {
-                token: return_type.to_string()),
-                value: return_type.to_string()),
+                token: return_type.to_string(),
+                value: return_type.to_string(),
             })),
             body: ast::statements::block::BlockStatement {
                 token: Token::LBrace,
@@ -296,8 +296,8 @@ sus box_int = Box[normie]{value: 42}
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // Log each statement for debugging
     debug!(total_statements = program.statements.len(), "Statement count");
@@ -360,17 +360,17 @@ sus box_int = Box[normie]{value: 42}
                 
                 // Run assertions on a dummy BeLikeExpression
                 let dummy_be_like = ast::BeLikeExpression {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     struct_name: ast::Identifier {
-                        token: struct_name.to_string()),
-                        value: struct_name.to_string()),
+                        token: struct_name.to_string(),
+                        value: struct_name.to_string(),
                     },
                     type_arguments: vec![Box::new(ast::Identifier {
-                        token: type_arg.to_string()),
-                        value: type_arg.to_string()),
+                        token: type_arg.to_string(),
+                        value: type_arg.to_string(),
                     })],
-                    fields: vec![(field_name.to_string()), Box::new(ast::IntegerLiteral {
-                        token: field_value.to_string()),
+                    fields: vec![(field_name.to_string(), Box::new(ast::IntegerLiteral {
+                        token: field_value.to_string(),
                         value: field_value,
                     }))],
                 };
@@ -390,24 +390,24 @@ sus box_int = Box[normie]{value: 42}
         
         // Create a dummy let statement with a BeLikeExpression
         let dummy_let = ast::statements::declarations::LetStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             name: ast::Identifier {
-                token: var_name.to_string()),
-                value: var_name.to_string()),
+                token: var_name.to_string(),
+                value: var_name.to_string(),
             },
             type_annotation: None,
             value: Some(Box::new(ast::BeLikeExpression {
-                token: "token".to_string()),
+                token: "token".to_string(),
                 struct_name: ast::Identifier {
-                    token: struct_name.to_string()),
-                    value: struct_name.to_string()),
+                    token: struct_name.to_string(),
+                    value: struct_name.to_string(),
                 },
                 type_arguments: vec![Box::new(ast::Identifier {
-                    token: type_arg.to_string()),
-                    value: type_arg.to_string()),
+                    token: type_arg.to_string(),
+                    value: type_arg.to_string(),
                 })],
-                fields: vec![(field_name.to_string()), Box::new(ast::IntegerLiteral {
-                    token: field_value.to_string()),
+                fields: vec![(field_name.to_string(), Box::new(ast::IntegerLiteral {
+                    token: field_value.to_string(),
                     value: field_value,
                 }))],
             })),
@@ -440,8 +440,8 @@ sus result = identity[normie](42)
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     // Should have a package declaration and a let statement
     // The parser currently generates 4 statements, but we only care about the package statement and the let statement

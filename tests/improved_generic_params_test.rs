@@ -4,10 +4,10 @@ use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::error::Error;
 use std::sync::{Arc, RwLock};
 
-//! Tests for generic constraint checking during monomorphization
-//!
-//! This test verifies that generic type parameters properly check interface constraints
-//! using the improved monomorphization system.
+// Tests for generic constraint checking during monomorphization
+//
+// This test verifies that generic type parameters properly check interface constraints
+// using the improved monomorphization system.
 
 
 // Import test helpers
@@ -24,9 +24,9 @@ fn test_register_methods_for_struct() {
     
     // Register methods for a test struct
     let methods = vec![
-        ("push".to_string()), vec![Type::Tea], None),
-        ("pop".to_string()), vec![], Some(Type::Tea)),
-        ("isEmpty".to_string()), vec![], Some(Type::Lit)),
+        ("push".to_string(), vec![Type::Tea], None),
+        ("pop".to_string(), vec![], Some(Type::Tea)),
+        ("isEmpty".to_string(), vec![], Some(Type::Lit)),
     ];
     
     // Register the methods for the struct
@@ -40,7 +40,7 @@ fn test_register_methods_for_struct() {
     for (i, (name, params, ret)) in methods.iter().enumerate() {
         assert_eq!(retrieved_methods[i].0, *name);
         assert_eq!(retrieved_methods[i].1.len(), params.len());
-        assert_eq!(retrieved_methods[i].2.is_some(), ret.is_some());
+        assert_eq!(retrieved_methods[i].2.is_some(), ret.is_some();
     }
 }
 
@@ -54,16 +54,16 @@ fn test_constraint_checking_with_type_checker() {
     
     // Register an interface with a required method
     let methods = vec![
-        ("push".to_string()), vec![Type::Tea], None),
-        ("pop".to_string()), vec![], Some(Type::Tea)),
+        ("push".to_string(), vec![Type::Tea], None),
+        ("pop".to_string(), vec![], Some(Type::Tea)),
     ];
     type_checker.register_interface("Stack", methods, vec![]);
     
     // Register a struct that implements the interface
     let struct_methods = vec![
-        ("push".to_string()), vec![Type::Tea], None),
-        ("pop".to_string()), vec![], Some(Type::Tea)),
-        ("isEmpty".to_string()), vec![], Some(Type::Lit)),
+        ("push".to_string(), vec![Type::Tea], None),
+        ("pop".to_string(), vec![], Some(Type::Tea)),
+        ("isEmpty".to_string(), vec![], Some(Type::Lit)),
     ];
     type_checker.register_methods_for_struct("StringStack", struct_methods);
     
@@ -72,7 +72,7 @@ fn test_constraint_checking_with_type_checker() {
     let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Check if the struct implements the interface
-    let struct_type = Type::Struct("StringStack".to_string()), vec![]);
+    let struct_type = Type::Struct("StringStack".to_string(), vec![]));
     let result = mono_manager.check_constraint(&struct_type, "Stack");
     
     // The struct should implement the interface
@@ -90,14 +90,14 @@ fn test_constraint_checking_missing_interface() {
     
     // Register an interface with a required method
     let methods = vec![
-        ("add".to_string()), vec![Type::Normie], None),
-        ("remove".to_string()), vec![Type::Normie], None),
+        ("add".to_string(), vec![Type::Normie], None),
+        ("remove".to_string(), vec![Type::Normie], None),
     ];
     type_checker.register_interface("Collection", methods, vec![]);
     
     // Register a struct that does NOT implement the interface correctly
     let struct_methods = vec![
-        ("add".to_string()), vec![Type::Normie], None),
+        ("add".to_string(), vec![Type::Normie], None),
         // Missing the 'remove' method
     ];
     type_checker.register_methods_for_struct("PartialCollection", struct_methods);
@@ -107,12 +107,12 @@ fn test_constraint_checking_missing_interface() {
     let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Check if the struct implements the interface
-    let struct_type = Type::Struct("PartialCollection".to_string()), vec![]);
+    let struct_type = Type::Struct("PartialCollection".to_string(), vec![]));
     let result = mono_manager.check_constraint(&struct_type, "Collection");
     
     // The struct should NOT implement the interface
     assert!(result.is_err());
-    assert!(result.err().unwrap().to_string().contains("does not implement interface"));
+    assert!(result.err().unwrap().to_string().contains("does not implement interface");
 }
 
 #[test]

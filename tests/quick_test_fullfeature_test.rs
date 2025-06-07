@@ -41,9 +41,9 @@ fn test_combined_generators() {
             
             // Create a hash map to represent our user
             let mut map = std::collections::HashMap::new();
-            map.insert("id".to_string()), Object::Integer(id));
-            map.insert("name".to_string()), Object::String(name));
-            map.insert("active".to_string()), Object::Boolean(active));
+            map.insert("id".to_string(, Object::Integer(id);
+            map.insert("name".to_string(, Object::String(name);
+            map.insert("active".to_string(, Object::Boolean(active);
             
             Object::HashTable(map)
         })
@@ -60,9 +60,9 @@ fn test_combined_generators() {
         // Verify the user has the expected structure
         match user {
             Object::HashTable(map) => {
-                assert!(map.contains_key("id"));
-                assert!(map.contains_key("name"));
-                assert!(map.contains_key("active"));
+                assert!(map.contains_key("id");
+                assert!(map.contains_key("name");
+                assert!(map.contains_key("active");
                 
                 match &map["id"] {
                     Object::Integer(id) => assert!(*id >= 1 && *id <= 1000),
@@ -132,8 +132,8 @@ fn test_state_machine() {
         max_value: i32,
     }
     
-    let counter = Rc::new(RefCell::new(Counter { value: 0, max_value: 5 }));
-    let machine = StateMachine::new(counter.clone());
+    let counter = Rc::new(RefCell::new(Counter { value: 0, max_value: 5 });
+    let machine = StateMachine::new(counter.clone();
     
     // Add increment action
     machine.add_action(

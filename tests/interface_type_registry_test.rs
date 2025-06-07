@@ -4,7 +4,7 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::object::{Object, ObjectRef};
 
-//! Tests for the interface type registry functionality
+// Tests for the interface type registry functionality
 
 
 // We need to call init_test_tracing only once
@@ -33,7 +33,7 @@ fn run_jit_test(input: &str) -> Result<ObjectRef, String> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg));
+        return Err(format!("Parser errors:\n{}", error_msg);
     }
     
     // Enable debugging for type assertions

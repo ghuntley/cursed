@@ -18,18 +18,18 @@ mod tests {
     // Helper function to create a simple type assertion
     fn create_test_type_assertion() -> Box<TypeAssertion> {
         Box::new(TypeAssertion {
-            token: "token".to_string()),
+            token: "token".to_string(),
             expression: Box::new(MockExpr { name: "testExpr".to_string() }),
-            type_name: "TestType".to_string()),
+            type_name: "TestType".to_string(),
         })
     }
     
     // Helper function to create a question operator type assertion
     fn create_test_type_assertion_question() -> Box<TypeAssertionQuestion> {
         Box::new(TypeAssertionQuestion {
-            token: "token".to_string()),
+            token: "token".to_string(),
             expression: Box::new(MockExpr { name: "testExpr".to_string() }),
-            type_name: "TestType".to_string()),
+            type_name: "TestType".to_string(),
         })
     }
     
@@ -73,7 +73,7 @@ mod tests {
         
         // Create LLVM context and code generator
         let context = Context::create();
-        let mut llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+        let mut llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
         
         // Create a type assertion with location information
         let type_assertion = create_test_type_assertion();
@@ -82,15 +82,15 @@ mod tests {
         let expected_location = SourceLocation {
             line: 42,
             column: 10,
-            file: Some("test.go".to_string()),
-            source_line: "testExpr.(TestType)".to_string()),
+            file: Some("test.go".to_string(),
+            source_line: "testExpr.(TestType)".to_string(),
         };
         
         // Set the source location
-        llvm_gen.set_source_location(expected_location.clone());
+        llvm_gen.set_source_location(expected_location.clone();
         
         // Verify the source location is stored correctly
-        let actual_location = llvm_gen.current_source_location().unwrap();
+        let actual_location = llvm_gen.current_source_location().unwrap());
         assert_eq!(actual_location.line, expected_location.line);
         assert_eq!(actual_location.column, expected_location.column);
         assert_eq!(actual_location.file, expected_location.file);
@@ -111,20 +111,20 @@ mod tests {
         
         // Create LLVM context and code generator
         let context = Context::create();
-        let mut llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+        let mut llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
         
         // Track a simple inheritance hierarchy
-        llvm_gen.track_inheritance_hierarchy("Rectangle", "Shape").unwrap();
-        llvm_gen.track_inheritance_hierarchy("Rectangle", "Drawable").unwrap();
-        llvm_gen.track_inheritance_hierarchy("Circle", "Shape").unwrap();
+        llvm_gen.track_inheritance_hierarchy("Rectangle", "Shape").unwrap());
+        llvm_gen.track_inheritance_hierarchy("Rectangle", "Drawable").unwrap());
+        llvm_gen.track_inheritance_hierarchy("Circle", "Shape").unwrap());
         
         // Verify the inheritance paths
-        let rectangle_path = llvm_gen.current_inheritance_path("Rectangle").unwrap();
+        let rectangle_path = llvm_gen.current_inheritance_path("Rectangle").unwrap());
         assert_eq!(rectangle_path.len(), 2);
         assert!(rectangle_path.contains(&"Shape".to_string());
         assert!(rectangle_path.contains(&"Drawable".to_string());
         
-        let circle_path = llvm_gen.current_inheritance_path("Circle").unwrap();
+        let circle_path = llvm_gen.current_inheritance_path("Circle").unwrap());
         assert_eq!(circle_path.len(), 1);
         assert!(circle_path.contains(&"Shape".to_string());
         
@@ -141,7 +141,7 @@ mod tests {
         
         // Create LLVM context and code generator
         let context = Context::create();
-        let llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+        let llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
         
         // Test with various token formats
         let (line, column, file) = llvm_gen.extract_location_from_token("file.go:123:45");

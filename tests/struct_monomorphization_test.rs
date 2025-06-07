@@ -9,9 +9,9 @@ use inkwell::context::Context;
 use common::tracing as test_tracing;
 use common::timing::Timer;
 
-//! Test for struct monomorphization
-//! 
-//! These tests verify that generic struct specialization works correctly.
+// Test for struct monomorphization
+// 
+// These tests verify that generic struct specialization works correctly.
 
 
 mod common;
@@ -30,22 +30,22 @@ fn create_generic_squad_statement(name: &str, type_params: Vec<&str>, fields: Ve
     let type_parameters = type_params
         .iter()
         .map(|p| Identifier {
-            token: "token".to_string()),
-            value: p.to_string()),
+            token: "token".to_string(),
+            value: p.to_string(),
         })
         .collect();
 
     let field_statements = fields
         .iter()
         .map(|(field_name, field_type)| FieldStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: field_name.to_string()),
+                token: "token".to_string(),
+                value: field_name.to_string(),
             },
             type_name: Identifier {
-                token: "token".to_string()),
-                value: field_type.to_string()),
+                token: "token".to_string(),
+                value: field_type.to_string(),
             },
         })
         .collect();
@@ -53,8 +53,8 @@ fn create_generic_squad_statement(name: &str, type_params: Vec<&str>, fields: Ve
     SquadStatement {
         token: Token::BeLike,
         name: Identifier {
-            token: "token".to_string()),
-            value: name.to_string()),
+            token: "token".to_string(),
+            value: name.to_string(),
         },
         type_parameters,
         fields: field_statements,
@@ -68,7 +68,7 @@ fn test_basic_struct_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Create a generic struct definition for a Pair[T] with two T fields
     let pair_struct = create_generic_squad_statement(
@@ -99,7 +99,7 @@ fn test_nested_struct_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Create a generic struct definition for a Pair[T] with two T fields
     let pair_struct = create_generic_squad_statement(
@@ -143,7 +143,7 @@ fn test_type_parameter_substitution() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Create a generic struct definition for a Container[T] with multiple field types
     let container_struct = create_generic_squad_statement(
@@ -190,7 +190,7 @@ fn test_invalid_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
     
     // Create a generic struct definition for a Pair[T, U] with T and U fields
     let pair_struct = create_generic_squad_statement(

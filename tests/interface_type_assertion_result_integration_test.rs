@@ -77,8 +77,8 @@ mod tests {
 
         match converted_error {
             Error::Compilation(msg) => {
-                assert!(msg.contains("Type mismatch"));
-                assert!(msg.contains("type assertion operation"));
+                assert!(msg.contains("Type mismatch");
+                assert!(msg.contains("type assertion operation");
             },
             _ => panic!("Expected Compilation error")
         }
@@ -91,17 +91,17 @@ mod tests {
         let mut setup = TestSetup::new(&context);
 
         let errors = vec![
-            Error::Compilation("Error 1".to_string()),
-            Error::Runtime("Error 2".to_string()),
+            Error::Compilation("Error 1".to_string(),
+            Error::Runtime("Error 2".to_string(),
         ];
 
         let combined_error = setup.codegen.collect_type_assertion_errors(errors);
 
         match combined_error {
             Error::Compilation(msg) => {
-                assert!(msg.contains("Multiple type assertion errors"));
-                assert!(msg.contains("Error 1"));
-                assert!(msg.contains("Error 2"));
+                assert!(msg.contains("Multiple type assertion errors");
+                assert!(msg.contains("Error 1");
+                assert!(msg.contains("Error 2");
             },
             _ => panic!("Expected Compilation error")
         }
@@ -117,7 +117,7 @@ mod tests {
         let target_type = "Person";
         let source_location = "test.csd:42";
         let errors = vec![
-            Error::Compilation("Type mismatch".to_string()),
+            Error::Compilation("Type mismatch".to_string(),
         ];
 
         let report = setup.codegen.create_type_assertion_error_report(
@@ -127,10 +127,10 @@ mod tests {
             &errors
         );
 
-        assert!(report.contains("Type Assertion Error Report"));
-        assert!(report.contains("test.csd:42"));
-        assert!(report.contains("Greeter -> Person"));
-        assert!(report.contains("Type mismatch"));
+        assert!(report.contains("Type Assertion Error Report");
+        assert!(report.contains("test.csd:42");
+        assert!(report.contains("Greeter -> Person");
+        assert!(report.contains("Type mismatch");
     }
 
     // This test would verify the full ? operator integration if we could set up the complete test environment

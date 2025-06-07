@@ -12,7 +12,7 @@ use cursed::error::Error;
 use inkwell::context::Context;
 use tracing::{debug, info, warn};
 
-//! Integration tests for the improved error propagation in interface type assertions
+// Integration tests for the improved error propagation in interface type assertions
 
 
 
@@ -190,22 +190,22 @@ fn test_generate_type_assertion_error() {
     assert_eq!(error.source_type, "SourceType");
     assert_eq!(error.target_type, "TargetType");
     assert_eq!(error.source_location, "source.csd:42:10");
-    assert!(error.message.contains("Additional error context"));
-    assert!(error.message.contains("No inheritance path exists"));
-    assert!(error.message.contains("Mock interface hierarchy visualization"));
+    assert!(error.message.contains("Additional error context");
+    assert!(error.message.contains("No inheritance path exists");
+    assert!(error.message.contains("Mock interface hierarchy visualization");
     
     // Test recovery suggestion
     if let Some(hint) = error.recovery_hint {
-        assert!(hint.contains("implement"));
+        assert!(hint.contains("implement");
     } else {
         panic!("Expected a recovery hint");
     }
     
     // Test string representation
     let error_string = error.to_string());
-    assert!(error_string.contains("Type assertion error"));
-    assert!(error_string.contains("SourceType is not a TargetType"));
-    assert!(error_string.contains("Recovery hint"));
+    assert!(error_string.contains("Type assertion error");
+    assert!(error_string.contains("SourceType is not a TargetType");
+    assert!(error_string.contains("Recovery hint");
 }
 
 #[test]
@@ -353,8 +353,8 @@ fn test_suggest_recovery_options() {
             .expect("Failed to get recovery options")
             .expect("Should have recovery hint");
         
-        assert!(hint.contains("implement"));
-        assert!(hint.contains("'TypeB' for the type 'TypeA'"));
+        assert!(hint.contains("implement");
+        assert!(hint.contains("'TypeB' for the type 'TypeA'");
     }
     
     // Test with reversed relationship
@@ -365,8 +365,8 @@ fn test_suggest_recovery_options() {
             .expect("Failed to get recovery options")
             .expect("Should have recovery hint");
         
-        assert!(hint.contains("reversed"));
-        assert!(hint.contains("Try asserting 'TypeB' as 'TypeA'"));
+        assert!(hint.contains("reversed");
+        assert!(hint.contains("Try asserting 'TypeB' as 'TypeA'");
     }
 }
 

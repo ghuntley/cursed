@@ -26,8 +26,8 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
@@ -35,25 +35,25 @@ slay main() {
     assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
 
     // Verify that the type of box_int is Box[normie]
-    let box_int_type = type_checker.get_type("box_int").unwrap();
+    let box_int_type = type_checker.get_type("box_int").unwrap());
     assert_eq!(
-        box_int_type.to_string()),
+        box_int_type.to_string(),
         "Box[normie]",
         "box_int should have type Box[normie]"
     );
 
     // Verify that the type of result is normie
-    let result_type = type_checker.get_type("result").unwrap();
+    let result_type = type_checker.get_type("result").unwrap());
     assert_eq!(
-        result_type.to_string()),
+        result_type.to_string(),
         "normie",
         "result should have type normie"
     );
 
     // Verify that the type of should_be_tea is tea
-    let tea_type = type_checker.get_type("should_be_tea").unwrap();
+    let tea_type = type_checker.get_type("should_be_tea").unwrap());
     assert_eq!(
-        tea_type.to_string()),
+        tea_type.to_string(),
         "tea",
         "should_be_tea should have type tea"
     );
@@ -74,8 +74,8 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
@@ -110,8 +110,8 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
@@ -119,25 +119,25 @@ slay main() {
     assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
 
     // Verify that the type of pair is Pair[tea, normie]
-    let pair_type = type_checker.get_type("pair").unwrap();
+    let pair_type = type_checker.get_type("pair").unwrap());
     assert_eq!(
-        pair_type.to_string()),
+        pair_type.to_string(),
         "Pair[tea, normie]",
         "pair should have type Pair[tea, normie]"
     );
 
     // Verify that first_value has type tea
-    let first_value_type = type_checker.get_type("first_value").unwrap();
+    let first_value_type = type_checker.get_type("first_value").unwrap());
     assert_eq!(
-        first_value_type.to_string()),
+        first_value_type.to_string(),
         "tea",
         "first_value should have type tea"
     );
 
     // Verify that second_value has type normie
-    let second_value_type = type_checker.get_type("second_value").unwrap();
+    let second_value_type = type_checker.get_type("second_value").unwrap());
     assert_eq!(
-        second_value_type.to_string()),
+        second_value_type.to_string(),
         "normie",
         "second_value should have type normie"
     );
@@ -167,8 +167,8 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
-    let program = parser.parse_program().unwrap();
+    let mut parser = Parser::new(&mut lexer).unwrap());
+    let program = parser.parse_program().unwrap());
 
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
@@ -176,22 +176,22 @@ slay main() {
     assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
 
     // Verify that the type of nested is Box[Pair[tea, normie]]
-    let nested_type = type_checker.get_type("nested").unwrap();
+    let nested_type = type_checker.get_type("nested").unwrap());
     assert_eq!(
-        nested_type.to_string()),
+        nested_type.to_string(),
         "Box[Pair[tea, normie]]",
         "nested should have type Box[Pair[tea, normie]]"
     );
 
     // Verify that the type of pair is Pair[tea, normie]
-    let pair_type = type_checker.get_type("pair").unwrap();
+    let pair_type = type_checker.get_type("pair").unwrap());
     assert_eq!(
-        pair_type.to_string()),
+        pair_type.to_string(),
         "Pair[tea, normie]",
         "pair should have type Pair[tea, normie]"
     );
 
     // Verify that the type of text is tea
-    let text_type = type_checker.get_type("text").unwrap();
-    assert_eq!(text_type.to_string()), "tea", "text should have type tea");
+    let text_type = type_checker.get_type("text").unwrap());
+    assert_eq!(text_type.to_string(), "tea", "text should have type tea");
 }

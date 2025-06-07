@@ -10,7 +10,7 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Test generic function specialization with JIT execution
+// Test generic function specialization with JIT execution
 
 use cursed::ast::expressions::{
     CallExpression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
@@ -38,7 +38,7 @@ fn test_monomorphization_jit_execution() {
     assert_eq!(specialized_name_i32, "identity__Normie");
 
     // Verify the function is in the instantiated map
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]);
 
     // Verify the LLVM module contains the specialized function
     let module = code_gen.module();
@@ -55,8 +55,8 @@ fn test_monomorphization_jit_execution() {
     assert_eq!(specialized_name_tea, "identity__Tea");
 
     // Verify both specialized versions exist
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]));
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]);
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]);
 
     // Make sure they are different specializations
     assert_ne!(specialized_name_i32, specialized_name_tea);
@@ -94,7 +94,7 @@ fn test_complex_generic_function() {
 
     // Verify the function is properly specialized
     assert_eq!(specialized_name, "swap__Normie");
-    assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]);
 
     // Specialize for a different type
     let specialized_name2 = mono_manager
@@ -107,7 +107,7 @@ fn test_complex_generic_function() {
 
     // Verify the second specialization
     assert_eq!(specialized_name2, "swap__Thicc");
-    assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]));
+    assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]);
 
     // We're using our own mono_manager for testing
 
@@ -123,48 +123,48 @@ fn test_complex_generic_function() {
 fn create_generic_swap_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     }];
 
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string()),
+            token: Token::Identifier("IDENT".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "a".to_string()),
+                token: "token".to_string(),
+                value: "a".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("IDENT".to_string()),
+            token: Token::Identifier("IDENT".to_string(),
             name: Identifier {
-                token: "token".to_string()),
-                value: "b".to_string()),
+                token: "token".to_string(),
+                value: "b".to_string(),
             },
             type_name: Box::new(Identifier {
-                token: "token".to_string()),
-                value: "T".to_string()),
+                token: "token".to_string(),
+                value: "T".to_string(),
             }),
         },
     ];
 
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
-    }));
+        token: "token".to_string(),
+        value: "T".to_string(),
+    });
 
     // Create body: { return a; }
     let return_statement = ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: Some(Box::new(Identifier {
-            token: "token".to_string()),
-            value: "a".to_string()),
+            token: "token".to_string(),
+            value: "a".to_string(),
         })),
     };
 
@@ -177,8 +177,8 @@ fn create_generic_swap_function() -> FunctionStatement {
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "swap".to_string()),
+            token: "token".to_string(),
+            value: "swap".to_string(),
         },
         parameters,
         body: body,
@@ -192,35 +192,35 @@ fn create_generic_swap_function() -> FunctionStatement {
 fn create_generic_identity_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     }];
 
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: Token::Identifier("IDENT".to_string()),
+        token: Token::Identifier("IDENT".to_string(),
         name: Identifier {
-            token: "token".to_string()),
-            value: "x".to_string()),
+            token: "token".to_string(),
+            value: "x".to_string(),
         },
         type_name: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "T".to_string()),
+            token: "token".to_string(),
+            value: "T".to_string(),
         }),
     }];
 
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
-    }));
+        token: "token".to_string(),
+        value: "T".to_string(),
+    });
 
     // Create body: { return x; }
     let return_statement = ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: Some(Box::new(Identifier {
-            token: "token".to_string()),
-            value: "x".to_string()),
+            token: "token".to_string(),
+            value: "x".to_string(),
         })),
     };
 
@@ -233,8 +233,8 @@ fn create_generic_identity_function() -> FunctionStatement {
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "identity".to_string()),
+            token: "token".to_string(),
+            value: "identity".to_string(),
         },
         parameters,
         body: body,

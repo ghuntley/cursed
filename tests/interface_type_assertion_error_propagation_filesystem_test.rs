@@ -13,10 +13,10 @@ use cursed::error::Error;
 use cursed::error::SourceLocation;
 use cursed::lexer::Token;
 
-//! Tests for the comprehensive interface type assertion error propagation with filesystem integration
-//!
-//! These tests ensure that the error propagation for interface type assertions with the ? operator
-//! effectively leverages filesystem source location information to generate rich error messages.
+// Tests for the comprehensive interface type assertion error propagation with filesystem integration
+//
+// These tests ensure that the error propagation for interface type assertions with the ? operator
+// effectively leverages filesystem source location information to generate rich error messages.
 
 
 #[path = "common.rs"]
@@ -65,17 +65,17 @@ fn test_comprehensive_error_message_creation() {
     // Create a mock type assertion question
     let expr = MockExpression::new("interface_value".to_string());
     let type_assertion = TypeAssertionQuestion {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Box::new(expr),
-        type_name: "ExpectedType".to_string()),
+        type_name: "ExpectedType".to_string(),
     };
     
     // Create a source location
     let source_location = SourceLocation {
         line: 42,
         column: 10,
-        file: Some("test_file.csd".to_string()),
-        source_line: "interface_value.(ExpectedType)?".to_string()),
+        file: Some("test_file.csd".to_string(),
+        source_line: "interface_value.(ExpectedType)?".to_string(),
     };
     
     // Create a comprehensive error message
@@ -110,24 +110,24 @@ fn test_visual_error_formatting() {
     // Create a mock type assertion question
     let expr = MockExpression::new("interface_value".to_string());
     let type_assertion = TypeAssertionQuestion {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Box::new(expr),
-        type_name: "ExpectedType".to_string()),
+        type_name: "ExpectedType".to_string(),
     };
     
     // Create a source location
     let source_location = SourceLocation {
         line: 42,
         column: 10,
-        file: Some("test_file.csd".to_string()),
-        source_line: "interface_value.(ExpectedType)?".to_string()),
+        file: Some("test_file.csd".to_string(),
+        source_line: "interface_value.(ExpectedType)?".to_string(),
     };
     
     // Create context lines
     let context_lines = vec![
-        (41, "    // Previous line\n".to_string()),
-        (42, "    interface_value.(ExpectedType)? // Error line\n".to_string()),
-        (43, "    // Next line\n".to_string()),
+        (41, "    // Previous line\n".to_string(),
+        (42, "    interface_value.(ExpectedType)? // Error line\n".to_string(),
+        (43, "    // Next line\n".to_string(),
     ];
     
     // Create a visual error

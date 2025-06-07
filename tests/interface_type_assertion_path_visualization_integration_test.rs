@@ -16,9 +16,9 @@ use cursed::codegen::llvm::llvm_code_generator_extensions::ErrorPathExtensions;
 use cursed::codegen::llvm::InterfaceTypeAssertionPathVisualizationAdapter;
 use cursed::lexer::Token;
 
-//! Integration test for interface type assertion path visualization
-//! Verifies that the path visualization system integrates properly
-//! with the interface registry to provide enhanced error messages.
+// Integration test for interface type assertion path visualization
+// Verifies that the path visualization system integrates properly
+// with the interface registry to provide enhanced error messages.
 
 // Initialize standard tracing infrastructure
 
@@ -77,21 +77,21 @@ impl Expression for MockExpression {
 fn setup_simple_test_types() -> (TypeAssertion, TypeAssertion) {
     // Create simple mock expressions for testing
     let valid_assertion = TypeAssertion {
-        token: Token::Identifier("test.csd:10".to_string()),
+        token: Token::Identifier("test.csd:10".to_string(),
         expression: Box::new(MockExpression {
-            token: "token".to_string()),
-            type_name: "Dog".to_string()),
+            token: "token".to_string(),
+            type_name: "Dog".to_string(),
         }),
-        type_name: "Animal".to_string()),
+        type_name: "Animal".to_string(),
     };
     
     let invalid_assertion = TypeAssertion {
-        token: Token::Identifier("test.csd:15".to_string()),
+        token: Token::Identifier("test.csd:15".to_string(),
         expression: Box::new(MockExpression {
-            token: "token".to_string()),
-            type_name: "Animal".to_string()),
+            token: "token".to_string(),
+            type_name: "Animal".to_string(),
         }),
-        type_name: "Plant".to_string()),
+        type_name: "Plant".to_string(),
     };
     
     (valid_assertion, invalid_assertion)

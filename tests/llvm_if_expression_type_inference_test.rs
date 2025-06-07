@@ -17,14 +17,14 @@ use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
 
-//! Tests for if expressions with type inference in the LLVM code generator
+// Tests for if expressions with type inference in the LLVM code generator
 
 
 
 #[test]
 fn test_assignment_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_inference", PathBuf::from("test_assignment_inference.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_inference", PathBuf::from("test_assignment_inference.csd");
 
     // Create a function for testing with float return type
     let f64_type = context.f64_type();
@@ -36,17 +36,17 @@ fn test_assignment_type_inference() {
     
     // Create a variable without explicit type annotation
     let var_name = Identifier {
-        token: "token".to_string()),
-        value: "x".to_string()),
+        token: "token".to_string(),
+        value: "x".to_string(),
     };
     
     // Declare and initialize with integer
     let let_stmt = LetStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(IntegerLiteral {
-            token: "token".to_string()),
+            token: "token".to_string(),
             value: 42,
         })),
     };
@@ -59,12 +59,12 @@ fn test_assignment_type_inference() {
     let assign_expr = InfixExpression {
         token: Token::Assign,
         left: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "x".to_string()),
+            token: "token".to_string(),
+            value: "x".to_string(),
         }),
-        operator: "=".to_string()),
+        operator: "=".to_string(),
         right: Box::new(FloatLiteral {
-            token: "token".to_string()),
+            token: "token".to_string(),
             value: 3.14,
         }),
     };
@@ -83,17 +83,17 @@ fn test_assignment_type_inference() {
     }
     
     // Return a dummy value and verify the module
-    let ret_val = generator.builder().build_return(Some(&generator.context().f64_type().const_float(0.0)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&generator.context().f64_type().const_float(0.0));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
     
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
 }
 
 #[test]
 fn test_assignment_type_coercion() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_coercion", PathBuf::from("test_assignment_coercion.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_coercion", PathBuf::from("test_assignment_coercion.csd");
 
     // Create a function for testing with float return type
     let f64_type = context.f64_type();
@@ -105,17 +105,17 @@ fn test_assignment_type_coercion() {
     
     // Create a variable with explicit float type annotation
     let var_name = Identifier {
-        token: "token".to_string()),
-        value: "x".to_string()),
+        token: "token".to_string(),
+        value: "x".to_string(),
     };
     
     // Declare a float variable with float type annotation
     let let_stmt = LetStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         name: var_name.clone(),
         type_annotation: Some(Token::Meal), // Explicitly float (f64)
         value: Some(Box::new(FloatLiteral {
-            token: "token".to_string()),
+            token: "token".to_string(),
             value: 0.0,
         })),
     };
@@ -131,12 +131,12 @@ fn test_assignment_type_coercion() {
     let assign_expr = InfixExpression {
         token: Token::Assign,
         left: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "x".to_string()),
+            token: "token".to_string(),
+            value: "x".to_string(),
         }),
-        operator: "=".to_string()),
+        operator: "=".to_string(),
         right: Box::new(IntegerLiteral {
-            token: "token".to_string()),
+            token: "token".to_string(),
             value: 42,
         }),
     };
@@ -157,8 +157,8 @@ fn test_assignment_type_coercion() {
     
     // Load the variable's value to verify it's properly coerced
     let load_expr = Identifier {
-        token: "token".to_string()),
-        value: "x".to_string()),
+        token: "token".to_string(),
+        value: "x".to_string(),
     };
     
     let load_result = generator.compile_expression(&load_expr);
@@ -172,17 +172,17 @@ fn test_assignment_type_coercion() {
     assert!(loaded_value.is_float_value(), "Loaded value should be a float after coercion");
     
     // Return the loaded value and verify the module
-    let ret_val = generator.builder().build_return(Some(&loaded_value));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&loaded_value);
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
     
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
 }
 
 #[test]
 fn test_if_expression_with_assignment_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_assignment_inference", PathBuf::from("test_if_assignment_inference.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_assignment_inference", PathBuf::from("test_if_assignment_inference.csd");
 
     // Create a function for testing
     let f64_type = context.f64_type();
@@ -194,31 +194,31 @@ fn test_if_expression_with_assignment_type_inference() {
     
     // Create a condition: true
     let condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
     
     // Create the then expression: 42.0 (explicitly as float)
     let then_expr = FloatLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 42.0,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 99.5 (f64)
     let else_expr = FloatLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 99.5,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -236,7 +236,7 @@ fn test_if_expression_with_assignment_type_inference() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -256,18 +256,18 @@ fn test_if_expression_with_assignment_type_inference() {
     assert!(value.is_float_value(), "Result should be a float value due to type inference");
     
     // Get the result from LLVM - Important: This serves as a terminator for the merge block
-    let ret_val = generator.builder().build_return(Some(&value));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&value);
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
     
     // Verify the module
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
 }
 
 #[test]
 fn test_if_expression_with_mixed_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_mixed_types", PathBuf::from("test_if_mixed_types.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_mixed_types", PathBuf::from("test_if_mixed_types.csd");
 
     // Create a function for testing - use double return type since we expect float result
     let double_type = context.f64_type();
@@ -279,31 +279,31 @@ fn test_if_expression_with_mixed_types() {
     
     // Create a condition: true
     let condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
     
     // Create the then expression: 42 (i32)
     let then_expr = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 42,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 24.5 (f64)
     let else_expr = FloatLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 24.5,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -321,7 +321,7 @@ fn test_if_expression_with_mixed_types() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -341,18 +341,18 @@ fn test_if_expression_with_mixed_types() {
     assert!(value.is_float_value(), "Result should be a float value due to type inference");
     
     // Get the result from LLVM
-    let ret_val = generator.builder().build_return(Some(&value));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&value);
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
     
     // Verify the module
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
 }
 
 #[test]
 fn test_if_expression_with_string_and_int() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_string_int", PathBuf::from("test_if_string_int.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_string_int", PathBuf::from("test_if_string_int.csd");
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -364,31 +364,31 @@ fn test_if_expression_with_string_and_int() {
     
     // Create a condition: true
     let condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
     
     // Create the then expression: string literal
     let then_expr = StringLiteral {
-        token: "token".to_string()),
-        value: "Hello".to_string()),
+        token: "token".to_string(),
+        value: "Hello".to_string(),
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: integer
     let else_expr = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 42,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -406,7 +406,7 @@ fn test_if_expression_with_string_and_int() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),

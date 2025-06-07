@@ -31,41 +31,41 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
     // Create a lexer
     let mut lexer = Lexer::new(input);
     // Create a parser with a mutable reference to the lexer
-    let mut parser = Parser::new(&mut lexer).map_err(|e| e.to_string()?;
+    let mut parser = Parser::new(&mut lexer).map_err(|e| e.to_string())?;
     // Parse the program
-    let program = parser.parse_program().map_err(|e| e.to_string()?;
+    let program = parser.parse_program().map_err(|e| e.to_string())?;
     
     // Check for parser errors
     if !parser.errors().is_empty() {
-        let error_msg = parser.errors().iter().map(|e| e.to_string().collect::<Vec<_>>().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg));
+        let error_msg = parser.errors().iter().map(|e| e.to_string()).collect::<Vec<_>>().join("\n");
+        return Err(format!("Parser errors:\n{}", error_msg);
     }
     
     // Create LLVM context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_program.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone());
+    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone();
     
     // Compile the program
-    code_gen.compile(&program).map_err(|e| e.to_string()?;
+    code_gen.compile(&program).map_err(|e| e.to_string())?;
     
     // Create JIT execution engine
     let execution_engine = code_gen
         .module()
         .create_jit_execution_engine(inkwell::OptimizationLevel::Default)
-        .map_err(|e| e.to_string()?;
+        .map_err(|e| e.to_string())?;
     
     // Initialize the goroutine manager
     cursed::codegen::jit::init_goroutine_manager();
     
     // Create JIT compiler
-    let mut jit_compiler = JitCompiler::new(&context, execution_engine, "_main_main", file_path.clone());
+    let mut jit_compiler = JitCompiler::new(&context, execution_engine, "_main_main", file_path.clone();
     
     // Use existing code_gen to avoid recompilation
     *jit_compiler.code_generator_mut() = Some(code_gen);
     
     // Execute the program
-    let result = jit_compiler.execute().map_err(|e| e.to_string()?;
+    let result = jit_compiler.execute().map_err(|e| e.to_string())?;
     
     // Wait for any goroutines to complete (10ms timeout)
     let _remaining = cursed::codegen::jit::wait_for_goroutines(10);

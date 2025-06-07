@@ -14,15 +14,15 @@ use std::path::PathBuf;
 // Helper function to create a string literal expression
 fn create_string_literal(value: &str) -> Box<dyn Expression> {
     Box::new(StringLiteral {
-        token: "\"string\"".to_string()),
-        value: value.to_string()),
+        token: "\"string\"".to_string(),
+        value: value.to_string(),
     })
 }
 
 // Helper function to create a return statement
 fn create_return_statement(value: Option<Box<dyn Expression>>) -> Box<dyn Statement> {
     Box::new(ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: value,
     })
 }
@@ -43,13 +43,13 @@ fn main() {
     
     // Create case statements
     let monday_case = CaseStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expressions: vec![create_string_literal("Monday")],
         body: create_block_with_return("Start of week"),
     };
     
     let friday_case = CaseStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expressions: vec![create_string_literal("Friday")],
         body: create_block_with_return("End of week"),
     };
@@ -59,7 +59,7 @@ fn main() {
     
     // Create the switch statement
     let switch_stmt = SwitchStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: switch_value,
         cases: vec![monday_case, friday_case],
         default: Some(default_case),

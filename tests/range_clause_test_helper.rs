@@ -1,10 +1,10 @@
 use cursed::error::Error;
 use cursed::object::{Object, ObjectRef};
 
-//! Helper functions for range clause tests
-//!
-//! This module provides utility functions for testing range clause
-//! functionality with both the original and the enhanced implementations.
+// Helper functions for range clause tests
+//
+// This module provides utility functions for testing range clause
+// functionality with both the original and the enhanced implementations.
 
 
 // Use the common test module that includes our standardized test helpers

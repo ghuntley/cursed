@@ -36,25 +36,25 @@ impl MockRegistry {
         let mut extensions = std::collections::HashMap::new();
         
         // Setup a sample interface hierarchy for testing
-        extensions.insert("Dog".to_string()), vec!["Mammal".to_string())]);
-        extensions.insert("Cat".to_string()), vec!["Mammal".to_string())]);
-        extensions.insert("Mammal".to_string()), vec!["Animal".to_string())]);
-        extensions.insert("Bird".to_string()), vec!["Animal".to_string())]);
-        extensions.insert("Reptile".to_string()), vec!["Animal".to_string())]);
-        extensions.insert("Animal".to_string()), vec!["LivingThing".to_string())]);
-        extensions.insert("Plant".to_string()), vec!["LivingThing".to_string())]);
+        extensions.insert("Dog".to_string(), vec!["Mammal".to_string())]);
+        extensions.insert("Cat".to_string(), vec!["Mammal".to_string())]);
+        extensions.insert("Mammal".to_string(), vec!["Animal".to_string())]);
+        extensions.insert("Bird".to_string(), vec!["Animal".to_string())]);
+        extensions.insert("Reptile".to_string(), vec!["Animal".to_string())]);
+        extensions.insert("Animal".to_string(), vec!["LivingThing".to_string())]);
+        extensions.insert("Plant".to_string(), vec!["LivingThing".to_string())]);
         
         // Multiple inheritance
-        extensions.insert("FlyingFish".to_string()), vec!["Fish".to_string()), "Flying".to_string())]);
-        extensions.insert("Fish".to_string()), vec!["Animal".to_string())]);
-        extensions.insert("Flying".to_string()), vec!["MovementType".to_string())]);
+        extensions.insert("FlyingFish".to_string(), vec!["Fish".to_string(), "Flying".to_string())]);
+        extensions.insert("Fish".to_string(), vec!["Animal".to_string())]);
+        extensions.insert("Flying".to_string(), vec!["MovementType".to_string())]);
         
         // More complex relationships for renderer interfaces
-        extensions.insert("Renderer".to_string()), vec!["Component".to_string())]);
-        extensions.insert("AnimatedRenderer".to_string()), vec!["Renderer".to_string())]);
-        extensions.insert("InteractiveRenderer".to_string()), vec!["Renderer".to_string())]);
-        extensions.insert("AdvancedRenderer".to_string()), 
-            vec!["AnimatedRenderer".to_string()), "InteractiveRenderer".to_string())]);
+        extensions.insert("Renderer".to_string(), vec!["Component".to_string())]);
+        extensions.insert("AnimatedRenderer".to_string(), vec!["Renderer".to_string())]);
+        extensions.insert("InteractiveRenderer".to_string(), vec!["Renderer".to_string())]);
+        extensions.insert("AdvancedRenderer".to_string(), 
+            vec!["AnimatedRenderer".to_string(), "InteractiveRenderer".to_string())]);
         
         MockRegistry { extensions }
     }

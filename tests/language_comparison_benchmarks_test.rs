@@ -2,7 +2,7 @@ use cursed::benchmark::language_comparison;
 use cursed::benchmark::metrics::*;
 use tracing::{debug, info};
 
-//! Integration tests for language comparison benchmarks
+// Integration tests for language comparison benchmarks
 
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
@@ -72,5 +72,5 @@ fn test_language_comparison_suite() {
     
     // Ensure we got results
     assert_eq!(results.suite_name, "language_comparison");
-    assert!(!results.results.is_empty());
+    assert!(!results.results.is_empty().is_empty());
 }

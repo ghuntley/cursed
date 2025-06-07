@@ -4,7 +4,7 @@ use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
 
-//! Tests for the improved garbage collector implementation with proper weak reference support
+// Tests for the improved garbage collector implementation with proper weak reference support
 
 
 
@@ -85,15 +85,15 @@ fn test_weak_reference_gc_connection() {
     info!("Starting weak reference GC connection test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a scope for root tracking
-    let _scope_guard = with_gc_scope(gc.clone());
+    let _scope_guard = with_gc_scope(gc.clone();
     debug!("Created scope guard for root tracking");
     
     // Create a test object
-    let test_obj = gc.allocate(TestObject::new(1, "test value"));
+    let test_obj = gc.allocate(TestObject::new(1, "test value");
     debug!(object = ?test_obj, "Created test object");
     
     // Create a weak reference
@@ -128,15 +128,15 @@ fn test_object_finalization() {
     info!("Starting object finalization test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a scope for root tracking
-    let _scope_guard = with_gc_scope(gc.clone());
+    let _scope_guard = with_gc_scope(gc.clone();
     debug!("Created scope guard for root tracking");
     
     // Create a test object that we can track finalization on
-    let mut test_obj = gc.allocate(TestObject::new(1, "finalization test"));
+    let mut test_obj = gc.allocate(TestObject::new(1, "finalization test");
     debug!(object = ?test_obj, "Created test object");
     
     // Ensure we can access the object before finalization
@@ -177,27 +177,27 @@ fn test_circular_references_with_finalization() {
     info!("Starting circular references with finalization test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a scope for root tracking
-    let _scope_guard = with_gc_scope(gc.clone());
+    let _scope_guard = with_gc_scope(gc.clone();
     debug!("Created scope guard for root tracking");
     
     // Create a cycle: obj1 -> obj2 -> obj3 -> obj1
-    let mut obj1 = gc.allocate(TestObject::new(1, "circular1"));
-    let mut obj2 = gc.allocate(TestObject::new(2, "circular2"));
-    let mut obj3 = gc.allocate(TestObject::new(3, "circular3"));
+    let mut obj1 = gc.allocate(TestObject::new(1, "circular1");
+    let mut obj2 = gc.allocate(TestObject::new(2, "circular2");
+    let mut obj3 = gc.allocate(TestObject::new(3, "circular3");
     debug!("Created three test objects for circular reference");
     
     // Create circular references
-    obj1.inner_mut().unwrap().set_next(obj2.clone());
+    obj1.inner_mut().unwrap().set_next(obj2.clone();
     debug!(from = 1, to = 2, "Created first reference");
     
-    obj2.inner_mut().unwrap().set_next(obj3.clone());
+    obj2.inner_mut().unwrap().set_next(obj3.clone();
     debug!(from = 2, to = 3, "Created second reference");
     
-    obj3.inner_mut().unwrap().set_next(obj1.clone());
+    obj3.inner_mut().unwrap().set_next(obj1.clone();
     debug!(from = 3, to = 1, "Created third reference, completing the cycle");
     
     // Get initial stats
@@ -286,18 +286,18 @@ fn test_incremental_collection_with_finalization() {
     };
     debug!(options = ?gc_options, "Creating GC with incremental collection options");
     
-    let gc = Arc::new(GarbageCollector::with_options(gc_options));
+    let gc = Arc::new(GarbageCollector::with_options(gc_options);
     debug!("Created garbage collector with incremental collection");
     
     // Create a scope for root tracking
-    let _scope_guard = with_gc_scope(gc.clone());
+    let _scope_guard = with_gc_scope(gc.clone();
     debug!("Created scope guard for root tracking");
     
     // Create a set of objects with connections
     debug!("Creating objects for collection test");
     let mut objects = Vec::new();
     for i in 0..20 {
-        objects.push(gc.allocate(TestObject::new(i, format!("object-{}", i))));
+        objects.push(gc.allocate(TestObject::new(i, format!("object-{}", i)));
     }
     debug!(object_count = objects.len(), "Created objects");
     
@@ -305,14 +305,14 @@ fn test_incremental_collection_with_finalization() {
     debug!("Creating connections between objects");
     for i in 0..objects.len() {
         // Connect each object to the next one in a ring structure
-        let next_idx = (i + 1) % objects.len();
-        objects[i].inner_mut().unwrap().set_next(objects[next_idx].clone());
+        let next_idx = (i + 1) % objects.len());
+        objects[i].inner_mut().unwrap().set_next(objects[next_idx].clone();
         trace!(from = i, to = next_idx, "Created connection");
     }
     debug!("Completed creating circular reference structure");
     
     // Create weak references to track object lifetime
-    let weak_refs: Vec<_> = objects.iter().map(|obj| obj.downgrade()).collect();
+    let weak_refs: Vec<_> = objects.iter().map(|obj| obj.downgrade()).collect());
     debug!(weak_refs_count = weak_refs.len(), "Created weak references to track objects");
     
     // Drop all strong references

@@ -72,7 +72,7 @@ fn test_basic_interface_type_assertion() {
     "#;
     
     // Run the test
-    let result = run_jit_test(input).unwrap();
+    let result = run_jit_test(input).unwrap());
     
     // Should return true since the type assertion is valid
     assert_eq!(result.as_bool().unwrap(), true);
@@ -117,7 +117,7 @@ fn test_interface_type_assertion_failure() {
     "#;
     
     // Run the test
-    let result = run_jit_test(input).unwrap();
+    let result = run_jit_test(input).unwrap());
     
     // Should return false since the type assertion is invalid
     assert_eq!(result.as_bool().unwrap(), false);
@@ -153,7 +153,7 @@ fn test_interface_type_assertion_null_check() {
     "#;
     
     // Run the test
-    let result = run_jit_test(input).unwrap();
+    let result = run_jit_test(input).unwrap());
     
     // Should return false since the interface value is null
     assert_eq!(result.as_bool().unwrap(), false);

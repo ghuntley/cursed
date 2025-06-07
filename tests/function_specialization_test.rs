@@ -11,7 +11,7 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Test for proper function specialization implementation
+// Test for proper function specialization implementation
 
 
 /// Test the specialization of a simple identity function with different types
@@ -28,24 +28,24 @@ fn test_identity_function_specialization() {
     // Create generic function calls with different type parameters
     let int_call = create_generic_call(&identity_function.name.value, vec![Type::Normie], vec![Box::new(
         IntegerLiteral {
-            token: "token".to_string()),
+            token: "token".to_string(),
             value: 42,
         }
     )]);
     
     let string_call = create_generic_call(&identity_function.name.value, vec![Type::Tea], vec![Box::new(
         StringLiteral {
-            token: "token".to_string()),
-            value: "hello".to_string()),
+            token: "token".to_string(),
+            value: "hello".to_string(),
         }
     )]);
     
     // Compile the generic function calls
     let result1 = code_gen.compile_generic_call_expression(&int_call);
-    assert!(result1.is_ok(), "Failed to compile integer identity function: {:?}", result1.err());
+    assert!(result1.is_ok(), "Failed to compile integer identity function: {:?}", result1.err();
     
     let result2 = code_gen.compile_generic_call_expression(&string_call);
-    assert!(result2.is_ok(), "Failed to compile string identity function: {:?}", result2.err());
+    assert!(result2.is_ok(), "Failed to compile string identity function: {:?}", result2.err();
     
     // Verify the module has the specialized functions
     let module = code_gen.module();
@@ -59,10 +59,10 @@ fn test_identity_function_specialization() {
     
     // Verify the functions can be executed (can't actually run them in this test,
     // but we can check that they've been properly verified)
-    let int_function = module.get_function(&int_specialized_name).unwrap();
+    let int_function = module.get_function(&int_specialized_name).unwrap());
     assert!(int_function.verify(true).is_ok(), "Integer function verification failed");
     
-    let string_function = module.get_function(&string_specialized_name).unwrap();
+    let string_function = module.get_function(&string_specialized_name).unwrap());
     assert!(string_function.verify(true).is_ok(), "String function verification failed");
 }
 
@@ -70,35 +70,35 @@ fn test_identity_function_specialization() {
 fn create_generic_identity_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
+        token: "token".to_string(),
+        value: "T".to_string(),
     }];
     
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: Token::Identifier("param".to_string()),
+        token: Token::Identifier("param".to_string(),
         name: Identifier {
-            token: "token".to_string()),
-            value: "x".to_string()),
+            token: "token".to_string(),
+            value: "x".to_string(),
         },
         type_name: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "T".to_string()),
+            token: "token".to_string(),
+            value: "T".to_string(),
         }),
     }];
     
     // Create return type T
     let return_type = Some(Box::new(Identifier {
-        token: "token".to_string()),
-        value: "T".to_string()),
-    }));
+        token: "token".to_string(),
+        value: "T".to_string(),
+    });
     
     // Create body: { return x; }
     let return_statement = ReturnStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         return_value: Some(Box::new(Identifier {
-            token: "token".to_string()),
-            value: "x".to_string()),
+            token: "token".to_string(),
+            value: "x".to_string(),
         })),
     };
     
@@ -111,8 +111,8 @@ fn create_generic_identity_function() -> FunctionStatement {
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: "identity".to_string()),
+            token: "token".to_string(),
+            value: "identity".to_string(),
         },
         params: parameters,
         body,
@@ -129,10 +129,10 @@ fn create_generic_call(
     args: Vec<Box<dyn cursed::ast::Expression>>,
 ) -> CallExpression {
     CallExpression {
-        token: "token".to_string()),
+        token: "token".to_string(),
         function: Box::new(Identifier {
-            token: "token".to_string()),
-            value: function_name.to_string()),
+            token: "token".to_string(),
+            value: function_name.to_string(),
         }),
         args,
         type_args,

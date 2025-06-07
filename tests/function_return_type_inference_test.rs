@@ -16,18 +16,18 @@ use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
 
-//! Tests for function return type inference in the LLVM code generator
+// Tests for function return type inference in the LLVM code generator
 
 
 #[test]
 fn test_function_return_type_inference_int() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_int", PathBuf::from("test_function_return_int.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_int", PathBuf::from("test_function_return_int.csd");
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
         token: "token".to_string().token_literal(),
-        value: "test_fn".to_string()),
+        value: "test_fn".to_string(),
     };
     
     // Return statement with integer literal
@@ -100,21 +100,21 @@ fn test_function_return_type_inference_int() {
     // Skip module verification for now - this will be confirmed once full type inference is implemented
     // The current implementations deliberately have a mismatch between return type and return value
     // for demonstration purposes
-    let verification = generator.module().verify();
+    let verification = generator.module().verify());
     if verification.is_err() {
-        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err());
+        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err();
     }
 }
 
 #[test]
 fn test_function_return_type_inference_float() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_float", PathBuf::from("test_function_return_float.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_float", PathBuf::from("test_function_return_float.csd");
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
         token: "token".to_string().token_literal(),
-        value: "test_fn".to_string()),
+        value: "test_fn".to_string(),
     };
     
     // Return statement with float literal
@@ -187,21 +187,21 @@ fn test_function_return_type_inference_float() {
     // Skip module verification for now - this will be confirmed once full type inference is implemented
     // The current implementations deliberately have a mismatch between return type and return value
     // for demonstration purposes
-    let verification = generator.module().verify();
+    let verification = generator.module().verify());
     if verification.is_err() {
-        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err());
+        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err();
     }
 }
 
 #[test]
 fn test_function_return_type_inference_mixed() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_mixed", PathBuf::from("test_function_return_mixed.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_mixed", PathBuf::from("test_function_return_mixed.csd");
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
         token: "token".to_string().token_literal(),
-        value: "test_fn".to_string()),
+        value: "test_fn".to_string(),
     };
     
     // Create a condition for if statement
@@ -233,7 +233,7 @@ fn test_function_return_type_inference_mixed() {
         token: Token::new(TokenType::If, "if").token_literal(),
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: "token".to_string()),
+            token: "token".to_string(),
             statements: vec![Box::new(return_int)],
         }),
         alternative: Some(Box::new(BlockStatement {
@@ -303,8 +303,8 @@ fn test_function_return_type_inference_mixed() {
     // Skip module verification for now - this will be confirmed once full type inference is implemented
     // The current implementations deliberately have a mismatch between return type and return value
     // for demonstration purposes
-    let verification = generator.module().verify();
+    let verification = generator.module().verify());
     if verification.is_err() {
-        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err());
+        println!("Expected verification error due to type mismatch (will be fixed with full implementation): {:?}", verification.err();
     }
 }

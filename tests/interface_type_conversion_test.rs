@@ -1,10 +1,10 @@
 use cursed::error::Error;
 use crate::common;
 
-//! Tests for interface type assertions and conversions
-//!
-//! This module tests the ability to assert that an interface value is of a specific
-//! concrete type and to convert an interface value back to a concrete type.
+// Tests for interface type assertions and conversions
+//
+// This module tests the ability to assert that an interface value is of a specific
+// concrete type and to convert an interface value back to a concrete type.
 
 
 #[path = "common.rs"]
@@ -184,7 +184,7 @@ fn test_multiple_interface_implementations() {
     
     match common::run_jit_test(code) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(84));
+            assert_eq!(result.as_i64(), Some(84);
         },
         Err(e) => panic!("Test failed: {}", e),
     }

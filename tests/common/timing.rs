@@ -14,7 +14,7 @@ impl Timer {
     /// Create a new timer with the given operation name
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string()),
+            name: name.to_string(),
             start: Instant::now(),
         }
     }

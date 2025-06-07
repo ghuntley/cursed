@@ -1,7 +1,7 @@
-//! Test helpers for CURSED test suite
-//! 
-//! Provides common utilities for testing, including tracing setup
-//! and assertion helpers specifically designed for tests.
+// Test helpers for CURSED test suite
+// 
+// Provides common utilities for testing, including tracing setup
+// and assertion helpers specifically designed for tests.
 
 // Re-export tracing for tests
 pub use tracing::{debug, error, info, trace, warn};

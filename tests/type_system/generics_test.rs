@@ -15,7 +15,7 @@ fn test_generic_type_instantiation() {
     instantiator.add_type_param("U", Type::Tea);
     
     // Create a generic type: Box[T]
-    let box_t = Type::Struct("Box".to_string()), vec![Box::new(Type::TypeParam("T".to_string())]);
+    let box_t = Type::Struct("Box".to_string(), vec![Box::new(Type::TypeParam("T".to_string())]);
     
     // Instantiate the generic type
     let box_normie = instantiator.instantiate_type(&box_t).unwrap();
@@ -32,10 +32,10 @@ fn test_generic_type_instantiation() {
     
     // Create a more complex generic type: Pair[T, U]
     let pair_t_u = Type::Struct(
-        "Pair".to_string()), 
+        "Pair".to_string(), 
         vec![
-            Box::new(Type::TypeParam("T".to_string())),
-            Box::new(Type::TypeParam("U".to_string())),
+            Box::new(Type::TypeParam("T".to_string(),
+            Box::new(Type::TypeParam("U".to_string(),
         ]
     );
     
@@ -55,7 +55,7 @@ fn test_generic_type_instantiation() {
     
     // Test nested generics: Box[Pair[T, U]]
     let box_pair = Type::Struct(
-        "Box".to_string()), 
+        "Box".to_string(), 
         vec![Box::new(pair_t_u)]
     );
     
@@ -137,7 +137,7 @@ fn test_generic_function_instantiation() {
     // and parameters (items []T, transformer slay(T) U) -> []U
     
     // Create the parameter types
-    let items_type = Type::Slice(Box::new(Type::TypeParam("T".to_string()));
+    let items_type = Type::Slice(Box::new(Type::TypeParam("T".to_string());
     let transformer_param_types = vec![Box::new(Type::TypeParam("T".to_string())];
     let transformer_return_type = Box::new(Type::TypeParam("U".to_string());
     let transformer_type = Type::Function(transformer_param_types, transformer_return_type);
@@ -146,7 +146,7 @@ fn test_generic_function_instantiation() {
     let param_types = vec![Box::new(items_type), Box::new(transformer_type)];
     
     // Create the function return type
-    let return_type = Box::new(Type::Slice(Box::new(Type::TypeParam("U".to_string())));
+    let return_type = Box::new(Type::Slice(Box::new(Type::TypeParam("U".to_string()));
     
     // Create the function type
     let function_type = Type::Function(param_types, return_type);

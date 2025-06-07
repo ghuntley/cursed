@@ -104,7 +104,7 @@ mod tests {
         let _ = gen.register_type_with_runtime_info(1002, "Employee");
         
         // Create an interface value struct type
-        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default());
+        let i8_ptr_type = context.i8_type().ptr_type(AddressSpace::default();
         let interface_struct_type = context.struct_type(&[i8_ptr_type.into(), i8_ptr_type.into()], false);
         
         // Create a vtable with type ID

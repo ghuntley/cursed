@@ -5,7 +5,7 @@ use cursed::memory::test_environment::reset_test_environment;
 use cursed::memory::weak::{Weak, WeakRegistry};
 use tracing::{debug, error, info, instrument, trace, warn};
 
-//! Tests for the improved weak reference implementation
+// Tests for the improved weak reference implementation
 
 
 
@@ -31,7 +31,7 @@ impl TestObject {
     
     // Create a thread-safe version for testing
     fn new_thread_safe(id: usize) -> ThreadSafeTraceable<Self> {
-        let boxed = Box::new(Self::new(id));
+        let boxed = Box::new(Self::new(id);
         let ptr = unsafe { std::ptr::NonNull::new_unchecked(Box::into_raw(boxed)) };
         ThreadSafeTraceable::new(ptr)
     }

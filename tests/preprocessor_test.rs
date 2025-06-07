@@ -79,7 +79,7 @@ fn test_malformed_generic_syntax() {
     
     if let Err(err) = result {
         let err_message = format!("{}", err); // Convert the error to string
-        assert!(err_message.contains("Unclosed type parameter"));
+        assert!(err_message.contains("Unclosed type parameter");
     }
 }
 

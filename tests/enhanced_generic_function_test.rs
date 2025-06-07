@@ -10,7 +10,7 @@ use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-//! Tests for enhanced generic function monomorphization
+// Tests for enhanced generic function monomorphization
 
 
 /// Helper function to create a generic function AST
@@ -24,8 +24,8 @@ fn create_generic_function(
     let type_parameters: Vec<Identifier> = type_params
         .iter()
         .map(|param| Identifier {
-            token: "token".to_string()),
-            value: param.to_string()),
+            token: "token".to_string(),
+            value: param.to_string(),
         })
         .collect();
 
@@ -36,14 +36,14 @@ fn create_generic_function(
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
             cursed::ast::ParameterStatement {
-                token: Token::Identifier("IDENT".to_string()),
+                token: Token::Identifier("IDENT".to_string(),
                 name: Identifier {
-                    token: "token".to_string()),
+                    token: "token".to_string(),
                     value: param_name,
                 },
                 type_name: Box::new(Identifier {
-                    token: "token".to_string()),
-                    value: param_type.to_string()),
+                    token: "token".to_string(),
+                    value: param_type.to_string(),
                 }),
             }
         })
@@ -51,8 +51,8 @@ fn create_generic_function(
 
     // Create return type expression
     let return_type_expr = Box::new(Identifier {
-        token: "token".to_string()),
-        value: return_type.to_string()),
+        token: "token".to_string(),
+        value: return_type.to_string(),
     }) as Box<dyn Expression>;
 
     // Create function body (empty for this test)
@@ -65,8 +65,8 @@ fn create_generic_function(
     FunctionStatement {
         token: Token::Slay,
         name: Identifier {
-            token: "token".to_string()),
-            value: name.to_string()),
+            token: "token".to_string(),
+            value: name.to_string(),
         },
         parameters,
         body,
@@ -91,7 +91,7 @@ fn test_specialization_with_primitive_types() {
         "identity",                        // Function name
         vec!["T"],                         // Type parameters
         vec![Type::TypeParam("T".to_string())], // Parameter types
-        Type::TypeParam("T".to_string()),  // Return type
+        Type::TypeParam("T".to_string(),  // Return type
     );
     
     // Test specializations with different types
@@ -132,13 +132,13 @@ fn test_multiple_type_parameter_specialization() {
         "makePair",              // Function name
         vec!["T", "U"],          // Type parameters
         vec![                   // Parameter types
-            Type::TypeParam("T".to_string()),
+            Type::TypeParam("T".to_string(),
             Type::TypeParam("U".to_string()
         ],
         Type::Struct(           // Return type is a Pair<T, U>
-            "Pair".to_string()),
+            "Pair".to_string(),
             vec![
-                Box::new(Type::TypeParam("T".to_string())),
+                Box::new(Type::TypeParam("T".to_string(),
                 Box::new(Type::TypeParam("U".to_string())
             ]
         ),
@@ -178,7 +178,7 @@ fn test_specialization_caching() {
         "process",
         vec!["T"],
         vec![Type::TypeParam("T".to_string())],
-        Type::TypeParam("T".to_string()),
+        Type::TypeParam("T".to_string(),
     );
     
     // First specialization
@@ -200,6 +200,6 @@ fn test_specialization_caching() {
     
     // There might be other functions in the module, but we should have exactly
     // one specialized function for our generic function
-    let function_exists = code_gen.module().get_function(&name1).is_some();
+    let function_exists = code_gen.module().get_function(&name1).is_some());
     assert!(function_exists, "Specialized function should exist");
 }

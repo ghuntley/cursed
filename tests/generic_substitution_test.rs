@@ -2,7 +2,7 @@ use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::core::type_checker::Type;
 use std::collections::HashMap;
 
-//! Tests for the enhanced generic parameter substitution
+// Tests for the enhanced generic parameter substitution
 
 
 #[test]
@@ -12,7 +12,7 @@ fn test_simple_parameter_substitution() {
     
     // Define a simple generic type: Vec<T>
     let vec_type = Type::Struct(
-        "Vec".to_string()),
+        "Vec".to_string(),
         vec![Box::new(Type::TypeParam("T".to_string())]
     );
     
@@ -20,7 +20,7 @@ fn test_simple_parameter_substitution() {
     instantiator.add_type_param("T", Type::Normie);
     
     // Instantiate the type
-    let concrete_type = instantiator.instantiate_type(&vec_type).unwrap();
+    let concrete_type = instantiator.instantiate_type(&vec_type).unwrap());
     
     // Verify the result is Vec<Normie>
     if let Type::Struct(name, type_args) = concrete_type {
@@ -41,9 +41,9 @@ fn test_nested_type_parameter_substitution() {
     
     // Define a nested generic type: Result<T, E>
     let result_type = Type::Struct(
-        "Result".to_string()),
+        "Result".to_string(),
         vec![
-            Box::new(Type::TypeParam("T".to_string())),
+            Box::new(Type::TypeParam("T".to_string(),
             Box::new(Type::TypeParam("E".to_string())
         ]
     );
@@ -51,12 +51,12 @@ fn test_nested_type_parameter_substitution() {
     // Add type mappings
     instantiator.add_type_param("T", Type::Tea);
     instantiator.add_type_param("E", Type::Struct(
-        "Error".to_string()),
+        "Error".to_string(),
         vec![Box::new(Type::Tea)]
-    ));
+    );
     
     // Instantiate the type
-    let concrete_type = instantiator.instantiate_type(&result_type).unwrap();
+    let concrete_type = instantiator.instantiate_type(&result_type).unwrap());
     
     // Verify the result is Result<Tea, Error<Tea>>
     if let Type::Struct(name, type_args) = concrete_type {
@@ -88,13 +88,13 @@ fn test_recursive_generic_type() {
     
     // Define a recursive generic type: TreeNode<T>
     let tree_node_type = Type::Struct(
-        "TreeNode".to_string()),
+        "TreeNode".to_string(),
         vec![Box::new(Type::TypeParam("T".to_string())]
     );
     
     // Create a type that refers to itself: TreeNode<TreeNode<Normie>>
     let recursive_type = Type::Struct(
-        "TreeNode".to_string()),
+        "TreeNode".to_string(),
         vec![Box::new(tree_node_type.clone())]
     );
     
@@ -102,7 +102,7 @@ fn test_recursive_generic_type() {
     instantiator.add_type_param("T", Type::Normie);
     
     // Instantiate the outer type (should remain TreeNode<TreeNode<Normie>>)
-    let concrete_type = instantiator.instantiate_type(&recursive_type).unwrap();
+    let concrete_type = instantiator.instantiate_type(&recursive_type).unwrap());
     
     // Verify the result is TreeNode<TreeNode<Normie>>
     if let Type::Struct(name, type_args) = concrete_type {
@@ -135,15 +135,15 @@ fn test_complex_nested_generics() {
     
     // Define Map<K, V>
     let map_type = Type::Map(
-        Box::new(Type::TypeParam("K".to_string())),
+        Box::new(Type::TypeParam("K".to_string(),
         Box::new(Type::TypeParam("V".to_string())
     );
     
     // Define a complex nested type: Map<K, List<V>>
     let nested_map_type = Type::Map(
-        Box::new(Type::TypeParam("K".to_string())),
+        Box::new(Type::TypeParam("K".to_string(),
         Box::new(Type::Struct(
-            "List".to_string()),
+            "List".to_string(),
             vec![Box::new(Type::TypeParam("V".to_string())]
         ))
     );
@@ -153,7 +153,7 @@ fn test_complex_nested_generics() {
     instantiator.add_type_param("V", Type::Normie);
     
     // Instantiate the type
-    let concrete_type = instantiator.instantiate_type(&nested_map_type).unwrap();
+    let concrete_type = instantiator.instantiate_type(&nested_map_type).unwrap());
     
     // Verify the result is Map<Tea, List<Normie>>
     if let Type::Map(key_type, value_type) = concrete_type {

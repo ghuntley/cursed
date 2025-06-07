@@ -2,7 +2,7 @@ use cursed::stdlib::quick_test;
 use cursed::object::Object;
 use std::sync::Arc;
 
-//! Standalone test for the quick_test module
+// Standalone test for the quick_test module
 
 // Temporarily skip this test module since we have conflicting implementations
 // TODO: Properly integrate the two implementations
@@ -21,11 +21,11 @@ fn test_quick_test_random_generation() {
     
     // Test random boolean generation
     let bool_val = quick_test::boolean();
-    assert!(matches!(bool_val, Object::Boolean(_)));
+    assert!(matches!(bool_val, Object::Boolean(_));
     
     // Test random string generation
     let string_val = quick_test::string();
-    assert!(matches!(string_val, Object::String(_)));
+    assert!(matches!(string_val, Object::String(_));
     
     // Test random array generation
     let array_val = quick_test::int_array(3, 7, 0, 100);
@@ -64,11 +64,11 @@ fn test_property_testing() {
     // Mock property and generator functions
     // The property will check if a number is even
     let mock_property = Object::Builtin {
-        name: "is_even".to_string()),
+        name: "is_even".to_string(),
         function: |args: &[Rc<Object>]| {
             if let Some(arg) = args.get(0) {
                 if let Object::Integer(n) = **arg {
-                    return Ok(Arc::new(Object::Boolean(n % 2 == 0)));
+                    return Ok(Arc::new(Object::Boolean(n % 2 == 0));
                 }
             }
             Ok(Arc::new(Object::Boolean(false)))
@@ -77,7 +77,7 @@ fn test_property_testing() {
     
     // The generator will create even numbers (which should satisfy the property)
     let mock_generator = Object::Builtin {
-        name: "even_number_generator".to_string()),
+        name: "even_number_generator".to_string(),
         function: |_args: &[Rc<Object>]| {
             Ok(Arc::new(Object::Integer(2)))
         },

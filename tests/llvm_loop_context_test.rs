@@ -10,7 +10,7 @@ use std::path::PathBuf;
 #[ignore = "Needs trait impl for control_flow"]
 fn test_loop_context_management() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
 
     // Create a function for testing
     let void_type = context.void_type();
@@ -31,7 +31,7 @@ fn test_loop_context_management() {
     
     // Add terminators to all blocks to avoid verification errors
     // Save current position
-    let current_block = generator.builder().get_insert_block().unwrap();
+    let current_block = generator.builder().get_insert_block().unwrap());
     
     // Add return to block1
     generator.builder().position_at_end(block1);
@@ -46,7 +46,7 @@ fn test_loop_context_management() {
     
     // Push the loop context with separate blocks
     let loop_context = LoopContext {
-        name: "test_loop".to_string()),
+        name: "test_loop".to_string(),
         break_block: block2,
         continue_block: block1,
     };
@@ -78,7 +78,7 @@ fn test_loop_context_management() {
     generator.builder().build_return(None).expect("Failed to build return");
     
     // Verify module
-    let verify_result = generator.module().verify();
+    let verify_result = generator.module().verify());
     assert!(
         verify_result.is_ok(),
         "Module verification failed: {:?}",

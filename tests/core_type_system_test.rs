@@ -52,18 +52,18 @@ mod core_type_system_tests {
         
         // Create test expressions
         let ident = Box::new(Identifier {
-            token: "token".to_string()),
-            value: "normie".to_string()),
+            token: "token".to_string(),
+            value: "normie".to_string(),
         }) as Box<dyn Expression>;
         
         let string_literal = Box::new(StringLiteral {
-            token: "token".to_string()),
-            value: "tea".to_string()),
+            token: "token".to_string(),
+            value: "tea".to_string(),
         }) as Box<dyn Expression>;
         
         // Test the implementation that was a placeholder
-        let result1 = instantiator.expression_to_type(ident.as_ref());
-        let result2 = instantiator.expression_to_type(string_literal.as_ref());
+        let result1 = instantiator.expression_to_type(ident.as_ref();
+        let result2 = instantiator.expression_to_type(string_literal.as_ref();
         
         // Assert that we get proper types now instead of just Unknown
         assert!(result1.is_ok());

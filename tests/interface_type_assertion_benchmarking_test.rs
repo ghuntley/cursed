@@ -5,10 +5,10 @@ use cursed::lexer::Token;
 use common::tracing::setup as init_tracing;
 use common::timing::Timer;
 
-//! Test for the interface type assertion benchmarking capabilities
-//!
-//! This test validates the benchmarking system for interface type assertions,
-//! demonstrating how to use it for performance analysis and optimization.
+// Test for the interface type assertion benchmarking capabilities
+//
+// This test validates the benchmarking system for interface type assertions,
+// demonstrating how to use it for performance analysis and optimization.
 
 
 use cursed::{
@@ -31,9 +31,9 @@ const BENCHMARK_ITERATIONS: usize = 10; // Reduced for tests, use higher values 
 /// Helper to create a test assertion
 fn create_test_assertion(type_name: &str) -> TypeAssertion {
     TypeAssertion {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Box::new(cursed::ast::expressions::Empty{}),
-        type_name: type_name.to_string()),
+        type_name: type_name.to_string(),
     }
 }
 
@@ -42,7 +42,7 @@ fn create_code_generator<'ctx>(
     context: &'ctx Context,
 ) -> LlvmCodeGenerator<'ctx> {
     // Initialize LLVM targets
-    Target::initialize_all(&InitializationConfig::default());
+    Target::initialize_all(&InitializationConfig::default();
     
     // Create module and builder
     let module = context.create_module("benchmark_test");
@@ -50,7 +50,7 @@ fn create_code_generator<'ctx>(
     
     // Set up a target machine for the module
     let target_triple = TargetMachine::get_default_triple();
-    let target = Target::from_triple(&target_triple).unwrap();
+    let target = Target::from_triple(&target_triple).unwrap());
     let target_machine = target.create_target_machine(
         &target_triple,
         "generic",
@@ -61,7 +61,7 @@ fn create_code_generator<'ctx>(
     ).unwrap();
     
     // Set up the data layout
-    let data_layout = target_machine.get_target_data().get_data_layout();
+    let data_layout = target_machine.get_target_data().get_data_layout());
     module.set_data_layout(&data_layout);
     
     // Create a test function
@@ -73,7 +73,7 @@ fn create_code_generator<'ctx>(
     
     // Create a registry with LRU cache
     let base_registry = InterfaceRegistry::new();
-    let registry = Box::new(LruCachedRegistry::new(base_registry));
+    let registry = Box::new(LruCachedRegistry::new(base_registry);
     
     // Create the code generator
     LlvmCodeGenerator::new(
@@ -105,11 +105,11 @@ fn test_basic_benchmarking() {
     // Run a simple operation to benchmark
     let _duration = benchmark.benchmark(|| {
         // Simulate work
-        std::thread::sleep(Duration::from_micros(10));
+        std::thread::sleep(Duration::from_micros(10);
     });
     
     // Check that we recorded a duration
-    assert!(!benchmark.compute_stats().durations.is_empty());
+    assert!(!benchmark.compute_stats().durations.is_empty();
     
     // Report the results
     benchmark.report();
@@ -205,12 +205,12 @@ fn test_benchmark_stats() {
     
     // Verify statistics
     assert_eq!(stats.iterations, 5);
-    assert_eq!(stats.min_duration, Duration::from_micros(100));
-    assert_eq!(stats.max_duration, Duration::from_micros(150));
+    assert_eq!(stats.min_duration, Duration::from_micros(100);
+    assert_eq!(stats.max_duration, Duration::from_micros(150);
     
     // Check average calculation
     let expected_avg = Duration::from_micros(122); // (100+150+120+110+130)/5 = 122
-    assert_eq!(stats.avg_duration.as_micros(), expected_avg.as_micros());
+    assert_eq!(stats.avg_duration.as_micros(), expected_avg.as_micros();
     
     // Generate and check metrics
     let metrics = stats.as_metrics();

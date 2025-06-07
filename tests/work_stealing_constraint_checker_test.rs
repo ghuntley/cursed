@@ -68,20 +68,20 @@ fn test_work_stealing_vs_standard_performance() {
     }
     
     // Test baseline: Use standard async constraint checker
-    let registry_arc = Arc::new(registry.clone());
-    let standard_checker = AsyncConstraintChecker::new(Arc::clone(&registry_arc));
+    let registry_arc = Arc::new(registry.clone();
+    let standard_checker = AsyncConstraintChecker::new(Arc::clone(&registry_arc);
     
     let standard_start = std::time::Instant::now();
-    let standard_results = standard_checker.check_constraints_parallel(constraints.clone());
+    let standard_results = standard_checker.check_constraints_parallel(constraints.clone();
     let standard_duration = standard_start.elapsed();
     
     println!("Standard checker processed {} constraints in {:?}", standard_results.len(), standard_duration);
     
     // Test work stealing implementation
-    let work_stealing_checker = WorkStealingConstraintChecker::new(Arc::clone(&registry_arc));
+    let work_stealing_checker = WorkStealingConstraintChecker::new(Arc::clone(&registry_arc);
     
     let ws_start = std::time::Instant::now();
-    let ws_results = work_stealing_checker.check_constraints_parallel(constraints.clone());
+    let ws_results = work_stealing_checker.check_constraints_parallel(constraints.clone();
     let ws_duration = ws_start.elapsed();
     
     println!("Work stealing checker processed {} constraints in {:?}", ws_results.len(), ws_duration);
@@ -103,7 +103,7 @@ fn test_work_stealing_vs_standard_performance() {
     
     // Test the extension trait implementation
     let extension_start = std::time::Instant::now();
-    let extension_results = registry.check_constraints_work_stealing(constraints.clone());
+    let extension_results = registry.check_constraints_work_stealing(constraints.clone();
     let extension_duration = extension_start.elapsed();
     
     println!("Extension trait processed {} constraints in {:?}", extension_results.len(), extension_duration);
@@ -136,7 +136,7 @@ fn test_work_stealing_unbalanced_workload() {
             // Simulate slow checks for certain types
             if interface_name == "SlowInterface" {
                 // Simulate a long-running check
-                std::thread::sleep(Duration::from_millis(50));
+                std::thread::sleep(Duration::from_millis(50);
                 Ok(true)
             } else {
                 // Normal speed check
@@ -171,24 +171,24 @@ fn test_work_stealing_unbalanced_workload() {
     }
     
     // Randomize the order of constraints
-    constraints.shuffle(&mut thread_rng());
+    constraints.shuffle(&mut thread_rng();
     
     let registry_arc = Arc::new(registry);
     
     // Test standard vs work stealing implementation
-    let standard_checker = AsyncConstraintChecker::new(Arc::clone(&registry_arc));
-    let work_stealing_checker = WorkStealingConstraintChecker::new(Arc::clone(&registry_arc));
+    let standard_checker = AsyncConstraintChecker::new(Arc::clone(&registry_arc);
+    let work_stealing_checker = WorkStealingConstraintChecker::new(Arc::clone(&registry_arc);
     
     // Test standard implementation
     println!("Testing standard implementation with unbalanced workload...");
     let standard_start = std::time::Instant::now();
-    let _ = standard_checker.check_constraints_parallel(constraints.clone());
+    let _ = standard_checker.check_constraints_parallel(constraints.clone();
     let standard_duration = standard_start.elapsed();
     
     // Test work stealing implementation
     println!("Testing work stealing implementation with unbalanced workload...");
     let ws_start = std::time::Instant::now();
-    let _ = work_stealing_checker.check_constraints_parallel(constraints.clone());
+    let _ = work_stealing_checker.check_constraints_parallel(constraints.clone();
     let ws_duration = ws_start.elapsed();
     
     println!("Standard implementation took: {:?}", standard_duration);
@@ -213,31 +213,31 @@ fn test_generic_constraint_checking_with_work_stealing() {
     
     // Register generic types with constraints
     registry.register_generic_implementation(
-        "Collection".to_string()),
+        "Collection".to_string(),
         vec!["T".to_string())],
-        "Container".to_string()),
-        vec![("T".to_string()), "Comparable".to_string())]
+        "Container".to_string(),
+        vec![("T".to_string(), "Comparable".to_string())]
     );
     
     registry.register_generic_implementation(
-        "Map".to_string()),
-        vec!["K".to_string()), "V".to_string())],
-        "Container".to_string()),
+        "Map".to_string(),
+        vec!["K".to_string(), "V".to_string())],
+        "Container".to_string(),
         vec![
-            ("K".to_string()), "Comparable".to_string()),
-            ("V".to_string()), "Serializable".to_string()
+            ("K".to_string(), "Comparable".to_string(),
+            ("V".to_string(), "Serializable".to_string()
         ]
     );
     
     registry.register_generic_implementation(
-        "ComplexStructure".to_string()),
-        vec!["A".to_string()), "B".to_string()), "C".to_string()), "D".to_string())],
-        "Serializable".to_string()),
+        "ComplexStructure".to_string(),
+        vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string())],
+        "Serializable".to_string(),
         vec![
-            ("A".to_string()), "Comparable".to_string()),
-            ("B".to_string()), "Container".to_string()),
-            ("C".to_string()), "Numeric".to_string()),
-            ("D".to_string()), "Serializable".to_string()
+            ("A".to_string(), "Comparable".to_string(),
+            ("B".to_string(), "Container".to_string(),
+            ("C".to_string(), "Numeric".to_string(),
+            ("D".to_string(), "Serializable".to_string()
         ]
     );
     
@@ -249,11 +249,11 @@ fn test_generic_constraint_checking_with_work_stealing() {
     // Test with Collection<String>
     let collection_type_args = vec![Type::Tea]; // String implements Comparable
     let collection_type_params = vec!["T".to_string())];
-    let collection_constraints = vec![("T".to_string()), "Comparable".to_string())];
+    let collection_constraints = vec![("T".to_string(), "Comparable".to_string())];
     
     // Test standard implementation
-    let registry_arc = Arc::new(registry.clone());
-    let standard_checker = AsyncConstraintChecker::new(Arc::clone(&registry_arc));
+    let registry_arc = Arc::new(registry.clone();
+    let standard_checker = AsyncConstraintChecker::new(Arc::clone(&registry_arc);
     
     let standard_result = standard_checker.check_generic_constraints_parallel(
         &collection_type_args,
@@ -262,7 +262,7 @@ fn test_generic_constraint_checking_with_work_stealing() {
     );
     
     // Test work stealing implementation
-    let work_stealing_checker = WorkStealingConstraintChecker::new(Arc::clone(&registry_arc));
+    let work_stealing_checker = WorkStealingConstraintChecker::new(Arc::clone(&registry_arc);
     
     let ws_result = work_stealing_checker.check_generic_constraints_parallel(
         &collection_type_args,
@@ -271,15 +271,15 @@ fn test_generic_constraint_checking_with_work_stealing() {
     );
     
     // Both should succeed
-    assert_eq!(standard_result, Ok(true));
-    assert_eq!(ws_result, Ok(true));
+    assert_eq!(standard_result, Ok(true);
+    assert_eq!(ws_result, Ok(true);
     
     // Test with Map<String, Int>
     let map_type_args = vec![Type::Tea, Type::Normie]; // String implements Comparable, Int implements Serializable
-    let map_type_params = vec!["K".to_string()), "V".to_string())];
+    let map_type_params = vec!["K".to_string(), "V".to_string())];
     let map_constraints = vec![
-        ("K".to_string()), "Comparable".to_string()),
-        ("V".to_string()), "Serializable".to_string()
+        ("K".to_string(), "Comparable".to_string(),
+        ("V".to_string(), "Serializable".to_string()
     ];
     
     // Test extension trait with work stealing
@@ -289,26 +289,26 @@ fn test_generic_constraint_checking_with_work_stealing() {
         &map_constraints
     );
     
-    assert_eq!(ws_extension_result, Ok(true));
+    assert_eq!(ws_extension_result, Ok(true);
     
     // Test with ComplexStructure<String, Map<String, Int>, Int, String>
     let complex_type_args = vec![
         Type::Tea, // A: String implements Comparable
-        Type::Struct("Map".to_string()), vec![Type::Tea, Type::Normie]), // B: Map<String, Int> implements Container
+        Type::Struct("Map".to_string(), vec![Type::Tea, Type::Normie]), // B: Map<String, Int> implements Container
         Type::Normie, // C: Int implements Numeric
         Type::Tea, // D: String implements Serializable
     ];
     let complex_type_params = vec![
-        "A".to_string()), 
-        "B".to_string()), 
-        "C".to_string()), 
+        "A".to_string(), 
+        "B".to_string(), 
+        "C".to_string(), 
         "D".to_string()
     ];
     let complex_constraints = vec![
-        ("A".to_string()), "Comparable".to_string()),
-        ("B".to_string()), "Container".to_string()),
-        ("C".to_string()), "Numeric".to_string()),
-        ("D".to_string()), "Serializable".to_string()
+        ("A".to_string(), "Comparable".to_string(),
+        ("B".to_string(), "Container".to_string(),
+        ("C".to_string(), "Numeric".to_string(),
+        ("D".to_string(), "Serializable".to_string()
     ];
     
     // Test with the more complex structure
@@ -318,12 +318,12 @@ fn test_generic_constraint_checking_with_work_stealing() {
         &complex_constraints
     );
     
-    assert_eq!(complex_result, Ok(true));
+    assert_eq!(complex_result, Ok(true);
     
     // Test with invalid type arguments
     let invalid_type_args = vec![
         Type::Normie, // Int does not implement Comparable
-        Type::Struct("Map".to_string()), vec![Type::Tea, Type::Normie]),
+        Type::Struct("Map".to_string(), vec![Type::Tea, Type::Normie]),
         Type::Normie,
         Type::Tea,
     ];
@@ -334,5 +334,5 @@ fn test_generic_constraint_checking_with_work_stealing() {
         &complex_constraints
     );
     
-    assert_eq!(invalid_result, Ok(false));
+    assert_eq!(invalid_result, Ok(false);
 }

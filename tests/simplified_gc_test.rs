@@ -2,7 +2,7 @@ use cursed::memory::gc::GarbageCollector;
 use cursed::memory::{Tag, Traceable, Visitor};
 use std::sync::Arc;
 
-//! A simplified test for the garbage collector
+// A simplified test for the garbage collector
 
 #[cfg(test)]
 mod tests {

@@ -44,7 +44,7 @@ fn test_basic_types_jit() {
     let test_file = "tests/jit/basic_types_test.csd";
     debug!(test_file = %test_file, "Checking test file existence");
     
-    let file_exists = Path::new(test_file).exists();
+    let file_exists = Path::new(test_file).exists());
     if !file_exists {
         error!(test_file = %test_file, "Test file not found");
     }

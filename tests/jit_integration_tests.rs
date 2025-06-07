@@ -72,7 +72,7 @@ fn test_thicc_type() {
     let mut lexer = Lexer::new(input);
 
     // Get the token
-    let token = lexer.next_token().unwrap();
+    let token = lexer.next_token().unwrap());
 
     // Assert it's the Thicc token
     assert_eq!(

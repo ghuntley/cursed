@@ -8,7 +8,7 @@ use cursed::memory::{Gc, Tag, Traceable, Visitor, ThreadSafeGc};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
 
-//! Comprehensive test suite for the garbage collector
+// Comprehensive test suite for the garbage collector
 
 
 
@@ -102,13 +102,13 @@ fn test_circular_reference_collection() {
     tracing_setup::setup();
     info!("Starting circular reference collection test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a circular reference with 3 nodes
-    let node1 = gc.allocate(CircularNode::new(1));
-    let node2 = gc.allocate(CircularNode::new(2));
-    let node3 = gc.allocate(CircularNode::new(3));
+    let node1 = gc.allocate(CircularNode::new(1);
+    let node2 = gc.allocate(CircularNode::new(2);
+    let node3 = gc.allocate(CircularNode::new(3);
     debug!("Created three nodes for circular reference");
     
     // Set up the circular chain: 1 -> 2 -> 3 -> 1
@@ -117,9 +117,9 @@ fn test_circular_reference_collection() {
     // For this test, we'll just register the dependencies
     
     // Register dependencies so the GC knows about the circular references
-    cursed::memory::register_dependency(node1.id(), node2.id());
-    cursed::memory::register_dependency(node2.id(), node3.id());
-    cursed::memory::register_dependency(node3.id(), node1.id());
+    cursed::memory::register_dependency(node1.id(), node2.id();
+    cursed::memory::register_dependency(node2.id(), node3.id();
+    cursed::memory::register_dependency(node3.id(), node1.id();
     debug!("Registered circular dependencies: 1 -> 2 -> 3 -> 1");
     
     // Get the initial object count
@@ -137,7 +137,7 @@ fn test_circular_reference_collection() {
     gc.collect_garbage();
     
     // Get stats after collection - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10));
+    std::thread::sleep(std::time::Duration::from_millis(10);
     let after_stats = gc.stats();
     debug!(object_count = after_stats.object_count, freed_objects = after_stats.freed_objects, "Memory stats after collection");
     
@@ -162,13 +162,13 @@ fn test_thread_safe_circular_reference_collection() {
     tracing_setup::setup();
     info!("Starting thread-safe circular reference collection test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a circular reference with 3 nodes
-    let node1 = gc.allocate_thread_safe(ThreadSafeCircularNode::new(1));
-    let node2 = gc.allocate_thread_safe(ThreadSafeCircularNode::new(2));
-    let node3 = gc.allocate_thread_safe(ThreadSafeCircularNode::new(3));
+    let node1 = gc.allocate_thread_safe(ThreadSafeCircularNode::new(1);
+    let node2 = gc.allocate_thread_safe(ThreadSafeCircularNode::new(2);
+    let node3 = gc.allocate_thread_safe(ThreadSafeCircularNode::new(3);
     debug!("Created three thread-safe nodes for circular reference");
     
     // Set up the circular chain: 1 -> 2 -> 3 -> 1
@@ -176,9 +176,9 @@ fn test_thread_safe_circular_reference_collection() {
     // Just register dependencies directly
     
     // Register dependencies so the GC knows about the circular references
-    cursed::memory::register_dependency(node1.id(), node2.id());
-    cursed::memory::register_dependency(node2.id(), node3.id());
-    cursed::memory::register_dependency(node3.id(), node1.id());
+    cursed::memory::register_dependency(node1.id(), node2.id();
+    cursed::memory::register_dependency(node2.id(), node3.id();
+    cursed::memory::register_dependency(node3.id(), node1.id();
     debug!("Registered circular dependencies: 1 -> 2 -> 3 -> 1");
     
     // Get the initial object count
@@ -200,7 +200,7 @@ fn test_thread_safe_circular_reference_collection() {
     gc.collect_garbage();
     
     // Get stats after collection - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10));
+    std::thread::sleep(std::time::Duration::from_millis(10);
     let after_stats = gc.stats();
     debug!(object_count = after_stats.object_count, freed_objects = after_stats.freed_objects, "Memory stats after collection");
     
@@ -217,7 +217,7 @@ fn test_thread_safe_circular_reference_collection() {
     assert!(enough_freed, "At least 3 objects should be freed");
     
     // The weak reference should not be upgradeable
-    let can_upgrade = weak1.upgrade().is_some();
+    let can_upgrade = weak1.upgrade().is_some());
     if can_upgrade {
         error!("Weak reference was upgradeable after collection but should not be");
     }
@@ -232,21 +232,21 @@ fn test_weak_reference_cycle_breaking() {
     tracing_setup::setup();
     info!("Starting weak reference cycle breaking test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create a circular reference with 3 nodes, but one link is weak
-    let node1 = gc.allocate(CircularNode::new(1));
-    let node2 = gc.allocate(CircularNode::new(2));
-    let node3 = gc.allocate(CircularNode::new(3));
+    let node1 = gc.allocate(CircularNode::new(1);
+    let node2 = gc.allocate(CircularNode::new(2);
+    let node3 = gc.allocate(CircularNode::new(3);
     debug!("Created three nodes with one weak link");
     
     // Set up the chain: 1 -> 2 -> 3 with a weak link back from 3 to 1
     // Using simplified setup for test purposes
     
     // Register dependencies for the strong links
-    cursed::memory::register_dependency(node1.id(), node2.id());
-    cursed::memory::register_dependency(node2.id(), node3.id());
+    cursed::memory::register_dependency(node1.id(), node2.id();
+    cursed::memory::register_dependency(node2.id(), node3.id();
     debug!("Created strong links: 1 -> 2 -> 3");
     
     // Create a weak reference from node3 to node1 (not using set_next to avoid a strong reference)
@@ -271,7 +271,7 @@ fn test_weak_reference_cycle_breaking() {
     gc.collect_garbage();
     
     // Get stats after collection - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10));
+    std::thread::sleep(std::time::Duration::from_millis(10);
     let after_stats = gc.stats();
     debug!(object_count = after_stats.object_count, freed_objects = after_stats.freed_objects, "Memory stats after collection");
     
@@ -285,7 +285,7 @@ fn test_weak_reference_cycle_breaking() {
     assert!(node3_alive, "Node3 should still be alive");
     
     // The weak reference should not be upgradeable since node1 was collected
-    let can_upgrade = weak1.upgrade().is_some();
+    let can_upgrade = weak1.upgrade().is_some());
     if can_upgrade {
         error!("Weak reference to node1 was upgradeable after collection but should not be");
     }
@@ -300,7 +300,7 @@ fn test_weak_reference_cycle_breaking() {
     gc.collect_garbage();
     
     // No objects should remain - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10));
+    std::thread::sleep(std::time::Duration::from_millis(10);
     let final_stats = gc.stats();
     debug!(object_count = final_stats.object_count, freed_objects = final_stats.freed_objects, "Final memory stats");
     
@@ -324,7 +324,7 @@ fn test_multithreaded_gc_stress() {
     tracing_setup::setup();
     info!("Starting multithreaded GC stress test");
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Number of objects to create per thread
@@ -344,7 +344,7 @@ fn test_multithreaded_gc_stress() {
             let mut objects = Vec::new();
             for i in 0..objects_per_thread {
                 let obj_id = thread_id * 1000 + i;
-                let obj = thread_gc.allocate_thread_safe(ThreadSafeCircularNode::new(obj_id));
+                let obj = thread_gc.allocate_thread_safe(ThreadSafeCircularNode::new(obj_id);
                 objects.push(obj);
             }
             debug!(thread_id = thread_id, count = objects.len(), "Thread created objects");
@@ -352,7 +352,7 @@ fn test_multithreaded_gc_stress() {
             // Create references between the objects
             for i in 0..objects_per_thread-1 {
                 // Register dependency between objects instead of setting next directly
-                cursed::memory::register_dependency(objects[i].id(), objects[i+1].id());
+                cursed::memory::register_dependency(objects[i].id(), objects[i+1].id();
             }
             debug!(thread_id = thread_id, "Created linear object chain");
             
@@ -362,7 +362,7 @@ fn test_multithreaded_gc_stress() {
                 for i in 0..objects_per_thread-2 {
                     if i % 3 == 0 {
                         // Create a reference back two steps
-                        cursed::memory::register_dependency(objects[i+2].id(), objects[i].id());
+                        cursed::memory::register_dependency(objects[i+2].id(), objects[i].id();
                         circular_refs += 1;
                     }
                 }
@@ -391,7 +391,7 @@ fn test_multithreaded_gc_stress() {
         let thread_gc = gc.clone();
         thread::spawn(move || {
             for i in 0..5 {
-                thread::sleep(Duration::from_millis(50));
+                thread::sleep(Duration::from_millis(50);
                 debug!(iteration = i+1, "Background GC running collection");
                 thread_gc.collect_garbage();
             }
@@ -401,12 +401,12 @@ fn test_multithreaded_gc_stress() {
     
     // Wait for all threads to complete
     info!("Waiting for all object creation threads to complete");
-    let _retained_objects: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+    let _retained_objects: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect());
     debug!(retained_thread_count = _retained_objects.len(), "All threads completed");
     
     // Wait for GC thread to complete
     info!("Waiting for GC thread to complete");
-    gc_thread.join().unwrap();
+    gc_thread.join().unwrap());
     debug!("GC thread joined");
     
     // Final GC to clean up all objects

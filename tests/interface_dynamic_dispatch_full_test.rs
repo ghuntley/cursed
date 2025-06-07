@@ -8,7 +8,7 @@ use cursed::codegen::llvm::InterfaceImplementation;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::error::Error;
 
-//! Full tests for interface dynamic dispatch in LLVM code generation
+// Full tests for interface dynamic dispatch in LLVM code generation
 
 
 #[path = "tracing_setup.rs"]
@@ -31,7 +31,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     // 1. Register Reader interface with a read method that takes a buffer and returns bytes read
     type_checker.register_interface(
         "Reader",
-        vec![("read".to_string()), 
+        vec![("read".to_string(), 
              vec![Type::Pointer(Box::new(Type::Tea)),  // buffer
                  Type::Normie],                       // offset
              Some(Type::Normie))],                    // returns bytes read
@@ -41,7 +41,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     // Register interface with code generator
     codegen.register_interface(
         "Reader",
-        vec![("read".to_string()), 
+        vec![("read".to_string(), 
               vec![Type::Pointer(Box::new(Type::Tea)),
                   Type::Normie],
               Some(Type::Normie))],
@@ -50,11 +50,11 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // 2. Register FileReader struct
     let file_reader_fields = HashMap::from([
-        ("path".to_string()), Type::Tea),
-        ("position".to_string()), Type::Normie),
+        ("path".to_string(), Type::Tea),
+        ("position".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("FileReader", file_reader_fields, Vec::new());
+    type_checker.register_struct("FileReader", file_reader_fields, Vec::new();
     
     // 3. Register read method for FileReader
     type_checker.register_struct_method(
@@ -65,8 +65,8 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     )?;
     
     // 4. Verify FileReader implements Reader
-    let file_reader_type = Type::Struct("FileReader".to_string()), Vec::new());
-    let reader_interface_type = Type::Interface("Reader".to_string()), Vec::new());
+    let file_reader_type = Type::Struct("FileReader".to_string(), Vec::new();
+    let reader_interface_type = Type::Interface("Reader".to_string(), Vec::new();
     
     let implements = type_checker.check_interface_implementation(
         &file_reader_type,
@@ -107,11 +107,11 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Return a constant value of 42 (simulating bytes read)
     let return_value = context.i32_type().const_int(42, false);
-    codegen.builder().build_return(Some(&return_value)).unwrap();
+    codegen.builder().build_return(Some(&return_value)).unwrap());
     
     // 7. Register FileReader as implementing Reader
     let mut reader_methods = HashMap::new();
-    reader_methods.insert("read".to_string()), read_function);
+    reader_methods.insert("read".to_string(, read_function);
     
     codegen.register_interface_implementation(
         "FileReader",
@@ -154,7 +154,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     // Store empty string as path
     let empty_string = codegen.create_string_constant("test.txt");
     // Need to handle the result
-    codegen.builder().build_store(path_ptr, empty_string.unwrap()).unwrap();
+    codegen.builder().build_store(path_ptr, empty_string.unwrap()).unwrap());
     
     // Get pointer to position field
     let position_ptr = unsafe {
@@ -168,7 +168,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Store 0 as position
     let zero = context.i32_type().const_int(0, false);
-    codegen.builder().build_store(position_ptr, zero).unwrap();
+    codegen.builder().build_store(position_ptr, zero).unwrap());
     
     // Convert FileReader to Reader interface
     let reader_interface = codegen.create_interface_value(
@@ -208,15 +208,15 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Return the result
     if let Some(read_result) = result {
-        codegen.builder().build_return(Some(&read_result)).unwrap();
+        codegen.builder().build_return(Some(&read_result)).unwrap());
     } else {
         let default = context.i32_type().const_int(0, false);
-        codegen.builder().build_return(Some(&default)).unwrap();
+        codegen.builder().build_return(Some(&default)).unwrap());
     }
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string());
     }
     
     Ok(())
@@ -239,23 +239,23 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     // 1. Register Stringer interface
     type_checker.register_interface(
         "Stringer",
-        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
         Vec::new()
     );
     
     codegen.register_interface(
         "Stringer",
-        vec![("to_string".to_string()), vec![], Some(Type::Tea))],
+        vec![("to_string".to_string(), vec![], Some(Type::Tea))],
         Vec::new()
     )?;
     
     // 2. Register Person struct
     let person_fields = HashMap::from([
-        ("name".to_string()), Type::Tea),
-        ("age".to_string()), Type::Normie),
+        ("name".to_string(), Type::Tea),
+        ("age".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("Person", person_fields, Vec::new());
+    type_checker.register_struct("Person", person_fields, Vec::new();
     
     // 3. Register to_string method for Person
     type_checker.register_struct_method(
@@ -315,11 +315,11 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         )
         .unwrap();
     
-    codegen.builder().build_return(Some(&name)).unwrap();
+    codegen.builder().build_return(Some(&name)).unwrap());
     
     // 6. Register Person as implementing Stringer
     let mut stringer_methods = HashMap::new();
-    stringer_methods.insert("to_string".to_string()), to_string_function);
+    stringer_methods.insert("to_string".to_string(, to_string_function);
     
     codegen.register_interface_implementation(
         "Person",
@@ -360,7 +360,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     // Store "Alice" as name
     let name_str = codegen.create_string_constant("Alice");
     // Need to handle the result
-    codegen.builder().build_store(name_ptr, name_str.unwrap()).unwrap();
+    codegen.builder().build_store(name_ptr, name_str.unwrap()).unwrap());
     
     // Get pointer to age field
     let age_ptr = unsafe {
@@ -374,10 +374,10 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // Store 30 as age
     let age = context.i32_type().const_int(30, false);
-    codegen.builder().build_store(age_ptr, age).unwrap();
+    codegen.builder().build_store(age_ptr, age).unwrap());
     
     // Convert Person to Stringer interface
-    let person_type = Type::Struct("Person".to_string()), Vec::new());
+    let person_type = Type::Struct("Person".to_string(), Vec::new();
     let stringer_interface = codegen.create_interface_value(
         person_ptr,
         &person_type,
@@ -428,17 +428,17 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         )
         .unwrap();
     
-    codegen.builder().build_return(Some(&name)).unwrap();
+    codegen.builder().build_return(Some(&name)).unwrap());
     
     // Failure case - return "not a Person"
     codegen.builder().position_at_end(failure_block);
     let error_str = codegen.create_string_constant("not a Person");
     // Need to handle the result
-    codegen.builder().build_return(Some(&error_str.unwrap())).unwrap();
+    codegen.builder().build_return(Some(&error_str.unwrap()).unwrap());
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string());
     }
     
     Ok(())

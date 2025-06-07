@@ -9,10 +9,10 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::core::jit::JitCompiler;
 use cursed::error::Error;
 
-//! # Comprehensive Interface Type Assertion Tests
-//!
-//! This module provides extensive testing for all aspects of interface type assertions,
-//! covering error handling, nesting, inheritance, and complex use cases.
+// # Comprehensive Interface Type Assertion Tests
+//
+// This module provides extensive testing for all aspects of interface type assertions,
+// covering error handling, nesting, inheritance, and complex use cases.
 
 
 #[path = "common.rs"]

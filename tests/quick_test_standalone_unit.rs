@@ -2,7 +2,7 @@ use std::sync::Arc;
 use cursed::object::Object;
 use cursed::stdlib::quick_test;
 
-//! Unit tests for the quick_test module
+// Unit tests for the quick_test module
 
 #[cfg(test)]
 mod tests {
@@ -27,7 +27,7 @@ mod tests {
         // Check that string generates non-empty strings
         for _ in 0..10 {
             let val = quick_test::string();
-            assert!(!val.is_empty());
+            assert!(!val.is_empty().is_empty());
         }
     }
 

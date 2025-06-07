@@ -4,7 +4,7 @@ use std::path::Path;
 use super::*;
 use std::fs;
 
-//! Integration test for interface type assertions with the ? operator
+// Integration test for interface type assertions with the ? operator
 
 
 #[cfg(test)]

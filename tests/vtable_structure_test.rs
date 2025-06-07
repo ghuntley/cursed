@@ -1,7 +1,7 @@
 use inkwell::context::Context;
 use inkwell::AddressSpace;
 
-//! Test for the vtable structure used in interface implementation
+// Test for the vtable structure used in interface implementation
 
 
 #[test]

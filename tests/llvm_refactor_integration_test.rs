@@ -26,7 +26,7 @@ fn test_simple_llvm_ir_generation() {
 
     // Create a simple function body: return 42;
     let ret_val = i32_type.const_int(42, false);
-    generator.builder().build_return(Some(&ret_val)).unwrap();
+    generator.builder().build_return(Some(&ret_val)).unwrap());
 
     // Verify the module
     let module = generator.module();
@@ -51,7 +51,7 @@ fn test_simple_llvm_ir_generation() {
     );
 
     // Get function return type
-    let return_type = main_fn.get_type().get_return_type().unwrap();
+    let return_type = main_fn.get_type().get_return_type().unwrap());
     assert!(
         return_type.is_int_type(),
         "Main function should return an int type"

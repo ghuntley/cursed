@@ -5,7 +5,7 @@ use tracing::{debug, error, info, trace, warn};
 use std::time::{Duration, Instant};
 use super::*;
 
-//! Comprehensive test for improved handling of circular references in the garbage collector
+// Comprehensive test for improved handling of circular references in the garbage collector
 
 
 
@@ -30,7 +30,7 @@ mod common {
         impl Timer {
             pub fn new(name: &str) -> Self {
                 Self {
-                    name: name.to_string()),
+                    name: name.to_string(),
                     start: Instant::now(),
                 }
             }
@@ -69,7 +69,7 @@ mod test_objects {
         pub fn new(id: usize, name: &str) -> Self {
             Self {
                 id,
-                name: name.to_string()),
+                name: name.to_string(),
                 edges: Arc::new(RwLock::new(Vec::new())),
                 was_finalized: Arc::new(Mutex::new(false)),
             }
@@ -147,7 +147,7 @@ mod test_objects {
         pub fn new(id: usize, name: &str) -> Self {
             Self {
                 id,
-                name: name.to_string()),
+                name: name.to_string(),
                 parent: Arc::new(RwLock::new(None)),
                 children: Arc::new(RwLock::new(Vec::new())),
                 was_finalized: Arc::new(Mutex::new(false)),
@@ -249,23 +249,23 @@ fn test_simple_circular_reference() {
     let _timer = common::timing::Timer::new("simple_circular_reference_test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     debug!("Created garbage collector");
     
     // Create two nodes with a circular reference
-    let node1 = gc.allocate(test_objects::GraphNode::new(1, "Node 1"));
-    let node2 = gc.allocate(test_objects::GraphNode::new(2, "Node 2"));
+    let node1 = gc.allocate(test_objects::GraphNode::new(1, "Node 1");
+    let node2 = gc.allocate(test_objects::GraphNode::new(2, "Node 2");
     
     debug!("Allocated two nodes");
     
     // Create mutual references
     if let Some(inner1) = node1.inner() {
-        inner1.add_edge(node2.clone());
+        inner1.add_edge(node2.clone();
         debug!("Added edge from Node 1 to Node 2");
     }
     
     if let Some(inner2) = node2.inner() {
-        inner2.add_edge(node1.clone());
+        inner2.add_edge(node1.clone();
         debug!("Added edge from Node 2 to Node 1");
     }
     
@@ -287,8 +287,8 @@ fn test_simple_circular_reference() {
     gc.collect_garbage();
     
     // Check weak references
-    let node1_alive = weak1.upgrade().is_some();
-    let node2_alive = weak2.upgrade().is_some();
+    let node1_alive = weak1.upgrade().is_some());
+    let node2_alive = weak2.upgrade().is_some());
     
     info!(node1_alive, node2_alive, "Weak references status after collection");
     
@@ -315,7 +315,7 @@ fn test_complex_circular_reference_graph() {
     let _timer = common::timing::Timer::new("complex_circular_reference_graph_test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a more complex graph with multiple circular references
     // Graph structure:
@@ -323,32 +323,32 @@ fn test_complex_circular_reference_graph() {
     // ↑      ↓       ↙
     // └──────Node D ←┘
     
-    let node_a = gc.allocate(test_objects::GraphNode::new(1, "Node A"));
-    let node_b = gc.allocate(test_objects::GraphNode::new(2, "Node B"));
-    let node_c = gc.allocate(test_objects::GraphNode::new(3, "Node C"));
-    let node_d = gc.allocate(test_objects::GraphNode::new(4, "Node D"));
+    let node_a = gc.allocate(test_objects::GraphNode::new(1, "Node A");
+    let node_b = gc.allocate(test_objects::GraphNode::new(2, "Node B");
+    let node_c = gc.allocate(test_objects::GraphNode::new(3, "Node C");
+    let node_d = gc.allocate(test_objects::GraphNode::new(4, "Node D");
     
     debug!("Allocated four nodes");
     
     // Create the graph connections
     if let Some(inner_a) = node_a.inner() {
-        inner_a.add_edge(node_b.clone());
+        inner_a.add_edge(node_b.clone();
         debug!("Added edge from Node A to Node B");
     }
     
     if let Some(inner_b) = node_b.inner() {
-        inner_b.add_edge(node_c.clone());
-        inner_b.add_edge(node_d.clone());
+        inner_b.add_edge(node_c.clone();
+        inner_b.add_edge(node_d.clone();
         debug!("Added edges from Node B to Node C and Node D");
     }
     
     if let Some(inner_c) = node_c.inner() {
-        inner_c.add_edge(node_d.clone());
+        inner_c.add_edge(node_d.clone();
         debug!("Added edge from Node C to Node D");
     }
     
     if let Some(inner_d) = node_d.inner() {
-        inner_d.add_edge(node_a.clone());
+        inner_d.add_edge(node_a.clone();
         debug!("Added edge from Node D to Node A, creating a cycle");
     }
     
@@ -376,10 +376,10 @@ fn test_complex_circular_reference_graph() {
     gc.collect_garbage();
     
     // Give GC some time to complete background work
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    std::thread::sleep(std::time::Duration::from_millis(100);
     
     // Check weak references
-    let alive_count = weak_refs.iter().filter(|weak| weak.upgrade().is_some()).count();
+    let alive_count = weak_refs.iter().filter(|weak| weak.upgrade().is_some()).count());
     
     info!(alive_count, "Nodes still alive after collection");
     
@@ -405,53 +405,53 @@ fn test_tree_with_parent_child_circular_references() {
     let _timer = common::timing::Timer::new("tree_circular_reference_test");
     
     // Create a garbage collector
-    let gc = Arc::new(GarbageCollector::new());
+    let gc = Arc::new(GarbageCollector::new();
     
     // Create a tree structure with parent-child circular references
-    let root = gc.allocate(test_objects::TreeNode::new(1, "Root"));
-    let child1 = gc.allocate(test_objects::TreeNode::new(2, "Child 1"));
-    let child2 = gc.allocate(test_objects::TreeNode::new(3, "Child 2"));
-    let grandchild1 = gc.allocate(test_objects::TreeNode::new(4, "Grandchild 1"));
-    let grandchild2 = gc.allocate(test_objects::TreeNode::new(5, "Grandchild 2"));
+    let root = gc.allocate(test_objects::TreeNode::new(1, "Root");
+    let child1 = gc.allocate(test_objects::TreeNode::new(2, "Child 1");
+    let child2 = gc.allocate(test_objects::TreeNode::new(3, "Child 2");
+    let grandchild1 = gc.allocate(test_objects::TreeNode::new(4, "Grandchild 1");
+    let grandchild2 = gc.allocate(test_objects::TreeNode::new(5, "Grandchild 2");
     
     debug!("Allocated five tree nodes");
     
     // Set up the tree structure
     // Add children to parent nodes
     if let Some(inner_root) = root.inner() {
-        inner_root.add_child(child1.clone());
-        inner_root.add_child(child2.clone());
+        inner_root.add_child(child1.clone();
+        inner_root.add_child(child2.clone();
         debug!("Added Child 1 and Child 2 to Root");
     }
     
     if let Some(inner_child1) = child1.inner() {
-        inner_child1.add_child(grandchild1.clone());
+        inner_child1.add_child(grandchild1.clone();
         debug!("Added Grandchild 1 to Child 1");
     }
     
     if let Some(inner_child2) = child2.inner() {
-        inner_child2.add_child(grandchild2.clone());
+        inner_child2.add_child(grandchild2.clone();
         debug!("Added Grandchild 2 to Child 2");
     }
     
     // Set parent references to create circular references
     if let Some(inner_child1) = child1.inner() {
-        inner_child1.set_parent(root.clone());
+        inner_child1.set_parent(root.clone();
         debug!("Set Root as parent of Child 1");
     }
     
     if let Some(inner_child2) = child2.inner() {
-        inner_child2.set_parent(root.clone());
+        inner_child2.set_parent(root.clone();
         debug!("Set Root as parent of Child 2");
     }
     
     if let Some(inner_grandchild1) = grandchild1.inner() {
-        inner_grandchild1.set_parent(child1.clone());
+        inner_grandchild1.set_parent(child1.clone();
         debug!("Set Child 1 as parent of Grandchild 1");
     }
     
     if let Some(inner_grandchild2) = grandchild2.inner() {
-        inner_grandchild2.set_parent(child2.clone());
+        inner_grandchild2.set_parent(child2.clone();
         debug!("Set Child 2 as parent of Grandchild 2");
     }
     
@@ -500,10 +500,10 @@ fn test_tree_with_parent_child_circular_references() {
     gc.collect_garbage();
     
     // Give GC some time to complete background work
-    std::thread::sleep(std::time::Duration::from_millis(100));
+    std::thread::sleep(std::time::Duration::from_millis(100);
     
     // Check weak references
-    let alive_count = weak_refs.iter().filter(|weak| weak.upgrade().is_some()).count();
+    let alive_count = weak_refs.iter().filter(|weak| weak.upgrade().is_some()).count());
     
     info!(alive_count, "Nodes still alive after collection");
     

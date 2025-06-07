@@ -1,7 +1,7 @@
 use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::core::type_checker::Type;
 
-//! Tests for generic type parameter substitution and instantiation
+// Tests for generic type parameter substitution and instantiation
 
 
 #[test]
@@ -27,9 +27,9 @@ fn test_nested_generic_types() {
     
     // Create a nested generic type: Vec<List<T>>
     let nested_type = Type::Struct(
-        "Vec".to_string()),
+        "Vec".to_string(),
         vec![Box::new(Type::Struct(
-            "List".to_string()),
+            "List".to_string(),
             vec![Box::new(Type::TypeParam("T".to_string())]
         ))]
     );
@@ -61,7 +61,7 @@ fn test_multiple_type_parameters() {
     
     // Create a generic type with multiple parameters: Map<K, V>
     let map_type = Type::Map(
-        Box::new(Type::TypeParam("K".to_string())),
+        Box::new(Type::TypeParam("K".to_string(),
         Box::new(Type::TypeParam("V".to_string())
     );
     

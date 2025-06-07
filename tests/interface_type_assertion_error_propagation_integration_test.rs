@@ -3,10 +3,10 @@ use cursed::codegen::llvm::interface_type_assertion_error_propagation_integratio
 use cursed::error::type_assertion_error::TypeAssertionError;
 use cursed::error_enhanced::CursedError;
 
-//! Tests for interface type assertion error propagation integration
-//!
-//! This file contains tests for the integration between the interface type assertion
-//! error propagation mechanism and the Result type, ensuring proper ? operator support.
+// Tests for interface type assertion error propagation integration
+//
+// This file contains tests for the integration between the interface type assertion
+// error propagation mechanism and the Result type, ensuring proper ? operator support.
 
 
 /// Create a type assertion error for testing
@@ -21,11 +21,11 @@ fn create_test_error() -> Error {
 #[test]
 fn test_is_type_mismatch_error() {
     let err = create_test_error();
-    assert!(is_type_mismatch_error(&err));
+    assert!(is_type_mismatch_error(&err);
     
     // Non-type assertion error should return false
     let other_err = Error::Compilation("This is not a type error".to_string());
-    assert!(!is_type_mismatch_error(&other_err));
+    assert!(!is_type_mismatch_error(&other_err);
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn test_error_propagation_with_question_mark() {
     
     // Verify the error type is preserved
     if let Err(err) = result {
-        assert!(is_type_mismatch_error(&err));
+        assert!(is_type_mismatch_error(&err);
         if let Some((source, target)) = extract_type_info(&err) {
             assert_eq!(source, "Reader");
             assert_eq!(target, "Writer");

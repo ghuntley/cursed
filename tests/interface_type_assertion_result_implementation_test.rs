@@ -16,10 +16,10 @@ use common::tracing::setup as init_tracing;
 use inkwell::context::Context;
 use tracing::{debug, info, warn, trace};
 
-//! Integration tests for the full Result-based interface type assertion implementation
-//!
-//! These tests verify that interface type assertions work correctly with proper
-//! integration of the ? operator for error propagation.
+// Integration tests for the full Result-based interface type assertion implementation
+//
+// These tests verify that interface type assertions work correctly with proper
+// integration of the ? operator for error propagation.
 
 
 
@@ -138,12 +138,12 @@ fn test_generate_type_assertion_error_info() {
             let error_message = format!("Type assertion failed: {} is not a {}", source_type, target_type);
             
             Ok(TypeAssertionErrorInfo {
-                source_type: source_type.to_string()),
-                target_type: target_type.to_string()),
+                source_type: source_type.to_string(),
+                target_type: target_type.to_string(),
                 source_location,
                 source_type_id: Some(12345),
                 target_type_id: Some(67890),
-                type_path: Some("source -> middle -> target".to_string()),
+                type_path: Some("source -> middle -> target".to_string(),
                 error_message,
             })
         }
@@ -183,8 +183,8 @@ fn test_generate_type_assertion_error_info() {
     let source_location = SourceLocation {
         line: 42,
         column: 10,
-        file: Some("test.csd".to_string()),
-        source_line: "x, ok = value.(TargetType)".to_string()),
+        file: Some("test.csd".to_string(),
+        source_line: "x, ok = value.(TargetType)".to_string(),
     };
     
     // Test generating error info
@@ -201,17 +201,17 @@ fn test_generate_type_assertion_error_info() {
     assert_eq!(error_info.target_type_id, Some(67890));
     
     // Check source location fields
-    assert!(error_info.source_location.is_some());
+    assert!(error_info.source_location.is_some();
     let loc = error_info.source_location.unwrap();
     assert_eq!(loc.line, 42);
     assert_eq!(loc.column, 10);
     
     // Verify error message contents
-    assert!(error_info.error_message.contains("Type assertion failed"));
-    assert!(error_info.error_message.contains("SourceType is not a TargetType"));
+    assert!(error_info.error_message.contains("Type assertion failed");
+    assert!(error_info.error_message.contains("SourceType is not a TargetType");
     
     // Verify type path is passed through
-    assert!(error_info.type_path.is_some());
+    assert!(error_info.type_path.is_some();
     assert_eq!(error_info.type_path.unwrap(), "source -> middle -> target");
 }
 
@@ -222,18 +222,18 @@ fn test_type_assertion_error_info_creation() {
     
     // Create a test TypeAssertionErrorInfo directly
     let error_info = TypeAssertionErrorInfo {
-        source_type: "Stringer".to_string()),
-        target_type: "Writer".to_string()),
+        source_type: "Stringer".to_string(),
+        target_type: "Writer".to_string(),
         source_location: Some(SourceLocation {
             line: 100,
             column: 20,
-            file: Some("test.csd".to_string()),
-            source_line: "test code".to_string()),
+            file: Some("test.csd".to_string(),
+            source_line: "test code".to_string(),
         }),
         source_type_id: Some(12345),
         target_type_id: Some(67890),
-        type_path: Some("Stringer -> io.Writer -> Writer".to_string()),
-        error_message: "Test error message".to_string()),
+        type_path: Some("Stringer -> io.Writer -> Writer".to_string(),
+        error_message: "Test error message".to_string(),
     };
     
     // Verify the fields
@@ -241,7 +241,7 @@ fn test_type_assertion_error_info_creation() {
     assert_eq!(error_info.target_type, "Writer");
     assert_eq!(error_info.source_type_id, Some(12345));
     assert_eq!(error_info.target_type_id, Some(67890));
-    assert!(error_info.source_location.is_some());
+    assert!(error_info.source_location.is_some();
     assert_eq!(error_info.type_path.unwrap(), "Stringer -> io.Writer -> Writer");
     assert_eq!(error_info.error_message, "Test error message");
 }
@@ -255,10 +255,10 @@ fn test_type_assertion_compilation() {
     let type_assertion = TypeAssertion {
         token: Token::Dot,
         expression: Box::new(Identifier {
-            token: "token".to_string()),
-            value: "value".to_string()),
+            token: "token".to_string(),
+            value: "value".to_string(),
         }),
-        type_name: "TargetType".to_string()),
+        type_name: "TargetType".to_string(),
     };
     
     // Verify the string representation

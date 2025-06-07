@@ -1,6 +1,6 @@
 use cursed::test_common;
 
-//! Tests for the diamond inheritance pattern detection in interface type assertions
+// Tests for the diamond inheritance pattern detection in interface type assertions
 
 use cursed::codegen::llvm::{
     DiamondInheritanceDetection,

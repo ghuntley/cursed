@@ -47,11 +47,11 @@ fn test_generic_types() {
     }
 
     // Create a Box[normie] type
-    let box_int = Type::Generic("Box".to_string()), vec![Box::new(Type::Normie)]);
+    let box_int = Type::Generic("Box".to_string(), vec![Box::new(Type::Normie)]);
 
     // Create a Box[T] with type parameter T
     let box_t = Type::Generic(
-        "Box".to_string()),
+        "Box".to_string(),
         vec![Box::new(Type::TypeParam("T".to_string())],
     );
 
@@ -69,7 +69,7 @@ fn test_generic_types() {
         match t {
             Type::TypeParam(name) if name == "T" => Type::Normie,
             Type::Generic(name, params) => {
-                let new_params = params.iter().map(|p| Box::new(t_to_normie(p))).collect();
+                let new_params = params.iter().map(|p| Box::new(t_to_normie(p))).collect());
                 Type::Generic(name.clone(), new_params)
             }
             _ => t.clone(),

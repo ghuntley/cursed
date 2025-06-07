@@ -1,7 +1,7 @@
 use cursed::object::Object;
 use cursed::stdlib::quick_test::*;
 
-//! Basic tests for the quick_test module
+// Basic tests for the quick_test module
 
 // Temporarily disabled while API is upgraded
 #[cfg(not(test))]
@@ -24,17 +24,17 @@ fn test_basic_generators() {
     // Test boolean generator
     let bool_gen = boolean();
     let bool_val = bool_gen.generate(&mut rand, 10);
-    assert!(bool_val.is_bool());
+    assert!(bool_val.is_bool();
     
     // Test int8 generator
     let int_gen = int8();
     let int_val = int_gen.generate(&mut rand, 10);
-    assert!(int_val.is_int());
+    assert!(int_val.is_int();
     
     // Test string generator
     let string_gen = string();
     let string_val = string_gen.generate(&mut rand, 10);
-    assert!(string_val.is_string());
+    assert!(string_val.is_string();
     
     // Test one_of generator
     let values = vec![
@@ -44,8 +44,8 @@ fn test_basic_generators() {
     ];
     let one_of_gen = one_of(values);
     let one_of_val = one_of_gen.generate(&mut rand, 10);
-    assert!(one_of_val.is_int());
-    let int_val = one_of_val.as_int().unwrap();
+    assert!(one_of_val.is_int();
+    let int_val = one_of_val.as_int().unwrap());
     assert!(int_val >= 1 && int_val <= 3);
 }
 
@@ -105,7 +105,7 @@ fn test_shrinking() {
     ]);
     
     // Test that it does fail
-    assert!(!has_zero(input.clone()));
+    assert!(!has_zero(input.clone());
     
     // Try to shrink it
     let config = Config {
@@ -116,14 +116,14 @@ fn test_shrinking() {
     let shrunk = shrink(&has_zero, input, &config);
     
     // Should get a simpler array that still fails
-    assert!(shrunk.is_some());
+    assert!(shrunk.is_some();
     if let Some(result) = shrunk {
-        assert!(result.is_array());
-        assert!(!has_zero(result.clone()));
+        assert!(result.is_array();
+        assert!(!has_zero(result.clone());
         
         // The shrunk result should be simpler (fewer elements)
-        let original_len = input.as_array().unwrap().len();
-        let shrunk_len = result.as_array().unwrap().len();
+        let original_len = input.as_array().unwrap().len());
+        let shrunk_len = result.as_array().unwrap().len());
         assert!(shrunk_len <= original_len);
     }
 }

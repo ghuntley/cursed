@@ -1,13 +1,13 @@
 use cursed::memory::{Traceable, Tag, Visitor};
 use cursed::memory::{register_dependency, global_object_storage, store};
-use cursed::memory::finalization_order::FinalizationGraph;
+use cursed::memory::finalization_order::FinalizationOrderManager;
 use cursed::memory::test_environment::{get_test_gc, reset_test_environment};
 use std::sync::{Arc, Mutex};
 
-//! Tests for finalization ordering in the garbage collector.
-//!
-//! This file tests the functionality of dependency-based finalization
-//! ordering to ensure objects are finalized in the correct order.
+// Tests for finalization ordering in the garbage collector.
+//
+// This file tests the functionality of dependency-based finalization
+// ordering to ensure objects are finalized in the correct order.
 
 
 // A struct with finalization tracking and dependency tracking
@@ -37,14 +37,14 @@ impl Traceable for DependentObject {
     fn finalize(&mut self) {
         // Mark as finalized
         {
-            let mut finalized = self.finalized.lock().unwrap();
+            let mut finalized = self.finalized.lock().unwrap());
             *finalized = true;
             println!("DependentObject {} finalized", self.id);
         }
         
         // Add to finalization order
         {
-            let mut order = self.finalization_order.lock().unwrap();
+            let mut order = self.finalization_order.lock().unwrap());
             order.push(self.id);
         }
     }
@@ -63,7 +63,7 @@ impl Clone for DependentObject {
 
 // Helper function to create a set of dependent objects
 fn create_dependent_objects(count: usize) -> (Vec<usize>, Arc<Mutex<Vec<usize>>>) {
-    let finalization_order = Arc::new(Mutex::new(Vec::new()));
+    let finalization_order = Arc::new(Mutex::new(Vec::new());
     let storage = global_object_storage();
     let mut addresses = Vec::new();
     
@@ -92,10 +92,10 @@ fn test_simple_dependency_chain() {
     let (addresses, finalization_order) = create_dependent_objects(4);
     
     // Manually add in reverse ID order to test the sorting
-    let obj0_pos = finalization_order.lock().unwrap().len();
-    let obj1_pos = finalization_order.lock().unwrap().len();
-    let obj2_pos = finalization_order.lock().unwrap().len();
-    let obj3_pos = finalization_order.lock().unwrap().len();
+    let obj0_pos = finalization_order.lock().unwrap().len());
+    let obj1_pos = finalization_order.lock().unwrap().len());
+    let obj2_pos = finalization_order.lock().unwrap().len());
+    let obj3_pos = finalization_order.lock().unwrap().len());
     
     // Register dependencies
     register_dependency(addresses[0], addresses[1]); // 0 depends on 1
@@ -106,7 +106,7 @@ fn test_simple_dependency_chain() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap();
+    let order = finalization_order.lock().unwrap());
     assert_eq!(order.len(), 4, "Should have finalized 4 objects");
     
     // Order should be 3, 2, 1, 0 (dependencies finalized first)
@@ -137,7 +137,7 @@ fn test_complex_dependency_graph() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap();
+    let order = finalization_order.lock().unwrap());
     assert_eq!(order.len(), 5, "Should have finalized 5 objects");
     
     // Verify that dependencies were finalized before dependents
@@ -179,7 +179,7 @@ fn test_circular_dependencies() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap();
+    let order = finalization_order.lock().unwrap());
     assert_eq!(order.len(), 3, "Should have finalized 3 objects");
     
     // All 3 objects should be in the finalization order
@@ -197,7 +197,7 @@ fn test_integration_with_gc() {
     let gc = get_test_gc();
     
     // Create objects with dependencies
-    let finalization_order = Arc::new(Mutex::new(Vec::new()));
+    let finalization_order = Arc::new(Mutex::new(Vec::new());
     
     // Create three objects with dependencies
     let obj1 = DependentObject {
@@ -246,7 +246,7 @@ fn test_integration_with_gc() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap();
+    let order = finalization_order.lock().unwrap());
     println!("Finalization order: {:?}", order);
     
     // All 3 objects should be finalized

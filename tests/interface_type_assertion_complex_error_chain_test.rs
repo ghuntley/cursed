@@ -9,14 +9,14 @@ use tracing::{debug, info, warn, instrument};
 use common::tracing::setup as init_tracing;
 use common::timing::Timer;
 
-//! # Complex Interface Type Assertion Error Chaining Test
-//!
-//! This test verifies the robustness of interface type assertions with the ? operator
-//! in complex error propagation scenarios, including:
-//! - Deep call stacks with multiple ? operators
-//! - Error context preservation through propagation
-//! - Error recovery and handling at different levels
-//! - Type hierarchy navigation during assertions
+// # Complex Interface Type Assertion Error Chaining Test
+//
+// This test verifies the robustness of interface type assertions with the ? operator
+// in complex error propagation scenarios, including:
+// - Deep call stacks with multiple ? operators
+// - Error context preservation through propagation
+// - Error recovery and handling at different levels
+// - Type hierarchy navigation during assertions
 
 
 
@@ -225,7 +225,7 @@ fn test_complex_error_chaining() {
         lowkey fullResult.isOk {
             vibez.spill("Success: " + fullResult.value);
         } no cap {
-            vibez.spill("Error: " + fullResult.err.error());
+            vibez.spill("Error: " + fullResult.err.error();
         }
         
         // Test chain breaking at formatter level
@@ -234,7 +234,7 @@ fn test_complex_error_chaining() {
         lowkey partialResult.isOk {
             vibez.spill("Success: " + partialResult.value);
         } no cap {
-            vibez.spill("Error correctly propagated: " + partialResult.err.error());
+            vibez.spill("Error correctly propagated: " + partialResult.err.error();
         }
         
         // Test with object that's only a validator
@@ -243,7 +243,7 @@ fn test_complex_error_chaining() {
         lowkey validatorResult.isOk {
             vibez.spill("Success: " + validatorResult.value);
         } no cap {
-            vibez.spill("Error correctly propagated: " + validatorResult.err.error());
+            vibez.spill("Error correctly propagated: " + validatorResult.err.error();
         }
         
         // Test with processor-only object
@@ -252,7 +252,7 @@ fn test_complex_error_chaining() {
         lowkey processorResult.isOk {
             vibez.spill("Success: " + processorResult.value);
         } no cap {
-            vibez.spill("Error correctly propagated: " + processorResult.err.error());
+            vibez.spill("Error correctly propagated: " + processorResult.err.error();
         }
         
         // Test with formatter-only object
@@ -261,7 +261,7 @@ fn test_complex_error_chaining() {
         lowkey formatterResult.isOk {
             vibez.spill("Success: " + formatterResult.value);
         } no cap {
-            vibez.spill("Error correctly propagated: " + formatterResult.err.error());
+            vibez.spill("Error correctly propagated: " + formatterResult.err.error();
         }
         
         // Test error recovery
@@ -276,7 +276,7 @@ fn test_complex_error_chaining() {
         lowkey recoveryResult.isOk {
             vibez.spill("Recovery succeeded: " + recoveryResult.value);
         } no cap {
-            vibez.spill("Recovery failed: " + recoveryResult.err.error());
+            vibez.spill("Recovery failed: " + recoveryResult.err.error();
         }
     }
     "#;
@@ -454,7 +454,7 @@ fn test_error_context_preservation() {
         // Verify we have a resource
         sus resource = res.(Resource)?;
         
-        return ok<tea, Error>("Accessed resource: " + resource.getType() + ":" + resource.getId());
+        return ok<tea, Error>("Accessed resource: " + resource.getType() + ":" + resource.getId();
     }
     
     // Level 2: Query database
@@ -493,7 +493,7 @@ fn test_error_context_preservation() {
         lowkey dbResult.isOk {
             vibez.spill("Success: " + dbResult.value);
         } no cap {
-            vibez.spill("Error with context: " + dbResult.err.error());
+            vibez.spill("Error with context: " + dbResult.err.error();
             // We should see the original error from MockDatabase.query
         }
         
@@ -503,7 +503,7 @@ fn test_error_context_preservation() {
         lowkey fsResult.isOk {
             vibez.spill("Success: " + fsResult.value);
         } no cap {
-            vibez.spill("Error with context: " + fsResult.err.error());
+            vibez.spill("Error with context: " + fsResult.err.error();
             // We should see the original error from MockFileSystem.readFile
         }
         
@@ -513,7 +513,7 @@ fn test_error_context_preservation() {
         lowkey dbFileResult.isOk {
             vibez.spill("Success: " + dbFileResult.value);
         } no cap {
-            vibez.spill("Error with context: " + dbFileResult.err.error());
+            vibez.spill("Error with context: " + dbFileResult.err.error();
             // We should see an error about db not implementing FileSystem
         }
     }

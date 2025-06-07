@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use cursed::codegen::llvm::type_registry_improved::ImprovedTypeRegistry;
-
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use cursed::codegen::llvm::ImprovedTypeRegistry;
     
     
     // Helper to initialize tracing for tests
@@ -27,16 +26,16 @@ mod tests {
         // Check that the registry has the expected types
         assert_eq!(registry.type_count(), 3);
         
-        assert_eq!(registry.get_type_name(1001).map(|s| s.as_str()), Some("Person"));
-        assert_eq!(registry.get_type_name(1002).map(|s| s.as_str()), Some("Employee"));
-        assert_eq!(registry.get_type_name(1003).map(|s| s.as_str()), Some("Manager"));
+        assert_eq!(registry.get_type_name(1001).map(|s| s.as_str()), Some("Person");
+        assert_eq!(registry.get_type_name(1002).map(|s| s.as_str()), Some("Employee");
+        assert_eq!(registry.get_type_name(1003).map(|s| s.as_str()), Some("Manager");
         
         // Test type report generation
         let report = registry.generate_type_report();
-        assert!(report.contains("Person"));
-        assert!(report.contains("Employee"));
-        assert!(report.contains("Manager"));
-        assert!(report.contains("Total types registered: 3"));
+        assert!(report.contains("Person");
+        assert!(report.contains("Employee");
+        assert!(report.contains("Manager");
+        assert!(report.contains("Total types registered: 3");
         
         // Non-existent types should return None
         assert_eq!(registry.get_type_name(9999), None);
@@ -58,10 +57,10 @@ mod tests {
         assert_eq!(all_types.len(), 2);
         
         // Create a map for easier lookup
-        let type_map: HashMap<_, _> = all_types.into_iter().collect();
+        let type_map: HashMap<_, _> = all_types.into_iter().collect());
         
-        assert_eq!(type_map.get(&1001).map(|s| s.as_str()), Some("Person"));
-        assert_eq!(type_map.get(&1002).map(|s| s.as_str()), Some("Employee"));
+        assert_eq!(type_map.get(&1001).map(|s| s.as_str()), Some("Person");
+        assert_eq!(type_map.get(&1002).map(|s| s.as_str()), Some("Employee");
     }
     
     #[test]
@@ -78,10 +77,10 @@ mod tests {
         let report = registry.generate_type_report();
         
         // Verify report contains appropriate formatting
-        assert!(report.contains("Type ID:"));
-        assert!(report.contains("Name:"));
-        assert!(report.contains("Short"));
-        assert!(report.contains("Long"));
+        assert!(report.contains("Type ID:");
+        assert!(report.contains("Name:");
+        assert!(report.contains("Short");
+        assert!(report.contains("Long");
         
         // Verify report is properly formatted
         println!("{}", report); // For visual inspection in test output

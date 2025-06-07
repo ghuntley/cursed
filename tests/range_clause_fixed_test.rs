@@ -2,13 +2,13 @@ use cursed::error::Error;
 use cursed::ast::BoxedStatement;
 use crate::common;
 
-//! Enhanced range clause implementation tests
-//!
-//! This module contains tests for the enhanced range clause implementation
-//! that includes proper error handling and improved LLVM builder operations.
-//!
-//! These tests focus on verifying the correctness of the implementation without
-//! introducing conflicts with the original implementation.
+// Enhanced range clause implementation tests
+//
+// This module contains tests for the enhanced range clause implementation
+// that includes proper error handling and improved LLVM builder operations.
+//
+// These tests focus on verifying the correctness of the implementation without
+// introducing conflicts with the original implementation.
 
 
 #[path = "common.rs"]
@@ -39,7 +39,7 @@ fn test_numeric_range_iteration() {
     // Later we'll switch to the enhanced implementation
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(10));
+            assert_eq!(result.as_i64(), Some(10);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -48,7 +48,7 @@ fn test_numeric_range_iteration() {
     // we can use this instead:
     // match helper::run_enhanced_impl(input) {
     //     Ok(result) => {
-    //         assert_eq!(result.as_i64(), Some(10));
+    //         assert_eq!(result.as_i64(), Some(10);
     //     },
     //     Err(e) => panic!("Failed to run test: {}", e),
     // }
@@ -74,7 +74,7 @@ fn test_range_with_start_and_end() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(27));
+            assert_eq!(result.as_i64(), Some(27);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -100,7 +100,7 @@ fn test_range_with_step() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(25));
+            assert_eq!(result.as_i64(), Some(25);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -126,7 +126,7 @@ fn test_negative_step_range() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(30));
+            assert_eq!(result.as_i64(), Some(30);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -155,7 +155,7 @@ fn test_break_in_range_loop() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(15));
+            assert_eq!(result.as_i64(), Some(15);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -184,7 +184,7 @@ fn test_continue_in_range_loop() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(25));
+            assert_eq!(result.as_i64(), Some(25);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -211,7 +211,7 @@ fn test_array_iteration() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(150));
+            assert_eq!(result.as_i64(), Some(150);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -239,7 +239,7 @@ fn test_map_key_value_iteration() {
     
     match common::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(274));
+            assert_eq!(result.as_i64(), Some(274);
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }

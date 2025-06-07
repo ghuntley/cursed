@@ -22,8 +22,8 @@ fn test_generics_parsing() {
         .expect("Failed to execute command");
 
     // Print output for debugging
-    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+    println!("stdout: {}", String::from_utf8_lossy(&output.stdout);
+    println!("stderr: {}", String::from_utf8_lossy(&output.stderr);
 
     // Check if the command executed successfully
     assert!(output.status.success(), "Failed to parse generics code");

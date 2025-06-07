@@ -98,7 +98,7 @@ fn test_mixed_key_types_map_literal() {
     // This should fail because key types are inconsistent
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.to_string().contains("Inconsistent key types"));
+        assert!(err.to_string().contains("Inconsistent key types");
     }
 }
 
@@ -109,6 +109,6 @@ fn test_mixed_value_types_map_literal() {
     // This should fail because value types are inconsistent
     assert!(result.is_err());
     if let Err(err) = result {
-        assert!(err.to_string().contains("Inconsistent value types"));
+        assert!(err.to_string().contains("Inconsistent value types");
     }
 }

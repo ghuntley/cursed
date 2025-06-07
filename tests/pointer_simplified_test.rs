@@ -1,10 +1,10 @@
 use llvm_test_helpers::*;
 use cursed::error::Error;
 
-//! Simplified test for pointer operations using the test helpers
-//!
-//! This test demonstrates the use of the standardized LLVM code generator
-//! with a focus on pointer operations.
+// Simplified test for pointer operations using the test helpers
+//
+// This test demonstrates the use of the standardized LLVM code generator
+// with a focus on pointer operations.
 
 mod llvm_test_helpers;
 

@@ -157,9 +157,9 @@ mod tests {
         
         // Verify the cycle contains the expected interfaces
         let cycle = &cycles[0];
-        assert!(cycle.contains(&"Interface1".to_string()), "Cycle should contain Interface1");
-        assert!(cycle.contains(&"Interface2".to_string()), "Cycle should contain Interface2");
-        assert!(cycle.contains(&"Interface3".to_string()), "Cycle should contain Interface3");
+        assert!(cycle.contains(&"Interface1".to_string(), "Cycle should contain Interface1");
+        assert!(cycle.contains(&"Interface2".to_string(), "Cycle should contain Interface2");
+        assert!(cycle.contains(&"Interface3".to_string(), "Cycle should contain Interface3");
     }
     
     #[test]

@@ -6,15 +6,15 @@ use cursed::core::type_checker::Type;
 use cursed::error::Error;
 use std::time::{Duration, Instant};
 
-//! Performance comparison test for different interface registry implementations
-//!
-//! This test compares the performance of different interface registry caching mechanisms:
-//! 1. No cache
-//! 2. Basic cache
-//! 3. Advanced LRU cache
-//!
-//! The test measures the time taken for a large number of interface implementation checks
-//! and reports detailed statistics.
+// Performance comparison test for different interface registry implementations
+//
+// This test compares the performance of different interface registry caching mechanisms:
+// 1. No cache
+// 2. Basic cache
+// 3. Advanced LRU cache
+//
+// The test measures the time taken for a large number of interface implementation checks
+// and reports detailed statistics.
 
 
 mod common;
@@ -31,16 +31,16 @@ const NUM_ITERATIONS: usize = 3;
 fn generate_test_data() -> (Vec<Type>, Vec<String>) {
     let mut types = Vec::with_capacity(NUM_TYPES);
     let interfaces = vec![
-        "Numeric".to_string()),
-        "Comparable".to_string()),
-        "Container".to_string()),
-        "List".to_string()),
-        "Map".to_string()),
-        "Iterable".to_string()),
-        "Serializable".to_string()),
-        "Cloneable".to_string()),
-        "Printable".to_string()),
-        "Equatable".to_string()),
+        "Numeric".to_string(),
+        "Comparable".to_string(),
+        "Container".to_string(),
+        "List".to_string(),
+        "Map".to_string(),
+        "Iterable".to_string(),
+        "Serializable".to_string(),
+        "Cloneable".to_string(),
+        "Printable".to_string(),
+        "Equatable".to_string(),
     ];
     
     // Create simple types
@@ -69,17 +69,17 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
         
         for name in struct_names {
             // Create different combinations of type parameters
-            types.push(Type::Struct(name.clone(), vec![]));
-            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Normie)]));
-            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Tea)]));
+            types.push(Type::Struct(name.clone(), vec![]);
+            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Normie)]);
+            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Tea)]);
             types.push(Type::Struct(
                 name.clone(), 
                 vec![Box::new(Type::Tea), Box::new(Type::Normie)]
-            ));
+            );
             types.push(Type::Struct(
                 name.clone(),
-                vec![Box::new(Type::Struct("Nested".to_string()), vec![Box::new(Type::Lit)]))]
-            ));
+                vec![Box::new(Type::Struct("Nested".to_string(), vec![Box::new(Type::Lit)]))]
+            );
         }
     }
     
@@ -94,14 +94,14 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
                     inner_name.clone(),
                     vec![Box::new(Type::Normie)]
                 ))]
-            ));
+            );
             types.push(Type::Struct(
                 outer_name.clone(),
                 vec![Box::new(Type::Struct(
                     inner_name.clone(),
                     vec![Box::new(Type::Tea)]
                 ))]
-            ));
+            );
         }
     }
     
@@ -111,7 +111,7 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
         types.push(Type::Struct(
             format!("Extra{}", idx),
             vec![Box::new(Type::Normie)]
-        ));
+        );
     }
     
     // Truncate to exactly NUM_TYPES
@@ -132,7 +132,7 @@ fn benchmark_no_cache(types: &[Type], interfaces: &[String]) -> (Duration, usize
     for _ in 0..NUM_ITERATIONS {
         for type_ in types {
             for interface in interfaces {
-                let result = registry.check_implementation(type_, interface).unwrap();
+                let result = registry.check_implementation(type_, interface).unwrap());
                 if result {
                     successful_checks += 1;
                 }
@@ -164,7 +164,7 @@ fn benchmark_basic_cache(types: &[Type], interfaces: &[String]) -> (Duration, us
                     }
                 } else {
                     // Cache miss, check with registry
-                    let result = registry.check_implementation(type_, interface).unwrap();
+                    let result = registry.check_implementation(type_, interface).unwrap());
                     cached_registry.store(type_, interface, result);
                     if result {
                         successful_checks += 1;
@@ -200,7 +200,7 @@ fn benchmark_lru_cache(types: &[Type], interfaces: &[String]) -> (Duration, usiz
                     }
                 } else {
                     // Cache miss, check with registry
-                    let result = registry.check_implementation(type_, interface).unwrap();
+                    let result = registry.check_implementation(type_, interface).unwrap());
                     lru_cache.store(type_, interface, result);
                     if result {
                         successful_checks += 1;
@@ -229,7 +229,7 @@ fn benchmark_thread_safe_lru(types: &[Type], interfaces: &[String]) -> (Duration
     for _ in 0..NUM_ITERATIONS {
         for type_ in types {
             for interface in interfaces {
-                let result = lru_registry.check_implementation(type_, interface).unwrap();
+                let result = lru_registry.check_implementation(type_, interface).unwrap());
                 if result {
                     successful_checks += 1;
                 }

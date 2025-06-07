@@ -19,14 +19,14 @@ use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
 
-//! Tests for complex if expressions in the LLVM code generator
+// Tests for complex if expressions in the LLVM code generator
 
 
 #[test]
 #[ignore = "This test needs more work to handle mixed integer types properly"]
 fn test_if_expression_with_variable() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_var", PathBuf::from("test_if_var.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_var", PathBuf::from("test_if_var.csd");
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -38,17 +38,17 @@ fn test_if_expression_with_variable() {
     
     // Set up a variable 'x' with value 10
     let x_ident = Identifier {
-        token: "token".to_string()),
-        value: "x".to_string()),
+        token: "token".to_string(),
+        value: "x".to_string(),
     };
     
     let x_value = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 10,
     };
     
     let let_stmt = LetStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         name: x_ident.clone(),
         value: Some(Box::new(x_value)),
         // Add explicit i32 type annotation to ensure consistency
@@ -62,7 +62,7 @@ fn test_if_expression_with_variable() {
     // Create a condition that compares x > 5
     let x_expr = x_ident.clone();
     let five = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 5,
     };
 
@@ -70,47 +70,47 @@ fn test_if_expression_with_variable() {
     let condition = InfixExpression {
         token: Token::Gt,
         left: Box::new(x_expr),
-        operator: ">".to_string()),
+        operator: ">".to_string(),
         right: Box::new(five),
     };
     
     // Create the then expression: x + 20
     let then_x = x_ident.clone();
     let twenty = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 20,
     };
     
     let then_expr = InfixExpression {
         token: Token::Plus,
         left: Box::new(then_x),
-        operator: "+".to_string()),
+        operator: "+".to_string(),
         right: Box::new(twenty),
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: x - 5
     let else_x = x_ident.clone();
     let five_2 = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 5,
     };
     
     let else_expr = InfixExpression {
         token: Token::Minus,
         left: Box::new(else_x),
-        operator: "-".to_string()),
+        operator: "-".to_string(),
         right: Box::new(five_2),
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -127,7 +127,7 @@ fn test_if_expression_with_variable() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -143,7 +143,7 @@ fn test_if_expression_with_variable() {
 #[test]
 fn test_nested_if_expressions() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_if", PathBuf::from("test_nested_if.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_if", PathBuf::from("test_nested_if.csd");
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -158,45 +158,45 @@ fn test_nested_if_expressions() {
     
     // Create outer condition: true
     let outer_condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: true,
     };
     
     // Create inner condition: false
     let inner_condition = BooleanLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: false,
     };
     
     // Create values for different branches
     let value_1 = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 1,
     };
     
     let value_2 = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 2,
     };
     
     let value_3 = IntegerLiteral {
-        token: "token".to_string()),
+        token: "token".to_string(),
         value: 3,
     };
     
     // Wrap values in expression statements
     let stmt_1 = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(value_1)),
     };
     
     let stmt_2 = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(value_2)),
     };
     
     let stmt_3 = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(value_3)),
     };
     
@@ -212,7 +212,7 @@ fn test_nested_if_expressions() {
     };
     
     let inner_if = IfStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         condition: Box::new(inner_condition),
         consequence: Box::new(inner_consequence),
         alternative: Some(Box::new(inner_alternative)),
@@ -221,7 +221,7 @@ fn test_nested_if_expressions() {
     // Wrap inner if in expression statement
     let inner_if_expr = IfExpression::new(inner_if);
     let inner_if_stmt = ExpressionStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         expression: Some(Box::new(inner_if_expr)),
     };
     
@@ -237,7 +237,7 @@ fn test_nested_if_expressions() {
     };
     
     let outer_if = IfStatement {
-        token: "token".to_string()),
+        token: "token".to_string(),
         condition: Box::new(outer_condition),
         consequence: Box::new(outer_consequence),
         alternative: Some(Box::new(outer_alternative)),
@@ -255,10 +255,10 @@ fn test_nested_if_expressions() {
     assert!(value.is_int_value(), "Result should be an integer");
     
     // Get the result from LLVM
-    let ret_val = generator.builder().build_return(Some(&value));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    let ret_val = generator.builder().build_return(Some(&value);
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
     
     // Verify the module
-    let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    let verification = generator.module().verify());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
 }

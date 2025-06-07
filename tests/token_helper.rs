@@ -6,7 +6,7 @@ use cursed::lexer::Token;
 // Helper function to create a token directly
 pub fn new_token(token_type: TokenType, literal: &str) -> Token {
     match token_type {
-        TokenType::Identifier => Token::Identifier(literal.to_string()),
+        TokenType::Identifier => Token::Identifier(literal.to_string(),
         TokenType::Int => {
             if let Ok(value) = literal.parse::<i64>() {
                 Token::Int(value)
@@ -21,7 +21,7 @@ pub fn new_token(token_type: TokenType, literal: &str) -> Token {
                 Token::Illegal(format!("Invalid float: {}", literal))
             }
         },
-        TokenType::String => Token::String(literal.to_string()),
+        TokenType::String => Token::String(literal.to_string(),
         // Boolean tokens omitted
         TokenType::LBrace => Token::LBrace,
         TokenType::RBrace => Token::RBrace,
