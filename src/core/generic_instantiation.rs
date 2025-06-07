@@ -546,6 +546,7 @@ impl GenericInstantiator {
             token: generic_struct.token.clone(),
             name: specialized_ident,
             type_parameters: Vec::new(), // No type parameters in specialized version
+            generic_constraints: Vec::new(), // No constraints in specialized version
             fields: specialized_fields,  // Fields with concrete types
         };
 

@@ -4,7 +4,7 @@
 //! called by the LLVM-generated code. It serves as the bridge between the compiled
 //! LLVM code and the CURSED channel implementation in the core library.
 
-use std::cell::RefCell;
+
 use std::sync::{Arc, RwLock};
 use std::panic;
 use std::sync::Mutex;

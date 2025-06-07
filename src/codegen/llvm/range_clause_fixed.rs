@@ -186,7 +186,7 @@ impl<'ctx> RangeClauseCompilationEnhanced<'ctx> for LlvmCodeGenerator<'ctx> {
 
         // Create a new scope for the loop variable
         self.push_scope(super::variables::VariableScope::new());
-        self.add_variable_with_type(iterator_name, i_ptr, self.context().i32_type().into())?;
+        self.add_variable_with_type(iterator_name, i_ptr, self.context.i32_type().into())?;
         
         // Set up loop context for break/continue
         let old_loop_exit = self.replace_loop_exit(Some(loop_exit));
@@ -455,15 +455,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     #[inline]
     fn get_pointee_type(&self, ptr_type: inkwell::types::PointerType<'ctx>) -> inkwell::types::BasicTypeEnum<'ctx> {
         // Get the element type of the pointer using the proper LLVM API
-        use inkwell::types::BasicTypeEnum;
-        match ptr_type.get_element_type() {
-            BasicTypeEnum::ArrayType(t) => t.into(),
-            BasicTypeEnum::FloatType(t) => t.into(),
-            BasicTypeEnum::IntType(t) => t.into(),
-            BasicTypeEnum::PointerType(t) => t.into(),
-            BasicTypeEnum::StructType(t) => t.into(),
-            BasicTypeEnum::VectorType(t) => t.into(),
-        }
+        ptr_type.get_element_type()
     }
     /// Get the length of a container
     /// Get container length (array size, slice length, etc.)

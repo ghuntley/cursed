@@ -270,13 +270,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             "assertion_result"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         
-        phi.add_incoming(&[(  
-            &success_tuple,
-            success_block
-        ), (
-            &failure_tuple,
-            failure_block
-        )]);
+        phi.add_incoming(&[
+            (&success_tuple, success_block),
+            (&failure_tuple, failure_block)
+        ]);
         
         // Return the phi result
         Ok(phi.as_basic_value())

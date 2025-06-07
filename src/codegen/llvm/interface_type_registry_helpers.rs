@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 
 /// Interface registry helpers for type name lookups
 pub trait TypeNameRegistry {
@@ -25,11 +26,22 @@ impl<'ctx> TypeNameRegistry for crate::codegen::llvm::LlvmCodeGenerator<'ctx> {
     }
     
     fn get_type_name_from_registry(&self, type_id: u32) -> Option<String> {
-        if let Some(registry) = self.get_interface_registry() {
+        if let Some(registry) = InterfaceRegistryAccess::get_interface_registry(self) {
             if let Ok(name) = registry.get_type_name(type_id) {
                 return Some(name);
             }
         }
         None
+    }
+}
+
+/// Extension trait to add interface registry access
+pub trait InterfaceRegistryAccess<'ctx> {
+    fn get_interface_registry(&self) -> Option<&dyn InterfaceTypeRegistry>;
+}
+
+impl<'ctx> InterfaceRegistryAccess<'ctx> for crate::codegen::llvm::LlvmCodeGenerator<'ctx> {
+    fn get_interface_registry(&self) -> Option<&dyn InterfaceTypeRegistry> {
+        self.interface_type_registry.as_ref().map(|r| r as &dyn InterfaceTypeRegistry)
     }
 }

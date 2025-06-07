@@ -213,6 +213,7 @@ pub mod interface_registry; // Interface registry for type assertions
 mod statement;
 mod string_switch;
 mod string_utils;
+mod path_utils;
 pub mod struct_monomorphization;
 mod types;
 mod variables;
@@ -319,6 +320,9 @@ pub use self::pointer_type_extension::{PointerTypeExtension, BasicTypeEnumExtens
 
 // Re-export string utilities extension
 pub use self::string_utils::StringUtilsExtension;
+
+// Re-export path utilities extension
+pub use self::path_utils::PathStringRepresentation;
 
 // Re-export Result integration for interface type assertions
 pub use self::interface_type_assertion_result_integration::TypeAssertionResultIntegration;

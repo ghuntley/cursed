@@ -19,6 +19,7 @@ use crate::error::SourceLocation;
 use crate::error::type_assertion_error::TypeAssertionError;
 use crate::codegen::llvm::LlvmCodeGenerator;
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 
 /// Configuration for the type assertion debugging system
 /// Controls the level of detail and when debugging information is displayed
@@ -322,7 +323,7 @@ impl<'ctx> InterfaceTypeAssertionDebug<'ctx> for LlvmCodeGenerator<'ctx> {
         for (interface_id, implementers) in inheritance_map.iter() {
             if implementers.contains(&type_id) {
                 let interface_name = registry.get_type_name(*interface_id)
-                    .unwrap_or_else(|| format!("unknown(0x{:x})", interface_id));
+                    .unwrap_or_else(|_| format!("unknown(0x{:x})", interface_id));
                 result.push_str(&format!("- {}\n", interface_name));
                 found_implementations = true;
             }

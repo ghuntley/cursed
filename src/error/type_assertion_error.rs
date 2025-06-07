@@ -184,7 +184,7 @@ impl From<crate::error::Error> for TypeAssertionError {
                 }
                 
                 let location_opt = assertion_error.location().map(|loc| {
-                    SourceLocation::new(loc.line as usize, loc.column as usize)
+                    SourceLocation::new(loc.line, loc.column)
                 });
                 
                 if let Some(loc) = location_opt {

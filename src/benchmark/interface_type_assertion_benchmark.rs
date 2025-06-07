@@ -346,7 +346,7 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
             
             let type_check_start = Instant::now();
             let path_finder = self.get_interface_path_finder();
-            let path_result = path_finder.and_then(|pf| pf.find_path(concrete_type_id, interface_ids[0]).ok());
+            let path_result = path_finder.and_then(|pf| pf.find_path(concrete_type_id, interface_ids[0]).ok().flatten());
             let type_check_time = type_check_start.elapsed();
             
             let error_handling_start = Instant::now();

@@ -55,7 +55,7 @@ impl<'ctx> InterfaceRegistryIntegration for LlvmCodeGenerator<'ctx> {
         // The registry_extensions field is already initialized in the LlvmCodeGenerator constructor
         // but we need to verify that the interface_type_registry is properly connected
         if self.interface_type_registry.is_none() {
-            let registry_ref = Arc::new(self.registry_extensions.clone());
+            let registry_ref = self.registry_extensions.extension_registry();
             let mut ir = crate::codegen::llvm::interface_type_registry::InterfaceTypeRegistry::with_extension_registry(registry_ref);
             self.interface_type_registry = Some(ir);
         }
@@ -111,7 +111,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             Some(registry) => {
                 let hierarchy = HashMap::new();
                 let options = VisualizationOptions::default();
-                registry.generate_dot_graph(&hierarchy, &options)
+                use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
+                InterfaceRegistryExtensionWithVisualization::generate_dot_graph(registry, &hierarchy, &options)
             },
             None => Err(Error::from_str("No registry visualization system available"))
         }
@@ -154,7 +155,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Get current hierarchy from visualization registry
         let registry = self.registry_visualization()
             .ok_or_else(|| Error::from_str("No registry visualization system available"))?;
-        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry.as_ref())?;
+        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry)?;
         
         // Update the type registry with the hierarchy information
         if let Some(registry) = &mut self.interface_type_registry {
@@ -167,6 +168,24 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         Ok(())
     }
+    
+    /// Check extension relationship between two interfaces (basic version)
+    pub fn check_extension_relationship(&self, source: &str, target: &str) -> Result<bool, Error> {
+        match self.registry_visualization() {
+            Some(registry) => registry.check_extension_relationship(source, target),
+            None => Err(Error::from_str("No registry visualization system available"))
+        }
+    }
+    
+    /// Check extension relationship between two interfaces (enhanced version)
+    pub fn check_extension_relationship_enhanced(&self, source: &str, target: &str) -> Result<bool, Error> {
+        match self.registry_visualization() {
+            Some(registry) => registry.check_extension_relationship_enhanced(source, target),
+            None => Err(Error::from_str("No registry visualization system available"))
+        }
+    }
+    
+
 }
 
 /// Register the interface registry integration functionality with the compiler

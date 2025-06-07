@@ -37,7 +37,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else if ty.is_pointer_type() {
             8 // Assuming 64-bit pointers
         } else if ty.is_struct_type() {
-            let struct_type = ty.into_struct_type();
+            let struct_type = match ty {
+                inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type,
+                _ => return 0, // Fallback for unexpected type
+            };
             let mut size = 0;
             for i in 0..struct_type.count_fields() {
                 if let Some(field_type) = struct_type.get_field_type_at_index(i) {
@@ -48,13 +51,13 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         } else if ty.is_array_type() {
             let array_type = ty.into_array_type();
             let elem_size = self.get_type_size_in_bytes(array_type.get_element_type());
-            let len = array_type.len();
-            elem_size * (len as u64)
+            let len = array_type.len() as u64;
+            elem_size * len
         } else if ty.is_vector_type() {
             let vector_type = ty.into_vector_type();
             let elem_size = self.get_type_size_in_bytes(vector_type.get_element_type());
-            let len = vector_type.get_size();
-            elem_size * (len as u64)
+            let len = vector_type.get_size() as u64;
+            elem_size * len
         } else {
             // Default fallback for types we don't handle explicitly
             8 // Reasonable default for unknown types

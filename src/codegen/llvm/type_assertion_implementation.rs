@@ -84,14 +84,19 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         // Check if the expression is null before proceeding
         if expr_value.is_pointer_value() {
             let ptr = expr_value.into_pointer_value();
-            if let Ok(is_null) = self.builder().build_is_null(ptr, "ptr_null_check") {
-                // Check if the is_null value is a constant true
-                if let Some(const_val) = is_null.get_zero_extended_constant() {
-                    if const_val != 0 {
-                        error!("Type assertion attempted on null interface value");
-                        // Return a tuple with null value and false flag to indicate failure
-                        return self.create_type_assertion_result(None, false);
+            match self.builder().build_is_null(ptr, "ptr_null_check") {
+                Ok(is_null) => {
+                    // Check if the is_null value is a constant true
+                    if let Some(const_val) = is_null.get_zero_extended_constant() {
+                        if const_val != 0 {
+                            error!("Type assertion attempted on null interface value");
+                            // Return a tuple with null value and false flag to indicate failure
+                            return self.create_type_assertion_result(None, false);
+                        }
                     }
+                },
+                Err(e) => {
+                    warn!("Failed to check null pointer, continuing with type assertion: {}", e);
                 }
             }
         }
@@ -239,7 +244,7 @@ impl<'ctx> IntegratedTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let success_val = self.context().bool_type().const_int(if success { 1 } else { 0 }, false);
         
         // Build the tuple (value, success)
-        self.build_tuple(vec![value, success_val.into()])
+        self.build_tuple(vec![value, BasicValueEnum::IntValue(success_val)])
     }
 }
 

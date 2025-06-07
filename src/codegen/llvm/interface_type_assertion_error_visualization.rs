@@ -180,10 +180,10 @@ impl<'ctx> ErrorVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
     ) -> Option<String> {
         // Try to get type names for better visualization
         let expected_name = self.get_type_name_by_id(expected_type_id)
-            .unwrap_or_else(|| format!("Type#{}", expected_type_id));
+            .unwrap_or_else(|_| format!("Type#{}", expected_type_id));
         
         let actual_name = self.get_type_name_by_id(actual_type_id)
-            .unwrap_or_else(|| format!("Type#{}", actual_type_id));
+            .unwrap_or_else(|_| format!("Type#{}", actual_type_id));
         
         // Check if we have a registered type visualization path
         if let Some(path) = self.get_type_path_visualization(expected_type_id, actual_type_id) {

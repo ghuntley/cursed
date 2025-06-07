@@ -414,12 +414,12 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
             .or_else(|_| std::env::var("CURSED_DEBUG"))
             .map(|val| {
                 if val.is_empty() || val == "0" || val.to_lowercase() == "false" {
-                    "none"
+                    "none".to_string()
                 } else {
-                    val.as_str()
+                    val
                 }
             })
-            .unwrap_or("none");
+            .unwrap_or_else(|_| "none".to_string());
         
         // If debugging is disabled, just return
         if debug_level == "none" {
@@ -435,14 +435,10 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         // Get the type name from the registry
-        let actual_type_name = match &self.interface_type_registry {
-            Some(registry) => {
-                registry.get_type_name(type_id_val)
-                    .map(|name| name.clone())
-                    .unwrap_or_else(|| String::from("Unknown Type"))
-            },
-            None => String::from("Unknown Type")
-        };
+        let actual_type_name = self.interface_type_registry()
+            .get_type_name(type_id_val)
+            .map(|name| name.clone())
+            .unwrap_or_else(|| String::from("Unknown Type"));
         
         // Log the type assertion details with appropriate level based on success
         if success {
@@ -465,7 +461,7 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
             
             if debug_level == "verbose" {
                 // Additional debugging information for verbose mode
-                let registry = self.interface_type_registry.as_ref().unwrap();
+                let registry = self.interface_type_registry();
                 let all_types = registry.all_types();
                 let types_info = all_types.iter()
                     .map(|(id, name)| format!("{} -> {}", id, name))
@@ -500,14 +496,10 @@ impl<'ctx> EnhancedTypeRegistry<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         // Get the type name from the registry
-        let type_name = match &self.interface_type_registry {
-            Some(registry) => {
-                registry.get_type_name(type_id_val)
-                    .map(|name| name.clone())
-                    .unwrap_or_else(|| String::from("Unknown Type"))
-            },
-            None => String::from("Unknown Type")
-        };
+        let type_name = self.interface_type_registry()
+            .get_type_name(type_id_val)
+            .map(|name| name.clone())
+            .unwrap_or_else(|| String::from("Unknown Type"));
         
         debug!("Retrieved type info: ID: {}, name: {}", type_id_val, type_name);
         Ok((type_id, type_name))

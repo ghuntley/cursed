@@ -290,7 +290,8 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let error_msg_ptr = if let Some(msg) = error_message {
             if !success {
                 // Create a global string constant for the error message
-                self.create_error_string_constant(msg)?.into()
+                let string_const = self.create_error_string_constant(msg)?;
+                string_const.into()
             } else {
                 // Null pointer for success case
                 ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
@@ -307,12 +308,14 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
                 let line = ctx.i32_type().const_int(loc.line as u64, false);
                 let column = ctx.i32_type().const_int(loc.column as u64, false);
                 let file_ptr = if let Some(file) = &loc.file {
-                    self.create_error_string_constant(file)?.into()
+                    let string_const = self.create_error_string_constant(file)?;
+                    string_const.into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
                 let source_line_ptr = if !loc.source_line.is_empty() {
-                    self.create_error_string_constant(&loc.source_line)?.into()
+                    let string_const = self.create_error_string_constant(&loc.source_line)?;
+                    string_const.into()
                 } else {
                     ctx.i8_type().ptr_type(AddressSpace::default()).const_null().into()
                 };
@@ -462,10 +465,16 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let location_struct = if let Some(location) = &source_location {
             // Pre-compute string constants to avoid borrow conflicts
             let file_const = match &location.file {
-                Some(file) => self.create_error_string_constant(file)?.into(),
+                Some(file) => {
+                    let string_const = self.create_error_string_constant(file)?;
+                    string_const.into()
+                },
                 None => self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
             };
-            let source_line_const = self.create_error_string_constant(&location.source_line)?.into();
+            let source_line_const = {
+                let string_const = self.create_error_string_constant(&location.source_line)?;
+                string_const.into()
+            };
             
             // Build location struct with available information
             self.build_struct_value(&[
@@ -485,10 +494,22 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         };
         
         // Pre-compute all string constants to avoid borrow conflicts
-        let error_msg_const = self.create_error_string_constant(&enhanced_error_message)?.into();
-        let source_type_const = self.create_error_string_constant(source_type)?.into();
-        let target_type_const = self.create_error_string_constant(target_type)?.into();
-        let empty_string_const = self.create_error_string_constant("")?.into();
+        let error_msg_const = {
+            let string_const = self.create_error_string_constant(&enhanced_error_message)?;
+            string_const.into()
+        };
+        let source_type_const = {
+            let string_const = self.create_error_string_constant(source_type)?;
+            string_const.into()
+        };
+        let target_type_const = {
+            let string_const = self.create_error_string_constant(target_type)?;
+            string_const.into()
+        };
+        let empty_string_const = {
+            let string_const = self.create_error_string_constant("")?;
+            string_const.into()
+        };
         
         self.call_error_propagation_function(
             error_msg_const,
@@ -677,10 +698,22 @@ impl<'ctx> InterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGenerator<'c
         let target_type = "unknown"; // The target type is not available in this context
         
         // Pre-compute string constants to avoid borrow conflicts
-        let error_msg_const = self.create_error_string_constant(&error_message)?.into();
-        let source_type_const = self.create_error_string_constant(source_type)?.into();
-        let target_type_const = self.create_error_string_constant(target_type)?.into();
-        let empty_string_const = self.create_error_string_constant("")?.into();
+        let error_msg_const = {
+            let string_const = self.create_error_string_constant(&error_message)?;
+            string_const.into()
+        };
+        let source_type_const = {
+            let string_const = self.create_error_string_constant(source_type)?;
+            string_const.into()
+        };
+        let target_type_const = {
+            let string_const = self.create_error_string_constant(target_type)?;
+            string_const.into()
+        };
+        let empty_string_const = {
+            let string_const = self.create_error_string_constant("")?;
+            string_const.into()
+        };
         
         // Call error propagation function with enhanced type information and better error message
         self.call_error_propagation_function(

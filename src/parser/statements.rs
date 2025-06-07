@@ -883,10 +883,10 @@ impl<'a> Parser<'a> {
             let param_type = self.parse_type_identifier(&param_type_token)?;
 
             // Create parameter
-            let parameter = ast::declarations::ParameterStatement {
+            let parameter = ast::declarations::fields::Parameter {
                 token: param_name.token.clone(),
                 name: param_name,
-                type_name: Box::new(param_type),
+                param_type: Box::new(param_type),
             };
             parameters.push(parameter);
 

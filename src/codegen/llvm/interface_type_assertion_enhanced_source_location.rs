@@ -183,7 +183,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
         
         // If we couldn't access the cache, initialize it
-        let mut cache = std::collections::HashMap::new();
+        let mut cache: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
         cache.insert(file_path.to_string(), content.lines().map(|s| s.to_string()).collect());
         self.internal_fields.insert("source_line_cache".to_string(), Box::new(cache));
         

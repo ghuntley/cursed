@@ -798,6 +798,57 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     pub fn get_default_integer_type(&self) -> inkwell::types::IntType<'ctx> {
         self.default_integer_type.unwrap_or_else(|| self.context.i64_type())
     }
+
+    /// Get an extension of a specific type
+    pub fn get_extension<T: 'static>(&self) -> Option<&T> {
+        // Try to get from internal fields using type name as key
+        let type_name = std::any::type_name::<T>();
+        self.internal_fields.get(type_name)
+            .and_then(|boxed| boxed.downcast_ref::<T>())
+    }
+    
+    /// Set an extension of a specific type
+    pub fn set_extension<T: 'static + Send + Sync>(&mut self, value: T) {
+        let type_name = std::any::type_name::<T>();
+        self.internal_fields.insert(type_name.to_string(), Box::new(value));
+    }
+    
+    /// Get a type name by its ID
+    pub fn get_type_name_by_id(&self, type_id: u32) -> Result<String, Error> {
+        use crate::codegen::llvm::interface_type_registry_helpers::{TypeNameRegistry, InterfaceRegistryAccess};
+        
+        // Try to get from the type name registry
+        if let Some(name) = TypeNameRegistry::get_type_name_by_id(self, type_id) {
+            return Ok(name);
+        }
+        
+        // Fall back to a default name
+        Ok(format!("Type#{}", type_id))
+    }
+    
+    /// Get the expected type ID for error reporting
+    pub fn get_expected_type_id(&self) -> Option<u32> {
+        self.internal_fields.get("expected_type_id")
+            .and_then(|boxed| boxed.downcast_ref::<u32>())
+            .copied()
+    }
+    
+    /// Set the expected type ID for error reporting  
+    pub fn set_expected_type_id(&mut self, type_id: u32) {
+        self.internal_fields.insert("expected_type_id".to_string(), Box::new(type_id));
+    }
+    
+    /// Get the actual type ID for error reporting
+    pub fn get_actual_type_id(&self) -> Option<u32> {
+        self.internal_fields.get("actual_type_id")
+            .and_then(|boxed| boxed.downcast_ref::<u32>())
+            .copied()
+    }
+    
+    /// Set the actual type ID for error reporting
+    pub fn set_actual_type_id(&mut self, type_id: u32) {
+        self.internal_fields.insert("actual_type_id".to_string(), Box::new(type_id));
+    }
 }
 
 

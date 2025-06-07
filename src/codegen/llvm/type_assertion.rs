@@ -42,6 +42,13 @@ pub trait InterfaceTypeAssertion<'ctx> {
         &mut self,
         interface_value: BasicValueEnum<'ctx>
     ) -> Result<PointerValue<'ctx>, Error>;
+    
+    /// Cast a value to an interface type
+    fn cast_to_interface_type(
+        &mut self,
+        value: BasicValueEnum<'ctx>,
+        type_name: &str
+    ) -> Result<BasicValueEnum<'ctx>, Error>;
 }
 
 impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
@@ -268,6 +275,44 @@ impl<'ctx> InterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         };
         
         Ok(data_ptr.into_pointer_value())
+    }
+    
+    fn cast_to_interface_type(
+        &mut self,
+        value: BasicValueEnum<'ctx>,
+        type_name: &str
+    ) -> Result<BasicValueEnum<'ctx>, Error> {
+        // For now, this is a simple implementation that just returns the value
+        // In a more sophisticated implementation, this would:
+        // 1. Create an interface struct with the value and proper vtable
+        // 2. Handle proper type conversion if needed
+        // 3. Set up the correct vtable for the target interface type
+        
+        // Get the type ID for the target interface type
+        let type_id = self.get_type_id(type_name)?;
+        
+        // Create a simple interface structure with data pointer and type ID
+        // This is a simplified implementation - in practice you'd need proper vtable setup
+        if value.is_pointer_value() {
+            // Value is already a pointer, can use directly as data pointer
+            let interface_struct = self.build_tuple(vec![
+                value, // data pointer
+                type_id, // type ID (simplified vtable)
+            ])?;
+            Ok(interface_struct)
+        } else {
+            // Need to allocate space for the value and get a pointer to it
+            let alloca = self.builder().build_alloca(value.get_type(), "cast_temp")
+                .map_err(|e| Error::Compilation(e.to_string()))?;
+            self.builder().build_store(alloca, value)
+                .map_err(|e| Error::Compilation(e.to_string()))?;
+            
+            let interface_struct = self.build_tuple(vec![
+                alloca.into(), // data pointer
+                type_id, // type ID (simplified vtable)
+            ])?;
+            Ok(interface_struct)
+        }
     }
     
 }

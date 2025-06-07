@@ -17,6 +17,8 @@ use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use std::collections::{HashMap, HashSet};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
+use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 use crate::error::Error;
 
 /// Extension trait for LlvmCodeGenerator to add path visualization capabilities
@@ -154,12 +156,10 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         
         // Check for extension relationship (one interface extending another)
         if let Some(registry) = &self.interface_type_registry {
-            if let Some(from_type) = registry.get_type_name(from_id) {
-                if let Some(to_type) = registry.get_type_name(to_id) {
-                    // Check if both are interfaces (this is a heuristic, would be better to check actual type kind)
-                    if from_type.ends_with("Interface") && to_type.ends_with("Interface") {
-                        return "extends".to_string();
-                    }
+            if let (Some(from_type), Some(to_type)) = (registry.get_type_name(from_id), registry.get_type_name(to_id)) {
+                // Check if both are interfaces (this is a heuristic, would be better to check actual type kind)
+                if from_type.ends_with("Interface") && to_type.ends_with("Interface") {
+                    return "extends".to_string();
                 }
             }
         }
@@ -316,6 +316,21 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Create a constant false value for incompatible types
         let false_value = self.context().bool_type().const_int(0, false);
         Ok(false_value.into())
+    }
+    
+    fn find_interface_path(&self, source_interface: &str, target_interface: &str) -> Result<Vec<String>, Error> {
+        // Use the interface registry if available
+        if let Some(registry) = &self.interface_type_registry {
+            // Try to find a path through the interface registry
+            match InterfaceTypeRegistry::find_path(registry, source_interface, target_interface) {
+                Ok(Some(path)) => Ok(path),
+                Ok(None) => Ok(vec![]), // No path found
+                Err(e) => Err(e),
+            }
+        } else {
+            // No registry available - can't find path
+            Ok(vec![])
+        }
     }
 }
 
@@ -506,10 +521,16 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Check inheritance relationship
         if let Some(registry) = &self.interface_type_registry {
-            if let Some(inheritance_map) = registry.get_inheritance_map() {
-                // Check if there's a path from actual to target type
-                match self.find_inheritance_path(actual_type_id, target_type_id, &inheritance_map) {
-                    Ok(path) => return !path.is_empty(),
+            if let Some(string_inheritance_map) = registry.get_inheritance_map() {
+                // Convert string-based map to u64-based map
+                match self.convert_inheritance_map_to_u64(&string_inheritance_map) {
+                    Ok(inheritance_map) => {
+                        // Check if there's a path from actual to target type
+                        match self.find_inheritance_path(actual_type_id, target_type_id, &inheritance_map) {
+                            Ok(path) => return !path.is_empty(),
+                            Err(_) => return false,
+                        }
+                    }
                     Err(_) => return false,
                 }
             }
@@ -518,19 +539,32 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         false
     }
     
-    fn find_interface_path(&self, source_interface: &str, target_interface: &str) -> Result<Vec<String>, Error> {
-        // Use the interface registry if available
+    /// Convert a string-based inheritance map to a u64-based inheritance map
+    fn convert_inheritance_map_to_u64(
+        &self,
+        string_map: &HashMap<String, HashSet<String>>,
+    ) -> Result<HashMap<u64, HashSet<u64>>, Error> {
+        let mut u64_map = HashMap::new();
+        
         if let Some(registry) = &self.interface_type_registry {
-            // Try to find a path through the interface registry
-            match registry.find_path(source_interface, target_interface) {
-                Ok(Some(path)) => Ok(path),
-                Ok(None) => Ok(vec![]), // No path found
-                Err(e) => Err(e),
+            for (from_type, to_types) in string_map.iter() {
+                // Convert from_type to u64
+                let from_id = registry.get_type_id(from_type)
+                    .unwrap_or_else(|_| self.hash_type_name(from_type));
+                
+                // Convert to_types to u64 set
+                let mut to_ids = HashSet::new();
+                for to_type in to_types {
+                    let to_id = registry.get_type_id(to_type)
+                        .unwrap_or_else(|_| self.hash_type_name(to_type));
+                    to_ids.insert(to_id);
+                }
+                
+                u64_map.insert(from_id, to_ids);
             }
-        } else {
-            // No registry available - can't find path
-            Ok(vec![])
         }
+        
+        Ok(u64_map)
     }
 }
 

@@ -341,7 +341,7 @@ impl<'a> Parser<'a> {
         }
 
         Ok(BlockStatement {
-            token: "{".to_string(),
+            token: Token::LBrace,
             statements,
         })
     }

@@ -930,6 +930,13 @@ impl Object {
         }
     }
 
+    pub fn as_string(&self) -> Option<&String> {
+        match self {
+            Object::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
     pub fn is_hashable(&self) -> bool {
         match self {
             Object::Integer(_) => true,
@@ -1573,6 +1580,18 @@ impl Object {
             Object::ExternalData(_) => "[ExternalData]".to_string(),
             Object::Template(_) => "[Template]".to_string(),
             Object::Function(_) => "[Function]".to_string(),
+        }
+    }
+
+    pub fn size_estimate(&self) -> usize {
+        match self {
+            Object::Integer(_) => std::mem::size_of::<i64>(),
+            Object::Float(_) => std::mem::size_of::<f64>(),
+            Object::Boolean(_) => std::mem::size_of::<bool>(),
+            Object::String(s) => s.len(),
+            Object::Array(arr) => arr.iter().map(|obj| obj.size_estimate()).sum::<usize>(),
+            Object::HashTable(map) => map.iter().map(|(k, v)| k.len() + v.size_estimate()).sum::<usize>(),
+            _ => std::mem::size_of::<Self>(),
         }
     }
 }

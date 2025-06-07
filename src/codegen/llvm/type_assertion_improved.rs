@@ -171,8 +171,14 @@ impl<'ctx> EnhancedInterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         let vtable_ptr = self.extract_vtable_ptr(interface_value)?;
         
         // Type info is the first field in the vtable
+        // Get the struct type from the pointer type
+        let vtable_struct_type = match vtable_ptr.get_type().get_element_type() {
+            inkwell::types::BasicTypeEnum::StructType(struct_type) => struct_type,
+            _ => return Err(Error::from_str("Expected vtable pointer to point to struct type")),
+        };
+        
         let type_info_ptr = self.builder().build_struct_gep(
-            vtable_ptr.get_type().get_pointee_type().into_struct_type(),
+            vtable_struct_type,
             vtable_ptr,
             0, // Index of type info pointer
             "type_info_ptr"

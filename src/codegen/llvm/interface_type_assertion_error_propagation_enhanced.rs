@@ -308,27 +308,23 @@ impl<'ctx> EnhancedInterfaceTypeAssertionErrorPropagation<'ctx> for LlvmCodeGene
         
         // Get source location with improved information
         let location_info = if let Some(loc) = source_location {
-            BasicValueEnum::into_struct_value(
-                self.build_struct_value(&[
-                    self.context().i32_type().const_int(loc.line as u64, false).into(),
-                    self.context().i32_type().const_int(loc.column as u64, false).into(),
-                    loc.file.map_or_else(
-                        || self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
-                        |file| self.create_string_constant(&file).into()
-                    ),
-                    self.create_string_constant(&loc.source_line).into()
-                ])
-            )
+            self.build_struct_value(&[
+                self.context().i32_type().const_int(loc.line as u64, false).into(),
+                self.context().i32_type().const_int(loc.column as u64, false).into(),
+                loc.file.map_or_else(
+                    || self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
+                    |file| self.create_string_constant(&file).into()
+                ),
+                self.create_string_constant(&loc.source_line).into()
+            ]).into_struct_value()
         } else {
             // Create a minimal struct with source line if available
-            BasicValueEnum::into_struct_value(
-                self.build_struct_value(&[
-                    self.context().i32_type().const_int(0, false).into(),
-                    self.context().i32_type().const_int(0, false).into(),
-                    self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
-                    self.create_string_constant(&format!("{}.({})?\n", type_assertion.expression.string(), type_assertion.type_name)).into()
-                ])
-            )
+            self.build_struct_value(&[
+                self.context().i32_type().const_int(0, false).into(),
+                self.context().i32_type().const_int(0, false).into(),
+                self.context().i8_type().ptr_type(inkwell::AddressSpace::default()).const_null().into(),
+                self.create_string_constant(&format!("{}.({})?\n", type_assertion.expression.string(), type_assertion.type_name)).into()
+            ]).into_struct_value()
         };
         
         // Call error propagation function with enhanced information

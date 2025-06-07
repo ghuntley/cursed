@@ -39,8 +39,7 @@ pub enum Token {
     Percent,  // %
     Lt,       // <
     Gt,       // >
-    Less = 38,     // < (alias for Lt)
-    Greater = 39,  // > (alias for Gt)
+
     Eq,       // ==
     NotEq,    // !=
     LtEq,     // <=
@@ -88,6 +87,8 @@ pub enum Token {
     RBracket,  // ]
     Dot,       // .
     Question,  // ?
+    Less,      // <
+    Greater,   // >
 
     // Keywords - CURSED uses Gen Z slang for keywords
     Vibe,      // package (vibe)
@@ -397,6 +398,11 @@ impl Token {
             Token::LineComment => String::from("LineComment"),
             Token::BlockCommentStart => String::from("BlockCommentStart"),
             Token::BlockCommentEnd => String::from("BlockCommentEnd"),
+            
+            // Other tokens
+            Token::Question => String::from("?"),
+            Token::Less => String::from("<"),
+            Token::Greater => String::from(">"),
         }
     }
 }

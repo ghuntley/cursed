@@ -76,8 +76,9 @@ impl<'ctx> EnhancedDynamicDispatch<'ctx> for crate::codegen::llvm::LlvmCodeGener
             Ok(vtable_ptr.into_pointer_value())
         } else if interface_ptr.is_pointer_value() {
             // Pointer to interface value - load and extract vtable pointer
+            let interface_type = interface_ptr.into_pointer_value().get_type().get_element_type();
             let loaded = self.builder().build_load(
-                interface_ptr.get_type(),
+                interface_type,
                 interface_ptr.into_pointer_value(),
                 "interface_value"
             ).map_err(|e| Error::Compilation(e.to_string()))?;
@@ -121,8 +122,13 @@ impl<'ctx> EnhancedDynamicDispatch<'ctx> for crate::codegen::llvm::LlvmCodeGener
                 "is_null"
             ).map_err(|e| Error::Compilation(e.to_string()))?;
             
-            let is_null_const = is_null.get_zero_extended_constant();
-            return Ok(is_null_const.is_some() && is_null_const.unwrap() != 0);
+            // Check if the value is a constant and extract its value
+            if let Some(const_val) = is_null.get_zero_extended_constant() {
+                return Ok(const_val != 0);
+            }
+            
+            // For non-constant values, we can't determine at compile time
+            return Ok(false);
         }
         
         // For a struct, check if both pointers are null
@@ -140,8 +146,13 @@ impl<'ctx> EnhancedDynamicDispatch<'ctx> for crate::codegen::llvm::LlvmCodeGener
                 "is_data_null"
             ).map_err(|e| Error::Compilation(e.to_string()))?;
             
-            let is_null_const = is_null.get_zero_extended_constant();
-            return Ok(is_null_const.is_some() && is_null_const.unwrap() != 0);
+            // Check if the value is a constant and extract its value
+            if let Some(const_val) = is_null.get_zero_extended_constant() {
+                return Ok(const_val != 0);
+            }
+            
+            // For non-constant values, we can't determine at compile time
+            return Ok(false);
         }
         
         Err(Error::Compilation(format!(
@@ -155,20 +166,11 @@ impl<'ctx> EnhancedDynamicDispatch<'ctx> for crate::codegen::llvm::LlvmCodeGener
         vtable_ptr1: PointerValue<'ctx>,
         vtable_ptr2: PointerValue<'ctx>
     ) -> Result<BasicValueEnum<'ctx>, Error> {
-        // Compare pointers for equality
-        let result = self.builder().build_ptr_diff(
-            self.context().i8_type(),
-            vtable_ptr1,
-            vtable_ptr2,
-            "ptr_diff"
-        ).map_err(|e| Error::Compilation(e.to_string()))?;
-        
-        // Check if difference is zero (pointers are equal)
-        let zero = self.context().i64_type().const_zero();
+        // Compare pointers for equality using pointer comparison
         let is_equal = self.builder().build_int_compare(
             inkwell::IntPredicate::EQ,
-            result,
-            zero,
+            vtable_ptr1,
+            vtable_ptr2,
             "vtables_equal"
         ).map_err(|e| Error::Compilation(e.to_string()))?;
         

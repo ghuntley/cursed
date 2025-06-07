@@ -152,7 +152,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
         
         // Register the struct as implementing the interface using the trait method
-        self.register_interface_implementation(struct_name, interface_name, HashMap::new())
+        self.register_interface_implementation(struct_name, interface_name, HashMap::<String, FunctionValue<'ctx>>::new())
             .map_err(|e| Error::codegen(format!(
                 "Failed to register field accessors with interface: {}", e
             )))?;

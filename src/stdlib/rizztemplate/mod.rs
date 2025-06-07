@@ -214,7 +214,7 @@ pub fn execute_template(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Get the template object
     let template = match &*args[0] {
         Object::ExternalData(data) => {
-            if let Some(template) = data.as_any().downcast_ref::<Template>() {
+            if let Some(template) = data.downcast_ref::<Template>() {
                 template
             } else {
                 return Err(Error::Runtime(
@@ -272,7 +272,7 @@ pub fn add_func(args: &[Arc<Object>]) -> Result<Arc<Object>, Error> {
     // Get the template object
     let template = match &*args[0] {
         Object::ExternalData(data) => {
-            if let Some(template) = data.as_any().downcast_ref::<Template>() {
+            if let Some(template) = data.downcast_ref::<Template>() {
                 template.clone()
             } else {
                 return Err(Error::Runtime(
