@@ -63,7 +63,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     // Set up LLVM JIT execution
@@ -76,7 +76,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
         Ok(_) => println!("Program compiled successfully"),
         Err(e) => {
             println!("Compilation error: {}", e);
-            return Err(Error::Compilation(format!("Error compiling program: {}", e));
+            return Err(Error::Compilation(format!("Error compiling program: {}", e)));
         }
     }
 

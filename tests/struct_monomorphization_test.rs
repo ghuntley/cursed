@@ -85,7 +85,7 @@ fn test_basic_struct_specialization() {
     let result = generator.generate_specialized_struct(&pair_struct, specialized_name, &type_args);
     
     // Verify the result is successful
-    assert!(result.is_ok(), "Failed to specialize struct: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to specialize struct: {:?}", result.err())
     
     // Verify the struct was registered correctly
     assert!(generator.get_struct_type(generator.current_package_name(), specialized_name).is_some(),
@@ -125,7 +125,7 @@ fn test_nested_struct_specialization() {
     
     // Generate the specialized Pair struct
     let result = generator.generate_specialized_struct(&pair_struct, specialized_pair_name, &pair_type_args);
-    assert!(result.is_ok(), "Failed to specialize Pair struct: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to specialize Pair struct: {:?}", result.err())
     
     // Specialize the Box struct with concrete type Int (normie)
     let specialized_box_name = "Box_normie";
@@ -133,7 +133,7 @@ fn test_nested_struct_specialization() {
     
     // Generate the specialized Box struct
     let result = generator.generate_specialized_struct(&box_struct, specialized_box_name, &box_type_args);
-    assert!(result.is_ok(), "Failed to specialize Box struct: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to specialize Box struct: {:?}", result.err())
 }
 
 #[test]
@@ -175,7 +175,7 @@ fn test_type_parameter_substitution() {
         
         assert!(result.is_ok(), 
             "Failed to specialize Container with {:?}: {:?}", 
-            type_arg, result.err());
+            type_arg, result.err())
         
         // Verify the struct was registered correctly
         assert!(generator.get_struct_type(generator.current_package_name(), specialized_name).is_some(),

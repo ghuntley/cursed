@@ -102,7 +102,7 @@ fn create_generic_identity_function() -> FunctionStatement {
 
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: Token::Identifier("param".to_string(),
+        token: Token::Identifier("param".to_string()),
         name: Identifier {
             token: "token".to_string(),
             value: "x".to_string(),

@@ -90,10 +90,8 @@ mod tests {
         let context = Context::create();
         let mut setup = TestSetup::new(&context);
 
-        let errors = vec![
-            Error::Compilation("Error 1".to_string(),
-            Error::Runtime("Error 2".to_string(),
-        ];
+        let errors = vec![Error::Compilation("Error 1".to_string(),
+            Error::Runtime("Error 2".to_string()];
 
         let combined_error = setup.codegen.collect_type_assertion_errors(errors);
 
@@ -116,9 +114,7 @@ mod tests {
         let interface_type = "Greeter";
         let target_type = "Person";
         let source_location = "test.csd:42";
-        let errors = vec![
-            Error::Compilation("Type mismatch".to_string(),
-        ];
+        let errors = vec![Error::Compilation("Type mismatch".to_string()];
 
         let report = setup.codegen.create_type_assertion_error_report(
             interface_type,
@@ -139,7 +135,7 @@ mod tests {
     fn test_result_propagation_concept() {
         // This is a simplified conceptual test that shows Result propagation works
         fn inner_operation() -> Result<i32, Error> {
-            Err(Error::Compilation("Inner error".to_string())
+            Err(Error::Compilation("Inner error".to_string()))
         }
 
         fn middle_operation() -> Result<i32, Error> {
@@ -155,10 +151,10 @@ mod tests {
         }
 
         let result = outer_operation();
-        assert!(result.is_err());
+        assert!(result.is_err())
         
         match result {
-            Err(Error::Compilation(msg)) => {
+            Err(Error::Compilation(msg))) => {
                 assert_eq!(msg, "Inner error");
             },
             _ => panic!("Expected compilation error")

@@ -59,10 +59,10 @@ fn test_identity_function_specialization() {
     
     // Verify the functions can be executed (can't actually run them in this test,
     // but we can check that they've been properly verified)
-    let int_function = module.get_function(&int_specialized_name).unwrap());
+    let int_function = module.get_function(&int_specialized_name).unwrap();
     assert!(int_function.verify(true).is_ok(), "Integer function verification failed");
     
-    let string_function = module.get_function(&string_specialized_name).unwrap());
+    let string_function = module.get_function(&string_specialized_name).unwrap();
     assert!(string_function.verify(true).is_ok(), "String function verification failed");
 }
 
@@ -76,7 +76,7 @@ fn create_generic_identity_function() -> FunctionStatement {
     
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: Token::Identifier("param".to_string(),
+        token: Token::Identifier("param".to_string()),
         name: Identifier {
             token: "token".to_string(),
             value: "x".to_string(),

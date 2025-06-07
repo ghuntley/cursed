@@ -239,7 +239,7 @@ fn create_generic_select_function() -> FunctionStatement {
     // Create parameters: condition: lit, first: T, second: U
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("param".to_string(),
+            token: Token::Identifier("param".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "condition".to_string(),
@@ -250,7 +250,7 @@ fn create_generic_select_function() -> FunctionStatement {
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("param".to_string(),
+            token: Token::Identifier("param".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "first".to_string(),
@@ -261,7 +261,7 @@ fn create_generic_select_function() -> FunctionStatement {
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("param".to_string(),
+            token: Token::Identifier("param".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "second".to_string(),
@@ -330,7 +330,7 @@ fn create_generic_map_function() -> FunctionStatement {
     // Create parameters: mapper: (T) -> U, elements: array<T>
     let parameters = vec![
         ParameterStatement {
-            token: Token::Identifier("param".to_string(),
+            token: Token::Identifier("param".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "mapper".to_string(),
@@ -342,7 +342,7 @@ fn create_generic_map_function() -> FunctionStatement {
             }),
         },
         ParameterStatement {
-            token: Token::Identifier("param".to_string(),
+            token: Token::Identifier("param".to_string()),
             name: Identifier {
                 token: "token".to_string(),
                 value: "elements".to_string(),

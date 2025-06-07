@@ -16,7 +16,7 @@ use cursed::codegen::llvm::StatementCompilation; // Updated import
 #[test]
 fn test_while_with_break_continue() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type();
@@ -59,14 +59,14 @@ fn test_while_with_break_continue() {
     
     // This should succeed even though the code isn't practical
     // (break followed by unreachable continue)
-    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err())
     
     // Terminate the function with a return
     let return_val = i32_type.const_int(0, false);
-    generator.builder().build_return(Some(&return_val)).unwrap());
+    generator.builder().build_return(Some(&return_val)).unwrap();
     
     // Verify the module
-    assert!(generator.module().verify().is_ok());
+    assert!(generator.module().verify().is_ok())
 }
 
 // Skip the Later statement test since it's not fully supported yet

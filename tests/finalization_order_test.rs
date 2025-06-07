@@ -37,14 +37,14 @@ impl Traceable for DependentObject {
     fn finalize(&mut self) {
         // Mark as finalized
         {
-            let mut finalized = self.finalized.lock().unwrap());
+            let mut finalized = self.finalized.lock().unwrap();
             *finalized = true;
             println!("DependentObject {} finalized", self.id);
         }
         
         // Add to finalization order
         {
-            let mut order = self.finalization_order.lock().unwrap());
+            let mut order = self.finalization_order.lock().unwrap();
             order.push(self.id);
         }
     }
@@ -106,7 +106,7 @@ fn test_simple_dependency_chain() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap());
+    let order = finalization_order.lock().unwrap();
     assert_eq!(order.len(), 4, "Should have finalized 4 objects");
     
     // Order should be 3, 2, 1, 0 (dependencies finalized first)
@@ -137,7 +137,7 @@ fn test_complex_dependency_graph() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap());
+    let order = finalization_order.lock().unwrap();
     assert_eq!(order.len(), 5, "Should have finalized 5 objects");
     
     // Verify that dependencies were finalized before dependents
@@ -179,7 +179,7 @@ fn test_circular_dependencies() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap());
+    let order = finalization_order.lock().unwrap();
     assert_eq!(order.len(), 3, "Should have finalized 3 objects");
     
     // All 3 objects should be in the finalization order
@@ -246,7 +246,7 @@ fn test_integration_with_gc() {
     cursed::memory::finalize_objects_ordered(&addresses);
     
     // Check the finalization order
-    let order = finalization_order.lock().unwrap());
+    let order = finalization_order.lock().unwrap();
     println!("Finalization order: {:?}", order);
     
     // All 3 objects should be finalized

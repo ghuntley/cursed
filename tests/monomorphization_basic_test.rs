@@ -49,7 +49,7 @@ fn test_function_monomorphization_basic() {
 
     // Verify the module
     let verify_result = generator.module().verify();
-    assert!(verify_result.is_ok(), "Module verification failed: {:?}", verify_result.err());
+    assert!(verify_result.is_ok(), "Module verification failed: {:?}", verify_result.err())
 
     // Check that the specialized function exists
     let i32_identity = generator.module().get_function("identity__Normie");

@@ -266,13 +266,13 @@ fn test_concurrent_channel_operations() {
     
     // Wait for all sender threads to complete
     for handle in handles {
-        handle.join().unwrap());
+        handle.join().unwrap();
     }
     
     // Wait for all receiver threads to complete and collect results
     let mut all_received = Vec::new();
     for handle in receiver_handles {
-        let received = handle.join().unwrap());
+        let received = handle.join().unwrap();
         all_received.extend(received);
     }
     

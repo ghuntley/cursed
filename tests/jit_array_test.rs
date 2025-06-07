@@ -39,7 +39,7 @@ fn test_jit_array_basic() -> Result<(), Error> {
     // Ensure no parser errors
     if !parser.errors().is_empty() {
         error!(errors = ?parser.errors(), "Parser errors encountered");
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -164,7 +164,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -289,7 +289,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");

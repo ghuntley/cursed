@@ -271,7 +271,7 @@ fn test_optimize_allocation_pattern() {
             buffer.push_str(&i.to_string());
             
             // Clone only when we need to store it
-            let gc_s = gc.allocate(GcString(buffer.clone());
+            let gc_s = gc.allocate(GcString(buffer.clone();
             if let Some(inner) = gc_s.inner() {
                 result.push(inner.0.clone();
             }

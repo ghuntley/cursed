@@ -200,8 +200,7 @@ fn test_lru_cache_performance() {
     // Create 1000 struct types with different type parameters
     for i in 0..100 {
         for j in 0..10 {
-            types.push(Type::Struct(
-                format!("Struct{}", i),
+            types.push(Type::Struct(vec![Type::Int32], false));format!("Struct{}", i),
                 vec![Box::new(match j {
                     0 => Type::Normie,
                     1 => Type::Thicc,

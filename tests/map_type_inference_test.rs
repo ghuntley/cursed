@@ -49,7 +49,7 @@ fn test_map_type_inference(input: &str) -> Result<Type, Error> {
 #[test]
 fn test_empty_map_literal() {
     let result = test_map_type_inference("{};");
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     
     if let Ok(type_) = result {
         if let Type::Map(key_type, value_type) = type_ {
@@ -64,7 +64,7 @@ fn test_empty_map_literal() {
 #[test]
 fn test_string_to_int_map_literal() {
     let result = test_map_type_inference("{\"Alice\": 30, \"Bob\": 25, \"Charlie\": 35};");
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     
     if let Ok(type_) = result {
         if let Type::Map(key_type, value_type) = type_ {
@@ -79,7 +79,7 @@ fn test_string_to_int_map_literal() {
 #[test]
 fn test_int_to_float_map_literal() {
     let result = test_map_type_inference("{1: 1.5, 2: 2.5, 3: 3.5};");
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     
     if let Ok(type_) = result {
         if let Type::Map(key_type, value_type) = type_ {
@@ -96,9 +96,9 @@ fn test_mixed_key_types_map_literal() {
     let result = test_map_type_inference("{\"name\": \"Alice\", 1: \"Bob\"};");
     
     // This should fail because key types are inconsistent
-    assert!(result.is_err());
+    assert!(result.is_err())
     if let Err(err) = result {
-        assert!(err.to_string().contains("Inconsistent key types"));
+        assert!(err.to_string().contains("Inconsistent key types"))
     }
 }
 
@@ -107,8 +107,8 @@ fn test_mixed_value_types_map_literal() {
     let result = test_map_type_inference("{\"Alice\": 30, \"Bob\": \"twenty-five\"};");
     
     // This should fail because value types are inconsistent
-    assert!(result.is_err());
+    assert!(result.is_err())
     if let Err(err) = result {
-        assert!(err.to_string().contains("Inconsistent value types"));
+        assert!(err.to_string().contains("Inconsistent value types"))
     }
 }

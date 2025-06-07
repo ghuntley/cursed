@@ -19,11 +19,11 @@ fn test_generic_interface_registry_basic() {
     
     // Check a basic generic type with a single type parameter
     let stack_type = Type::Struct("GenericStack".to_string(), vec![Box::new(Type::Tea)]);
-    assert!(registry.check_implementation(&stack_type, "Container").unwrap());
-    assert!(registry.check_implementation(&stack_type, "Stack").unwrap());
+    assert!(registry.check_implementation(&stack_type, "Container").unwrap();
+    assert!(registry.check_implementation(&stack_type, "Stack").unwrap();
     
     // Make sure it doesn't implement interfaces it shouldn't
-    assert!(!registry.check_implementation(&stack_type, "List").unwrap());
+    assert!(!registry.check_implementation(&stack_type, "List").unwrap();
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn test_constraint_checking_with_multiple_type_params() {
         "Pair".to_string(), 
         vec![Box::new(Type::Tea), Box::new(Type::Tea)]
     );
-    assert!(registry.check_implementation(&pair_tea_tea, "Container").unwrap());
+    assert!(registry.check_implementation(&pair_tea_tea, "Container").unwrap();
     
     // Pair[String, Custom] - String implements Comparable, custom type doesn't matter
     let custom_type = Type::Struct("Custom".to_string(), vec![]);
@@ -49,14 +49,14 @@ fn test_constraint_checking_with_multiple_type_params() {
         "Pair".to_string(), 
         vec![Box::new(Type::Tea), Box::new(custom_type.clone())]
     );
-    assert!(registry.check_implementation(&pair_tea_custom, "Container").unwrap());
+    assert!(registry.check_implementation(&pair_tea_custom, "Container").unwrap();
     
     // Pair[Custom, String] - Custom doesn't implement Comparable
     let pair_custom_tea = Type::Struct(
         "Pair".to_string(), 
         vec![Box::new(custom_type.clone()), Box::new(Type::Tea)]
     );
-    assert!(!registry.check_implementation(&pair_custom_tea, "Container").unwrap());
+    assert!(!registry.check_implementation(&pair_custom_tea, "Container").unwrap();
 }
 
 #[test]
@@ -86,14 +86,14 @@ fn test_manually_registering_generic_interfaces() {
         "Result".to_string(),
         vec![Box::new(Type::Tea), Box::new(Type::Struct("ErrorType".to_string(), vec![]))]
     );
-    assert!(registry.check_implementation(&result_type, "Monad").unwrap());
+    assert!(registry.check_implementation(&result_type, "Monad").unwrap();
     
     // Result[String, String] should not implement Monad because String doesn't implement Error
     let invalid_result_type = Type::Struct(
         "Result".to_string(),
         vec![Box::new(Type::Tea), Box::new(Type::Tea)]
     );
-    assert!(!registry.check_implementation(&invalid_result_type, "Monad").unwrap());
+    assert!(!registry.check_implementation(&invalid_result_type, "Monad").unwrap();
 }
 
 #[test]
@@ -126,7 +126,7 @@ fn test_constraints_on_multiple_type_params() {
         "KeyValuePair".to_string(),
         vec![Box::new(Type::Tea), Box::new(Type::Tea)]
     );
-    assert!(registry.check_implementation(&kv_tea_tea, "Storable").unwrap());
+    assert!(registry.check_implementation(&kv_tea_tea, "Storable").unwrap();
     
     // KeyValuePair[String, Int] should implement Storable
     // because String implements Comparable and Int implements Serializable
@@ -134,7 +134,7 @@ fn test_constraints_on_multiple_type_params() {
         "KeyValuePair".to_string(),
         vec![Box::new(Type::Tea), Box::new(Type::Normie)]
     );
-    assert!(registry.check_implementation(&kv_tea_normie, "Storable").unwrap());
+    assert!(registry.check_implementation(&kv_tea_normie, "Storable").unwrap();
     
     // KeyValuePair[Int, String] should NOT implement Storable
     // because Int doesn't implement Comparable (we didn't register it)
@@ -142,9 +142,9 @@ fn test_constraints_on_multiple_type_params() {
         "KeyValuePair".to_string(),
         vec![Box::new(Type::Normie), Box::new(Type::Tea)]
     );
-    assert!(!registry.check_implementation(&kv_normie_tea, "Storable").unwrap());
+    assert!(!registry.check_implementation(&kv_normie_tea, "Storable").unwrap();
     
     // After registering Int as Comparable, it should work
     registry.register_implementation(Type::Normie, "Comparable".to_string());
-    assert!(registry.check_implementation(&kv_normie_tea, "Storable").unwrap());
+    assert!(registry.check_implementation(&kv_normie_tea, "Storable").unwrap();
 }

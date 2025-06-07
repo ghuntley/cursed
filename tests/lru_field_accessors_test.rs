@@ -85,7 +85,7 @@ fn test_lru_cached_field_accessors() {
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd");
+    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
     
     // Ensure LRU cache is initialized
     codegen.ensure_lru_field_accessor_cache();

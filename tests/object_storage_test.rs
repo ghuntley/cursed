@@ -45,7 +45,7 @@ impl Traceable for TestObject {
     
     fn finalize(&mut self) {
         // Mark as finalized
-        let mut finalized = self.finalized.lock().unwrap());
+        let mut finalized = self.finalized.lock().unwrap();
         *finalized = true;
         info!(id = self.id, "TestObject finalized");
     }
@@ -138,7 +138,7 @@ fn test_object_storage_basic() {
     
     // Verify finalization happened
     debug!("Checking if object was finalized");
-    let was_finalized = *finalized.lock().unwrap());
+    let was_finalized = *finalized.lock().unwrap();
     if !was_finalized {
         error!("Object was not finalized properly");
     }
@@ -215,7 +215,7 @@ fn test_storage_wrapper() {
     
     // Verify finalization happened
     debug!("Checking if object was finalized");
-    let was_finalized = *finalized.lock().unwrap());
+    let was_finalized = *finalized.lock().unwrap();
     if !was_finalized {
         error!("Object was not finalized properly");
     }
@@ -269,7 +269,7 @@ fn test_integration_with_gc() {
     
     // Verify finalization happened
     debug!("Checking if object was finalized");
-    let was_finalized = *finalized.lock().unwrap());
+    let was_finalized = *finalized.lock().unwrap();
     if !was_finalized {
         error!("Object was not finalized properly");
     }
@@ -333,8 +333,8 @@ fn test_multiple_objects() {
     
     // Verify both were finalized
     debug!("Checking if both objects were finalized");
-    let was_finalized1 = *finalized1.lock().unwrap());
-    let was_finalized2 = *finalized2.lock().unwrap());
+    let was_finalized1 = *finalized1.lock().unwrap();
+    let was_finalized2 = *finalized2.lock().unwrap();
     if !was_finalized1 || !was_finalized2 {
         error!("One or both objects were not finalized properly");
     }

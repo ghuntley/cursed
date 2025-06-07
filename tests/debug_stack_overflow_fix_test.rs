@@ -7,7 +7,7 @@ fn test_debug_no_stack_overflow() {
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
     
     // Test Debug formatting - this should not cause stack overflow
-    let debug_output = format!("{:?}", *registry.read().unwrap());
+    let debug_output = format!("{:?}", *registry.read().unwrap();
     
     // Verify that the debug output contains expected information
     assert!(debug_output.contains("ThreadSafeInterfaceExtensionRegistry");

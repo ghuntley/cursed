@@ -51,26 +51,26 @@ fn test_source_line_retrieval() {
     init_tracing();
     
     // Create a temporary test file
-    let temp_dir = tempfile::tempdir().unwrap());
+    let temp_dir = tempfile::tempdir().unwrap();
     let file_path = temp_dir.path().join("test_source.csd");
-    let mut file = std::fs::File::create(&file_path).unwrap());
+    let mut file = std::fs::File::create(&file_path).unwrap();
     
     // Write a simple interface type assertion example
     writeln!(file, "vibe main;").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "collab Shape {{").unwrap();
-    writeln!(file, "    slay area() meal;").unwrap());
+    writeln!(file, "    slay area() meal;").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "squad Circle {{").unwrap();
     writeln!(file, "    radius meal,").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
-    writeln!(file, "slay (c Circle) area() meal {{").unwrap());
+    writeln!(file, "slay (c Circle) area() meal {{").unwrap();
     writeln!(file, "    return 3.14159 * c.radius * c.radius;").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
-    writeln!(file, "slay main() {{").unwrap());
+    writeln!(file, "slay main() {{").unwrap();
     writeln!(file, "    sus shape Shape = Circle{{radius: 5.0};").unwrap();
     writeln!(file, "    sus circle = shape.(Circle)?;").unwrap();
     writeln!(file, "}}").unwrap();
@@ -99,15 +99,15 @@ fn test_formatting_error_with_source_context() {
     init_tracing();
     
     // Create a temporary test file
-    let temp_dir = tempfile::tempdir().unwrap());
+    let temp_dir = tempfile::tempdir().unwrap();
     let file_path = temp_dir.path().join("test_error.csd");
-    let mut file = std::fs::File::create(&file_path).unwrap());
+    let mut file = std::fs::File::create(&file_path).unwrap();
     
     // Write a simple interface type assertion example with an error
     writeln!(file, "vibe main;").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "collab Shape {{").unwrap();
-    writeln!(file, "    slay area() meal;").unwrap());
+    writeln!(file, "    slay area() meal;").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
     writeln!(file, "squad Circle {{").unwrap();
@@ -119,7 +119,7 @@ fn test_formatting_error_with_source_context() {
     writeln!(file, "    height meal").unwrap();
     writeln!(file, "}}").unwrap();
     writeln!(file, "").unwrap();
-    writeln!(file, "slay main() {{").unwrap());
+    writeln!(file, "slay main() {{").unwrap();
     writeln!(file, "    sus shape Shape = Rectangle{{width: 10.0, height: 5.0};").unwrap();
     writeln!(file, "    sus circle = shape.(Circle)?; // This will fail at runtime").unwrap();
     writeln!(file, "}}").unwrap();
@@ -149,7 +149,7 @@ fn test_formatting_error_with_source_context() {
     
     // Verify the formatted error includes the file, line, and source context
     assert!(formatted.contains("Type assertion failed");
-    assert!(formatted.contains(file_path.to_str().unwrap());
+    assert!(formatted.contains(file_path.to_str().unwrap();
     assert!(formatted.contains("18");
     assert!(formatted.contains("shape.(Circle)?");
     assert!(formatted.contains("Source:");
@@ -188,9 +188,9 @@ fn test_source_location_with_node() {
     }
     
     // Create a temporary test file
-    let temp_dir = tempfile::tempdir().unwrap());
+    let temp_dir = tempfile::tempdir().unwrap();
     let file_path = temp_dir.path().join("test_node.csd");
-    let mut file = std::fs::File::create(&file_path).unwrap());
+    let mut file = std::fs::File::create(&file_path).unwrap();
     
     // Write a simple test file
     writeln!(file, "line 1").unwrap();

@@ -266,7 +266,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
         _value: inkwell::values::BasicValueEnum<'_>
     ) -> Result<inkwell::values::BasicValueEnum<'_>, Error> {
         // Mock implementation
-        Err(Error::Compilation("Not implemented in mock".to_string())
+        Err(Error::Compilation("Not implemented in mock".to_string()))
     }
 }
 
@@ -276,7 +276,7 @@ fn test_visualize_interface_path() {
     
     let mut generator = MockGenerator::new();
     
-    let visualization = generator.visualize_interface_path("Dog", 2).unwrap());
+    let visualization = generator.visualize_interface_path("Dog", 2).unwrap();
     println!("{}", visualization);
     
     assert!(visualization.contains("Animal");
@@ -290,19 +290,19 @@ fn test_find_alternative_paths() {
     let mut generator = MockGenerator::new();
     
     // Test finding paths between types
-    let paths = generator.find_alternative_paths("Dog", "Cat", 3).unwrap());
+    let paths = generator.find_alternative_paths("Dog", "Cat", 3).unwrap();
     println!("Paths between Dog and Cat: {:?}", paths);
     
     // Should have common interfaces
-    assert!(paths.iter().any(|p| p.contains("Animal"));
-    assert!(paths.iter().any(|p| p.contains("Pet"));
+    assert!(paths.iter().any(|p| p.contains("Animal"))
+    assert!(paths.iter().any(|p| p.contains("Pet"))
     
     // Test finding paths between unrelated types
-    let paths = generator.find_alternative_paths("Dog", "Car", 3).unwrap());
+    let paths = generator.find_alternative_paths("Dog", "Car", 3).unwrap();
     println!("Paths between Dog and Car: {:?}", paths);
     
     // Should be empty - no relationship
-    assert!(paths.is_empty().is_empty());
+    assert!(paths.is_empty().is_empty())
 }
 
 #[test]
@@ -312,10 +312,10 @@ fn test_check_extension_relationship() {
     let mut generator = MockGenerator::new();
     
     // Check existing relationship
-    assert!(generator.check_extension_relationship_simple("Dog", "Animal").unwrap());
+    assert!(generator.check_extension_relationship_simple("Dog", "Animal").unwrap();
     
     // Check non-existing relationship
-    assert!(!generator.check_extension_relationship_simple("Dog", "Vehicle").unwrap());
+    assert!(!generator.check_extension_relationship_simple("Dog", "Vehicle").unwrap();
 }
 
 #[test]
@@ -324,13 +324,13 @@ fn test_get_implementors() {
     
     let mut generator = MockGenerator::new();
     
-    let animal_implementors = generator.get_implementors("Animal").unwrap());
+    let animal_implementors = generator.get_implementors("Animal").unwrap();
     println!("Animal implementors: {:?}", animal_implementors);
     
-    assert!(animal_implementors.contains(&"Dog".to_string());
-    assert!(animal_implementors.contains(&"Cat".to_string());
-    assert!(animal_implementors.contains(&"Bird".to_string());
-    assert!(!animal_implementors.contains(&"Car".to_string());
+    assert!(animal_implementors.contains(&"Dog".to_string())
+    assert!(animal_implementors.contains(&"Cat".to_string())
+    assert!(animal_implementors.contains(&"Bird".to_string())
+    assert!(!animal_implementors.contains(&"Car".to_string())
 }
 
 #[test]
@@ -339,7 +339,7 @@ fn test_inheritance_tree() {
     
     let mut generator = MockGenerator::new();
     
-    let tree = generator.generate_inheritance_tree("Dog", 2).unwrap());
+    let tree = generator.generate_inheritance_tree("Dog", 2).unwrap();
     println!("{}", tree);
     
     assert!(tree.contains("Animal");

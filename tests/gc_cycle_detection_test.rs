@@ -139,7 +139,7 @@ fn test_incremental_collection() {
     // Create 20 nodes with various connections
     let mut nodes = Vec::new();
     for i in 0..20 {
-        nodes.push(gc.allocate(CyclicNode::new(i));
+        nodes.push(gc.allocate(CyclicNode::new(i))
     }
     
     // Create some connections (including cycles)

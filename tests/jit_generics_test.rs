@@ -38,7 +38,7 @@ fn test_monomorphization_jit_execution() {
     assert_eq!(specialized_name_i32, "identity__Normie");
 
     // Verify the function is in the instantiated map
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]))
 
     // Verify the LLVM module contains the specialized function
     let module = code_gen.module();
@@ -55,8 +55,8 @@ fn test_monomorphization_jit_execution() {
     assert_eq!(specialized_name_tea, "identity__Tea");
 
     // Verify both specialized versions exist
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
-    assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]));
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]))
+    assert!(mono_manager.is_function_instantiated("identity", &[Type::Tea]))
 
     // Make sure they are different specializations
     assert_ne!(specialized_name_i32, specialized_name_tea);
@@ -94,7 +94,7 @@ fn test_complex_generic_function() {
 
     // Verify the function is properly specialized
     assert_eq!(specialized_name, "swap__Normie");
-    assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("swap", &[Type::Normie]))
 
     // Specialize for a different type
     let specialized_name2 = mono_manager
@@ -107,7 +107,7 @@ fn test_complex_generic_function() {
 
     // Verify the second specialization
     assert_eq!(specialized_name2, "swap__Thicc");
-    assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]));
+    assert!(mono_manager.is_function_instantiated("swap", &[Type::Thicc]))
 
     // We're using our own mono_manager for testing
 
@@ -115,8 +115,8 @@ fn test_complex_generic_function() {
     let module = code_gen.module();
 
     // In a real implementation, these might exist, but since we're not actually creating functions:
-    // assert!(module.get_function(&specialized_name).is_some());
-    // assert!(module.get_function(&specialized_name2).is_some());
+    // assert!(module.get_function(&specialized_name).is_some())
+    // assert!(module.get_function(&specialized_name2).is_some())
 }
 
 /// Helper function to create a generic swap function

@@ -168,7 +168,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return area
-    codegen.builder().build_return(Some(&area)).unwrap());
+    codegen.builder().build_return(Some(&area)).unwrap();
     
     // Create perimeter function for Circle
     let perimeter_fn_type = context.f64_type().fn_type(
@@ -229,7 +229,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return perimeter
-    codegen.builder().build_return(Some(&perimeter)).unwrap());
+    codegen.builder().build_return(Some(&perimeter)).unwrap();
     
     // Register Circle as implementing Shape
     let mut circle_methods = HashMap::new();
@@ -270,7 +270,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
     
     // Store 5.0 as radius
     let radius_value = context.f64_type().const_float(5.0);
-    codegen.builder().build_store(radius_ptr, radius_value).unwrap());
+    codegen.builder().build_store(radius_ptr, radius_value).unwrap();
     
     // Convert Circle to Shape interface
     let circle_type = Type::Struct("Circle".to_string(), Vec::new();
@@ -309,7 +309,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return the result
-    codegen.builder().build_return(Some(&sum)).unwrap());
+    codegen.builder().build_return(Some(&sum)).unwrap();
     
     // Get dispatch statistics
     let stats = codegen.get_dispatch_statistics()?;
@@ -428,7 +428,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return area
-    codegen.builder().build_return(Some(&area)).unwrap());
+    codegen.builder().build_return(Some(&area)).unwrap();
     
     // Create perimeter function for Circle
     let perimeter_fn_type = context.f64_type().fn_type(
@@ -489,7 +489,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return perimeter
-    codegen.builder().build_return(Some(&perimeter)).unwrap());
+    codegen.builder().build_return(Some(&perimeter)).unwrap();
     
     // Create area function for Rectangle
     let rect_area_fn_type = context.f64_type().fn_type(
@@ -558,7 +558,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return area
-    codegen.builder().build_return(Some(&area)).unwrap());
+    codegen.builder().build_return(Some(&area)).unwrap();
     
     // Create perimeter function for Rectangle
     let rect_perimeter_fn_type = context.f64_type().fn_type(
@@ -636,7 +636,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return perimeter
-    codegen.builder().build_return(Some(&perimeter)).unwrap());
+    codegen.builder().build_return(Some(&perimeter)).unwrap();
     
     // Register Circle as implementing Shape
     let mut circle_methods = HashMap::new();
@@ -688,7 +688,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     
     // Store 5.0 as radius
     let radius_value = context.f64_type().const_float(5.0);
-    codegen.builder().build_store(radius_ptr, radius_value).unwrap());
+    codegen.builder().build_store(radius_ptr, radius_value).unwrap();
     
     // Allocate Rectangle with width 4.0 and height 6.0
     let rectangle_ptr = codegen.builder()
@@ -707,7 +707,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     
     // Store 4.0 as width
     let width_value = context.f64_type().const_float(4.0);
-    codegen.builder().build_store(width_ptr, width_value).unwrap());
+    codegen.builder().build_store(width_ptr, width_value).unwrap();
     
     // Initialize Rectangle height field
     let height_ptr = unsafe {
@@ -721,7 +721,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     
     // Store 6.0 as height
     let height_value = context.f64_type().const_float(6.0);
-    codegen.builder().build_store(height_ptr, height_value).unwrap());
+    codegen.builder().build_store(height_ptr, height_value).unwrap();
     
     // Convert Circle to Shape interface
     let circle_type = Type::Struct("Circle".to_string(), Vec::new();
@@ -769,7 +769,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         ).unwrap()
     };
     
-    codegen.builder().build_store(circle_slot_ptr, circle_shape).unwrap());
+    codegen.builder().build_store(circle_slot_ptr, circle_shape).unwrap();
     
     // Store Rectangle shape in the array
     let rectangle_slot_ptr = unsafe {
@@ -781,13 +781,13 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         ).unwrap()
     };
     
-    codegen.builder().build_store(rectangle_slot_ptr, rectangle_shape).unwrap());
+    codegen.builder().build_store(rectangle_slot_ptr, rectangle_shape).unwrap();
     
     // Create a loop to calculate total area of all shapes
     // Loop initialization - total area
-    let total_area = codegen.builder().build_alloca(context.f64_type(), "total_area").unwrap());
+    let total_area = codegen.builder().build_alloca(context.f64_type(), "total_area").unwrap();
     let zero = context.f64_type().const_float(0.0);
-    codegen.builder().build_store(total_area, zero).unwrap());
+    codegen.builder().build_store(total_area, zero).unwrap();
     
     // Load shape instances
     let circle_shape = codegen.builder()
@@ -838,7 +838,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
             )
             .unwrap();
         
-        codegen.builder().build_store(total_area, new_total).unwrap());
+        codegen.builder().build_store(total_area, new_total).unwrap();
     }
     
     // Call area for rectangle several times
@@ -868,7 +868,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
             )
             .unwrap();
         
-        codegen.builder().build_store(total_area, new_total).unwrap());
+        codegen.builder().build_store(total_area, new_total).unwrap();
     }
     
     // After enough calls, the system should use speculative dispatch
@@ -882,7 +882,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
         .unwrap();
     
     // Return the result
-    codegen.builder().build_return(Some(&result)).unwrap());
+    codegen.builder().build_return(Some(&result)).unwrap();
     
     // Get dispatch statistics
     let stats = codegen.get_dispatch_statistics()?;

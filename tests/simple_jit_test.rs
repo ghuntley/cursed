@@ -38,7 +38,7 @@ fn test_simple_jit() -> Result<(), Error> {
     // Ensure no parser errors
     if !parser.errors().is_empty() {
         error!(errors = ?parser.errors(), "Parser errors encountered");
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     debug!(ast = %program.string(), "Parsed AST structure");
@@ -63,11 +63,11 @@ fn test_simple_jit() -> Result<(), Error> {
     let x_value = i32_type.const_int(42, false);
 
     // Create a function call to puts
-    let puts_fn = code_gen.module().get_function("puts").unwrap());
-    code_gen.builder().build_call(puts_fn, &[x_value.into()], "putscall").unwrap());
+    let puts_fn = code_gen.module().get_function("puts").unwrap();
+    code_gen.builder().build_call(puts_fn, &[x_value.into()], "putscall").unwrap();
 
     // Return the value from main
-    code_gen.builder().build_return(Some(&x_value)).unwrap());
+    code_gen.builder().build_return(Some(&x_value)).unwrap();
 
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");

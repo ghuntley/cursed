@@ -35,7 +35,7 @@ fn test_jit_debug() -> Result<(), Error> {
 
     // Create a return value of 42
     let return_value = i32_type.const_int(42, false);
-    code_gen.builder().build_return(Some(&return_value)).unwrap());
+    code_gen.builder().build_return(Some(&return_value)).unwrap();
 
     // Print the generated LLVM IR for debugging
     debug!("Generated LLVM IR");
@@ -126,7 +126,7 @@ fn test_jit_through_compilation() -> Result<(), Error> {
     // Add a return 42 for our test
     debug!("Adding return statement with value 42");
     let return_value = i32_type.const_int(42, false);
-    code_gen.builder().build_return(Some(&return_value)).unwrap());
+    code_gen.builder().build_return(Some(&return_value)).unwrap();
     
     info!("Manual compilation completed");
 

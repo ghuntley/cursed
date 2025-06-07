@@ -87,7 +87,7 @@ fn test_minimal_interface_implementation() {
     ).unwrap();
     
     // Return the name string
-    builder.build_return(Some(&name)).unwrap());
+    builder.build_return(Some(&name)).unwrap();
     
     // Create the Stringer vtable for Person
     let stringer_person_vtable = module.add_global(
@@ -114,7 +114,7 @@ fn test_minimal_interface_implementation() {
     builder.position_at_end(test_entry);
     
     // Create a Person
-    let person_ptr = builder.build_alloca(person_type, "person").unwrap());
+    let person_ptr = builder.build_alloca(person_type, "person").unwrap();
     
     // Initialize name field with "Alice"
     let name_ptr = unsafe {
@@ -127,8 +127,8 @@ fn test_minimal_interface_implementation() {
     };
     
     // Create a global string constant for "Alice"
-    let alice = builder.build_global_string_ptr("Alice", "alice_str").unwrap());
-    builder.build_store(name_ptr, alice.as_pointer_value()).unwrap());
+    let alice = builder.build_global_string_ptr("Alice", "alice_str").unwrap();
+    builder.build_store(name_ptr, alice.as_pointer_value()).unwrap();
     
     // Initialize age field with 30
     let age_ptr = unsafe {
@@ -141,7 +141,7 @@ fn test_minimal_interface_implementation() {
     };
     
     let thirty = context.i32_type().const_int(30, false);
-    builder.build_store(age_ptr, thirty).unwrap());
+    builder.build_store(age_ptr, thirty).unwrap();
     
     // Get the vtable pointer
     let vtable_ptr = stringer_person_vtable.as_pointer_value();
@@ -180,7 +180,7 @@ fn test_minimal_interface_implementation() {
     ).unwrap();
     
     // Return the result
-    builder.build_return(Some(&result.try_as_basic_value().left().unwrap()).unwrap());
+    builder.build_return(Some(&result.try_as_basic_value().left().unwrap()).unwrap();
     
     // Verify the module
     if let Err(err) = module.verify() {

@@ -35,7 +35,7 @@ fn test_field_accessors_integration() {
         &type_args,
     );
     
-    assert!(result.is_ok(), "Failed to generate specialized struct with accessors: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to generate specialized struct with accessors: {:?}", result.err())
     
     // Verify the field accessors were created
     assert!(code_gen.module().get_function("Point_Normie_Tea_get_x").is_some(), 
@@ -79,7 +79,7 @@ fn test_field_accessors_integration() {
     );
     let cache_time = start.elapsed();
     
-    assert!(cache_result.is_ok(), "Failed to regenerate specialized struct with accessors: {:?}", cache_result.err());
+    assert!(cache_result.is_ok(), "Failed to regenerate specialized struct with accessors: {:?}", cache_result.err())
     println!("Cache regeneration took: {:?}", cache_time);
     
     // Verify module integrity
@@ -96,13 +96,13 @@ fn create_test_generic_struct() -> SquadStatement {
         },
         type_parameters: vec![
             TypeParameter {
-                token: Token::Identifier("T".to_string(),
+                token: Token::Identifier("T".to_string()),
                 name: "T".to_string(),
                 value: "T".to_string(),
                 constraints: Vec::new(),
             },
             TypeParameter {
-                token: Token::Identifier("U".to_string(),
+                token: Token::Identifier("U".to_string()),
                 name: "U".to_string(),
                 value: "U".to_string(),
                 constraints: Vec::new(),

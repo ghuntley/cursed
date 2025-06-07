@@ -50,7 +50,7 @@ fn test_async_constraint_checker_parallel_execution() {
     // Verify all results match expected outcomes
     assert_eq!(results.len(), 10);
     for i in 0..10 {
-        assert!(results[i].is_ok());
+        assert!(results[i].is_ok())
     }
     
     // Check specific results
@@ -68,7 +68,7 @@ fn test_async_constraint_checker_parallel_execution() {
     // Verify results again
     assert_eq!(results.len(), 10);
     for i in 0..10 {
-        assert!(results[i].is_ok());
+        assert!(results[i].is_ok())
     }
 }
 

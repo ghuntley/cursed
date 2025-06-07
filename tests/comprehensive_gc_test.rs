@@ -406,7 +406,7 @@ fn test_multithreaded_gc_stress() {
     
     // Wait for GC thread to complete
     info!("Waiting for GC thread to complete");
-    gc_thread.join().unwrap());
+    gc_thread.join().unwrap();
     debug!("GC thread joined");
     
     // Final GC to clean up all objects

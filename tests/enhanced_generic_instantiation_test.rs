@@ -11,7 +11,7 @@ fn test_simple_type_substitution() {
     instantiator.add_type_param("T", Type::Normie);
     
     let type_param = Type::TypeParam("T".to_string());
-    let result = instantiator.instantiate_type(&type_param).unwrap());
+    let result = instantiator.instantiate_type(&type_param).unwrap();
     
     assert_eq!(result, Type::Normie);
 }
@@ -22,7 +22,7 @@ fn test_array_type_substitution() {
     instantiator.add_type_param("T", Type::Normie);
     
     let array_type = Type::Array(Box::new(Type::TypeParam("T".to_string(), 5);
-    let result = instantiator.instantiate_type(&array_type).unwrap());
+    let result = instantiator.instantiate_type(&array_type).unwrap();
     
     assert_eq!(result, Type::Array(Box::new(Type::Normie), 5);
 }
@@ -33,7 +33,7 @@ fn test_slice_type_substitution() {
     instantiator.add_type_param("T", Type::Tea);
     
     let slice_type = Type::Slice(Box::new(Type::TypeParam("T".to_string());
-    let result = instantiator.instantiate_type(&slice_type).unwrap());
+    let result = instantiator.instantiate_type(&slice_type).unwrap();
     
     assert_eq!(result, Type::Slice(Box::new(Type::Tea));
 }
@@ -48,7 +48,7 @@ fn test_map_type_substitution() {
         Box::new(Type::TypeParam("K".to_string(),
         Box::new(Type::TypeParam("V".to_string())
     );
-    let result = instantiator.instantiate_type(&map_type).unwrap());
+    let result = instantiator.instantiate_type(&map_type).unwrap();
     
     assert_eq!(result, Type::Map(Box::new(Type::Tea), Box::new(Type::Normie));
 }
@@ -60,7 +60,7 @@ fn test_nested_type_substitution() {
     instantiator.add_type_param("U", Type::Normie);
     
     let type_param = Type::TypeParam("T".to_string());
-    let result = instantiator.instantiate_type(&type_param).unwrap());
+    let result = instantiator.instantiate_type(&type_param).unwrap();
     
     assert_eq!(result, Type::Slice(Box::new(Type::Normie));
 }
@@ -74,7 +74,7 @@ fn test_struct_type_substitution() {
         "Stack".to_string(),
         vec![Box::new(Type::TypeParam("T".to_string())]
     );
-    let result = instantiator.instantiate_type(&struct_type).unwrap());
+    let result = instantiator.instantiate_type(&struct_type).unwrap();
     
     assert_eq!(result, Type::Struct("Stack".to_string(), vec![Box::new(Type::Normie)]);
 }
@@ -88,7 +88,7 @@ fn test_interface_type_substitution() {
         "Comparable".to_string(),
         vec![Box::new(Type::TypeParam("T".to_string())]
     );
-    let result = instantiator.instantiate_type(&interface_type).unwrap());
+    let result = instantiator.instantiate_type(&interface_type).unwrap();
     
     assert_eq!(result, Type::Interface("Comparable".to_string(), vec![Box::new(Type::Normie)]);
 }
@@ -109,7 +109,7 @@ fn test_deeply_nested_type_substitution() {
     instantiator.add_type_param("V", Type::Normie);
     
     let type_param = Type::TypeParam("T".to_string());
-    let result = instantiator.instantiate_type(&type_param).unwrap());
+    let result = instantiator.instantiate_type(&type_param).unwrap();
     
     // Should resolve to List<Map<Tea, Normie>>
     let expected = Type::Struct(
@@ -129,7 +129,7 @@ fn test_channel_type_substitution() {
     instantiator.add_type_param("T", Type::Normie);
     
     let channel_type = Type::Channel(Box::new(Type::TypeParam("T".to_string());
-    let result = instantiator.instantiate_type(&channel_type).unwrap());
+    let result = instantiator.instantiate_type(&channel_type).unwrap();
     
     assert_eq!(result, Type::Channel(Box::new(Type::Normie));
 }
@@ -144,7 +144,7 @@ fn test_function_type_substitution() {
         vec![Type::TypeParam("T".to_string(), Type::TypeParam("U".to_string())],
         Some(Box::new(Type::TypeParam("T".to_string())
     );
-    let result = instantiator.instantiate_type(&function_type).unwrap());
+    let result = instantiator.instantiate_type(&function_type).unwrap();
     
     assert_eq!(result, Type::Function(
         vec![Type::Normie, Type::Tea],
@@ -160,7 +160,7 @@ fn test_unknown_type_parameter() {
     let type_param = Type::TypeParam("U".to_string(); // Not defined
     let result = instantiator.instantiate_type(&type_param);
     
-    assert!(result.is_err());
+    assert!(result.is_err())
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn test_recursive_type_parameters() {
     let result = instantiator.instantiate_type(&type_param);
     
     // Should fail due to maximum recursion depth
-    assert!(result.is_err());
+    assert!(result.is_err())
 }
 
 #[test]
@@ -187,7 +187,7 @@ fn test_recursive_but_terminating_type_parameters() {
     instantiator.add_type_param("V", Type::Normie);
     
     let type_param = Type::TypeParam("T".to_string());
-    let result = instantiator.instantiate_type(&type_param).unwrap());
+    let result = instantiator.instantiate_type(&type_param).unwrap();
     
     assert_eq!(result, Type::Normie);
 }

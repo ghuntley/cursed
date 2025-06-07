@@ -37,8 +37,8 @@ fn test_simple_vibe_check_codegen() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
     if !parser.errors().is_empty() {
@@ -71,7 +71,7 @@ fn test_simple_vibe_check_codegen() {
     if let Err(ref err) = result {
         error!(error = ?err, "Code generation failed");
     }
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
 
     // Get the resulting IR code
     let ir_code = code_generator.module().print_to_string().to_string());
@@ -124,8 +124,8 @@ fn test_multiple_case_values() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
     if !parser.errors().is_empty() {
@@ -150,7 +150,7 @@ fn test_multiple_case_values() {
     if let Err(ref err) = result {
         error!(error = ?err, "Code generation failed");
     }
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
 
     // Get the resulting IR code
     let ir_code = code_generator.module().print_to_string().to_string());
@@ -207,8 +207,8 @@ fn test_fallthrough_behavior() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
     if !parser.errors().is_empty() {

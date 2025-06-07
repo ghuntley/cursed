@@ -19,7 +19,7 @@ use std::path::PathBuf;
 #[test]
 fn test_simple_if_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
 
     // Create a function context for testing
     let i32_type = context.i32_type();
@@ -83,13 +83,13 @@ fn test_simple_if_expression() {
     
     // Compile the if expression
     let result = generator.compile_if_expression(&if_expr);
-    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err())
     
     // Since the condition is true, the result should be 42
     println!("DEBUG TEST: Result: {:?}", result);
     
     // Make sure we have a result
-    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile if expression: {:?}", result.err())
     
     // Now safely get the value
     let value = result.unwrap();

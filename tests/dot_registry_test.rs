@@ -18,7 +18,7 @@ mod tests {
     fn test_vibez_spill() {
         // Test the vibez.spill function
         let result = execute_dot("vibez", "spill", vec!["Hello, world!".to_string())]);
-        assert!(result.is_ok());
+        assert!(result.is_ok())
         assert_eq!(result.unwrap(), "Hello, world!");
     }
     
@@ -27,7 +27,7 @@ mod tests {
         // Test the htmlrizzler.escape_html function
         let input = "<script>alert('XSS');</script>";
         let result = execute_dot("htmlrizzler", "escape_html", vec![input.to_string())]);
-        assert!(result.is_ok());
+        assert!(result.is_ok())
         assert_eq!(result.unwrap(), "&lt;script&gt;alert(&#39;XSS&#39;);&lt;/script&gt;");
     }
     
@@ -35,35 +35,35 @@ mod tests {
     fn test_timez_now() {
         // Test the timez.Now function
         let result = execute_dot("timez", "Now", vec![]);
-        assert!(result.is_ok());
+        assert!(result.is_ok())
         // We can't assert on the exact value since it'll be different each time,
         // but we can check that it's a number followed by 's'
         let time_str = result.unwrap();
         assert!(time_str.ends_with('s');
         let time_value = time_str.trim_end_matches('s');
-        assert!(time_value.parse::<u64>().is_ok());
+        assert!(time_value.parse::<u64>().is_ok())
     }
     
     #[test]
     fn test_get_packages() {
         // Test the get_packages function
         let packages = get_packages();
-        assert!(packages.contains(&"vibez".to_string());
-        assert!(packages.contains(&"htmlrizzler".to_string());
-        assert!(packages.contains(&"timez".to_string());
+        assert!(packages.contains(&"vibez".to_string())
+        assert!(packages.contains(&"htmlrizzler".to_string())
+        assert!(packages.contains(&"timez".to_string())
     }
     
     #[test]
     fn test_get_functions() {
         // Test the get_functions function
         let vibez_functions = get_functions("vibez");
-        assert!(vibez_functions.contains(&"spill".to_string());
+        assert!(vibez_functions.contains(&"spill".to_string())
         
         let htmlrizzler_functions = get_functions("htmlrizzler");
-        assert!(htmlrizzler_functions.contains(&"escape_html".to_string());
+        assert!(htmlrizzler_functions.contains(&"escape_html".to_string())
         
         let timez_functions = get_functions("timez");
-        assert!(timez_functions.contains(&"Now".to_string());
+        assert!(timez_functions.contains(&"Now".to_string())
     }
     
     #[test]
@@ -84,12 +84,12 @@ mod tests {
             
             // Test with no arguments
             let result = registry.execute("testz", "hello", vec![]);
-            assert!(result.is_ok());
+            assert!(result.is_ok())
             assert_eq!(result.unwrap(), "Hello, world!");
             
             // Test with an argument
             let result = registry.execute("testz", "hello", vec!["CURSED".to_string())]);
-            assert!(result.is_ok());
+            assert!(result.is_ok())
             assert_eq!(result.unwrap(), "Hello, CURSED!");
         } else {
             panic!("Failed to lock dot registry");

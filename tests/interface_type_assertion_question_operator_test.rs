@@ -168,7 +168,7 @@ fn test_create_error_result() {
                         "value_alloca"
                     ).unwrap();
                     
-                    self.builder.build_store(alloca, value).unwrap());
+                    self.builder.build_store(alloca, value).unwrap();
                     
                     // Cast to generic pointer
                     self.builder.build_bitcast(
@@ -271,7 +271,7 @@ fn test_create_error_result() {
                 return Err(Error::Compilation(format!(
                     "Expected Result struct, got {:?}",
                     result_value
-                ));
+                )));
             }
             
             // Extract the value pointer (second field)
@@ -294,7 +294,7 @@ fn test_create_error_result() {
                 return Err(Error::Compilation(format!(
                     "Expected Result struct, got {:?}",
                     result_value
-                ));
+                )));
             }
             
             // Extract the error pointer (second field)
@@ -319,7 +319,7 @@ fn test_create_error_result() {
         .with_target_type_id(0x5678);
     
     // Create a result with an error
-    let error_result = code_generator.create_error_result(error).unwrap());
+    let error_result = code_generator.create_error_result(error).unwrap();
     
     // Verify it's a struct
     assert!(error_result.is_struct_value();
@@ -412,8 +412,8 @@ fn test_question_mark_operator_propagation() {
             current_function: FunctionValue<'ctx>
         ) -> Result<BasicValueEnum<'ctx>, Error> {
             // Get or create the blocks for error checking and propagation
-            let current_block = self.builder.get_insert_block().unwrap());
-            let function = current_block.get_parent().unwrap());
+            let current_block = self.builder.get_insert_block().unwrap();
+            let function = current_block.get_parent().unwrap();
             
             let success_block = self.context.append_basic_block(function, "propagate_success");
             let error_block = self.context.append_basic_block(function, "propagate_error");
@@ -443,7 +443,7 @@ fn test_question_mark_operator_propagation() {
                 "result.value"
             ).unwrap();
             
-            self.builder.build_unconditional_branch(return_block).unwrap());
+            self.builder.build_unconditional_branch(return_block).unwrap();
             
             // Error path - propagate the error by returning an error Result
             self.builder.position_at_end(error_block);
@@ -478,7 +478,7 @@ fn test_question_mark_operator_propagation() {
             ).unwrap().into_struct_value());
             
             // Return the error Result
-            self.builder.build_return(Some(&error_result)).unwrap());
+            self.builder.build_return(Some(&error_result)).unwrap();
             
             // Continue with normal execution at the return block
             self.builder.position_at_end(return_block);
@@ -547,7 +547,7 @@ fn test_question_mark_operator_propagation() {
     );
     
     // This should succeed since we built the error propagation path
-    assert!(propagate_result.is_ok());
+    assert!(propagate_result.is_ok())
     
     // Verify the module structure
     let module_str = module.print_to_string().to_string());

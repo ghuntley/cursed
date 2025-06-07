@@ -76,8 +76,8 @@ fn test_with_attributes() {
     assert_eq!(record.attrs.len(), 2);
     
     // Find the attributes by key
-    let request_id_attr = record.attrs.iter().find(|attr| attr.key == "request_id").unwrap());
-    let path_attr = record.attrs.iter().find(|attr| attr.key == "path").unwrap());
+    let request_id_attr = record.attrs.iter().find(|attr| attr.key == "request_id").unwrap();
+    let path_attr = record.attrs.iter().find(|attr| attr.key == "path").unwrap();
     
     assert_eq!(request_id_attr.value, Object::String("req-123456".to_string());
     assert_eq!(path_attr.value, Object::String("/api/users".to_string());
@@ -116,8 +116,8 @@ fn test_groups() {
     assert_eq!(record.attrs.len(), 2);
     
     // Find the group attribute
-    let group_attr = record.attrs.iter().find(|attr| attr.key == "request").unwrap());
-    let duration_attr = record.attrs.iter().find(|attr| attr.key == "duration_ms").unwrap());
+    let group_attr = record.attrs.iter().find(|attr| attr.key == "request").unwrap();
+    let duration_attr = record.attrs.iter().find(|attr| attr.key == "duration_ms").unwrap();
     
     // Check that the group is a special hashtable
     match &group_attr.value {

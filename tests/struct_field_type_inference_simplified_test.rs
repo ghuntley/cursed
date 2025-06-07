@@ -16,7 +16,7 @@ use std::path::PathBuf;
 #[test]
 fn test_struct_field_incompatible_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test_struct_field_incompatible.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -33,7 +33,7 @@ fn test_struct_field_incompatible_types() {
         string_ptr.into(), // name: string
         generator.context().i32_type().into(), // age: i32
     ], false);
-    generator.register_struct_type(person_name, person_ty).unwrap());
+    generator.register_struct_type(person_name, person_ty).unwrap();
     
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
@@ -112,7 +112,7 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
 #[test]
 fn test_simple_struct_field_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_simple_struct", PathBuf::from("test_simple_struct.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_simple_struct", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -130,7 +130,7 @@ fn test_simple_struct_field_type_inference() {
     ], false);
     
     // Register the struct with the code generator's type system
-    generator.register_struct_type(struct_name, struct_ty).unwrap());
+    generator.register_struct_type(struct_name, struct_ty).unwrap();
     
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
@@ -162,7 +162,7 @@ fn test_simple_struct_field_type_inference() {
     
     // Compile the struct literal
     let result = generator.compile_struct_literal(&struct_literal);
-    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err())
     
     // Return a dummy value to finalize function
     let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false));

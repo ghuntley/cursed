@@ -72,7 +72,7 @@ mod simple_stdlib_tests {
         ];
         
         // Call the function
-        let result = stringz::contains(&args).unwrap());
+        let result = stringz::contains(&args).unwrap();
         
         // Verify result
         assert_eq!(extract_bool(result), true);
@@ -83,7 +83,7 @@ mod simple_stdlib_tests {
             string_object("moon"),
         ];
         
-        let result = stringz::contains(&args).unwrap());
+        let result = stringz::contains(&args).unwrap();
         assert_eq!(extract_bool(result), false);
     }
 
@@ -91,12 +91,12 @@ mod simple_stdlib_tests {
     fn test_string_transform() {
         // Test to_upper
         let args = vec![string_object("hello")];
-        let result = stringz::to_upper(&args).unwrap());
+        let result = stringz::to_upper(&args).unwrap();
         assert_eq!(extract_string(result), "HELLO");
         
         // Test to_lower
         let args = vec![string_object("WORLD")];
-        let result = stringz::to_lower(&args).unwrap());
+        let result = stringz::to_lower(&args).unwrap();
         assert_eq!(extract_string(result), "world");
     }
 
@@ -104,7 +104,7 @@ mod simple_stdlib_tests {
     fn test_htmlrizzler() {
         // Test HTML escaping
         let args = vec![string_object("<p>This is a test & it's important</p>")];
-        let result = htmlrizzler::escape_html(&args).unwrap());
+        let result = htmlrizzler::escape_html(&args).unwrap();
         let escaped = extract_string(result);
         // Just test for expected replacements rather than exact string
         assert!(escaped.contains("&lt;p&gt;"), "Should escape < and > symbols");
@@ -112,7 +112,7 @@ mod simple_stdlib_tests {
         
         // Test JavaScript escaping
         let args = vec![string_object("script with \\ and \"quotes\"")];
-        let result = htmlrizzler::escape_js(&args).unwrap());
+        let result = htmlrizzler::escape_js(&args).unwrap();
         let escaped = extract_string(result);
         assert!(escaped.contains("\\\\"), "Backslashes should be escaped");
         assert!(escaped.contains("\\\""), "Quotes should be escaped");
@@ -122,21 +122,21 @@ mod simple_stdlib_tests {
     fn test_mathz() {
         // Test abs
         let args = vec![number_object(-5)];
-        let result = mathz::abs(&args).unwrap());
+        let result = mathz::abs(&args).unwrap();
         assert_eq!(extract_number(result), 5);
         
         // Test min/max
         let args = vec![number_object(10), number_object(20)];
-        let result = mathz::max(&args).unwrap());
+        let result = mathz::max(&args).unwrap();
         assert_eq!(extract_number(result), 20);
         
         let args = vec![number_object(10), number_object(20)];
-        let result = mathz::min(&args).unwrap());
+        let result = mathz::min(&args).unwrap();
         assert_eq!(extract_number(result), 10);
         
         // Test sqrt
         let args = vec![float_object(25.0)];
-        let result = mathz::sqrt(&args).unwrap());
+        let result = mathz::sqrt(&args).unwrap();
         let sqrt_val = extract_float(result);
         assert!((sqrt_val - 5.0).abs() < 0.0001, "Expected sqrt(25) ≈ 5, got {}", sqrt_val);
     }
@@ -144,7 +144,7 @@ mod simple_stdlib_tests {
     #[test]
     fn test_dot_registry() {
         // Get the registry
-        let registry = DOT_REGISTRY.lock().unwrap());
+        let registry = DOT_REGISTRY.lock().unwrap();
         
         // Verify some standard functions are registered
         assert!(registry.has_handler("vibez", "spill"), "vibez.spill should be registered");

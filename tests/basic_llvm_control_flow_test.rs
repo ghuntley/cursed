@@ -17,7 +17,7 @@ use std::path::PathBuf;
 fn test_if_statement_compilation() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if", PathBuf::from("test.csd"));
 
     // Create a function to add the if statement to
     let i32_type = context.i32_type();
@@ -49,7 +49,7 @@ fn test_if_statement_compilation() {
 
     // Compile the if statement using the wrapper (which is just a stub for now)
     let result = generator.compile_if_statement_wrapper(&if_stmt);
-    assert!(result.is_ok(), "Failed to compile if statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile if statement: {:?}", result.err())
 
     // Finally, add a return statement at the end to complete the function
     let ret_val = context.i32_type().const_int(0, false);
@@ -58,14 +58,14 @@ fn test_if_statement_compilation() {
 
     // Verify the module
     let result = generator.module().verify());
-    assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
+    assert!(result.is_ok(), "Module verification failed: {:?}", result.err())
 }
 
 #[test]
 fn test_while_statement_compilation() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_while", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_while", PathBuf::from("test.csd"));
 
     // Create a function to add the while statement to
     let i32_type = context.i32_type();
@@ -96,7 +96,7 @@ fn test_while_statement_compilation() {
 
     // Compile the while statement using the wrapper (which is just a stub for now)
     let result = generator.compile_while_statement_wrapper(&while_stmt);
-    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile while statement: {:?}", result.err())
 
     // Finally, add a return statement at the end to complete the function
     let ret_val = context.i32_type().const_int(0, false);
@@ -105,14 +105,14 @@ fn test_while_statement_compilation() {
 
     // Verify the module
     let result = generator.module().verify());
-    assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
+    assert!(result.is_ok(), "Module verification failed: {:?}", result.err())
 }
 
 #[test]
 fn test_container_layout() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_container", PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_container", PathBuf::from("test.csd"));
 
     // Create a function where we'll create a container
     let i32_type = context.i32_type();
@@ -136,5 +136,5 @@ fn test_container_layout() {
 
     // Verify the module
     let result = generator.module().verify());
-    assert!(result.is_ok(), "Module verification failed: {:?}", result.err());
+    assert!(result.is_ok(), "Module verification failed: {:?}", result.err())
 }

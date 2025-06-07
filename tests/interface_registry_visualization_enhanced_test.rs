@@ -30,11 +30,11 @@ fn test_enhanced_detailed_error_message() {
     
     // Create a registry with test data
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
-    registry.register_extension("Dog", "Mammal").unwrap());
-    registry.register_extension("Cat", "Mammal").unwrap());
-    registry.register_extension("Mammal", "Animal").unwrap());
-    registry.register_extension("Bird", "Animal").unwrap());
-    registry.register_extension("Animal", "LivingThing").unwrap());
+    registry.register_extension("Dog", "Mammal").unwrap();
+    registry.register_extension("Cat", "Mammal").unwrap();
+    registry.register_extension("Mammal", "Animal").unwrap();
+    registry.register_extension("Bird", "Animal").unwrap();
+    registry.register_extension("Animal", "LivingThing").unwrap();
     
     // Test with inheritance relationship in the wrong direction
     let error_message = EnhancedVisualizationIntegration::generate_detailed_error_message(
@@ -70,14 +70,14 @@ fn test_enhanced_ascii_hierarchy() {
     
     // Create a registry with test data
     let registry = ThreadSafeInterfaceExtensionRegistry::new();
-    registry.register_extension("Dog", "Mammal").unwrap());
-    registry.register_extension("Cat", "Mammal").unwrap());
-    registry.register_extension("Mammal", "Animal").unwrap());
-    registry.register_extension("Bird", "Animal").unwrap());
-    registry.register_extension("Animal", "LivingThing").unwrap());
+    registry.register_extension("Dog", "Mammal").unwrap();
+    registry.register_extension("Cat", "Mammal").unwrap();
+    registry.register_extension("Mammal", "Animal").unwrap();
+    registry.register_extension("Bird", "Animal").unwrap();
+    registry.register_extension("Animal", "LivingThing").unwrap();
     
     // Test ASCII visualization
-    let ascii = EnhancedVisualizationIntegration::generate_ascii_hierarchy(&registry).unwrap());
+    let ascii = EnhancedVisualizationIntegration::generate_ascii_hierarchy(&registry).unwrap();
     
     // Verify output contains expected content
     assert!(ascii.contains("Interface Hierarchy Tree");

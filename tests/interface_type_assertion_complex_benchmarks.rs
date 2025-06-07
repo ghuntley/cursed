@@ -44,7 +44,7 @@ mod tests {
     
     impl BenchmarkResult {
         fn new(name: &str, iterations: u32, durations: Vec<Duration>) -> Self {
-            let total_duration = durations.iter().sum());
+            let total_duration = durations.iter().sum();
             let avg_duration_ns = total_duration.as_nanos() as u64 / iterations as u64;
             let min_duration_ns = durations.iter().map(|d| d.as_nanos() as u64).min().unwrap_or(0);
             let max_duration_ns = durations.iter().map(|d| d.as_nanos() as u64).max().unwrap_or(0);
@@ -120,7 +120,7 @@ mod tests {
         // Create a target machine for the code generator
         let target_triple = inkwell::targets::TargetMachine::get_default_triple();
         inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default();
-        let target = inkwell::targets::Target::from_triple(&target_triple).unwrap());
+        let target = inkwell::targets::Target::from_triple(&target_triple).unwrap();
         let target_machine = target.create_target_machine(
             &target_triple,
             "generic",
@@ -131,7 +131,7 @@ mod tests {
         ).unwrap();
         
         // Create a data layout for LLVM module
-        let data_layout = target_machine.get_target_data().get_data_layout());
+        let data_layout = target_machine.get_target_data().get_data_layout();
         module.set_data_layout(&data_layout);
         
         // Create a simplified test function to benchmark
@@ -320,7 +320,7 @@ mod tests {
         // Create a target machine for the code generator
         let target_triple = inkwell::targets::TargetMachine::get_default_triple();
         inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default();
-        let target = inkwell::targets::Target::from_triple(&target_triple).unwrap());
+        let target = inkwell::targets::Target::from_triple(&target_triple).unwrap();
         let target_machine = target.create_target_machine(
             &target_triple,
             "generic",
@@ -331,7 +331,7 @@ mod tests {
         ).unwrap();
         
         // Create a data layout for LLVM module
-        let data_layout = target_machine.get_target_data().get_data_layout());
+        let data_layout = target_machine.get_target_data().get_data_layout();
         module.set_data_layout(&data_layout);
         
         // Create a simplified test function to benchmark

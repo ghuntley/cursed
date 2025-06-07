@@ -40,7 +40,7 @@ fn test_function_specialization() {
     assert_eq!(specialized_name, "add__Normie");
 
     // Verify the function is in the instantiation cache
-    assert!(mono_manager.is_function_instantiated("add", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("add", &[Type::Normie]))
 
     // Try specializing with a different type
     let specialized_name2 = mono_manager
@@ -96,7 +96,7 @@ fn test_struct_specialization() {
     assert_eq!(specialized_name, "Pair__Normie");
 
     // Verify it's in the cache
-    assert!(mono_manager.is_function_instantiated("Pair", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("Pair", &[Type::Normie]))
 
     // Specializing again should return the same name
     let specialized_name2 = mono_manager

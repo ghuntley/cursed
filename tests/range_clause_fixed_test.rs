@@ -226,9 +226,9 @@ fn test_map_key_value_iteration() {
     let input = r#"
         slay main() lit {
             sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
-            sus sum lit = 0
-            
-            // Key-value iteration
+            sus sum lit = 0;
+
+    //
             periodt name, score := range scores {
                 sum = sum + score
             }

@@ -45,7 +45,7 @@ fn test_basic_generators() {
     let one_of_gen = one_of(values);
     let one_of_val = one_of_gen.generate(&mut rand, 10);
     assert!(one_of_val.is_int();
-    let int_val = one_of_val.as_int().unwrap());
+    let int_val = one_of_val.as_int().unwrap();
     assert!(int_val >= 1 && int_val <= 3);
 }
 
@@ -105,7 +105,7 @@ fn test_shrinking() {
     ]);
     
     // Test that it does fail
-    assert!(!has_zero(input.clone());
+    assert!(!has_zero(input.clone())
     
     // Try to shrink it
     let config = Config {
@@ -119,7 +119,7 @@ fn test_shrinking() {
     assert!(shrunk.is_some();
     if let Some(result) = shrunk {
         assert!(result.is_array();
-        assert!(!has_zero(result.clone());
+        assert!(!has_zero(result.clone())
         
         // The shrunk result should be simpler (fewer elements)
         let original_len = input.as_array().unwrap().len());

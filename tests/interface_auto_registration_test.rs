@@ -49,7 +49,7 @@ fn test_auto_interface_registration() {
     let registry = type_checker.interface_registry.clone();
     let registry = registry.lock().unwrap();
     
-    assert!(registry.check_implementation(&person_type, "Named").unwrap());
+    assert!(registry.check_implementation(&person_type, "Named").unwrap();
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn test_auto_interface_registration_with_generic_types() {
         vec![Box::new(Type::Tea)]
     );
     
-    assert!(registry.check_implementation(&container_tea, "Collection").unwrap());
+    assert!(registry.check_implementation(&container_tea, "Collection").unwrap();
 }
 
 #[test]

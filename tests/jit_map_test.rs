@@ -34,7 +34,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     // Set up LLVM JIT execution
@@ -124,7 +124,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     // Set up LLVM JIT execution
@@ -213,7 +213,7 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     // Set up LLVM JIT execution

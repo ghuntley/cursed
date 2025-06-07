@@ -225,11 +225,11 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
         
         fn get_type_name(&self, id: u32) -> Result<String, Error> {
             if let Some(name) = self.interfaces.get(&id) {
-                return Ok(name.clone());
+                return Ok(name.clone();
             }
             
             if let Some(name) = self.concrete_types.get(&id) {
-                return Ok(name.clone());
+                return Ok(name.clone();
             }
             
             Ok(format!("Type{}", id))

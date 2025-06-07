@@ -102,7 +102,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     codegen.builder().position_at_end(entry_block);
     
     // Allocate a Person struct
-    let person_ptr = codegen.builder().build_alloca(person_llvm_type, "person").unwrap());
+    let person_ptr = codegen.builder().build_alloca(person_llvm_type, "person").unwrap();
     
     // Create an interface value from the Person
     let interface_value = codegen.create_interface_value(

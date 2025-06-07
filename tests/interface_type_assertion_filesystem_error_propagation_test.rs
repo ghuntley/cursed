@@ -29,14 +29,14 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
     let context = inkwell::context::Context::create();
     
     // Create an LlvmCodeGenerator with enhanced filesystem integration
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
     
     // Initialize filesystem integration with the tests directory as root
     let _ = code_gen.init_filesystem_integration();
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: Token::Identifier("test.csd:10:15".to_string(),
+        token: Token::Identifier("test.csd:10:15".to_string()),
         expression: Box::new(MockExpression { token: "token".to_string() }),
         type_name: "ExpectedType".to_string(),
     };
@@ -103,14 +103,14 @@ fn test_interface_filesystem_error_propagation_integration() {
     let context = inkwell::context::Context::create();
     
     // Create an LlvmCodeGenerator with enhanced filesystem integration
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
     
     // Initialize filesystem integration
     let _ = code_gen.init_filesystem_integration();
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: Token::Identifier("interface_type_assertion_question_op.csd:98:20".to_string(),
+        token: Token::Identifier("interface_type_assertion_question_op.csd:98:20".to_string()),
         expression: Box::new(MockExpression { token: "token".to_string() }),
         type_name: "Circle".to_string(),
     };

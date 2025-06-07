@@ -26,7 +26,7 @@ use std::path::PathBuf;
 #[ignore = "This test needs more work to handle mixed integer types properly"]
 fn test_if_expression_with_variable() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_var", PathBuf::from("test_if_var.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_var", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -57,7 +57,7 @@ fn test_if_expression_with_variable() {
     
     // Compile the let statement to create the variable
     let result = generator.compile_statement(&let_stmt);
-    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err())
     
     // Create a condition that compares x > 5
     let x_expr = x_ident.clone();
@@ -143,7 +143,7 @@ fn test_if_expression_with_variable() {
 #[test]
 fn test_nested_if_expressions() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_if", PathBuf::from("test_nested_if.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_if", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -248,7 +248,7 @@ fn test_nested_if_expressions() {
     
     // Compile the nested if expressions
     let result = generator.compile_if_expression(&outer_if_expr);
-    assert!(result.is_ok(), "Failed to compile nested if expressions: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile nested if expressions: {:?}", result.err())
     
     // Since outer is true and inner is false, the result should be 2
     let value = result.unwrap();

@@ -12,7 +12,7 @@ use cursed::{
 #[test]
 fn test_type_of() {
     let obj = Arc::new(Object::Integer(42);
-    let result = reflectz::type_of(&[obj]).unwrap());
+    let result = reflectz::type_of(&[obj]).unwrap();
     
     // The type_of function returns a Type struct instead of a string
     if let Object::Struct { name, .. } = &*result {
@@ -27,7 +27,7 @@ fn test_is_type() {
     let obj = Arc::new(Object::Integer(42);
     let type_name = Arc::new(Object::String("integer".to_string());
     
-    let result = reflectz::is_type(&[obj.clone(), type_name]).unwrap());
+    let result = reflectz::is_type(&[obj.clone(), type_name]).unwrap();
     
     if let Object::Boolean(is_int) = &*result {
         assert!(*is_int, "Should identify object as an integer");
@@ -37,7 +37,7 @@ fn test_is_type() {
     
     // Test wrong type
     let wrong_type = Arc::new(Object::String("string".to_string());
-    let result = reflectz::is_type(&[obj, wrong_type]).unwrap());
+    let result = reflectz::is_type(&[obj, wrong_type]).unwrap();
     
     if let Object::Boolean(is_int) = &*result {
         assert!(!*is_int, "Should not identify integer as string");
@@ -68,7 +68,7 @@ fn test_get_field() {
     });
     
     let field_name = Arc::new(Object::String("Name".to_string());
-    let result = reflectz::get_field(&[person.clone(), field_name]).unwrap());
+    let result = reflectz::get_field(&[person.clone(), field_name]).unwrap();
     
     if let Object::String(name) = &*result {
         assert_eq!(name, "John", "Field value doesn't match expected");
@@ -78,7 +78,7 @@ fn test_get_field() {
     
     // Test getting integer field
     let age_field = Arc::new(Object::String("Age".to_string());
-    let result = reflectz::get_field(&[person, age_field]).unwrap());
+    let result = reflectz::get_field(&[person, age_field]).unwrap();
     
     if let Object::Integer(age) = &*result {
         assert_eq!(*age, 30, "Age field value doesn't match expected");
@@ -111,10 +111,10 @@ fn test_set_field() {
     let field_name = Arc::new(Object::String("Name".to_string());
     let new_value = Arc::new(Object::String("Jane".to_string());
     
-    let _ = reflectz::set_field(&[person.clone(), field_name.clone(), new_value]).unwrap());
+    let _ = reflectz::set_field(&[person.clone(), field_name.clone(), new_value]).unwrap();
     
     // Verify the field was updated
-    let result = reflectz::get_field(&[person, field_name]).unwrap());
+    let result = reflectz::get_field(&[person, field_name]).unwrap();
     
     if let Object::String(name) = &*result {
         assert_eq!(name, "Jane", "Field value wasn't updated correctly");
@@ -130,7 +130,7 @@ fn test_call_method() {
     let obj = Arc::new(Object::Integer(42);
     let method_name = Arc::new(Object::String("toString".to_string());
     
-    let result = reflectz::call_method(&[obj, method_name]).unwrap());
+    let result = reflectz::call_method(&[obj, method_name]).unwrap();
     
     // We expect null in the simplified implementation
     assert!(matches!(*result, Object::Null), "Expected Null result from unimplemented call_method");

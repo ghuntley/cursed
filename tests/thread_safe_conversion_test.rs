@@ -24,7 +24,7 @@ fn test_object_to_thread_safe_conversion() {
         Object::Array(vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)]),
         Object::HashTable({
             let mut map = std::collections::HashMap::new();
-            map.insert("key".to_string(), Object::String("value".to_string()));
+            map.insert("key".to_string(), Object::String("value".to_string());
             map
         }),
         Object::Null,
@@ -204,7 +204,7 @@ fn test_complex_nested_conversion() {
     
     // Add some simple values
     outer_map.insert("number".to_string(), Object::Integer(42));
-    outer_map.insert("text".to_string(), Object::String("hello".to_string()));
+    outer_map.insert("text".to_string(), Object::String("hello".to_string());
     
     // Add a nested array
     let nested_array = vec![

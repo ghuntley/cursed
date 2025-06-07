@@ -43,39 +43,39 @@ fn test_registry_visualization_extension_hierarchy() {
     let hierarchy = registry.get_extension_hierarchy().unwrap();
     
     // Verify the hierarchy contains the expected relationships
-    assert!(hierarchy.contains_key("Dog"));
-    assert!(hierarchy.contains_key("Cat"));
-    assert!(hierarchy.contains_key("Mammal"));
-    assert!(hierarchy.contains_key("Bird"));
-    assert!(hierarchy.contains_key("Animal"));
+    assert!(hierarchy.contains_key("Dog"))
+    assert!(hierarchy.contains_key("Cat"))
+    assert!(hierarchy.contains_key("Mammal"))
+    assert!(hierarchy.contains_key("Bird"))
+    assert!(hierarchy.contains_key("Animal"))
     
     // Verify specific relationships
     let mammal_extensions = hierarchy.get("Mammal").unwrap();
-    assert!(mammal_extensions.contains(&"Animal".to_string()));
+    assert!(mammal_extensions.contains(&"Animal".to_string())
     
     let animal_extensions = hierarchy.get("Animal").unwrap();
-    assert!(animal_extensions.contains(&"LivingThing".to_string()));
+    assert!(animal_extensions.contains(&"LivingThing".to_string())
     
     // Test the direct extensions method
     let dog_extensions = registry.get_direct_extensions("Dog").unwrap().unwrap();
     assert_eq!(dog_extensions.len(), 1);
-    assert!(dog_extensions.contains(&"Mammal".to_string()));
+    assert!(dog_extensions.contains(&"Mammal".to_string())
     
     // Test the direct implementors method
     let mammal_implementors = registry.get_direct_implementors("Mammal").unwrap().unwrap();
     assert_eq!(mammal_implementors.len(), 2);
-    assert!(mammal_implementors.contains(&"Dog".to_string()));
-    assert!(mammal_implementors.contains(&"Cat".to_string()));
+    assert!(mammal_implementors.contains(&"Dog".to_string())
+    assert!(mammal_implementors.contains(&"Cat".to_string())
     
     // Test getting all interfaces
     let all_interfaces = registry.get_all_interfaces().unwrap();
     assert_eq!(all_interfaces.len(), 5);
-    assert!(all_interfaces.contains("Dog"));
-    assert!(all_interfaces.contains("Cat"));
-    assert!(all_interfaces.contains("Mammal"));
-    assert!(all_interfaces.contains("Bird"));
-    assert!(all_interfaces.contains("Animal"));
-    assert!(all_interfaces.contains("LivingThing"));
+    assert!(all_interfaces.contains("Dog"))
+    assert!(all_interfaces.contains("Cat"))
+    assert!(all_interfaces.contains("Mammal"))
+    assert!(all_interfaces.contains("Bird"))
+    assert!(all_interfaces.contains("Animal"))
+    assert!(all_interfaces.contains("LivingThing"))
 }
 
 #[test]
@@ -92,16 +92,16 @@ fn test_registry_visualization_error_propagation() {
     
     // The registry should properly propagate errors when using the ? operator
     let hierarchy = registry.get_extension_hierarchy().unwrap();
-    assert!(hierarchy.contains_key("Interface1"));
-    assert!(hierarchy.contains_key("Interface2"));
+    assert!(hierarchy.contains_key("Interface1"))
+    assert!(hierarchy.contains_key("Interface2"))
     
     let extensions = registry.get_direct_extensions("Interface1").unwrap().unwrap();
     assert_eq!(extensions.len(), 1);
-    assert!(extensions.contains(&"BaseInterface".to_string()));
+    assert!(extensions.contains(&"BaseInterface".to_string())
     
     // Test error propagation format with proper context
     let non_existent = registry.get_direct_extensions("NonExistentInterface").unwrap();
-    assert!(non_existent.is_none());
+    assert!(non_existent.is_none())
 }
 
 #[test]
@@ -138,11 +138,11 @@ fn test_registry_thread_safety() {
             
             // Query the registry using visualization methods
             let hierarchy = registry_clone.get_extension_hierarchy().unwrap();
-            assert!(hierarchy.contains_key(&interface_name));
+            assert!(hierarchy.contains_key(&interface_name))
             
             let extensions = registry_clone.get_direct_extensions(&interface_name).unwrap().unwrap();
             assert_eq!(extensions.len(), 1);
-            assert!(extensions.contains(&base_name.to_string()));
+            assert!(extensions.contains(&base_name.to_string())
             
             // Return success indicator
             true
@@ -153,7 +153,7 @@ fn test_registry_thread_safety() {
     
     // Wait for all threads to complete
     for handle in handles {
-        assert!(handle.join().unwrap());
+        assert!(handle.join().unwrap();
     }
     
     // Verify final state with all interfaces

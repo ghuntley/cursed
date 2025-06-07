@@ -45,7 +45,7 @@ fn test_jit_print_support() -> Result<(), Error> {
 
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     // Set up the JIT compiler

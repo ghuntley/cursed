@@ -88,7 +88,7 @@ fn test_end_to_end_compile_and_run() {
     
     // Generate code
     let result = codegen.generate_code(&program);
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
     
     // Verify the generated module
     let module = codegen.module();
@@ -122,7 +122,7 @@ fn test_string_switch_compilation() {
     
     // Generate code
     let result = codegen.generate_code(&program);
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
     
     // Verify the generated module
     let module = codegen.module();
@@ -168,7 +168,7 @@ fn test_dot_expression_compilation() {
     
     // Generate code
     let result = codegen.generate_code(&program);
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
     
     // Verify the generated module
     let module = codegen.module();

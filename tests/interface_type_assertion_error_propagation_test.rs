@@ -62,7 +62,7 @@ mod tests {
         );
         
         // Verify the Result was created successfully
-        assert!(success_result.is_ok());
+        assert!(success_result.is_ok())
         
         // Create a failure Result with error message
         let error_message = "Test error message";
@@ -74,7 +74,7 @@ mod tests {
         );
         
         // Verify the failure Result was created successfully
-        assert!(failure_result.is_ok());
+        assert!(failure_result.is_ok())
         
         info!("Successfully created Result structures for type assertions");
     }
@@ -118,7 +118,7 @@ mod tests {
         let unwrapped = codegen.unwrap_type_assertion_result(success_result);
         
         // Verify the unwrapping succeeded
-        assert!(unwrapped.is_ok());
+        assert!(unwrapped.is_ok())
         
         // Branch to the success block
         codegen.builder().build_unconditional_branch(success_block)
