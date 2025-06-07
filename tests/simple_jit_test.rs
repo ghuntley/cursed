@@ -51,7 +51,7 @@ fn test_simple_jit() -> Result<(), Error> {
     // Manually create and register the 'puts' function
     let i32_type = context.i32_type();
     let puts_type = i32_type.fn_type(&[i32_type.into()], false);
-    code_gen.module().add_function("puts", puts_type, Some(Linkage::External);
+    code_gen.module().add_function("puts", puts_type, Some(Linkage::External));
 
     // Manually create the 'main' function
     let main_fn_type = i32_type.fn_type(&[], false);

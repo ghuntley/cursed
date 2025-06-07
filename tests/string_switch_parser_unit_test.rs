@@ -17,7 +17,7 @@ mod tests {
         let program = parser.parse_program().unwrap();
         
         // Debug output the AST
-        println!("Program AST: {}", program.string();
+        println!("Program AST: {}", program.string());
         
         // There should be one statement
         assert_eq!(program.statements.len(), 1);
@@ -27,10 +27,10 @@ mod tests {
         let expr = expr_stmt.expression();
         
         // Debug output the expression type
-        println!("Expression type: {}", std::any::type_name_of_val(expr.expect("Expression should not be None").as_ref().as_any());
+        println!("Expression type: {}", std::any::type_name_of_val(expr.expect("Expression should not be None").as_ref().as_any()));
         
         // Try to cast it to a CallExpression
-        let call_expr_any = expr.expect("Expression should not be None").as_any());
+        let call_expr_any = expr.expect("Expression should not be None").as_any();
         
         // Check if it's a DotExpression first
         if let Some(dot_expr) = call_expr_any.downcast_ref::<DotExpression>() {
