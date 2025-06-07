@@ -81,11 +81,11 @@ fn test_circular_references_with_scope() {
     {
         // Allocate two nodes
         debug!("Allocating node 1");
-        let mut node1 = gc.allocate(CircularNode::new(1);
+        let mut node1 = gc.allocate(CircularNode::new(1));
         debug!("Allocated node 1");
         
         debug!("Allocating node 2");
-        let mut node2 = gc.allocate(CircularNode::new(2);
+        let mut node2 = gc.allocate(CircularNode::new(2));
         debug!("Allocated node 2");
         
         // Create a circular reference
@@ -178,14 +178,14 @@ fn test_complex_object_graph() {
     
     // Create initial nodes
     for i in 1..=5 {
-        let node = gc.allocate(CircularNode::new(i);
+        let node = gc.allocate(CircularNode::new(i));
         nodes.push(node);
     }
     
     // Create connections between nodes
     // 1->2->3->4->5->1 (circular)
     for i in 0..nodes.len() {
-        let next_idx = (i + 1) % nodes.len());
+        let next_idx = (i + 1) % nodes.len();
         let mut node = nodes[i].clone();
         let next = nodes[next_idx].clone();
         
@@ -200,7 +200,7 @@ fn test_complex_object_graph() {
     assert!(initial_stats.object_count >= 5, "Expected at least 5 objects");
     
     // Create weak references to track object lifetime
-    let weak_refs: Vec<_> = nodes.iter().map(|n| n.downgrade()).collect());
+    let weak_refs: Vec<_> = nodes.iter().map(|n| n.downgrade()).collect();
     
     // Drop strong references
     info!("DROPPING STRONG REFERENCES");
