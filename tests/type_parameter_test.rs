@@ -30,7 +30,7 @@ fn test_nested_generic_types() {
         "Vec".to_string(),
         vec![Box::new(Type::Struct(
             "List".to_string(),
-            vec![Box::new(Type::TypeParam("T".to_string())]
+            vec![Box::new(Type::TypeParam("T".to_string()))]
         ))]
     );
     
@@ -61,8 +61,8 @@ fn test_multiple_type_parameters() {
     
     // Create a generic type with multiple parameters: Map<K, V>
     let map_type = Type::Map(
-        Box::new(Type::TypeParam("K".to_string(),
-        Box::new(Type::TypeParam("V".to_string())
+        Box::new(Type::TypeParam("K".to_string())),
+        Box::new(Type::TypeParam("V".to_string()))
     );
     
     // Add type mappings

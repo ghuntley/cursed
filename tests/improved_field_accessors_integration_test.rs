@@ -20,7 +20,7 @@ use tracing::*;
 // Test for improved field accessors integration with the monomorphization system
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 /// Setup function to initialize test tracing

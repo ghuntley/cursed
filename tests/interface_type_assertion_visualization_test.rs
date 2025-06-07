@@ -5,7 +5,7 @@ use cursed::codegen::llvm::interface_type_assertion_diamond_inheritance::Diamond
 use cursed::error::SourceLocation;
 use common::tracing::init_test_tracing;
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 

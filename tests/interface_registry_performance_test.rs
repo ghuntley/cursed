@@ -69,15 +69,15 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
         
         for name in struct_names {
             // Create different combinations of type parameters
-            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), vec![]);
-            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), vec![Box::new(Type::Normie)]);
-            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), vec![Box::new(Type::Tea)]);
-            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), 
+            types.push(Type::Struct(name.clone(), vec![]));
+            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Normie)]));
+            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Tea)]));
+            types.push(Type::Struct(name.clone(), 
                 vec![Box::new(Type::Tea), Box::new(Type::Normie)]
-            );
-            types.push(Type::Struct(vec![Type::Int32], false));name.clone(),
+            ));
+            types.push(Type::Struct(name.clone(),
                 vec![Box::new(Type::Struct("Nested".to_string(), vec![Box::new(Type::Lit)]))]
-            );
+            ));
         }
     }
     

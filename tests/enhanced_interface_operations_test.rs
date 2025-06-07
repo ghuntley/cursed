@@ -18,7 +18,7 @@ use inkwell::values::BasicValueEnum;
 // 4. Better integration with the type checker
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 /// Test fixture with interfaces and implementing types

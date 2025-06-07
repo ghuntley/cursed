@@ -8,7 +8,7 @@ use cursed::codegen::llvm::RangeClauseCompilation;
 // based on the feature flag.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[allow(unused_imports)]

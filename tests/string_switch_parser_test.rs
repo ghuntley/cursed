@@ -39,5 +39,5 @@ fn test_basic_string_switch_parsing() {
     assert!(switch_any.is::<SwitchStatement>(), "Expected a SwitchStatement, got something else");
     
     // Verify no remaining errors
-    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors();
+    assert!(parser.errors().is_empty(), "Parser had errors: {:?}", parser.errors());
 }

@@ -21,7 +21,7 @@ slay add[T](x T, y T) T {
     // Print all statements for debugging
     println!("Found {} statements", program.statements.len());
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("Statement {}: {}", i, stmt.string();
+        println!("Statement {}: {}", i, stmt.string());
         
         // Print the type of each statement
         if stmt.as_any().is::<ast::FunctionStatement>() {
@@ -29,7 +29,7 @@ slay add[T](x T, y T) T {
         } else if stmt.as_any().is::<ast::statements::PackageStatement>() {
             println!("  Type: PackageStatement");
         } else {
-            println!("  Type: Other - {}", std::any::type_name_of_val(stmt.as_any());
+            println!("  Type: Other - {}", std::any::type_name_of_val(stmt.as_any()));
         }
     }
     

@@ -87,5 +87,5 @@ slay convert[T, U](source T, converter stan(T) U) U {
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program();
     
-    assert!(program.is_ok(), "Failed to parse complex generic function: {}", program.err().unwrap();
+    assert!(program.is_ok(), "Failed to parse complex generic function: {}", program.err().unwrap());
 }

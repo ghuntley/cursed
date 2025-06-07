@@ -9,7 +9,7 @@ use cursed::parser::Parser;
 // functionality with both the original and the enhanced implementations.
 
 // Use the common test module that includes our standardized test helpers
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 // Use directly instead of via common

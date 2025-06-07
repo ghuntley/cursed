@@ -63,7 +63,7 @@ impl Clone for DependentObject {
 
 // Helper function to create a set of dependent objects
 fn create_dependent_objects(count: usize) -> (Vec<usize>, Arc<Mutex<Vec<usize>>>) {
-    let finalization_order = Arc::new(Mutex::new(Vec::new());
+    let finalization_order = Arc::new(Mutex::new(Vec::new()));
     let storage = global_object_storage();
     let mut addresses = Vec::new();
     
@@ -92,10 +92,10 @@ fn test_simple_dependency_chain() {
     let (addresses, finalization_order) = create_dependent_objects(4);
     
     // Manually add in reverse ID order to test the sorting
-    let obj0_pos = finalization_order.lock().unwrap().len());
-    let obj1_pos = finalization_order.lock().unwrap().len());
-    let obj2_pos = finalization_order.lock().unwrap().len());
-    let obj3_pos = finalization_order.lock().unwrap().len());
+    let obj0_pos = finalization_order.lock().unwrap().len();
+    let obj1_pos = finalization_order.lock().unwrap().len();
+    let obj2_pos = finalization_order.lock().unwrap().len();
+    let obj3_pos = finalization_order.lock().unwrap().len();
     
     // Register dependencies
     register_dependency(addresses[0], addresses[1]); // 0 depends on 1
@@ -197,7 +197,7 @@ fn test_integration_with_gc() {
     let gc = get_test_gc();
     
     // Create objects with dependencies
-    let finalization_order = Arc::new(Mutex::new(Vec::new());
+    let finalization_order = Arc::new(Mutex::new(Vec::new()));
     
     // Create three objects with dependencies
     let obj1 = DependentObject {

@@ -9,7 +9,7 @@ use common::tracing::setup as init_tracing;
 
 extern crate cursed;
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 

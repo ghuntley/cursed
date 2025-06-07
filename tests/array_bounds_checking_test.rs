@@ -34,7 +34,7 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
     
     // Check if the compiler binary exists
     if !Path::new("./target/debug/cursed").exists() {
-        return Err(io::Error::new(io::ErrorKind::NotFound, "Compiler binary not found. Run 'cargo build' first.");
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Compiler binary not found. Run 'cargo build' first."));
     }
     
     // Wait for the process to complete with a timeout

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::rc::Rc;
 use cursed::object::Object;
 use cursed::stdlib::vibez;
 use cursed::stdlib::stringz;
@@ -11,23 +12,24 @@ use cursed::stdlib::dot_registry::DOT_REGISTRY;
 
 #[cfg(test)]
 mod simple_stdlib_tests {
+    use super::*;
     // Import test helper to convert between Rust and CURSED objects
 
     // Import packages we want to test
 
     // Function to create a string object from a Rust string
     fn string_object(s: &str) -> Rc<Object> {
-        Arc::new(Object::String(s.to_string())
+        Rc::new(Object::String(s.to_string()))
     }
 
     // Function to create a number object from a Rust i64
     fn number_object(n: i64) -> Rc<Object> {
-        Arc::new(Object::Integer(n))
+        Rc::new(Object::Integer(n))
     }
 
     // Function to create a float object from a Rust f64
     fn float_object(f: f64) -> Rc<Object> {
-        Arc::new(Object::Float(f))
+        Rc::new(Object::Float(f))
     }
 
     // Function to extract a string from a CURSED object

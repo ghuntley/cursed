@@ -6,7 +6,7 @@ use cursed::error::Error;
 // focusing on edge cases and specific scenarios required by the test plan.
 
 // Import test setup and common utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 // Import test tracing macro via path include

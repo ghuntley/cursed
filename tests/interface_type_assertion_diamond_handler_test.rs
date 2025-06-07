@@ -14,7 +14,7 @@ use cursed::codegen::llvm::InterfaceTypeRegistryExtensionCheckingAccess;
 // detect, visualize, and report diamond inheritance patterns in interface type assertions.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 

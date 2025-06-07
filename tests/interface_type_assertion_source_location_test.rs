@@ -11,7 +11,7 @@ use cursed::lexer::Token;
 // captured and reported in interface type assertion errors.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

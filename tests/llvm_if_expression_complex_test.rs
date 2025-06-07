@@ -57,7 +57,7 @@ fn test_if_expression_with_variable() {
     
     // Compile the let statement to create the variable
     let result = generator.compile_statement(&let_stmt);
-    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
     
     // Create a condition that compares x > 5
     let x_expr = x_ident.clone();
@@ -248,17 +248,17 @@ fn test_nested_if_expressions() {
     
     // Compile the nested if expressions
     let result = generator.compile_if_expression(&outer_if_expr);
-    assert!(result.is_ok(), "Failed to compile nested if expressions: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile nested if expressions: {:?}", result.err());
     
     // Since outer is true and inner is false, the result should be 2
     let value = result.unwrap();
     assert!(value.is_int_value(), "Result should be an integer");
     
     // Get the result from LLVM
-    let ret_val = generator.builder().build_return(Some(&value);
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err();
+    let ret_val = generator.builder().build_return(Some(&value));
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Verify the module
-    let verification = generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
 }

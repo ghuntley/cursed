@@ -71,10 +71,10 @@ fn test_simple_vibe_check_codegen() {
     if let Err(ref err) = result {
         error!(error = ?err, "Code generation failed");
     }
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     // Get the resulting IR code
-    let ir_code = code_generator.module().print_to_string().to_string());
+    let ir_code = code_generator.module().print_to_string().to_string();
     debug!("Generated LLVM IR successfully");
     trace!(ir_code = %ir_code, "Generated LLVM IR");
 
@@ -150,10 +150,10 @@ fn test_multiple_case_values() {
     if let Err(ref err) = result {
         error!(error = ?err, "Code generation failed");
     }
-    assert!(result.is_ok(), "Code generation failed: {:?}", result.err())
+    assert!(result.is_ok(), "Code generation failed: {:?}", result.err());
 
     // Get the resulting IR code
-    let ir_code = code_generator.module().print_to_string().to_string());
+    let ir_code = code_generator.module().print_to_string().to_string();
     debug!("Generated LLVM IR successfully");
     trace!(ir_code = %ir_code, "Generated LLVM IR");
 

@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[macro_export]

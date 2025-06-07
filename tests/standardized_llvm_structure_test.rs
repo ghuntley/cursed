@@ -173,7 +173,7 @@ slay test_pointer_ops() normie {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors()));
+        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors())));
     }
 
     // Set up LLVM JIT execution

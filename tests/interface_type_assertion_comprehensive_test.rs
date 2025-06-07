@@ -15,7 +15,7 @@ use cursed::error::Error;
 // covering error handling, nesting, inheritance, and complex use cases.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 

@@ -6,7 +6,7 @@ use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::struct_field_inference::StructFieldInference;
-use cursed::lexer::Token;
+
 use inkwell::context::Context;
 use std::path::PathBuf;
 

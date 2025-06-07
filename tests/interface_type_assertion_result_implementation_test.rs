@@ -24,7 +24,7 @@ use tracing::{debug, info, warn, trace};
 
 
 // Import common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 pub mod common;
 
 

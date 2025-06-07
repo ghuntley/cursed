@@ -59,7 +59,7 @@ slay main() {
     for (name, level) in &debug_levels {
         // Compile with the specific debug level
         let context = Context::create();
-        let output_path = PathBuf::from(format!("target/debug/debug_{}_test_binary", name);
+        let output_path = PathBuf::from(format!("target/debug/debug_{}_test_binary", name));
         let mut binary_compiler = BinaryCompiler::new(&context, "debug_test_module");
         
         // Create code generator

@@ -16,7 +16,7 @@ use cursed::core::interface_registry::InterfaceRegistry;
 
 
 // Import test helpers
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 // Helper function to set up a type checker with interfaces and implementations

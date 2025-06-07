@@ -89,7 +89,7 @@ fn test_array_generators() {
     // Generate integer arrays
     for _ in 0..5 {
         let value = int_array(3, 7, 0, 100);
-        assert!(value.len() >= 3 && value.len() <= 7, "Array length {} is out of range 3-7", value.len())
+        assert!(value.len() >= 3 && value.len() <= 7, "Array length {} is out of range 3-7", value.len());
         
         for item in &value {
             assert!(*item >= 0 && *item <= 100, "Integer {} is out of range 0-100", item);
@@ -105,7 +105,7 @@ fn test_hash_map_generators() {
     // Generate hash maps
     for _ in 0..5 {
         let value = hash_map(2, 5);
-        assert!(value.len() >= 2 && value.len() <= 5, "Map size {} is out of range 2-5", value.len())
+        assert!(value.len() >= 2 && value.len() <= 5, "Map size {} is out of range 2-5", value.len());
         
         for (key, _) in &value {
             assert!(key.starts_with("key_"), "Map key '{}' does not start with 'key_'", key);

@@ -6,7 +6,7 @@ use cursed::error::Error;
 // Tests for constraint recovery strategies
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

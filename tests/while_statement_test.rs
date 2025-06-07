@@ -2,7 +2,7 @@ use cursed::error::Error;
 use std::path::Path;
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

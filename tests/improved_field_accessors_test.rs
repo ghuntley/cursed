@@ -12,7 +12,7 @@ use cursed::core::type_checker::Type;
 // better error handling for LLVM operations.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

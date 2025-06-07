@@ -8,7 +8,7 @@ use cursed::error::Error;
 // These tests focus on verifying the correctness of the implementation without
 // introducing conflicts with the original implementation.
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[path = "range_clause_test_helper.rs"]

@@ -11,7 +11,7 @@ use std::sync::{Arc, RwLock};
 
 
 // Import test helpers
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

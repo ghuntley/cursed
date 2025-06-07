@@ -7,7 +7,7 @@ use crate::common;
 // concrete type and to convert an interface value back to a concrete type.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 // Simple macro to init tracing in tests

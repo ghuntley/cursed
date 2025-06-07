@@ -78,7 +78,7 @@ fn test_loop_context_management() {
     generator.builder().build_return(None).expect("Failed to build return");
     
     // Verify module
-    let verify_result = generator.module().verify());
+    let verify_result = generator.module().verify();
     assert!(
         verify_result.is_ok(),
         "Module verification failed: {:?}",

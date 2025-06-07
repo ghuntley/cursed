@@ -3,7 +3,7 @@ use tracing::{debug, error, info};
 // Note: This is a standalone test that doesn't rely on the full compiler infrastructure
 
 // Import the common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 #[allow(unused_imports)]
 mod common;
 

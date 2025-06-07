@@ -24,7 +24,7 @@ mod tests {
     };
     
     // Import common testing utils
-    #[path = "common.rs"]
+    #[path = "common/mod.rs"]
     mod common;
     
     const BENCHMARK_ITERATIONS: u32 = 1000;

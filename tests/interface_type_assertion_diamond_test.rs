@@ -13,7 +13,7 @@ use common::tracing::setup as init_tracing;
 mod tests {
     
     // Include common test utilities
-    #[path = "common.rs"]
+    #[path = "common/mod.rs"]
     mod common;
     
     /// Set up a mock type registry with a diamond inheritance pattern
