@@ -22,33 +22,23 @@ impl fmt::Debug for ThreadSafeInterfaceExtensionRegistry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         debug!("Formatting ThreadSafeInterfaceExtensionRegistry for Debug");
         
-        // Start with a simplified representation
+        // Use a simplified representation to avoid stack overflow from circular debug formatting
         let mut debug_struct = f.debug_struct("ThreadSafeInterfaceExtensionRegistry");
         
-        // Attempt to get all interfaces
-        let all_interfaces = match self.get_all_interfaces() {
-            Ok(interfaces) => interfaces,
+        // Get basic information without triggering complex debug formatting
+        let interface_count = match self.get_all_interfaces() {
+            Ok(interfaces) => interfaces.len(),
             Err(_) => {
-                // If we can't acquire the lock, show a placeholder
-                debug_struct.field("registry", &"<lock acquisition failed>");
+                debug_struct.field("status", &"<lock acquisition failed>");
                 return debug_struct.finish();
             }
         };
         
-        // Format the registry content
-        let mut registry_map = HashMap::new();
-        
-        for interface in all_interfaces {
-            let extensions = match self.get_direct_extensions(&interface) {
-                Ok(Some(exts)) => exts,
-                _ => continue,
-            };
-            
-            registry_map.insert(interface, extensions);
-        }
-        
-        debug_struct.field("registry", &registry_map);
-        debug_struct.finish()
+        // Only show summary information to prevent infinite recursion
+        debug_struct
+            .field("interface_count", &interface_count)
+            .field("type", &"ThreadSafeInterfaceExtensionRegistry")
+            .finish()
     }
 }
 
