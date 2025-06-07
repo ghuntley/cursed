@@ -4,7 +4,7 @@
 //! Traceable objects for proper finalization during garbage collection.
 
 // Temporarily disabled while we update the API
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 use tracing::{debug, error, info, instrument, trace, warn};

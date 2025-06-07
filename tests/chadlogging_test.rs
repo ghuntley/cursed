@@ -6,7 +6,7 @@ use std::cell::RefCell;
 /// Tests for the chadlogging module
 
 // Temporarily disabled while we update the API
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 #[test]

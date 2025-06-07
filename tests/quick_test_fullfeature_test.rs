@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::cell::RefCell;
 
 // Temporarily disabled while API is upgraded
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 #[test]

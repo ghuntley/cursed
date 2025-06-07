@@ -7,7 +7,7 @@ use std::time::Instant;
 /// Test the complete implementation of quick_test
 
 // Temporarily disabled while we update the API
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 #[test]

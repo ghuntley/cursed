@@ -2,7 +2,7 @@ use cursed::object::Object;
 use cursed::stdlib::quick_test;
 
 // Temporarily disabled while API is upgraded
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 #[test]

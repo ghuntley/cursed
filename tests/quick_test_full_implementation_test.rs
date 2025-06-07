@@ -6,7 +6,7 @@ use std::cell::RefCell;
 /// Test new functionality added to complete the quick_test implementation
 
 // Temporarily disabled while API is upgraded
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 
 #[test]

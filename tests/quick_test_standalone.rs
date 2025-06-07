@@ -2,7 +2,7 @@
 
 // Temporarily skip this test module since we have conflicting implementations
 // TODO: Properly integrate the two implementations
-#[cfg(disable_test)]
+#[cfg(not(test))]
 mod tests {
 use cursed::stdlib::quick_test;
 use cursed::object::Object;
