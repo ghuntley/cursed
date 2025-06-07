@@ -155,10 +155,23 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
         let mut queue = VecDeque::new();
         
         // Create an initial node for the root type
+        // For the root node, we need to determine if it has any direct constraints
+        let initial_constraints = match root_type {
+            Type::Generic(name, type_args) => {
+                // For generic types, we'll process the type arguments which may have constraints
+                Vec::new()
+            },
+            Type::Struct(name, type_args) if !type_args.is_empty() => {
+                // For parameterized structs, we'll process the type arguments
+                Vec::new()
+            },
+            _ => Vec::new(),
+        };
+        
         let root_node = ConstraintNode {
             type_: root_type.clone(),
             path: TypePath::new(),
-            constraints: Vec::new(),
+            constraints: initial_constraints,
             param_names: Vec::new(),
         };
         
@@ -223,63 +236,12 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
             // If this is a generic type, traverse its type arguments
             match &node.type_ {
                 Type::Struct(name, type_args) if !type_args.is_empty() => {
-                    // Get the generic definition to find parameter names
-                    let mut param_names: Vec<String> = Vec::new();
-                    
-                    // For each type argument, create a child node
-                    for (i, arg) in type_args.iter().enumerate() {
-                        let mut child_path = node.path.clone();
-                        let param_name = if i < node.param_names.len() {
-                            Some(node.param_names[i].clone())
-                        } else {
-                            None
-                        };
-                        
-                        // Check if this parameter has any constraints
-                        let constraints = if let Some(name) = &param_name {
-                            if let Some(constraints) = type_param_constraints.get(name) {
-                                constraints.clone()
-                            } else {
-                                Vec::new()
-                            }
-                        } else {
-                            Vec::new()
-                        };
-                        
-                        // Add a component to the path
-                        let constraint_str = if !constraints.is_empty() {
-                            Some(constraints[0].clone())
-                        } else {
-                            None
-                        };
-                        
-                        child_path.add_component(TypePathComponent {
-                            type_: *arg.clone(),
-                            constraint: constraint_str,
-                            position: i,
-                            param_name: param_name.clone(),
-                        });
-                        
-                        // Enqueue the child node
-                        let child_node = ConstraintNode {
-                            type_: *arg.clone(),
-                            path: child_path,
-                            constraints,
-                            param_names: Vec::new(), // Will be populated when processing this node
-                        };
-                        
-                        queue.push_back(child_node);
-                    }
-                },
-                Type::Generic(name, type_args) => {
-                    // Similar to struct, but for explicit generic types
-                    let generic_implementations = self.get_generic_implementations(name);
-                    let generic_impl = generic_implementations
-                        .iter()
-                        .find(|impl_| impl_.type_name == *name);
+                    // Try to find the generic implementation to get parameter names
+                    let generic_implementations = self.get_generic_implementations_by_type(name);
+                    let generic_impl = generic_implementations.first();
                     
                     if let Some(generic_impl) = generic_impl {
-                        let param_names = generic_impl.type_params.clone();
+                        let param_names = &generic_impl.type_params;
                         
                         // For each type argument, create a child node
                         for (i, arg) in type_args.iter().enumerate() {
@@ -320,7 +282,61 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
                                 type_: *arg.clone(),
                                 path: child_path,
                                 constraints,
-                                param_names: Vec::new(),
+                                param_names: Vec::new(), // Will be populated when processing this node
+                            };
+                            
+                            queue.push_back(child_node);
+                        }
+                    }
+                },
+                Type::Generic(name, type_args) => {
+                    // Similar to struct, but for explicit generic types
+                    let generic_implementations = self.get_generic_implementations_by_type(name);
+                    let generic_impl = generic_implementations.first();
+                    
+                    if let Some(generic_impl) = generic_impl {
+                        let param_names = generic_impl.type_params.clone();
+                        
+                        // For each type argument, create a child node
+                        for (i, arg) in type_args.iter().enumerate() {
+                            let mut child_path = node.path.clone();
+                            let param_name = if i < param_names.len() {
+                                Some(param_names[i].clone())
+                            } else {
+                                None
+                            };
+                            
+                            // Check if this parameter has any constraints
+                            let constraints = if let Some(name) = &param_name {
+                                if let Some(constraints) = type_param_constraints.get(name) {
+                                    constraints.clone()
+                                } else {
+                                    Vec::new()
+                                }
+                            } else {
+                                Vec::new()
+                            };
+                            
+                            // Add a component to the path
+                            let constraint_str = if !constraints.is_empty() {
+                                Some(constraints[0].clone())
+                            } else {
+                                None
+                            };
+                            
+                            child_path.add_component(TypePathComponent {
+                                type_: *arg.clone(),
+                                constraint: constraint_str,
+                                position: i,
+                                param_name: param_name.clone(),
+                            });
+                            
+                            // Enqueue the child node - this will recursively check nested generics
+                            let child_node = ConstraintNode {
+                                type_: *arg.clone(),
+                                path: child_path,
+                                constraints,
+                                param_names: param_names.clone(), // Pass parameter names for nested processing
                             };
                             
                             queue.push_back(child_node);
@@ -363,10 +379,51 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
             });
         }
         
-        // Create a root generic type for checking
+        // Check each type argument against its constraints directly
+        for (i, type_arg) in type_args.iter().enumerate() {
+            if i < type_params.len() {
+                let param_name = &type_params[i];
+                if let Some(constraints) = type_param_constraints.get(param_name) {
+                    // Check each constraint for this parameter
+                    for constraint in constraints {
+                        let implementation_result = self.check_implementation(type_arg, constraint);
+                        match implementation_result {
+                            Ok(true) => {
+                                debug!("Type {:?} satisfies constraint {}", type_arg, constraint);
+                            },
+                            Ok(false) => {
+                                debug!("Type {:?} does not satisfy constraint {}", type_arg, constraint);
+                                
+                                // Create failure context
+                                let mut path = TypePath::new();
+                                path.add_component(TypePathComponent {
+                                    type_: type_arg.clone(),
+                                    constraint: Some(constraint.clone()),
+                                    position: i,
+                                    param_name: Some(param_name.clone()),
+                                });
+                                
+                                let recovery_context = self.create_recovery_context(type_arg, constraint);
+                                
+                                return Ok(DeepConstraintResult {
+                                    satisfied: false,
+                                    failure_path: Some(path),
+                                    recovery_context: Some(recovery_context),
+                                });
+                            },
+                            Err(e) => {
+                                return Err(e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Create a root generic type for checking nested constraints
         let root_type = Type::Generic(generic_type.to_string(), type_args.into_iter().map(|t| Box::new(t.clone())).collect());
         
-        // Check all nested constraints
+        // Check all nested constraints recursively
         self.check_deep_nested_constraints(&root_type, type_param_constraints)
     }
 }
@@ -391,10 +448,8 @@ impl InterfaceRegistry {
         constraints: &HashMap<String, Vec<String>>,
     ) -> Result<bool, Error> {
         // Find the generic implementation to get the parameter names
-        let generic_impl = self.get_generic_implementations(generic_type)
-            .iter()
-            .find(|impl_| impl_.type_name == generic_type.to_string())
-            .cloned();
+        let generic_implementations = self.get_generic_implementations_by_type(generic_type);
+        let generic_impl = generic_implementations.first().cloned();
         
         if let Some(generic_impl) = generic_impl {
             // Check the constraints at all levels
@@ -432,10 +487,8 @@ impl InterfaceRegistry {
         constraints: &HashMap<String, Vec<String>>,
     ) -> Result<DeepConstraintResult, Error> {
         // Find the generic implementation to get the parameter names
-        let generic_impl = self.get_generic_implementations(generic_type)
-            .iter()
-            .find(|impl_| impl_.type_name == generic_type.to_string())
-            .cloned();
+        let generic_implementations = self.get_generic_implementations_by_type(generic_type);
+        let generic_impl = generic_implementations.first().cloned();
         
         if let Some(generic_impl) = generic_impl {
             // Check the constraints at all levels

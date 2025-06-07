@@ -274,9 +274,10 @@ impl AsyncConstraintChecker {
         
         // Calculate the average task time
         let elapsed = start_time.elapsed();
-        let elapsed_ms = elapsed.as_secs() as f32 * 1000.0 + elapsed.subsec_millis() as f32;
+        let elapsed_ms = elapsed.as_millis() as f32;
         let avg_task_time_ms = if num_constraints > 0 {
-            elapsed_ms / num_constraints as f32
+            // Ensure we have a minimum time to avoid 0.0 for very fast operations
+            (elapsed_ms / num_constraints as f32).max(0.001)
         } else {
             0.0
         };
