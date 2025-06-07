@@ -845,7 +845,11 @@ mod tests {
         // Create a new extension registry
         let mut registry = ThreadSafeInterfaceExtensionRegistry::new();
         
-        // Register some extensions
+        // Register interfaces first
+        registry.register_interface("A");
+        registry.register_interface("B");
+        registry.register_interface("C");
+        // Then register extensions
         registry.register_extension("A", "B").unwrap();
         registry.register_extension("B", "C").unwrap();
         
@@ -868,7 +872,11 @@ mod tests {
         // Create a new extension registry
         let mut ext_registry = ThreadSafeInterfaceExtensionRegistry::new();
         
-        // Register some extensions
+        // Register interfaces first
+        ext_registry.register_interface("A");
+        ext_registry.register_interface("B");
+        ext_registry.register_interface("C");
+        // Then register extensions
         ext_registry.register_extension("A", "B").unwrap();
         ext_registry.register_extension("B", "C").unwrap();
         
@@ -876,12 +884,19 @@ mod tests {
         let vis_registry_arc = ThreadSafeInterfaceExtensionRegistry::new();
         let mut vis_registry: Box<dyn InterfaceRegistryExtensionWithVisualization + Send + Sync> = Box::new(DefaultInterfaceRegistryVisualization::new(vis_registry_arc));
         
-        // Register the same extensions
+        // Register interfaces in visualization registry first
+        vis_registry.register_interface("A");
+        vis_registry.register_interface("B");
+        vis_registry.register_interface("C");
+        // Then register the same extensions
         vis_registry.register_extension("A", "B").unwrap();
         vis_registry.register_extension("B", "C").unwrap();
         
         // Create adapter with both registries
         let fresh_ext_registry = ThreadSafeInterfaceExtensionRegistry::new();
+        fresh_ext_registry.write().unwrap().register_interface("A");
+        fresh_ext_registry.write().unwrap().register_interface("B");
+        fresh_ext_registry.write().unwrap().register_interface("C");
         fresh_ext_registry.write().unwrap().register_extension("A", "B").unwrap();
         fresh_ext_registry.write().unwrap().register_extension("B", "C").unwrap();
         let adapter = InterfaceRegistryAdapter::new_with_visualization(fresh_ext_registry, vis_registry);
