@@ -427,7 +427,7 @@ mod tests {
         // Create test types
         let stack_int = Type::Struct(
             "Stack".to_string(),
-            vec![Type::Normie] // Int implements Comparable
+            vec![Box::new(Type::Normie)] // Int implements Comparable
         );
         
         // Container[Stack[Int]]
@@ -445,7 +445,7 @@ mod tests {
         let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
         let stack_non_comparable = Type::Struct(
             "Stack".to_string(),
-            vec![non_comparable]
+            vec![Box::new(non_comparable)]
         );
         
         let result = checker.check_complex_nested_constraint_parallel(
@@ -481,12 +481,12 @@ mod tests {
         // Create test types
         let list_int = Type::Struct(
             "List".to_string(),
-            vec![Type::Normie] // Int implements Comparable
+            vec![Box::new(Type::Normie)] // Int implements Comparable
         );
         
         let container_list_int = Type::Struct(
             "Container".to_string(),
-            vec![list_int.clone()]
+            vec![Box::new(list_int.clone())]
         );
         
         // Check multi-level constraint
@@ -504,12 +504,12 @@ mod tests {
         let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
         let list_non_comparable = Type::Struct(
             "List".to_string(),
-            vec![non_comparable.clone()]
+            vec![Box::new(non_comparable.clone())]
         );
         
         let container_list_non_comparable = Type::Struct(
             "Container".to_string(),
-            vec![list_non_comparable.clone()]
+            vec![Box::new(list_non_comparable.clone())]
         );
         
         let result = checker.check_complex_nested_constraint_parallel(
@@ -560,7 +560,7 @@ mod tests {
         // Make the same check twice
         let stack_int = Type::Struct(
             "Stack".to_string(),
-            vec![Type::Normie]
+            vec![Box::new(Type::Normie)]
         );
         
         // First call should compute the result

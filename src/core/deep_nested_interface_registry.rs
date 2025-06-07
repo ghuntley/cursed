@@ -525,13 +525,13 @@ mod tests {
         // InnerContainer[Int] - where Int implements Comparable
         let inner_container_int = Type::Struct(
             "InnerContainer".to_string(),
-            vec![Type::Normie]
+            vec![Box::new(Type::Normie)]
         );
         
         // OuterContainer[InnerContainer[Int]]
         let outer_container = Type::Struct(
             "OuterContainer".to_string(),
-            vec![inner_container_int.clone()]
+            vec![Box::new(inner_container_int.clone())]
         );
         
         // Check the constraint - should pass because Int implements Comparable
@@ -547,7 +547,7 @@ mod tests {
         let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
         let inner_container_non_comparable = Type::Struct(
             "InnerContainer".to_string(),
-            vec![non_comparable]
+            vec![Box::new(non_comparable)]
         );
         
         // Check the constraint - should fail because NonComparable doesn't implement Comparable
@@ -579,13 +579,13 @@ mod tests {
         // Box[Int] - where Int implements Numeric
         let box_int = Type::Struct(
             "Box".to_string(),
-            vec![Type::Normie]
+            vec![Box::new(Type::Normie)]
         );
         
         // Pair[String, Box[Int]]
         let pair = Type::Struct(
             "Pair".to_string(),
-            vec![Type::Tea, box_int.clone()]
+            vec![Box::new(Type::Tea), Box::new(box_int.clone())]
         );
         
         // Check the first step in the chain
@@ -603,13 +603,13 @@ mod tests {
         let non_numeric = Type::Struct("NonNumeric".to_string(), vec![]);
         let box_non_numeric = Type::Struct(
             "Box".to_string(),
-            vec![non_numeric]
+            vec![Box::new(non_numeric)]
         );
         
         // Pair[String, Box[NonNumeric]]
         let pair_with_non_numeric = Type::Struct(
             "Pair".to_string(),
-            vec![Type::Tea, box_non_numeric]
+            vec![Box::new(Type::Tea), Box::new(box_non_numeric)]
         );
         
         // Check the constraint - should fail because NonNumeric doesn't implement Numeric
@@ -682,7 +682,7 @@ mod tests {
         // Check a constraint directly through the extension trait
         let list_of_int = Type::Struct(
             "List".to_string(),
-            vec![Type::Normie]
+            vec![Box::new(Type::Normie)]
         );
         
         let result = registry.check_complex_nested_constraint(

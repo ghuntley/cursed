@@ -125,7 +125,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
         
         if let Some(extension_registry) = &self.extension_registry {
             // Get the extension hierarchy from the registry
-            let hierarchy = InterfaceRegistryExtension::get_extension_hierarchy(&**extension_registry).map_err(|e| {
+            let hierarchy = InterfaceRegistryExtension::get_extension_hierarchy(extension_registry).map_err(|e| {
                 warn!("Error accessing extension registry: {}", e);
                 Error::from_str("Error accessing interface registry data")
             })?;
@@ -575,7 +575,8 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
         // If we have an extension registry, register the extension there too for consistency
         if let Some(registry) = &self.extension_registry {
             // Register the extension in the external registry
-            registry.register_extension(source, target).map_err(|e| {
+            let mut reg = registry.write().map_err(|_| Error::Compilation("Failed to acquire write lock".to_string()))?;
+            reg.register_extension(source, target).map_err(|e| {
                 warn!("Error registering extension in external registry: {}", e);
                 Error::from_str("Error updating extension registry")
             })?;
@@ -617,8 +618,7 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
     /// Check if source interface extends target interface (alias for extends)
     pub fn check_interface_extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         if let Some(registry) = &self.extension_registry {
-            let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
-            InterfaceRegistryExtension::extends(&*reg, source, target)
+            InterfaceRegistryExtension::extends(registry, source, target)
         } else {
             Ok(false)
         }
@@ -646,8 +646,7 @@ impl<'ctx> InterfaceTypeRegistryTrait for InterfaceTypeRegistry<'ctx> {
     
     fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
         if let Some(registry) = &self.extension_registry {
-            let reg = registry.read().map_err(|_| Error::Compilation("Failed to acquire read lock".to_string()))?;
-            InterfaceRegistryExtension::extends(&*reg, source, target)
+            InterfaceRegistryExtension::extends(registry, source, target)
         } else {
             Ok(false)
         }

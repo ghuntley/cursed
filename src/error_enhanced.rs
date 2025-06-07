@@ -105,6 +105,18 @@ impl fmt::Display for ErrorKind {
     }
 }
 
+impl PartialEq for CursedError {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind 
+            && self.message == other.message 
+            && self.location == other.location
+            && self.context == other.context
+            && self.code == other.code
+            // Note: We don't compare cause (trait object) or stack_trace (Backtrace)
+            // as they don't implement PartialEq
+    }
+}
+
 impl CursedError {
     /// Create a new error with the given kind and message
     pub fn new<S: Into<String>>(kind: ErrorKind, message: S) -> Self {

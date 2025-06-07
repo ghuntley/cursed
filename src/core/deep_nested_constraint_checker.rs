@@ -224,7 +224,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
             match &node.type_ {
                 Type::Struct(name, type_args) if !type_args.is_empty() => {
                     // Get the generic definition to find parameter names
-                    let mut param_names = Vec::new();
+                    let mut param_names: Vec<String> = Vec::new();
                     
                     // For each type argument, create a child node
                     for (i, arg) in type_args.iter().enumerate() {
@@ -273,9 +273,10 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
                 },
                 Type::Generic(name, type_args) => {
                     // Similar to struct, but for explicit generic types
-                    let generic_impl = self.get_generic_implementations(name)
+                    let generic_implementations = self.get_generic_implementations(name);
+                    let generic_impl = generic_implementations
                         .iter()
-                        .find(|impl_| impl_.name == *name);
+                        .find(|impl_| impl_.type_name == *name);
                     
                     if let Some(generic_impl) = generic_impl {
                         let param_names = generic_impl.type_params.clone();
@@ -363,7 +364,7 @@ impl DeepNestedConstraintChecking for InterfaceRegistry {
         }
         
         // Create a root generic type for checking
-        let root_type = Type::Generic(generic_type.to_string(), type_args.into_iter().map(|t| Box::new(t)).collect());
+        let root_type = Type::Generic(generic_type.to_string(), type_args.into_iter().map(|t| Box::new(t.clone())).collect());
         
         // Check all nested constraints
         self.check_deep_nested_constraints(&root_type, type_param_constraints)
@@ -392,7 +393,7 @@ impl InterfaceRegistry {
         // Find the generic implementation to get the parameter names
         let generic_impl = self.get_generic_implementations(generic_type)
             .iter()
-            .find(|impl_| impl_.name == generic_type.to_string())
+            .find(|impl_| impl_.type_name == generic_type.to_string())
             .cloned();
         
         if let Some(generic_impl) = generic_impl {
@@ -433,7 +434,7 @@ impl InterfaceRegistry {
         // Find the generic implementation to get the parameter names
         let generic_impl = self.get_generic_implementations(generic_type)
             .iter()
-            .find(|impl_| impl_.name == generic_type.to_string())
+            .find(|impl_| impl_.type_name == generic_type.to_string())
             .cloned();
         
         if let Some(generic_impl) = generic_impl {
@@ -578,7 +579,7 @@ mod tests {
         // Create a List[V] as the second argument
         let list_type = Type::Generic(
             "List".to_string(),
-            vec![Type::Struct("Array".to_string(), vec![])] // Array implements Container
+            vec![Box::new(Type::Struct("Array".to_string(), vec![]))] // Array implements Container
         );
         
         // Check with valid arguments
@@ -594,7 +595,7 @@ mod tests {
         // Check with invalid nested argument
         let bad_list_type = Type::Generic(
             "List".to_string(),
-            vec![Type::Lit] // Lit doesn't implement Container
+            vec![Box::new(Type::Lit)] // Lit doesn't implement Container
         );
         
         let type_args = vec![Type::Tea, bad_list_type];

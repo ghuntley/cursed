@@ -143,7 +143,12 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         let (actual_type_id, actual_type_name) = self.get_runtime_type_id(expr_value, source_location.clone().into())?;
         
         // Look up the type names for better error messages using common function
-        let expected_type_name = crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, type_id as u32)?;
+        let type_id_u32 = if let Some(const_int) = type_id.into_int_value().get_zero_extended_constant() {
+            const_int as u32
+        } else {
+            0u32 // fallback value
+        };
+        let expected_type_name = crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, type_id_u32)?;
         let actual_type_name = Some(actual_type_name);
         
         // Create an enhanced error message
@@ -223,6 +228,7 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
                     Some(line as usize)
                 ) {
                     return Ok(SourceLocation {
+                        source_line: context.source_line.unwrap_or_else(|| node.string()),
                         file: Some(file.clone()),
                         line: line as usize,
                         column: column as usize,
@@ -267,12 +273,17 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         let target_type = "unknown";
         
         // Call the error propagation function with the enhanced message and location
+        let enhanced_message_ptr = self.create_string_constant(&enhanced_message)?;
+        let source_type_ptr = self.create_string_constant(source_type)?;
+        let target_type_ptr = self.create_string_constant(target_type)?;
+        let additional_message_ptr = self.create_string_constant("")?;
+        
         self.call_error_propagation_function(
-            self.create_string_constant(&enhanced_message)?.into(),
-            self.create_string_constant(source_type)?.into(),
-            self.create_string_constant(target_type)?.into(),
-            location_struct,
-            self.create_string_constant("")?.into()
+            enhanced_message_ptr.into(),
+            source_type_ptr.into(),
+            target_type_ptr.into(),
+            location_struct?,
+            additional_message_ptr.into()
         )?;
         
         // This function should not return normally after error propagation
@@ -302,7 +313,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Build a source location struct for LLVM
-    pub fn build_source_location_struct(&self, location: &SourceLocation) -> BasicValueEnum<'ctx> {
+    pub fn build_source_location_struct(&mut self, location: &SourceLocation) -> Result<BasicValueEnum<'ctx>, Error> {
         let ctx = self.context();
         
         // Create integer values for line and column
@@ -323,12 +334,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         };
         
         // Build the location struct
-        self.build_struct_value(&[
+        Ok(self.build_struct_value(&[
             line.into(),
             column.into(),
             file_ptr,
             source_line_ptr
-        ]).into()
+        ]).into())
     }
     
     // Using the shared implementation from interface_type_registry_helpers.rs

@@ -256,12 +256,12 @@ mod tests {
         // Create test types
         let list_of_int = Type::Struct(
             "List".to_string(),
-            vec![Type::Normie]
+            vec![Box::new(Type::Normie)]
         );
         
         let list_of_non_comparable = Type::Struct(
             "List".to_string(),
-            vec![Type::Struct("NonComparable".to_string(), vec![])]
+            vec![Box::new(Type::Struct("NonComparable".to_string(), vec![]))]
         );
         
         // Int implements Comparable, so this should pass
@@ -295,12 +295,12 @@ mod tests {
         // Create test types
         let container_of_int = Type::Struct(
             "Container".to_string(),
-            vec![Type::Normie]
+            vec![Box::new(Type::Normie)]
         );
         
         let container_of_non_comparable = Type::Struct(
             "Container".to_string(),
-            vec![Type::Struct("NonComparable".to_string(), vec![])]
+            vec![Box::new(Type::Struct("NonComparable".to_string(), vec![]))]
         );
         
         // Container of Int should satisfy the constraint

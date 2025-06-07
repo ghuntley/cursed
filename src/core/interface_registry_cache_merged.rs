@@ -290,7 +290,34 @@ pub mod test_common {
     pub fn create_test_registry_cache() -> Arc<RwLock<ThreadSafeInterfaceRegistryLruCache>> {
         trace!("Creating test registry cache");
         let registry = create_test_registry_with_visualization();
-        let cache = ThreadSafeInterfaceRegistryLruCache::new(registry.clone(), 100);
+        
+        // Convert to the basic extension interface required by the cache
+        let base_registry: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>> = 
+            Arc::new(RwLock::new(ThreadSafeInterfaceExtensionRegistry::new()));
+        
+        // Copy the data from the visualization registry to the base registry
+        {
+            let viz_guard = registry.read().unwrap();
+            let mut base_guard = base_registry.write().unwrap();
+            
+            // Copy interfaces
+            if let Ok(interfaces) = viz_guard.get_all_interfaces() {
+                for interface in interfaces {
+                    base_guard.register_interface(&interface);
+                }
+            }
+            
+            // Copy extensions
+            if let Ok(hierarchy) = viz_guard.get_extension_hierarchy() {
+                for (source, targets) in hierarchy {
+                    for target in targets {
+                        let _ = base_guard.register_extension(&source, &target);
+                    }
+                }
+            }
+        }
+        
+        let cache = ThreadSafeInterfaceRegistryLruCache::new(base_registry, 100);
         Arc::new(RwLock::new(cache))
     }
     

@@ -244,7 +244,7 @@ impl<'ctx> ImprovedErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Combine the message parts
         let message = format!("{}{}{}\n\n{}",
-            additional_message.unwrap_or_default(),
+            additional_message.as_ref().map(|s| s.as_str()).unwrap_or(""),
             if additional_message.is_some() { "\n\n" } else { "" },
             alt_paths,
             hierarchy
@@ -269,13 +269,13 @@ impl<'ctx> ImprovedErrorPropagation<'ctx> for LlvmCodeGenerator<'ctx> {
         target_type: &str
     ) -> Result<Option<String>, Error> {
         // Check if source implements target as an interface
-        let implements = match self.check_extension_relationship_simple(source_type, target_type) {
+        let implements = match self.check_extension_relationship(source_type, target_type) {
             Ok(result) => result,
             Err(_) => false
         };
         
         // Check if target implements source as an interface (reversed relationship)
-        let reversed = match self.check_extension_relationship_simple(target_type, source_type) {
+        let reversed = match self.check_extension_relationship(target_type, source_type) {
             Ok(result) => result,
             Err(_) => false
         };

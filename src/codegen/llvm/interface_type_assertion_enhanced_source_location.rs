@@ -54,6 +54,11 @@ pub trait EnhancedSourceLocationSupport<'ctx>: EnhancedSourceLocationErrorPropag
         node: &dyn Node,
         additional_context: Option<&str>
     ) -> SourceLocation;
+    
+    /// Set the filesystem integration for enhanced error handling
+    fn set_filesystem_integration(&self, _integration: std::sync::Arc<std::sync::Mutex<()>>) {
+        // Default implementation - do nothing
+    }
 }
 
 /// Implementation of the enhanced source location support for LlvmCodeGenerator

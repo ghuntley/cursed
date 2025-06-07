@@ -276,6 +276,53 @@ impl ErrorReporter {
     }
 }
 
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Error::IoError(a), Error::IoError(b)) => {
+                a.kind() == b.kind() && a.to_string() == b.to_string()
+            },
+            (Error::Lexer { location: l1, message: m1 }, Error::Lexer { location: l2, message: m2 }) => {
+                l1 == l2 && m1 == m2
+            },
+            (Error::Parser { location: l1, message: m1 }, Error::Parser { location: l2, message: m2 }) => {
+                l1 == l2 && m1 == m2
+            },
+            (Error::Type { location: l1, message: m1 }, Error::Type { location: l2, message: m2 }) => {
+                l1 == l2 && m1 == m2
+            },
+            (Error::Syntax { location: l1, message: m1 }, Error::Syntax { location: l2, message: m2 }) => {
+                l1 == l2 && m1 == m2
+            },
+            (Error::NotImplemented { message: m1 }, Error::NotImplemented { message: m2 }) => m1 == m2,
+            (Error::SemanticError(a), Error::SemanticError(b)) => a == b,
+            (Error::Compilation(a), Error::Compilation(b)) => a == b,
+            (Error::Runtime(a), Error::Runtime(b)) => a == b,
+            (Error::Memory(a), Error::Memory(b)) => a == b,
+            (Error::BytecodeError(a), Error::BytecodeError(b)) => a == b,
+            (Error::VMError(a), Error::VMError(b)) => a == b,
+            (Error::Unknown(a), Error::Unknown(b)) => a == b,
+            (Error::IndexError(a), Error::IndexError(b)) => a == b,
+            (Error::DivisionByZero(a), Error::DivisionByZero(b)) => a == b,
+            (Error::StackOverflow(a), Error::StackOverflow(b)) => a == b,
+            (Error::HeapOverflow(a), Error::HeapOverflow(b)) => a == b,
+            (Error::InvalidOperation(a), Error::InvalidOperation(b)) => a == b,
+            (Error::SystemError(a), Error::SystemError(b)) => a == b,
+            (Error::CodeGenError(a), Error::CodeGenError(b)) => a == b,
+            (Error::TypeAssertion(a), Error::TypeAssertion(b)) => a == b,
+            (Error::InvalidArguments(a), Error::InvalidArguments(b)) => a == b,
+            (Error::NotFound(a), Error::NotFound(b)) => a == b,
+            (Error::Parsing(a), Error::Parsing(b)) => a == b,
+            (Error::IO(a), Error::IO(b)) => {
+                a.kind() == b.kind() && a.to_string() == b.to_string()
+            },
+            (Error::Internal(a), Error::Internal(b)) => a == b,
+            (Error::Validation(a), Error::Validation(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
 impl Clone for Error {
     fn clone(&self) -> Self {
         match self {

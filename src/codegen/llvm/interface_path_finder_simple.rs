@@ -326,7 +326,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
         
         // Check if target actually extends source (reverse of what was attempted)
-        match self.check_extension_relationship_simple(target_interface, source_interface) {
+        match self.check_extension_relationship(target_interface, source_interface) {
             Ok(true) => {
                 // Found reversed relationship - provide helpful message
                 let message = format!(

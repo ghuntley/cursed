@@ -15,6 +15,7 @@
 
 use tracing::{debug, error, info, instrument, span, trace, warn, Level};
 use std::fmt;
+use crate::core::interface_registry_extensions::InterfaceRegistryExtension;
 
 use inkwell::values::BasicValueEnum;
 use inkwell::types::{BasicTypeEnum, StructType};
@@ -293,7 +294,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> Result<Vec<String>, Error> {
         if let Some(registry) = self.registry_visualization() {
             // Get all interfaces that type1 implements
-            let type1_interfaces = match InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry.as_ref()) {
+            let type1_interfaces = match <dyn InterfaceRegistryExtensionWithVisualization>::get_extension_hierarchy(registry) {
                 Ok(hierarchy) => {
                     let mut result = Vec::new();
                     for (source, targets) in hierarchy {
@@ -309,7 +310,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             };
             
             // Get all interfaces that type2 implements
-            let type2_interfaces = match InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry.as_ref()) {
+            let type2_interfaces = match <dyn InterfaceRegistryExtensionWithVisualization>::get_extension_hierarchy(registry) {
                 Ok(hierarchy) => {
                     let mut result = Vec::new();
                     for (source, targets) in hierarchy {

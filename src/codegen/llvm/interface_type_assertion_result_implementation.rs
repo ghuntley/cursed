@@ -153,8 +153,8 @@ impl<'ctx> IntegratedResultTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Find target type in the registry or create an opaque type
         let target_struct_type = self.get_type_by_name(&type_assertion.type_name)
-            .map(|bve| match bve {
-                BasicValueEnum::StructValue(sv) => sv.get_type(),
+            .map(|bte| match bte {
+                BasicTypeEnum::StructType(st) => st,
                 _ => self.context().opaque_struct_type(&type_assertion.type_name)
             })
             .unwrap_or_else(|| self.context().opaque_struct_type(&type_assertion.type_name));

@@ -323,6 +323,9 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
                 
                 // Check if these interfaces share a common ancestor
                 // (other than the concrete type itself)
+                // TODO: Implement InterfaceTypeRegistryExtensionCheckingAccess trait
+                // Commented out until trait is properly implemented
+                /*
                 if let Some(registry_ext) = registry.as_interface_extension_checking() {
                     // Check if they both extend a common interface
                     let ext1 = registry_ext.get_extended_interfaces(interface1_id as u64)?;
@@ -347,6 +350,7 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
                         }
                     }
                 }
+                */
             }
         }
         
@@ -434,8 +438,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     
     /// Gets the interface registry extension checking functionality
     fn get_interface_registry_extension_checker(&self) -> Option<&dyn InterfaceTypeRegistryExtensionChecking> {
-        self.get_interface_registry()
-            .and_then(|registry| registry.as_interface_extension_checking())
+        // TODO: Implement InterfaceTypeRegistryExtensionCheckingAccess trait
+        // self.get_interface_registry()
+        //     .and_then(|registry| registry.as_interface_extension_checking())
+        None
     }
 }
 
@@ -448,23 +454,8 @@ pub trait InterfaceTypeRegistryExtensionCheckingAccess {
     fn get_extended_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error>;
 }
 
-// Implementation for the interface registry
-impl<T: InterfaceTypeRegistry + ?Sized> InterfaceTypeRegistryExtensionCheckingAccess for T {
-    fn as_interface_extension_checking(&self) -> Option<&dyn InterfaceTypeRegistryExtensionChecking> {
-        Some(self as &dyn InterfaceTypeRegistryExtensionChecking)
-    }
-    
-    fn get_extended_interfaces(&self, interface_id: u64) -> Result<HashSet<u64>, Error> {
-        // This should return all interfaces that this interface extends
-        // For simplicity, we'll return an empty set here
-        // In a real implementation, this would query the registry's extension relationships
-        let extensions = self.get_extension_relationships()?;
-        
-        Ok(extensions.get(&interface_id)
-            .cloned()
-            .unwrap_or_else(HashSet::new))
-    }
-}
+// Note: Concrete implementations of this trait should be provided for specific registry types
+// rather than using a generic impl, due to trait object constraints
 
 /// Register the diamond inheritance handler module
 pub fn register_diamond_inheritance_handler() {

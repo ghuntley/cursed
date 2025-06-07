@@ -59,14 +59,15 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         }
         
         // Check if both interfaces exist
-        if !registry.interface_exists(source)? {
+        let all_interfaces = registry.get_all_interfaces()?;
+        if !all_interfaces.contains(source) {
             return Err(Error::Compilation(format!(
                 "Source interface '{}' does not exist in the registry",
                 source
             )));
         }
         
-        if !registry.interface_exists(target)? {
+        if !all_interfaces.contains(target) {
             return Err(Error::Compilation(format!(
                 "Target interface '{}' does not exist in the registry",
                 target
@@ -74,7 +75,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         }
         
         // Try to find an inheritance path
-        match InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), source, target) {
+        match registry.find_inheritance_path(source, target) {
             Ok(path) => {
                 // Create a visual representation of the path
                 let path_visual = registry.visualize_path_ascii(&path)?;
@@ -109,7 +110,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         })?;
         
         // Find the inheritance path
-        let path = InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), source, target)?;
+        let path = registry.find_inheritance_path(source, target)?;
         
         // Generate a visual representation
         let mut result = String::from("Interface Inheritance Path:\n");
@@ -146,14 +147,15 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         })?;
         
         // Check if both interfaces exist
-        if !registry.interface_exists(source)? {
+        let all_interfaces = registry.get_all_interfaces()?;
+        if !all_interfaces.contains(source) {
             return Err(Error::Compilation(format!(
                 "Source interface '{}' does not exist in the registry",
                 source
             )));
         }
         
-        if !registry.interface_exists(target)? {
+        if !all_interfaces.contains(target) {
             return Err(Error::Compilation(format!(
                 "Target interface '{}' does not exist in the registry",
                 target
@@ -189,7 +191,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
             }
             
             // Get direct extensions of the current interface
-            if let Some(extensions) = InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*registry, &current_interface)? {
+            if let Some(extensions) = <dyn InterfaceRegistryExtensionWithVisualization>::get_direct_extensions(&*registry, &current_interface)? {
                 for extension in extensions {
                     // Avoid cycles and already visited paths
                     if !current_path.contains(&extension) {
@@ -209,7 +211,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         // Check if we found any paths
         if paths.is_empty() {
             // Try finding paths through a common parent
-            let all_interfaces = InterfaceRegistryExtensionWithVisualization::get_all_interfaces(&*registry)?;
+            let all_interfaces = <dyn InterfaceRegistryExtensionWithVisualization>::get_all_interfaces(&*registry)?;
             
             for interface in all_interfaces {
                 if interface == source || interface == target {
@@ -217,20 +219,20 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
                 }
                 
                 // Check if both source and target extend this interface
-                let source_extends = match InterfaceRegistryExtensionWithVisualization::extends(&*registry, source, &interface) {
+                let source_extends = match <dyn InterfaceRegistryExtensionWithVisualization>::extends(&*registry, source, &interface) {
                     Ok(extends) => extends,
                     Err(_) => continue,
                 };
                 
-                let target_extends = match InterfaceRegistryExtensionWithVisualization::extends(&*registry, target, &interface) {
+                let target_extends = match <dyn InterfaceRegistryExtensionWithVisualization>::extends(&*registry, target, &interface) {
                     Ok(extends) => extends,
                     Err(_) => continue,
                 };
                 
                 if source_extends && target_extends {
                     // Found a common parent, create paths
-                    let path_source_to_common = InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), source, &interface)?;
-                    let path_target_to_common = InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), target, &interface)?;
+                    let path_source_to_common = registry.find_inheritance_path(source, &interface)?;
+                    let path_target_to_common = registry.find_inheritance_path(target, &interface)?;
                     
                     // Combine paths
                     let mut full_path = path_source_to_common;
@@ -264,14 +266,15 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         })?;
         
         // Check if both interfaces exist
-        if !registry.interface_exists(source)? {
+        let all_interfaces = registry.get_all_interfaces()?;
+        if !all_interfaces.contains(source) {
             return Err(Error::Compilation(format!(
                 "Source interface '{}' does not exist in the registry",
                 source
             )));
         }
         
-        if !registry.interface_exists(target)? {
+        if !all_interfaces.contains(target) {
             return Err(Error::Compilation(format!(
                 "Target interface '{}' does not exist in the registry",
                 target
@@ -279,7 +282,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
         }
         
         // Try to find a path in the reverse direction
-        match InterfaceRegistryExtensionWithVisualization::find_inheritance_path(&**registry.read().unwrap(), target, source) {
+        match registry.find_inheritance_path(target, source) {
             Ok(path) => {
                 // Found a reversed relationship
                 let path_visual = registry.visualize_path_ascii(&path)?;
@@ -352,7 +355,7 @@ impl InterfaceTypeRegistryExtensionChecking for Arc<RwLock<dyn InterfaceRegistry
             ancestors.insert(interface.to_string());
             
             // Add all interfaces that this interface extends
-            if let Some(extensions) = InterfaceRegistryExtensionWithVisualization::get_direct_extensions(registry, interface)? {
+            if let Some(extensions) = <dyn InterfaceRegistryExtensionWithVisualization>::get_direct_extensions(registry, interface)? {
                 for extension in extensions {
                     ancestors.insert(extension.clone());
                     find_ancestors(registry, &extension, ancestors)?;
