@@ -1,4 +1,4 @@
-use cursed::ast::declarations::{SquadStatement, GenericConstraint};
+use cursed::ast::declarations::{SquadStatement, GenericConstraint, TypeParameter};
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::fields::FieldStatement;
 use cursed::codegen::llvm::{LlvmCodeGenerator, StructMonomorphization};
@@ -29,10 +29,7 @@ macro_rules! init_tracing {
 fn create_generic_squad_statement(name: &str, type_params: Vec<&str>, fields: Vec<(&str, &str)>) -> SquadStatement {
     let type_parameters = type_params
         .iter()
-        .map(|p| Identifier {
-            token: "token".to_string(),
-            value: p.to_string(),
-        })
+        .map(|p| TypeParameter::new(Token::Identifier(p.to_string()), p.to_string()))
         .collect();
 
     let field_statements = fields
@@ -51,12 +48,13 @@ fn create_generic_squad_statement(name: &str, type_params: Vec<&str>, fields: Ve
         .collect();
 
     SquadStatement {
-        token: Token::BeLike,
+        token: "squad".to_string(),
         name: Identifier {
             token: "token".to_string(),
             value: name.to_string(),
         },
         type_parameters,
+        generic_constraints: Vec::new(),
         fields: field_statements,
     }
 }
@@ -68,7 +66,7 @@ fn test_basic_struct_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Pair[T] with two T fields
     let pair_struct = create_generic_squad_statement(
@@ -85,7 +83,7 @@ fn test_basic_struct_specialization() {
     let result = generator.generate_specialized_struct(&pair_struct, specialized_name, &type_args);
     
     // Verify the result is successful
-    assert!(result.is_ok(), "Failed to specialize struct: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to specialize struct: {:?}", result.err());
     
     // Verify the struct was registered correctly
     assert!(generator.get_struct_type(generator.current_package_name(), specialized_name).is_some(),
@@ -99,7 +97,7 @@ fn test_nested_struct_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Pair[T] with two T fields
     let pair_struct = create_generic_squad_statement(
@@ -125,7 +123,7 @@ fn test_nested_struct_specialization() {
     
     // Generate the specialized Pair struct
     let result = generator.generate_specialized_struct(&pair_struct, specialized_pair_name, &pair_type_args);
-    assert!(result.is_ok(), "Failed to specialize Pair struct: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to specialize Pair struct: {:?}", result.err());
     
     // Specialize the Box struct with concrete type Int (normie)
     let specialized_box_name = "Box_normie";
@@ -143,7 +141,7 @@ fn test_type_parameter_substitution() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Container[T] with multiple field types
     let container_struct = create_generic_squad_statement(
@@ -175,7 +173,7 @@ fn test_type_parameter_substitution() {
         
         assert!(result.is_ok(), 
             "Failed to specialize Container with {:?}: {:?}", 
-            type_arg, result.err())
+            type_arg, result.err());
         
         // Verify the struct was registered correctly
         assert!(generator.get_struct_type(generator.current_package_name(), specialized_name).is_some(),
@@ -190,7 +188,7 @@ fn test_invalid_specialization() {
     
     // Create an LLVM context
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a generic struct definition for a Pair[T, U] with T and U fields
     let pair_struct = create_generic_squad_statement(

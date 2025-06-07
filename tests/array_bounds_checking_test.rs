@@ -45,11 +45,11 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
             // Process didn't complete within timeout, kill it
             warn!("Process timed out after {} seconds, killing it", TIMEOUT_SECONDS);
             let _ = child.kill();
-            return Ok((format!("Process timed out after {} seconds", TIMEOUT_SECONDS), false);
+            return Ok((format!("Process timed out after {} seconds", TIMEOUT_SECONDS), false));
         },
         Err(e) => {
             error!("Failed to wait for process: {}", e);
-            return Err(io::Error::new(io::ErrorKind::Other, format!("Wait error: {}", e));
+            return Err(io::Error::new(io::ErrorKind::Other, format!("Wait error: {}", e)));
         }
     };
     

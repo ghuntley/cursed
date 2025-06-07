@@ -8,24 +8,13 @@ use cursed::error::Error;
 // They focus on edge cases and comprehensive testing of all range clause features.
 
 
-#[path = "common/mod.rs"]
-mod common;
-
 #[path = "range_clause_test_helper.rs"]
 mod helper;
 
-// Simple macro to init tracing in tests
-#[macro_export]
-macro_rules! init_test_tracing {
-    () => {
-        common::tracing::setup();
-    };
-}
-
 /// Run a test using JIT and verify the expected result
 fn run_test_with_expected(code: &str, expected: Object) -> Result<(), String> {
-    // Initialize test tracing
-    init_test_tracing!();
+    // Initialize test tracing via helper module
+    helper::setup_tracing();
     
     // Run the test
     let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43));
