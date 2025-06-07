@@ -78,6 +78,26 @@ impl<'ctx> InterfaceTypeRegistry<'ctx> {
         self.type_id_to_name.get(&type_id)
     }
     
+    /// Get access to type_ids_global field
+    pub fn type_ids_global(&self) -> Option<GlobalValue<'ctx>> {
+        self.type_ids_global
+    }
+    
+    /// Set type_ids_global field
+    pub fn set_type_ids_global(&mut self, global: Option<GlobalValue<'ctx>>) {
+        self.type_ids_global = global;
+    }
+    
+    /// Get access to type_names_global field
+    pub fn type_names_global(&self) -> Option<GlobalValue<'ctx>> {
+        self.type_names_global
+    }
+    
+    /// Set type_names_global field
+    pub fn set_type_names_global(&mut self, global: Option<GlobalValue<'ctx>>) {
+        self.type_names_global = global;
+    }
+    
     /// Get all registered types
     pub fn all_types(&self) -> Vec<(u64, String)> {
         self.type_id_to_name

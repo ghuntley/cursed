@@ -27,8 +27,8 @@ impl fmt::Debug for ThreadSafeInterfaceExtensionRegistry {
         
         // Attempt to get all interfaces
         let all_interfaces = match self.get_all_interfaces() {
-            Some(interfaces) => interfaces,
-            None => {
+            Ok(interfaces) => interfaces,
+            Err(_) => {
                 // If we can't acquire the lock, show a placeholder
                 debug_struct.field("registry", &"<lock acquisition failed>");
                 return debug_struct.finish();

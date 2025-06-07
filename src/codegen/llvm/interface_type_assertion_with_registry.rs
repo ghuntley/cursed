@@ -77,16 +77,24 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         };
         
         // Get runtime type information
-        let runtime_type_id = self.get_runtime_type_id(expr_value, None)?;
+        let (runtime_type_id, runtime_type_name) = self.get_runtime_type_id(expr_value, None)?;
         
-        // Get the target type ID
-        let target_type_id = match self.get_type_id(&type_assertion.type_name) {
-            Ok(id) => id,
-            Err(e) => {
-                error!("Failed to get type ID for {}: {}", type_assertion.type_name, e);
-                return Err(Error::Compilation(format!(
-                    "Failed to get type ID for {}: {}", type_assertion.type_name, e
-                )));
+        // Get the target type ID from registry
+        let target_type_id = match &self.interface_type_registry {
+            Some(registry) => match registry.get_type_id(&type_assertion.type_name) {
+                Ok(id) => id,
+                Err(e) => {
+                    error!("Failed to get type ID for {}: {}", type_assertion.type_name, e);
+                    return Err(Error::Compilation(format!(
+                        "Failed to get type ID for {}: {}", type_assertion.type_name, e
+                    )));
+                }
+            },
+            None => {
+                error!("No interface type registry available");
+                return Err(Error::Compilation(
+                    "Interface type registry not initialized".to_string()
+                ));
             }
         };
         
@@ -94,8 +102,7 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         // We use the enhanced path finder to check for both direct and indirect relationships
         let mut found_relationship = false;
         
-        // Get type names for both the runtime type and target type
-        let runtime_type_name = self.get_type_name_for_id(runtime_type_id)?;
+        // Get target type name 
         let target_type_name = &type_assertion.type_name;
         
         debug!("Checking if '{}' extends '{}'", runtime_type_name, target_type_name);
@@ -238,11 +245,18 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
         debug!("Checking if value is instance of {} using registry", type_name);
         
         // Get the target type ID from the registry
-        let target_type_id = self.get_type_id(type_name)?;
+        let target_type_id = match &self.interface_type_registry {
+            Some(registry) => registry.get_type_id(type_name)?,
+            None => {
+                return Err(Error::Compilation(
+                    "Interface type registry not initialized".to_string()
+                ));
+            }
+        };
         debug!("Target type ID for {}: {}", type_name, target_type_id);
         
         // Get the runtime type ID of the value
-        let runtime_type_id = self.get_runtime_type_id(value, None)?;
+        let (runtime_type_id, runtime_type_name) = self.get_runtime_type_id(value, None)?;
         
         // If they're the same, return true immediately
         if runtime_type_id == target_type_id {
@@ -250,9 +264,6 @@ impl<'ctx> InterfaceTypeAssertionWithRegistry<'ctx> for LlvmCodeGenerator<'ctx> 
                  runtime_type_id, target_type_id);
             return Ok(self.context().bool_type().const_int(1, false).into());
         }
-        
-        // Get type names for both the runtime type and target type
-        let runtime_type_name = self.get_type_name_for_id(runtime_type_id)?;
         
         // Use the enhanced path finder to check for an inheritance relationship
         match self.check_extension_relationship_enhanced(&runtime_type_name, type_name) {

@@ -24,17 +24,17 @@ impl ThreadSafeInterfaceExtensionRegistry {
     }
     
     #[instrument(level = "debug")]
-    fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
+    pub fn get_extension_hierarchy(&self) -> Result<HashMap<String, Vec<String>>, Error> {
         debug!("Getting complete extension hierarchy");
         
-        let registry = self.registry.read().map_err(|e| {
+        let direct_extensions = self.direct_extensions().read().map_err(|e| {
             Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
         })?;
         
         // Create a deep copy to avoid holding the lock longer than necessary
         let mut hierarchy = HashMap::new();
         
-        for (key, value) in &registry.direct_extensions {
+        for (key, value) in &*direct_extensions {
             let extensions: Vec<String> = value.iter().cloned().collect();
             hierarchy.insert(key.clone(), extensions);
         }
@@ -43,25 +43,25 @@ impl ThreadSafeInterfaceExtensionRegistry {
     }
     
     #[instrument(level = "debug")]
-    fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+    pub fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
         debug!("Getting all interfaces in the registry");
         
-        let registry = self.registry.read().map_err(|e| {
+        let interfaces = self.interfaces().read().map_err(|e| {
             Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
         })?;
         
-        Ok(registry.get_all_interfaces())
+        Ok(interfaces.clone())
     }
     
     #[instrument(level = "debug")]
-    fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+    pub fn get_direct_extensions(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         debug!("Getting direct extensions of interface: {}", interface);
         
-        let registry = self.registry.read().map_err(|e| {
+        let direct_extensions = self.direct_extensions().read().map_err(|e| {
             Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
         })?;
         
-        if let Some(extensions) = registry.direct_extensions.get(interface) {
+        if let Some(extensions) = direct_extensions.get(interface) {
             // Convert HashSet to Vec for the return type
             let extensions_vec: Vec<String> = extensions.iter().cloned().collect();
             Ok(Some(extensions_vec))
@@ -71,14 +71,14 @@ impl ThreadSafeInterfaceExtensionRegistry {
     }
     
     #[instrument(level = "debug")]
-    fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
+    pub fn get_direct_implementors(&self, interface: &str) -> Result<Option<Vec<String>>, Error> {
         debug!("Getting direct implementors of interface: {}", interface);
         
-        let registry = self.registry.read().map_err(|e| {
+        let direct_implementers = self.direct_implementers().read().map_err(|e| {
             Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
         })?;
         
-        if let Some(implementors) = registry.reverse_extensions.get(interface) {
+        if let Some(implementors) = direct_implementers.get(interface) {
             // Convert HashSet to Vec for the return type
             let implementors_vec: Vec<String> = implementors.iter().cloned().collect();
             Ok(Some(implementors_vec))
@@ -96,13 +96,8 @@ impl ThreadSafeInterfaceExtensionRegistry {
             return Ok(true);
         }
         
-        // Get a read lock on the registry
-        let mut registry = self.registry.write().map_err(|e| {
-            Error::Compilation(format!("Failed to acquire write lock on extension registry: {}", e))
-        })?;
-        
-        // Use does_extend from the registry
-        Ok(registry.does_extend(source, target))
+        // Use the extends method from the trait implementation
+        self.extends(source, target)
     }
     
     #[instrument(level = "debug")]
@@ -729,12 +724,15 @@ impl ThreadSafeInterfaceExtensionRegistry {
         
         // For the ThreadSafeInterfaceExtensionRegistry, we don't have a separate 
         // initialized flag, so we'll consider it initialized if it has any entries
-        let registry = self.registry.read().map_err(|e| {
+        let direct_extensions = self.direct_extensions().read().map_err(|e| {
+            Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
+        })?;
+        let direct_implementers = self.direct_implementers().read().map_err(|e| {
             Error::Compilation(format!("Failed to acquire read lock on extension registry: {}", e))
         })?;
         
         // Check if there are any entries in the registry
-        Ok(!registry.direct_extensions.is_empty() || !registry.reverse_extensions.is_empty())
+        Ok(!direct_extensions.is_empty() || !direct_implementers.is_empty())
     }
     
     #[instrument(level = "debug")]

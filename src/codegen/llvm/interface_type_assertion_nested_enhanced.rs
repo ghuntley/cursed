@@ -16,6 +16,7 @@
 use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
 use tracing::{debug, info, trace, warn, instrument};
+use crate::codegen::llvm::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
@@ -317,7 +318,7 @@ impl<'ctx> NestedInterfaceTypeAssertionEnhanced<'ctx> for LlvmCodeGenerator<'ctx
             Ok(phi.as_basic_value())
         } else {
             // For non-interface types, delegate to the standard type assertion implementation
-            self.compile_type_assertion_with_propagation(type_assertion)
+            self.compile_type_assertion_with_propagation(type_assertion, None)
         }
     }
     
@@ -338,7 +339,7 @@ impl<'ctx> NestedInterfaceTypeAssertionEnhanced<'ctx> for LlvmCodeGenerator<'ctx
         let extensions = self.get_interface_extensions(interface_name)?;
         
         // Check if potential_parent is in the extension set
-        let result = extensions.contains(potential_parent);
+        let result = extensions.map_or(false, |ext| ext.contains(&potential_parent.to_string()));
         trace!("Interface extension check: {} {} {}", 
                interface_name, 
                if result { "extends" } else { "does not extend" },

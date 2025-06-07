@@ -350,7 +350,7 @@ impl<'ctx> InterfaceTypeAssertionBenchmark<'ctx> for LlvmCodeGenerator<'ctx> {
             let type_check_time = type_check_start.elapsed();
             
             let error_handling_start = Instant::now();
-            let path_length = path_result.map(|path| path.path.len()).unwrap_or(0);
+            let path_length = path_result.map(|path| path.len()).unwrap_or(0);
             if path_length > 0 {
                 debug!("Found inheritance path of length {} for deep hierarchy", path_length);
             } else {

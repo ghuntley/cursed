@@ -28,6 +28,7 @@ use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryInteg
 use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::TypeAssertionErrorPropagation;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::interface_path_finder_enhanced;
 use crate::codegen::llvm::llvm_code_generator_extensions::{SymbolLookupExtensions, ErrorPathExtensions};
 use crate::error::Error;
 
@@ -286,7 +287,7 @@ impl<'ctx> EnhancedInterfaceTypeAssertion<'ctx> for LlvmCodeGenerator<'ctx> {
         
         // Check if there's a direct extension relationship too
         // This handles simple inheritance cases
-        match self.check_extension_relationship_enhanced(
+        match self.check_extension_relationship_simple(
             source_interface,
             target_interface
         ) {

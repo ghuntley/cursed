@@ -407,11 +407,11 @@ impl ConstraintRecoveryExtension for InterfaceRegistry {
         methods: HashMap<String, String>
     ) {
         // Store the methods in the interface_methods field
-        self.interface_methods.insert(interface_name.to_string(), methods);
+        self.interface_methods_mut().insert(interface_name.to_string(), methods);
         
         debug!(
             interface = interface_name,
-            method_count = self.interface_methods.get(interface_name).map_or(0, |m| m.len()),
+            method_count = self.interface_methods().get(interface_name).map_or(0, |m| m.len()),
             "Registered methods for interface"
         );
     }
@@ -422,7 +422,7 @@ impl ConstraintRecoveryExtension for InterfaceRegistry {
         strategy: RecoveryStrategy
     ) {
         // Store the strategy in the recovery_strategies field
-        self.recovery_strategies.insert(interface_name.to_string(), strategy.clone());
+        self.recovery_strategies_mut().insert(interface_name.to_string(), strategy.clone());
         
         debug!(
             interface = interface_name,
@@ -446,7 +446,7 @@ impl InterfaceRegistry {
     /// Get the method signatures for an interface
     pub fn get_interface_methods(&self, interface_name: &str) -> Option<HashMap<String, String>> {
         // First check if we have methods registered in our field
-        if let Some(methods) = self.interface_methods.get(interface_name) {
+        if let Some(methods) = self.interface_methods().get(interface_name) {
             return Some(methods.clone());
         }
         
@@ -486,7 +486,7 @@ impl InterfaceRegistry {
     /// Get the registered recovery strategy for an interface
     pub fn get_recovery_strategy(&self, interface_name: &str) -> Option<RecoveryStrategy> {
         // First check if we have a strategy registered in our field
-        if let Some(strategy) = self.recovery_strategies.get(interface_name) {
+        if let Some(strategy) = self.recovery_strategies().get(interface_name) {
             return Some(strategy.clone());
         }
         

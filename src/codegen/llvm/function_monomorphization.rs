@@ -71,29 +71,14 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
             return Err(Error::from_str("Generic function call missing type arguments"));
         };
         
-        // 2. Look up the generic function declaration
-        let generic_function = if let Some(function) = self.lookup_generic_function(function_name) {
-            function.clone()
-        } else {
-            return Err(Error::from_str(&format!("Generic function not found: {}", function_name)));
-        };
+        // 2-5. Handle function monomorphization
+        let specialized_name = self.handle_function_monomorphization(function_name, &type_args)?;
         
-        // 3. Generate a specialized name for this function with these type arguments
-        let specialized_name = self.get_mono_manager_mut().generate_specialized_name(function_name, &type_args);
-        
-        // 4. Check if we already have this specialization, if not generate it
-        if !self.module().get_function(&specialized_name).is_some() {
-            tracing::info!("Generating specialized function: {} with type args: {:?}", specialized_name, type_args);
-            
-            // Generate the specialized function
-            self.generate_specialized_function(&generic_function, &specialized_name, &type_args)?;
-        }
-        
-        // 5. Get the specialized function and call it with the provided arguments
+        // 6. Get the specialized function and call it with the provided arguments
         let specialized_function = self.module().get_function(&specialized_name)
             .ok_or_else(|| Error::from_str(&format!("Failed to get specialized function: {}", specialized_name)))?;
             
-        // 6. Compile the arguments
+        // 7. Compile the arguments
         let mut compiled_args = Vec::new();
         for arg in &call_expr.arguments {
             // Compile the expression from inside the Box
@@ -533,5 +518,33 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// to avoid duplicate implementations.
     pub fn use_mono_manager(&mut self) -> &mut MonomorphizationManager {
         self.get_mono_manager_mut()
+    }
+
+    fn handle_function_monomorphization(&mut self, function_name: &str, type_args: &[crate::core::type_checker::Type]) -> Result<String, Error> {
+        let function_name_owned = function_name.to_string();
+        
+        // Check if function exists first
+        if self.lookup_generic_function(&function_name_owned).is_none() {
+            return Err(Error::from_str(&format!("Generic function not found: {}", function_name_owned)));
+        }
+        
+        // Generate specialized name first
+        let specialized_name = self.get_mono_manager_mut().generate_specialized_name(&function_name_owned, type_args);
+        
+        // Check if specialization already exists
+        let should_generate = !self.module().get_function(&specialized_name).is_some();
+        if should_generate {
+            // Now get the generic function for generation
+            let generic_function = {
+                self.lookup_generic_function(&function_name_owned)
+                    .expect("Function should exist since we checked above")
+                    .clone()
+            };
+            
+            tracing::info!("Generating specialized function: {} with type args: {:?}", specialized_name, type_args);
+            self.generate_specialized_function(&generic_function, &specialized_name, type_args)?;
+        }
+        
+        Ok(specialized_name)
     }
 }

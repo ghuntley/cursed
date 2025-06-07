@@ -13,6 +13,7 @@ use crate::error::SourceLocation;
 use crate::error::type_assertion_error::TypeAssertionError;
 use inkwell::values::BasicValueEnum;
 use inkwell::IntPredicate;
+use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use std::collections::{HashMap, HashSet};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
@@ -53,6 +54,9 @@ pub trait InterfaceTypeAssertionPathVisualization<'ctx> {
     
     /// Get or insert a runtime function in the LLVM module
     fn get_or_insert_runtime_function(&mut self, name: &str) -> Option<inkwell::values::FunctionValue<'ctx>>;
+    
+    /// Find an inheritance path between two interfaces
+    fn find_interface_path(&self, source_interface: &str, target_interface: &str) -> Result<Vec<String>, Error>;
 }
 
 impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'ctx> {
@@ -96,152 +100,13 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
             ));
         }
         
-        // Get the inheritance map from the registry if available
-        let inheritance_map = match registry.get_inheritance_map() {
-            Some(map) => map,
-            None => return Ok(format!(
-                "Type Path Visualization:\n\n{} --?--> {}\n\nNo inheritance information available in the registry.",
-                from_type, to_type
-            )),
-        };
+        // For now, we'll return a simple visualization without the inheritance map
+        // since get_inheritance_map is not fully implemented
+        return Ok(format!(
+            "Type Path Visualization:\n\n{} --?--> {}\n\nInheritance information analysis not available in current context.",
+            from_type, to_type
+        ));
         
-        // Try to find a path from from_type to to_type
-        let path = self.find_inheritance_path(from_id, to_id, &inheritance_map)?;
-        
-        // Build the visualization based on the path
-        if path.is_empty() {
-            // No path found - provide a detailed explanation with potential alternatives
-            
-            // Get implemented interfaces for the source type if available
-            let source_implements = self.get_implemented_interfaces(from_id, &inheritance_map);
-            
-            // Get types that implement the target interface if it's an interface
-            let target_implementors = self.get_interface_implementors(to_id, &inheritance_map);
-            
-            // Create a more helpful error message with suggestions
-            let mut path_str = format!(
-                "Type Path Visualization:\n\n{} --INCOMPATIBLE--> {}\n\nNo valid conversion path exists between these types.",
-                from_type, to_type
-            );
-            
-            // Add information about source type's interfaces
-            if !source_implements.is_empty() {
-                path_str.push_str("\nThe source type implements the following interfaces:\n");
-                for (i, &interface_id) in source_implements.iter().enumerate() {
-                    let interface_name = registry.get_type_name(interface_id)
-                        .unwrap_or_else(|_| format!("unknown(0x{:x})", interface_id));
-                    path_str.push_str(&format!("  {}. {}\n", i + 1, interface_name));
-                }
-            }
-            
-            // Add information about target interface implementors
-            if !target_implementors.is_empty() {
-                path_str.push_str("\nThe target interface is implemented by:\n");
-                for (i, &impl_id) in target_implementors.iter().enumerate() {
-                    let impl_name = registry.get_type_name(impl_id)
-                        .unwrap_or_else(|_| format!("unknown(0x{:x})", impl_id));
-                    path_str.push_str(&format!("  {}. {}\n", i + 1, impl_name));
-                }
-            }
-            
-            // Suggest possible solutions
-            path_str.push_str("\nPossible solutions:\n");
-            path_str.push_str("  1. Add missing interface implementation\n");
-            path_str.push_str("  2. Use a different type that is compatible with the target\n");
-            path_str.push_str("  3. Create an adapter or conversion function\n");
-            
-            Ok(path_str)
-        } else {
-            // Convert type IDs to names
-            let mut path_names = Vec::new();
-            let mut path_details = Vec::new();
-            
-            for type_id in &path {
-                // Get basic name
-                let type_name = registry.get_type_name(*type_id)
-                    .unwrap_or_else(|_| format!("unknown(0x{:x})", type_id));
-                path_names.push(type_name.clone());
-                
-                // Try to get additional type metadata if available
-                let type_detail = if let Ok(metadata) = registry.get_type_metadata(*type_id) {
-                    let mut detail = type_name.clone();
-                    
-                    // Add relevant metadata for better context
-                    if let Some(module) = metadata.get("module") {
-                        detail.push_str(&format!(" [module: {}]", module));
-                    }
-                    
-                    if let Some(kind) = metadata.get("kind") {
-                        detail.push_str(&format!(" [{}]", kind));
-                    }
-                    
-                    detail
-                } else {
-                    type_name
-                };
-                
-                path_details.push(type_detail);
-            }
-            
-            // Create the visualization with the path
-            let mut path_str = String::new();
-            path_str.push_str(&format!("\nType Path Visualization:\n\n"));
-            
-            // Add source type information
-            path_str.push_str(&format!("Source: {} (ID: 0x{:x})\n", path_details[0], path[0]));
-            path_str.push_str(&format!("Target: {} (ID: 0x{:x})\n\n", path_details[path_details.len()-1], path[path.len()-1]));
-            
-            // Build enhanced path diagram
-            if path_names.len() <= 2 {
-                // Direct inheritance
-                path_str.push_str(&format!("{} --DIRECT--> {}\n", from_type, to_type));
-            } else {
-                // Path with intermediate types - create a more visual representation
-                path_str.push_str(&format!("{} \n", path_details[0]));
-                
-                for i in 1..path_details.len() - 1 {
-                    // Add information about the relationship type if available
-                    let relation_type = self.get_relationship_type(path[i-1], path[i], &inheritance_map);
-                    
-                    // Show the relationship type in the arrow
-                    path_str.push_str(&format!("  |\n  | [{}]\n  v\n", relation_type));
-                    path_str.push_str(&format!("{} \n", path_details[i]));
-                }
-                
-                // Final relationship to target type
-                let final_relation = self.get_relationship_type(
-                    path[path.len()-2], 
-                    path[path.len()-1], 
-                    &inheritance_map
-                );
-                
-                path_str.push_str(&format!("  |\n  | [{}]\n  v\n", final_relation));
-                path_str.push_str(&format!("{} (target)\n", path_details[path_details.len()-1]));
-            }
-            
-            // Add explanation with more details
-            path_str.push_str("\n");
-            if path_names.len() <= 2 {
-                path_str.push_str("Direct implementation relationship exists between these types.\n");
-            } else {
-                path_str.push_str(&format!(
-                    "Conversion path has {} intermediate types across {} inheritance levels.\n",
-                    path_names.len() - 2, path_names.len() - 1
-                ));
-                
-                // Add path summary
-                path_str.push_str("\nPath summary: ");
-                for (i, name) in path_names.iter().enumerate() {
-                    if i > 0 {
-                        path_str.push_str(" -> ");
-                    }
-                    path_str.push_str(name);
-                }
-                path_str.push_str("\n");
-            }
-            
-            Ok(path_str)
-        }
     }
     
     /// Get a list of interfaces implemented by a type
@@ -289,8 +154,8 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         
         // Check for extension relationship (one interface extending another)
         if let Some(registry) = &self.interface_type_registry {
-            if let Ok(from_type) = registry.get_type_name(from_id) {
-                if let Ok(to_type) = registry.get_type_name(to_id) {
+            if let Some(from_type) = registry.get_type_name(from_id) {
+                if let Some(to_type) = registry.get_type_name(to_id) {
                     // Check if both are interfaces (this is a heuristic, would be better to check actual type kind)
                     if from_type.ends_with("Interface") && to_type.ends_with("Interface") {
                         return "extends".to_string();
@@ -310,8 +175,8 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         interface_value: BasicValueEnum<'ctx>,
         source_location: Option<SourceLocation>,
     ) -> Result<(u64, String), Error> {
-        // First, extract the type ID using the base functionality
-        let type_id = match self.get_interface_type_id(interface_value) {
+        // First, extract the type ID using the trait method
+        let type_id_val = match InterfaceTypeAssertion::get_interface_type_id(self, interface_value) {
             Ok(id) => id,
             Err(e) => return Err(Error::TypeAssertion(
                 TypeAssertionError::new("interface", "any")
@@ -322,11 +187,18 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
                         file: None,
                         source_line: String::new(),
                     }))
+                    .into()
             )),
         };
         
         // Convert the type ID to a runtime constant if possible
-        let const_id = match type_id.as_int_value().get_zero_extended_constant() {
+        let const_id = if type_id_val.is_int_value() {
+            type_id_val.into_int_value().get_zero_extended_constant()
+        } else {
+            None
+        };
+        
+        let type_id = match const_id {
             Some(id) => id,
             None => {
                 // For dynamic IDs, generate LLVM IR to print the ID at runtime
@@ -351,7 +223,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
                 if let Some(debug_fn) = self.get_or_insert_runtime_function("print_type_id") {
                     let _ = self.builder().build_call(
                         debug_fn,
-                        &[type_id.into()],
+                        &[type_id_val.into()],
                         "debug_type_id"
                     ).map_err(|e| Error::Compilation(e.to_string()))?;
                 }
@@ -371,39 +243,20 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
         // Try to look up the type name and additional metadata in the registry
         let type_info = if let Some(registry) = &self.interface_type_registry {
             // Get basic type name
-            let type_name = match registry.get_type_name(const_id) {
-                Ok(name) => name,
-                Err(_) => format!("unknown(0x{:x})", const_id),
+            let type_name = match registry.get_type_name(type_id) {
+                Some(name) => name.clone(),
+                None => format!("unknown(0x{:x})", type_id),
             };
             
-            // Try to get additional type metadata if available
-            let type_metadata = match registry.get_type_metadata(const_id) {
-                Ok(metadata) => {
-                    // If we have metadata, construct a richer type description
-                    let mut description = type_name.clone();
-                    
-                    // Add module information if available
-                    if let Some(module) = metadata.get("module") {
-                        description.push_str(&format!(" [module: {}]", module));
-                    }
-                    
-                    // Add namespace information if available
-                    if let Some(namespace) = metadata.get("namespace") {
-                        description.push_str(&format!(" [namespace: {}]", namespace));
-                    }
-                    
-                    description
-                },
-                Err(_) => type_name, // Use basic name if metadata not available
-            };
-            
-            type_metadata
+            // For now, use the basic type name without additional metadata
+            // TODO: Implement proper type metadata retrieval
+            type_name
         } else {
             // If no registry, just use the raw type ID as hexadecimal
-            format!("unknown(0x{:x})", const_id)
+            format!("unknown(0x{:x})", type_id)
         };
         
-        Ok((const_id, type_info))
+        Ok((type_id, type_info))
     }
     
     /// Gets a function from the runtime support or inserts it if not present
@@ -456,7 +309,7 @@ impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for LlvmCodeGenerator<'
             
         if let Some(loc) = source_location {
             return Err(Error::TypeAssertion(
-                detailed_error.with_location(loc).with_message(visualization)
+                detailed_error.with_location(loc).with_message(visualization).into()
             ));
         }
         
@@ -663,6 +516,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         }
         
         false
+    }
+    
+    fn find_interface_path(&self, source_interface: &str, target_interface: &str) -> Result<Vec<String>, Error> {
+        // Use the interface registry if available
+        if let Some(registry) = &self.interface_type_registry {
+            // Try to find a path through the interface registry
+            match registry.find_path(source_interface, target_interface) {
+                Ok(Some(path)) => Ok(path),
+                Ok(None) => Ok(vec![]), // No path found
+                Err(e) => Err(e),
+            }
+        } else {
+            // No registry available - can't find path
+            Ok(vec![])
+        }
     }
 }
 

@@ -236,9 +236,9 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
                 debug!("Using speculative dispatch for frequently called method");
                 
                 // Convert the observed types to str slices for the speculative dispatch function
-                let expected_types: Vec<&str> = if let Some(cache) = &self.method_dispatch_cache {
+                let expected_types: Vec<String> = if let Some(cache) = &self.method_dispatch_cache {
                     if let Some(cached) = cache.method_cache.get(&cache_key) {
-                        cached.observed_types.iter().map(|s| s.as_str()).collect()
+                        cached.observed_types.iter().cloned().collect()
                     } else {
                         vec![]
                     }
@@ -247,13 +247,15 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
                 };
                 
                 if !expected_types.is_empty() {
+                    // Convert to string references
+                    let expected_types_refs: Vec<&str> = expected_types.iter().map(|s| s.as_str()).collect();
                     // Try speculative dispatch with the observed types
                     return self.generate_speculative_dispatch(
                         interface_ptr,
                         interface_name,
                         method_name,
                         args,
-                        &expected_types,
+                        &expected_types_refs,
                     );
                 }
             }
@@ -314,14 +316,15 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             )));
         }
         
-        // Get the interface manager
+        // Extract the vtable pointer and data pointer first to avoid borrow conflicts
+        let vtable_ptr = self.extract_vtable_pointer(interface_ptr.into())?;
+        let data_ptr = self.extract_data_pointer(interface_ptr.into())?;
+        
+        // Get the interface manager after mutable borrows are done
         let interface_manager = match &self.interface_manager {
             Some(manager) => manager,
             None => return Err(Error::from_str("Interface manager not initialized")),
         };
-        
-        // Extract the vtable pointer for type checking
-        let vtable_ptr = self.extract_vtable_pointer(interface_ptr.into())?;
         
         // For each expected type, we'll generate a fast path
         let current_function = self.builder().get_insert_block().unwrap().get_parent().unwrap();
@@ -396,12 +399,15 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
                 // for the concrete type we know
                 let type_struct = CursedType::Struct(type_name.to_string(), Vec::new());
                 
-                // Extract the data pointer
-                let data_ptr = self.extract_data_pointer(interface_ptr.into())?;
-                
                 // Cast to the concrete type
                 // This would be more complex in practice and involve proper struct type determination
                 // For now, we just use the i8* pointer directly
+                
+                // Re-get interface manager for this block to avoid borrow conflicts
+                let interface_manager = match &self.interface_manager {
+                    Some(manager) => manager,
+                    None => return Err(Error::from_str("Interface manager not initialized")),
+                };
                 
                 // Look up the method implementation
                 if let Some(vtable) = interface_manager.get_vtable(interface_name) {
@@ -572,12 +578,15 @@ impl<'ctx> OptimizedDynamicDispatch<'ctx> for LlvmCodeGenerator<'ctx> {
             // Create the CursedType for the struct
             let struct_type = CursedType::Struct(struct_name.clone(), Vec::new());
             
-            // Get references to context and module to avoid borrowing issues
-            let context = self.context();
-            let module = self.module();
-            
             // Register the implementation with the interface manager
-            if let Some(interface_manager) = &mut self.interface_manager {
+            let has_interface_manager = self.interface_manager.is_some();
+            if has_interface_manager {
+                // Extract context and module
+                let context = self.context();
+                let module = self.module();
+                
+                // This is safe because we already checked that interface_manager is Some
+                let interface_manager = unsafe { self.interface_manager.as_mut().unwrap_unchecked() };
                 interface_manager.create_vtable_for_implementation(
                     context,
                     module,
@@ -637,15 +646,6 @@ impl<'ctx> OptimizedDynamicDispatchExtensions<'ctx> for LlvmCodeGenerator<'ctx> 
         // Extract the vtable pointer
         let vtable_ptr = self.extract_vtable_pointer(interface_ptr.into())?;
         
-        // Get the interface manager
-        let interface_manager = match &self.interface_manager {
-            Some(manager) => manager,
-            None => return Ok(()), // Skip if interface manager isn't initialized
-        };
-        
-        // Try to determine the concrete type from the vtable pointer
-        let mut concrete_type = None;
-        
         // Check all registered vtable implementations
         let implementing_types = if let Some(cache) = &self.method_dispatch_cache {
             cache.implementing_types.get(interface_name).cloned().unwrap_or_default()
@@ -653,10 +653,22 @@ impl<'ctx> OptimizedDynamicDispatchExtensions<'ctx> for LlvmCodeGenerator<'ctx> 
             HashSet::new()
         };
         
+        // Try to determine the concrete type from the vtable pointer
+        let mut concrete_type = None;
+        
         for type_name in implementing_types {
+            // Get the interface manager for each iteration to avoid borrow conflicts
+            let interface_manager = match &self.interface_manager {
+                Some(manager) => manager,
+                None => return Ok(()), // Skip if interface manager isn't initialized
+            };
+            
             if let Some(vtable_impl) = interface_manager.get_vtable_impl(interface_name, &type_name) {
-                // Compare vtable pointers
-                let result = self.compare_vtable_pointers(vtable_ptr, vtable_impl.vtable_global)?;
+                // Store the vtable_global value to avoid holding the borrow
+                let vtable_global = vtable_impl.vtable_global;
+                
+                // Compare vtable pointers (this needs mutable borrow)
+                let result = self.compare_vtable_pointers(vtable_ptr, vtable_global)?;
                 
                 // Check if the comparison is true
                 if result.is_int_value() {

@@ -18,6 +18,7 @@ use std::fmt;
 
 use inkwell::values::BasicValueEnum;
 use inkwell::types::{BasicTypeEnum, StructType};
+use crate::core::interface_registry_visualization::InterfaceRegistryExtensionWithVisualization;
 
 use crate::ast::expressions::TypeAssertion;
 use crate::ast::traits::Node;
@@ -292,7 +293,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ) -> Result<Vec<String>, Error> {
         if let Some(registry) = self.registry_visualization() {
             // Get all interfaces that type1 implements
-            let type1_interfaces = match registry.get_extension_hierarchy() {
+            let type1_interfaces = match InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry.as_ref()) {
                 Ok(hierarchy) => {
                     let mut result = Vec::new();
                     for (source, targets) in hierarchy {
@@ -308,7 +309,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             };
             
             // Get all interfaces that type2 implements
-            let type2_interfaces = match registry.get_extension_hierarchy() {
+            let type2_interfaces = match InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(registry.as_ref()) {
                 Ok(hierarchy) => {
                     let mut result = Vec::new();
                     for (source, targets) in hierarchy {

@@ -429,7 +429,7 @@ impl<'ctx> DiamondInheritanceHandler<'ctx> for LlvmCodeGenerator<'ctx> {
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Creates a new path finder for interface inheritance relationships
     fn create_path_finder<'a>(&'a self, registry: &'a dyn InterfaceTypeRegistry) -> impl EnhancedInterfacePathFinder + 'a {
-        crate::codegen::llvm::interface_path_finder_enhanced_fix::MultiPathFinder::new(registry)
+        MultiPathFinder::new(registry)
     }
     
     /// Gets the interface registry extension checking functionality

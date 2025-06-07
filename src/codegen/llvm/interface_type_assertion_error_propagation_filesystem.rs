@@ -30,6 +30,7 @@ use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
 use crate::codegen::llvm::string_utils::StringUtilsExtension;
 use crate::codegen::llvm::type_assertion::InterfaceTypeAssertion;
+use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use crate::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
 use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use crate::codegen::llvm::interface_type_assertion_filesystem_integration::FilesystemSourceLocationIntegration;
@@ -87,7 +88,7 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         // Extract source location information with filesystem context
         let source_location = self.create_enhanced_source_location(
             type_assertion,
-            self.current_file_path().as_deref()
+            Some(self.current_file_path())
         )?;
         
         debug!("Compiling type assertion with ? operator and filesystem integration: {}", type_assertion.string());
@@ -139,14 +140,11 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         self.builder().position_at_end(failure_block);
         
         // Get the actual type ID from the interface value for better error reporting
-        let actual_type_id = self.get_interface_type_id(expr_value)?;
+        let (actual_type_id, actual_type_name) = self.get_runtime_type_id(expr_value, source_location.clone().into())?;
         
         // Look up the type names for better error messages using common function
-        let expected_type_name = crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, type_id)?;
-        let actual_type_name = match crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, actual_type_id) {
-            Ok(name) => Some(name),
-            Err(_) => None
-        };
+        let expected_type_name = crate::codegen::llvm::interface_type_registry_common::get_type_name_by_id_impl(self, type_id as u32)?;
+        let actual_type_name = Some(actual_type_name);
         
         // Create an enhanced error message
         let error_message = self.create_enhanced_error_message(
@@ -258,6 +256,10 @@ impl<'ctx> EnhancedErrorPropagationWithFilesystem<'ctx> for LlvmCodeGenerator<'c
         
         // Convert source location to LLVM structure
         let location_struct = self.build_source_location_struct(source_location);
+        
+        // Default type information for error reporting
+        let source_type = "interface";
+        let target_type = "unknown";
         
         // Call the error propagation function with the enhanced message and location
         self.call_error_propagation_function(

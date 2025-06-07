@@ -527,8 +527,8 @@ impl<'ctx> TypeAssertionErrorHandler<'ctx> for LlvmCodeGenerator<'ctx> {
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     // Print debug information about a type assertion operation
     #[instrument(skip(self, interface_value, result), level = "debug")]
-    pub fn debug_type_assertion(
-        &self,
+    pub fn print_type_assertion_debug(
+        &mut self,
         interface_value: BasicValueEnum<'ctx>,
         target_type_name: &str,
         result: BasicValueEnum<'ctx>
@@ -543,57 +543,57 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             return Ok(());
         }
         
+        // Get the actual type ID from the interface value first
+        let actual_type_id = self.get_interface_type_id_safe(interface_value)?;
+        
         // Get the interface type registry
         if let Some(registry) = &self.interface_type_registry {
-            // Get the actual type ID from the interface value
-            if let Ok(actual_type_id) = self.get_interface_type_id_safe(interface_value) {
-                // Get type names for both expected and actual types
-                let actual_type_id_const = if actual_type_id.is_int_value() {
-                    if let Some(const_val) = actual_type_id.into_int_value().get_zero_extended_constant() {
-                        const_val
-                    } else {
-                        u64::MAX // Cannot get constant value
-                    }
+            // Get type names for both expected and actual types
+            let actual_type_id_const = if actual_type_id.is_int_value() {
+                if let Some(const_val) = actual_type_id.into_int_value().get_zero_extended_constant() {
+                    const_val
                 } else {
-                    u64::MAX // Unknown type ID
-                };
-                
-                let actual_type_name = registry.get_type_name(actual_type_id_const)
-                    .map(|s| s.as_str())
-                    .unwrap_or("Unknown");
-                
-                // Check if the assertion succeeded (extract success flag)
-                let success = if result.is_struct_value() {
-                    if let Ok(success_val) = self.builder().build_extract_value(
-                        result.into_struct_value(),
-                        1, // Index of success flag
-                        "success_flag"
-                    ) {
-                        if success_val.is_int_value() {
-                            success_val.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0
-                        } else {
-                            false
-                        }
+                    u64::MAX // Cannot get constant value
+                }
+            } else {
+                u64::MAX // Unknown type ID
+            };
+            
+            let actual_type_name = registry.get_type_name(actual_type_id_const)
+                .map(|s| s.as_str())
+                .unwrap_or("Unknown");
+            
+            // Check if the assertion succeeded (extract success flag)
+            let success = if result.is_struct_value() {
+                if let Ok(success_val) = self.builder().build_extract_value(
+                    result.into_struct_value(),
+                    1, // Index of success flag
+                    "success_flag"
+                ) {
+                    if success_val.is_int_value() {
+                        success_val.into_int_value().get_zero_extended_constant().unwrap_or(0) != 0
                     } else {
                         false
                     }
                 } else {
                     false
-                };
-                
-                if success {
-                    info!(
-                        "Type assertion SUCCESS: Value of type '{}' asserted to type '{}'", 
-                        actual_type_name, 
-                        target_type_name
-                    );
-                } else {
-                    warn!(
-                        "Type assertion FAILED: Value of type '{}' cannot be converted to type '{}'", 
-                        actual_type_name, 
-                        target_type_name
-                    );
                 }
+            } else {
+                false
+            };
+            
+            if success {
+                info!(
+                    "Type assertion SUCCESS: Value of type '{}' asserted to type '{}'", 
+                    actual_type_name, 
+                    target_type_name
+                );
+            } else {
+                warn!(
+                    "Type assertion FAILED: Value of type '{}' cannot be converted to type '{}'", 
+                    actual_type_name, 
+                    target_type_name
+                );
             }
         } else {
             // Fallback if registry isn't available

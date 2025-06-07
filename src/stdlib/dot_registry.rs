@@ -831,7 +831,7 @@ fn cryptz_random_bytes_handler(args: Vec<String>) -> Result<String, Error> {
                 // Convert the array to a JSON string representation
                 let bytes_json: Vec<Value> = bytes.iter()
                     .map(|b| {
-                        if let crate::object::Object::Integer(n) = &**b {
+                        if let crate::object::Object::Integer(n) = b {
                             Value::Number(serde_json::Number::from(*n))
                         } else {
                             Value::Null

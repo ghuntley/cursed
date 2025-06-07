@@ -78,13 +78,13 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
         }
         
         // Initialize the visualization system with all known interfaces
-        let interfaces = self.interface_registry().get_all_interfaces()?;
+        let interfaces = InterfaceRegistryExtensionWithVisualization::get_all_interfaces(&*self.interface_registry())?;
         debug!("Found {} interfaces to initialize in visualization system", interfaces.len());
         
         // Register all known interface extensions
         for interface_name in &interfaces {
             // Get extensions for this interface with proper error propagation
-            if let Some(extensions) = self.interface_registry().get_direct_extensions(interface_name)? {
+            if let Some(extensions) = InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*self.interface_registry(), interface_name)? {
                 for extension in extensions {
                     // Register the extension relationship with proper error handling
                     self.registry_extensions.register_extension(interface_name, &extension)?;
@@ -109,7 +109,7 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
         debug!("Visualizing interface hierarchy with format: {:?}", format);
         
         // Get the complete hierarchy with proper error propagation
-        let hierarchy = self.interface_registry().get_extension_hierarchy()?;
+        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(&*self.interface_registry())?;
         
         // Generate visualization based on the specified format
         match format {
@@ -253,7 +253,7 @@ impl<'ctx> InterfaceRegistryVisualizationIntegration<'ctx> for LlvmCodeGenerator
         debug!("Detecting cycles in interface inheritance hierarchy");
         
         // Get the complete hierarchy with proper error propagation
-        let hierarchy = self.interface_registry().get_extension_hierarchy()?;
+        let hierarchy = InterfaceRegistryExtensionWithVisualization::get_extension_hierarchy(&*self.interface_registry())?;
         
         // Call the registry's cycle detection with proper error handling
         self.registry_extensions.detect_cycles()
@@ -454,7 +454,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let _span = span!(Level::DEBUG, "add_interface_context").entered();
         
         // Add information about the source interface
-        match self.interface_registry().get_direct_extensions(source_interface) {
+        match InterfaceRegistryExtensionWithVisualization::get_direct_extensions(&*self.interface_registry(), source_interface) {
             Ok(Some(extensions)) if !extensions.is_empty() => {
                 writeln!(*message, "
 '{}' directly extends these interfaces:", source_interface).map_err(|e| {
@@ -483,7 +483,7 @@ Error retrieving extension information for '{}': {}",
         }
         
         // Add information about the target interface
-        match self.interface_registry().get_direct_implementors(target_interface) {
+        match InterfaceRegistryExtensionWithVisualization::get_direct_implementors(&*self.interface_registry(), target_interface) {
             Ok(Some(implementors)) if !implementors.is_empty() => {
                 writeln!(*message, "
 These interfaces directly extend '{}':", target_interface).map_err(|e| {

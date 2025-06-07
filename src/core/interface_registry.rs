@@ -84,6 +84,31 @@ impl InterfaceRegistry {
             .insert(interface_name);
     }
     
+    /// Get mutable access to interface methods
+    pub fn interface_methods_mut(&mut self) -> &mut HashMap<String, HashMap<String, String>> {
+        &mut self.interface_methods
+    }
+    
+    /// Get immutable access to interface methods
+    pub fn interface_methods(&self) -> &HashMap<String, HashMap<String, String>> {
+        &self.interface_methods
+    }
+    
+    /// Get mutable access to recovery strategies
+    pub fn recovery_strategies_mut(&mut self) -> &mut HashMap<String, crate::core::constraint_recovery::RecoveryStrategy> {
+        &mut self.recovery_strategies
+    }
+    
+    /// Get immutable access to recovery strategies
+    pub fn recovery_strategies(&self) -> &HashMap<String, crate::core::constraint_recovery::RecoveryStrategy> {
+        &self.recovery_strategies
+    }
+    
+    /// Get immutable access to implementations
+    pub fn implementations(&self) -> &HashMap<String, HashSet<Type>> {
+        &self.implementations
+    }
+
     /// Register a generic type that implements an interface
     /// 
     /// # Arguments
