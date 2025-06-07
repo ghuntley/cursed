@@ -90,7 +90,7 @@ fn test_string_switch_statement() {
     
     // Compile the switch statement for the string value
     let result = code_generator.compile_string_switch_statement(&switch_stmt, switch_value);
-    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err());
     
     // Add a return value to satisfy the function type
     let return_str = code_generator.create_string_constant("test return").unwrap();
@@ -98,7 +98,7 @@ fn test_string_switch_statement() {
     
     // Verify the module
     let verification = code_generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
     
     // Get the IR code and check for expected components
     let ir_code = code_generator.module().print_to_string().to_string();
@@ -155,7 +155,7 @@ fn test_string_switch_with_multiple_case_values() {
     
     // Compile the switch statement for the string value
     let result = code_generator.compile_string_switch_statement(&switch_stmt, switch_value);
-    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err());
     
     // Add a return value to satisfy the function type
     let return_str = code_generator.create_string_constant("test return").unwrap();
@@ -163,7 +163,7 @@ fn test_string_switch_with_multiple_case_values() {
     
     // Verify the module
     let verification = code_generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
     
     // Get the IR code and check for expected components
     let ir_code = code_generator.module().print_to_string().to_string();

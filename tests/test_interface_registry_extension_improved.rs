@@ -18,7 +18,7 @@ fn test_real_registry_integration() {
     );
     
     // Create a test registry with the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
     
     // Register some interface types
     registry.register_type(1001, "Reader".to_string());

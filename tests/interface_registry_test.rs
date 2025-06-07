@@ -35,8 +35,8 @@ fn test_interface_registry_primitive_types() {
     assert!(registry.check_implementation(&Type::Meal, "Numeric").unwrap();
     
     // Check primitive types that should NOT implement certain interfaces
-    assert!(!registry.check_implementation(&Type::Tea, "Numeric").unwrap();
-    assert!(!registry.check_implementation(&Type::Lit, "Numeric").unwrap();
+    assert!(!registry.check_implementation(&Type::Tea, "Numeric").unwrap());
+    assert!(!registry.check_implementation(&Type::Lit, "Numeric").unwrap());
 }
 
 #[test]
@@ -61,9 +61,9 @@ fn test_interface_registry_custom_types() {
     
     // Check IntList with Container, List, and Numeric interfaces
     let int_list = Type::Struct("IntList".to_string(), vec![]);
-    assert!(registry.check_implementation(&int_list, "Container").unwrap();
-    assert!(registry.check_implementation(&int_list, "List").unwrap();
-    assert!(registry.check_implementation(&int_list, "Numeric").unwrap();
+    assert!(registry.check_implementation(&int_list, "Container").unwrap());
+    assert!(registry.check_implementation(&int_list, "List").unwrap());
+    assert!(registry.check_implementation(&int_list, "Numeric").unwrap());
 }
 
 #[test]
@@ -88,8 +88,8 @@ fn test_interface_registry_adding_custom_implementations() {
     registry.register_implementation(vector_type.clone(), "Comparable".to_string());
     
     // Now it should implement both
-    assert!(registry.check_implementation(&vector_type, "Numeric").unwrap();
-    assert!(registry.check_implementation(&vector_type, "Comparable").unwrap();
+    assert!(registry.check_implementation(&vector_type, "Numeric").unwrap());
+    assert!(registry.check_implementation(&vector_type, "Comparable").unwrap());
 }
 
 #[test]

@@ -2,9 +2,12 @@ use std::sync::Arc;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
-use cursed::codegen::llvm::jit::JitCompiler;
+use cursed::codegen::jit::JitCompiler;
 use cursed::parser::Parser;
+use cursed::lexer::Lexer;
 use cursed::error::Error;
+use inkwell::context::Context;
+use std::path::PathBuf;
 use tracing::{debug, info, warn, instrument};
 use common::tracing::setup as init_tracing;
 use common::timing::Timer;
@@ -282,40 +285,52 @@ fn test_complex_error_chaining() {
     "#;
     
     // Parse the code
-    let mut parser = Parser::new(code);
+    let mut lexer = Lexer::new(code);
+    let mut parser = match Parser::new(&mut lexer) {
+        Ok(p) => p,
+        Err(e) => panic!("Failed to create parser: {}", e),
+    };
     let program = match parser.parse_program() {
         Ok(prog) => prog,
         Err(e) => panic!("Failed to parse program: {}", e),
     };
     
     // Create JIT compiler
-    let mut jit = JitCompiler::new("complex_error_chaining_test");
+    let context = Context::create();
+    let module = context.create_module("complex_error_chaining_test");
+    let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
+        .map_err(|e| panic!("Failed to create execution engine: {:?}", e))
+        .unwrap();
     
-    // Configure JIT for proper interface type assertions
-    jit.set_enable_debug(true);
-    jit.set_enable_type_debugging(true);
-    jit.set_enable_type_checks(true);
-    jit.set_enable_interface_registry(true);
-    jit.set_enable_enhanced_error_reporting(true);
+    let mut jit = JitCompiler::new(
+        &context,
+        execution_engine,
+        "complex_error_chaining_test",
+        PathBuf::from("test.csd"),
+    );
     
-    // Add enhanced error handlers
-    jit.add_runtime_error_handlers();
+    // Create LLVM code generator and compile the program
+    use cursed::codegen::llvm::LlvmCodeGenerator;
+    let mut code_gen = LlvmCodeGenerator::new(&context, "complex_error_chaining_test", &PathBuf::from("test.csd"));
     
-    // Compile the program
-    match jit.compile(&program) {
+    // Generate code for the program
+    match code_gen.generate(&program) {
         Ok(_) => {
-            info!("Successfully compiled complex error chaining test program");
+            info!("Successfully generated LLVM code for complex error chaining test program");
         },
         Err(e) => {
-            panic!("Failed to compile complex error chaining test program: {}", e);
+            panic!("Failed to generate LLVM code for complex error chaining test program: {}", e);
         }
     };
     
-    // Run the program
-    let result = jit.run();
+    // Add the code generator to the JIT compiler
+    *jit.code_generator_mut() = Some(code_gen);
+    
+    // Execute the program
+    let result = jit.execute();
     
     // Check that execution completed successfully
-    assert!(result.is_ok(), "Complex error chaining test execution failed");
+    assert!(result.is_ok(), "Complex error chaining test execution failed: {:?}", result.err());
     
     info!("Complex error chaining test completed successfully");
 }
@@ -520,40 +535,52 @@ fn test_error_context_preservation() {
     "#;
     
     // Parse the code
-    let mut parser = Parser::new(code);
+    let mut lexer = Lexer::new(code);
+    let mut parser = match Parser::new(&mut lexer) {
+        Ok(p) => p,
+        Err(e) => panic!("Failed to create parser: {}", e),
+    };
     let program = match parser.parse_program() {
         Ok(prog) => prog,
         Err(e) => panic!("Failed to parse program: {}", e),
     };
     
     // Create JIT compiler
-    let mut jit = JitCompiler::new("error_context_preservation_test");
+    let context = Context::create();
+    let module = context.create_module("error_context_preservation_test");
+    let execution_engine = module.create_jit_execution_engine(inkwell::OptimizationLevel::None)
+        .map_err(|e| panic!("Failed to create execution engine: {:?}", e))
+        .unwrap();
     
-    // Configure JIT with all the necessary features for interface type assertion
-    jit.set_enable_debug(true);
-    jit.set_enable_type_debugging(true);
-    jit.set_enable_type_checks(true);
-    jit.set_enable_interface_registry(true);
-    jit.set_enable_enhanced_error_reporting(true);
+    let mut jit = JitCompiler::new(
+        &context,
+        execution_engine,
+        "error_context_preservation_test",
+        PathBuf::from("test.csd"),
+    );
     
-    // Add enhanced error handlers
-    jit.add_runtime_error_handlers();
+    // Create LLVM code generator and compile the program
+    use cursed::codegen::llvm::LlvmCodeGenerator;
+    let mut code_gen = LlvmCodeGenerator::new(&context, "error_context_preservation_test", &PathBuf::from("test.csd"));
     
-    // Compile the program
-    match jit.compile(&program) {
+    // Generate code for the program
+    match code_gen.generate(&program) {
         Ok(_) => {
-            info!("Successfully compiled error context preservation test program");
+            info!("Successfully generated LLVM code for error context preservation test program");
         },
         Err(e) => {
-            panic!("Failed to compile error context preservation test program: {}", e);
+            panic!("Failed to generate LLVM code for error context preservation test program: {}", e);
         }
     };
     
-    // Run the program
-    let result = jit.run();
+    // Add the code generator to the JIT compiler
+    *jit.code_generator_mut() = Some(code_gen);
+    
+    // Execute the program
+    let result = jit.execute();
     
     // Check that execution completed successfully
-    assert!(result.is_ok(), "Error context preservation test execution failed");
+    assert!(result.is_ok(), "Error context preservation test execution failed: {:?}", result.err());
     
     info!("Error context preservation test completed successfully");
 }

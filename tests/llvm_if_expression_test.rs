@@ -101,7 +101,7 @@ fn test_simple_if_expression() {
     let int_value = value.into_int_value();
     
     // Print the value for debugging
-    println!("DEBUG TEST: Int value: {:?}", int_value.get_zero_extended_constant();
+    println!("DEBUG TEST: Int value: {:?}", int_value.get_zero_extended_constant());
     
     // For this test, we're not interested in the actual value yet, just that it works
     // The PHI node should select 42 since the condition is true

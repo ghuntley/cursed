@@ -118,7 +118,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
             execution_engine.add_global_mapping(&puts_fn, addr);
         }
     } else {
-        return Err(Error::from_str("Failed to find 'puts' function in module");
+        return Err(Error::from_str("Failed to find 'puts' function in module"));
     }
 
     // Execute the main function
@@ -133,7 +133,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
                 if let Some(f) = code_gen.module().get_function("_test_main") {
                     println!("Found mangled main: {}", f.get_name().to_string_lossy());
                 } else {
-                    return Err(Error::from_str("No main function found in module");
+                    return Err(Error::from_str("No main function found in module"));
                 }
             }
         };

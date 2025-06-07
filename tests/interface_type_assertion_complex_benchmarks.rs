@@ -85,7 +85,7 @@ mod tests {
         for _ in 0..iterations {
             let start = Instant::now();
             f();
-            durations.push(start.elapsed();
+            durations.push(start.elapsed());
         }
         
         BenchmarkResult::new(name, iterations, durations)
@@ -119,7 +119,7 @@ mod tests {
         
         // Create a target machine for the code generator
         let target_triple = inkwell::targets::TargetMachine::get_default_triple();
-        inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default();
+        inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default());
         let target = inkwell::targets::Target::from_triple(&target_triple).unwrap();
         let target_machine = target.create_target_machine(
             &target_triple,
@@ -315,11 +315,11 @@ mod tests {
         let builder = context.create_builder();
         
         // Use LRU cache for realistic scenario
-        let registry: Box<dyn InterfaceRegistry> = Box::new(LruCachedRegistry::new(100);
+        let registry: Box<dyn InterfaceRegistry> = Box::new(LruCachedRegistry::new(100));
         
         // Create a target machine for the code generator
         let target_triple = inkwell::targets::TargetMachine::get_default_triple();
-        inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default();
+        inkwell::targets::Target::initialize_all(&inkwell::targets::InitializationConfig::default());
         let target = inkwell::targets::Target::from_triple(&target_triple).unwrap();
         let target_machine = target.create_target_machine(
             &target_triple,

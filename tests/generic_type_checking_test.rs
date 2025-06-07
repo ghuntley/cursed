@@ -32,7 +32,7 @@ slay main() {
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
 
-    assert!(result.is_ok(), "Type checking failed: {:?}", result.err())
+    assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
 
     // Verify that the type of box_int is Box[normie]
     let box_int_type = type_checker.get_type("box_int").unwrap();
@@ -116,7 +116,7 @@ slay main() {
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
 
-    assert!(result.is_ok(), "Type checking failed: {:?}", result.err())
+    assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
 
     // Verify that the type of pair is Pair[tea, normie]
     let pair_type = type_checker.get_type("pair").unwrap();
@@ -173,7 +173,7 @@ slay main() {
     let mut type_checker = TypeChecker::new();
     let result = type_checker.check_program(&program);
 
-    assert!(result.is_ok(), "Type checking failed: {:?}", result.err())
+    assert!(result.is_ok(), "Type checking failed: {:?}", result.err());
 
     // Verify that the type of nested is Box[Pair[tea, normie]]
     let nested_type = type_checker.get_type("nested").unwrap();

@@ -1,17 +1,22 @@
 use cursed::core::interface_registry::InterfaceRegistry;
-use cursed::core::interface_registry_cache::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
+use cursed::core::interface_registry_cache_merged::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
 use cursed::core::type_checker::Type;
 use cursed::core::type_checker_interface_registry::{CachedInterfaceRegistry, CachedRegistry, ThreadSafeCachedRegistry};
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
-use crate::common;
-
-// Tests for the interface registry cache implementation
-
 
 #[path = "common.rs"]
 mod common;
+
+#[macro_export]
+macro_rules! init_tracing {
+    () => {
+        common::tracing::setup();
+    };
+}
+
+// Tests for the interface registry cache implementation
 
 
 #[test]

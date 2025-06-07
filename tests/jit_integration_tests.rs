@@ -12,8 +12,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["run", "--", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string())
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     //
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);

@@ -94,7 +94,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     // Test create_null_pointer
     // We should use "normie" instead of "int" as that's the cursed language type name
     let null_ptr = code_gen.create_null_pointer("normie")?;
-    assert!(null_ptr.is_null())
+    assert!(null_ptr.is_null());
     
     // Test compilation of pointer operations using AST nodes
     // Instead of using Rc<PointerType>, create a PointerType directly
@@ -108,7 +108,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     };
     
     let ptr_value = code_gen.compile_pointer_type(&ptr_type)?;
-    assert!(ptr_value.is_pointer_value())
+    assert!(ptr_value.is_pointer_value());
     
     // Testing the full standardized implementation through the mod.rs exports
     // Create a new pointer type since we don't have Clone
