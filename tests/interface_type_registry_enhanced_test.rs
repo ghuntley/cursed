@@ -6,8 +6,7 @@ mod tests {
     use inkwell::AddressSpace;
     use inkwell::IntPredicate;
     
-    use cursed::codegen::llvm::LlvmCodeGenerator;
-    use cursed::codegen::llvm::interface_type_registry_enhanced::EnhancedTypeRegistry;
+    use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedTypeRegistry, InterfaceTypeRegistryAccess, InterfaceTypeAssertion};
     use cursed::error::Error;
     
     // Helper to initialize tracing for tests
@@ -37,7 +36,7 @@ mod tests {
         assert!(result.is_ok(), "Failed to initialize type registry globals: {:?}", result);
         
         // Check that the registry has the expected types
-        let registry = gen.interface_type_registry().unwrap();
+        let registry = gen.interface_type_registry();
         assert_eq!(registry.type_count(), 3);
         
         assert_eq!(registry.get_type_name(1001).map(|s| s.as_str()), Some("Person"));
@@ -45,8 +44,8 @@ mod tests {
         assert_eq!(registry.get_type_name(1003).map(|s| s.as_str()), Some("Manager"));
         
         // Verify globals were created
-        assert!(registry.type_ids_global.is_some());
-        assert!(registry.type_names_global.is_some());
+        assert!(registry.type_ids_global().is_some());
+        assert!(registry.type_names_global().is_some());
     }
     
     #[test]
@@ -122,9 +121,10 @@ mod tests {
         ]);
         
         // Check if the interface value is of type "Person"
-        let is_person = gen.check_instance_of_with_enhanced_errors(
+        let is_person = gen.check_instance_of(
             interface_value.into(),
-            "Person"
+            "Person",
+            None
         ).unwrap();
         
         // Should return true
@@ -159,8 +159,8 @@ mod tests {
         // Create a type ID
         let type_id = context.i64_type().const_int(1001, false);
         
-        // Report an assertion failure
-        let result = gen.report_assertion_failure(type_id.into(), "Manager");
+        // Test logging type assertion with info instead
+        let result = gen.log_type_assertion_with_info(type_id.into(), "Manager", false);
         
         // Should succeed even if it's just logging
         assert!(result.is_ok());

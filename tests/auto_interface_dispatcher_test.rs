@@ -3,11 +3,14 @@
 //! This test verifies that our automatic interface method dispatch code generation
 //! works correctly, both for static interface implementations and dynamic lookups.
 
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::auto_interface_dispatcher::{AutoInterfaceDispatcher, AutoInterfaceDispatchExtension};
-use cursed::codegen::llvm::auto_interface_dispatcher_integration::AutoInterfaceDispatcherIntegration;
-use cursed::codegen::llvm::interface_implementation::InterfaceImplementation;
-use cursed::codegen::llvm::string_utils::StringUtilsExtension;
+use cursed::codegen::llvm::{
+    LlvmCodeGenerator, 
+    AutoInterfaceDispatcher, 
+    AutoInterfaceDispatchExtension,
+    AutoInterfaceDispatcherIntegration,
+    InterfaceImplementation,
+    StringUtilsExtension
+};
 use cursed::core::type_checker::Type as CursedType;
 use cursed::error::Error;
 use inkwell::context::Context;
