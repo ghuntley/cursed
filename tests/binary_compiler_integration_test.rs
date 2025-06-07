@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::process::Command;
-
 use cursed::ast::Program;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
@@ -9,6 +8,8 @@ use cursed::codegen::llvm::BinaryCompiler;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use cursed::codegen::llvm::binary_compiler::DebugInfoLevel;
+
+
 
 // Helper function to parse a CURSED program
 fn parse_program(code: &str) -> Program {

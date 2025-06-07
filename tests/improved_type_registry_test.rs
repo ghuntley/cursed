@@ -1,8 +1,9 @@
+use std::collections::HashMap;
+use cursed::codegen::llvm::type_registry_improved::ImprovedTypeRegistry;
+
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
     
-    use cursed::codegen::llvm::type_registry_improved::ImprovedTypeRegistry;
     
     // Helper to initialize tracing for tests
     fn init_tracing() {

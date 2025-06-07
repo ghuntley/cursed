@@ -1,8 +1,9 @@
 use std::sync::Arc;
-
 use cursed::codegen::llvm::interface_type_assertion_debug::{InterfaceTypeAssertionDebug, TypeAssertionDebugConfig};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::SourceLocation;
+
+
 
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
@@ -71,7 +72,7 @@ fn test_register_runtime_type() {
         line: 42,
         column: 10,
         file: Some("test.csd".to_string()),
-        source_line: "person, ok = animal.(Person)".to_string(),
+        source_line: "person, ok = animal.(Person)".to_string()),
     };
     
     // Create a dummy LLVM value for testing

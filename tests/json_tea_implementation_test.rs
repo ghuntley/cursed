@@ -3,6 +3,7 @@ use cursed::error::Error;
 use cursed::object::Object;
 use cursed::stdlib::json_tea;
 
+
 #[test]
 fn test_json_unmarshal_primitive_values() {
     // Test null
@@ -56,7 +57,7 @@ fn test_json_unmarshal_arrays() {
     }
 
     // Test array with primitive values
-    let args = vec![Arc::new(Object::String("[1, true, \"hello\"]".to_string())), Arc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("[1, true, \"hello\"]".to_string()), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::Array(val) = &*result {
         assert_eq!(val.len(), 3);
@@ -102,7 +103,7 @@ fn test_json_unmarshal_objects() {
     }
 
     // Test object with primitive values
-    let args = vec![Arc::new(Object::String("{\"name\":\"zoomer\",\"age\":21,\"cool\":true}".to_string())), Arc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{\"name\":\"zoomer\",\"age\":21,\"cool\":true}".to_string()), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::HashTable(val) = &*result {
         assert_eq!(val.len(), 3);
@@ -126,7 +127,7 @@ fn test_json_unmarshal_objects() {
     }
 
     // Test nested object
-    let args = vec![Arc::new(Object::String("{\"user\":{\"name\":\"zoomer\",\"age\":21},\"active\":true}".to_string())), Arc::new(Object::Null)];
+    let args = vec![Arc::new(Object::String("{\"user\":{\"name\":\"zoomer\",\"age\":21},\"active\":true}".to_string()), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();
     if let Object::HashTable(val) = &*result {
         assert_eq!(val.len(), 2);
@@ -257,7 +258,7 @@ fn test_json_unmarshal_error_cases() {
     assert!(result.is_err());
 
     // Test missing second argument
-    let args = vec![Arc::new(Object::String("{}".to_string()))];
+    let args = vec![Arc::new(Object::String("{}".to_string())];
     let result = json_tea::unmarshal(&args);
     assert!(result.is_err());
 

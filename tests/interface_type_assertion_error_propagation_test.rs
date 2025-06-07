@@ -1,3 +1,12 @@
+use crate::ast::expressions::TypeAssertion;
+use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::error::Error;
+use tracing::{debug, error, info};
+use std::sync::Arc;
+use inkwell::context::Context;
+use crate::common;
+
 //! Test module for interface type assertion error propagation
 //!
 //! This module tests the implementation of interface type assertion error propagation
@@ -6,16 +15,8 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::ast::expressions::TypeAssertion;
-    use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
-    use crate::codegen::llvm::LlvmCodeGenerator;
-    use crate::error::Error;
-    use tracing::{debug, error, info};
-    use std::sync::Arc;
-    use inkwell::context::Context;
 
     // Import the common module for test utilities
-    use crate::common;
 
     // Initialize tracing for the test
     fn setup() {

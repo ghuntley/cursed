@@ -1,22 +1,23 @@
+use std::sync::Arc;
+use cursed::object::Object;
+use cursed::stdlib::vibez;
+use cursed::stdlib::stringz;
+use cursed::stdlib::htmlrizzler;
+use cursed::stdlib::timez;
+use cursed::stdlib::mathz;
+use cursed::stdlib::dot_registry::DOT_REGISTRY;
+
 //! Simple tests for standard library package functions
 
 #[cfg(test)]
 mod simple_stdlib_tests {
     // Import test helper to convert between Rust and CURSED objects
-    use std::sync::Arc;
-    use cursed::object::Object;
 
     // Import packages we want to test
-    use cursed::stdlib::vibez;
-    use cursed::stdlib::stringz;
-    use cursed::stdlib::htmlrizzler;
-    use cursed::stdlib::timez;
-    use cursed::stdlib::mathz;
-    use cursed::stdlib::dot_registry::DOT_REGISTRY;
 
     // Function to create a string object from a Rust string
     fn string_object(s: &str) -> Rc<Object> {
-        Arc::new(Object::String(s.to_string()))
+        Arc::new(Object::String(s.to_string())
     }
 
     // Function to create a number object from a Rust i64

@@ -1,11 +1,15 @@
+use std::time::Duration;
+use inkwell::context::Context;
+use inkwell::targets::{InitializationConfig, Target, TargetMachine};
+use cursed::lexer::Token;
+use common::tracing::setup as init_tracing;
+use common::timing::Timer;
+
 //! Test for the interface type assertion benchmarking capabilities
 //!
 //! This test validates the benchmarking system for interface type assertions,
 //! demonstrating how to use it for performance analysis and optimization.
 
-use std::time::Duration;
-use inkwell::context::Context;
-use inkwell::targets::{InitializationConfig, Target, TargetMachine};
 
 use cursed::{
     ast::expressions::TypeAssertion,
@@ -19,8 +23,6 @@ use cursed::{
 #[path = "common.rs"]
 pub mod common;
 
-use common::tracing::setup as init_tracing;
-use common::timing::Timer;
 
 // Constants for benchmark configuration
 const WARMUP_ITERATIONS: usize = 5;
@@ -29,9 +31,9 @@ const BENCHMARK_ITERATIONS: usize = 10; // Reduced for tests, use higher values 
 /// Helper to create a test assertion
 fn create_test_assertion(type_name: &str) -> TypeAssertion {
     TypeAssertion {
-        token: "(".to_string(),
+        token: "token".to_string()),
         expression: Box::new(cursed::ast::expressions::Empty{}),
-        type_name: type_name.to_string(),
+        type_name: type_name.to_string()),
     }
 }
 

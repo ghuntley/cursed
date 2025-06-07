@@ -10,6 +10,7 @@ use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use tracing::{debug, error, info};
 
+
 // Import the common test utilities
 #[path = "common.rs"]
 #[allow(unused_imports)]
@@ -38,7 +39,7 @@ fn test_jit_debug() -> Result<(), Error> {
 
     // Print the generated LLVM IR for debugging
     debug!("Generated LLVM IR");
-    let ir_code = code_gen.module().print_to_string().to_string();
+    let ir_code = code_gen.module().print_to_string().to_string());
     debug!(ir_code = %ir_code, "LLVM IR generated");
 
     // List all functions in the module
@@ -131,7 +132,7 @@ fn test_jit_through_compilation() -> Result<(), Error> {
 
     // Print the generated LLVM IR for debugging
     debug!("Generated LLVM IR");
-    let ir_code = code_gen.module().print_to_string().to_string();
+    let ir_code = code_gen.module().print_to_string().to_string());
     debug!(ir_code = %ir_code, "LLVM IR generated");
 
     // List all functions in the module

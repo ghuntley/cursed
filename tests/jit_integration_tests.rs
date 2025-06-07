@@ -3,6 +3,8 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use cursed::lexer::{Lexer, Token};
+
 
 /// Runs a CURSED file through the compiler and returns the output and exit status
 fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
@@ -10,8 +12,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["run", "--", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
 
     // Combine stdout and stderr for debugging
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);
@@ -64,7 +66,6 @@ fn test_thicc_type() {
     // This test is sufficient because we already verified the token can be used in
     // the parser and code generator in previous code reviews
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with a test string using 'thicc'
     let input = "thicc";

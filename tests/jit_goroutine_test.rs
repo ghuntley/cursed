@@ -4,14 +4,15 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 
+
 /// Runs a CURSED file through the compiler and returns the output and exit status
 fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
     let output = Command::new("devenv")
         .args(&["shell", "./target/debug/cursed", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
 
     // Combine stdout and stderr for debugging
     let combined_output = format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr);

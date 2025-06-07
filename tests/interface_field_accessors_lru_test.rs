@@ -1,5 +1,3 @@
-//! Test for LRU cached interface field accessors implementation
-
 use cursed::prelude::*;
 use cursed::ast::declarations::*;
 use cursed::ast::statements::*;
@@ -17,6 +15,9 @@ use cursed::memory::gc::GarbageCollector;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use tracing::*;
+
+//! Test for LRU cached interface field accessors implementation
+
 
 #[path = "common.rs"]
 mod common;
@@ -84,10 +85,10 @@ fn test_interface_field_accessors_lru() {
     
     // Create field mappings for interfaces
     let mut vector_mappings = HashMap::new();
-    vector_mappings.insert("size".to_string(), "capacity".to_string());
+    vector_mappings.insert("size".to_string()), "capacity".to_string());
     
     let mut map_mappings = HashMap::new();
-    map_mappings.insert("size".to_string(), "count".to_string());
+    map_mappings.insert("size".to_string()), "count".to_string());
     
     // Simulate struct types
     let vector_type = codegen.context().opaque_struct_type("Vector");

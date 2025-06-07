@@ -1,18 +1,8 @@
-//! Tests for the comprehensive interface type assertion error propagation with filesystem integration
-//!
-//! These tests ensure that the error propagation for interface type assertions with the ? operator
-//! effectively leverages filesystem source location information to generate rich error messages.
-
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::cell::RefCell;
-
-#[path = "common.rs"]
-mod common;
-
 use inkwell::context::Context;
 use tracing::{debug, info};
-
 use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -21,6 +11,18 @@ use cursed::codegen::llvm::interface_type_assertion_error_propagation_filesystem
 use cursed::codegen::llvm::interface_type_assertion_error_visualization::ErrorVisualization;
 use cursed::error::Error;
 use cursed::error::SourceLocation;
+use cursed::lexer::Token;
+
+//! Tests for the comprehensive interface type assertion error propagation with filesystem integration
+//!
+//! These tests ensure that the error propagation for interface type assertions with the ? operator
+//! effectively leverages filesystem source location information to generate rich error messages.
+
+
+#[path = "common.rs"]
+mod common;
+
+
 
 // Initialize tracing for tests
 fn init_tracing() {
@@ -63,9 +65,9 @@ fn test_comprehensive_error_message_creation() {
     // Create a mock type assertion question
     let expr = MockExpression::new("interface_value".to_string());
     let type_assertion = TypeAssertionQuestion {
-        token: ".".to_string(),
+        token: "token".to_string()),
         expression: Box::new(expr),
-        type_name: "ExpectedType".to_string(),
+        type_name: "ExpectedType".to_string()),
     };
     
     // Create a source location
@@ -73,7 +75,7 @@ fn test_comprehensive_error_message_creation() {
         line: 42,
         column: 10,
         file: Some("test_file.csd".to_string()),
-        source_line: "interface_value.(ExpectedType)?".to_string(),
+        source_line: "interface_value.(ExpectedType)?".to_string()),
     };
     
     // Create a comprehensive error message
@@ -108,9 +110,9 @@ fn test_visual_error_formatting() {
     // Create a mock type assertion question
     let expr = MockExpression::new("interface_value".to_string());
     let type_assertion = TypeAssertionQuestion {
-        token: ".".to_string(),
+        token: "token".to_string()),
         expression: Box::new(expr),
-        type_name: "ExpectedType".to_string(),
+        type_name: "ExpectedType".to_string()),
     };
     
     // Create a source location
@@ -118,7 +120,7 @@ fn test_visual_error_formatting() {
         line: 42,
         column: 10,
         file: Some("test_file.csd".to_string()),
-        source_line: "interface_value.(ExpectedType)?".to_string(),
+        source_line: "interface_value.(ExpectedType)?".to_string()),
     };
     
     // Create context lines

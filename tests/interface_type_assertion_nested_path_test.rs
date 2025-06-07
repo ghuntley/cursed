@@ -1,4 +1,9 @@
 use std::sync::Once;
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::object::{Object, ObjectRef};
+
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -16,10 +21,6 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities
-use cursed::core::{JitOptions, InterpretOptions};
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::object::{Object, ObjectRef};
 
 // Helper function to run JIT tests on Cursed code
 fn run_jit_test(input: &str) -> Result<ObjectRef, String> {

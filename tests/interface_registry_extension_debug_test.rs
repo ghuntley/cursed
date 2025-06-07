@@ -3,6 +3,7 @@ use cursed::core::interface_registry_visualization::{VisualizationFormat, Visual
 use cursed::core::interface_registry_visualization_integration::InterfaceRegistryVisualizationIntegration;
 use std::fmt::Debug;
 
+
 #[test]
 fn test_interface_registry_debug_impl() {
     // Verify that ThreadSafeInterfaceExtensionRegistry implements Debug
@@ -61,5 +62,5 @@ fn test_interface_registry_visualization_integration() {
     // Find paths between interfaces
     let paths = integration.find_paths("Animal", "Dog", 10).unwrap();
     assert!(!paths.is_empty());
-    assert_eq!(paths[0], vec!["Animal".to_string(), "Mammal".to_string(), "Dog".to_string()]);
+    assert_eq!(paths[0], vec!["Animal".to_string()), "Mammal".to_string()), "Dog".to_string())]);
 }

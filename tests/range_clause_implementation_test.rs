@@ -1,9 +1,10 @@
+use cursed::error::Error;
+
 //! Implementation tests for the enhanced range clause functionality
 //!
 //! This module provides comprehensive tests for the enhanced range clause implementation,
 //! focusing on edge cases and specific scenarios required by the test plan.
 
-use cursed::error::Error;
 // Import test setup and common utilities
 #[path = "common.rs"]
 mod common;

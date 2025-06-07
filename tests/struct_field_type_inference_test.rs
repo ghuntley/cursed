@@ -1,5 +1,3 @@
-//! Tests for type inference in struct field initialization
-
 use cursed::ast::expressions::identifiers::Identifier;
 use cursed::ast::expressions::literals::{IntegerLiteral, FloatLiteral, StringLiteral};
 use cursed::ast::expressions::struct_expr::{StructLiteral, KeyValuePair};
@@ -10,11 +8,15 @@ use cursed::lexer::TokenType;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation, StructFieldInference};
 use cursed::Type;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+use token_helper::new_token;
+
+// Tests for type inference in struct field initialization
+
 
 mod token_helper;
-use token_helper::new_token;
 
 #[test]
 fn test_struct_field_type_inference() {
@@ -42,25 +44,25 @@ fn test_struct_field_type_inference() {
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: struct_name.to_string(),
+        struct_name: struct_name.to_string()),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x"),
-                    value: "x".to_string(),
+                    token: "token".to_string()),
+                    value: "x".to_string()),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
-                    token: Token::new(TokenType::Int, "10"),
+                    token: "token".to_string()),
                     value: 10,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "y"),
-                    value: "y".to_string(),
+                    token: "token".to_string()),
+                    value: "y".to_string()),
                 },
                 value: Box::new(FloatLiteral {
-                    token: Token::new(TokenType::Float, "20.5"),
+                    token: "token".to_string()),
                     value: 20.5,
                 }),
             },
@@ -79,12 +81,12 @@ fn test_struct_field_type_inference() {
     
     // Store the struct in a variable
     let var_name = Identifier {
-        token: Token::new(TokenType::Identifier, "p"),
-        value: "p".to_string(),
+        token: "token".to_string()),
+        value: "p".to_string()),
     };
     
     let let_stmt = LetStatement {
-        token: Token::new(TokenType::Sus, "sus"),
+        token: "token".to_string()),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(struct_literal)),
@@ -136,25 +138,25 @@ fn test_nested_struct_type_inference() {
     // Create a nested struct literal 
     let top_left = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: point_name.to_string(),
+        struct_name: point_name.to_string()),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x"),
-                    value: "x".to_string(),
+                    token: "token".to_string()),
+                    value: "x".to_string()),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: Token::new(TokenType::Int, "0"),
+                    token: "token".to_string()),
                     value: 0,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "y"),
-                    value: "y".to_string(),
+                    token: "token".to_string()),
+                    value: "y".to_string()),
                 },
                 value: Box::new(IntegerLiteral {
-                    token: Token::new(TokenType::Int, "0"),
+                    token: "token".to_string()),
                     value: 0,
                 }),
             },
@@ -163,25 +165,25 @@ fn test_nested_struct_type_inference() {
     
     let bottom_right = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: point_name.to_string(),
+        struct_name: point_name.to_string()),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "x"),
-                    value: "x".to_string(),
+                    token: "token".to_string()),
+                    value: "x".to_string()),
                 },
                 value: Box::new(FloatLiteral {
-                    token: Token::new(TokenType::Float, "100.0"),
+                    token: "token".to_string()),
                     value: 100.0,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "y"),
-                    value: "y".to_string(),
+                    token: "token".to_string()),
+                    value: "y".to_string()),
                 },
                 value: Box::new(FloatLiteral {
-                    token: Token::new(TokenType::Float, "100.0"),
+                    token: "token".to_string()),
                     value: 100.0,
                 }),
             },
@@ -190,19 +192,19 @@ fn test_nested_struct_type_inference() {
     
     let rect_literal = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: rect_name.to_string(),
+        struct_name: rect_name.to_string()),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "top_left"),
-                    value: "top_left".to_string(),
+                    token: "token".to_string()),
+                    value: "top_left".to_string()),
                 },
                 value: Box::new(top_left),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "bottom_right"),
-                    value: "bottom_right".to_string(),
+                    token: "token".to_string()),
+                    value: "bottom_right".to_string()),
                 },
                 value: Box::new(bottom_right),
             },
@@ -251,26 +253,26 @@ fn test_struct_field_incompatible_types() {
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
         token: Token::new(TokenType::LBrace, "{"),
-        struct_name: person_name.to_string(),
+        struct_name: person_name.to_string()),
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "name"),
-                    value: "name".to_string(),
+                    token: "token".to_string()),
+                    value: "name".to_string()),
                 },
                 value: Box::new(StringLiteral {
-                    token: Token::new(TokenType::String, "\"John\""),
-                    value: "John".to_string(),
+                    token: "token".to_string()),
+                    value: "John".to_string()),
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: Token::new(TokenType::Identifier, "age"),
-                    value: "age".to_string(),
+                    token: "token".to_string()),
+                    value: "age".to_string()),
                 },
                 value: Box::new(StringLiteral { // String assigned to int field - should fail
-                    token: Token::new(TokenType::String, "\"30\""),
-                    value: "30".to_string(),
+                    token: "token".to_string()),
+                    value: "30".to_string()),
                 }),
             },
         ],

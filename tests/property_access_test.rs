@@ -4,10 +4,11 @@ use cursed::parser::Parser;
 use cursed::code::jit_compile_and_run;
 use cursed::core::JitOptions;
 use cursed::object::ObjectRef;
+use super::*;
+
 
 #[cfg(test)]
 mod property_access_tests {
-    use super::*;
 
     // Helper function to run code and get the result
     fn run_code(code: &str) -> Result<ObjectRef, Error> {
@@ -129,7 +130,7 @@ mod property_access_tests {
         // This should fail with a field not found error
         let result = run_code_int(code);
         assert!(result.is_err(), "Expected an error when accessing non-existent field");
-        let error = result.unwrap_err().to_string();
+        let error = result.unwrap_err().to_string());
         assert!(error.contains("not found"), "Error should mention field not found: {}", error);
     }
 

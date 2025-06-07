@@ -7,6 +7,7 @@ use inkwell::OptimizationLevel;
 use std::path::Path;
 use tracing::{debug, info};
 
+
 // Import the common test utilities
 #[path = "common.rs"]
 #[allow(unused_imports)]
@@ -53,7 +54,7 @@ fn test_facts_codegen() {
 
     // We can't easily run the code in this test, but we can at least verify it compiles
     // and check if the LLVM module looks correct
-    let module_str = code_gen.module().print_to_string().to_string();
+    let module_str = code_gen.module().print_to_string().to_string());
     
     // The test requires either a main function or at least some constant declarations
     let has_constants = module_str.contains("ANSWER") && module_str.contains("PI") && module_str.contains("E");

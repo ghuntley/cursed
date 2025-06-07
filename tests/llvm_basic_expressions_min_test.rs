@@ -1,13 +1,15 @@
-//! Minimal test for basic expression compilation in the LLVM code generator
-
 use cursed::ast::expressions::literals::{IntegerLiteral};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ExpressionCompilation;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Minimal test for basic expression compilation in the LLVM code generator
+
 
 #[test]
 fn test_integer_literal_expression() {
@@ -23,7 +25,7 @@ fn test_integer_literal_expression() {
 
     // Create a simple expression: 42
     let int_lit = IntegerLiteral {
-        token: "42".to_string(),
+        token: "token".to_string()),
         value: 42,
     };
 

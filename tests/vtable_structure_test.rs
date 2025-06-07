@@ -1,7 +1,8 @@
-//! Test for the vtable structure used in interface implementation
-
 use inkwell::context::Context;
 use inkwell::AddressSpace;
+
+//! Test for the vtable structure used in interface implementation
+
 
 #[test]
 fn test_vtable_structure() {

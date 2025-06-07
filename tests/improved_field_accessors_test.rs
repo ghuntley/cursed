@@ -1,8 +1,3 @@
-//! Tests for the improved field accessors implementation
-//!
-//! This module tests the ImprovedFieldAccessors implementation which provides
-//! better error handling for LLVM operations.
-
 use cursed::error::Error;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ImprovedFieldAccessors;
@@ -10,6 +5,12 @@ use cursed::ast::declarations::SquadStatement;
 use cursed::ast::FieldDefinition;
 use cursed::ast::expressions::Identifier;
 use cursed::core::type_checker::Type;
+
+//! Tests for the improved field accessors implementation
+//!
+//! This module tests the ImprovedFieldAccessors implementation which provides
+//! better error handling for LLVM operations.
+
 
 #[path = "common.rs"]
 mod common;

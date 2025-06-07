@@ -1,8 +1,9 @@
-//! Basic test for improved interface registry extension
-
 use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
 use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 use std::sync::Arc;
+
+//! Basic test for improved interface registry extension
+
 
 mod common;
 

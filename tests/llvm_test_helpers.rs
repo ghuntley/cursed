@@ -1,8 +1,3 @@
-//! Test helpers for LLVM code generation tests
-//!
-//! This module provides common functionality for setting up and running tests
-//! with the LLVM code generator, including JIT execution testing.
-
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
@@ -11,6 +6,12 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
+
+//! Test helpers for LLVM code generation tests
+//!
+//! This module provides common functionality for setting up and running tests
+//! with the LLVM code generator, including JIT execution testing.
+
 
 /// Set up a code generator with a basic configuration for testing
 pub fn setup_code_generator<'ctx>(context: &'ctx Context, module_name: &str) -> LlvmCodeGenerator<'ctx> {

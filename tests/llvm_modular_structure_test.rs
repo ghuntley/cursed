@@ -1,11 +1,12 @@
-//! Test for the modular LLVM code generator structure
-//! This test ensures that the new modular structure works correctly
-
 use cursed::ast::base::Program;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
+
+//! Test for the modular LLVM code generator structure
+//! This test ensures that the new modular structure works correctly
+
 
 #[test]
 fn test_modular_structure_basic() {

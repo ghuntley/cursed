@@ -1,13 +1,15 @@
-//! Tests for improved interface type assertion source location support
-//!
-//! This test suite verifies that source location information is correctly
-//! captured and reported in interface type assertion errors.
-
 use std::path::Path;
 use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::Node;
 use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedSourceLocationSupport};
 use cursed::error::SourceLocation;
+use cursed::lexer::Token;
+
+//! Tests for improved interface type assertion source location support
+//!
+//! This test suite verifies that source location information is correctly
+//! captured and reported in interface type assertion errors.
+
 
 #[path = "common.rs"]
 mod common;

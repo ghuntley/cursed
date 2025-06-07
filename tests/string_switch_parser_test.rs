@@ -6,6 +6,7 @@ use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 
+
 #[test]
 fn test_basic_string_switch_parsing() {
     let input = r#"

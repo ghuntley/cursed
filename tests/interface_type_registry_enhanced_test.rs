@@ -1,13 +1,14 @@
+use std::collections::HashMap;
+use inkwell::context::Context;
+use inkwell::values::BasicValueEnum;
+use inkwell::AddressSpace;
+use inkwell::IntPredicate;
+use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedTypeRegistry, InterfaceTypeRegistryAccess, InterfaceTypeAssertion};
+use cursed::error::Error;
+
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use inkwell::context::Context;
-    use inkwell::values::BasicValueEnum;
-    use inkwell::AddressSpace;
-    use inkwell::IntPredicate;
     
-    use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedTypeRegistry, InterfaceTypeRegistryAccess, InterfaceTypeAssertion};
-    use cursed::error::Error;
     
     // Helper to initialize tracing for tests
     fn init_tracing() {

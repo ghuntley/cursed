@@ -2,6 +2,7 @@ use cursed::lexer::Lexer;
 use cursed::parser::{Parser, TokenStream, Preprocessor};
 use cursed::error::Error;
 
+
 #[test]
 fn test_preprocessor_functionality() {
     // Test generic struct declaration

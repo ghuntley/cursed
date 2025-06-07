@@ -1,7 +1,8 @@
-//! Integration test for oglogging package
-
 use cursed::object::Object;
 use cursed::stdlib::oglogging;
+
+//! Integration test for oglogging package
+
 
 #[test]
 fn test_basic_logging() {

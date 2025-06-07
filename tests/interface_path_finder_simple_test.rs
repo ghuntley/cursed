@@ -1,15 +1,16 @@
+use std::collections::HashSet;
+use inkwell::context::Context;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::error::Error;
+use common::test_utils::create_test_code_generator;
+use common::tracing;
+
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-    use inkwell::context::Context;
     
-    use cursed::codegen::llvm::LlvmCodeGenerator;
-    use cursed::error::Error;
     
     // Import common test utilities
     mod common;
-    use common::test_utils::create_test_code_generator;
-    use common::tracing;
     
     #[test]
     fn test_find_interface_path_simple() {

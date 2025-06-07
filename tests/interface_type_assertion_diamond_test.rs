@@ -1,19 +1,20 @@
+use crate::ast::expressions::TypeAssertion;
+use crate::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondInheritanceHandler;
+use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use crate::codegen::llvm::LlvmCodeGenerator;
+use crate::error::Error;
+use inkwell::context::Context;
+use std::cell::RefCell;
+use std::sync::Arc;
+use tracing::{info, debug};
+use common::tracing::setup as init_tracing;
+
 #[cfg(test)]
 mod tests {
-    use crate::ast::expressions::TypeAssertion;
-    use crate::codegen::llvm::interface_type_assertion_diamond_inheritance::DiamondInheritanceHandler;
-    use crate::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
-    use crate::codegen::llvm::LlvmCodeGenerator;
-    use crate::error::Error;
-    use inkwell::context::Context;
-    use std::cell::RefCell;
-    use std::sync::Arc;
-    use tracing::{info, debug};
     
     // Include common test utilities
     #[path = "common.rs"]
     mod common;
-    use common::tracing::setup as init_tracing;
     
     /// Set up a mock type registry with a diamond inheritance pattern
     fn setup_diamond_inheritance_registry(code_gen: &mut LlvmCodeGenerator) {

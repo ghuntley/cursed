@@ -1,3 +1,9 @@
+use cursed::core::type_checker::Type as CursedType;
+use cursed::error::Error;
+use inkwell::context::Context;
+use inkwell::values::{BasicValueEnum, FunctionValue};
+use std::collections::HashMap;
+
 //! Test automatic code generation for interface method dispatching
 //!
 //! This test verifies that our automatic interface method dispatch code generation
@@ -11,11 +17,6 @@ use cursed::codegen::llvm::{
     InterfaceImplementation,
     StringUtilsExtension
 };
-use cursed::core::type_checker::Type as CursedType;
-use cursed::error::Error;
-use inkwell::context::Context;
-use inkwell::values::{BasicValueEnum, FunctionValue};
-use std::collections::HashMap;
 
 mod common;
 
@@ -33,7 +34,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     // Define an interface with a single method
     let greeter_methods = vec![
         (
-            "greet".to_string(),
+            "greet".to_string()),
             vec![CursedType::Tea],  // Parameters: [name: string]
             Some(CursedType::Tea),   // Return type: string
         ),
@@ -70,7 +71,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Add the method to a map
     let mut methods = HashMap::new();
-    methods.insert("greet".to_string(), greet_fn);
+    methods.insert("greet".to_string()), greet_fn);
     
     // Auto-generate the interface implementation
     codegen.auto_generate_interface_implementation(
@@ -83,7 +84,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     let person_struct_type = context.struct_type(&[], false);
     let person_instance = codegen.builder().build_alloca(person_struct_type, "person_instance").unwrap();
     
-    let person_type = CursedType::Struct(struct_name.to_string(), vec![]);
+    let person_type = CursedType::Struct(struct_name.to_string()), vec![]);
     let greeter_interface = codegen.create_interface_value(
         person_instance,
         &person_type,
@@ -132,12 +133,12 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     // Define an interface with methods
     let shape_methods = vec![
         (
-            "area".to_string(),
+            "area".to_string()),
             vec![],  // No parameters besides self
             Some(CursedType::Meal),   // Return type: float64
         ),
         (
-            "perimeter".to_string(),
+            "perimeter".to_string()),
             vec![],  // No parameters besides self
             Some(CursedType::Meal),   // Return type: float64
         ),
@@ -199,7 +200,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     let rect_struct_type = context.struct_type(&[], false);
     let rect_instance = codegen.builder().build_alloca(rect_struct_type, "rect_instance").unwrap();
     
-    let rect_type = CursedType::Struct(struct_name.to_string(), vec![]);
+    let rect_type = CursedType::Struct(struct_name.to_string()), vec![]);
     let shape_interface = codegen.create_interface_value(
         rect_instance,
         &rect_type,
@@ -245,7 +246,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     // Define an interface with a method
     let speaker_methods = vec![
         (
-            "speak".to_string(),
+            "speak".to_string()),
             vec![],  // No parameters besides self
             Some(CursedType::Tea),   // Return type: string
         ),
@@ -283,7 +284,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Add the method to a map
     let mut methods = HashMap::new();
-    methods.insert("speak".to_string(), speak_fn);
+    methods.insert("speak".to_string()), speak_fn);
     
     // Auto-generate the interface implementation
     codegen.auto_generate_interface_implementation(
@@ -297,8 +298,8 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     let dog_instance = codegen.builder().build_alloca(dog_struct_type, "dog_instance").unwrap();
     
     // Create types for testing
-    let dog_type = CursedType::Struct(struct_name.to_string(), vec![]);
-    let speaker_type = CursedType::Interface("Speaker".to_string(), vec![]);
+    let dog_type = CursedType::Struct(struct_name.to_string()), vec![]);
+    let speaker_type = CursedType::Interface("Speaker".to_string()), vec![]);
     
     // Convert Dog to Speaker interface
     let speaker_interface = codegen.create_interface_value(

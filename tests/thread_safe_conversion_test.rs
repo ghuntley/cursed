@@ -1,10 +1,11 @@
-//! Test the conversion between regular Objects and ThreadSafeObjects
-
 use std::sync::{Arc, Mutex};
 use std::thread;
 use cursed::error::Error;
 use cursed::object::Object;
 use cursed::object_thread_safe::{ThreadSafeObject, ThreadSafeValue, convert_to_thread_safe, convert_from_thread_safe};
+
+//! Test the conversion between regular Objects and ThreadSafeObjects
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
@@ -23,7 +24,7 @@ fn test_object_to_thread_safe_conversion() {
         Object::Array(vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)]),
         Object::HashTable({
             let mut map = std::collections::HashMap::new();
-            map.insert("key".to_string(), Object::String("value".to_string()));
+            map.insert("key".to_string()), Object::String("value".to_string());
             map
         }),
         Object::Null,
@@ -102,7 +103,7 @@ fn test_thread_safe_to_object_conversion() {
         Arc::new(ThreadSafeObject::Integer(42)),
         Arc::new(ThreadSafeObject::Float(3.14)),
         Arc::new(ThreadSafeObject::Boolean(true)),
-        Arc::new(ThreadSafeObject::String(Arc::new("Hello, world!".to_string()))),
+        Arc::new(ThreadSafeObject::String(Arc::new("Hello, world!".to_string())),
         Arc::new(ThreadSafeObject::Null),
     ];
     
@@ -179,7 +180,7 @@ fn test_bidirectional_conversion() {
         Object::Boolean(true),
         Object::HashTable({
             let mut map = std::collections::HashMap::new();
-            map.insert("nested".to_string(), Object::Float(3.14));
+            map.insert("nested".to_string()), Object::Float(3.14));
             map
         })
     ]);
@@ -202,8 +203,8 @@ fn test_complex_nested_conversion() {
     let mut outer_map = std::collections::HashMap::new();
     
     // Add some simple values
-    outer_map.insert("number".to_string(), Object::Integer(42));
-    outer_map.insert("text".to_string(), Object::String("hello".to_string()));
+    outer_map.insert("number".to_string()), Object::Integer(42));
+    outer_map.insert("text".to_string()), Object::String("hello".to_string());
     
     // Add a nested array
     let nested_array = vec![
@@ -211,13 +212,13 @@ fn test_complex_nested_conversion() {
         Object::Float(2.718),
         Object::Null
     ];
-    outer_map.insert("array".to_string(), Object::Array(nested_array));
+    outer_map.insert("array".to_string()), Object::Array(nested_array));
     
     // Add a nested map
     let mut nested_map = std::collections::HashMap::new();
-    nested_map.insert("a".to_string(), Object::Integer(1));
-    nested_map.insert("b".to_string(), Object::Integer(2));
-    outer_map.insert("map".to_string(), Object::HashTable(nested_map));
+    nested_map.insert("a".to_string()), Object::Integer(1));
+    nested_map.insert("b".to_string()), Object::Integer(2));
+    outer_map.insert("map".to_string()), Object::HashTable(nested_map));
     
     // Create the original object
     let original = Object::HashTable(outer_map);

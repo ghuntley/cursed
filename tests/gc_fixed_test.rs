@@ -1,13 +1,14 @@
+use std::sync::Arc;
+use cursed::memory::gc::{GarbageCollector, MemoryStats};
+use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
+use tracing::{debug, error, info, instrument, trace, warn};
+
 //! Fixed garbage collector test
 //!
 //! This test uses the improved garbage collector implementation with
 //! proper root management, deadlock detection, and circular reference handling.
 
-use std::sync::Arc;
 
-use cursed::memory::gc::{GarbageCollector, MemoryStats};
-use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
-use tracing::{debug, error, info, instrument, trace, warn};
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]

@@ -1,3 +1,5 @@
+use cursed::lexer::{Lexer, Token};
+
 // Tests for composite types token implementation in the JIT
 
 #[test]
@@ -6,7 +8,6 @@ fn test_array_tokens() {
     // This test is sufficient because we already verified the token can be used in
     // the parser and code generator in previous code reviews
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with array brackets
     let input = "[]";
@@ -35,7 +36,6 @@ fn test_array_tokens() {
 fn test_squad_tokens() {
     // We're testing that the struct-related tokens exist in the lexer
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with struct token
     let input = "be_like Person squad";
@@ -70,7 +70,6 @@ fn test_squad_tokens() {
 fn test_map_tokens() {
     // We're testing that the map-related tokens exist in the lexer
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with map syntax
     let input = "tea[K]V";
@@ -113,7 +112,6 @@ fn test_map_tokens() {
 fn test_channel_tokens() {
     // We're testing that the channel-related tokens exist in the lexer
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with channel syntax
     let input = "dm<T>";
@@ -140,7 +138,6 @@ fn test_channel_tokens() {
 fn test_function_as_value_tokens() {
     // We're testing that function as value syntax exists in the lexer
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with function type syntax
     let input = "slay(normie, normie) normie";
@@ -199,7 +196,6 @@ fn test_function_as_value_tokens() {
 fn test_interface_tokens() {
     // We're testing that the interface-related tokens exist in the lexer
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with interface token
     let input = "be_like MyInterface collab";
@@ -234,7 +230,6 @@ fn test_interface_tokens() {
 fn test_pointer_tokens() {
     // We're testing that the pointer-related tokens exist in the lexer
 
-    use cursed::lexer::{Lexer, Token};
 
     // Create a lexer with pointer token
     let input = "@T";

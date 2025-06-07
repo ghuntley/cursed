@@ -1,8 +1,12 @@
+use std::time::{Duration, Instant};
+use tracing::{debug, info};
+use inkwell;
+use cursed::lexer::Token;
+use common::tracing::setup as setup_tracing;
+use common::timing::Timer;
+
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, Instant};
-    use tracing::{debug, info};
-    use inkwell;
     
     use cursed::{
         ast::expressions::TypeAssertion,
@@ -22,8 +26,6 @@ mod tests {
     // Import common testing utils
     #[path = "common.rs"]
     mod common;
-    use common::tracing::setup as setup_tracing;
-    use common::timing::Timer;
     
     const BENCHMARK_ITERATIONS: u32 = 1000;
     const WARMUP_ITERATIONS: u32 = 100;
@@ -47,7 +49,7 @@ mod tests {
             let max_duration_ns = durations.iter().map(|d| d.as_nanos() as u64).max().unwrap_or(0);
             
             BenchmarkResult {
-                name: name.to_string(),
+                name: name.to_string()),
                 iterations,
                 total_duration,
                 avg_duration_ns,
@@ -344,9 +346,9 @@ mod tests {
             // Create a minimal TypeAssertion instance for benchmarking
             // In a real implementation, this would be properly constructed
             TypeAssertion {
-                token: "(".to_string(),
+                token: "token".to_string()),
                 expression: Box::new(cursed::ast::expressions::Empty{}),
-                type_name: "DummyType".to_string(),
+                type_name: "DummyType".to_string()),
             }
         }
     }

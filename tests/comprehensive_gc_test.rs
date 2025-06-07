@@ -1,15 +1,16 @@
-//! Comprehensive test suite for the garbage collector
-
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, ThreadSafeGc};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
+
+//! Comprehensive test suite for the garbage collector
+
+
 
 mod tracing_setup {
     pub fn setup() {

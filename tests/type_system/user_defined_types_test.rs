@@ -3,6 +3,7 @@ use cursed::parser::Parser;
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
 
+
 #[test]
 fn test_parse_basic_types() {
     let input = "

@@ -1,20 +1,21 @@
-//! # Tests for Interface Type Assertion Path Visualization Adapter
-//!
-//! This module tests the adapter that ensures proper method exposure between the
-//! interface type assertion path visualization traits.
-
 use std::sync::{Arc, RwLock};
 use std::collections::{HashMap, HashSet};
-
-// Import the modules we need to test
 use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
 use cursed::codegen::llvm::interface_type_assertion_path_visualization_adapter::InterfaceTypeAssertionPathVisualizationAdapter;
 use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};
 use cursed::error::Error;
+use crate::common;
+
+//! # Tests for Interface Type Assertion Path Visualization Adapter
+//!
+//! This module tests the adapter that ensures proper method exposure between the
+//! interface type assertion path visualization traits.
+
+
+// Import the modules we need to test
 
 // Import the common test utilities
-use crate::common;
 
 #[path = "common.rs"]
 mod common;
@@ -72,7 +73,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockCodeGenerator {
         _interface_value: inkwell::values::BasicValueEnum<'_>,
         _source_location: Option<cursed::error::SourceLocation>,
     ) -> Result<(u64, String), Error> {
-        Ok((123, "MockType".to_string()))
+        Ok((123, "MockType".to_string())
     }
     
     fn check_type_assertion_with_visualization(
@@ -113,7 +114,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockCodeGenerator {
     }
     
     fn generate_interface_hierarchy_dot_enhanced(&self) -> Result<String, Error> {
-        Ok("Enhanced DOT graph visualization".to_string())
+        Ok("Enhanced DOT graph visualization".to_string()
     }
     
     fn find_alternative_paths_enhanced(
@@ -122,7 +123,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockCodeGenerator {
         target_interface: &str,
         _max_alternatives: usize,
     ) -> Result<Vec<Vec<String>>, Error> {
-        Ok(vec![vec![source_interface.to_string(), target_interface.to_string()]])
+        Ok(vec![vec![source_interface.to_string()), target_interface.to_string())]])
     }
     
     fn generate_path_error_message_enhanced(
@@ -148,7 +149,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockCodeGenerator {
         &mut self,
         _type_assertion: &cursed::ast::expressions::TypeAssertion,
     ) -> Result<inkwell::values::BasicValueEnum<'_>, Error> {
-        Err(Error::Compilation("Mock enhanced compilation".to_string()))
+        Err(Error::Compilation("Mock enhanced compilation".to_string())
     }
 }
 
@@ -163,8 +164,8 @@ fn test_adapter_forward_find_interface_path() {
     let path = generator.forward_find_interface_path("A", "D").unwrap();
     
     // The actual path should be determined by the registry we set up
-    assert!(path.contains(&"A".to_string()));
-    assert!(path.contains(&"D".to_string()));
+    assert!(path.contains(&"A".to_string());
+    assert!(path.contains(&"D".to_string());
     // Verify it's the expected path (either A->B->D or A->C->D)
     assert!(path.len() == 3, "Expected path length of 3, got {}", path.len());
 }

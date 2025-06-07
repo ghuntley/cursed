@@ -1,3 +1,16 @@
+use inkwell::context::Context;
+use std::sync::Arc;
+use cursed::lexer::TokenType;
+use cursed::lexer::Token;
+use cursed::ast::expressions::{Identifier, IntegerLiteral};
+use cursed::ast::pointer::{PointerDereference, PointerType};
+use cursed::ast::traits::Expression;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::PointerOperations;
+use cursed::codegen::llvm::VariableHandling;
+use cursed::codegen::llvm::ExpressionCompilation;
+use cursed::error::Error;
+
 //! Tests for pointer operations in the LLVM code generator
 //!
 //! This file contains tests for pointer operations including:
@@ -7,10 +20,6 @@
 //! - Pointer arithmetic
 //! - Null pointer handling
 
-use inkwell::context::Context;
-use std::sync::Arc;
-use cursed::lexer::TokenType;
-use cursed::lexer::Token;
 
 // Helper function to convert Token to String
 fn token_to_string(token: &Token) -> String {
@@ -23,14 +32,6 @@ fn token_to_string(token: &Token) -> String {
 
 
 // Import the necessary modules from the cursed compiler
-use cursed::ast::expressions::{Identifier, IntegerLiteral};
-use cursed::ast::pointer::{PointerDereference, PointerType};
-use cursed::ast::traits::Expression;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::PointerOperations;
-use cursed::codegen::llvm::VariableHandling;
-use cursed::codegen::llvm::ExpressionCompilation;
-use cursed::error::Error;
 
 /// Helper function to create a test environment
 fn setup_generator<'ctx>(context: &'ctx Context) -> LlvmCodeGenerator<'ctx> {
@@ -68,7 +69,7 @@ fn test_basic_address_of_operation() -> Result<(), Error> {
     let id_token = Token::Identifier("test_var".to_string());
     let identifier = Identifier {
         token: token_to_string(&id_token),
-        value: "test_var".to_string(),
+        value: "test_var".to_string()),
     };
     
     // Get the address of the variable
@@ -125,13 +126,13 @@ fn test_pointer_dereference() -> Result<(), Error> {
     
     // Create an identifier expression for the variable
     let identifier = Identifier {
-        token: "test_var".to_string(),
-        value: "test_var".to_string(),
+        token: "token".to_string()),
+        value: "test_var".to_string()),
     };
     
     // Create a pointer type expression (&test_var)
     let ptr_expr = PointerType {
-        token: "@".to_string(),
+        token: "token".to_string()),
         target_type: Box::new(identifier.clone()),
     };
     
@@ -141,12 +142,12 @@ fn test_pointer_dereference() -> Result<(), Error> {
     // Create a dereference expression (*ptr)
     // Since PointerType doesn't implement Clone, create a new instance
     let ptr_expr2 = PointerType {
-        token: "@".to_string(),
+        token: "token".to_string()),
         target_type: Box::new(identifier.clone()),
     };
     
     let deref_expr = PointerDereference {
-        token: "*".to_string(),
+        token: "token".to_string()),
         pointer: Box::new(ptr_expr2),
     };
     
@@ -194,13 +195,13 @@ fn test_multiple_indirection() -> Result<(), Error> {
     
     // Create an identifier expression for the variable
     let identifier = Identifier {
-        token: "test_var".to_string(),
-        value: "test_var".to_string(),
+        token: "token".to_string()),
+        value: "test_var".to_string()),
     };
     
     // Create a pointer type expression (&test_var)
     let ptr_expr = PointerType {
-        token: "@".to_string(),
+        token: "token".to_string()),
         target_type: Box::new(identifier.clone()),
     };
     
@@ -216,25 +217,25 @@ fn test_multiple_indirection() -> Result<(), Error> {
     
     // Create an identifier for the pointer-to-pointer variable
     let ptr_ptr_ident = Identifier {
-        token: "ptr_ptr_var".to_string(),
-        value: "ptr_ptr_var".to_string(),
+        token: "token".to_string()),
+        value: "ptr_ptr_var".to_string()),
     };
     
     // Dereference the pointer-to-pointer to get the pointer
     let deref_ptr_ptr = PointerDereference {
-        token: "*".to_string(),
+        token: "token".to_string()),
         pointer: Box::new(ptr_ptr_ident.clone()),
     };
     
     // Dereference the pointer to get the original value
     // Since PointerDereference doesn't implement Clone, create a new instance
     let deref_ptr_ptr2 = PointerDereference {
-        token: "*".to_string(),
+        token: "token".to_string()),
         pointer: Box::new(ptr_ptr_ident.clone()),
     };
     
     let deref_ptr = PointerDereference {
-        token: "*".to_string(),
+        token: "token".to_string()),
         pointer: Box::new(deref_ptr_ptr2),
     };
     
@@ -302,13 +303,13 @@ fn test_store_to_pointer() -> Result<(), Error> {
     
     // Create an identifier expression for the variable
     let identifier = Identifier {
-        token: "test_var".to_string(),
-        value: "test_var".to_string(),
+        token: "token".to_string()),
+        value: "test_var".to_string()),
     };
     
     // Create a pointer type expression (&test_var)
     let ptr_expr = PointerType {
-        token: "@".to_string(),
+        token: "token".to_string()),
         target_type: Box::new(identifier.clone()),
     };
     

@@ -1,6 +1,11 @@
+use std::sync::Once;
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::object::{Object, ObjectRef};
+
 //! Tests for the interface type registry functionality
 
-use std::sync::Once;
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -18,10 +23,6 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities
-use cursed::core::{JitOptions, InterpretOptions};
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::object::{Object, ObjectRef};
 
 // Helper function to run JIT tests on Cursed code
 fn run_jit_test(input: &str) -> Result<ObjectRef, String> {
@@ -137,7 +138,7 @@ fn test_interface_type_registry_basic() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Counts: Rectangle=1, Circle=1, Triangle=1".to_string()));
+            assert_eq!(result.as_string(), Some("Counts: Rectangle=1, Circle=1, Triangle=1".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -208,7 +209,7 @@ fn test_interface_type_registry_nested() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Success: All type assertions passed".to_string()));
+            assert_eq!(result.as_string(), Some("Success: All type assertions passed".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -275,7 +276,7 @@ fn test_interface_type_registry_invalid() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Success: Invalid assertions correctly failed".to_string()));
+            assert_eq!(result.as_string(), Some("Success: Invalid assertions correctly failed".to_string());
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }

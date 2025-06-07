@@ -1,10 +1,11 @@
+use cursed::error::Error;
+use crate::common;
+
 //! Tests for interface type assertions and conversions
 //!
 //! This module tests the ability to assert that an interface value is of a specific
 //! concrete type and to convert an interface value back to a concrete type.
 
-use cursed::error::Error;
-use crate::common;
 
 #[path = "common.rs"]
 mod common;
@@ -60,7 +61,7 @@ fn test_basic_interface_type_assertion() {
     
     match common::run_jit_test(code) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Alice".to_string()));
+            assert_eq!(result.as_string(), Some("Alice".to_string());
         },
         Err(e) => panic!("Test failed: {}", e),
     }
@@ -120,7 +121,7 @@ fn test_interface_type_assertion_failure() {
     
     match common::run_jit_test(code) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("assertion failed as expected".to_string()));
+            assert_eq!(result.as_string(), Some("assertion failed as expected".to_string());
         },
         Err(e) => panic!("Test failed: {}", e),
     }
@@ -264,7 +265,7 @@ fn test_interface_type_switch() {
     
     match common::run_jit_test(code) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("circle,rectangle".to_string()));
+            assert_eq!(result.as_string(), Some("circle,rectangle".to_string());
         },
         Err(e) => panic!("Test failed: {}", e),
     }
@@ -322,7 +323,7 @@ fn test_direct_interface_method_call_with_assertion() {
     
     match common::run_jit_test(code) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Golden Retriever".to_string()));
+            assert_eq!(result.as_string(), Some("Golden Retriever".to_string());
         },
         Err(e) => panic!("Test failed: {}", e),
     }
@@ -371,7 +372,7 @@ fn test_nil_interface_assertion() {
     
     match common::run_jit_test(code) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("nil or wrong type".to_string()));
+            assert_eq!(result.as_string(), Some("nil or wrong type".to_string());
         },
         Err(e) => panic!("Test failed: {}", e),
     }

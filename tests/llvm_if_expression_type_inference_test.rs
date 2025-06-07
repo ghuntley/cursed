@@ -1,5 +1,3 @@
-//! Tests for if expressions with type inference in the LLVM code generator
-
 use cursed::ast::expressions::identifiers::Identifier;
 use cursed::ast::expressions::operators::InfixExpression;
 use cursed::ast::expressions::literals::{IntegerLiteral, FloatLiteral, StringLiteral, BooleanLiteral};
@@ -9,15 +7,19 @@ use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::ExpressionStatement;
 use cursed::ast::statements::declarations::LetStatement;
 use cursed::ast::traits::{Expression, Statement};
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation};
 use cursed::codegen::llvm::IfExpressionCompilation;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
+
+//! Tests for if expressions with type inference in the LLVM code generator
+
+
 
 #[test]
 fn test_assignment_type_inference() {
@@ -34,17 +36,17 @@ fn test_assignment_type_inference() {
     
     // Create a variable without explicit type annotation
     let var_name = Identifier {
-        token: "x".to_string(),
-        value: "x".to_string(),
+        token: "token".to_string()),
+        value: "x".to_string()),
     };
     
     // Declare and initialize with integer
     let let_stmt = LetStatement {
-        token: "sus".to_string(),
+        token: "token".to_string()),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(IntegerLiteral {
-            token: "42".to_string(),
+            token: "token".to_string()),
             value: 42,
         })),
     };
@@ -57,12 +59,12 @@ fn test_assignment_type_inference() {
     let assign_expr = InfixExpression {
         token: Token::Assign,
         left: Box::new(Identifier {
-            token: "x".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         }),
-        operator: "=".to_string(),
+        operator: "=".to_string()),
         right: Box::new(FloatLiteral {
-            token: "3.14".to_string(),
+            token: "token".to_string()),
             value: 3.14,
         }),
     };
@@ -103,17 +105,17 @@ fn test_assignment_type_coercion() {
     
     // Create a variable with explicit float type annotation
     let var_name = Identifier {
-        token: "x".to_string(),
-        value: "x".to_string(),
+        token: "token".to_string()),
+        value: "x".to_string()),
     };
     
     // Declare a float variable with float type annotation
     let let_stmt = LetStatement {
-        token: "sus".to_string(),
+        token: "token".to_string()),
         name: var_name.clone(),
         type_annotation: Some(Token::Meal), // Explicitly float (f64)
         value: Some(Box::new(FloatLiteral {
-            token: "0.0".to_string(),
+            token: "token".to_string()),
             value: 0.0,
         })),
     };
@@ -129,12 +131,12 @@ fn test_assignment_type_coercion() {
     let assign_expr = InfixExpression {
         token: Token::Assign,
         left: Box::new(Identifier {
-            token: "x".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         }),
-        operator: "=".to_string(),
+        operator: "=".to_string()),
         right: Box::new(IntegerLiteral {
-            token: "42".to_string(),
+            token: "token".to_string()),
             value: 42,
         }),
     };
@@ -155,8 +157,8 @@ fn test_assignment_type_coercion() {
     
     // Load the variable's value to verify it's properly coerced
     let load_expr = Identifier {
-        token: "x".to_string(),
-        value: "x".to_string(),
+        token: "token".to_string()),
+        value: "x".to_string()),
     };
     
     let load_result = generator.compile_expression(&load_expr);
@@ -192,31 +194,31 @@ fn test_if_expression_with_assignment_type_inference() {
     
     // Create a condition: true
     let condition = BooleanLiteral {
-        token: "true".to_string(),
+        token: "token".to_string()),
         value: true,
     };
     
     // Create the then expression: 42.0 (explicitly as float)
     let then_expr = FloatLiteral {
-        token: "42.0".to_string(),
+        token: "token".to_string()),
         value: 42.0,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "42.0".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 99.5 (f64)
     let else_expr = FloatLiteral {
-        token: "99.5".to_string(),
+        token: "token".to_string()),
         value: 99.5,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "99.5".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -234,7 +236,7 @@ fn test_if_expression_with_assignment_type_inference() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "if".to_string(),
+        token: "token".to_string()),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -277,31 +279,31 @@ fn test_if_expression_with_mixed_types() {
     
     // Create a condition: true
     let condition = BooleanLiteral {
-        token: "true".to_string(),
+        token: "token".to_string()),
         value: true,
     };
     
     // Create the then expression: 42 (i32)
     let then_expr = IntegerLiteral {
-        token: "42".to_string(),
+        token: "token".to_string()),
         value: 42,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "42".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 24.5 (f64)
     let else_expr = FloatLiteral {
-        token: "24.5".to_string(),
+        token: "token".to_string()),
         value: 24.5,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "24.5".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -319,7 +321,7 @@ fn test_if_expression_with_mixed_types() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "if".to_string(),
+        token: "token".to_string()),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),
@@ -362,31 +364,31 @@ fn test_if_expression_with_string_and_int() {
     
     // Create a condition: true
     let condition = BooleanLiteral {
-        token: "true".to_string(),
+        token: "token".to_string()),
         value: true,
     };
     
     // Create the then expression: string literal
     let then_expr = StringLiteral {
-        token: "Hello".to_string(),
-        value: "Hello".to_string(),
+        token: "token".to_string()),
+        value: "Hello".to_string()),
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: "Hello".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: integer
     let else_expr = IntegerLiteral {
-        token: "42".to_string(),
+        token: "token".to_string()),
         value: 42,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: "42".to_string(),
+        token: "token".to_string()),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -404,7 +406,7 @@ fn test_if_expression_with_string_and_int() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: "if".to_string(),
+        token: "token".to_string()),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),

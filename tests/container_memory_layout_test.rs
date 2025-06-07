@@ -1,8 +1,5 @@
-//! Tests for specialized container memory layout optimizations
-
 use cursed::codegen::llvm::ContainerKind;
 use cursed::codegen::llvm::LlvmCodeGenerator;
-// Import the extension traits
 use cursed::codegen::llvm::ContainerLayoutExtension;
 use cursed::codegen::llvm::MemoryLayoutExtension;
 use cursed::codegen::llvm::ContainerLayout;
@@ -10,6 +7,10 @@ use cursed::codegen::llvm::MemoryLayout;
 use inkwell::context::Context;
 use inkwell::types::BasicTypeEnum;
 use std::path::PathBuf;
+
+//! Tests for specialized container memory layout optimizations
+
+// Import the extension traits
 
 #[test]
 fn test_specialized_container_layout() {

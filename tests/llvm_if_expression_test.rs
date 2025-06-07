@@ -1,5 +1,3 @@
-//! Tests for if expressions in the LLVM code generator
-
 use cursed::ast::expressions::literals::{IntegerLiteral, BooleanLiteral};
 use cursed::ast::expressions::if_expression::IfExpression;
 use cursed::ast::control_flow::conditionals::IfStatement;
@@ -11,8 +9,12 @@ use cursed::codegen::llvm::ExpressionCompilation;
 use cursed::codegen::llvm::IfExpressionCompilation;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for if expressions in the LLVM code generator
+
 
 #[test]
 fn test_simple_if_expression() {
@@ -28,31 +30,31 @@ fn test_simple_if_expression() {
     
     // Create a simple condition: true
     let condition = BooleanLiteral {
-        token: Token::Based.token_literal(),
+        token: "token".to_string().token_literal(),
         value: true,
     };
     
     // Create the then expression: 42
     let then_expr = IntegerLiteral {
-        token: Token::Int(42).token_literal(),
+        token: "token".to_string().token_literal(),
         value: 42,
     };
     
     // Wrap in an expression statement
     let then_stmt = ExpressionStatement {
-        token: Token::Int(42).token_literal(),
+        token: "token".to_string().token_literal(),
         expression: Some(Box::new(then_expr)),
     };
     
     // Create the else expression: 24
     let else_expr = IntegerLiteral {
-        token: Token::Int(24).token_literal(),
+        token: "token".to_string().token_literal(),
         value: 24,
     };
     
     // Wrap in an expression statement
     let else_stmt = ExpressionStatement {
-        token: Token::Int(24).token_literal(),
+        token: "token".to_string().token_literal(),
         expression: Some(Box::new(else_expr)),
     };
     
@@ -70,7 +72,7 @@ fn test_simple_if_expression() {
     
     // Create the IfStatement
     let if_stmt = IfStatement {
-        token: Token::Lowkey.token_literal(),
+        token: "token".to_string().token_literal(),
         condition: Box::new(condition),
         consequence: Box::new(consequence),
         alternative: Some(Box::new(alternative)),

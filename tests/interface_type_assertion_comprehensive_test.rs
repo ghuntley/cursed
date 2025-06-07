@@ -1,23 +1,24 @@
-//! # Comprehensive Interface Type Assertion Tests
-//!
-//! This module provides extensive testing for all aspects of interface type assertions,
-//! covering error handling, nesting, inheritance, and complex use cases.
-
 use std::env;
 use std::path::PathBuf;
-
-#[path = "common.rs"]
-mod common;
-
 use common::tracing;
 use tracing::{debug, error, info, trace, warn};
-
 use cursed::ast::types::{InterfaceType, StructType, Type};
 use cursed::ast::expressions::TypeAssertion;
 use cursed::parser::Parser;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::core::jit::JitCompiler;
 use cursed::error::Error;
+
+//! # Comprehensive Interface Type Assertion Tests
+//!
+//! This module provides extensive testing for all aspects of interface type assertions,
+//! covering error handling, nesting, inheritance, and complex use cases.
+
+
+#[path = "common.rs"]
+mod common;
+
+
 
 /// Initialize tracing for tests
 macro_rules! init_tracing {

@@ -2,6 +2,7 @@ use cursed::lexer::{Lexer, Token};
 use cursed::parser::preprocessor::{Preprocessor, TokenMetadata};
 use cursed::error::Error;
 
+
 #[test]
 fn test_nested_generic_type_declaration() {
     let input = "be_like Pair[K, List[T]] squad { first K, second List[T] }";

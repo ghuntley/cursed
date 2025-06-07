@@ -1,5 +1,7 @@
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
+
 
 // Helper function to create a token directly
 pub fn new_token(token_type: TokenType, literal: &str) -> Token {

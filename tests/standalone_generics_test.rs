@@ -1,5 +1,6 @@
-// Note: This is a standalone test that doesn't rely on the full compiler infrastructure
 use tracing::{debug, error, info};
+
+// Note: This is a standalone test that doesn't rely on the full compiler infrastructure
 
 // Import the common test utilities
 #[path = "common.rs"]
@@ -46,12 +47,12 @@ fn test_generic_types() {
     }
 
     // Create a Box[normie] type
-    let box_int = Type::Generic("Box".to_string(), vec![Box::new(Type::Normie)]);
+    let box_int = Type::Generic("Box".to_string()), vec![Box::new(Type::Normie)]);
 
     // Create a Box[T] with type parameter T
     let box_t = Type::Generic(
-        "Box".to_string(),
-        vec![Box::new(Type::TypeParam("T".to_string()))],
+        "Box".to_string()),
+        vec![Box::new(Type::TypeParam("T".to_string())],
     );
 
     // Test type equality

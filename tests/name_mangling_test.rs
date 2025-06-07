@@ -1,6 +1,7 @@
 use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::core::type_checker::Type;
 
+
 #[test]
 fn test_name_mangling_for_specializations() {
     let manager = MonomorphizationManager::new();

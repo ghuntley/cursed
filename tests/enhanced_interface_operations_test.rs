@@ -1,11 +1,3 @@
-//! Integration test for enhanced interface operations
-//!
-//! This test verifies the improvements to interface operations including:
-//! 1. Enhanced dynamic dispatch with better error handling
-//! 2. Integrated type assertions
-//! 3. Improved interface value creation
-//! 4. Better integration with the type checker
-
 use std::collections::HashMap;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::core::interface_type_checker::InterfaceTypeChecker;
@@ -16,6 +8,15 @@ use cursed::codegen::llvm::dynamic_dispatch::InterfaceManager;
 use cursed::codegen::llvm::enhanced_dynamic_dispatch::EnhancedDynamicDispatch;
 use cursed::codegen::llvm::integrated_interface_operations::IntegratedInterfaceOperations;
 use inkwell::values::BasicValueEnum;
+
+//! Integration test for enhanced interface operations
+//!
+//! This test verifies the improvements to interface operations including:
+//! 1. Enhanced dynamic dispatch with better error handling
+//! 2. Integrated type assertions
+//! 3. Improved interface value creation
+//! 4. Better integration with the type checker
+
 
 #[path = "common.rs"]
 mod common;
@@ -28,26 +29,26 @@ fn setup_test_hierarchy() -> Result<TypeChecker, Error> {
     type_checker.register_interface(
         "Serializable",
         vec![
-            ("to_json".to_string(), vec![], Some(Type::Tea)),
-            ("from_json".to_string(), vec![Type::Tea], Some(Type::Lit)),
+            ("to_json".to_string()), vec![], Some(Type::Tea)),
+            ("from_json".to_string()), vec![Type::Tea], Some(Type::Lit)),
         ],
         Vec::new(),
     );
     
     // Register a Person struct that implements Serializable
     let person_fields = HashMap::from([
-        ("name".to_string(), Type::Tea),
-        ("age".to_string(), Type::Normie),
-        ("email".to_string(), Type::Tea),
+        ("name".to_string()), Type::Tea),
+        ("age".to_string()), Type::Normie),
+        ("email".to_string()), Type::Tea),
     ]);
     
     type_checker.register_struct("Person", person_fields, Vec::new());
     
     // Register Person methods
     let person_methods = vec![
-        ("to_json".to_string(), vec![], Some(Type::Tea)),
-        ("from_json".to_string(), vec![Type::Tea], Some(Type::Lit)),
-        ("get_name".to_string(), vec![], Some(Type::Tea)),
+        ("to_json".to_string()), vec![], Some(Type::Tea)),
+        ("from_json".to_string()), vec![Type::Tea], Some(Type::Lit)),
+        ("get_name".to_string()), vec![], Some(Type::Tea)),
     ];
     
     for (method_name, param_types, return_type) in person_methods.clone() {
@@ -56,17 +57,17 @@ fn setup_test_hierarchy() -> Result<TypeChecker, Error> {
     
     // Register a Config struct that implements Serializable
     let config_fields = HashMap::from([
-        ("settings".to_string(), Type::Tea),
-        ("version".to_string(), Type::Normie),
+        ("settings".to_string()), Type::Tea),
+        ("version".to_string()), Type::Normie),
     ]);
     
     type_checker.register_struct("Config", config_fields, Vec::new());
     
     // Register Config methods
     let config_methods = vec![
-        ("to_json".to_string(), vec![], Some(Type::Tea)),
-        ("from_json".to_string(), vec![Type::Tea], Some(Type::Lit)),
-        ("get_version".to_string(), vec![], Some(Type::Normie)),
+        ("to_json".to_string()), vec![], Some(Type::Tea)),
+        ("from_json".to_string()), vec![Type::Tea], Some(Type::Lit)),
+        ("get_version".to_string()), vec![], Some(Type::Normie)),
     ];
     
     for (method_name, param_types, return_type) in config_methods.clone() {
@@ -85,14 +86,14 @@ fn test_interface_implementation_checking() -> Result<(), Error> {
     let mut type_checker = setup_test_hierarchy()?;
     
     // Verify that Person implements Serializable
-    let person_type = Type::Struct("Person".to_string(), Vec::new());
-    let serializable_type = Type::Interface("Serializable".to_string(), Vec::new());
+    let person_type = Type::Struct("Person".to_string()), Vec::new());
+    let serializable_type = Type::Interface("Serializable".to_string()), Vec::new());
     
     let person_implements = type_checker.check_interface_implementation(&person_type, &serializable_type)?;
     assert!(person_implements, "Person should implement Serializable");
     
     // Verify that Config implements Serializable
-    let config_type = Type::Struct("Config".to_string(), Vec::new());
+    let config_type = Type::Struct("Config".to_string()), Vec::new());
     
     let config_implements = type_checker.check_interface_implementation(&config_type, &serializable_type)?;
     assert!(config_implements, "Config should implement Serializable");
@@ -123,14 +124,14 @@ fn test_enhanced_dynamic_dispatch() -> Result<(), Error> {
     code_gen.register_interface(
         "Serializable",
         vec![
-            ("to_json".to_string(), vec![], Some(Type::Tea)),
-            ("from_json".to_string(), vec![Type::Tea], Some(Type::Lit)),
+            ("to_json".to_string()), vec![], Some(Type::Tea)),
+            ("from_json".to_string()), vec![Type::Tea], Some(Type::Lit)),
         ],
         Vec::new(),
     )?;
     
     // Create a Person struct type
-    let person_type = Type::Struct("Person".to_string(), Vec::new());
+    let person_type = Type::Struct("Person".to_string()), Vec::new());
     
     // Create method function types
     let to_json_type = context.i8_type()
@@ -149,8 +150,8 @@ fn test_enhanced_dynamic_dispatch() -> Result<(), Error> {
     
     // Register method implementations
     let mut methods = HashMap::new();
-    methods.insert("to_json".to_string(), to_json_fn);
-    methods.insert("from_json".to_string(), from_json_fn);
+    methods.insert("to_json".to_string()), to_json_fn);
+    methods.insert("from_json".to_string()), from_json_fn);
     
     // Register the implementation
     code_gen.register_interface_implementation("Person", "Serializable", methods)?;
@@ -207,16 +208,16 @@ fn test_integrated_interface_operations() -> Result<(), Error> {
     code_gen.register_interface(
         "Serializable",
         vec![
-            ("to_json".to_string(), vec![], Some(Type::Tea)),
-            ("from_json".to_string(), vec![Type::Tea], Some(Type::Lit)),
+            ("to_json".to_string()), vec![], Some(Type::Tea)),
+            ("from_json".to_string()), vec![Type::Tea], Some(Type::Lit)),
         ],
         Vec::new(),
     )?;
     
     // Create a Person struct type
-    let person_type = Type::Struct("Person".to_string(), Vec::new());
-    let config_type = Type::Struct("Config".to_string(), Vec::new());
-    let serializable_type = Type::Interface("Serializable".to_string(), Vec::new());
+    let person_type = Type::Struct("Person".to_string()), Vec::new());
+    let config_type = Type::Struct("Config".to_string()), Vec::new());
+    let serializable_type = Type::Interface("Serializable".to_string()), Vec::new());
     
     // Create method function types
     let to_json_type = context.i8_type()
@@ -235,8 +236,8 @@ fn test_integrated_interface_operations() -> Result<(), Error> {
     
     // Register Person method implementations
     let mut person_methods = HashMap::new();
-    person_methods.insert("to_json".to_string(), person_to_json_fn);
-    person_methods.insert("from_json".to_string(), person_from_json_fn);
+    person_methods.insert("to_json".to_string()), person_to_json_fn);
+    person_methods.insert("from_json".to_string()), person_from_json_fn);
     
     // Register the Person implementation
     code_gen.register_interface_implementation("Person", "Serializable", person_methods)?;
@@ -247,8 +248,8 @@ fn test_integrated_interface_operations() -> Result<(), Error> {
     
     // Register Config method implementations
     let mut config_methods = HashMap::new();
-    config_methods.insert("to_json".to_string(), config_to_json_fn);
-    config_methods.insert("from_json".to_string(), config_from_json_fn);
+    config_methods.insert("to_json".to_string()), config_to_json_fn);
+    config_methods.insert("from_json".to_string()), config_from_json_fn);
     
     // Register the Config implementation
     code_gen.register_interface_implementation("Config", "Serializable", config_methods)?;

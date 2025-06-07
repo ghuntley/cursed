@@ -1,19 +1,20 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+use cursed::memory::{Traceable, Tag, Visitor, GarbageCollector, ThreadSafeGc, ConcurrentGarbageCollector};
+use cursed::memory::concurrent_gc::ConcurrentGcConfig;
+use cursed::runtime::channel_gc::ThreadSafeChannel;
+use cursed::object_thread_safe::ThreadSafeObject;
+use common::tracing::setup as init_tracing;
+
 extern crate cursed;
 
 #[path = "common.rs"]
 mod common;
 
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
 
-use cursed::memory::{Traceable, Tag, Visitor, GarbageCollector, ThreadSafeGc, ConcurrentGarbageCollector};
-use cursed::memory::concurrent_gc::ConcurrentGcConfig;
-use cursed::runtime::channel_gc::ThreadSafeChannel;
-use cursed::object_thread_safe::ThreadSafeObject;
 
 // Initialize tracing for tests
-use common::tracing::setup as init_tracing;
 
 // Test data object for channels
 #[derive(Debug, Clone)]
@@ -75,7 +76,7 @@ fn test_channel_with_concurrent_gc() {
     let concurrent_gc = ConcurrentGarbageCollector::with_config(gc.clone(), config);
     
     // Create a thread-safe channel
-    let channel = ThreadSafeChannel::new("TestData".to_string(), 10);
+    let channel = ThreadSafeChannel::new("TestData".to_string()), 10);
     let channel_obj = ThreadSafeObject::Channel(Arc::new(channel));
     
     // Allocate some test data objects
@@ -184,7 +185,7 @@ fn test_concurrent_channel_operations() {
     let concurrent_gc = ConcurrentGarbageCollector::with_config(gc.clone(), config);
     
     // Create an unbuffered channel to force synchronization
-    let channel = ThreadSafeChannel::new("TestData".to_string(), 0);
+    let channel = ThreadSafeChannel::new("TestData".to_string()), 0);
     let channel_obj = ThreadSafeObject::Channel(Arc::new(channel));
     let channel_gc = concurrent_gc.allocate(channel_obj.clone());
     

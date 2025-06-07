@@ -5,6 +5,9 @@ use cursed::core::type_checker::Type;
 use cursed::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+
 
 #[path = "common.rs"]
 mod common;
@@ -45,23 +48,23 @@ fn test_work_stealing_vs_standard_performance() {
     // Add many constraints to ensure parallelism is needed
     for i in 0..20 {
         let struct_name = format!("TestStruct{}", i);
-        constraints.push((Type::Struct(struct_name.clone(), vec![]), "Testable".to_string()));
-        constraints.push((Type::Normie, "Numeric".to_string()));
-        constraints.push((Type::Tea, "Comparable".to_string()));
+        constraints.push((Type::Struct(struct_name.clone(), vec![]), "Testable".to_string());
+        constraints.push((Type::Normie, "Numeric".to_string());
+        constraints.push((Type::Tea, "Comparable".to_string());
         
         if i % 2 == 0 {
-            constraints.push((Type::Struct(struct_name.clone(), vec![]), "Container".to_string()));
+            constraints.push((Type::Struct(struct_name.clone(), vec![]), "Container".to_string());
         }
         
         if i % 3 == 0 {
-            constraints.push((Type::Struct(struct_name.clone(), vec![]), "Comparable".to_string()));
+            constraints.push((Type::Struct(struct_name.clone(), vec![]), "Comparable".to_string());
         }
     }
     
     // Add duplicates to test caching
     for i in 0..10 {
-        constraints.push((Type::Normie, "Numeric".to_string()));
-        constraints.push((Type::Tea, "Comparable".to_string()));
+        constraints.push((Type::Normie, "Numeric".to_string());
+        constraints.push((Type::Tea, "Comparable".to_string());
     }
     
     // Test baseline: Use standard async constraint checker
@@ -156,20 +159,18 @@ fn test_work_stealing_unbalanced_workload() {
     
     // Add many fast checks
     for _ in 0..50 {
-        constraints.push((Type::Normie, "Numeric".to_string()));
-        constraints.push((Type::Tea, "Comparable".to_string()));
-        constraints.push((Type::Lit, "Comparable".to_string()));
+        constraints.push((Type::Normie, "Numeric".to_string());
+        constraints.push((Type::Tea, "Comparable".to_string());
+        constraints.push((Type::Lit, "Comparable".to_string());
     }
     
     // Add a few slow checks
     for i in 0..5 {
         let struct_name = format!("SlowStruct{}", i);
-        constraints.push((Type::Struct(struct_name.clone(), vec![]), "SlowInterface".to_string()));
+        constraints.push((Type::Struct(struct_name.clone(), vec![]), "SlowInterface".to_string());
     }
     
     // Randomize the order of constraints
-    use rand::seq::SliceRandom;
-    use rand::thread_rng;
     constraints.shuffle(&mut thread_rng());
     
     let registry_arc = Arc::new(registry);
@@ -212,31 +213,31 @@ fn test_generic_constraint_checking_with_work_stealing() {
     
     // Register generic types with constraints
     registry.register_generic_implementation(
-        "Collection".to_string(),
-        vec!["T".to_string()],
-        "Container".to_string(),
-        vec![("T".to_string(), "Comparable".to_string())]
+        "Collection".to_string()),
+        vec!["T".to_string())],
+        "Container".to_string()),
+        vec![("T".to_string()), "Comparable".to_string())]
     );
     
     registry.register_generic_implementation(
-        "Map".to_string(),
-        vec!["K".to_string(), "V".to_string()],
-        "Container".to_string(),
+        "Map".to_string()),
+        vec!["K".to_string()), "V".to_string())],
+        "Container".to_string()),
         vec![
-            ("K".to_string(), "Comparable".to_string()),
-            ("V".to_string(), "Serializable".to_string())
+            ("K".to_string()), "Comparable".to_string()),
+            ("V".to_string()), "Serializable".to_string()
         ]
     );
     
     registry.register_generic_implementation(
-        "ComplexStructure".to_string(),
-        vec!["A".to_string(), "B".to_string(), "C".to_string(), "D".to_string()],
-        "Serializable".to_string(),
+        "ComplexStructure".to_string()),
+        vec!["A".to_string()), "B".to_string()), "C".to_string()), "D".to_string())],
+        "Serializable".to_string()),
         vec![
-            ("A".to_string(), "Comparable".to_string()),
-            ("B".to_string(), "Container".to_string()),
-            ("C".to_string(), "Numeric".to_string()),
-            ("D".to_string(), "Serializable".to_string())
+            ("A".to_string()), "Comparable".to_string()),
+            ("B".to_string()), "Container".to_string()),
+            ("C".to_string()), "Numeric".to_string()),
+            ("D".to_string()), "Serializable".to_string()
         ]
     );
     
@@ -247,8 +248,8 @@ fn test_generic_constraint_checking_with_work_stealing() {
     
     // Test with Collection<String>
     let collection_type_args = vec![Type::Tea]; // String implements Comparable
-    let collection_type_params = vec!["T".to_string()];
-    let collection_constraints = vec![("T".to_string(), "Comparable".to_string())];
+    let collection_type_params = vec!["T".to_string())];
+    let collection_constraints = vec![("T".to_string()), "Comparable".to_string())];
     
     // Test standard implementation
     let registry_arc = Arc::new(registry.clone());
@@ -275,10 +276,10 @@ fn test_generic_constraint_checking_with_work_stealing() {
     
     // Test with Map<String, Int>
     let map_type_args = vec![Type::Tea, Type::Normie]; // String implements Comparable, Int implements Serializable
-    let map_type_params = vec!["K".to_string(), "V".to_string()];
+    let map_type_params = vec!["K".to_string()), "V".to_string())];
     let map_constraints = vec![
-        ("K".to_string(), "Comparable".to_string()),
-        ("V".to_string(), "Serializable".to_string())
+        ("K".to_string()), "Comparable".to_string()),
+        ("V".to_string()), "Serializable".to_string()
     ];
     
     // Test extension trait with work stealing
@@ -293,21 +294,21 @@ fn test_generic_constraint_checking_with_work_stealing() {
     // Test with ComplexStructure<String, Map<String, Int>, Int, String>
     let complex_type_args = vec![
         Type::Tea, // A: String implements Comparable
-        Type::Struct("Map".to_string(), vec![Type::Tea, Type::Normie]), // B: Map<String, Int> implements Container
+        Type::Struct("Map".to_string()), vec![Type::Tea, Type::Normie]), // B: Map<String, Int> implements Container
         Type::Normie, // C: Int implements Numeric
         Type::Tea, // D: String implements Serializable
     ];
     let complex_type_params = vec![
-        "A".to_string(), 
-        "B".to_string(), 
-        "C".to_string(), 
+        "A".to_string()), 
+        "B".to_string()), 
+        "C".to_string()), 
         "D".to_string()
     ];
     let complex_constraints = vec![
-        ("A".to_string(), "Comparable".to_string()),
-        ("B".to_string(), "Container".to_string()),
-        ("C".to_string(), "Numeric".to_string()),
-        ("D".to_string(), "Serializable".to_string())
+        ("A".to_string()), "Comparable".to_string()),
+        ("B".to_string()), "Container".to_string()),
+        ("C".to_string()), "Numeric".to_string()),
+        ("D".to_string()), "Serializable".to_string()
     ];
     
     // Test with the more complex structure
@@ -322,7 +323,7 @@ fn test_generic_constraint_checking_with_work_stealing() {
     // Test with invalid type arguments
     let invalid_type_args = vec![
         Type::Normie, // Int does not implement Comparable
-        Type::Struct("Map".to_string(), vec![Type::Tea, Type::Normie]),
+        Type::Struct("Map".to_string()), vec![Type::Tea, Type::Normie]),
         Type::Normie,
         Type::Tea,
     ];

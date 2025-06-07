@@ -1,8 +1,23 @@
+use std::sync::Once;
+use std::fs;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+use cursed::benchmark::interface_type_assertion_benchmark::{InterfaceTypeAssertionBenchmark, InterfaceTypeAssertionBenchmarkConfig};
+use cursed::codegen::llvm::EnhancedInterfacePathFinder;
+use cursed::codegen::llvm::InterfaceTypeRegistry;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::error::Error;
+use cursed::object::{Object, ObjectRef};
+use inkwell::context::Context;
+
 //! Test the interface type assertion benchmark functionality.
 //! This integration test validates that the benchmarking
 //! infrastructure works correctly for interface type assertions.
 
-use std::sync::Once;
 
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
@@ -20,22 +35,8 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
 
-use cursed::benchmark::interface_type_assertion_benchmark::{InterfaceTypeAssertionBenchmark, InterfaceTypeAssertionBenchmarkConfig};
-use cursed::codegen::llvm::EnhancedInterfacePathFinder;
-use cursed::codegen::llvm::InterfaceTypeRegistry;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::core::{JitOptions, InterpretOptions};
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::error::Error;
-use cursed::object::{Object, ObjectRef};
 
-use inkwell::context::Context;
 
 #[test]
 fn test_interface_type_assertion_benchmark_config() {
@@ -63,7 +64,7 @@ fn test_simple_interface_type_assertion_benchmark() {
     
     // Add mock registry to the code generator
     code_generator.internal_fields.insert(
-        "interface_registry".to_string(),
+        "interface_registry".to_string()),
         Box::new(mock_registry) as Box<dyn std::any::Any>
     );
     
@@ -111,7 +112,7 @@ fn test_comprehensive_interface_type_assertion_benchmark() {
     
     // Add mock registry to the code generator
     code_generator.internal_fields.insert(
-        "interface_registry".to_string(),
+        "interface_registry".to_string()),
         Box::new(mock_registry) as Box<dyn std::any::Any>
     );
     
@@ -178,7 +179,7 @@ fn create_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
         fn register_implementation(&mut self, _concrete_id: u32, _interface_id: u32) -> Result<(), Error> { Ok(()) }
         fn type_implements_interface(&self, _concrete_id: u32, _interface_id: u32) -> bool { true }
         fn get_implemented_interfaces(&self, _concrete_id: u32) -> Result<Vec<u32>, Error> { Ok(vec![100, 200]) }
-        fn get_type_name(&self, _id: u32) -> Result<String, Error> { Ok("MockType".to_string()) }
+        fn get_type_name(&self, _id: u32) -> Result<String, Error> { Ok("MockType".to_string() }
     }
     
     Box::new(MockRegistry)
@@ -243,9 +244,9 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
     };
     
     // Add interfaces
-    registry.register_interface(100, "BaseInterface".to_string()).unwrap();
-    registry.register_interface(200, "LeftInterface".to_string()).unwrap();
-    registry.register_interface(300, "RightInterface".to_string()).unwrap();
+    registry.register_interface(100, "BaseInterface".to_string().unwrap();
+    registry.register_interface(200, "LeftInterface".to_string().unwrap();
+    registry.register_interface(300, "RightInterface".to_string().unwrap();
     
     // Add deep hierarchy interfaces
     for i in 1..=5 {
@@ -253,9 +254,9 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
     }
     
     // Add concrete types
-    registry.register_concrete_type(400, "SimpleConcrete".to_string()).unwrap();
-    registry.register_concrete_type(500, "DiamondConcrete".to_string()).unwrap();
-    registry.register_concrete_type(600, "DeepConcrete".to_string()).unwrap();
+    registry.register_concrete_type(400, "SimpleConcrete".to_string().unwrap();
+    registry.register_concrete_type(500, "DiamondConcrete".to_string().unwrap();
+    registry.register_concrete_type(600, "DeepConcrete".to_string().unwrap();
     
     // Add implementations
     // Simple implementation

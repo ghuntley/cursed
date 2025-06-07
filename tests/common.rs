@@ -1,16 +1,18 @@
-//! Common test utilities for the CURSED test suite
-
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::object::Object;
 use cursed::parser::Parser;
 use std::sync::Arc;
+use std::sync::Once;
+use std::time::{Duration, Instant};
+
+//! Common test utilities for the CURSED test suite
+
 
 // AST Factory for creating test AST nodes
 // pub mod ast_factory;
 
 pub mod tracing {
-    use std::sync::Once;
     
     /// Initialize tracing for tests
     pub fn setup() {
@@ -37,7 +39,6 @@ macro_rules! init_tracing {
 
 /// Benchmark timer utility
 pub mod timing {
-    use std::time::{Duration, Instant};
     
     pub struct Timer {
         start: Instant,
@@ -48,7 +49,7 @@ pub mod timing {
         pub fn new(operation: &str) -> Self {
             let timer = Timer {
                 start: Instant::now(),
-                operation: operation.to_string(),
+                operation: operation.to_string()),
             };
             tracing::info!(operation = operation, "Starting operation timing");
             timer
@@ -143,7 +144,7 @@ pub fn test_container_iteration(container_code: &str, expected_values: Vec<Arc<O
     
     // Compare with expected values
     let expected_str = expected_values.iter()
-        .map(|obj| obj.to_string())
+        .map(|obj| obj.to_string()
         .collect::<Vec<_>>()
         .join(",") + ",";
         

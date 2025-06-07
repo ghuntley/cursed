@@ -1,8 +1,3 @@
-//! Tests for constraint checking during monomorphization
-//! 
-//! This test verifies that the monomorphization system properly checks
-//! that concrete types satisfy interface constraints when specializing generic code.
-
 use cursed::ast::base::*;
 use cursed::ast::declarations::*;
 use cursed::ast::expressions::*;
@@ -13,6 +8,13 @@ use cursed::codegen::monomorphization::MonomorphizationManager;
 use cursed::error::Error;
 use std::sync::Arc;
 use std::cell::RefCell;
+use cursed::core::interface_registry::InterfaceRegistry;
+
+//! Tests for constraint checking during monomorphization
+//! 
+//! This test verifies that the monomorphization system properly checks
+//! that concrete types satisfy interface constraints when specializing generic code.
+
 
 // Import test helpers
 #[path = "common.rs"]
@@ -24,35 +26,35 @@ fn setup_type_checker() -> TypeChecker {
     
     // Register a Comparable interface
     let comparable_methods = vec![
-        ("compare".to_string(), vec![Type::TypeParam("T".to_string())], Some(Type::Normie)),
+        ("compare".to_string()), vec![Type::TypeParam("T".to_string())], Some(Type::Normie)),
     ];
-    type_checker.register_interface("Comparable", vec!["T".to_string()], comparable_methods);
+    type_checker.register_interface("Comparable", vec!["T".to_string())], comparable_methods);
     
     // Register a Numeric interface
     let numeric_methods = vec![
-        ("add".to_string(), vec![Type::TypeParam("T".to_string())], Some(Type::TypeParam("T".to_string()))),
-        ("subtract".to_string(), vec![Type::TypeParam("T".to_string())], Some(Type::TypeParam("T".to_string()))),
+        ("add".to_string()), vec![Type::TypeParam("T".to_string())], Some(Type::TypeParam("T".to_string())),
+        ("subtract".to_string()), vec![Type::TypeParam("T".to_string())], Some(Type::TypeParam("T".to_string())),
     ];
-    type_checker.register_interface("Numeric", vec!["T".to_string()], numeric_methods);
+    type_checker.register_interface("Numeric", vec!["T".to_string())], numeric_methods);
     
     // Register implementations for primitive types
     let int_methods = vec![
-        ("compare".to_string(), vec![Type::Normie], Some(Type::Normie)),
-        ("add".to_string(), vec![Type::Normie], Some(Type::Normie)),
-        ("subtract".to_string(), vec![Type::Normie], Some(Type::Normie)),
+        ("compare".to_string()), vec![Type::Normie], Some(Type::Normie)),
+        ("add".to_string()), vec![Type::Normie], Some(Type::Normie)),
+        ("subtract".to_string()), vec![Type::Normie], Some(Type::Normie)),
     ];
     type_checker.register_methods_for_struct("Normie", int_methods);
     
     let float_methods = vec![
-        ("compare".to_string(), vec![Type::Snack], Some(Type::Normie)),
-        ("add".to_string(), vec![Type::Snack], Some(Type::Snack)),
-        ("subtract".to_string(), vec![Type::Snack], Some(Type::Snack)),
+        ("compare".to_string()), vec![Type::Snack], Some(Type::Normie)),
+        ("add".to_string()), vec![Type::Snack], Some(Type::Snack)),
+        ("subtract".to_string()), vec![Type::Snack], Some(Type::Snack)),
     ];
     type_checker.register_methods_for_struct("Snack", float_methods);
     
     // Register implementations for custom types
     let point_methods = vec![
-        ("compare".to_string(), vec![Type::Struct("Point".to_string(), vec![])], Some(Type::Normie)),
+        ("compare".to_string()), vec![Type::Struct("Point".to_string()), vec![])], Some(Type::Normie)),
     ];
     type_checker.register_methods_for_struct("Point", point_methods);
     
@@ -65,7 +67,6 @@ fn test_constraint_checking_during_monomorphization() {
     common::tracing::setup();
     
     // Set up the registry with known interface implementations
-    use cursed::core::interface_registry::InterfaceRegistry;
     
     // Test both implementations
     test_with_registry();
@@ -94,7 +95,7 @@ fn test_with_registry() {
     
     // Check constraint: Custom struct implements an interface
     let point_result = registry.check_implementation(
-        &Type::Struct("Point".to_string(), vec![]), 
+        &Type::Struct("Point".to_string()), vec![]), 
         "Comparable"
     );
     assert!(point_result.is_ok());
@@ -102,7 +103,7 @@ fn test_with_registry() {
     
     // Check constraint: Custom struct doesn't implement non-registered interface
     let point_numeric_result = registry.check_implementation(
-        &Type::Struct("Point".to_string(), vec![]), 
+        &Type::Struct("Point".to_string()), vec![]), 
         "Numeric"
     );
     assert!(point_numeric_result.is_ok());
@@ -133,14 +134,14 @@ fn test_with_type_checker() {
     
     // Check constraint: Custom struct implements an interface
     let point_result = mono_manager.check_constraint(
-        &Type::Struct("Point".to_string(), vec![]), 
+        &Type::Struct("Point".to_string()), vec![]), 
         "Comparable"
     );
     assert!(point_result.is_ok());
     
     // Check constraint: Custom struct doesn't implement non-registered interface
     let point_numeric_result = mono_manager.check_constraint(
-        &Type::Struct("Point".to_string(), vec![]), 
+        &Type::Struct("Point".to_string()), vec![]), 
         "Numeric"
     );
     assert!(point_numeric_result.is_err());

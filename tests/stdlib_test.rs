@@ -1,3 +1,6 @@
+use super::stdlib_test_wrapper::*;
+use cursed::stdlib::dot_registry::DOT_REGISTRY;
+
 //! Test for standard library functionality
 //! Tests various standard library packages and functions
 
@@ -5,8 +8,6 @@ mod stdlib_test_wrapper;
 
 #[cfg(test)]
 mod tests {
-    use super::stdlib_test_wrapper::*;
-    use cursed::stdlib::dot_registry::DOT_REGISTRY;
 
     #[test]
     fn test_vibez_spill() {

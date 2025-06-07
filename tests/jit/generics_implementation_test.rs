@@ -2,6 +2,7 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::ast::{Statement, Expression};
 
+
 #[test]
 fn test_parse_generic_type_definition() {
     let input = "be_like Box[T] squad { value T }";

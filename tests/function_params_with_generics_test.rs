@@ -3,6 +3,7 @@ use cursed::parser::Parser;
 use cursed::ast;
 use cursed::ast::traits::{Node, Statement, Expression};
 
+
 #[test]
 fn test_function_with_generic_parameters() {
     // Test a function with generic parameters

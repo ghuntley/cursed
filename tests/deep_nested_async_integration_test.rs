@@ -1,5 +1,3 @@
-//! Integration tests for deep nested async constraint checking
-
 use cursed::core::interface_registry::{InterfaceRegistry, GenericInterfaceImpl};
 use cursed::core::nested_interface_registry::{NestedInterfaceRegistry, NestedConstraint, EnhancedInterfaceRegistry};
 use cursed::core::deep_nested_interface_registry::{DeepNestedInterfaceRegistry, ConstraintPath, DeepNestedInterfaceChecking};
@@ -8,6 +6,9 @@ use cursed::core::async_constraint_checker::AsyncConstraintChecking;
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
 use std::sync::Arc;
+
+//! Integration tests for deep nested async constraint checking
+
 
 #[path = "common.rs"]
 mod common;
@@ -33,7 +34,7 @@ fn test_integrated_deep_nested_async_checker() {
     
     // Test simple type check
     let stack_int = Type::Struct(
-        "Stack".to_string(),
+        "Stack".to_string()),
         vec![Box::new(Type::Normie)] // Int implements Comparable
     );
     
@@ -48,9 +49,9 @@ fn test_integrated_deep_nested_async_checker() {
     assert!(result.unwrap());
     
     // Non-comparable type check
-    let non_comparable = Type::Struct("NonComparable".to_string(), vec![]);
+    let non_comparable = Type::Struct("NonComparable".to_string()), vec![]);
     let stack_non_comparable = Type::Struct(
-        "Stack".to_string(),
+        "Stack".to_string()),
         vec![Box::new(non_comparable)]
     );
     
@@ -106,19 +107,19 @@ fn test_multi_level_constraint_parallel() {
     // Create test types for a complex nested structure
     // Box[Int]
     let box_int = Type::Struct(
-        "Box".to_string(),
+        "Box".to_string()),
         vec![Box::new(Type::Normie)] // Int implements Numeric
     );
     
     // List[Box[Int]]
     let list_box_int = Type::Struct(
-        "List".to_string(),
+        "List".to_string()),
         vec![Box::new(box_int.clone())]
     );
     
     // Container[List[Box[Int]]]
     let container_list_box_int = Type::Struct(
-        "Container".to_string(),
+        "Container".to_string()),
         vec![Box::new(list_box_int.clone())]
     );
     
@@ -134,20 +135,20 @@ fn test_multi_level_constraint_parallel() {
     assert!(result.unwrap());
     
     // Create a version with a non-numeric inner type
-    let non_numeric = Type::Struct("NonNumeric".to_string(), vec![]);
+    let non_numeric = Type::Struct("NonNumeric".to_string()), vec![]);
     
     let box_non_numeric = Type::Struct(
-        "Box".to_string(),
+        "Box".to_string()),
         vec![Box::new(non_numeric.clone())]
     );
     
     let list_box_non_numeric = Type::Struct(
-        "List".to_string(),
+        "List".to_string()),
         vec![Box::new(box_non_numeric.clone())]
     );
     
     let container_list_box_non_numeric = Type::Struct(
-        "Container".to_string(),
+        "Container".to_string()),
         vec![Box::new(list_box_non_numeric.clone())]
     );
     
@@ -184,7 +185,7 @@ fn test_caching_reuses_results() {
     
     // Create a test type
     let list_int = Type::Struct(
-        "List".to_string(),
+        "List".to_string()),
         vec![Box::new(Type::Normie)] // Int implements Comparable
     );
     
@@ -237,7 +238,7 @@ fn test_combining_async_and_deep_nested_checks() {
     let mut constraints = vec![];
     for i in 0..10 {
         let type_name = format!("TestType{}", i);
-        constraints.push((Type::Struct(type_name, vec![]), "Testable".to_string()));
+        constraints.push((Type::Struct(type_name, vec![]), "Testable".to_string());
     }
     
     // Use the AsyncConstraintChecking trait
@@ -266,8 +267,8 @@ fn test_combining_async_and_deep_nested_checks() {
     
     for i in 0..5 {
         let inner_type = Type::Struct(format!("TestType{}", i), vec![]);
-        let wrapper_type = Type::Struct("Wrapper".to_string(), vec![Box::new(inner_type)]);
-        let box_type = Type::Struct("Box".to_string(), vec![Box::new(wrapper_type)]);
+        let wrapper_type = Type::Struct("Wrapper".to_string()), vec![Box::new(inner_type)]);
+        let box_type = Type::Struct("Box".to_string()), vec![Box::new(wrapper_type)]);
         
         complex_checks.push(("MultiContainer", "T", box_type, "Testable"));
     }

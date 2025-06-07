@@ -1,10 +1,11 @@
+use cursed::memory::gc::GarbageCollector;
+use cursed::memory::{Tag, Traceable, Visitor};
+use std::sync::Arc;
+
 //! A simplified test for the garbage collector
 
 #[cfg(test)]
 mod tests {
-    use cursed::memory::gc::GarbageCollector;
-    use cursed::memory::{Tag, Traceable, Visitor};
-    use std::sync::Arc;
 
     // A simple object type for testing
     #[derive(Debug, Clone)]

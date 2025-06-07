@@ -1,12 +1,13 @@
+use cursed::Error;
+use cursed::object::Object;
+use cursed::stdlib::core;
+use std::sync::Arc;
+
 //! Tests for the core standard library module
 //! This file contains tests for the Core module functionality
 
 #[cfg(test)]
 mod tests {
-    use cursed::Error;
-    use cursed::object::Object;
-    use cursed::stdlib::core;
-    use std::sync::Arc;
     
     #[test]
     fn test_lit_function() {
@@ -18,11 +19,11 @@ mod tests {
         let result = core::lit(&[arg]).unwrap();
         assert_eq!(*result, Object::Boolean(true));
         
-        let arg = Arc::new(Object::String("hello".to_string()));
+        let arg = Arc::new(Object::String("hello".to_string());
         let result = core::lit(&[arg]).unwrap();
         assert_eq!(*result, Object::Boolean(true));
         
-        let arg = Arc::new(Object::String("".to_string()));
+        let arg = Arc::new(Object::String("".to_string());
         let result = core::lit(&[arg]).unwrap();
         assert_eq!(*result, Object::Boolean(false));
         
@@ -41,7 +42,7 @@ mod tests {
         let result = core::normie(&[arg]).unwrap();
         assert_eq!(*result, Object::Integer(1));
         
-        let arg = Arc::new(Object::String("123".to_string()));
+        let arg = Arc::new(Object::String("123".to_string());
         let result = core::normie(&[arg]).unwrap();
         assert_eq!(*result, Object::Integer(123));
         
@@ -95,7 +96,7 @@ mod tests {
     fn test_tea_function() {
         let arg = Arc::new(Object::Integer(42));
         let result = core::tea(&[arg]).unwrap();
-        assert_eq!(*result, Object::String("42".to_string()));
+        assert_eq!(*result, Object::String("42".to_string());
         
         // Test error case
         let result = core::tea(&[]);
@@ -104,7 +105,7 @@ mod tests {
     
     #[test]
     fn test_len_function() {
-        let arg = Arc::new(Object::String("hello".to_string()));
+        let arg = Arc::new(Object::String("hello".to_string());
         let result = core::len(&[arg]).unwrap();
         assert_eq!(*result, Object::Integer(5));
         
@@ -171,7 +172,7 @@ mod tests {
     #[test]
     fn test_make_function() {
         // Test make slice
-        let type_arg = Arc::new(Object::String("slice".to_string()));
+        let type_arg = Arc::new(Object::String("slice".to_string());
         let size_arg = Arc::new(Object::Integer(3));
         
         let result = core::make(&[type_arg, size_arg]).unwrap();
@@ -187,7 +188,7 @@ mod tests {
         }
         
         // Test make with zero size
-        let type_arg = Arc::new(Object::String("slice".to_string()));
+        let type_arg = Arc::new(Object::String("slice".to_string());
         let size_arg = Arc::new(Object::Integer(0));
         
         let result = core::make(&[type_arg, size_arg]).unwrap();
@@ -198,7 +199,7 @@ mod tests {
         }
         
         // Test make map (placeholder implementation)
-        let type_arg = Arc::new(Object::String("map".to_string()));
+        let type_arg = Arc::new(Object::String("map".to_string());
         
         let result = core::make(&[type_arg]).unwrap();
         if let Object::Array(arr) = &*result {
@@ -215,14 +216,14 @@ mod tests {
         let result = core::make(&[invalid_type]);
         assert!(result.is_err());
         
-        let invalid_type = Arc::new(Object::String("invalid_type".to_string()));
+        let invalid_type = Arc::new(Object::String("invalid_type".to_string());
         let result = core::make(&[invalid_type]);
         assert!(result.is_err());
     }
     
     #[test]
     fn test_new_function() {
-        let type_arg = Arc::new(Object::String("normie".to_string()));
+        let type_arg = Arc::new(Object::String("normie".to_string());
         let result = core::new(&[type_arg]).unwrap();
         if let Object::Integer(i) = &*result {
             assert_eq!(*i, 0);
@@ -230,7 +231,7 @@ mod tests {
             panic!("Expected integer");
         }
         
-        let type_arg = Arc::new(Object::String("tea".to_string()));
+        let type_arg = Arc::new(Object::String("tea".to_string());
         let result = core::new(&[type_arg]).unwrap();
         if let Object::String(s) = &*result {
             assert!(s.is_empty());
@@ -238,7 +239,7 @@ mod tests {
             panic!("Expected string");
         }
         
-        let type_arg = Arc::new(Object::String("lit".to_string()));
+        let type_arg = Arc::new(Object::String("lit".to_string());
         let result = core::new(&[type_arg]).unwrap();
         if let Object::Boolean(b) = &*result {
             assert_eq!(*b, false);
@@ -258,7 +259,7 @@ mod tests {
     #[test]
     fn test_panic_and_recover() {
         // Test that panic causes a panic
-        let panic_message = Arc::new(Object::String("Test panic".to_string()));
+        let panic_message = Arc::new(Object::String("Test panic".to_string());
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             core::panic(&[panic_message]).unwrap();
         }));

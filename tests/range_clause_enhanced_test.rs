@@ -1,11 +1,12 @@
+use cursed::object::Object;
+use cursed::error::Error;
+
 //! Enhanced range clause implementation tests
 //! 
 //! These tests are specifically designed to test the enhanced range clause
 //! implementation after it has been integrated into the main codebase.
 //! They focus on edge cases and comprehensive testing of all range clause features.
 
-use cursed::object::Object;
-use cursed::error::Error;
 
 #[path = "common.rs"]
 mod common;
@@ -366,7 +367,7 @@ fn test_implementation_comparison() -> Result<(), String> {
             if same {
                 Ok(())
             } else {
-                Err("Implementations produced different results".to_string())
+                Err("Implementations produced different results".to_string()
             }
         },
         Err(e) => Err(format!("Test comparison failed: {}", e))

@@ -1,12 +1,13 @@
 use std::path::Path;
 use std::fs;
 use std::process::Command;
-
 use cursed::ast::Program;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
 use cursed::codegen::llvm::BinaryCompiler;
 use inkwell::context::Context;
+
+
 
 // Conditionally compile this test when the binary_compiler feature is enabled
 #[cfg(feature = "binary_compiler")]

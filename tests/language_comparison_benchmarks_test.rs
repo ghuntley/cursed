@@ -1,11 +1,12 @@
+use cursed::benchmark::language_comparison;
+use cursed::benchmark::metrics::*;
+use tracing::{debug, info};
+
 //! Integration tests for language comparison benchmarks
 
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
 
-use cursed::benchmark::language_comparison;
-use cursed::benchmark::metrics::*;
-use tracing::{debug, info};
 
 #[test]
 fn test_binary_trees_benchmark() {

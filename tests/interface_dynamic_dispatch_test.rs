@@ -1,5 +1,3 @@
-//! Integration test for interface type conversions and dynamic dispatch
-
 use std::collections::HashMap;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::core::interface_type_checker::InterfaceTypeChecker;
@@ -7,6 +5,9 @@ use cursed::error::Error;
 use inkwell::context::Context;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::dynamic_dispatch::InterfaceManager;
+
+//! Integration test for interface type conversions and dynamic dispatch
+
 
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
@@ -19,8 +20,8 @@ fn setup_interface_hierarchy() -> Result<TypeChecker, Error> {
     type_checker.register_interface(
         "Reader",
         vec![
-            ("read".to_string(), vec![], Some(Type::Tea)),
-            ("has_more".to_string(), vec![], Some(Type::Lit)),
+            ("read".to_string()), vec![], Some(Type::Tea)),
+            ("has_more".to_string()), vec![], Some(Type::Lit)),
         ],
         Vec::new(),
     );
@@ -29,28 +30,28 @@ fn setup_interface_hierarchy() -> Result<TypeChecker, Error> {
     type_checker.register_interface(
         "Writer",
         vec![
-            ("write".to_string(), vec![Type::Tea], None),
-            ("flush".to_string(), vec![], None),
+            ("write".to_string()), vec![Type::Tea], None),
+            ("flush".to_string()), vec![], None),
         ],
         Vec::new(),
     );
     
     // Register a TextFile struct that implements both interfaces
     let text_file_fields = HashMap::from([
-        ("filename".to_string(), Type::Tea),
-        ("buffer".to_string(), Type::Tea),
-        ("position".to_string(), Type::Normie),
+        ("filename".to_string()), Type::Tea),
+        ("buffer".to_string()), Type::Tea),
+        ("position".to_string()), Type::Normie),
     ]);
     
     type_checker.register_struct("TextFile", text_file_fields, Vec::new());
     
     // Register TextFile methods
     let text_file_methods = vec![
-        ("read".to_string(), vec![], Some(Type::Tea)),
-        ("has_more".to_string(), vec![], Some(Type::Lit)),
-        ("write".to_string(), vec![Type::Tea], None),
-        ("flush".to_string(), vec![], None),
-        ("close".to_string(), vec![], None),
+        ("read".to_string()), vec![], Some(Type::Tea)),
+        ("has_more".to_string()), vec![], Some(Type::Lit)),
+        ("write".to_string()), vec![Type::Tea], None),
+        ("flush".to_string()), vec![], None),
+        ("close".to_string()), vec![], None),
     ];
     
     for (method_name, param_types, return_type) in text_file_methods.clone() {
@@ -59,16 +60,16 @@ fn setup_interface_hierarchy() -> Result<TypeChecker, Error> {
     
     // Register a StringBuffer struct that implements Writer
     let buffer_fields = HashMap::from([
-        ("data".to_string(), Type::Tea),
+        ("data".to_string()), Type::Tea),
     ]);
     
     type_checker.register_struct("StringBuffer", buffer_fields, Vec::new());
     
     // Register StringBuffer methods
     let buffer_methods = vec![
-        ("write".to_string(), vec![Type::Tea], None),
-        ("flush".to_string(), vec![], None),
-        ("get_contents".to_string(), vec![], Some(Type::Tea)),
+        ("write".to_string()), vec![Type::Tea], None),
+        ("flush".to_string()), vec![], None),
+        ("get_contents".to_string()), vec![], Some(Type::Tea)),
     ];
     
     for (method_name, param_types, return_type) in buffer_methods.clone() {
@@ -86,9 +87,9 @@ fn test_multiple_interface_implementations() -> Result<(), Error> {
     let mut type_checker = setup_interface_hierarchy()?;
     
     // Test if TextFile implements both Reader and Writer
-    let text_file_type = Type::Struct("TextFile".to_string(), Vec::new());
-    let reader_type = Type::Interface("Reader".to_string(), Vec::new());
-    let writer_type = Type::Interface("Writer".to_string(), Vec::new());
+    let text_file_type = Type::Struct("TextFile".to_string()), Vec::new());
+    let reader_type = Type::Interface("Reader".to_string()), Vec::new());
+    let writer_type = Type::Interface("Writer".to_string()), Vec::new());
     
     let implements_reader = type_checker.check_interface_implementation(&text_file_type, &reader_type)?;
     let implements_writer = type_checker.check_interface_implementation(&text_file_type, &writer_type)?;
@@ -97,7 +98,7 @@ fn test_multiple_interface_implementations() -> Result<(), Error> {
     assert!(implements_writer, "TextFile should implement Writer");
     
     // Test if StringBuffer implements Writer but not Reader
-    let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new());
+    let buffer_type = Type::Struct("StringBuffer".to_string()), Vec::new());
     
     let buffer_implements_writer = type_checker.check_interface_implementation(&buffer_type, &writer_type)?;
     let buffer_implements_reader = type_checker.check_interface_implementation(&buffer_type, &reader_type)?;
@@ -134,8 +135,8 @@ fn test_interface_vtable_generation() -> Result<(), Error> {
         &context,
         "Writer",
         vec![
-            ("write".to_string(), vec![Type::Tea], None),
-            ("flush".to_string(), vec![], None),
+            ("write".to_string()), vec![Type::Tea], None),
+            ("flush".to_string()), vec![], None),
         ],
         Vec::new(),
     )?;
@@ -159,11 +160,11 @@ fn test_interface_vtable_generation() -> Result<(), Error> {
     
     // Register methods for the implementation
     let mut method_map = HashMap::new();
-    method_map.insert("write".to_string(), write_fn);
-    method_map.insert("flush".to_string(), flush_fn);
+    method_map.insert("write".to_string()), write_fn);
+    method_map.insert("flush".to_string()), flush_fn);
     
     // Create vtable implementation for StringBuffer -> Writer
-    let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new());
+    let buffer_type = Type::Struct("StringBuffer".to_string()), Vec::new());
     interface_manager.create_vtable_for_implementation(
         &context,
         &module,

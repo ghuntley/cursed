@@ -1,3 +1,11 @@
+use std::sync::Arc;
+use std::io::Cursor;
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::stdlib::dot_registry::DOT_REGISTRY;
+use tracing::{debug, error, info, trace, warn};
+
 //! End-to-end integration test for the Cursed language
 //! This test verifies the full compilation pipeline from source to execution
 
@@ -6,14 +14,7 @@
 #[cfg(feature = "disabled_test")]
 mod tests {
 
-use std::sync::Arc;
-use std::io::Cursor;
 
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::stdlib::dot_registry::DOT_REGISTRY;
-use tracing::{debug, error, info, trace, warn};
 
 // Include test tracing utilities
 #[path = "tracing_setup.rs"]
@@ -128,7 +129,7 @@ fn test_string_switch_compilation() {
     assert!(!module.to_string().is_empty(), "Generated module is empty");
     
     // Verify the module contains string comparison logic
-    let module_str = module.to_string();
+    let module_str = module.to_string());
     assert!(module_str.contains("strcmp") || 
            module_str.contains("string_compare") || 
            module_str.contains("str_eq"),
@@ -174,7 +175,7 @@ fn test_dot_expression_compilation() {
     assert!(!module.to_string().is_empty(), "Generated module is empty");
     
     // Verify the module contains calls to the standard library functions
-    let module_str = module.to_string();
+    let module_str = module.to_string());
     assert!(module_str.contains("vibez_spill") || module_str.contains("print"), 
             "Module does not contain vibez.spill function");
     

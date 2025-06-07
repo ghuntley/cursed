@@ -1,9 +1,5 @@
-//! Integration tests for the improved error propagation in interface type assertions
-
-use std::sync::Arc;
 use std::sync::Arc;
 use std::cell::RefCell;
-
 use cursed::ast::expressions::TypeAssertion;
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::interface_type_assertion_error_propagation_improved::*;
@@ -13,13 +9,17 @@ use cursed::codegen::llvm::interface_type_assertion_path_visualization::Interfac
 use cursed::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
+use inkwell::context::Context;
+use tracing::{debug, info, warn};
+
+//! Integration tests for the improved error propagation in interface type assertions
+
+
 
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
 
-use inkwell::context::Context;
-use tracing::{debug, info, warn};
 
 #[test]
 fn test_improved_error_propagation_registration() {
@@ -124,7 +124,7 @@ fn test_generate_type_assertion_error() {
             &mut self,
             _type_id: u64
         ) -> Result<String, Error> {
-            Ok("MockSourceType".to_string())
+            Ok("MockSourceType".to_string()
         }
         
         fn cast_to_interface_type(
@@ -142,7 +142,7 @@ fn test_generate_type_assertion_error() {
             _type_name: &str,
             _depth: usize
         ) -> Result<String, Error> {
-            Ok("Mock interface hierarchy visualization".to_string())
+            Ok("Mock interface hierarchy visualization".to_string()
         }
         
         fn check_extension_relationship_enhanced(
@@ -158,7 +158,7 @@ fn test_generate_type_assertion_error() {
             _source_type: &str,
             _target_type: &str
         ) -> Result<(bool, String), Error> {
-            Ok((false, "".to_string()))
+            Ok((false, "".to_string())
         }
         
         fn find_alternative_paths_enhanced(
@@ -171,7 +171,7 @@ fn test_generate_type_assertion_error() {
         }
         
         fn generate_interface_hierarchy_dot_graph(&mut self) -> Result<String, Error> {
-            Ok("digraph G { A -> B; }".to_string())
+            Ok("digraph G { A -> B; }".to_string()
         }
     }
     
@@ -183,7 +183,7 @@ fn test_generate_type_assertion_error() {
         "SourceType",
         "TargetType",
         "source.csd:42:10",
-        Some("Additional error context".to_string())
+        Some("Additional error context".to_string()
     ).expect("Failed to generate error");
     
     // Verify the error has the expected fields
@@ -202,7 +202,7 @@ fn test_generate_type_assertion_error() {
     }
     
     // Test string representation
-    let error_string = error.to_string();
+    let error_string = error.to_string());
     assert!(error_string.contains("Type assertion error"));
     assert!(error_string.contains("SourceType is not a TargetType"));
     assert!(error_string.contains("Recovery hint"));
@@ -298,7 +298,7 @@ fn test_suggest_recovery_options() {
         }
         
         fn get_type_name_for_id(&mut self, _type_id: u64) -> Result<String, Error> {
-            Ok("MockType".to_string())
+            Ok("MockType".to_string()
         }
         
         fn cast_to_interface_type(
@@ -312,7 +312,7 @@ fn test_suggest_recovery_options() {
     
     impl<'ctx> InterfaceTypeAssertionPathVisualization<'ctx> for RecoveryTestGenerator<'ctx> {
         fn visualize_interface_hierarchy(&mut self, _type_name: &str, _depth: usize) -> Result<String, Error> {
-            Ok("Mock interface hierarchy visualization".to_string())
+            Ok("Mock interface hierarchy visualization".to_string()
         }
         
         fn check_extension_relationship_enhanced(&mut self, source_type: &str, target_type: &str) -> Result<bool, Error> {
@@ -328,7 +328,7 @@ fn test_suggest_recovery_options() {
         }
         
         fn detect_reversed_inheritance_enhanced(&mut self, _source_type: &str, _target_type: &str) -> Result<(bool, String), Error> {
-            Ok((self.reversed_relationship, "Reversed relationship detected".to_string()))
+            Ok((self.reversed_relationship, "Reversed relationship detected".to_string())
         }
         
         fn find_alternative_paths_enhanced(
@@ -341,7 +341,7 @@ fn test_suggest_recovery_options() {
         }
         
         fn generate_interface_hierarchy_dot_graph(&mut self) -> Result<String, Error> {
-            Ok("digraph G { A -> B; }".to_string())
+            Ok("digraph G { A -> B; }".to_string()
         }
     }
     

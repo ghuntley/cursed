@@ -1,15 +1,16 @@
+use cursed::object::Object;
+use cursed::error::Error;
+use std::sync::Arc;
+
 //! Test wrappers for stdlib functions
 //! 
 //! This file provides wrapper functions for the standard library tests
 //! to convert between raw string/number inputs and the Object-based API.
 
-use cursed::object::Object;
-use cursed::error::Error;
-use std::sync::Arc;
 
 /// Wrapper for vibez::spill
 pub fn spill(message: &str) -> Result<(), Error> {
-    let args = vec![Arc::new(Object::String(message.to_string()))];
+    let args = vec![Arc::new(Object::String(message.to_string())];
     cursed::stdlib::vibez::spill(&args).map(|_| ())
 }
 
@@ -33,7 +34,7 @@ pub fn contains(s: &str, substr: &str) -> bool {
 
 /// Wrapper for stringz::len
 pub fn len(s: &str) -> i64 {
-    let args = vec![Arc::new(Object::String(s.to_string()))];
+    let args = vec![Arc::new(Object::String(s.to_string())];
     match cursed::stdlib::stringz::len(&args) {
         Ok(obj) => {
             if let Object::Integer(i) = &*obj {
@@ -48,7 +49,7 @@ pub fn len(s: &str) -> i64 {
 
 /// Wrapper for stringz::to_upper
 pub fn to_upper(s: &str) -> String {
-    let args = vec![Arc::new(Object::String(s.to_string()))];
+    let args = vec![Arc::new(Object::String(s.to_string())];
     match cursed::stdlib::stringz::to_upper(&args) {
         Ok(obj) => {
             if let Object::String(s) = &*obj {
@@ -63,7 +64,7 @@ pub fn to_upper(s: &str) -> String {
 
 /// Wrapper for stringz::to_lower
 pub fn to_lower(s: &str) -> String {
-    let args = vec![Arc::new(Object::String(s.to_string()))];
+    let args = vec![Arc::new(Object::String(s.to_string())];
     match cursed::stdlib::stringz::to_lower(&args) {
         Ok(obj) => {
             if let Object::String(s) = &*obj {
@@ -78,7 +79,7 @@ pub fn to_lower(s: &str) -> String {
 
 /// Wrapper for htmlrizzler::escape_html
 pub fn escape_html(html: &str) -> String {
-    let args = vec![Arc::new(Object::String(html.to_string()))];
+    let args = vec![Arc::new(Object::String(html.to_string())];
     match cursed::stdlib::htmlrizzler::escape_html(&args) {
         Ok(obj) => {
             if let Object::String(s) = &*obj {
@@ -93,7 +94,7 @@ pub fn escape_html(html: &str) -> String {
 
 /// Wrapper for htmlrizzler::escape_js
 pub fn escape_js(js: &str) -> String {
-    let args = vec![Arc::new(Object::String(js.to_string()))];
+    let args = vec![Arc::new(Object::String(js.to_string())];
     match cursed::stdlib::htmlrizzler::escape_js(&args) {
         Ok(obj) => {
             if let Object::String(s) = &*obj {

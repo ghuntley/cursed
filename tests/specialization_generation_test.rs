@@ -1,5 +1,3 @@
-//! Tests for the specialization generation of generic functions
-
 use cursed::ast::expressions::Identifier;
 use cursed::ast::expressions::InfixExpression;
 use cursed::ast::statements::block::BlockStatement;
@@ -12,9 +10,12 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::core::type_checker::Type;
-use cursed::lexer::token::Token;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for the specialization generation of generic functions
+
 
 /// Test that specialization generation works correctly
 #[test]
@@ -112,73 +113,73 @@ fn test_struct_specialization() {
 fn create_generic_add_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }];
 
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
-            token: "IDENT".to_string(),
+            token: Token::Identifier("IDENT".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: "a".to_string(),
+                token: "token".to_string()),
+                value: "a".to_string()),
             },
             type_name: Box::new(Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
+                token: "token".to_string()),
+                value: "T".to_string()),
             }),
         },
         ParameterStatement {
-            token: "IDENT".to_string(),
+            token: Token::Identifier("IDENT".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: "b".to_string(),
+                token: "token".to_string()),
+                value: "b".to_string()),
             },
             type_name: Box::new(Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
+                token: "token".to_string()),
+                value: "T".to_string()),
             }),
         },
     ];
 
     // Create return type T
     let return_type = Some(Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }) as Box<dyn Expression>);
 
     // Create an infix expression for a + b
     let infix_expr = InfixExpression {
         token: Token::Plus,
         left: Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "a".to_string(),
+            token: "token".to_string()),
+            value: "a".to_string()),
         }),
-        operator: "+".to_string(),
+        operator: "+".to_string()),
         right: Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "b".to_string(),
+            token: "token".to_string()),
+            value: "b".to_string()),
         }),
     };
 
     // Create body: { return a + b; }
     let return_statement = ReturnStatement {
-        token: "return".to_string(),
+        token: "token".to_string()),
         return_value: Some(Box::new(infix_expr)),
     };
 
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![Box::new(return_statement)],
     };
 
     // Create the function statement
     FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: "add".to_string(),
+            token: "token".to_string()),
+            value: "add".to_string()),
         },
         parameters,
         body,
@@ -192,42 +193,42 @@ fn create_generic_add_function() -> FunctionStatement {
 fn create_generic_pair_struct() -> cursed::ast::SquadStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }];
 
     // Create fields first: T, second: T
     let fields = vec![
         FieldStatement {
-            token: "IDENT".to_string(),
+            token: "token".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: "first".to_string(),
+                token: "token".to_string()),
+                value: "first".to_string()),
             },
             type_name: Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
+                token: "token".to_string()),
+                value: "T".to_string()),
             },
         },
         FieldStatement {
-            token: "IDENT".to_string(),
+            token: "token".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: "second".to_string(),
+                token: "token".to_string()),
+                value: "second".to_string()),
             },
             type_name: Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
+                token: "token".to_string()),
+                value: "T".to_string()),
             },
         },
     ];
 
     // Create the struct statement
     cursed::ast::SquadStatement {
-        token: "squad".to_string(),
+        token: Token::Identifier("squad".to_string()),
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: "Pair".to_string(),
+            token: "token".to_string()),
+            value: "Pair".to_string()),
         },
         type_parameters,
         fields,

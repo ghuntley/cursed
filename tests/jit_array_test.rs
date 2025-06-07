@@ -9,6 +9,8 @@ use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use tracing::{debug, error, info, instrument, trace, warn};
+use std::ffi::CStr;
+
 
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
@@ -97,7 +99,7 @@ fn test_jit_array_basic() -> Result<(), Error> {
     
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -108,7 +110,6 @@ fn test_jit_array_basic() -> Result<(), Error> {
 
     // Define and map the 'vibez.spill' function for string printing
     extern "C" fn spill_impl(message_ptr: *const i8) {
-        use std::ffi::CStr;
         let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
         info!(message = %message, "spill function called");
     }
@@ -222,7 +223,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -233,7 +234,6 @@ fn test_jit_array_mutation() -> Result<(), Error> {
 
     // Define and map the 'vibez.spill' function for string printing
     extern "C" fn spill_impl(message_ptr: *const i8) {
-        use std::ffi::CStr;
         let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
         info!(message = %message, "spill function called");
     }
@@ -360,7 +360,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -371,7 +371,6 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
 
     // Define and map the 'vibez.spill' function for string printing
     extern "C" fn spill_impl(message_ptr: *const i8) {
-        use std::ffi::CStr;
         let message = unsafe { CStr::from_ptr(message_ptr).to_string_lossy() };
         info!(message = %message, "spill function called");
     }

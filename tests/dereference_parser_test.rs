@@ -1,10 +1,11 @@
-// Dereference parser integration test
-// Commented out as this test depends on DerefExpression which was removed
-/*
 use cursed::prelude::*;
 use cursed::lexer::*;
 use cursed::parser::*;
 use cursed::ast::{Expression, DerefExpression, StatementExtensions, Node};
+
+// Dereference parser integration test
+// Commented out as this test depends on DerefExpression which was removed
+/*
 
 #[test]
 fn test_dereference_expression_parsing() {

@@ -1,9 +1,10 @@
-//! Simple test for function monomorphization
-
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::function_monomorphization::FunctionMonomorphization;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Simple test for function monomorphization
+
 
 #[test]
 fn test_monomorphization_type_to_llvm_type() {

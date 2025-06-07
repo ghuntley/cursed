@@ -1,13 +1,14 @@
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
+use cursed::memory::gc::GarbageCollector;
+use cursed::memory::{Gc, Tag, Traceable, Visitor};
+use tracing::{debug, error, info, trace};
+use tracing_subscriber;
+
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use std::thread;
-    use std::time::Duration;
     
-    use cursed::memory::gc::GarbageCollector;
-    use cursed::memory::{Gc, Tag, Traceable, Visitor};
-    use tracing::{debug, error, info, trace};
-    use tracing_subscriber;
     
     mod tracing_setup {
         pub fn setup() {

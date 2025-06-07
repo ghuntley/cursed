@@ -2,6 +2,7 @@ use cursed::ast::*;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 
+
 #[test]
 fn test_parse_squad() {
     let input = r#"

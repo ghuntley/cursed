@@ -1,10 +1,11 @@
-// Reference parser integration test
-// Commented out as this test depends on ReferenceExpression which was removed
-/*
 use cursed::prelude::*;
 use cursed::lexer::*;
 use cursed::parser::*;
 use cursed::ast::{Expression, ReferenceExpression, StatementExtensions, Node};
+
+// Reference parser integration test
+// Commented out as this test depends on ReferenceExpression which was removed
+/*
 
 #[test]
 fn test_reference_expression_parsing() {

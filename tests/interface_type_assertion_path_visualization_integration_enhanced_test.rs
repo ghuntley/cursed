@@ -1,18 +1,19 @@
+use std::sync::Arc;
+use std::path::PathBuf;
+use inkwell::context::Context;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::error::Error;
+
 //! Integration test for enhanced interface type assertion path visualization
 //!
 //! Tests the complete integration of the enhanced path visualization system
 //! with the full compiler pipeline, ensuring proper error propagation using
 //! the `?` operator throughout the system.
 
-use std::sync::Arc;
-use std::path::PathBuf;
 
-use inkwell::context::Context;
 
-use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
-use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::EnhancedInterfaceTypeAssertionPathVisualization;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::error::Error;
 
 // Import the common test utilities
 #[path = "common.rs"]
@@ -145,7 +146,7 @@ fn test_find_alternative_paths_enhanced() {
             path.len() >= 4 &&
             path[0] == "FileWriter" &&
             path[path.len()-1] == "Reader" &&
-            path.contains(&"IOHandler".to_string())
+            path.contains(&"IOHandler".to_string()
         });
         
         assert!(found_path, "Expected to find alternative path through IOHandler");

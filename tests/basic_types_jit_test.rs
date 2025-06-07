@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::Command;
 use tracing::{debug, error, info, instrument, trace, warn};
 
+
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
@@ -15,8 +16,8 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
         .args(&["shell", "cargo", "run", "--", file_path])
         .output()?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string());
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string());
     
     let success = output.status.success();
     if !success {

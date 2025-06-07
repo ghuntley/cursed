@@ -1,8 +1,3 @@
-//! Tests for string-based switch statements in the LLVM codegen
-//!
-//! These tests verify string comparison capabilities needed for implementing
-//! switch statements with string case values in the CURSED language.
-
 use cursed::ast::{Expression, StringLiteral, Statement, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::StringUtilsExtension;
@@ -11,6 +6,12 @@ use cursed::parser::Parser;
 use std::any::Any;
 use std::path::PathBuf;
 use tracing::{debug, error, info};
+
+//! Tests for string-based switch statements in the LLVM codegen
+//!
+//! These tests verify string comparison capabilities needed for implementing
+//! switch statements with string case values in the CURSED language.
+
 
 // Import the common test utilities
 #[path = "common.rs"]
@@ -102,7 +103,7 @@ fn test_string_comparison() {
     debug!("LLVM module verified successfully");
 
     // Get the generated IR code and make sure it contains the expected function calls
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     
     let contains_strcmp = ir_code.contains("@strcmp");
     if !contains_strcmp {
@@ -152,7 +153,7 @@ fn test_string_literal_evaluation() {
 
     // Create a string literal expression
     let string_literal = TestStringLiteral {
-        value: "hello world".to_string(),
+        value: "hello world".to_string()),
     };
 
     // Evaluate the string expression
@@ -172,7 +173,7 @@ fn test_string_literal_evaluation() {
     debug!("LLVM module verified successfully");
 
     // Get the generated IR code and make sure it contains the expected string content
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     
     let contains_str = ir_code.contains("hello world");
     if !contains_str {
@@ -345,7 +346,7 @@ fn test_string_switch_compilation() {
     debug!("LLVM module verified successfully");
     
     // Get the generated IR code
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.module().print_to_string().to_string());
     
     // Verify that strcmp is used in the IR
     let has_strcmp = ir_code.contains("@strcmp");

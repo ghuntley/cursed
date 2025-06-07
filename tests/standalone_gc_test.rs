@@ -1,11 +1,12 @@
-//! Tests for the improved garbage collector implementation with proper weak reference support
-
 use std::sync::Arc;
-
 use cursed::memory::gc::{GarbageCollector, MemoryStats};
 use cursed::memory::{Gc, Tag, Traceable, Visitor, with_gc_scope};
 use tracing::{debug, error, info, trace};
 use tracing_subscriber;
+
+//! Tests for the improved garbage collector implementation with proper weak reference support
+
+
 
 mod tracing_setup {
     pub fn setup() {

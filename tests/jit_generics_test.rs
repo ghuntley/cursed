@@ -1,9 +1,4 @@
-//! Test generic function specialization with JIT execution
-
 use cursed::ast::base::Program;
-use cursed::ast::expressions::{
-    CallExpression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
-};
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
 use cursed::ast::declarations::FunctionStatement;
@@ -11,8 +6,15 @@ use cursed::ast::declarations::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::type_checker::Type;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Test generic function specialization with JIT execution
+
+use cursed::ast::expressions::{
+    CallExpression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
+};
 
 #[test]
 fn test_monomorphization_jit_execution() {
@@ -121,62 +123,62 @@ fn test_complex_generic_function() {
 fn create_generic_swap_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }];
 
     // Create parameters a: T, b: T
     let parameters = vec![
         ParameterStatement {
-            token: "IDENT".to_string(),
+            token: Token::Identifier("IDENT".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: "a".to_string(),
+                token: "token".to_string()),
+                value: "a".to_string()),
             },
             type_name: Box::new(Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
+                token: "token".to_string()),
+                value: "T".to_string()),
             }),
         },
         ParameterStatement {
-            token: "IDENT".to_string(),
+            token: Token::Identifier("IDENT".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: "b".to_string(),
+                token: "token".to_string()),
+                value: "b".to_string()),
             },
             type_name: Box::new(Identifier {
-                token: "IDENT".to_string(),
-                value: "T".to_string(),
+                token: "token".to_string()),
+                value: "T".to_string()),
             }),
         },
     ];
 
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }));
 
     // Create body: { return a; }
     let return_statement = ReturnStatement {
-        token: "return".to_string(),
+        token: "token".to_string()),
         return_value: Some(Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "a".to_string(),
+            token: "token".to_string()),
+            value: "a".to_string()),
         })),
     };
 
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![Box::new(return_statement)],
     };
 
     // Create the function statement
     FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: "swap".to_string(),
+            token: "token".to_string()),
+            value: "swap".to_string()),
         },
         parameters,
         body: body,
@@ -190,49 +192,49 @@ fn create_generic_swap_function() -> FunctionStatement {
 fn create_generic_identity_function() -> FunctionStatement {
     // Create type parameter T
     let type_parameters = vec![Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }];
 
     // Create parameter x: T
     let parameters = vec![ParameterStatement {
-        token: "IDENT".to_string(),
+        token: Token::Identifier("IDENT".to_string()),
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         },
         type_name: Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "T".to_string(),
+            token: "token".to_string()),
+            value: "T".to_string()),
         }),
     }];
 
     // Create return type T
     let return_type: Option<Box<dyn cursed::ast::traits::Expression>> = Some(Box::new(Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     }));
 
     // Create body: { return x; }
     let return_statement = ReturnStatement {
-        token: "return".to_string(),
+        token: "token".to_string()),
         return_value: Some(Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "x".to_string(),
+            token: "token".to_string()),
+            value: "x".to_string()),
         })),
     };
 
     let body = BlockStatement {
-        token: "{".to_string(),
+        token: Token::LBrace,
         statements: vec![Box::new(return_statement)],
     };
 
     // Create the function statement
     FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: "identity".to_string(),
+            token: "token".to_string()),
+            value: "identity".to_string()),
         },
         parameters,
         body: body,

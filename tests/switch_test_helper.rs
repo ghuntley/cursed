@@ -1,6 +1,8 @@
 use cursed::ast::control_flow::{CaseStatement, SwitchCase};
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::{Expression, Statement};
+use cursed::lexer::Token;
+
 
 /// Helper function to convert a CaseStatement to a SwitchCase
 pub fn convert_to_switch_case(case: CaseStatement) -> SwitchCase {
@@ -10,7 +12,7 @@ pub fn convert_to_switch_case(case: CaseStatement) -> SwitchCase {
     let value = if !case.expressions.is_empty() {
         // Use the first expression's string representation to create a new StringLiteral
         Box::new(cursed::ast::expressions::StringLiteral {
-            token: "\"string\"".to_string(),
+            token: "\"string\"".to_string()),
             value: case.expressions[0].string(),
         }) as Box<dyn Expression>
     } else {

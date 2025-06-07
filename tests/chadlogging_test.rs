@@ -3,6 +3,7 @@ use cursed::stdlib::chadlogging;
 use std::sync::Arc;
 use std::cell::RefCell;
 
+
 /// Tests for the chadlogging module
 
 // Temporarily disabled while we update the API
@@ -78,8 +79,8 @@ fn test_with_attributes() {
     let request_id_attr = record.attrs.iter().find(|attr| attr.key == "request_id").unwrap();
     let path_attr = record.attrs.iter().find(|attr| attr.key == "path").unwrap();
     
-    assert_eq!(request_id_attr.value, Object::String("req-123456".to_string()));
-    assert_eq!(path_attr.value, Object::String("/api/users".to_string()));
+    assert_eq!(request_id_attr.value, Object::String("req-123456".to_string());
+    assert_eq!(path_attr.value, Object::String("/api/users".to_string());
 }
 
 #[test]
@@ -122,15 +123,15 @@ fn test_groups() {
     match &group_attr.value {
         Object::HashTable(group_map) if group_map.contains_key("__type") => {
             // Check that it's an attrs type
-            assert_eq!(group_map["__type"], Object::String("attrs".to_string()));
+            assert_eq!(group_map["__type"], Object::String("attrs".to_string());
             
             // For our simplified implementation, we just check that the key values exist
             assert!(group_map.contains_key("method"));
             assert!(group_map.contains_key("path"));
             assert!(group_map.contains_key("status"));
             
-            assert_eq!(group_map["method"], Object::String("GET".to_string()));
-            assert_eq!(group_map["path"], Object::String("/api/users".to_string()));
+            assert_eq!(group_map["method"], Object::String("GET".to_string());
+            assert_eq!(group_map["path"], Object::String("/api/users".to_string());
             assert_eq!(group_map["status"], Object::Integer(200));
         },
         _ => panic!("Expected group to be represented as a special HashTable")

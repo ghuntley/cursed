@@ -1,17 +1,18 @@
+use std::cell::RefCell;
+use std::sync::Arc;
+use inkwell::context::Context;
+use inkwell::values::BasicValueEnum;
+use tracing::debug;
+use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::traits::{Expression, Node};
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::TypeAssertionResultIntegration;
+use cursed::error::Error;
+use cursed::lexer::Token;
+
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-    use std::sync::Arc;
-    use std::sync::Arc;
-    use inkwell::context::Context;
-    use inkwell::values::BasicValueEnum;
-    use tracing::debug;
 
-    use cursed::ast::expressions::TypeAssertion;
-    use cursed::ast::traits::{Expression, Node};
-    use cursed::codegen::llvm::LlvmCodeGenerator;
-    use cursed::codegen::llvm::TypeAssertionResultIntegration;
-    use cursed::error::Error;
 
     // Common test setup
     struct TestSetup<'ctx> {
@@ -138,7 +139,7 @@ mod tests {
     fn test_result_propagation_concept() {
         // This is a simplified conceptual test that shows Result propagation works
         fn inner_operation() -> Result<i32, Error> {
-            Err(Error::Compilation("Inner error".to_string()))
+            Err(Error::Compilation("Inner error".to_string())
         }
 
         fn middle_operation() -> Result<i32, Error> {

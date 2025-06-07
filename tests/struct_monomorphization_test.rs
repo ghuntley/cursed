@@ -1,20 +1,22 @@
-//! Test for struct monomorphization
-//! 
-//! These tests verify that generic struct specialization works correctly.
-
 use cursed::ast::declarations::{SquadStatement, GenericConstraint};
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::fields::FieldStatement;
 use cursed::codegen::llvm::{LlvmCodeGenerator, StructMonomorphization};
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
+use cursed::lexer::Token;
 use inkwell::context::Context;
+use common::tracing as test_tracing;
+use common::timing::Timer;
+
+//! Test for struct monomorphization
+//! 
+//! These tests verify that generic struct specialization works correctly.
+
 
 mod common;
 
 // Initialize tracing for tests
-use common::tracing as test_tracing;
-use common::timing::Timer;
 
 // Macro to initialize tracing for tests
 macro_rules! init_tracing {
@@ -28,31 +30,31 @@ fn create_generic_squad_statement(name: &str, type_params: Vec<&str>, fields: Ve
     let type_parameters = type_params
         .iter()
         .map(|p| Identifier {
-            token: "IDENT".to_string(),
-            value: p.to_string(),
+            token: "token".to_string()),
+            value: p.to_string()),
         })
         .collect();
 
     let field_statements = fields
         .iter()
         .map(|(field_name, field_type)| FieldStatement {
-            token: "IDENT".to_string(),
+            token: "token".to_string()),
             name: Identifier {
-                token: "IDENT".to_string(),
-                value: field_name.to_string(),
+                token: "token".to_string()),
+                value: field_name.to_string()),
             },
             type_name: Identifier {
-                token: "IDENT".to_string(),
-                value: field_type.to_string(),
+                token: "token".to_string()),
+                value: field_type.to_string()),
             },
         })
         .collect();
 
     SquadStatement {
-        token: "be_like".to_string(),
+        token: Token::BeLike,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: name.to_string(),
+            token: "token".to_string()),
+            value: name.to_string()),
         },
         type_parameters,
         fields: field_statements,

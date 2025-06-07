@@ -5,6 +5,7 @@ use cursed::object::Object;
 use std::sync::Arc;
 use std::cell::RefCell;
 
+
 /// Tests for the enhanced features of the quick_test module
 
 #[test]
@@ -117,8 +118,8 @@ fn test_combine_generators() {
             
             // For testing purposes, we'll just return the components
             let mut map = std::collections::HashMap::new();
-            map.insert("name".to_string(), Object::String(person.name));
-            map.insert("age".to_string(), Object::Integer(person.age));
+            map.insert("name".to_string()), Object::String(person.name));
+            map.insert("age".to_string()), Object::Integer(person.age));
             Object::HashTable(map)
         })
     );

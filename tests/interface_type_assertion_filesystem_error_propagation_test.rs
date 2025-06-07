@@ -1,18 +1,20 @@
+use std::sync::Arc;
+use std::path::PathBuf;
+use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::traits::Node;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::error::SourceLocation;
+use cursed::error::Error;
+use cursed::lexer::Token;
+
 //! Integration test for interface type assertion error propagation with filesystem integration
 //!
 //! This test verifies that the enhanced error propagation system properly uses
 //! filesystem source location tracking to provide detailed error messages with
 //! source code context when interface type assertions with the ? operator fail.
 
-use std::sync::Arc;
-use std::path::PathBuf;
 
 // Import the necessary modules and traits
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
-use cursed::ast::traits::Node;
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::error::SourceLocation;
-use cursed::error::Error;
 
 // Import common test utilities
 #[path = "common.rs"]
@@ -34,9 +36,9 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: "test.csd:10:15".to_string(),
-        expression: Box::new(MockExpression { token: "someInterface".to_string() }),
-        type_name: "ExpectedType".to_string(),
+        token: Token::Identifier("test.csd:10:15".to_string()),
+        expression: Box::new(MockExpression { token: "token".to_string() }),
+        type_name: "ExpectedType".to_string()),
     };
     
     // Test basic source location creation
@@ -108,9 +110,9 @@ fn test_interface_filesystem_error_propagation_integration() {
     
     // Create a mock AST node for testing
     let type_assertion = TypeAssertionQuestion {
-        token: "interface_type_assertion_question_op.csd:98:20".to_string(),
-        expression: Box::new(MockExpression { token: "shape".to_string() }),
-        type_name: "Circle".to_string(),
+        token: Token::Identifier("interface_type_assertion_question_op.csd:98:20".to_string()),
+        expression: Box::new(MockExpression { token: "token".to_string() }),
+        type_name: "Circle".to_string()),
     };
     
     // Test basic source location creation with specific file

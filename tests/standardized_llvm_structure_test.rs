@@ -1,19 +1,12 @@
-//! Integration test for the standardized LLVM code generator structure
-//!
-//! This test verifies that the standardized LLVM code generator structure works
-//! correctly, with a particular focus on the pointer operations implementation.
-
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use std::sync::Arc;
-
 use cursed::ast::expressions::{IntegerLiteral, FloatLiteral, Identifier};
 use cursed::ast::pointer::{PointerType, PointerDereference};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::VariableHandling;
 use cursed::codegen::llvm::ExpressionCompilation;
-
 use cursed::lexer::TokenType;
 use cursed::ast::Program;
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -21,6 +14,15 @@ use cursed::codegen::llvm::PointerOperations;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
+use cursed::lexer::Token;
+
+//! Integration test for the standardized LLVM code generator structure
+//!
+//! This test verifies that the standardized LLVM code generator structure works
+//! correctly, with a particular focus on the pointer operations implementation.
+
+
+
 
 #[test]
 fn test_standardized_structure() -> Result<(), Error> {
@@ -70,8 +72,8 @@ fn test_standardized_structure() -> Result<(), Error> {
     
     // Test the get_address_of method
     let var1_ident = Rc::new(Identifier {
-        token: "var1".to_string(),
-        value: "var1".to_string(),
+        token: "token".to_string()),
+        value: "var1".to_string()),
     });
     
     let ptr1 = code_gen.get_address_of(&*var1_ident)?;
@@ -97,7 +99,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     // Test compilation of pointer operations using AST nodes
     // Instead of using Rc<PointerType>, create a PointerType directly
     let ptr_type = PointerType {
-        token: "@".to_string(),
+        token: "token".to_string()),
         // Unbox the Rc<Identifier> to create a new Identifier
         target_type: Box::new(Identifier {
             token: var1_ident.token.clone(),
@@ -111,7 +113,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     // Testing the full standardized implementation through the mod.rs exports
     // Create a new pointer type since we don't have Clone
     let ptr_type2 = PointerType {
-        token: "@".to_string(),
+        token: "token".to_string()),
         target_type: Box::new(Identifier {
             token: var1_ident.token.clone(),
             value: var1_ident.value.clone(),
@@ -119,7 +121,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     };
     
     let deref_expr = PointerDereference {
-        token: "*".to_string(),
+        token: "token".to_string()),
         pointer: Box::new(ptr_type2),
     };
     

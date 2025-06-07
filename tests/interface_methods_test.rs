@@ -1,5 +1,3 @@
-//! Test for interface methods implementation in the LLVM code generator
-
 use std::path::PathBuf;
 use cursed::ast::*;
 use cursed::lexer::Lexer;
@@ -8,6 +6,9 @@ use cursed::core::type_checker::TypeChecker;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use inkwell::context::Context;
+
+//! Test for interface methods implementation in the LLVM code generator
+
 
 #[test]
 fn test_basic_interface_methods() -> Result<(), Error> {

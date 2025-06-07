@@ -1,5 +1,3 @@
-//! Tests for the interface registry cache implementation
-
 use cursed::core::interface_registry::InterfaceRegistry;
 use cursed::core::interface_registry_cache::{InterfaceImplementationCache, ThreadSafeInterfaceCache};
 use cursed::core::type_checker::Type;
@@ -7,11 +5,14 @@ use cursed::core::type_checker_interface_registry::{CachedInterfaceRegistry, Cac
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
+use crate::common;
+
+//! Tests for the interface registry cache implementation
+
 
 #[path = "common.rs"]
 mod common;
 
-use crate::common;
 
 #[test]
 fn test_cached_registry_performance() {
@@ -29,9 +30,9 @@ fn test_cached_registry_performance() {
         Type::Normie,
         Type::Tea,
         Type::Lit,
-        Type::Struct("Point".to_string(), vec![]),
-        Type::Struct("IntList".to_string(), vec![]),
-        Type::Struct("StringStack".to_string(), vec![]),
+        Type::Struct("Point".to_string()), vec![]),
+        Type::Struct("IntList".to_string()), vec![]),
+        Type::Struct("StringStack".to_string()), vec![]),
     ];
     
     let interfaces = vec!["Numeric", "Comparable", "Container", "List"];
@@ -95,7 +96,7 @@ fn test_thread_safe_cached_registry() {
             let types = vec![
                 Type::Normie,
                 Type::Tea,
-                Type::Struct("Point".to_string(), vec![]),
+                Type::Struct("Point".to_string()), vec![]),
             ];
             
             // Interfaces to check
@@ -149,7 +150,7 @@ fn test_complex_type_caching() {
     
     // Create a complex generic type
     let generic_stack_tea = Type::Struct(
-        "GenericStack".to_string(),
+        "GenericStack".to_string()),
         vec![Box::new(Type::Tea)]
     );
     
@@ -161,7 +162,7 @@ fn test_complex_type_caching() {
     
     // Different type argument should be a miss
     let generic_stack_int = Type::Struct(
-        "GenericStack".to_string(),
+        "GenericStack".to_string()),
         vec![Box::new(Type::Normie)]
     );
     let _ = cached_registry.check_implementation_cached(&generic_stack_int, "Container");

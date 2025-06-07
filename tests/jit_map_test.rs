@@ -9,6 +9,7 @@ use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use tracing::{debug, error, info, instrument, span, Level};
 
+
 // Import common test utilities for setting up tracing
 #[path = "tracing_setup.rs"]
 mod tracing_setup;
@@ -51,7 +52,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
 
     // Log the generated LLVM IR for debugging
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -141,7 +142,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 
     // Log the generated LLVM IR for debugging at debug level
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine
@@ -230,7 +231,7 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
 
     // Log the generated LLVM IR for debugging at debug level
     debug!("--- Generated LLVM IR ---");
-    debug!(ir = %code_gen.module().print_to_string().to_string(), "Generated LLVM IR");
+    debug!(ir = %code_gen.module().print_to_string().to_string()), "Generated LLVM IR");
     debug!("-------------------------");
 
     // Create JIT execution engine

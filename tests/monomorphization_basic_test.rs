@@ -1,13 +1,15 @@
-//! Basic test for function monomorphization
-
 use cursed::ast::FunctionStatement;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::function_monomorphization::FunctionMonomorphization;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Basic test for function monomorphization
+
 
 #[test]
 fn test_function_monomorphization_basic() {
@@ -17,24 +19,24 @@ fn test_function_monomorphization_basic() {
 
     // Create a generic function AST
     let type_param = Identifier {
-        token: "IDENT".to_string(),
-        value: "T".to_string(),
+        token: "token".to_string()),
+        value: "T".to_string()),
     };
 
     let function = FunctionStatement {
-        token: "function".to_string(),
+        token: Token::Slay,
         name: Identifier {
-            token: "IDENT".to_string(),
-            value: "identity".to_string(),
+            token: "token".to_string()),
+            value: "identity".to_string()),
         },
         parameters: vec![],
         body: BlockStatement {
-            token: "{".to_string(),
+            token: Token::LBrace,
             statements: vec![],
         },
         return_type: Some(Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "T".to_string(),
+            token: "token".to_string()),
+            value: "T".to_string()),
         })),
         type_parameters: vec![type_param],
         generic_constraints: vec![],

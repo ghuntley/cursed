@@ -1,5 +1,3 @@
-//! Basic test for LLVM control flow support
-
 use cursed::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use cursed::ast::expressions::literals::{BooleanLiteral, IntegerLiteral};
 use cursed::ast::statements::BlockStatement;
@@ -8,8 +6,12 @@ use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ContainerLayoutExtension;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Basic test for LLVM control flow support
+
 
 #[test]
 fn test_if_statement_compilation() {
@@ -30,16 +32,16 @@ fn test_if_statement_compilation() {
 
     // Create condition: true
     let condition = BooleanLiteral {
-        token: "based".to_string(),
+        token: "token".to_string()),
         value: true,
     };
 
     // Create the if statement
     let if_stmt = IfStatement {
-        token: "lowkey".to_string(),
+        token: Token::Lowkey,
         condition: Box::new(condition),
         consequence: Box::new(BlockStatement {
-            token: Token::LBrace,
+            token: "token".to_string()),
             statements: Vec::new(),
         }),
         alternative: None,
@@ -78,16 +80,16 @@ fn test_while_statement_compilation() {
 
     // Create condition: true
     let condition = BooleanLiteral {
-        token: "based".to_string(),
+        token: "token".to_string()),
         value: true,
     };
 
     // Create the while statement
     let while_stmt = WhileStatement {
-        token: "periodt".to_string(),
+        token: Token::Periodt,
         condition: Box::new(condition),
         body: Box::new(BlockStatement {
-            token: Token::LBrace,
+            token: "token".to_string()),
             statements: Vec::new(),
         }),
     };

@@ -1,5 +1,3 @@
-//! Tests for property access (field access) in the LLVM code generator
-
 use cursed::ast::expressions::dot_expression::DotExpression;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::traits::Expression;
@@ -9,8 +7,12 @@ use cursed::codegen::llvm::PropertyAccessCompilation;
 use cursed::codegen::llvm::VariableHandling;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
+use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::path::PathBuf;
+
+//! Tests for property access (field access) in the LLVM code generator
+
 
 #[test]
 fn test_property_access() {
@@ -45,14 +47,14 @@ fn test_property_access() {
     
     // Create expression to access test_obj.value
     let object_ident = Identifier {
-        token: Token::new(TokenType::Identifier, "test_obj"),
-        value: "test_obj".to_string(),
+        token: "token".to_string()),
+        value: "test_obj".to_string()),
     };
     
     let dot_expr = DotExpression {
-        token: ".".to_string(),
+        token: "token".to_string()),
         object: Box::new(object_ident),
-        property: "value".to_string(),
+        property: "value".to_string()),
     };
     
     // Test the property access

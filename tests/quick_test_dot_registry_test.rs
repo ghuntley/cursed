@@ -1,8 +1,9 @@
-//! Test for the quick_test dot registry integration
-
 use cursed::stdlib::dot_registry::{is_supported, execute_generic_dot};
 use cursed::stdlib::quick_test;
 use serde_json::json;
+
+//! Test for the quick_test dot registry integration
+
 
 #[test]
 fn test_quick_test_registry() {

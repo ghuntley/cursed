@@ -1,8 +1,9 @@
-//! Test for integration between finalization ordering and object storage
-
 use cursed::memory::{Traceable, Tag, Visitor, register_dependency};
 use cursed::memory::{global_object_storage, finalize_objects_ordered};
 use std::sync::{Arc, Mutex};
+
+//! Test for integration between finalization ordering and object storage
+
 
 // Create a test-specific traceable type with finalization tracking
 struct DependentObject {

@@ -1,6 +1,7 @@
 use cursed::stdlib::dot_registry::{DOT_REGISTRY, execute_method, is_method_supported};
 use serde_json::{json, Value};
 
+
 #[test]
 fn test_vector2d_length() {
     // Initialize Vector2D methods
@@ -13,7 +14,7 @@ fn test_vector2d_length() {
     assert!(is_method_supported("Vector2D", "length"));
     
     // Call the length method
-    let result = execute_method("Vector2D", "length", vector.to_string(), vec![]);
+    let result = execute_method("Vector2D", "length", vector.to_string()), vec![]);
     
     // Check the result
     assert!(result.is_ok());
@@ -34,7 +35,7 @@ fn test_vector2d_add() {
     assert!(is_method_supported("Vector2D", "add"));
     
     // Call the add method with arguments
-    let result = execute_method("Vector2D", "add", vector.to_string(), vec!["2".to_string(), "3".to_string()]);
+    let result = execute_method("Vector2D", "add", vector.to_string()), vec!["2".to_string()), "3".to_string())]);
     
     // Check the result
     assert!(result.is_ok());
@@ -60,7 +61,7 @@ fn test_vector2d_to_string() {
     assert!(is_method_supported("Vector2D", "toString"));
     
     // Call the toString method
-    let result = execute_method("Vector2D", "toString", vector.to_string(), vec![]);
+    let result = execute_method("Vector2D", "toString", vector.to_string()), vec![]);
     
     // Check the result
     assert!(result.is_ok());

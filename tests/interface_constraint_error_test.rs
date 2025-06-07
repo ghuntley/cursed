@@ -1,9 +1,16 @@
+use std::sync::Once;
+use cursed::core::{JitOptions, InterpretOptions};
+use cursed::lexer::Lexer;
+use cursed::parser::Parser;
+use cursed::object::{Object, ObjectRef};
+use cursed::error_enhanced::CursedError;
+use cursed::error_enhanced::ErrorKind;
+
 //! Tests for detailed constraint error messages
 //!
 //! This module tests the enhanced error messages generated
 //! when type constraints are not satisfied.
 
-use std::sync::Once;
 
 // Init tracing once
 static INIT: Once = Once::new();
@@ -21,12 +28,6 @@ macro_rules! init_tracing {
 }
 
 // Import required test utilities
-use cursed::core::{JitOptions, InterpretOptions};
-use cursed::lexer::Lexer;
-use cursed::parser::Parser;
-use cursed::object::{Object, ObjectRef};
-use cursed::error_enhanced::CursedError;
-use cursed::error_enhanced::ErrorKind;
 
 // Helper function to test if code produces a constraint error
 // Returns Some(error) if a constraint error occurred, None otherwise
@@ -96,7 +97,7 @@ fn test_constraint_error_message_contains_missing_methods() {
         assert_eq!(error.kind(), &ErrorKind::Type);
         
         // Verify it contains detailed information
-        let error_msg = error.to_string();
+        let error_msg = error.to_string());
         assert!(error_msg.contains("does not satisfy interface constraint"), 
                 "Error message should mention constraint: {}", error_msg);
         
@@ -157,7 +158,7 @@ fn test_direct_interface_implementation_error() {
                 "Error should be a type error, got: {:?}", error.kind());
         
         // Verify it contains detailed information
-        let error_msg = error.to_string();
+        let error_msg = error.to_string());
         assert!(error_msg.contains("does not implement"), 
                 "Error message should mention implementation issue: {}", error_msg);
         

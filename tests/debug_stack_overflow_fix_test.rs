@@ -1,5 +1,6 @@
 use cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry;
 
+
 #[test]
 fn test_debug_no_stack_overflow() {
     // Create a registry

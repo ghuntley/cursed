@@ -1,8 +1,9 @@
-//! Simplified test for finalization ordering functionality
-
 use cursed::memory::{Traceable, Tag, Visitor, register_dependency};
 use cursed::memory::finalization_order::{FinalizationGraph, finalize_objects_ordered};
 use std::collections::HashSet;
+
+//! Simplified test for finalization ordering functionality
+
 
 // Very simple test that doesn't rely on the GC
 #[test]

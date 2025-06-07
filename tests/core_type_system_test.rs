@@ -1,10 +1,12 @@
+use cursed::core::generic_instantiation::{GenericInstantiator, GenericTypeChecker};
+use cursed::core::type_checker::Type;
+use cursed::error::Error;
+use cursed::ast::{Expression, Node};
+use cursed::ast::expressions::{Identifier, StringLiteral};
+use cursed::lexer::Token;
+
 #[cfg(test)]
 mod core_type_system_tests {
-    use cursed::core::generic_instantiation::{GenericInstantiator, GenericTypeChecker};
-    use cursed::core::type_checker::Type;
-    use cursed::error::Error;
-    use cursed::ast::{Expression, Node};
-    use cursed::ast::expressions::{Identifier, StringLiteral};
 
     // Helper struct to implement the GenericTypeChecker trait for testing
     struct TestTypeChecker;
@@ -50,13 +52,13 @@ mod core_type_system_tests {
         
         // Create test expressions
         let ident = Box::new(Identifier {
-            token: "IDENT".to_string(),
-            value: "normie".to_string(),
+            token: "token".to_string()),
+            value: "normie".to_string()),
         }) as Box<dyn Expression>;
         
         let string_literal = Box::new(StringLiteral {
-            token: "STRING".to_string(),
-            value: "tea".to_string(),
+            token: "token".to_string()),
+            value: "tea".to_string()),
         }) as Box<dyn Expression>;
         
         // Test the implementation that was a placeholder

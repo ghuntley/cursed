@@ -1,18 +1,19 @@
+use std::collections::HashMap;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization::*;
+use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
+use cursed::error::Error;
+use common::setup_test_environment;
+
 //! Tests for the interface type assertion path visualization
 //!
 //! This module tests the standalone functionality of the path visualization system
 //! for interface type assertions, verifying that it correctly analyzes and visualizes
 //! type relationships for error reporting and debugging.
 
-use std::collections::HashMap;
 
-use cursed::codegen::llvm::interface_type_assertion_path_visualization::*;
-use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
-use cursed::error::Error;
 
 // Import common test utilities
 mod common;
-use common::setup_test_environment;
 
 // Test-specific mocks and utilities
 struct MockInterfaceRegistry {
@@ -36,13 +37,13 @@ impl MockInterfaceRegistry {
     fn register_implementation(&mut self, type_name: &str, interface_name: &str) {
         // Register that type implements interface
         self.implementations
-            .entry(type_name.to_string())
+            .entry(type_name.to_string()
             .or_insert_with(Vec::new)
             .push(interface_name.to_string());
         
         // Register that interface is implemented by type
         self.implementors
-            .entry(interface_name.to_string())
+            .entry(interface_name.to_string()
             .or_insert_with(Vec::new)
             .push(type_name.to_string());
     }
@@ -167,7 +168,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
         let source_interfaces = self.registry.get_implemented_interfaces(source_type)
             .map_err(|e| Error::Compilation(format!("Failed to get interfaces: {}", e)))?;
         
-        if source_interfaces.contains(&target_type.to_string()) {
+        if source_interfaces.contains(&target_type.to_string() {
             paths.push(format!("{} -> {}", source_type, target_type));
         }
         
@@ -197,7 +198,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
         let interfaces = self.registry.get_implemented_interfaces(source_type)
             .map_err(|e| Error::Compilation(format!("Failed to get interfaces: {}", e)))?;
         
-        Ok(interfaces.contains(&target_type.to_string()))
+        Ok(interfaces.contains(&target_type.to_string())
     }
     
     fn find_shortest_path(
@@ -207,14 +208,14 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
     ) -> Result<Option<Vec<String>>, Error> {
         // Simple implementation for testing
         if source_type == target_type {
-            return Ok(Some(vec![source_type.to_string()]));
+            return Ok(Some(vec![source_type.to_string())]));
         }
         
         let interfaces = self.registry.get_implemented_interfaces(source_type)
             .map_err(|e| Error::Compilation(format!("Failed to get interfaces: {}", e)))?;
         
-        if interfaces.contains(&target_type.to_string()) {
-            return Ok(Some(vec![source_type.to_string(), target_type.to_string()]));
+        if interfaces.contains(&target_type.to_string() {
+            return Ok(Some(vec![source_type.to_string()), target_type.to_string())]));
         }
         
         Ok(None)
@@ -265,7 +266,7 @@ impl InterfaceTypeAssertionPathVisualization for MockGenerator {
         _value: inkwell::values::BasicValueEnum<'_>
     ) -> Result<inkwell::values::BasicValueEnum<'_>, Error> {
         // Mock implementation
-        Err(Error::Compilation("Not implemented in mock".to_string()))
+        Err(Error::Compilation("Not implemented in mock".to_string())
     }
 }
 
@@ -326,10 +327,10 @@ fn test_get_implementors() {
     let animal_implementors = generator.get_implementors("Animal").unwrap();
     println!("Animal implementors: {:?}", animal_implementors);
     
-    assert!(animal_implementors.contains(&"Dog".to_string()));
-    assert!(animal_implementors.contains(&"Cat".to_string()));
-    assert!(animal_implementors.contains(&"Bird".to_string()));
-    assert!(!animal_implementors.contains(&"Car".to_string()));
+    assert!(animal_implementors.contains(&"Dog".to_string());
+    assert!(animal_implementors.contains(&"Cat".to_string());
+    assert!(animal_implementors.contains(&"Bird".to_string());
+    assert!(!animal_implementors.contains(&"Car".to_string());
 }
 
 #[test]

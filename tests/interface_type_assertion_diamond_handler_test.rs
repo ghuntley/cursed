@@ -1,22 +1,23 @@
+use std::collections::HashMap;
+use common::tracing::init_tracing;
+use common::timing::Timer;
+use inkwell::context::Context;
+use tracing::{debug, info};
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::DiamondInheritanceHandler;
+use cursed::codegen::llvm::interface_registry::{InterfaceTypeRegistry, InterfaceImplementation};
+use cursed::codegen::llvm::InterfaceTypeRegistryExtensionCheckingAccess;
+
 //! Integration test for the DiamondInheritanceHandler implementation
 //!
 //! This test verifies that the diamond inheritance pattern handler can correctly
 //! detect, visualize, and report diamond inheritance patterns in interface type assertions.
 
-use std::collections::HashMap;
 
 #[path = "common.rs"]
 mod common;
-use common::tracing::init_tracing;
-use common::timing::Timer;
 
-use inkwell::context::Context;
-use tracing::{debug, info};
 
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::DiamondInheritanceHandler;
-use cursed::codegen::llvm::interface_registry::{InterfaceTypeRegistry, InterfaceImplementation};
-use cursed::codegen::llvm::InterfaceTypeRegistryExtensionCheckingAccess;
 
 /// Test registry setup helper that creates a diamond inheritance pattern
 fn setup_test_registry() -> InterfaceTypeRegistry<'static> {
@@ -68,7 +69,7 @@ fn test_diamond_inheritance_handler_detection() {
     // Set up the registry
     let registry = setup_test_registry();
     code_gen.internal_fields.insert(
-        "interface_registry".to_string(),
+        "interface_registry".to_string()),
         Box::new(registry)
     );
     

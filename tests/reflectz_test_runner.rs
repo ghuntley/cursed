@@ -2,6 +2,7 @@ use cursed::stdlib::reflectz;
 use cursed::object::Object;
 use std::sync::Arc;
 
+
 #[test]
 fn test_reflectz_type_of() {
     // Test basic type_of functionality
@@ -27,14 +28,14 @@ fn test_reflectz_type_of() {
 fn test_reflectz_get_field() {
     // Create a struct object with fields
     let person = Arc::new(Object::Struct {
-        name: "Person".to_string(),
+        name: "Person".to_string()),
         fields: vec![
-            ("name".to_string(), "John".to_string()),
-            ("age".to_string(), "30".to_string()),
+            ("name".to_string()), "John".to_string()),
+            ("age".to_string()), "30".to_string()),
         ],
     });
     
-    let field_name = Arc::new(Object::String("name".to_string()));
+    let field_name = Arc::new(Object::String("name".to_string());
     let result = reflectz::get_field(&[person.clone(), field_name]).unwrap();
     
     match &*result {
@@ -43,7 +44,7 @@ fn test_reflectz_get_field() {
     }
     
     // Try getting an integer field which is stored as a string but should be converted
-    let age_field = Arc::new(Object::String("age".to_string()));
+    let age_field = Arc::new(Object::String("age".to_string());
     let result = reflectz::get_field(&[person, age_field]).unwrap();
     
     match &*result {
@@ -56,16 +57,16 @@ fn test_reflectz_get_field() {
 fn test_reflectz_set_field() {
     // Create a struct object
     let person = Arc::new(Object::Struct {
-        name: "Person".to_string(),
+        name: "Person".to_string()),
         fields: vec![
-            ("name".to_string(), "John".to_string()),
-            ("age".to_string(), "30".to_string()),
+            ("name".to_string()), "John".to_string()),
+            ("age".to_string()), "30".to_string()),
         ],
     });
     
     // Set a field (note: this doesn't actually modify the original due to immutability)
-    let field_name = Arc::new(Object::String("name".to_string()));
-    let new_value = Arc::new(Object::String("Jane".to_string()));
+    let field_name = Arc::new(Object::String("name".to_string());
+    let new_value = Arc::new(Object::String("Jane".to_string());
     
     // This test is simplified since we can't actually modify the struct
     let _ = reflectz::set_field(&[person, field_name, new_value]).unwrap();

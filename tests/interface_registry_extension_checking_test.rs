@@ -1,17 +1,18 @@
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
+use cursed::codegen::llvm::InterfaceTypeRegistryAccess;
+use cursed::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
+use cursed::error::Error;
+use inkwell::context::Context;
+use std::collections::{HashMap, HashSet};
+
 //! # Interface Registry Extension Checking Tests
 //!
 //! This module tests the comprehensive implementation of the InterfaceTypeRegistryExtensionChecking
 //! trait for reliable inheritance verification in interface type assertions with proper
 //! integration with the interface path finder for enhanced error diagnostics.
 
-use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::llvm::interface_path_finder_enhanced::InterfaceTypeRegistryExtensionChecking;
-use cursed::codegen::llvm::InterfaceTypeRegistryAccess;
-use cursed::codegen::llvm::interface_registry_integration::InterfaceRegistryIntegration;
-use cursed::error::Error;
 
-use inkwell::context::Context;
-use std::collections::{HashMap, HashSet};
 
 mod common;
 
@@ -69,11 +70,11 @@ fn test_partial_extension_relationships() {
     let mut test_inheritance_map = HashMap::new();
     let mut animal_extensions = HashSet::new();
     animal_extensions.insert("Mammal".to_string());
-    test_inheritance_map.insert("Animal".to_string(), animal_extensions);
+    test_inheritance_map.insert("Animal".to_string()), animal_extensions);
     
     let mut mammal_extensions = HashSet::new();
     mammal_extensions.insert("Dog".to_string());
-    test_inheritance_map.insert("Mammal".to_string(), mammal_extensions);
+    test_inheritance_map.insert("Mammal".to_string()), mammal_extensions);
     
     // codegen.test_inheritance_map = Some(test_inheritance_map);
     
@@ -114,32 +115,32 @@ fn test_multi_level_inheritance_hierarchies() {
     vehicle_extensions.insert("LandVehicle".to_string());
     vehicle_extensions.insert("WaterVehicle".to_string());
     vehicle_extensions.insert("AirVehicle".to_string());
-    test_inheritance_map.insert("Vehicle".to_string(), vehicle_extensions);
+    test_inheritance_map.insert("Vehicle".to_string()), vehicle_extensions);
     
     // LandVehicle extends to Car
     let mut land_vehicle_extensions = HashSet::new();
     land_vehicle_extensions.insert("Car".to_string());
-    test_inheritance_map.insert("LandVehicle".to_string(), land_vehicle_extensions);
+    test_inheritance_map.insert("LandVehicle".to_string()), land_vehicle_extensions);
     
     // WaterVehicle extends to Boat
     let mut water_vehicle_extensions = HashSet::new();
     water_vehicle_extensions.insert("Boat".to_string());
-    test_inheritance_map.insert("WaterVehicle".to_string(), water_vehicle_extensions);
+    test_inheritance_map.insert("WaterVehicle".to_string()), water_vehicle_extensions);
     
     // AirVehicle extends to Plane
     let mut air_vehicle_extensions = HashSet::new();
     air_vehicle_extensions.insert("Plane".to_string());
-    test_inheritance_map.insert("AirVehicle".to_string(), air_vehicle_extensions);
+    test_inheritance_map.insert("AirVehicle".to_string()), air_vehicle_extensions);
     
     // Car extends to SportsCar
     let mut car_extensions = HashSet::new();
     car_extensions.insert("SportsCar".to_string());
-    test_inheritance_map.insert("Car".to_string(), car_extensions);
+    test_inheritance_map.insert("Car".to_string()), car_extensions);
     
     // Plane extends to Jet
     let mut plane_extensions = HashSet::new();
     plane_extensions.insert("Jet".to_string());
-    test_inheritance_map.insert("Plane".to_string(), plane_extensions);
+    test_inheritance_map.insert("Plane".to_string()), plane_extensions);
     
     // Set the test inheritance map
     // codegen.test_inheritance_map = Some(test_inheritance_map);
@@ -167,17 +168,17 @@ fn setup_test_inheritance_relationships(codegen: &mut LlvmCodeGenerator) {
     let mut reader_extensions = HashSet::new();
     reader_extensions.insert("FileReader".to_string());
     reader_extensions.insert("NetworkReader".to_string());
-    test_inheritance_map.insert("Reader".to_string(), reader_extensions);
+    test_inheritance_map.insert("Reader".to_string()), reader_extensions);
     
     // Set up JSONFileReader extends FileReader
     let mut filereader_extensions = HashSet::new();
     filereader_extensions.insert("JSONFileReader".to_string());
-    test_inheritance_map.insert("FileReader".to_string(), filereader_extensions);
+    test_inheritance_map.insert("FileReader".to_string()), filereader_extensions);
     
     // Set up JSONSerializable extends Serializable
     let mut serializable_extensions = HashSet::new();
     serializable_extensions.insert("JSONSerializable".to_string());
-    test_inheritance_map.insert("Serializable".to_string(), serializable_extensions);
+    test_inheritance_map.insert("Serializable".to_string()), serializable_extensions);
     
     // Store this in the code generator for testing
     // codegen.test_inheritance_map = Some(test_inheritance_map);

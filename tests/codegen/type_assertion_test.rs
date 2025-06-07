@@ -1,26 +1,28 @@
-//! Tests for the interface type assertion feature
-
 use cursed::ast::expressions::TypeAssertion;
 use cursed::ast::expressions::Identifier;
 use cursed::ast::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::type_assertion::InterfaceTypeAssertion;
 use cursed::error::Error;
+use cursed::lexer::Token;
 use std::cell::RefCell;
 use std::sync::Arc;
+
+//! Tests for the interface type assertion feature
+
 
 #[test]
 fn test_compile_type_assertion() {
     // Create a simple mock type assertion: myInterface.(ConcreteType)
     let interface_value = Identifier {
-        token: "test".to_string(),
-        value: "myInterface".to_string(),
+        token: "token".to_string()),
+        value: "myInterface".to_string()),
     };
     
     let assertion = TypeAssertion {
-        token: ".".to_string(),
+        token: "token".to_string()),
         expression: Box::new(interface_value),
-        type_name: "ConcreteType".to_string(),
+        type_name: "ConcreteType".to_string()),
     };
     
     // In a real test, you would use a more complete test harness

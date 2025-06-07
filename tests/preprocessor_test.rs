@@ -3,6 +3,7 @@ use cursed::parser::preprocessor::TokenStream;
 use cursed::parser::preprocessor::Preprocessor;
 use cursed::error::Error;
 
+
 #[test]
 fn test_generic_preprocessor_squad() {
     let input = "be_like Box[T] squad { stuff normie }";

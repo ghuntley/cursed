@@ -1,3 +1,14 @@
+use std::sync::Arc;
+use std::path::Path;
+use std::fs::File;
+use std::io::Read;
+use cursed::parser::Parser;
+use cursed::lexer::Lexer;
+use cursed::error::Error;
+use tracing::{debug, info, warn, instrument};
+use common::tracing::setup as init_tracing;
+use common::timing::Timer;
+
 //! # Diamond Inheritance Interface Type Assertion Test
 //!
 //! This test verifies the correctness of interface type assertions when dealing with
@@ -11,23 +22,13 @@
 //! 3. Using the ? operator for clean error propagation across complex type hierarchies
 //! 4. Visualizing type assertion paths in diamond inheritance relationships
 
-use std::sync::Arc;
-use std::path::Path;
-use std::fs::File;
-use std::io::Read;
 
 // JIT compiler not used in this simplified test
-use cursed::parser::Parser;
-use cursed::lexer::Lexer;
-use cursed::error::Error;
-use tracing::{debug, info, warn, instrument};
 
 // Import common test utilities
 #[path = "common.rs"]
 pub mod common;
 
-use common::tracing::setup as init_tracing;
-use common::timing::Timer;
 
 /// Test interface type assertions with diamond inheritance patterns
 #[test]

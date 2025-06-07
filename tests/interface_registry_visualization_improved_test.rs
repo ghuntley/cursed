@@ -1,9 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
-
 use cursed::core::interface_registry::InterfaceRegistry;
 use cursed::core::interface_registry_visualization_improved::ImprovedInterfaceRegistryVisualization;
 use cursed::error::Error;
+
+
 
 // Common setup code for registry with a test hierarchy
 fn setup_test_registry() -> InterfaceRegistry {
@@ -37,13 +38,13 @@ fn test_get_extension_hierarchy() {
     
     // Check that Dog extends Mammal and Pet
     let dog_extensions = hierarchy.get("Dog").unwrap();
-    assert!(dog_extensions.contains(&"Mammal".to_string()));
-    assert!(dog_extensions.contains(&"Pet".to_string()));
+    assert!(dog_extensions.contains(&"Mammal".to_string());
+    assert!(dog_extensions.contains(&"Pet".to_string());
     
     // Check that Mammal extends Animal and Pet
     let mammal_extensions = hierarchy.get("Mammal").unwrap();
-    assert!(mammal_extensions.contains(&"Animal".to_string()));
-    assert!(mammal_extensions.contains(&"Pet".to_string()));
+    assert!(mammal_extensions.contains(&"Animal".to_string());
+    assert!(mammal_extensions.contains(&"Pet".to_string());
     
     // Verify all expected extensions are present
     assert_eq!(hierarchy.len(), 7); // Dog, Mammal, Bird, Eagle, Fish, Shark, and Animal all have extensions
@@ -195,20 +196,20 @@ fn test_get_direct_implementors() {
     
     // Get direct implementors of Animal
     let implementors = registry.get_direct_implementors("Animal").unwrap().unwrap();
-    assert!(implementors.contains(&"Mammal".to_string()));
-    assert!(implementors.contains(&"Bird".to_string()));
-    assert!(implementors.contains(&"Fish".to_string()));
+    assert!(implementors.contains(&"Mammal".to_string());
+    assert!(implementors.contains(&"Bird".to_string());
+    assert!(implementors.contains(&"Fish".to_string());
     assert_eq!(implementors.len(), 3);
     
     // Get direct implementors of Mammal
     let implementors = registry.get_direct_implementors("Mammal").unwrap().unwrap();
-    assert!(implementors.contains(&"Dog".to_string()));
+    assert!(implementors.contains(&"Dog".to_string());
     assert_eq!(implementors.len(), 1);
     
     // Get direct implementors of Pet
     let implementors = registry.get_direct_implementors("Pet").unwrap().unwrap();
-    assert!(implementors.contains(&"Dog".to_string()));
-    assert!(implementors.contains(&"Mammal".to_string()));
+    assert!(implementors.contains(&"Dog".to_string());
+    assert!(implementors.contains(&"Mammal".to_string());
     assert_eq!(implementors.len(), 2);
 }
 

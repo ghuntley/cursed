@@ -1,16 +1,17 @@
+use cursed::object::Object;
+use cursed::error::Error;
+use cursed::codegen::llvm::RangeClauseCompilation;
+
 //! Feature flag integration test for the enhanced range clause implementation
 //!
 //! This test demonstrates how to conditionally use the enhanced implementation
 //! based on the feature flag.
 
-use cursed::object::Object;
-use cursed::error::Error;
 
 #[path = "common.rs"]
 mod common;
 
 #[allow(unused_imports)]
-use cursed::codegen::llvm::RangeClauseCompilation;
 
 // This function would use either the default or enhanced implementation
 // depending on which feature flag is enabled

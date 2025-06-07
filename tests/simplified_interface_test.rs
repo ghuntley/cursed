@@ -1,8 +1,9 @@
-//! Simplified test for basic interface implementation
-
 use inkwell::context::Context;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use std::path::PathBuf;
+
+//! Simplified test for basic interface implementation
+
 
 #[test]
 fn test_simplified_interface() {
