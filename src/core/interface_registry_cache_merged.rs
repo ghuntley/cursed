@@ -493,9 +493,33 @@ pub mod test_common {
         #[test]
         fn test_create_registry_with_visualization() {
             let registry = create_test_registry_with_visualization();
-            // Create a new extension registry to avoid trait upcasting issues
+            
+            // Convert to the basic extension interface required by verify_test_registry
             let test_extension_registry = ThreadSafeInterfaceExtensionRegistry::new();
-            let registry_arc: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>> = Arc::new(RwLock::new(test_extension_registry));
+            let registry_arc: Arc<RwLock<dyn InterfaceRegistryExtension + Send + Sync>> = test_extension_registry;
+            
+            // Copy the data from the visualization registry to the base registry
+            {
+                let viz_guard = registry.read().unwrap();
+                let mut base_guard = registry_arc.write().unwrap();
+                
+                // Copy interfaces
+                if let Ok(interfaces) = viz_guard.get_all_interfaces() {
+                    for interface in interfaces {
+                        base_guard.register_interface(&interface);
+                    }
+                }
+                
+                // Copy extensions
+                if let Ok(hierarchy) = viz_guard.get_extension_hierarchy() {
+                    for (source, targets) in hierarchy {
+                        for target in targets {
+                            let _ = base_guard.register_extension(&source, &target);
+                        }
+                    }
+                }
+            }
+            
             assert!(verify_test_registry(&registry_arc).is_ok());
         }
         

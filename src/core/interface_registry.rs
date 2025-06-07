@@ -424,6 +424,12 @@ impl InterfaceRegistry {
             "Numeric".to_string()
         );
         
+        // Register Array as Container
+        self.register_implementation(
+            Type::Struct("Array".to_string(), vec![]),
+            "Container".to_string()
+        );
+        
         // Register generic interface implementations
         
         // GenericStack[T] implements Container
@@ -524,6 +530,19 @@ impl InterfaceRegistry {
             .get(interface_name)
             .cloned()
             .unwrap_or_default()
+    }
+    
+    /// Get all generic implementations for a specific type name
+    pub fn get_generic_implementations_by_type(&self, type_name: &str) -> Vec<GenericInterfaceImpl> {
+        let mut result = Vec::new();
+        for implementations in self.generic_implementations.values() {
+            for impl_ in implementations {
+                if impl_.type_name == type_name {
+                    result.push(impl_.clone());
+                }
+            }
+        }
+        result
     }
 }
 

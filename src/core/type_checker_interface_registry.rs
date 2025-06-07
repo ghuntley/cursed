@@ -134,17 +134,13 @@ impl AutoInterfaceRegistration for TypeChecker {
         // If it implements the interface, register it
         if implements {
             match implementing_type {
-                // For concrete structs
-                Type::Struct(name, type_args) if type_args.is_empty() => {
-                    self.register_interface_implementation(implementing_type, interface_name)?;
-                },
-                
-                // For generic structs
+                // For struct types, check if they are generic or concrete
                 Type::Struct(name, _) => {
-                    // Get the type parameters for this struct
+                    // Get the type parameters for this struct definition
                     // Get type parameters first - clone them to avoid borrowing issues
                     let type_params_opt = self.type_params_map.get(name).cloned();
                     if let Some(type_params) = type_params_opt {
+                        // This is a generic struct - register as generic implementation
                         // Extract constraints
                         // For this implementation, we assume no constraints
                         // A more complete implementation would extract constraints from the code
@@ -157,7 +153,7 @@ impl AutoInterfaceRegistration for TypeChecker {
                             constraints
                         )?;
                     } else {
-                        // If no type parameters found, treat as concrete type
+                        // No type parameters found, treat as concrete type
                         self.register_interface_implementation(implementing_type, interface_name)?;
                     }
                 },
