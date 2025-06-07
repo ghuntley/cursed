@@ -32,7 +32,7 @@ fn test_expression_compilation() {
     };
     
     let result = generator.compile_expression(&int_lit);
-    assert!(result.is_ok(), "Failed to compile integer literal: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile integer literal: {:?}", result.err())
     let value = result.unwrap();
     assert!(value.is_int_value(), "Result should be an integer");
     assert_eq!(value.into_int_value().get_zero_extended_constant().unwrap(), 42);
@@ -44,7 +44,7 @@ fn test_expression_compilation() {
     };
     
     let result = generator.compile_expression(&bool_lit);
-    assert!(result.is_ok(), "Failed to compile boolean literal: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile boolean literal: {:?}", result.err())
     let value = result.unwrap();
     assert!(value.is_int_value(), "Result should be an integer (boolean)");
     assert_eq!(value.into_int_value().get_zero_extended_constant().unwrap(), 1);
@@ -68,7 +68,7 @@ fn test_expression_compilation() {
     };
     
     let result = generator.compile_expression(&infix);
-    assert!(result.is_ok(), "Failed to compile infix expression: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile infix expression: {:?}", result.err())
     let value = result.unwrap();
     assert!(value.is_int_value(), "Result should be an integer");
     assert_eq!(value.into_int_value().get_zero_extended_constant().unwrap(), 15);
@@ -86,7 +86,7 @@ fn test_expression_compilation() {
     };
     
     let result = generator.compile_expression(&prefix);
-    assert!(result.is_ok(), "Failed to compile prefix expression: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile prefix expression: {:?}", result.err())
     let value = result.unwrap();
     assert!(value.is_int_value(), "Result should be an integer");
     
@@ -102,5 +102,5 @@ fn test_expression_compilation() {
     }
     
     // Terminate the block with a return statement
-    generator.builder().build_return(Some(&i32_type.const_int(0, false))).unwrap());
+    generator.builder().build_return(Some(&i32_type.const_int(0, false))).unwrap();
 }

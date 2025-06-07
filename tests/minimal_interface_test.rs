@@ -27,7 +27,7 @@ fn test_minimal_interface() {
         Vec::new(),
     );
     
-    assert!(result.is_ok(), "Failed to register interface: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to register interface: {:?}", result.err())
     
     // Create a basic struct type
     let struct_type = context.struct_type(
@@ -55,5 +55,5 @@ fn test_minimal_interface() {
         methods,
     );
     
-    assert!(result.is_ok(), "Failed to register implementation: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to register implementation: {:?}", result.err())
 }

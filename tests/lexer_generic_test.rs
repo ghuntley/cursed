@@ -26,7 +26,7 @@ fn test_generic_syntax_lexing() {
 
     // Test tokens one by one
     for expected in expected_tokens {
-        let token = lexer.next_token().unwrap());
+        let token = lexer.next_token().unwrap();
         assert_eq!(token, expected, "Expected {:?}, got {:?}", expected, token);
     }
 
@@ -57,7 +57,7 @@ fn test_generic_syntax_lexing() {
 
     // Test tokens one by one
     for expected in expected_tokens {
-        let token = lexer.next_token().unwrap());
+        let token = lexer.next_token().unwrap();
         assert_eq!(token, expected, "Expected {:?}, got {:?}", expected, token);
     }
 
@@ -92,7 +92,7 @@ fn test_generic_syntax_lexing() {
 
     // Test tokens one by one
     for expected in expected_tokens {
-        let token = lexer.next_token().unwrap());
+        let token = lexer.next_token().unwrap();
         assert_eq!(token, expected, "Expected {:?}, got {:?}", expected, token);
     }
 }

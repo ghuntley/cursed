@@ -74,18 +74,18 @@ fn test_circular_references_with_scope() {
     debug!("Created garbage collector");
     
     // Create a new root scope
-    let _scope_guard = with_gc_scope(gc.clone());
+    let _scope_guard = with_gc_scope(gc.clone();
     debug!("Created root scope");
     
     // Allocate nodes in a new inner scope
     {
         // Allocate two nodes
         debug!("Allocating node 1");
-        let mut node1 = gc.allocate(CircularNode::new(1));
+        let mut node1 = gc.allocate(CircularNode::new(1))
         debug!("Allocated node 1");
         
         debug!("Allocating node 2");
-        let mut node2 = gc.allocate(CircularNode::new(2));
+        let mut node2 = gc.allocate(CircularNode::new(2))
         debug!("Allocated node 2");
         
         // Create a circular reference
@@ -93,7 +93,7 @@ fn test_circular_references_with_scope() {
         {
             let inner1 = node1.inner_mut().unwrap();
             debug!(node_id = inner1.id, "Got mutable reference to node1");
-            inner1.set_next(node2.clone());
+            inner1.set_next(node2.clone();
             debug!("Set node1.next = node2");
         }
         
@@ -101,7 +101,7 @@ fn test_circular_references_with_scope() {
         {
             let inner2 = node2.inner_mut().unwrap();
             debug!(node_id = inner2.id, "Got mutable reference to node2");
-            inner2.set_next(node1.clone());
+            inner2.set_next(node1.clone();
             debug!("Set node2.next = node1");
         }
         
@@ -170,7 +170,7 @@ fn test_complex_object_graph() {
     debug!("Created garbage collector");
     
     // Create a new root scope
-    let _scope_guard = with_gc_scope(gc.clone());
+    let _scope_guard = with_gc_scope(gc.clone();
     debug!("Created root scope");
     
     // Create a complex object graph with multiple circular references
@@ -178,7 +178,7 @@ fn test_complex_object_graph() {
     
     // Create initial nodes
     for i in 1..=5 {
-        let node = gc.allocate(CircularNode::new(i));
+        let node = gc.allocate(CircularNode::new(i))
         nodes.push(node);
     }
     

@@ -24,7 +24,7 @@ use std::path::PathBuf;
 #[test]
 fn test_assignment_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_inference", PathBuf::from("test_assignment_inference.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_inference", PathBuf::from("test.csd"));
 
     // Create a function for testing with float return type
     let f64_type = context.f64_type();
@@ -53,7 +53,7 @@ fn test_assignment_type_inference() {
     
     // Compile the declaration
     let result = generator.compile_statement(&let_stmt);
-    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err())
     
     // Now assign a float value to the variable
     let assign_expr = InfixExpression {
@@ -93,7 +93,7 @@ fn test_assignment_type_inference() {
 #[test]
 fn test_assignment_type_coercion() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_coercion", PathBuf::from("test_assignment_coercion.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_coercion", PathBuf::from("test.csd"));
 
     // Create a function for testing with float return type
     let f64_type = context.f64_type();
@@ -125,7 +125,7 @@ fn test_assignment_type_coercion() {
     
     // Compile the declaration
     let result = generator.compile_statement(&let_stmt);
-    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err())
     
     // Now assign an integer value to the float variable - should be coerced
     let assign_expr = InfixExpression {
@@ -145,7 +145,7 @@ fn test_assignment_type_coercion() {
     let assign_result = generator.compile_expression(&assign_expr);
     
     // With proper type coercion, this should succeed
-    assert!(assign_result.is_ok(), "Assignment with type coercion failed: {:?}", assign_result.err());
+    assert!(assign_result.is_ok(), "Assignment with type coercion failed: {:?}", assign_result.err())
     
     // The result should be the coerced integer value (now a float)
     if let Ok(value) = assign_result {
@@ -162,7 +162,7 @@ fn test_assignment_type_coercion() {
     };
     
     let load_result = generator.compile_expression(&load_expr);
-    assert!(load_result.is_ok(), "Failed to load variable: {:?}", load_result.err());
+    assert!(load_result.is_ok(), "Failed to load variable: {:?}", load_result.err())
     
     let loaded_value = load_result.unwrap();
     println!("DEBUG: Loaded value type: {}", 
@@ -182,7 +182,7 @@ fn test_assignment_type_coercion() {
 #[test]
 fn test_if_expression_with_assignment_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_assignment_inference", PathBuf::from("test_if_assignment_inference.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_assignment_inference", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let f64_type = context.f64_type();
@@ -247,7 +247,7 @@ fn test_if_expression_with_assignment_type_inference() {
     
     // Compile the if expression
     let result = generator.compile_if_expression(&if_expr);
-    assert!(result.is_ok(), "Failed to compile if expression with assignment type inference: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile if expression with assignment type inference: {:?}", result.err())
     
     // Get the result and verify it's proper type inference
     let value = result.unwrap();
@@ -267,7 +267,7 @@ fn test_if_expression_with_assignment_type_inference() {
 #[test]
 fn test_if_expression_with_mixed_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_mixed_types", PathBuf::from("test_if_mixed_types.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_mixed_types", PathBuf::from("test.csd"));
 
     // Create a function for testing - use double return type since we expect float result
     let double_type = context.f64_type();
@@ -332,7 +332,7 @@ fn test_if_expression_with_mixed_types() {
     
     // Compile the if expression
     let result = generator.compile_if_expression(&if_expr);
-    assert!(result.is_ok(), "Failed to compile if expression with mixed types: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile if expression with mixed types: {:?}", result.err())
     
     // Get the result and verify it's proper type inference
     let value = result.unwrap();
@@ -352,7 +352,7 @@ fn test_if_expression_with_mixed_types() {
 #[test]
 fn test_if_expression_with_string_and_int() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_string_int", PathBuf::from("test_if_string_int.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_if_string_int", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();

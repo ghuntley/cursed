@@ -64,7 +64,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -84,7 +84,7 @@ mod tests {
             Ok(_) => {},
             Err(err) => {
                 // Check that we get a compilation error, not a panic
-                assert!(matches!(err, Error::Compilation(_));
+                assert!(matches!(err, Error::Compilation(_))
             }
         }
     }
@@ -106,7 +106,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -118,7 +118,7 @@ mod tests {
         let result = codegen.create_success_result(null_ptr.into();
         
         // Verify that the result is created successfully
-        assert!(result.is_ok());
+        assert!(result.is_ok())
     }
     
     #[test]
@@ -138,7 +138,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -157,7 +157,7 @@ mod tests {
         let result = codegen.create_error_result(error_info);
         
         // Verify that the error result is created successfully
-        assert!(result.is_ok());
+        assert!(result.is_ok())
     }
     
     #[test]
@@ -178,7 +178,7 @@ mod tests {
         builder.position_at_end(basic_block);
         
         // Initialize the code generator
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_module");
+        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
         
         // Set the current function for the code generator
         codegen.set_current_function(function);
@@ -187,6 +187,6 @@ mod tests {
         let result = codegen.setup_result_propagation(function);
         
         // Verify that the setup succeeds
-        assert!(result.is_ok());
+        assert!(result.is_ok())
     }
 }

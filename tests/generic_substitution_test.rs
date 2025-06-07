@@ -160,9 +160,9 @@ fn test_complex_nested_generics() {
         match &*key_type {
             Type::Tea => { /* success */ },
             _ => panic!("Expected Tea type for key, got {:?}", key_type),
-        }
-        
-        // Check the value type
+        };
+
+    //
         if let Type::Struct(list_name, list_args) = &*value_type {
             assert_eq!(list_name, "List");
             match &*list_args[0] {

@@ -216,13 +216,13 @@ fn test_concurrent_gc_stress() {
     // Wait for all threads to complete
     let mut all_objects = Vec::new();
     for handle in handles {
-        let objects = handle.join().unwrap());
+        let objects = handle.join().unwrap();
         all_objects.extend(objects);
     }
     
     // Verify all objects are still accessible
     for obj in &all_objects {
-        assert!(obj.inner().is_some());
+        assert!(obj.inner().is_some())
     }
     
     // Drop half the objects
@@ -236,7 +236,7 @@ fn test_concurrent_gc_stress() {
     
     // Verify remaining objects are still accessible
     for obj in &all_objects {
-        assert!(obj.inner().is_some());
+        assert!(obj.inner().is_some())
     }
     
     // Drop all objects

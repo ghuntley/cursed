@@ -33,7 +33,7 @@ fn test_pointer_parsing() -> Result<(), Error> {
 
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     assert_eq!(
@@ -74,7 +74,7 @@ fn test_pointer_dereference() -> Result<(), Error> {
 
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     assert_eq!(
@@ -120,7 +120,7 @@ fn test_pointer_struct() -> Result<(), Error> {
 
     // Verify there are no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors();
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     assert_eq!(

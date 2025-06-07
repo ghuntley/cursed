@@ -1,6 +1,7 @@
 use cursed::prelude::*;
 use cursed::ast::declarations::*;
 use cursed::ast::statements::*;
+use cursed::ast::statements::fields::FieldStatement;
 use cursed::ast::expressions::*;
 use cursed::ast::operators::*;
 use cursed::ast::types::*;
@@ -10,7 +11,8 @@ use cursed::parser::*;
 use cursed::core::type_checker::*;
 use cursed::codegen::llvm::*;
 use cursed::codegen::llvm::integrated_monomorphization::IntegratedMonomorphization;
-use cursed::codegen::llvm::interface_field_accessors::InterfaceFieldAccessors;
+
+use cursed::codegen::llvm::improved_field_accessors::ImprovedFieldAccessors;
 use cursed::memory::gc::GarbageCollector;
 use std::path::PathBuf;
 use tracing::*;
@@ -70,14 +72,14 @@ fn test_improved_field_accessors_integration() {
     let mut lexer = Lexer::new(TEST_CODE);
     
     let mut parser = Parser::new(&mut lexer).expect("Parser creation failed");
-    let program = parser.parse().expect("Parsing failed");
+    let program = parser.parse_program().expect("Parsing failed");
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
     let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
     
     // Compile the program
-    let result = codegen.compile_program(&program, &Default::default());
+    let result = codegen.compile_program(&program);
     info!("Compilation result: {:?}", result);
     assert!(result.is_ok(), "Compilation failed: {:?}", result);
     
@@ -112,17 +114,17 @@ fn test_field_accessor_error_propagation() {
     
     // Create a struct definition with an invalid field type
     let squad_stmt = SquadStatement {
-        name: Identifier { value: "InvalidStruct".to_string(), span: Span::default() },
+        token: "squad".to_string(),
+        name: Identifier { token: "InvalidStruct".to_string(), value: "InvalidStruct".to_string() },
         fields: vec![
-            Field {
-                name: Identifier { value: "invalid_field".to_string(), span: Span::default() },
-                type_name: TypeName::Named(Identifier { value: "NonExistentType".to_string(), span: Span::default() }),
-                span: Span::default(),
+            FieldStatement {
+                token: "invalid_field".to_string(),
+                name: Identifier { token: "invalid_field".to_string(), value: "invalid_field".to_string() },
+                type_name: Identifier { token: "NonExistentType".to_string(), value: "NonExistentType".to_string() },
             }
         ],
         type_parameters: vec![],
-        type_constraints: vec![],
-        span: Span::default(),
+        generic_constraints: vec![],
     };
     
     // Create the code generator

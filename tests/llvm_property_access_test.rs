@@ -59,7 +59,7 @@ fn test_property_access() {
     
     // Test the property access
     let result = generator.compile_property_access(&dot_expr);
-    assert!(result.is_ok(), "Failed to compile property access: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile property access: {:?}", result.err())
     
     // Verify the result is 42
     let value = result.unwrap();

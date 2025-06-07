@@ -45,7 +45,7 @@ fn test_integrated_deep_nested_async_checker() {
         "Comparable"
     );
     
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     assert!(result.unwrap();
     
     // Non-comparable type check
@@ -62,7 +62,7 @@ fn test_integrated_deep_nested_async_checker() {
         "Comparable"
     );
     
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     assert!(!result.unwrap();
 }
 
@@ -81,7 +81,7 @@ fn test_extension_trait_direct_usage() {
         "Comparable"
     );
     
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     assert!(result.unwrap();
 }
 
@@ -131,7 +131,7 @@ fn test_multi_level_constraint_parallel() {
         "Numeric"
     );
     
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     assert!(result.unwrap();
     
     // Create a version with a non-numeric inner type
@@ -160,7 +160,7 @@ fn test_multi_level_constraint_parallel() {
         "Numeric"
     );
     
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     assert!(!result.unwrap();
 }
 
@@ -282,7 +282,7 @@ fn test_combining_async_and_deep_nested_checks() {
             interface
         );
         
-        assert!(result.is_ok());
+        assert!(result.is_ok())
         assert!(result.unwrap();
     }
 }

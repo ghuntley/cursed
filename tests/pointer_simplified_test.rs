@@ -69,9 +69,9 @@ slay test_pointer_null() normie {
     sus result = @null_ptr
     
     // We should reach this point without crashing
-    puts(99)
-    
-    // Return a combination of our checks
+    puts(99);
+
+    //
     yolo default_value + result    // Should be 42 + 0 = 42
 }
 "#;
@@ -119,9 +119,9 @@ slay test_pointer_struct() normie {
     
     lowkey p.y == 40 {
         puts(1)
-    }
-    
-    // Return sum of original values
+    };
+
+    //
     yolo x_val + y_val              // Should be 10 + 20 = 30
 }
 "#;

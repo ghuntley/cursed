@@ -38,7 +38,7 @@ fn test_memory_layout() {
     // Compute and compare type sizes using module data layout
     debug!("Getting module data layout");
     // Get the data layout from the module
-    let data_layout = generator.module().get_data_layout());
+    let data_layout = generator.module().get_data_layout();
     
     // Drop data_layout so it doesn't cause borrow issues with later mutable borrows
     debug!("Dropping data_layout to avoid borrow issues");

@@ -50,7 +50,7 @@ fn create_code_generator<'ctx>(
     
     // Set up a target machine for the module
     let target_triple = TargetMachine::get_default_triple();
-    let target = Target::from_triple(&target_triple).unwrap());
+    let target = Target::from_triple(&target_triple).unwrap();
     let target_machine = target.create_target_machine(
         &target_triple,
         "generic",
@@ -61,7 +61,7 @@ fn create_code_generator<'ctx>(
     ).unwrap();
     
     // Set up the data layout
-    let data_layout = target_machine.get_target_data().get_data_layout());
+    let data_layout = target_machine.get_target_data().get_data_layout();
     module.set_data_layout(&data_layout);
     
     // Create a test function
@@ -135,7 +135,7 @@ fn test_type_assertion_benchmarking() {
     let result = code_gen.compile_type_assertion_with_benchmarking(&type_assertion);
     
     // Check that we got a result and benchmark stats
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     let (_value, stats) = result.unwrap();
     
     // Report the stats

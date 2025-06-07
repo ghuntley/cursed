@@ -21,11 +21,11 @@ fn test_basic_string_switch_parsing() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
     // Need to access the statement parsing differently, through public API
     let result = parser.parse_program();
     
-    assert!(result.is_ok(), "Failed to parse string switch: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to parse string switch: {:?}", result.err())
     
     // Get the program and extract the first statement
     let program = result.unwrap();

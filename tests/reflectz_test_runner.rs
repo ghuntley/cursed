@@ -7,12 +7,12 @@ use std::sync::Arc;
 fn test_reflectz_type_of() {
     // Test basic type_of functionality
     let obj = Arc::new(Object::Integer(42);
-    let result = reflectz::type_of(&[obj]).unwrap());
+    let result = reflectz::type_of(&[obj]).unwrap();
     
     match &*result {
         Object::Struct { name, fields } => {
             assert_eq!(name, "Type");
-            assert!(!fields.is_empty().is_empty());
+            assert!(!fields.is_empty().is_empty())
             
             // Check if we have the type name
             let name_field = fields.iter().find(|(k, _)| k == "Name");
@@ -36,7 +36,7 @@ fn test_reflectz_get_field() {
     });
     
     let field_name = Arc::new(Object::String("name".to_string());
-    let result = reflectz::get_field(&[person.clone(), field_name]).unwrap());
+    let result = reflectz::get_field(&[person.clone(), field_name]).unwrap();
     
     match &*result {
         Object::String(name) => assert_eq!(name, "John"),
@@ -44,8 +44,8 @@ fn test_reflectz_get_field() {
     }
     
     // Try getting an integer field which is stored as a string but should be converted
-    let age_field = Arc::new(Object::String("age".to_string());
-    let result = reflectz::get_field(&[person, age_field]).unwrap());
+    let age_field = Arc::new(Object::String("age".to_string())
+    let result = reflectz::get_field(&[person, age_field]).unwrap();
     
     match &*result {
         Object::Integer(age) => assert_eq!(*age, 30),
@@ -69,7 +69,7 @@ fn test_reflectz_set_field() {
     let new_value = Arc::new(Object::String("Jane".to_string());
     
     // This test is simplified since we can't actually modify the struct
-    let _ = reflectz::set_field(&[person, field_name, new_value]).unwrap());
+    let _ = reflectz::set_field(&[person, field_name, new_value]).unwrap();
 
     // In a real implementation, we would test that the field was updated
 }

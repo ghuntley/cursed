@@ -74,7 +74,7 @@ fn test_interface_type_assertion_question_operator_example() {
     );
     
     // Generate code
-    let code_gen = LlvmCodeGenerator::new(&context, "interface_type_assertion_question_operator_test", PathBuf::from("interface_type_assertion_question_op.csd"));
+    let code_gen = LlvmCodeGenerator::new(&context, "interface_type_assertion_question_operator_test", PathBuf::from("test.csd"));
     *(jit.code_generator_mut()) = Some(code_gen);
     
     // Compile the program
@@ -251,7 +251,7 @@ fn test_interface_type_assertion_error_propagation() {
     );
     
     // Generate code
-    let code_gen = LlvmCodeGenerator::new(&context, "interface_type_assertion_error_propagation_test", PathBuf::from("error_propagation_test.csd"));
+    let code_gen = LlvmCodeGenerator::new(&context, "interface_type_assertion_error_propagation_test", PathBuf::from("test.csd"));
     *(jit.code_generator_mut()) = Some(code_gen);
     
     // Compile the program
@@ -506,7 +506,7 @@ fn test_nested_interface_type_assertion_propagation() {
     );
     
     // Generate code
-    let code_gen = LlvmCodeGenerator::new(&context, "nested_interface_type_assertion_test", PathBuf::from("nested_test.csd"));
+    let code_gen = LlvmCodeGenerator::new(&context, "nested_interface_type_assertion_test", PathBuf::from("test.csd"));
     *(jit.code_generator_mut()) = Some(code_gen);
     
     // Compile the program

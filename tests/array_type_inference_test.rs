@@ -49,7 +49,7 @@ fn test_array_type_inference(input: &str) -> Result<Type, Error> {
 #[test]
 fn test_empty_array_literal() {
     let result = test_array_type_inference("[];");
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     
     if let Ok(type_) = result {
         if let Type::Array(elem_type, size) = type_ {
@@ -64,7 +64,7 @@ fn test_empty_array_literal() {
 #[test]
 fn test_int_array_literal() {
     let result = test_array_type_inference("[1, 2, 3, 4, 5];");
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     
     if let Ok(type_) = result {
         if let Type::Array(elem_type, size) = type_ {
@@ -81,17 +81,17 @@ fn test_mixed_numeric_array_literal() {
     let result = test_array_type_inference("[1, 2, 3, 4.5, 5.5];");
     
     // This should fail because normie and snack are not compatible
-    assert!(result.is_err());
+    assert!(result.is_err())
     if let Err(err) = result {
         assert!(err.to_string().contains("must have the same type"), 
-               "Error message '{}' should mention incompatible types", err.to_string());
+               "Error message '{}' should mention incompatible types", err.to_string())
     }
 }
 
 #[test]
 fn test_string_array_literal() {
     let result = test_array_type_inference("[\"one\", \"two\", \"three\"];");
-    assert!(result.is_ok());
+    assert!(result.is_ok())
     
     if let Ok(type_) = result {
         if let Type::Array(elem_type, size) = type_ {
@@ -108,9 +108,9 @@ fn test_mixed_types_array_literal() {
     let result = test_array_type_inference("[1, \"two\", 3];");
     
     // This should fail because int and string are not compatible
-    assert!(result.is_err());
+    assert!(result.is_err())
     if let Err(err) = result {
         assert!(err.to_string().contains("must have the same type"), 
-               "Error message '{}' should mention incompatible types", err.to_string());
+               "Error message '{}' should mention incompatible types", err.to_string())
     }
 }

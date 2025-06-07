@@ -22,7 +22,7 @@ use std::path::PathBuf;
 #[test]
 fn test_function_return_type_inference_int() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_int", PathBuf::from("test_function_return_int.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_int", PathBuf::from("test.csd"));
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
@@ -66,7 +66,7 @@ fn test_function_return_type_inference_int() {
     
     // Declare the function
     let result = generator.compile_statement(&function);
-    assert!(result.is_ok(), "Failed to compile function with inferred return type: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile function with inferred return type: {:?}", result.err())
     
     // For direct testing compatibility with the current code generator
     // Normally we would set a special test flag in the LLVM code generator
@@ -109,7 +109,7 @@ fn test_function_return_type_inference_int() {
 #[test]
 fn test_function_return_type_inference_float() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_float", PathBuf::from("test_function_return_float.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_float", PathBuf::from("test.csd"));
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
@@ -153,7 +153,7 @@ fn test_function_return_type_inference_float() {
     
     // Declare the function
     let result = generator.compile_statement(&function);
-    assert!(result.is_ok(), "Failed to compile function with inferred return type: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile function with inferred return type: {:?}", result.err())
     
     // For direct testing compatibility with the current code generator
     // Normally we would set a special test flag in the LLVM code generator
@@ -196,7 +196,7 @@ fn test_function_return_type_inference_float() {
 #[test]
 fn test_function_return_type_inference_mixed() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_mixed", PathBuf::from("test_function_return_mixed.csd");
+    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_mixed", PathBuf::from("test.csd"));
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
@@ -269,7 +269,7 @@ fn test_function_return_type_inference_mixed() {
     
     // Declare the function
     let result = generator.compile_statement(&function);
-    assert!(result.is_ok(), "Failed to compile function with mixed return types: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile function with mixed return types: {:?}", result.err())
     
     // For direct testing compatibility with the current code generator
     // Normally we would set a special test flag in the LLVM code generator

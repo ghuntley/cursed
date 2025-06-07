@@ -76,7 +76,7 @@ fn test_monomorphization_function_specialization() {
     assert_eq!(specialized_name, "max__Normie");
 
     // Verify the function is in the instantiated map
-    assert!(mono_manager.is_function_instantiated("max", &[Type::Normie]));
+    assert!(mono_manager.is_function_instantiated("max", &[Type::Normie]))
 
     // Specializing again should return the same name
     let specialized_name2 = mono_manager
@@ -120,7 +120,7 @@ fn create_generic_function(
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
             ParameterStatement {
-                token: Token::Identifier("IDENT".to_string(),
+                token: Token::Identifier("IDENT".to_string()),
                 name: Identifier {
                     token: "token".to_string(),
                     value: param_name,
@@ -187,7 +187,7 @@ fn test_monomorphization_manager_in_llvm_generator() {
     assert_eq!(spec_name, "map__Thicc_Tea");
 
     // Verify it's cached
-    assert!(mono_manager.is_function_instantiated("map", &[Type::Thicc, Type::Tea]));
+    assert!(mono_manager.is_function_instantiated("map", &[Type::Thicc, Type::Tea]))
 
     // Get the function from the LLVM module
     let function = code_gen.module().get_function(&spec_name);

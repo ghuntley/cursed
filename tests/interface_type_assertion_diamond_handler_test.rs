@@ -24,11 +24,11 @@ fn setup_test_registry() -> InterfaceTypeRegistry<'static> {
     let mut registry = InterfaceTypeRegistry::new();
     
     // Register types for our diamond pattern
-    registry.register_type(1, "Player", false).unwrap());
-    registry.register_type(2, "GameObject", true).unwrap());
-    registry.register_type(3, "Movable", true).unwrap());
-    registry.register_type(4, "Drawable", true).unwrap());
-    registry.register_type(5, "AnimatedObject", true).unwrap());
+    registry.register_type(1, "Player", false).unwrap();
+    registry.register_type(2, "GameObject", true).unwrap();
+    registry.register_type(3, "Movable", true).unwrap();
+    registry.register_type(4, "Drawable", true).unwrap();
+    registry.register_type(5, "AnimatedObject", true).unwrap();
     
     // Set up inheritance relationships for the diamond pattern
     // GameObject is the base interface (top of diamond)
@@ -37,20 +37,20 @@ fn setup_test_registry() -> InterfaceTypeRegistry<'static> {
     // Player implements AnimatedObject (concrete type below diamond)
     
     // Movable extends GameObject
-    registry.register_extension(3, 2).unwrap());
+    registry.register_extension(3, 2).unwrap();
     
     // Drawable extends GameObject
-    registry.register_extension(4, 2).unwrap());
+    registry.register_extension(4, 2).unwrap();
     
     // AnimatedObject extends both Movable and Drawable
-    registry.register_extension(5, 3).unwrap());
-    registry.register_extension(5, 4).unwrap());
+    registry.register_extension(5, 3).unwrap();
+    registry.register_extension(5, 4).unwrap();
     
     // Player implements all interfaces in the diamond
-    registry.register_implementation(1, 2).unwrap()); // Player implements GameObject
-    registry.register_implementation(1, 3).unwrap()); // Player implements Movable
-    registry.register_implementation(1, 4).unwrap()); // Player implements Drawable
-    registry.register_implementation(1, 5).unwrap()); // Player implements AnimatedObject
+    registry.register_implementation(1, 2).unwrap(); // Player implements GameObject
+    registry.register_implementation(1, 3).unwrap(); // Player implements Movable
+    registry.register_implementation(1, 4).unwrap(); // Player implements Drawable
+    registry.register_implementation(1, 5).unwrap(); // Player implements AnimatedObject
     
     registry
 }
@@ -75,7 +75,7 @@ fn test_diamond_inheritance_handler_detection() {
     
     // Test detection of diamond pattern
     let result = code_gen.detect_diamond_inheritance("Player", "GameObject");
-    assert!(result.is_ok(), "Diamond detection failed: {:?}", result.err());
+    assert!(result.is_ok(), "Diamond detection failed: {:?}", result.err())
     
     // We should have found a diamond pattern
     let diamond_info = result.unwrap();

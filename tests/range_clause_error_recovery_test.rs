@@ -30,7 +30,7 @@ fn ensure_temp_dir() -> std::io::Result<()> {
     if !temp_dir.exists() {
         fs::create_dir(temp_dir)?;
     }
-    Ok()
+    Ok(())
 }
 
 /// Runs a CURSED file through the compiler and returns the output and exit status

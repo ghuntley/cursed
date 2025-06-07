@@ -53,7 +53,7 @@ fn test_character_generators() {
 fn test_combination_generators() {
     // Test the one_of generator
     let one_of_vals = vec![Object::Integer(1), Object::Integer(2), Object::Integer(3)];
-    let one_of_gen = one_of(one_of_vals.clone());
+    let one_of_gen = one_of(one_of_vals.clone();
     
     let mut rand = RandGen::new(42); // Fixed seed for reproducibility
     
@@ -77,7 +77,7 @@ fn test_string_generators() {
     // Generate strings with length constraints
     for _ in 0..10 {
         let value = string_with_length(5, 10);
-        assert!(value.len() >= 5 && value.len() <= 10, "String length {} is out of range 5-10", value.len());
+        assert!(value.len() >= 5 && value.len() <= 10, "String length {} is out of range 5-10", value.len())
     }
 }
 
@@ -89,7 +89,7 @@ fn test_array_generators() {
     // Generate integer arrays
     for _ in 0..5 {
         let value = int_array(3, 7, 0, 100);
-        assert!(value.len() >= 3 && value.len() <= 7, "Array length {} is out of range 3-7", value.len());
+        assert!(value.len() >= 3 && value.len() <= 7, "Array length {} is out of range 3-7", value.len())
         
         for item in &value {
             assert!(*item >= 0 && *item <= 100, "Integer {} is out of range 0-100", item);
@@ -105,7 +105,7 @@ fn test_hash_map_generators() {
     // Generate hash maps
     for _ in 0..5 {
         let value = hash_map(2, 5);
-        assert!(value.len() >= 2 && value.len() <= 5, "Map size {} is out of range 2-5", value.len());
+        assert!(value.len() >= 2 && value.len() <= 5, "Map size {} is out of range 2-5", value.len())
         
         for (key, _) in &value {
             assert!(key.starts_with("key_"), "Map key '{}' does not start with 'key_'", key);

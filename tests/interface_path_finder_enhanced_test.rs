@@ -39,40 +39,40 @@ fn test_interface_path_finder_enhanced() {
     setup_test_inheritance_relationships(&mut codegen);
     
     // Test finding a simple path
-    let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap());
+    let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap();
     assert_eq!(path.path(), &vec!["JSONFileReader".to_string(), "FileReader".to_string(), "Reader".to_string())]);
     
     // Test finding path between unrelated interfaces
     let result = codegen.find_interface_path_enhanced("JSONFileReader", "Serializable");
-    assert!(result.is_err());
+    assert!(result.is_err())
     assert!(result.unwrap_err().to_string().contains("No path found");
     
     // Test finding path with non-existent interface
     let result = codegen.find_interface_path_enhanced("NonExistentInterface", "Reader");
-    assert!(result.is_err());
+    assert!(result.is_err())
     assert!(result.unwrap_err().to_string().contains("does not exist");
     
     // Test finding alternative paths
-    let paths = codegen.find_alternative_paths_enhanced("JSONFileReader", "Reader", 5).unwrap());
+    let paths = codegen.find_alternative_paths_enhanced("JSONFileReader", "Reader", 5).unwrap();
     assert_eq!(paths.len(), 1); // Only one path exists in our test setup
     
     // Test checking extension relationship
-    assert!(codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Reader").unwrap());
-    assert!(!codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Serializable").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Reader").unwrap();
+    assert!(!codegen.check_extension_relationship_enhanced_test("JSONFileReader", "Serializable").unwrap();
     
     // Test reversed inheritance detection
-    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "JSONFileReader").unwrap());
+    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "JSONFileReader").unwrap();
     assert!(reversed);
     assert!(message.contains("Reversed inheritance detected");
     
     // Test hierarchy visualization
-    let hierarchy = codegen.visualize_interface_hierarchy("Reader", 2).unwrap());
+    let hierarchy = codegen.visualize_interface_hierarchy("Reader", 2).unwrap();
     assert!(hierarchy.contains("Interface Hierarchy for 'Reader'");
     assert!(hierarchy.contains("FileReader");
     assert!(hierarchy.contains("NetworkReader");
     
     // Test DOT graph generation
-    let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap());
+    let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap();
     assert!(dot_graph.contains("digraph interface_hierarchy");
     assert!(dot_graph.contains("\"FileReader\" -> \"Reader\"");
     assert!(dot_graph.contains("\"JSONFileReader\" -> \"FileReader\"");
@@ -145,7 +145,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
     assert!(err.to_string().contains("No alternative paths found");
     
     // Test reversed inheritance message
-    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "FileReader").unwrap());
+    let (reversed, message) = codegen.detect_reversed_inheritance_enhanced_test("Reader", "FileReader").unwrap();
     assert!(reversed);
     assert!(message.contains("Reversed inheritance detected");
     assert!(message.contains("The actual inheritance path is");
@@ -222,7 +222,7 @@ fn test_interface_hierarchy_dot_graph() {
     codegen.test_inheritance_map = Some(test_inheritance_map);
     
     // Generate the DOT graph
-    let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap());
+    let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap();
     
     // Verify DOT graph content
     assert!(dot_graph.contains("digraph interface_hierarchy");

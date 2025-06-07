@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn test_dot_registry() {
         // Get a lock on the registry
-        let registry = DOT_REGISTRY.lock().unwrap());
+        let registry = DOT_REGISTRY.lock().unwrap();
         
         // Check that some standard functions are registered
         assert!(registry.has_handler("vibez", "spill"), "vibez.spill should be registered");

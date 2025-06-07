@@ -85,18 +85,18 @@ fn test_interface_type_assertion_with_registry() {
     
     // Test that a direct relationship can be verified
     // FileReader directly extends Reader, so this should succeed
-    assert!(codegen.check_extension_relationship_enhanced("FileReader", "Reader").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("FileReader", "Reader").unwrap();
     
     // Test that an indirect relationship can be verified
     // JSONFileReader indirectly extends Reader (through FileReader), so this should succeed
-    assert!(codegen.check_extension_relationship_enhanced("JSONFileReader", "Reader").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("JSONFileReader", "Reader").unwrap();
     
     // Test that the path finder can find the correct path
-    let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap());
+    let path = codegen.find_interface_path_enhanced("JSONFileReader", "Reader").unwrap();
     assert_eq!(path.path(), &vec!["JSONFileReader".to_string(), "FileReader".to_string(), "Reader".to_string())]);
     
     // Test reversed relationship detection
-    let (reversed, _) = codegen.detect_reversed_inheritance_enhanced("Reader", "FileReader").unwrap());
+    let (reversed, _) = codegen.detect_reversed_inheritance_enhanced("Reader", "FileReader").unwrap();
     assert!(reversed);
 }
 
@@ -116,25 +116,25 @@ fn test_interface_type_assertion_path_registry() {
     
     // Test that a type assertion from an unrelated branch would fail
     // Boat should not extend LandVehicle
-    assert!(!codegen.check_extension_relationship_enhanced("Boat", "LandVehicle").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced("Boat", "LandVehicle").unwrap();
     
     // Test that a multi-level inheritance can be verified
     // SportsCar indirectly extends Vehicle (through Car and LandVehicle)
-    assert!(codegen.check_extension_relationship_enhanced("SportsCar", "Vehicle").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("SportsCar", "Vehicle").unwrap();
     
     // Test that the path finder can find the correct path for multi-level inheritance
-    let path = codegen.find_interface_path_enhanced("Jet", "Vehicle").unwrap());
+    let path = codegen.find_interface_path_enhanced("Jet", "Vehicle").unwrap();
     assert_eq!(path.path(), &vec!["Jet".to_string(), "Plane".to_string(), 
                                "AirVehicle".to_string(), "Vehicle".to_string())]);
     
     // Test visualization of interface hierarchies
-    let hierarchy = codegen.visualize_interface_hierarchy("Vehicle", 3).unwrap());
+    let hierarchy = codegen.visualize_interface_hierarchy("Vehicle", 3).unwrap();
     assert!(hierarchy.contains("Vehicle");
     assert!(hierarchy.contains("LandVehicle");
     assert!(hierarchy.contains("SportsCar");
     
     // DOT graph generation
-    let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap());
+    let dot_graph = codegen.generate_interface_hierarchy_dot_graph().unwrap();
     assert!(dot_graph.contains("digraph interface_hierarchy");
     assert!(dot_graph.contains("Vehicle");
     assert!(dot_graph.contains("Car");

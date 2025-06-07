@@ -75,7 +75,7 @@ fn test_malformed_generic_syntax() {
     
     // Process tokens should return an error
     let result = preprocessor.process();
-    assert!(result.is_err());
+    assert!(result.is_err())
     
     if let Err(err) = result {
         let err_message = format!("{}", err); // Convert the error to string

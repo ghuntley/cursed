@@ -9,11 +9,11 @@ use cursed::stdlib::web_vibez::{get, post, head, delete, client_timeout};
 fn test_client_timeout() {
     // Test setting timeout
     let result = client_timeout(&[Arc::new(Object::Integer(5000))]).unwrap();
-    assert!(matches!(*result, Object::Integer(5000)));
+    assert!(matches!(*result, Object::Integer(5000)))
     
     // Test getting timeout
     let result = client_timeout(&[]).unwrap();
-    assert!(matches!(*result, Object::Integer(5000)));
+    assert!(matches!(*result, Object::Integer(5000)))
 }
 
 #[test]
@@ -27,9 +27,9 @@ fn test_get_mock() {
     match &*result {
         Object::HashTable(response) => {
             // Verify response structure
-            assert!(response.contains_key("status"));
-            assert!(response.contains_key("body"));
-            assert!(response.contains_key("headers"));
+            assert!(response.contains_key("status"))
+            assert!(response.contains_key("body"))
+            assert!(response.contains_key("headers"))
             
             // Verify status is 200
             match &response["status"] {
@@ -57,7 +57,7 @@ fn test_get_mock() {
 fn test_post_mock() {
     // Create a simple request body
     let mut body = HashMap::new();
-    body.insert("name".to_string(), Object::String("test".to_string()));
+    body.insert("name".to_string(), Object::String("test".to_string());
     body.insert("value".to_string(), Object::Integer(42));
     
     // Test with mock mode
@@ -70,9 +70,9 @@ fn test_post_mock() {
     match &*result {
         Object::HashTable(response) => {
             // Verify response structure
-            assert!(response.contains_key("status"));
-            assert!(response.contains_key("body"));
-            assert!(response.contains_key("headers"));
+            assert!(response.contains_key("status"))
+            assert!(response.contains_key("body"))
+            assert!(response.contains_key("headers"))
             
             // Verify status is 201 (created)
             match &response["status"] {
@@ -95,9 +95,9 @@ fn test_head_mock() {
     match &*result {
         Object::HashTable(response) => {
             // Verify response structure
-            assert!(response.contains_key("status"));
-            assert!(response.contains_key("headers"));
-            assert!(!response.contains_key("body")); // HEAD requests don't have a body
+            assert!(response.contains_key("status"))
+            assert!(response.contains_key("headers"))
+            assert!(!response.contains_key("body")) // HEAD requests don't have a body
             
             // Verify status is 200
             match &response["status"] {
@@ -120,7 +120,7 @@ fn test_delete_mock() {
     match &*result {
         Object::HashTable(response) => {
             // Verify response structure
-            assert!(response.contains_key("status"));
+            assert!(response.contains_key("status"))
             
             // Verify status is 204 (No Content)
             match &response["status"] {

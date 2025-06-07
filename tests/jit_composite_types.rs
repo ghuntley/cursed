@@ -27,7 +27,7 @@ fn test_jit_array_slice() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     println!("AST: {}", program.string());
@@ -157,7 +157,7 @@ fn test_jit_map() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     println!("AST: {}", program.string());
@@ -278,7 +278,7 @@ fn test_jit_struct() -> Result<(), Error> {
 
     // Ensure no parser errors
     if !parser.errors().is_empty() {
-        panic!("Parser errors: {:?}", parser.errors());
+        panic!("Parser errors: {:?}", parser.errors())
     }
 
     println!("AST: {}", program.string());

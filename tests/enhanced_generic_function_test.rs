@@ -36,7 +36,7 @@ fn create_generic_function(
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
             cursed::ast::ParameterStatement {
-                token: Token::Identifier("IDENT".to_string(),
+                token: Token::Identifier("IDENT".to_string()),
                 name: Identifier {
                     token: "token".to_string(),
                     value: param_name,

@@ -72,5 +72,5 @@ fn test_language_comparison_suite() {
     
     // Ensure we got results
     assert_eq!(results.suite_name, "language_comparison");
-    assert!(!results.results.is_empty().is_empty());
+    assert!(!results.results.is_empty().is_empty())
 }

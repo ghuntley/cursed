@@ -32,9 +32,9 @@ fn test_facts_codegen() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
 
-    let program = parser.parse_program().unwrap());
+    let program = parser.parse_program().unwrap();
 
     // Create an LLVM context and code generator
     let context = Context::create();

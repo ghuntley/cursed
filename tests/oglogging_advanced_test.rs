@@ -19,7 +19,7 @@ fn test_advanced_formatting() {
     assert_eq!(precision_result, "3.14");
     
     // Format with positional arguments
-    let multi_args = [Object::String("first".to_string(), Object::String("second".to_string())];
+    let multi_args = [Object::String("first".to_string()), Object::String("second".to_string())];
     let positional_result = oglogging::format_with_args("%[1]v %[2]v %[1]v", &multi_args);
     assert_eq!(positional_result, "first second first");
     

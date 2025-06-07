@@ -29,7 +29,7 @@ where
     
     // Create LLVM context and code generator
     let context = Context::create();
-    let mut compiler = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd");
+    let mut compiler = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
     
     // Call the test function with the compiler
     test_fn(&mut compiler)
@@ -90,7 +90,7 @@ fn test_generate_interface_hierarchy_dot_enhanced() {
         // Verify proper error propagation by checking the error message format
         // for a generated path that doesn't exist
         let result = compiler.find_interface_path("HttpClient", "StringReader");
-        assert!(result.is_err());
+        assert!(result.is_err())
         let err = result.unwrap_err();
         match err {
             Error::Compilation(msg) => {
@@ -139,7 +139,7 @@ fn test_find_alternative_paths_enhanced() {
             .expect("Failed to find alternative paths");
         
         // Alternative path should be found via IOHandler
-        assert!(!paths.is_empty().is_empty());
+        assert!(!paths.is_empty().is_empty())
         
         // Check for potential path: FileWriter -> Writer -> IOHandler -> Reader
         let found_path = paths.iter().any(|path| {

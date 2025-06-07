@@ -107,7 +107,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Return a constant value of 42 (simulating bytes read)
     let return_value = context.i32_type().const_int(42, false);
-    codegen.builder().build_return(Some(&return_value)).unwrap());
+    codegen.builder().build_return(Some(&return_value)).unwrap();
     
     // 7. Register FileReader as implementing Reader
     let mut reader_methods = HashMap::new();
@@ -154,7 +154,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     // Store empty string as path
     let empty_string = codegen.create_string_constant("test.txt");
     // Need to handle the result
-    codegen.builder().build_store(path_ptr, empty_string.unwrap()).unwrap());
+    codegen.builder().build_store(path_ptr, empty_string.unwrap()).unwrap();
     
     // Get pointer to position field
     let position_ptr = unsafe {
@@ -168,7 +168,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Store 0 as position
     let zero = context.i32_type().const_int(0, false);
-    codegen.builder().build_store(position_ptr, zero).unwrap());
+    codegen.builder().build_store(position_ptr, zero).unwrap();
     
     // Convert FileReader to Reader interface
     let reader_interface = codegen.create_interface_value(
@@ -208,10 +208,10 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Return the result
     if let Some(read_result) = result {
-        codegen.builder().build_return(Some(&read_result)).unwrap());
+        codegen.builder().build_return(Some(&read_result)).unwrap();
     } else {
         let default = context.i32_type().const_int(0, false);
-        codegen.builder().build_return(Some(&default)).unwrap());
+        codegen.builder().build_return(Some(&default)).unwrap();
     }
     
     // Verify the module
@@ -315,7 +315,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         )
         .unwrap();
     
-    codegen.builder().build_return(Some(&name)).unwrap());
+    codegen.builder().build_return(Some(&name)).unwrap();
     
     // 6. Register Person as implementing Stringer
     let mut stringer_methods = HashMap::new();
@@ -360,7 +360,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     // Store "Alice" as name
     let name_str = codegen.create_string_constant("Alice");
     // Need to handle the result
-    codegen.builder().build_store(name_ptr, name_str.unwrap()).unwrap());
+    codegen.builder().build_store(name_ptr, name_str.unwrap()).unwrap();
     
     // Get pointer to age field
     let age_ptr = unsafe {
@@ -374,7 +374,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // Store 30 as age
     let age = context.i32_type().const_int(30, false);
-    codegen.builder().build_store(age_ptr, age).unwrap());
+    codegen.builder().build_store(age_ptr, age).unwrap();
     
     // Convert Person to Stringer interface
     let person_type = Type::Struct("Person".to_string(), Vec::new();
@@ -428,13 +428,13 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         )
         .unwrap();
     
-    codegen.builder().build_return(Some(&name)).unwrap());
+    codegen.builder().build_return(Some(&name)).unwrap();
     
     // Failure case - return "not a Person"
     codegen.builder().position_at_end(failure_block);
     let error_str = codegen.create_string_constant("not a Person");
     // Need to handle the result
-    codegen.builder().build_return(Some(&error_str.unwrap()).unwrap());
+    codegen.builder().build_return(Some(&error_str.unwrap()).unwrap();
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {

@@ -71,9 +71,9 @@ mod property_access_tests {
             squad Point {
                 x: normie,
                 y: normie
-            }
+            };
 
-            // Define outer struct that contains a Point
+    //
             squad Rectangle {
                 topLeft: Point,
                 bottomRight: Point

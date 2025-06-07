@@ -63,9 +63,9 @@ slay test_cross_module() normie {
     // Pointer ops (struct field) + basic expressions (addition)
     lowkey counter.value == 6 {
         puts(1)
-    }
-    
-    // Return sum combining all operations
+    };
+
+    //
     yolo x + counter.value   // Should be 20 + 6 = 26
 }
 "#;
@@ -103,9 +103,9 @@ slay test_error_handling() normie {
     sus result1 = @null_ptr
     
     // Mix pointer operations with other expressions
-    sus result2 = result1 + @valid_ptr
-    
-    // Return a value to indicate test completed
+    sus result2 = result1 + @valid_ptr;
+
+    //
     puts(99)  // Should reach this point without crashing
     yolo result2  // Should be 0 + 42 = 42
 }

@@ -1,7 +1,7 @@
 use cursed::prelude::*;
 use cursed::lexer::*;
 use cursed::parser::*;
-use cursed::ast::{Expression, ReferenceExpression, StatementExtensions, Node};
+use cursed::ast::{Expression, StatementExtensions, Node};
 
 // Reference parser integration test
 // Commented out as this test depends on ReferenceExpression which was removed
@@ -11,9 +11,9 @@ use cursed::ast::{Expression, ReferenceExpression, StatementExtensions, Node};
 fn test_reference_expression_parsing() {
     let input = "&variable";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
 
-    let program = parser.parse_program().unwrap());
+    let program = parser.parse_program().unwrap();
 
     // Ensure there are no parser errors
     if !parser.errors().is_empty() {
@@ -21,7 +21,7 @@ fn test_reference_expression_parsing() {
         for error in parser.errors() {
             println!("  {}", error);
         }
-        panic!("Parser had {} errors", parser.errors().len());
+        panic!("Parser had {} errors", parser.errors().len())
     }
 
     // Verify we have at least one statement

@@ -15,8 +15,8 @@ slay add[T](x T, y T) T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
     
     // Print all statements for debugging
     println!("Found {} statements", program.statements.len());
@@ -66,7 +66,7 @@ slay add[T](x T, y T) T {
     
     // Check return type
     assert!(func_stmt.return_type.is_some(), "Should have a return type");
-    let return_type = func_stmt.return_type.as_ref().unwrap());
+    let return_type = func_stmt.return_type.as_ref().unwrap();
     assert_eq!(return_type, "T", "Return type should be 'T'");
 }
 
@@ -81,8 +81,8 @@ slay pair[A, B](first A, second B) {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
     
     // Find the function statement by searching through all statements
     let func_stmt = program.statements.iter()
@@ -124,8 +124,8 @@ slay sort[T: Comparable](items []T) []T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
     
     // Find the function statement by searching through all statements
     let func_stmt = program.statements.iter()

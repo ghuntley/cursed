@@ -23,8 +23,8 @@ be_like Box[T] squad {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
 
     // Log each statement for debugging
     debug!(total_statements = program.statements.len(), "Statement count");
@@ -134,9 +134,9 @@ slay foo[T](x normie) T {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
 
-    let program = parser.parse_program().unwrap());
+    let program = parser.parse_program().unwrap();
     
     // Log each statement for debugging
     debug!(total_statements = program.statements.len(), "Statement count");
@@ -296,8 +296,8 @@ sus box_int = Box[normie]{value: 42}
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
 
     // Log each statement for debugging
     debug!(total_statements = program.statements.len(), "Statement count");
@@ -440,8 +440,8 @@ sus result = identity[normie](42)
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
 
     // Should have a package declaration and a let statement
     // The parser currently generates 4 statements, but we only care about the package statement and the let statement

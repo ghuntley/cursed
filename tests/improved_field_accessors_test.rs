@@ -62,7 +62,7 @@ fn test_improved_field_accessors() {
     );
     
     // Check that it succeeded
-    assert!(result.is_ok(), "Failed to generate field accessors: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to generate field accessors: {:?}", result.err())
     
     // Verify that the accessor functions were created
     let getter_x = code_gen.module().get_function("Point_get_x");

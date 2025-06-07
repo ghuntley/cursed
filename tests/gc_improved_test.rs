@@ -365,7 +365,7 @@ fn test_incremental_gc_with_circular_refs() {
         
         if i > 0 {
             // Connect to previous node
-            let prev_node = nodes.last().unwrap());
+            let prev_node = nodes.last().unwrap();
             if let Some(inner) = new_node.inner_mut() {
                 inner.set_next(prev_node.clone();
                 trace!(from = i, to = i-1, "Created link between nodes");

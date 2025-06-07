@@ -35,8 +35,8 @@ fn test_switch_statement_compilation() {
     
     // Parse and generate code
     let mut lexer = Lexer::new(test_code);
-    let mut parser = Parser::new(&mut lexer).unwrap());
-    let program = parser.parse_program().unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
+    let program = parser.parse_program().unwrap();
     
     // Create the code generator
     let context = inkwell::context::Context::create();
@@ -45,7 +45,7 @@ fn test_switch_statement_compilation() {
     
     // Compile program
     let result = code_gen.compile_program(&program);
-    assert!(result.is_ok(), "Failed to compile switch statement: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile switch statement: {:?}", result.err())
     
     // Print generated IR for verification
     println!("Generated LLVM IR:\n{}", code_gen.module().to_string());
@@ -72,10 +72,10 @@ fn test_string_switch_statement_parsing() {
     "#;
     
     let mut lexer = Lexer::new(test_code);
-    let mut parser = Parser::new(&mut lexer).unwrap());
+    let mut parser = Parser::new(&mut lexer).unwrap();
     
     // Parse the program
-    let program = parser.parse_program().unwrap());
+    let program = parser.parse_program().unwrap();
     
     // Verify the program contains statements
     assert!(!program.statements.is_empty(), "Program should have statements");

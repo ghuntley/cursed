@@ -34,17 +34,17 @@ fn setup_interface_hierarchy() -> ThreadSafeInterfaceExtensionRegistry {
     // E -> F ---+
     // Simple diamond-like inheritance pattern
     
-    registry.register_extension("A", "B").unwrap());
-    registry.register_extension("A", "E").unwrap());
-    registry.register_extension("B", "C").unwrap());
-    registry.register_extension("B", "F").unwrap());
-    registry.register_extension("E", "F").unwrap());
-    registry.register_extension("F", "C").unwrap());
-    registry.register_extension("C", "D").unwrap());
+    registry.register_extension("A", "B").unwrap();
+    registry.register_extension("A", "E").unwrap();
+    registry.register_extension("B", "C").unwrap();
+    registry.register_extension("B", "F").unwrap();
+    registry.register_extension("E", "F").unwrap();
+    registry.register_extension("F", "C").unwrap();
+    registry.register_extension("C", "D").unwrap();
     
     // Add some isolated interfaces for testing error cases
-    registry.register_extension("X", "Y").unwrap());
-    registry.register_extension("Y", "Z").unwrap());
+    registry.register_extension("X", "Y").unwrap();
+    registry.register_extension("Y", "Z").unwrap();
     
     registry
 }
@@ -240,7 +240,7 @@ impl EnhancedInterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerat
         &mut self,
         _type_assertion: &cursed::ast::expressions::TypeAssertion,
     ) -> Result<inkwell::values::BasicValueEnum<'_>, Error> {
-        Err(Error::Compilation("Mock implementation does not support full compilation".into()))
+        Err(Error::Compilation("Mock implementation does not support full compilation".into())))
     }
 }
 
@@ -278,7 +278,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
                             // Update path
                             let mut new_path = path_map.get(&current).cloned().unwrap_or_else(|| (None, Vec::new())).1;
                             new_path.push(next.clone();
-                            path_map.insert(next.clone(), (Some(current.clone()), new_path.clone());
+                            path_map.insert(next.clone(), (Some(current.clone()), new_path.clone();
                             
                             // Check if we've reached the target
                             if &next == target_interface {
@@ -301,7 +301,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
         Err(Error::Compilation(format!(
             "No path found from interface '{}' to interface '{}'",
             source_interface, target_interface
-        )))
+        ))))
     }
     
     fn generate_interface_hierarchy_dot(&self) -> Result<String, Error> {
@@ -352,7 +352,7 @@ fn test_generate_interface_hierarchy_dot_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test the enhanced dot generation with proper error handling
-    let dot = generator.generate_interface_hierarchy_dot_enhanced().unwrap());
+    let dot = generator.generate_interface_hierarchy_dot_enhanced().unwrap();
     
     // Check that the DOT graph contains all the expected interfaces
     assert!(dot.contains("digraph interface_hierarchy");
@@ -378,7 +378,7 @@ fn test_find_interface_path_success() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding a path in a simple case
-    let path = generator.find_interface_path("A", "D").unwrap());
+    let path = generator.find_interface_path("A", "D").unwrap();
     
     // Verify the path is correct (should be A -> B -> C -> D)
     assert_eq!(path, vec!["A", "B", "C", "D"]);
@@ -392,7 +392,7 @@ fn test_find_interface_path_failure() {
     let result = generator.find_interface_path("A", "Z");
     
     // Verify proper error is returned
-    assert!(result.is_err());
+    assert!(result.is_err())
     let err = result.unwrap_err();
     match err {
         Error::Compilation(msg) => {
@@ -407,7 +407,7 @@ fn test_visualize_interface_path_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test the enhanced path visualization
-    let visualization = generator.visualize_interface_path_enhanced("A", "D").unwrap());
+    let visualization = generator.visualize_interface_path_enhanced("A", "D").unwrap();
     
     // Check that the visualization contains the expected content
     assert!(visualization.contains("Interface Inheritance Path:");
@@ -429,10 +429,10 @@ fn test_find_alternative_paths_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding alternative paths
-    let paths = generator.find_alternative_paths_enhanced("A", "D", 3).unwrap());
+    let paths = generator.find_alternative_paths_enhanced("A", "D", 3).unwrap();
     
     // Should find at least one alternative path in our test data
-    assert!(!paths.is_empty().is_empty());
+    assert!(!paths.is_empty().is_empty())
     
     // Verify the alternative paths are valid
     for path in &paths {
@@ -446,7 +446,7 @@ fn test_generate_path_error_message_enhanced() {
     let generator = MockLlvmCodeGenerator::new();
     
     // Test generating enhanced error message with alternatives
-    let error_msg = generator.generate_path_error_message_enhanced("A", "X", "test.csd:123").unwrap());
+    let error_msg = generator.generate_path_error_message_enhanced("A", "X", "test.csd:123").unwrap();
     
     // Verify error message contains expected content
     assert!(error_msg.contains("Type assertion error at test.csd:123");
@@ -459,7 +459,7 @@ fn test_generate_path_error_message_enhanced() {
     assert!(error_msg.contains("- E");
     
     // Test with interfaces that have alternatives
-    let error_msg = generator.generate_path_error_message_enhanced("A", "D", "test.csd:123").unwrap());
+    let error_msg = generator.generate_path_error_message_enhanced("A", "D", "test.csd:123").unwrap();
     
     // Verify error message contains alternatives
     assert!(error_msg.contains("Alternative paths between these interfaces:");

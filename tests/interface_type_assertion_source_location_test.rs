@@ -113,10 +113,10 @@ fn test_source_location_cache() {
     std::fs::write(&file_path, "line1\nline2\nline3\nline4\n").unwrap();
     
     // Cache the file
-    code_gen.cache_source_file(file_path.to_str().unwrap()).unwrap());
+    code_gen.cache_source_file(file_path.to_str().unwrap()).unwrap();
     
     // Get a line from the cache
-    let line = code_gen.get_cached_source_line(file_path.to_str().unwrap(), 3).unwrap());
+    let line = code_gen.get_cached_source_line(file_path.to_str().unwrap(), 3).unwrap();
     
     // Verify the line content
     assert_eq!(line, "line3");

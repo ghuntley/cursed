@@ -27,7 +27,7 @@ mod tests {
         // Check that string generates non-empty strings
         for _ in 0..10 {
             let val = quick_test::string();
-            assert!(!val.is_empty().is_empty());
+            assert!(!val.is_empty().is_empty())
         }
     }
 

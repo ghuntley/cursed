@@ -79,29 +79,29 @@ fn test_string_switch_statement() {
     let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
     
     // Create a function to test the switch statement
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let fn_type = i8_ptr_type.fn_type(&[], false);
     let function = code_generator.module().add_function("test_switch", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
     code_generator.builder_mut().position_at_end(entry_block);
     
     // Create a string value to switch on
-    let switch_value = code_generator.create_string_constant("Monday").unwrap());
+    let switch_value = code_generator.create_string_constant("Monday").unwrap();
     
     // Compile the switch statement for the string value
     let result = code_generator.compile_string_switch_statement(&switch_stmt, switch_value);
-    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err())
     
     // Add a return value to satisfy the function type
-    let return_str = code_generator.create_string_constant("test return").unwrap());
-    code_generator.builder_mut().build_return(Some(&return_str)).unwrap());
+    let return_str = code_generator.create_string_constant("test return").unwrap();
+    code_generator.builder_mut().build_return(Some(&return_str)).unwrap();
     
     // Verify the module
-    let verification = code_generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = code_generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
     
     // Get the IR code and check for expected components
-    let ir_code = code_generator.module().print_to_string().to_string());
+    let ir_code = code_generator.module().print_to_string().to_string();
     
     // Verify that strcmp is used in the IR
     assert!(ir_code.contains("@strcmp"), "IR should include strcmp function call");
@@ -144,29 +144,29 @@ fn test_string_switch_with_multiple_case_values() {
     let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
     
     // Create a function to test the switch statement
-    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default();
+    let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
     let fn_type = i8_ptr_type.fn_type(&[], false);
     let function = code_generator.module().add_function("test_switch", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
     code_generator.builder_mut().position_at_end(entry_block);
     
     // Create a string value to switch on
-    let switch_value = code_generator.create_string_constant("Mon").unwrap());
+    let switch_value = code_generator.create_string_constant("Mon").unwrap();
     
     // Compile the switch statement for the string value
     let result = code_generator.compile_string_switch_statement(&switch_stmt, switch_value);
-    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile string switch: {:?}", result.err())
     
     // Add a return value to satisfy the function type
-    let return_str = code_generator.create_string_constant("test return").unwrap());
-    code_generator.builder_mut().build_return(Some(&return_str)).unwrap());
+    let return_str = code_generator.create_string_constant("test return").unwrap();
+    code_generator.builder_mut().build_return(Some(&return_str)).unwrap();
     
     // Verify the module
-    let verification = code_generator.module().verify());
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err();
+    let verification = code_generator.module().verify();
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
     
     // Get the IR code and check for expected components
-    let ir_code = code_generator.module().print_to_string().to_string());
+    let ir_code = code_generator.module().print_to_string().to_string();
     
     // Verify both case values are included
     assert!(ir_code.contains("Monday"), "IR should contain 'Monday' string constant");

@@ -19,12 +19,12 @@ fn test_parse_struct_with_inferred_fields() {
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    let program = parser.parse_program().unwrap());
+    let program = parser.parse_program().unwrap();
 
     assert_eq!(program.statements.len(), 1);
 
     // Get the struct declaration
-    let struct_stmt = program.statements[0].as_any().downcast_ref::<cursed::ast::SquadStatement>().unwrap());
+    let struct_stmt = program.statements[0].as_any().downcast_ref::<cursed::ast::SquadStatement>().unwrap();
     
     // Check fields
     assert_eq!(struct_stmt.fields.len(), 4);
@@ -56,12 +56,12 @@ fn test_mixed_inferred_fields() {
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    let program = parser.parse_program().unwrap());
+    let program = parser.parse_program().unwrap();
 
     assert_eq!(program.statements.len(), 1);
 
     // Get the struct declaration
-    let struct_stmt = program.statements[0].as_any().downcast_ref::<cursed::ast::SquadStatement>().unwrap());
+    let struct_stmt = program.statements[0].as_any().downcast_ref::<cursed::ast::SquadStatement>().unwrap();
     
     // Check fields
     assert_eq!(struct_stmt.fields.len(), 3);

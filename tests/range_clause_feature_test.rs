@@ -35,7 +35,7 @@ fn test_range_implementation() {
     
     // Run the test with the currently active implementation
     // Using a mock test helper for now
-    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(45);
+    let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(45));
     match result {
         Ok(result) => {
             // Use as_int() which is the correct method

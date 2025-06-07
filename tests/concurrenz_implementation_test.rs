@@ -15,12 +15,12 @@ fn test_mutex_implementation() {
     let mutex = CursedMutex::new();
     
     // Test locking and unlocking
-    mutex.lock().unwrap());
+    mutex.lock().unwrap();
     
     // Since we're using a real mutex, unlock will fail because
     // the lock guard has already been dropped due to RAII
     // This is expected behavior
-    assert!(mutex.unlock().is_err());
+    assert!(mutex.unlock().is_err())
 }
 
 /// Test that we can create and use a RWMutex
@@ -30,14 +30,14 @@ fn test_rwmutex_implementation() {
     let rwmutex = CursedRWMutex::new();
     
     // Test read locking
-    rwmutex.rlock().unwrap());
+    rwmutex.rlock().unwrap();
     // Since we're using a real rwmutex with RAII, this should fail
-    assert!(rwmutex.runlock().is_err());
+    assert!(rwmutex.runlock().is_err())
     
     // Test write locking
-    rwmutex.lock().unwrap());
+    rwmutex.lock().unwrap();
     // Since we're using a real rwmutex with RAII, this should fail
-    assert!(rwmutex.unlock().is_err());
+    assert!(rwmutex.unlock().is_err())
 }
 
 /// Test that we can create and use a WaitGroup
@@ -47,34 +47,34 @@ fn test_waitgroup_implementation() {
     let wg = CursedWaitGroup::new();
     
     // Test adding to the waitgroup
-    wg.add(3).unwrap());
+    wg.add(3).unwrap();
     
     // Test marking as done
-    wg.done().unwrap());
-    wg.done().unwrap());
-    wg.done().unwrap());
+    wg.done().unwrap();
+    wg.done().unwrap();
+    wg.done().unwrap();
     
     // Test that we can't mark as done more than we added
-    assert!(wg.done().is_err());
+    assert!(wg.done().is_err())
     
     // Create another waitgroup for wait testing
     let wg2 = CursedWaitGroup::new();
-    wg2.add(1).unwrap());
+    wg2.add(1).unwrap();
     
     // Start a thread that will call done after a delay
     let wg2 = Arc::new(Mutex::new(wg2);
     let wg2_clone = Arc::clone(&wg2);
     let handle = thread::spawn(move || {
         thread::sleep(Duration::from_millis(100);
-        wg2_clone.lock().unwrap().done().unwrap());
+        wg2_clone.lock().unwrap().done().unwrap();
     });
     
     // Wait for the waitgroup to complete
     // This will block until the thread calls done
-    wg2.lock().unwrap().wait().unwrap());
+    wg2.lock().unwrap().wait().unwrap();
     
     // Join the thread (should already be done)
-    handle.join().unwrap());
+    handle.join().unwrap();
 }
 
 /// Test that we can create and use a Once object
@@ -89,7 +89,7 @@ fn test_once_implementation() {
     
     // Test the do_with_fn method works
     once.do_with_fn(move || {
-        let mut count = counter_clone.lock().unwrap());
+        let mut count = counter_clone.lock().unwrap();
         *count += 1;
     }).unwrap();
     
@@ -102,7 +102,7 @@ fn test_once_implementation() {
     
     // Call do_with_fn again - should still only execute once
     once.do_with_fn(move || {
-        let mut count = counter2_clone.lock().unwrap());
+        let mut count = counter2_clone.lock().unwrap();
         *count += 1;
     }).unwrap();
     

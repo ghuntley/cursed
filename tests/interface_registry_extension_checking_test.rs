@@ -40,16 +40,16 @@ fn test_interface_registry_extension_checking() {
     
     // Using the enhanced interface path finder for relationship detection
     // Test transitive relationship - this should work with the enhanced path finder
-    assert!(codegen.check_extension_relationship_enhanced("JSONFileReader", "Reader").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("JSONFileReader", "Reader").unwrap();
     
     // Test unrelated interfaces
-    assert!(!codegen.check_extension_relationship_enhanced("JSONFileReader", "Serializable").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced("JSONFileReader", "Serializable").unwrap();
     
     // Test with non-existent interface
-    assert!(!codegen.check_extension_relationship_enhanced("NonExistentInterface", "Reader").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced("NonExistentInterface", "Reader").unwrap();
     
     // Test checking for reversed relationships
-    assert!(!codegen.check_extension_relationship_enhanced("Reader", "JSONFileReader").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced("Reader", "JSONFileReader").unwrap();
 }
 
 /// Test that path finding works even with partial relationships in the registry
@@ -79,7 +79,7 @@ fn test_partial_extension_relationships() {
     // codegen.test_inheritance_map = Some(test_inheritance_map);
     
     // Check that the extension relationship check uses the enhanced path finder internally
-    assert!(codegen.check_extension_relationship_enhanced("Dog", "Animal").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("Dog", "Animal").unwrap();
 }
 
 /// Test multi-level inheritance hierarchies using enhanced extension checking
@@ -146,17 +146,17 @@ fn test_multi_level_inheritance_hierarchies() {
     // codegen.test_inheritance_map = Some(test_inheritance_map);
     
     // Test direct relationship
-    assert!(codegen.check_extension_relationship_enhanced("LandVehicle", "Vehicle").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("LandVehicle", "Vehicle").unwrap();
     
     // Test single-level indirect relationship
-    assert!(codegen.check_extension_relationship_enhanced("Car", "Vehicle").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("Car", "Vehicle").unwrap();
     
     // Test two-level indirect relationship
-    assert!(codegen.check_extension_relationship_enhanced("SportsCar", "Vehicle").unwrap());
+    assert!(codegen.check_extension_relationship_enhanced("SportsCar", "Vehicle").unwrap();
     
     // Test that non-existent paths return appropriate results
-    assert!(!codegen.check_extension_relationship_enhanced("Boat", "LandVehicle").unwrap());
-    assert!(!codegen.check_extension_relationship_enhanced("Car", "AirVehicle").unwrap());
+    assert!(!codegen.check_extension_relationship_enhanced("Boat", "LandVehicle").unwrap();
+    assert!(!codegen.check_extension_relationship_enhanced("Car", "AirVehicle").unwrap();
 }
 
 /// Test hook to set up inheritance relationships for testing

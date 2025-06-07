@@ -69,15 +69,13 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
         
         for name in struct_names {
             // Create different combinations of type parameters
-            types.push(Type::Struct(name.clone(), vec![]);
-            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Normie)]);
-            types.push(Type::Struct(name.clone(), vec![Box::new(Type::Tea)]);
-            types.push(Type::Struct(
-                name.clone(), 
+            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), vec![]);
+            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), vec![Box::new(Type::Normie)]);
+            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), vec![Box::new(Type::Tea)]);
+            types.push(Type::Struct(vec![Type::Int32], false));name.clone(), 
                 vec![Box::new(Type::Tea), Box::new(Type::Normie)]
             );
-            types.push(Type::Struct(
-                name.clone(),
+            types.push(Type::Struct(vec![Type::Int32], false));name.clone(),
                 vec![Box::new(Type::Struct("Nested".to_string(), vec![Box::new(Type::Lit)]))]
             );
         }
@@ -88,15 +86,13 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
         let outer_name = format!("Container{}", i);
         for j in 0..5 {
             let inner_name = format!("Element{}", j);
-            types.push(Type::Struct(
-                outer_name.clone(),
+            types.push(Type::Struct(vec![Type::Int32], false));outer_name.clone(),
                 vec![Box::new(Type::Struct(
                     inner_name.clone(),
                     vec![Box::new(Type::Normie)]
                 ))]
             );
-            types.push(Type::Struct(
-                outer_name.clone(),
+            types.push(Type::Struct(vec![Type::Int32], false));outer_name.clone(),
                 vec![Box::new(Type::Struct(
                     inner_name.clone(),
                     vec![Box::new(Type::Tea)]
@@ -108,8 +104,7 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
     // Ensure we have at least NUM_TYPES types
     while types.len() < NUM_TYPES {
         let idx = types.len() % 10;
-        types.push(Type::Struct(
-            format!("Extra{}", idx),
+        types.push(Type::Struct(vec![Type::Int32], false));format!("Extra{}", idx),
             vec![Box::new(Type::Normie)]
         );
     }
@@ -132,7 +127,7 @@ fn benchmark_no_cache(types: &[Type], interfaces: &[String]) -> (Duration, usize
     for _ in 0..NUM_ITERATIONS {
         for type_ in types {
             for interface in interfaces {
-                let result = registry.check_implementation(type_, interface).unwrap());
+                let result = registry.check_implementation(type_, interface).unwrap();
                 if result {
                     successful_checks += 1;
                 }
@@ -164,7 +159,7 @@ fn benchmark_basic_cache(types: &[Type], interfaces: &[String]) -> (Duration, us
                     }
                 } else {
                     // Cache miss, check with registry
-                    let result = registry.check_implementation(type_, interface).unwrap());
+                    let result = registry.check_implementation(type_, interface).unwrap();
                     cached_registry.store(type_, interface, result);
                     if result {
                         successful_checks += 1;
@@ -200,7 +195,7 @@ fn benchmark_lru_cache(types: &[Type], interfaces: &[String]) -> (Duration, usiz
                     }
                 } else {
                     // Cache miss, check with registry
-                    let result = registry.check_implementation(type_, interface).unwrap());
+                    let result = registry.check_implementation(type_, interface).unwrap();
                     lru_cache.store(type_, interface, result);
                     if result {
                         successful_checks += 1;
@@ -229,7 +224,7 @@ fn benchmark_thread_safe_lru(types: &[Type], interfaces: &[String]) -> (Duration
     for _ in 0..NUM_ITERATIONS {
         for type_ in types {
             for interface in interfaces {
-                let result = lru_registry.check_implementation(type_, interface).unwrap());
+                let result = lru_registry.check_implementation(type_, interface).unwrap();
                 if result {
                     successful_checks += 1;
                 }

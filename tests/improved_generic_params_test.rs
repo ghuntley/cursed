@@ -30,7 +30,7 @@ fn test_register_methods_for_struct() {
     ];
     
     // Register the methods for the struct
-    type_checker.register_methods_for_struct("TestStack", methods.clone());
+    type_checker.register_methods_for_struct("TestStack", methods.clone();
     
     // Get the methods for the struct
     let retrieved_methods = type_checker.get_struct_methods("TestStack").unwrap();
@@ -76,8 +76,8 @@ fn test_constraint_checking_with_type_checker() {
     let result = mono_manager.check_constraint(&struct_type, "Stack");
     
     // The struct should implement the interface
-    assert!(result.is_ok());
-    assert!(result.unwrap());
+    assert!(result.is_ok())
+    assert!(result.unwrap();
 }
 
 #[test]
@@ -111,7 +111,7 @@ fn test_constraint_checking_missing_interface() {
     let result = mono_manager.check_constraint(&struct_type, "Collection");
     
     // The struct should NOT implement the interface
-    assert!(result.is_err());
+    assert!(result.is_err())
     assert!(result.err().unwrap().to_string().contains("does not implement interface");
 }
 

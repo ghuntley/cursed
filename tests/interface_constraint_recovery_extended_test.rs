@@ -24,7 +24,7 @@ fn test_constraint_path_finding() {
     // Test with a type that implements the interface directly
     let path = registry.find_constraint_path(&Type::Normie, "Numeric");
     assert!(path.valid);
-    assert!(!path.path.is_empty().is_empty());
+    assert!(!path.path.is_empty().is_empty())
     
     // Test with a type that doesn't implement the interface
     let path = registry.find_constraint_path(&Type::Lit, "Numeric");
@@ -67,19 +67,19 @@ fn test_fix_suggestions() {
     let custom_type = Type::Struct("CustomVector".to_string(), vec![]);
     
     // It should not implement Numeric
-    assert!(!registry.check_implementation(&custom_type, "Numeric").unwrap());
+    assert!(!registry.check_implementation(&custom_type, "Numeric").unwrap();
     
     // Get fix suggestions
     let suggestions = registry.suggest_constraint_fixes(&custom_type, "Numeric");
     
     // Should have at least one suggestion
-    assert!(!suggestions.is_empty().is_empty());
+    assert!(!suggestions.is_empty().is_empty())
     
     // Should include suggestion to implement directly
-    assert!(suggestions.iter().any(|s| s.contains("Implement interface 'Numeric' directly"));
+    assert!(suggestions.iter().any(|s| s.contains("Implement interface 'Numeric' directly"))
     
     // Should include suggestion to use alternative type
-    assert!(suggestions.iter().any(|s| s.contains("Use an alternative type"));
+    assert!(suggestions.iter().any(|s| s.contains("Use an alternative type"))
 }
 
 #[test]
@@ -194,18 +194,18 @@ fn test_integrated_constraint_recovery() {
     let result = registry.check_constraint_with_recovery(&vector_type, "Numeric");
     
     // Should fail with recovery context
-    assert!(result.is_err());
-    let context = result.err().unwrap());
+    assert!(result.is_err())
+    let context = result.err().unwrap();
     
     // Context should have all the expected fields
     assert_eq!(context.failed_type, vector_type);
     assert_eq!(context.interface_name, "Numeric");
-    assert!(!context.alternative_types.is_empty().is_empty());
+    assert!(!context.alternative_types.is_empty().is_empty())
     
     // Create extended error
     let error = registry.create_extended_constraint_error(&vector_type, "Numeric");
     
     // Should be a formatted error message
-    assert!(!error.message().is_empty());
+    assert!(!error.message().is_empty())
     assert_eq!(error.code(), "CNST03");
 }

@@ -81,19 +81,19 @@ fn test_complex_dependencies() {
     // in reverse dependency order (dependents before their dependencies)
     
     // 0 must come before 1 and 2 in the finalization order
-    let pos_0 = order.iter().position(|&x| x == 0).unwrap());
-    let pos_1 = order.iter().position(|&x| x == 1).unwrap());
-    let pos_2 = order.iter().position(|&x| x == 2).unwrap());
+    let pos_0 = order.iter().position(|&x| x == 0).unwrap();
+    let pos_1 = order.iter().position(|&x| x == 1).unwrap();
+    let pos_2 = order.iter().position(|&x| x == 2).unwrap();
     assert!(pos_0 < pos_1, "Object 0 should come before object 1");
     assert!(pos_0 < pos_2, "Object 0 should come before object 2");
     
     // 1 and 2 must come before 3 in the finalization order
-    let pos_3 = order.iter().position(|&x| x == 3).unwrap());
+    let pos_3 = order.iter().position(|&x| x == 3).unwrap();
     assert!(pos_1 < pos_3, "Object 1 should come before object 3");
     assert!(pos_2 < pos_3, "Object 2 should come before object 3");
     
     // 2 must come before 4 in the finalization order
-    let pos_4 = order.iter().position(|&x| x == 4).unwrap());
+    let pos_4 = order.iter().position(|&x| x == 4).unwrap();
     assert!(pos_2 < pos_4, "Object 2 should come before object 4");
 }
 

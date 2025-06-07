@@ -26,13 +26,13 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register some test interfaces
-        code_generator.interface_registry().register_interface("Animal").unwrap());
-        code_generator.interface_registry().register_interface("Mammal").unwrap());
-        code_generator.interface_registry().register_interface("Dog").unwrap());
+        code_generator.interface_registry().register_interface("Animal").unwrap();
+        code_generator.interface_registry().register_interface("Mammal").unwrap();
+        code_generator.interface_registry().register_interface("Dog").unwrap();
         
         // Register the inheritance relationships
-        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap());
-        code_generator.interface_registry().register_extension("Mammal", "Dog").unwrap());
+        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap();
+        code_generator.interface_registry().register_extension("Mammal", "Dog").unwrap();
         
         // Test creating an error context
         let result = code_generator.create_assertion_context_error(
@@ -66,17 +66,17 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register some interfaces with a hierarchy
-        code_generator.interface_registry().register_interface("Animal").unwrap());
-        code_generator.interface_registry().register_interface("Mammal").unwrap());
-        code_generator.interface_registry().register_interface("Canine").unwrap());
-        code_generator.interface_registry().register_interface("Dog").unwrap());
-        code_generator.interface_registry().register_interface("Cat").unwrap());
+        code_generator.interface_registry().register_interface("Animal").unwrap();
+        code_generator.interface_registry().register_interface("Mammal").unwrap();
+        code_generator.interface_registry().register_interface("Canine").unwrap();
+        code_generator.interface_registry().register_interface("Dog").unwrap();
+        code_generator.interface_registry().register_interface("Cat").unwrap();
         
         // Register the inheritance relationships
-        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap());
-        code_generator.interface_registry().register_extension("Mammal", "Canine").unwrap());
-        code_generator.interface_registry().register_extension("Mammal", "Cat").unwrap());
-        code_generator.interface_registry().register_extension("Canine", "Dog").unwrap());
+        code_generator.interface_registry().register_extension("Animal", "Mammal").unwrap();
+        code_generator.interface_registry().register_extension("Mammal", "Canine").unwrap();
+        code_generator.interface_registry().register_extension("Mammal", "Cat").unwrap();
+        code_generator.interface_registry().register_extension("Canine", "Dog").unwrap();
         
         // Test getting recovery options for reversed relationship
         let reversed_result = code_generator.get_assertion_recovery_options("Dog", "Canine");
@@ -104,21 +104,21 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register a more complex hierarchy
-        code_generator.interface_registry().register_interface("Animal").unwrap());
-        code_generator.interface_registry().register_interface("Mammal").unwrap());
-        code_generator.interface_registry().register_interface("Bird").unwrap());
-        code_generator.interface_registry().register_interface("Cat").unwrap());
-        code_generator.interface_registry().register_interface("Dog").unwrap());
-        code_generator.interface_registry().register_interface("Duck").unwrap());
-        code_generator.interface_registry().register_interface("Penguin").unwrap());
+        code_generator.interface_registry().register_interface("Animal").unwrap();
+        code_generator.interface_registry().register_interface("Mammal").unwrap();
+        code_generator.interface_registry().register_interface("Bird").unwrap();
+        code_generator.interface_registry().register_interface("Cat").unwrap();
+        code_generator.interface_registry().register_interface("Dog").unwrap();
+        code_generator.interface_registry().register_interface("Duck").unwrap();
+        code_generator.interface_registry().register_interface("Penguin").unwrap();
         
         // Register extensions
-        code_generator.interface_registry().register_extension("Mammal", "Animal").unwrap());
-        code_generator.interface_registry().register_extension("Bird", "Animal").unwrap());
-        code_generator.interface_registry().register_extension("Cat", "Mammal").unwrap());
-        code_generator.interface_registry().register_extension("Dog", "Mammal").unwrap());
-        code_generator.interface_registry().register_extension("Duck", "Bird").unwrap());
-        code_generator.interface_registry().register_extension("Penguin", "Bird").unwrap());
+        code_generator.interface_registry().register_extension("Mammal", "Animal").unwrap();
+        code_generator.interface_registry().register_extension("Bird", "Animal").unwrap();
+        code_generator.interface_registry().register_extension("Cat", "Mammal").unwrap();
+        code_generator.interface_registry().register_extension("Dog", "Mammal").unwrap();
+        code_generator.interface_registry().register_extension("Duck", "Bird").unwrap();
+        code_generator.interface_registry().register_extension("Penguin", "Bird").unwrap();
         
         // Find common interfaces between cat and dog
         let common_mammal = code_generator.find_common_interfaces("Cat", "Dog");
@@ -146,14 +146,14 @@ mod tests {
         let mut code_generator = create_test_code_generator();
         
         // Register a type hierarchy
-        code_generator.interface_registry().register_interface("Readable").unwrap());
-        code_generator.interface_registry().register_interface("Document").unwrap());
-        code_generator.interface_registry().register_interface("Book").unwrap());
-        code_generator.interface_registry().register_interface("Article").unwrap());
+        code_generator.interface_registry().register_interface("Readable").unwrap();
+        code_generator.interface_registry().register_interface("Document").unwrap();
+        code_generator.interface_registry().register_interface("Book").unwrap();
+        code_generator.interface_registry().register_interface("Article").unwrap();
         
-        code_generator.interface_registry().register_extension("Document", "Readable").unwrap());
-        code_generator.interface_registry().register_extension("Book", "Document").unwrap());
-        code_generator.interface_registry().register_extension("Article", "Document").unwrap());
+        code_generator.interface_registry().register_extension("Document", "Readable").unwrap();
+        code_generator.interface_registry().register_extension("Book", "Document").unwrap();
+        code_generator.interface_registry().register_extension("Article", "Document").unwrap();
         
         // Create a simple type assertion expression
         let obj_expr = Box::new(Identifier {
@@ -174,7 +174,7 @@ mod tests {
         // but we can check that our error handler runs and returns a detailed error
         assert!(result.is_err(), "Should fail with detailed error");
         
-        if let Err(Error::Compilation(msg)) = result {
+        if let Err(Error::Compilation(msg))) = result {
             // The error message should be structured and include recovery options
             assert!(msg.contains("Article is not a Book"), "Error should mention type mismatch");
             assert!(msg.contains("Document"), "Error should mention common parent 'Document'");

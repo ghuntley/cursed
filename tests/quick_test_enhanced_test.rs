@@ -4,6 +4,7 @@ use cursed::stdlib::{combine_gen, weighted_gen};
 use cursed::object::Object;
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 
 /// Tests for the enhanced features of the quick_test module
@@ -35,8 +36,8 @@ fn test_state_machine() {
     }
     
     // Create a state machine for the counter
-    let counter = Rc::new(RefCell::new(Counter::new());
-    let mut machine = StateMachineImpl::new(counter.clone();
+    let counter = Rc::new(RefCell::new(Counter::new()));
+    let mut machine = StateMachineImpl::new(counter.clone());
     
     // Add increment action
     machine.add_action("increment", 
@@ -118,8 +119,8 @@ fn test_combine_generators() {
             
             // For testing purposes, we'll just return the components
             let mut map = std::collections::HashMap::new();
-            map.insert("name".to_string(, Object::String(person.name);
-            map.insert("age".to_string(, Object::Integer(person.age);
+            map.insert("name".to_string(), Object::String(person.name));
+            map.insert("age".to_string(), Object::Integer(person.age));
             Object::HashTable(map)
         })
     );

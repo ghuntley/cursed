@@ -30,14 +30,14 @@ impl Traceable for DependentObject {
     fn finalize(&mut self) {
         // Mark as finalized
         {
-            let mut finalized = self.finalized.lock().unwrap());
+            let mut finalized = self.finalized.lock().unwrap();
             *finalized = true;
             println!("DependentObject {} finalized", self.id);
         }
         
         // Add to finalization order
         {
-            let mut order = self.finalization_order.lock().unwrap());
+            let mut order = self.finalization_order.lock().unwrap();
             order.push(self.id);
         }
     }
@@ -93,7 +93,7 @@ fn test_finalization_order_with_object_storage() {
     finalize_objects_ordered(&addresses);
     
     // Check finalization order
-    let order = finalization_order.lock().unwrap());
+    let order = finalization_order.lock().unwrap();
     
     // Order should be correct (dependencies should be finalized first)
     assert_eq!(order.len(), 3, "All objects should be finalized");

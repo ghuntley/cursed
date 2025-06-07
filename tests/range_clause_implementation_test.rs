@@ -25,9 +25,9 @@ fn test_enhanced_numeric_range() {
     // Test basic range statement with improved syntax
     let input = r#"
         slay main() lit {
-            sus sum lit = 0
-            
-            // Use range to iterate from 0 to 9
+            sus sum lit = 0;
+
+    //
             periodt i := range 10 {
                 sum = sum + i
             }
@@ -52,9 +52,9 @@ fn test_enhanced_range_with_bounds() {
     // Test range with explicit start and end bounds
     let input = r#"
         slay main() lit {
-            sus sum lit = 0
-            
-            // Use range with start and end bounds
+            sus sum lit = 0;
+
+    //
             periodt i := range 5, 15 {
                 sum = sum + i
             }
@@ -79,9 +79,9 @@ fn test_enhanced_range_with_step() {
     // Test range with explicit step value
     let input = r#"
         slay main() lit {
-            sus sum lit = 0
-            
-            // Use range with start, end, and step
+            sus sum lit = 0;
+
+    //
             periodt i := range 0, 20, 4 {
                 sum = sum + i
             }
@@ -106,9 +106,9 @@ fn test_enhanced_negative_step_range() {
     // Test range with negative step value for decrementing iteration
     let input = r#"
         slay main() lit {
-            sus sum lit = 0
-            
-            // Use range with negative step
+            sus sum lit = 0;
+
+    //
             periodt i := range 20, 0, -5 {
                 sum = sum + i
             }
@@ -134,9 +134,9 @@ fn test_enhanced_empty_range() {
     let input = r#"
         slay main() lit {
             sus sum lit = 100
-            sus count lit = 0
-            
-            // Empty range cases
+            sus count lit = 0;
+
+    //
             periodt i := range 10, 5 {
                 // This body should never execute due to end < start
                 sum = sum + i
@@ -163,9 +163,9 @@ fn test_enhanced_large_range() {
     // Test range with large numbers close to integer limits
     let input = r#"
         slay main() lit {
-            sus count lit = 0
-            
-            // Large range with small number of iterations to avoid excessive loops
+            sus count lit = 0;
+
+    //
             periodt i := range 1000000, 1000010 {
                 count = count + 1
             }
@@ -190,9 +190,9 @@ fn test_enhanced_negative_bounds_range() {
     // Test range with negative start and end values
     let input = r#"
         slay main() lit {
-            sus sum lit = 0
-            
-            // Range with negative bounds
+            sus sum lit = 0;
+
+    //
             periodt i := range -10, -5 {
                 sum = sum + i
             }
@@ -279,9 +279,9 @@ fn test_enhanced_nested_range_loops() {
                 periodt j := range 3 {
                     sum = sum + (i * 10 + j)
                 }
-            }
-            
-            // Should be (0*10+0)+(0*10+1)+(0*10+2)+(1*10+0)+(1*10+1)+(1*10+2)+(2*10+0)+(2*10+1)+(2*10+2)
+            };
+
+    //
             // = 0+1+2+10+11+12+20+21+22 = 99
             return sum
         }
@@ -304,9 +304,9 @@ fn test_enhanced_map_key_iteration() {
     let input = r#"
         slay main() lit {
             sus scores = {"Alice": 10, "Bob": 20, "Charlie": 30}
-            sus count lit = 0
-            
-            // Iterate over just the keys
+            sus count lit = 0;
+
+    //
             periodt name := range scores {
                 // Just count how many keys
                 count = count + 1
@@ -333,9 +333,9 @@ fn test_enhanced_map_key_value_iteration() {
     let input = r#"
         slay main() lit {
             sus scores = {"Alice": 10, "Bob": 20, "Charlie": 30}
-            sus sum lit = 0
-            
-            // Iterate over key-value pairs
+            sus sum lit = 0;
+
+    //
             periodt name, score := range scores {
                 sum = sum + score
             }
@@ -369,9 +369,9 @@ fn test_enhanced_break_continue_combined() {
                 }
                 
                 // Add even number to sum
-                sum = sum + i
-                
-                // Break when sum exceeds 30
+                sum = sum + i;
+
+    //
                 lowkey sum > 30 {
                     break
                 }
@@ -402,9 +402,9 @@ fn test_enhanced_range_variable_scoping() {
             periodt outer := range 5 {
                 // This 'outer' should shadow the original 'outer'
                 // and be scoped to the loop
-            }
-            
-            // Should still be 42 after the loop
+            };
+
+    //
             return outer
         }
     "#;

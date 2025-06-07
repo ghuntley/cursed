@@ -58,9 +58,9 @@ fn test_basic_interface_type_assertion() {
         
         slay main() lit {
             sus p = Person{name: "John", age: 30}
-            sus greeter Greeter = p
-            
-            // Try to cast back to Person
+            sus greeter Greeter = p;
+
+    //
             sus person, ok = greeter.(Person)
             
             lowkey ok {
@@ -72,7 +72,7 @@ fn test_basic_interface_type_assertion() {
     "#;
     
     // Run the test
-    let result = run_jit_test(input).unwrap());
+    let result = run_jit_test(input).unwrap();
     
     // Should return true since the type assertion is valid
     assert_eq!(result.as_bool().unwrap(), true);
@@ -103,9 +103,9 @@ fn test_interface_type_assertion_failure() {
         
         slay main() lit {
             sus p = Person{name: "John", age: 30}
-            sus greeter Greeter = p
-            
-            // Try to cast to wrong type
+            sus greeter Greeter = p;
+
+    //
             sus other, ok = greeter.(OtherType)
             
             lowkey ok {
@@ -117,7 +117,7 @@ fn test_interface_type_assertion_failure() {
     "#;
     
     // Run the test
-    let result = run_jit_test(input).unwrap());
+    let result = run_jit_test(input).unwrap();
     
     // Should return false since the type assertion is invalid
     assert_eq!(result.as_bool().unwrap(), false);
@@ -139,9 +139,9 @@ fn test_interface_type_assertion_null_check() {
         }
         
         slay main() lit {
-            sus greeter Greeter = cap  // Null interface value
-            
-            // Try type assertion on null
+            sus greeter Greeter = cap  // Null interface value;
+
+    //
             sus person, ok = greeter.(Person)
             
             lowkey ok {
@@ -153,7 +153,7 @@ fn test_interface_type_assertion_null_check() {
     "#;
     
     // Run the test
-    let result = run_jit_test(input).unwrap());
+    let result = run_jit_test(input).unwrap();
     
     // Should return false since the interface value is null
     assert_eq!(result.as_bool().unwrap(), false);

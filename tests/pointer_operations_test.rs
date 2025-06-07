@@ -105,7 +105,7 @@ fn test_basic_address_of_operation() -> Result<(), Error> {
     generator.builder().build_return(Some(&result))?;
     
     // Skip module verification for now - we're focused on the API changes
-    // assert!(generator.module().verify().is_ok());
+    // assert!(generator.module().verify().is_ok())
     
     Ok(())
 }
@@ -173,7 +173,7 @@ fn test_pointer_dereference() -> Result<(), Error> {
     generator.builder().build_return(Some(&result))?;
     
     // Skip module verification for now - we're focused on the API changes
-    // assert!(generator.module().verify().is_ok());
+    // assert!(generator.module().verify().is_ok())
     
     Ok(())
 }
@@ -261,7 +261,7 @@ fn test_multiple_indirection() -> Result<(), Error> {
     generator.builder().build_return(Some(&result))?;
     
     // Skip module verification for now - we're focused on the API changes
-    // assert!(generator.module().verify().is_ok());
+    // assert!(generator.module().verify().is_ok())
     
     Ok(())
 }
@@ -279,7 +279,7 @@ fn test_null_pointer_handling() -> Result<(), Error> {
     
     // The code should have created the basic blocks for handling the null pointer
     // Skip module verification for now - we're focused on the API changes
-    // assert!(generator.module().verify().is_ok());
+    // assert!(generator.module().verify().is_ok())
     
     // We can't easily test the runtime behavior in a unit test, but we can
     // verify that the proper code was generated
@@ -342,7 +342,7 @@ fn test_store_to_pointer() -> Result<(), Error> {
     generator.builder().build_return(Some(&result))?;
     
     // Skip module verification for now - we're focused on the API changes
-    // assert!(generator.module().verify().is_ok());
+    // assert!(generator.module().verify().is_ok())
     
     Ok(())
 } 

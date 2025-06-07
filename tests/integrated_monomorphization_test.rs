@@ -39,7 +39,7 @@ fn test_integrated_monomorphization() {
     );
     
     // Verify the result
-    assert!(result.is_ok(), "Integrated monomorphization failed: {:?}", result.err());
+    assert!(result.is_ok(), "Integrated monomorphization failed: {:?}", result.err())
     
     // Verify the accessors were created correctly by checking for their presence in the module
     let module = code_gen.module();

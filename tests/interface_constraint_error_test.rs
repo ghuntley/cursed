@@ -42,7 +42,7 @@ fn test_constraint_error(input: &str) -> Option<CursedError> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().join("\n");
-        return Some(CursedError::new(ErrorKind::Parser, error_msg);
+        return Some(CursedError::new(ErrorKind::Parser, error_msg));
     }
     
     // Run the program with default JIT options
@@ -97,7 +97,7 @@ fn test_constraint_error_message_contains_missing_methods() {
         assert_eq!(error.kind(), &ErrorKind::Type);
         
         // Verify it contains detailed information
-        let error_msg = error.to_string());
+        let error_msg = error.to_string();
         assert!(error_msg.contains("does not satisfy interface constraint"), 
                 "Error message should mention constraint: {}", error_msg);
         
@@ -155,10 +155,10 @@ fn test_direct_interface_implementation_error() {
     if let Some(error) = test_constraint_error(input) {
         // Verify it's a type error
         assert!(error.is_kind(&ErrorKind::Type) || error.is_kind(&ErrorKind::TypeAssertion),
-                "Error should be a type error, got: {:?}", error.kind();
+                "Error should be a type error, got: {:?}", error.kind());
         
         // Verify it contains detailed information
-        let error_msg = error.to_string());
+        let error_msg = error.to_string();
         assert!(error_msg.contains("does not implement"), 
                 "Error message should mention implementation issue: {}", error_msg);
         

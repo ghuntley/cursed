@@ -181,9 +181,9 @@ fn test_struct_generator() {
             assert!(map.contains_key("is_active");
             
             // Check types
-            assert!(matches!(map["name"], Object::String(_));
-            assert!(matches!(map["age"], Object::Integer(_));
-            assert!(matches!(map["is_active"], Object::Boolean(_));
+            assert!(matches!(map["name"], Object::String(_))
+            assert!(matches!(map["age"], Object::Integer(_))
+            assert!(matches!(map["is_active"], Object::Boolean(_))
         } else {
             panic!("Generated value is not a struct");
         }

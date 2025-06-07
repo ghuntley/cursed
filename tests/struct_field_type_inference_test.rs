@@ -20,7 +20,7 @@ mod token_helper;
 #[test]
 fn test_struct_field_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_inference", PathBuf::from("test_struct_field_inference.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_inference", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -70,7 +70,7 @@ fn test_struct_field_type_inference() {
     
     // Compile the struct literal
     let result = generator.compile_expression(&struct_literal);
-    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile struct literal with type inference: {:?}", result.err())
     
     // Get the result value
     let struct_value = result.unwrap();
@@ -93,21 +93,21 @@ fn test_struct_field_type_inference() {
     
     // Compile the declaration
     let decl_result = generator.compile_statement(&let_stmt);
-    assert!(decl_result.is_ok(), "Failed to compile struct variable declaration: {:?}", decl_result.err());
+    assert!(decl_result.is_ok(), "Failed to compile struct variable declaration: {:?}", decl_result.err())
     
     // Verify the module
     let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
     
     // Return a dummy value and finalize function
     let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err())
 }
 
 #[test]
 fn test_nested_struct_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_struct_inference", PathBuf::from("test_nested_struct_inference.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_struct_inference", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -212,7 +212,7 @@ fn test_nested_struct_type_inference() {
     
     // Compile the nested struct literal
     let result = generator.compile_expression(&rect_literal);
-    assert!(result.is_ok(), "Failed to compile nested struct literal: {:?}", result.err());
+    assert!(result.is_ok(), "Failed to compile nested struct literal: {:?}", result.err())
     
     // Result should be a pointer to a struct
     let struct_value = result.unwrap();
@@ -220,17 +220,17 @@ fn test_nested_struct_type_inference() {
     
     // Verify the module
     let verification = generator.module().verify();
-    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
+    assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err())
     
     // Return a dummy value and finalize function
     let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err())
 }
 
 #[test]
 fn test_struct_field_incompatible_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test_struct_field_incompatible.csd"));
+    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test.csd"));
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -290,5 +290,5 @@ fn test_struct_field_incompatible_types() {
     
     // Return a dummy value to finalize function
     let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
-    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
+    assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err())
 }
