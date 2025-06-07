@@ -5,7 +5,7 @@ use cursed::error::Error;
 // Test for automatic registration of interface implementations during type checking
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

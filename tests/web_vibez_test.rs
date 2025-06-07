@@ -57,7 +57,7 @@ fn test_get_mock() {
 fn test_post_mock() {
     // Create a simple request body
     let mut body = HashMap::new();
-    body.insert("name".to_string(), Object::String("test".to_string());
+    body.insert("name".to_string(), Object::String("test".to_string()));
     body.insert("value".to_string(), Object::Integer(42));
     
     // Test with mock mode

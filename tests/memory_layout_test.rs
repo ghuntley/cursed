@@ -100,7 +100,7 @@ fn test_memory_layout() {
 
     // Return the size difference
     debug!("Building return instruction");
-    let _ = generator.builder_mut().build_return(Some(&size_diff);
+    let _ = generator.builder_mut().build_return(Some(&size_diff));
     debug!("Added return instruction successfully");
 
     let size_difference = normal_size_val as i64 - specialized_size_val as i64;

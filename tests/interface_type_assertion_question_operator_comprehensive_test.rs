@@ -20,7 +20,7 @@ use common::timing::Timer;
 
 
 // Import common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 pub mod common;
 
 

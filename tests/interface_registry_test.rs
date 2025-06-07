@@ -9,7 +9,7 @@ use cursed::error::Error;
 
 
 // Import test helpers
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

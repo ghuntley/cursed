@@ -17,7 +17,7 @@ use cursed::lexer::Token;
 // Import the necessary modules and traits
 
 // Import common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

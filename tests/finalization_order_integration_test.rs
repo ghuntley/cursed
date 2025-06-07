@@ -56,7 +56,7 @@ impl Clone for DependentObject {
 #[test]
 fn test_finalization_order_with_object_storage() {
     // Create a finalization order tracker
-    let finalization_order = Arc::new(Mutex::new(Vec::new());
+    let finalization_order = Arc::new(Mutex::new(Vec::new()));
     let storage = global_object_storage();
     
     // Create objects with dependencies: 0 depends on 1, 1 depends on 2

@@ -10,7 +10,7 @@ use std::sync::Arc;
 // Integration tests for deep nested async constraint checking
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

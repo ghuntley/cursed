@@ -8,7 +8,7 @@ use cursed::error::Error;
 // They focus on edge cases and comprehensive testing of all range clause features.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[path = "range_clause_test_helper.rs"]

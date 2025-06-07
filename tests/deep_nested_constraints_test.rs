@@ -9,7 +9,7 @@ use std::collections::HashMap;
 // with multiple constraints.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

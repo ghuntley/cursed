@@ -37,7 +37,7 @@ mod tests {
         }
 
         // Test meal (float64 conversion)
-        let arg = Arc::new(Object::Boolean(true);
+        let arg = Arc::new(Object::Boolean(true));
         let result = core::meal(&[arg]).unwrap();
         if let Object::Float(f) = &*result {
             assert!(*f == 1.0);
@@ -46,9 +46,9 @@ mod tests {
         }
 
         // Test tea (string conversion)
-        let arg = Arc::new(Object::Integer(42);
+        let arg = Arc::new(Object::Integer(42));
         let result = core::tea(&[arg]).unwrap();
-        assert_eq!(*result, Object::String("42".to_string());
+        assert_eq!(*result, Object::String("42".to_string()));
     }
 
     #[test]
@@ -88,16 +88,16 @@ mod tests {
         assert_eq!(*result, Object::Null);
         
         // Test set_map_value
-        let key = Arc::new(Object::String("key2".to_string());
-        let value = Arc::new(Object::String("value2".to_string());
+        let key = Arc::new(Object::String("key2".to_string()));
+        let value = Arc::new(Object::String("value2".to_string()));
         let result = core::set_map_value(&[map_obj.clone(), key.clone(), value]).unwrap();
         
         if let Object::HashTable(map) = &*result {
             assert_eq!(map.len(), 2);
-            assert!(map.contains_key("key1");
-            assert!(map.contains_key("key2");
+            assert!(map.contains_key("key1"));
+            assert!(map.contains_key("key2"));
             if let Some(v) = map.get("key2") {
-                assert_eq!(*v, Object::String("value2".to_string());
+                assert_eq!(*v, Object::String("value2".to_string()));
             } else {
                 panic!("Expected value for key2");
             }
@@ -109,29 +109,29 @@ mod tests {
     #[test]
     fn test_collections() {
         // Test len with string
-        let string_obj = Arc::new(Object::String("hello".to_string());
+        let string_obj = Arc::new(Object::String("hello".to_string()));
         let result = core::len(&[string_obj]).unwrap();
-        assert_eq!(*result, Object::Integer(5);
+        assert_eq!(*result, Object::Integer(5));
 
         // Test len with array
         let array = Object::Array(vec![Object::Integer(1), Object::Integer(2)]);
-        let array_obj = Rc::new(array.clone();
+        let array_obj = Rc::new(array.clone());
         let result = core::len(&[array_obj]).unwrap();
-        assert_eq!(*result, Object::Integer(2);
+        assert_eq!(*result, Object::Integer(2));
 
         // Test cap with array
         let mut vec = Vec::with_capacity(10);
-        vec.push(Object::Integer(1);
-        vec.push(Object::Integer(2);
+        vec.push(Object::Integer(1));
+        vec.push(Object::Integer(2));
         let array = Object::Array(vec);
         let array_obj = Rc::new(array);
         let result = core::cap(&[array_obj]).unwrap();
-        assert_eq!(*result, Object::Integer(10);
+        assert_eq!(*result, Object::Integer(10));
 
         // Test append with array
-        let original = Arc::new(Object::Array(vec![Object::Integer(1), Object::Integer(2)]);
-        let elem1 = Arc::new(Object::Integer(3);
-        let elem2 = Arc::new(Object::Integer(4);
+        let original = Arc::new(Object::Array(vec![Object::Integer(1), Object::Integer(2)]));
+        let elem1 = Arc::new(Object::Integer(3));
+        let elem2 = Arc::new(Object::Integer(4));
         
         let args = vec![original.clone(), elem1, elem2];
         let result = core::append(&args).unwrap();
@@ -146,10 +146,10 @@ mod tests {
         // Check result has all elements
         if let Object::Array(arr) = &*result {
             assert_eq!(arr.len(), 4);
-            assert_eq!(arr[0], Object::Integer(1);
-            assert_eq!(arr[1], Object::Integer(2);
-            assert_eq!(arr[2], Object::Integer(3);
-            assert_eq!(arr[3], Object::Integer(4);
+            assert_eq!(arr[0], Object::Integer(1));
+            assert_eq!(arr[1], Object::Integer(2));
+            assert_eq!(arr[2], Object::Integer(3));
+            assert_eq!(arr[3], Object::Integer(4));
         } else {
             panic!("Expected array");
         }
@@ -158,15 +158,15 @@ mod tests {
     #[test]
     fn test_channel_operations() {
         // Test channel creation
-        let arg = Arc::new(Object::String("channel".to_string());
-        let size = Arc::new(Object::Integer(5); // Buffer size 5
+        let arg = Arc::new(Object::String("channel".to_string()));
+        let size = Arc::new(Object::Integer(5)); // Buffer size 5
         let result = core::make(&[arg, size]).unwrap();
         
         if let Object::Channel(ch) = &*result {
             let channel = ch.borrow();
             assert_eq!(channel.capacity(), 5);
             assert_eq!(channel.len(), 0);
-            assert!(!channel.is_closed();
+            assert!(!channel.is_closed());
         } else {
             panic!("Expected channel");
         }
@@ -196,7 +196,7 @@ mod tests {
             
             // Verify it's closed
             let ch_ref = ch.borrow();
-            assert!(ch_ref.is_closed();
+            assert!(ch_ref.is_closed());
         }
     }
     
@@ -219,8 +219,8 @@ mod tests {
         }
         
         // Test make with zero size
-        let type_arg = Arc::new(Object::String("slice".to_string());
-        let size_arg = Arc::new(Object::Integer(0);
+        let type_arg = Arc::new(Object::String("slice".to_string()));
+        let size_arg = Arc::new(Object::Integer(0));
         
         let result = core::make(&[type_arg, size_arg]).unwrap();
         if let Object::Array(arr) = &*result {
@@ -232,7 +232,7 @@ mod tests {
     
     #[test]
     fn test_new_function() {
-        let type_arg = Arc::new(Object::String("normie".to_string());
+        let type_arg = Arc::new(Object::String("normie".to_string()));
         let result = core::new(&[type_arg]).unwrap();
         if let Object::Integer(i) = &*result {
             assert_eq!(*i, 0);
@@ -256,10 +256,10 @@ mod tests {
             panic!("Expected boolean");
         }
         
-        let type_arg = Arc::new(Object::String("map".to_string());
+        let type_arg = Arc::new(Object::String("map".to_string()));
         let result = core::new(&[type_arg]).unwrap();
         if let Object::HashTable(map) = &*result {
-            assert!(map.is_empty().is_empty())
+            assert!(map.is_empty())
         } else {
             panic!("Expected hash table");
         }

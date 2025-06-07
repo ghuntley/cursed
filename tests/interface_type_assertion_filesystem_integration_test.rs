@@ -16,7 +16,7 @@ mod tests {
     
     
     
-    #[path = "common.rs"]
+    #[path = "common/mod.rs"]
     mod common;
     
     // Initialize tracing for tests

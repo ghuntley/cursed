@@ -17,7 +17,7 @@ use tracing::*;
 // Test for LRU cached field accessors implementation
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 /// Setup function to initialize test tracing

@@ -54,8 +54,8 @@ fn test_error_wrapping() {
     assert_eq!(cause_error.message(), "Unexpected character");
     
     // Test is_kind for wrapped errors
-    assert!(wrapper_err.is_kind(&ErrorKind::Parser)) // Direct kind
-    assert!(wrapper_err.is_kind(&ErrorKind::Lexer))  // Kind of wrapped error
+    assert!(wrapper_err.is_kind(&ErrorKind::Parser)); // Direct kind
+    assert!(wrapper_err.is_kind(&ErrorKind::Lexer));  // Kind of wrapped error
 }
 
 #[test]
@@ -68,10 +68,10 @@ fn test_error_full_message() {
     let message = err.full_message();
     
     // Check that the full message contains all the expected parts
-    assert!(message.contains("[Runtime/E2001]"))
-    assert!(message.contains("Division by zero"))
-    assert!(message.contains("line 42, column 10"))
-    assert!(message.contains("operation: division"))
+    assert!(message.contains("[Runtime/E2001]"));
+    assert!(message.contains("Division by zero"));
+    assert!(message.contains("line 42, column 10"));
+    assert!(message.contains("operation: division"));
 }
 
 #[test]

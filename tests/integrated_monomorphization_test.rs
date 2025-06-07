@@ -2,7 +2,7 @@ use cursed::codegen::llvm::EnhancedMonomorphization;
 use cursed::codegen::llvm::IntegratedMonomorphization;
 use cursed::codegen::llvm::StructMonomorphization;
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

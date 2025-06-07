@@ -9,7 +9,7 @@ use tracing::{debug, info};
 
 
 // Import the common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 #[allow(unused_imports)]
 mod common;
 
@@ -38,7 +38,7 @@ fn test_facts_codegen() {
 
     // Create an LLVM context and code generator
     let context = Context::create();
-    let file_path = Path::new("facts_test.ll").to_path_buf());
+    let file_path = Path::new("facts_test.ll").to_path_buf();
     let mut code_gen = LlvmCodeGenerator::new(&context, "facts_test", file_path);
 
     // This should not panic if code generation for facts statements is properly implemented
@@ -54,7 +54,7 @@ fn test_facts_codegen() {
 
     // We can't easily run the code in this test, but we can at least verify it compiles
     // and check if the LLVM module looks correct
-    let module_str = code_gen.module().print_to_string().to_string());
+    let module_str = code_gen.module().print_to_string().to_string();
     
     // The test requires either a main function or at least some constant declarations
     let has_constants = module_str.contains("ANSWER") && module_str.contains("PI") && module_str.contains("E");

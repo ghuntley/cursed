@@ -9,7 +9,7 @@ use cursed::codegen::llvm::{
 
 // Import test utilities
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

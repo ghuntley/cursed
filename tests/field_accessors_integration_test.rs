@@ -58,7 +58,7 @@ fn test_field_accessors_integration() {
         &type_args2,
     );
     
-    assert!(result2.is_ok(), "Failed to generate second specialized struct with accessors: {:?}", result2.err();
+    assert!(result2.is_ok(), "Failed to generate second specialized struct with accessors: {:?}", result2.err());
     
     // Verify the field accessors were created for the second specialization
     assert!(code_gen.module().get_function("Point_Thicc_Lit_get_x").is_some(), 

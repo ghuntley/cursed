@@ -16,7 +16,7 @@ use cursed::error::Error;
 
 
 // Import the common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 /// Create test compiler with properly managed lifetime

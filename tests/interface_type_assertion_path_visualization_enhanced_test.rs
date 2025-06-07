@@ -17,7 +17,7 @@ use crate::common;
 
 // Import the common test utilities
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 /// Set up a fixture for tests with a populated interface hierarchy

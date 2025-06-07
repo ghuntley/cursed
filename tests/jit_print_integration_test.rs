@@ -92,7 +92,7 @@ fn setup_test_tracing() -> Result<(), ()> {
     {
         match std::path::Path::new("tests/common.rs").exists() {
             true => {
-                #[path = "common.rs"]
+                #[path = "common/mod.rs"]
                 mod common;
                 common::tracing::setup();
                 return Ok(());

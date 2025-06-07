@@ -5,7 +5,7 @@ use cursed::error::Error;
 use std::sync::Arc;
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

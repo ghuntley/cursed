@@ -5,6 +5,7 @@ use tracing_subscriber;
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     
     mod tracing_setup {
         pub fn setup() {

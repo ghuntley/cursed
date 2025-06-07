@@ -9,7 +9,7 @@ use cursed::object::Object as CursedObject;
 use cursed::object::ObjectRef;
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 pub mod common;
 
 // Initialize tracing setup for tests

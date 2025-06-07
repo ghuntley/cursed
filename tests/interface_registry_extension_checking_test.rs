@@ -49,7 +49,7 @@ fn test_interface_registry_extension_checking() {
     assert!(!codegen.check_extension_relationship_enhanced("NonExistentInterface", "Reader").unwrap();
     
     // Test checking for reversed relationships
-    assert!(!codegen.check_extension_relationship_enhanced("Reader", "JSONFileReader").unwrap();
+    assert!(!codegen.check_extension_relationship_enhanced("Reader", "JSONFileReader").unwrap());
 }
 
 /// Test that path finding works even with partial relationships in the registry
@@ -79,7 +79,7 @@ fn test_partial_extension_relationships() {
     // codegen.test_inheritance_map = Some(test_inheritance_map);
     
     // Check that the extension relationship check uses the enhanced path finder internally
-    assert!(codegen.check_extension_relationship_enhanced("Dog", "Animal").unwrap();
+    assert!(codegen.check_extension_relationship_enhanced("Dog", "Animal").unwrap());
 }
 
 /// Test multi-level inheritance hierarchies using enhanced extension checking
@@ -156,7 +156,7 @@ fn test_multi_level_inheritance_hierarchies() {
     
     // Test that non-existent paths return appropriate results
     assert!(!codegen.check_extension_relationship_enhanced("Boat", "LandVehicle").unwrap();
-    assert!(!codegen.check_extension_relationship_enhanced("Car", "AirVehicle").unwrap();
+    assert!(!codegen.check_extension_relationship_enhanced("Car", "AirVehicle").unwrap());
 }
 
 /// Test hook to set up inheritance relationships for testing
@@ -178,7 +178,7 @@ fn setup_test_inheritance_relationships(codegen: &mut LlvmCodeGenerator) {
     // Set up JSONSerializable extends Serializable
     let mut serializable_extensions = HashSet::new();
     serializable_extensions.insert("JSONSerializable".to_string());
-    test_inheritance_map.insert("Serializable".to_string(, serializable_extensions);
+    test_inheritance_map.insert("Serializable".to_string(), serializable_extensions);
     
     // Store this in the code generator for testing
     // codegen.test_inheritance_map = Some(test_inheritance_map);

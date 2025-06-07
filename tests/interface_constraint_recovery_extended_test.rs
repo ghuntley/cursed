@@ -11,7 +11,7 @@ use cursed::error::Error;
 // meaningful fixes, and provide detailed implementation guidance.
 
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 #[test]

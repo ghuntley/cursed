@@ -14,7 +14,7 @@ use tracing::{debug, error, info};
 
 
 // Import the common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 #[allow(unused_imports)]
 mod common;
 

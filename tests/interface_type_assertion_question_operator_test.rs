@@ -27,7 +27,7 @@ use inkwell::module::Module;
 
 
 // Import common test utilities
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 pub mod common;
 
 // Test trait definitions (since the real ones aren't public)

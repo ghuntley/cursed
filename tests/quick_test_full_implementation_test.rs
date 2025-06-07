@@ -2,6 +2,7 @@ use cursed::stdlib::quick_test::*;
 use cursed::object::Object;
 use std::sync::Arc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 
 /// Test new functionality added to complete the quick_test implementation
@@ -13,8 +14,8 @@ mod tests {
 #[test]
 fn test_state_machine_implementation() {
     // Create a state machine for testing
-    let counter = Rc::new(RefCell::new(0);
-    let machine = StateMachine::new(counter.clone();
+    let counter = Rc::new(RefCell::new(0));
+    let machine = StateMachine::new(counter.clone());
     
     // Add increment action
     machine.add_action("increment", 
@@ -81,8 +82,8 @@ fn test_complex_generators() {
     for _ in 0..10 {
         let value = complex_gen.generate(&mut rand, 100);
         if let Object::HashTable(map) = value {
-            assert!(map.contains_key("real");
-            assert!(map.contains_key("imag");
+            assert!(map.contains_key("real"));
+            assert!(map.contains_key("imag"));
         } else {
             panic!("Generated value is not a complex number");
         }
@@ -92,7 +93,7 @@ fn test_complex_generators() {
 #[test]
 fn test_string_generators() {
     // Test string generators with character restrictions
-    let alphanum_gen = string_of_n_from(1, 10, alpha_numeric();
+    let alphanum_gen = string_of_n_from(1, 10, alpha_numeric());
     let mut rand = Rand::new(42); // Fixed seed for reproducibility
     
     // Generate alphanumeric strings
@@ -114,10 +115,10 @@ fn test_composite_generators() {
     // Test slice and map generators
     let elem_gen = int_range_gen(0, 100);
     // Create a new generator instead of cloning
-    let slice_gen = slice_of_n(5, 10, int_range_gen(0, 100);
+    let slice_gen = slice_of_n(5, 10, int_range_gen(0, 100));
     
     // Use separate generators instead of trying to clone
-    let key_gen = string_of_n_from(1, 10, alpha_numeric();
+    let key_gen = string_of_n_from(1, 10, alpha_numeric());
     let value_gen = int_range_gen(0, 100);
     let map_gen = map_of(key_gen, value_gen);
     
@@ -165,9 +166,9 @@ fn test_composite_generators() {
 fn test_struct_generator() {
     // Test struct generator
     let mut field_gens = std::collections::HashMap::new();
-    field_gens.insert("name".to_string(), string_of_n_from(1, 10, alpha_numeric());
-    field_gens.insert("age".to_string(, int_range_gen(0, 120);
-    field_gens.insert("is_active".to_string(, boolean_gen();
+    field_gens.insert("name".to_string(), string_of_n_from(1, 10, alpha_numeric()));
+    field_gens.insert("age".to_string(), int_range_gen(0, 120));
+    field_gens.insert("is_active".to_string(), boolean_gen());
     
     let struct_gen = struct_of(field_gens);
     let mut rand = Rand::new(42); // Fixed seed for reproducibility
@@ -176,14 +177,14 @@ fn test_struct_generator() {
     for _ in 0..10 {
         let value = struct_gen.generate(&mut rand, 100);
         if let Object::HashTable(map) = value {
-            assert!(map.contains_key("name");
-            assert!(map.contains_key("age");
-            assert!(map.contains_key("is_active");
+            assert!(map.contains_key("name"));
+            assert!(map.contains_key("age"));
+            assert!(map.contains_key("is_active"));
             
             // Check types
-            assert!(matches!(map["name"], Object::String(_))
-            assert!(matches!(map["age"], Object::Integer(_))
-            assert!(matches!(map["is_active"], Object::Boolean(_))
+            assert!(matches!(map["name"], Object::String(_)));
+            assert!(matches!(map["age"], Object::Integer(_)));
+            assert!(matches!(map["is_active"], Object::Boolean(_)));
         } else {
             panic!("Generated value is not a struct");
         }
