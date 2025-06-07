@@ -9,7 +9,7 @@ use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation, StructFieldInference};
-use cursed::Type;
+use cursed::core::type_checker::Type;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
@@ -74,21 +74,21 @@ fn test_struct_field_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "x"),
+                    token: "x".to_string(),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Note: integer assigned to float field
-                    token: new_token(TokenType::Int, "10"),
+                    token: "10".to_string(),
                     value: 10,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "y"),
+                    token: "y".to_string(),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: new_token(TokenType::Float, "20.5"),
+                    token: "20.5".to_string(),
                     value: 20.5,
                 }),
             },
@@ -111,7 +111,7 @@ fn test_struct_field_type_inference() {
     
     // Store the struct in a variable
     let var_name = Identifier {
-        token: new_token(TokenType::Identifier, "p"),
+        token: "p".to_string(),
         value: "p".to_string(),
     };
     
@@ -122,21 +122,21 @@ fn test_struct_field_type_inference() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "x"),
+                    token: "x".to_string(),
                     value: "x".to_string(),
                 },
                 value: Box::new(IntegerLiteral { // Using integer for float field (type coercion)
-                    token: new_token(TokenType::Int, "15"),
+                    token: "15".to_string(),
                     value: 15,
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "y"),
+                    token: "y".to_string(),
                     value: "y".to_string(),
                 },
                 value: Box::new(FloatLiteral {
-                    token: new_token(TokenType::Float, "25.5"),
+                    token: "25.5".to_string(),
                     value: 25.5,
                 }),
             },
@@ -144,7 +144,7 @@ fn test_struct_field_type_inference() {
     };
     
     let let_stmt = LetStatement {
-        token: new_token(TokenType::Sus, "sus"),
+        token: "sus".to_string(),
         name: var_name.clone(),
         type_annotation: None, // No explicit type - should infer from value
         value: Some(Box::new(new_struct_literal)),
@@ -196,21 +196,21 @@ fn test_struct_field_incompatible_types() {
         fields: vec![
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "name"),
+                    token: "name".to_string(),
                     value: "name".to_string(),
                 },
                 value: Box::new(StringLiteral {
-                    token: new_token(TokenType::String, "\"John\""),
+                    token: "\"John\"".to_string(),
                     value: "John".to_string(),
                 }),
             },
             KeyValuePair {
                 key: Identifier {
-                    token: new_token(TokenType::Identifier, "age"),
+                    token: "age".to_string(),
                     value: "age".to_string(),
                 },
                 value: Box::new(StringLiteral { // String assigned to int field - should fail
-                    token: new_token(TokenType::String, "\"30\""),
+                    token: "\"30\"".to_string(),
                     value: "30".to_string(),
                 }),
             },

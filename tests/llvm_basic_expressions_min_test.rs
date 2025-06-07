@@ -23,7 +23,7 @@ fn test_integer_literal_expression() {
 
     // Create a simple expression: 42
     let int_lit = IntegerLiteral {
-        token: Token::new(TokenType::Int, "42"),
+        token: "42".to_string(),
         value: 42,
     };
 

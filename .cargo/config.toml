@@ -1,15 +1,9 @@
-[target.x86_64-unknown-linux-gnu]
-linker = "gcc"
-rustflags = [
-  "-C", "link-arg=-fuse-ld=bfd",
-  "-C", "link-arg=-Wl,-z,muldefs"
-]
-
 [build]
 rustflags = [
-  "-C", "link-arg=-fuse-ld=bfd",
-  "-C", "link-arg=-Wl,-z,muldefs"
+    "-C", "linker=gcc",
+    "-C", "link-arg=-fuse-ld=ld",
+    "-L", "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib",
+    "-L", "/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib",
+    "-L", "/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib",
+    "-L", "/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib"
 ]
-
-[env]
-CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER = "gcc"

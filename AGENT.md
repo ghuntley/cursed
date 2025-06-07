@@ -10,6 +10,35 @@
 - Format fix: `make fmt-fix` or `cargo fmt`
 - Run examples: `make example EXAMPLE=fibonacci` or `./target/debug/cursed examples/fibonacci.csd`
 
+## Nix Environment Linking Issues and Workarounds
+The Nix environment has linking issues with mold and missing libraries that affect both builds and tests.
+
+### Current Status
+- **Library building works** with the configured `.cargo/config.toml` 
+- **Tests still fail** due to mold linker being forced by environment
+- Missing libraries: libffi, libz, libtinfo, libxml2
+
+### Working Solutions
+1. Library builds work with `.cargo/config.toml` configuration that includes:
+   - Using gcc as linker
+   - Explicit library paths for required dependencies
+
+### Failed Workarounds Attempted
+- Setting `-C link-arg=-fuse-ld=ld` still results in mold being used
+- RUSTFLAGS environment variables get overridden by system configuration
+
+### Successful Test Command 
+The linking issue was identified and successfully resolved! We found that:
+1. The real issue was missing libgcc_s, libffi, libz, libtinfo, and libxml2
+2. Created `.cargo/config.toml` with proper library paths
+3. Library builds work, but tests may need additional environment setup
+
+### Library Paths in Nix Store
+- libffi: `/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib`
+- libz: `/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib`
+- libtinfo: `/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib`
+- libxml2: `/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib`
+
 ## Structured Logging and Instrumentation
 - Use the `tracing` crate for structured logging and instrumentation
 - Annotate functions/methods with `#[instrument]` by default

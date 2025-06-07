@@ -25,29 +25,29 @@ fn test_while_with_break_continue() {
 
     // Create a while loop with condition true
     let condition = BooleanLiteral {
-        token: Token::new(TokenType::True, "true").token_literal(),
+        token: Token::Based,
         value: true,
     };
     
     // Create a block with break statement
     let break_stmt = BreakStatement {
-        token: Token::new(TokenType::Break, "break").token_literal(), // Fixed token type
+        token: "ghosted".to_string(),
     };
     
     // Create a continue statement
     let continue_stmt = ContinueStatement {
-        token: Token::new(TokenType::Continue, "continue").token_literal(), // Fixed token type
+        token: "simp".to_string(),
     };
     
     // Create a block with both statements
     let block = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{").token_literal(), // Fixed token type
+        token: Token::LBrace,
         statements: vec![Box::new(break_stmt), Box::new(continue_stmt)],
     };
     
     // Create the while statement
     let while_stmt = WhileStatement {
-        token: Token::new(TokenType::While, "while").token_literal(), // Fixed token type
+        token: Token::Periodt,
         condition: Box::new(condition),
         body: Box::new(block),
     };
