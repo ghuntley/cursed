@@ -21,6 +21,8 @@ pub mod collections;
 pub mod concurrency;
 pub mod constraint;
 pub mod dot_expression;
+pub mod qualified_name;
+pub mod qualified_identifier;
 pub mod generics;
 pub mod identifiers;
 pub mod if_expression;
@@ -50,6 +52,8 @@ pub use range_expression::RangeExpression;
 
 // Specific imports from generics to avoid conflicts
 pub use dot_expression::DotExpression;
+pub use qualified_name::{QualifiedName, QualifiedSymbolKind};
+pub use qualified_identifier::QualifiedIdentifier;
 pub use generics::TypeReference;
 pub use if_expression::IfExpression;
 pub use struct_expr::{StructLiteral, StructFieldAccess, KeyValuePair};

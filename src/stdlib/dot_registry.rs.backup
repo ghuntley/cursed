@@ -9,6 +9,7 @@ use std::sync::Mutex;
 use std::sync::Arc;
 use once_cell::sync::Lazy;
 use crate::error::Error;
+// // // Symbol resolution will be handled by the new package resolver system // Commented out - using new resolver
 use serde_json::{Value, json};
 
 /// Function type for dot expression handlers (package functions) with string arguments
@@ -52,7 +53,9 @@ impl DotRegistry {
             generic_handlers: HashMap::new(),
             generic_methods: HashMap::new(),
         }
+*/
     }
+*/
     
     /// Initialize standard library dot functions
     fn init_stdlib(&mut self) {
@@ -71,6 +74,7 @@ impl DotRegistry {
             if args.len() < 2 {
                 return Err(crate::error::Error::from_str("reflectz.IsType requires 2 arguments"));
             }
+*/
             // Simplified implementation
             Ok("true".to_string())
         });
@@ -79,6 +83,7 @@ impl DotRegistry {
             if args.len() < 2 {
                 return Err(crate::error::Error::from_str("reflectz.Implements requires 2 arguments"));
             }
+*/
             // Simplified implementation
             Ok("true".to_string())
         });
@@ -116,6 +121,7 @@ impl DotRegistry {
         self.register_handler("core", "make", core_make_handler);
         self.register_handler("core", "new", core_new_handler);
     }
+*/
     
     /// Register a handler for a dot expression
     #[tracing::instrument(skip(self, handler), fields(package = ?package, function = ?function), level = "debug")]
@@ -125,6 +131,7 @@ impl DotRegistry {
             
         package_handlers.insert(function.to_string(), handler);
     }
+*/
     
     /// Register a method for a user-defined type
     pub fn register_method(&mut self, type_name: &str, method_name: &str, handler: MethodHandlerFn) {
@@ -133,6 +140,7 @@ impl DotRegistry {
             
         type_methods.insert(method_name.to_string(), handler);
     }
+*/
     
     /// Register a generic handler for a dot expression (with JSON arguments)
     pub fn register_generic_handler(&mut self, package: &str, function: &str, handler: GenericDotHandlerFn) {
@@ -141,6 +149,7 @@ impl DotRegistry {
             
         package_handlers.insert(function.to_string(), handler);
     }
+*/
     
     /// Register a generic method for a user-defined type (with JSON arguments)
     pub fn register_generic_method(&mut self, type_name: &str, method_name: &str, handler: GenericMethodHandlerFn) {
@@ -149,6 +158,7 @@ impl DotRegistry {
             
         type_methods.insert(method_name.to_string(), handler);
     }
+*/
 
     /// Check if a handler exists for a given package.function
     pub fn has_handler(&self, package: &str, function: &str) -> bool {
@@ -185,7 +195,9 @@ impl DotRegistry {
         } else {
             false
         }
+*/
     }
+*/
     
     /// Check if a generic method exists for a given type.method
     pub fn has_generic_method(&self, type_name: &str, method_name: &str) -> bool {
@@ -194,31 +206,37 @@ impl DotRegistry {
         } else {
             false
         }
+*/
     }
+*/
     
     /// Get a handler for a dot expression
     pub fn get_handler(&self, package: &str, function: &str) -> Option<&DotHandlerFn> {
         self.handlers.get(package)
             .and_then(|package_handlers| package_handlers.get(function))
     }
+*/
     
     /// Get a method handler for a user-defined type
     pub fn get_method(&self, type_name: &str, method_name: &str) -> Option<&MethodHandlerFn> {
         self.methods.get(type_name)
             .and_then(|type_methods| type_methods.get(method_name))
     }
+*/
     
     /// Get a generic handler for a dot expression
     pub fn get_generic_handler(&self, package: &str, function: &str) -> Option<&GenericDotHandlerFn> {
         self.generic_handlers.get(package)
             .and_then(|package_handlers| package_handlers.get(function))
     }
+*/
     
     /// Get a generic method handler for a user-defined type
     pub fn get_generic_method(&self, type_name: &str, method_name: &str) -> Option<&GenericMethodHandlerFn> {
         self.generic_methods.get(type_name)
             .and_then(|type_methods| type_methods.get(method_name))
     }
+*/
     
     /// Execute a dot expression with the given arguments
     #[tracing::instrument(skip(self), fields(package = ?package, function = ?function, args_count = args.len()), level = "debug")]
@@ -236,10 +254,13 @@ impl DotRegistry {
                 Ok(value) => Ok(value.to_string()),
                 Err(e) => Err(e),
             }
+*/
         } else {
             Err(Error::from_str(&format!("No handler found for {}.{}", package, function)))
         }
+*/
     }
+*/
     
     /// Execute a method on a user-defined type
     pub fn execute_method(&self, type_name: &str, method_name: &str, object_json: String, args: Vec<String>) -> Result<String, Error> {
@@ -259,13 +280,17 @@ impl DotRegistry {
                         Ok(value) => Ok(value.to_string()),
                         Err(e) => Err(e),
                     }
+*/
                 },
                 Err(_) => Err(Error::from_str("Invalid JSON for object")),
             }
+*/
         } else {
             Err(Error::from_str(&format!("No method found for {}.{}", type_name, method_name)))
         }
+*/
     }
+*/
     
     /// Execute a dot expression with generic JSON arguments
     pub fn execute_generic(&self, package: &str, function: &str, args: Vec<Value>) -> Result<Value, Error> {
@@ -282,10 +307,13 @@ impl DotRegistry {
                 Ok(result) => serde_json::from_str(&result).map_err(|_| Error::from_str("Failed to parse result as JSON")),
                 Err(e) => Err(e),
             }
+*/
         } else {
             Err(Error::from_str(&format!("No handler found for {}.{}", package, function)))
         }
+*/
     }
+*/
     
     /// Execute a method with generic JSON arguments
     pub fn execute_generic_method(&self, type_name: &str, method_name: &str, object: Value, args: Vec<Value>) -> Result<Value, Error> {
@@ -305,10 +333,13 @@ impl DotRegistry {
                 Ok(result) => serde_json::from_str(&result).map_err(|_| Error::from_str("Failed to parse result as JSON")),
                 Err(e) => Err(e),
             }
+*/
         } else {
             Err(Error::from_str(&format!("No method found for {}.{}", type_name, method_name)))
         }
+*/
     }
+*/
     
     /// Get all registered packages
     pub fn packages(&self) -> Vec<String> {
@@ -318,9 +349,12 @@ impl DotRegistry {
             if !packages.contains(package) {
                 packages.push(package.clone());
             }
+*/
         }
+*/
         packages
     }
+*/
     
     /// Get all registered user-defined types
     pub fn types(&self) -> Vec<String> {
@@ -330,9 +364,12 @@ impl DotRegistry {
             if !types.contains(typ) {
                 types.push(typ.clone());
             }
+*/
         }
+*/
         types
     }
+*/
     
     /// Get all registered functions for a package
     pub fn functions(&self, package: &str) -> Vec<String> {
@@ -341,16 +378,21 @@ impl DotRegistry {
         if let Some(package_handlers) = self.handlers.get(package) {
             functions.extend(package_handlers.keys().cloned());
         }
+*/
         // Add functions from generic handlers that aren't already in the list
         if let Some(package_handlers) = self.generic_handlers.get(package) {
             for function in package_handlers.keys() {
                 if !functions.contains(function) {
                     functions.push(function.clone());
                 }
+*/
             }
+*/
         }
+*/
         functions
     }
+*/
     
     /// Get all registered methods for a user-defined type
     pub fn methods(&self, type_name: &str) -> Vec<String> {
@@ -359,27 +401,48 @@ impl DotRegistry {
         if let Some(type_methods) = self.methods.get(type_name) {
             methods.extend(type_methods.keys().cloned());
         }
+*/
         // Add methods from generic handlers that aren't already in the list
         if let Some(type_methods) = self.generic_methods.get(type_name) {
             for method in type_methods.keys() {
                 if !methods.contains(method) {
                     methods.push(method.clone());
                 }
+*/
             }
+*/
         }
+*/
         methods
     }
+*/
 
-    /// Alias for packages() - used by public API
-    pub fn get_packages(&self) -> Vec<String> {
-        self.packages()
+        }
+*/
+        
+        // Register user-defined types and their methods
+        for type_name in self.types() {
+            // Note: We don't have a package context for user types in the registry
+            // In a real implementation, these would be tied to specific packages
+            for method_name in self.methods(&type_name) {
+                // For now, skip registration of methods as they need a package context
+                tracing::debug!(
+                    type_name = %type_name,
+                    method_name = %method_name,
+                    "Skipping method registration (needs package context)"
+                );
+            }
+*/
+        }
+*/
+        
+        tracing::debug!("Stdlib symbols registered with resolver");
+        Ok(())
     }
-
-    /// Alias for functions() - used by public API
-    pub fn get_functions(&self, package: &str) -> Vec<String> {
-        self.functions(package)
-    }
+*/
+    */
 }
+*/
 
 // Helper function to parse a string into a JSON Value
 fn parse_json_value(s: &str) -> Value {
@@ -387,11 +450,13 @@ fn parse_json_value(s: &str) -> Value {
     if let Ok(value) = serde_json::from_str::<Value>(s) {
         return value;
     }
+*/
     
     // Try to parse as a number
     if let Ok(num) = s.parse::<f64>() {
         return json!(num);
     }
+*/
     
     // Try to parse as a boolean
     if s == "true" || s == "True" {
@@ -399,10 +464,12 @@ fn parse_json_value(s: &str) -> Value {
     } else if s == "false" || s == "False" {
         return Value::Bool(false);
     }
+*/
     
     // Default to a string
     Value::String(s.to_string())
 }
+*/
 
 // Standard handler implementations
 
@@ -414,7 +481,9 @@ fn vibez_spill_handler(args: Vec<String>) -> Result<String, Error> {
     } else {
         Err(Error::from_str("vibez.spill requires one argument"))
     }
+*/
 }
+*/
 
 /// Handler for htmlrizzler.escape_html function
 fn htmlrizzler_escape_html_handler(args: Vec<String>) -> Result<String, Error> {
@@ -429,7 +498,9 @@ fn htmlrizzler_escape_html_handler(args: Vec<String>) -> Result<String, Error> {
     } else {
         Err(Error::from_str("htmlrizzler.escape_html requires one argument"))
     }
+*/
 }
+*/
 
 /// Handler for timez.Now function
 fn timez_now_handler(args: Vec<String>) -> Result<String, Error> {
@@ -441,13 +512,16 @@ fn timez_now_handler(args: Vec<String>) -> Result<String, Error> {
     } else {
         Err(Error::from_str("Failed to get system time"))
     }
+*/
 }
+*/
 
 /// Generic handler for mathz.CalculateArea function
 fn mathz_calculate_area_handler(args: Vec<Value>) -> Result<Value, Error> {
     if args.len() < 2 {
         return Err(Error::from_str("mathz.CalculateArea requires at least 2 arguments"));
     }
+*/
     
     // Extract the first argument (pi)
     let pi = args[0].as_f64().unwrap_or(3.14159);
@@ -461,12 +535,14 @@ fn mathz_calculate_area_handler(args: Vec<Value>) -> Result<Value, Error> {
     // Return the result as a JSON Value
     Ok(json!(area))
 }
+*/
 
 /// Generic handler for mathz.ConditionalCalculation function
 fn mathz_conditional_calculation_handler(args: Vec<Value>) -> Result<Value, Error> {
     if args.len() < 2 {
         return Err(Error::from_str("mathz.ConditionalCalculation requires at least 2 arguments"));
     }
+*/
     
     // Extract the first argument (boolean flag)
     let is_enabled = args[0].as_bool().unwrap_or(false);
@@ -484,6 +560,7 @@ fn mathz_conditional_calculation_handler(args: Vec<Value>) -> Result<Value, Erro
     // Return the result as a JSON Value
     Ok(json!(result))
 }
+*/
 
 // Core function handlers
 
@@ -492,27 +569,32 @@ fn core_len_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.len requires one argument"));
     }
+*/
 
     // For strings, return the string length
     Ok(args[0].len().to_string())
 }
+*/
 
 /// Handler for core.cap function
 fn core_cap_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.cap requires one argument"));
     }
+*/
 
     // This is a placeholder - in a real implementation, this would
     // determine the capacity based on the type of the argument
     Ok(args[0].capacity().to_string())
 }
+*/
 
 /// Handler for core.lit function (boolean conversion)
 fn core_lit_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.lit requires one argument"));
     }
+*/
 
     let value = &args[0];
     let result = match value.as_str() {
@@ -522,62 +604,74 @@ fn core_lit_handler(args: Vec<String>) -> Result<String, Error> {
 
     Ok(result.to_string())
 }
+*/
 
 /// Handler for core.normie function (int32 conversion)
 fn core_normie_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.normie requires one argument"));
     }
+*/
 
     let value = args[0].parse::<i32>().unwrap_or(0);
     Ok(value.to_string())
 }
+*/
 
 /// Handler for core.thicc function (int64 conversion)
 fn core_thicc_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.thicc requires one argument"));
     }
+*/
 
     let value = args[0].parse::<i64>().unwrap_or(0);
     Ok(value.to_string())
 }
+*/
 
 /// Handler for core.snack function (float32 conversion)
 fn core_snack_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.snack requires one argument"));
     }
+*/
 
     let value = args[0].parse::<f32>().unwrap_or(0.0);
     Ok(value.to_string())
 }
+*/
 
 /// Handler for core.meal function (float64 conversion)
 fn core_meal_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.meal requires one argument"));
     }
+*/
 
     let value = args[0].parse::<f64>().unwrap_or(0.0);
     Ok(value.to_string())
 }
+*/
 
 /// Handler for core.tea function (string conversion)
 fn core_tea_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.tea requires one argument"));
     }
+*/
 
     // Already a string, just return it
     Ok(args[0].clone())
 }
+*/
 
 /// Handler for core.append function
 fn core_append_handler(args: Vec<String>) -> Result<String, Error> {
     if args.len() < 2 {
         return Err(Error::from_str("core.append requires at least two arguments"));
     }
+*/
 
     // In a real implementation, this would parse the first argument as an array
     // and append the remaining arguments to it
@@ -588,15 +682,18 @@ fn core_append_handler(args: Vec<String>) -> Result<String, Error> {
         elements.push(',');
         elements.push_str(elem);
     }
+*/
 
     Ok(format!("[{}]", elements))
 }
+*/
 
 /// Handler for core.make function
 fn core_make_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.make requires at least one argument"));
     }
+*/
 
     let type_name = &args[0];
     let size = args.get(1).and_then(|s| s.parse::<usize>().ok()).unwrap_or(0);
@@ -608,6 +705,7 @@ fn core_make_handler(args: Vec<String>) -> Result<String, Error> {
             for _ in 0..size {
                 nulls.push("null");
             }
+*/
             Ok(format!("[{}]", nulls.join(", ")))
         },
         "map" => {
@@ -620,13 +718,16 @@ fn core_make_handler(args: Vec<String>) -> Result<String, Error> {
         },
         _ => Err(Error::from_str(&format!("Unsupported type for make: {}", type_name))),
     }
+*/
 }
+*/
 
 /// Handler for core.new function
 fn core_new_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("core.new requires one argument"));
     }
+*/
 
     let type_name = &args[0];
     match type_name.as_str() {
@@ -638,7 +739,9 @@ fn core_new_handler(args: Vec<String>) -> Result<String, Error> {
         "bool" | "lit" => Ok("false".to_string()),
         _ => Ok("null".to_string()),
     }
+*/
 }
+*/
 
 // Global API functions
 
@@ -649,7 +752,9 @@ pub fn is_supported(package: &str, function: &str) -> bool {
     } else {
         false
     }
+*/
 }
+*/
 
 /// Global function to check if a method is supported for a type
 pub fn is_method_supported(type_name: &str, method_name: &str) -> bool {
@@ -658,7 +763,9 @@ pub fn is_method_supported(type_name: &str, method_name: &str) -> bool {
     } else {
         false
     }
+*/
 }
+*/
 
 /// Global function to execute a dot expression
 pub fn execute_dot(package: &str, function: &str, args: Vec<String>) -> Result<String, Error> {
@@ -667,7 +774,9 @@ pub fn execute_dot(package: &str, function: &str, args: Vec<String>) -> Result<S
     } else {
         Err(Error::from_str("Failed to lock dot registry"))
     }
+*/
 }
+*/
 
 /// Global function to execute a method on a user-defined type
 pub fn execute_method(type_name: &str, method_name: &str, object_json: String, args: Vec<String>) -> Result<String, Error> {
@@ -676,7 +785,9 @@ pub fn execute_method(type_name: &str, method_name: &str, object_json: String, a
     } else {
         Err(Error::from_str("Failed to lock dot registry"))
     }
+*/
 }
+*/
 
 /// Global function to execute a dot expression with JSON arguments
 pub fn execute_generic_dot(package: &str, function: &str, args: Vec<Value>) -> Result<Value, Error> {
@@ -685,7 +796,9 @@ pub fn execute_generic_dot(package: &str, function: &str, args: Vec<Value>) -> R
     } else {
         Err(Error::from_str("Failed to lock dot registry"))
     }
+*/
 }
+*/
 
 /// Global function to execute a method with JSON arguments
 pub fn execute_generic_method(type_name: &str, method_name: &str, object: Value, args: Vec<Value>) -> Result<Value, Error> {
@@ -694,7 +807,9 @@ pub fn execute_generic_method(type_name: &str, method_name: &str, object: Value,
     } else {
         Err(Error::from_str("Failed to lock dot registry"))
     }
+*/
 }
+*/
 
 /// Global function to get all registered packages
 pub fn get_packages() -> Vec<String> {
@@ -703,7 +818,9 @@ pub fn get_packages() -> Vec<String> {
     } else {
         Vec::new()
     }
+*/
 }
+*/
 
 /// Global function to get all registered types
 pub fn get_types() -> Vec<String> {
@@ -712,7 +829,9 @@ pub fn get_types() -> Vec<String> {
     } else {
         Vec::new()
     }
+*/
 }
+*/
 
 /// Global function to get all registered functions for a package
 pub fn get_functions(package: &str) -> Vec<String> {
@@ -721,7 +840,9 @@ pub fn get_functions(package: &str) -> Vec<String> {
     } else {
         Vec::new()
     }
+*/
 }
+*/
 
 /// Global function to get all registered methods for a type
 pub fn get_methods(type_name: &str) -> Vec<String> {
@@ -729,6 +850,59 @@ pub fn get_methods(type_name: &str) -> Vec<String> {
         registry.methods(type_name)
     } else {
         Vec::new()
+    }
+*/
+}
+*/
+
+/// Initialize a resolver with standard library symbols
+/*
+pub fn init_resolver_with_stdlib() -> Result<Resolver, Error> {
+    let mut resolver = Resolver::new();
+    
+    // Get the global registry and register all stdlib symbols
+    if let Ok(registry) = DOT_REGISTRY.lock() {
+        registry.register_with_resolver(&mut resolver)?;
+    } else {
+        return Err(Error::from_str("Failed to access dot registry"));
+    }
+    
+    Ok(resolver)
+}
+
+/// Check if a package.function is supported
+pub fn is_supported(package: &str, function: &str) -> bool {
+    if let Ok(registry) = DOT_REGISTRY.lock() {
+        registry.has_handler(package, function)
+    } else {
+        false
+    }
+}
+
+/// Execute a dot expression
+pub fn execute_dot(package: &str, function: &str, args: Vec<String>) -> Result<String, Error> {
+    if let Ok(registry) = DOT_REGISTRY.lock() {
+        registry.execute(package, function, args)
+    } else {
+        Err(Error::from_str("Failed to access dot registry"))
+    }
+}
+
+/// Get list of supported packages
+pub fn get_packages() -> Vec<String> {
+    if let Ok(registry) = DOT_REGISTRY.lock() {
+        registry.get_packages()
+    } else {
+        vec![]
+    }
+}
+
+/// Get list of functions for a package
+pub fn get_functions(package: &str) -> Vec<String> {
+    if let Ok(registry) = DOT_REGISTRY.lock() {
+        registry.get_functions(package)
+    } else {
+        vec![]
     }
 }
 
@@ -739,6 +913,7 @@ fn cryptz_md5sum_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("cryptz.md5sum requires one argument"));
     }
+*/
     let input = &args[0];
     
     // Call the md5sum function from the cryptz module
@@ -749,16 +924,20 @@ fn cryptz_md5sum_handler(args: Vec<String>) -> Result<String, Error> {
             } else {
                 Err(Error::from_str("Unexpected result type from md5sum"))
             }
+*/
         },
         Err(e) => Err(e),
     }
+*/
 }
+*/
 
 /// Handler for cryptz.sha1sum function
 fn cryptz_sha1sum_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("cryptz.sha1sum requires one argument"));
     }
+*/
     let input = &args[0];
     
     // Call the sha1sum function from the cryptz module
@@ -769,16 +948,20 @@ fn cryptz_sha1sum_handler(args: Vec<String>) -> Result<String, Error> {
             } else {
                 Err(Error::from_str("Unexpected result type from sha1sum"))
             }
+*/
         },
         Err(e) => Err(e),
     }
+*/
 }
+*/
 
 /// Handler for cryptz.sha256sum function
 fn cryptz_sha256sum_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("cryptz.sha256sum requires one argument"));
     }
+*/
     let input = &args[0];
     
     // Call the sha256sum function from the cryptz module
@@ -789,16 +972,20 @@ fn cryptz_sha256sum_handler(args: Vec<String>) -> Result<String, Error> {
             } else {
                 Err(Error::from_str("Unexpected result type from sha256sum"))
             }
+*/
         },
         Err(e) => Err(e),
     }
+*/
 }
+*/
 
 /// Handler for cryptz.hmac function
 fn cryptz_hmac_handler(args: Vec<String>) -> Result<String, Error> {
     if args.len() < 3 {
         return Err(Error::from_str("cryptz.hmac requires 3 arguments: data, key, and algorithm"));
     }
+*/
     let data = &args[0];
     let key = &args[1];
     let algorithm = &args[2];
@@ -817,16 +1004,20 @@ fn cryptz_hmac_handler(args: Vec<String>) -> Result<String, Error> {
             } else {
                 Err(Error::from_str("Unexpected result type from hmac"))
             }
+*/
         },
         Err(e) => Err(e),
     }
+*/
 }
+*/
 
 /// Handler for cryptz.random_bytes function
 fn cryptz_random_bytes_handler(args: Vec<String>) -> Result<String, Error> {
     if args.is_empty() {
         return Err(Error::from_str("cryptz.random_bytes requires one argument"));
     }
+*/
     
     // Parse the length argument as an integer
     let length = match args[0].parse::<i64>() {
@@ -842,7 +1033,8 @@ fn cryptz_random_bytes_handler(args: Vec<String>) -> Result<String, Error> {
             } else {
                 Err(Error::from_str("Unexpected result type from random_bytes"))
             }
+*/
         },
         Err(e) => Err(e),
     }
-}
+*/

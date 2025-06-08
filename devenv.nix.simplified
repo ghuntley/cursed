@@ -1,0 +1,54 @@
+{ pkgs, lib, config, inputs, ... }:
+
+{
+  # https://devenv.sh/basics/
+  env.GREET = "devenv";
+
+  # https://devenv.sh/packages/
+  packages = [
+    pkgs.git
+    pkgs.ninja
+    pkgs.cmake
+    pkgs.llvmPackages_17.clang
+    pkgs.llvmPackages_17.llvm
+    pkgs.llvmPackages_17.libllvm
+    pkgs.llvmPackages_17.libllvm.dev
+    pkgs.llvmPackages_17.mlir
+    pkgs.llvmPackages_17.stdenv
+    pkgs.libffi
+    pkgs.libffi.dev
+    pkgs.libxml2
+    pkgs.libxml2.dev
+    pkgs.zlib
+    pkgs.zlib.dev
+    pkgs.ncurses
+    pkgs.ncurses.dev
+    # Use binutils for bfd linker
+    pkgs.binutils
+  ];
+
+  # https://devenv.sh/languages/
+  languages.rust.enable = true;
+  languages.rust.mold.enable = false;  # Explicitly disable mold
+
+  enterShell = ''
+    # LLVM configuration
+    export LLVM_SYS_170_PREFIX="${pkgs.llvmPackages_17.llvm.dev}"
+    export LLVM_CONFIG_PATH="${pkgs.llvmPackages_17.llvm.dev}/bin/llvm-config"
+    
+    # Library paths for runtime and compilation
+    export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:$LD_LIBRARY_PATH"
+    export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:$LIBRARY_PATH"
+    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
+    
+    # Include paths
+    export C_INCLUDE_PATH="${pkgs.libffi.dev}/include:${pkgs.zlib.dev}/include:${pkgs.ncurses.dev}/include:${pkgs.libxml2.dev}/include/libxml2:$C_INCLUDE_PATH"
+    export CPLUS_INCLUDE_PATH="$C_INCLUDE_PATH:$CPLUS_INCLUDE_PATH"
+    
+    # Force use of bfd linker through gcc
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${pkgs.gcc}/bin/gcc"
+    export RUSTFLAGS="-C linker=${pkgs.gcc}/bin/gcc -C link-arg=-fuse-ld=bfd"
+  '';
+
+  # See full reference at https://devenv.sh/reference/options/
+}

@@ -21,7 +21,7 @@ pub mod go_statement;
 // Re-export all types for easier imports
 pub use self::block::BlockStatement;
 pub use self::declarations::{
-    FactsStatement, ImportStatement, LetStatement, PackageStatement, ReturnStatement,
+    FactsStatement, ImportStatement, ImportSpec, LetStatement, MultiImportStatement, PackageStatement, ReturnStatement,
 };
 pub use self::expressions::ExpressionStatement;
 pub use self::fields::FieldStatement;

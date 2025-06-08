@@ -167,7 +167,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let builder = context.create_builder();
         let current_package_name = module_name.to_string(); 
 
-        LlvmCodeGenerator {
+        let mut generator = LlvmCodeGenerator {
             defer_blocks: HashMap::new(),
             context,
             module,
@@ -177,7 +177,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             functions: HashMap::new(),
             current_package_name,
             imported_packages: HashMap::new(),
-            current_file_path: initial_file_path,
+            current_file_path: initial_file_path.clone(),
             struct_types: HashMap::new(),
             loop_contexts: Vec::new(),
             var_scopes: Vec::new(),
@@ -235,7 +235,22 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Register the integrated type assertion implementation
             // to ensure proper type assertion functionality
             // Type assertion debug level - initialized from environment variables when needed
-        }
+        };
+        
+        // TODO: Initialize package resolver when available
+        // let mut package_resolver = crate::resolver::PackageResolver::with_working_directory(
+        //     initial_file_path.parent().unwrap_or(std::path::Path::new("."))
+        // );
+        // 
+        // // Add standard search paths for package resolution
+        // if let Some(parent_dir) = initial_file_path.parent() {
+        //     package_resolver.add_search_path(parent_dir);
+        // }
+        // 
+        // // Store the resolver in the generator
+        // generator.set_extension(package_resolver);
+        
+        generator
     }
     
     /// Mangles a symbol name with its package name according to `_<package>_<symbol>`.

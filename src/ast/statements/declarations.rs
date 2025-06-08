@@ -129,6 +129,19 @@ pub struct PackageStatement {
     pub name: Identifier,
 }
 
+impl PackageStatement {
+    /// Create a new package statement
+    pub fn new(package_name: String) -> Self {
+        Self {
+            token: "package".to_string(),
+            name: Identifier {
+                token: "IDENT".to_string(),
+                value: package_name,
+            },
+        }
+    }
+}
+
 impl Node for PackageStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
@@ -154,6 +167,20 @@ pub struct ImportStatement {
     pub alias: Option<Identifier>,
 }
 
+/// ImportSpec represents a single import specification within a multi-import
+#[derive(Debug, Clone)]
+pub struct ImportSpec {
+    pub path: StringLiteral,
+    pub alias: Option<Identifier>,
+}
+
+/// MultiImportStatement represents a multi-import declaration
+/// Example: yeet ( "fmt"; tea "strings"; "os" )
+pub struct MultiImportStatement {
+    pub token: String, // Token::Yeet
+    pub imports: Vec<ImportSpec>,
+}
+
 impl Node for ImportStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
@@ -174,6 +201,36 @@ impl Node for ImportStatement {
 }
 
 impl Statement for ImportStatement {
+    fn statement_node(&self) {}
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl Node for MultiImportStatement {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        let mut out = format!("{} (", self.token_literal());
+        for (i, import) in self.imports.iter().enumerate() {
+            if i > 0 {
+                out.push_str("; ");
+            }
+            if let Some(alias) = &import.alias {
+                out.push_str(&format!("{} {}", alias.string(), import.path.string()));
+            } else {
+                out.push_str(&import.path.string());
+            }
+        }
+        out.push_str(")");
+        out
+    }
+}
+
+impl Statement for MultiImportStatement {
     fn statement_node(&self) {}
 
     fn as_any(&self) -> &dyn Any {

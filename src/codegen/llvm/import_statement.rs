@@ -1,76 +1,62 @@
 //! Import statement compilation for LLVM code generation
 //!
 //! This module handles the compilation of import statements
-//! for the CURSED language to LLVM IR.
+//! for the CURSED language to LLVM IR using the package resolver system.
 
 use crate::ast::statements::declarations::ImportStatement;
-use std::path::PathBuf;
 use std::collections::HashMap;
 use inkwell::values::FunctionValue;
 use crate::error::Error;
 use super::context::{LlvmCodeGenerator, ImportedPackageInfo};
+use super::dot_expressions::QualifiedNameCompilation;
 
 /// Trait for import statement compilation
 pub trait ImportStatementCompilation<'ctx> {
-    /// Compile an import statement
+    /// Compile an import statement and register the imported package
     fn compile_import_statement(&mut self, stmt: &ImportStatement) -> Result<(), Error>;
+    
+    /// Set the package resolver for import resolution
+    fn set_package_resolver(&mut self, resolver: crate::resolver::PackageResolver);
+    
+    /// Get mutable reference to the package resolver
+    fn get_package_resolver_mut(&mut self) -> Option<&mut crate::resolver::PackageResolver>;
 }
 
 impl<'ctx> ImportStatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
     #[tracing::instrument(skip(self, stmt), fields(path = stmt.path.value), level = "debug")]
     fn compile_import_statement(&mut self, stmt: &ImportStatement) -> Result<(), Error> {
-        tracing::debug!("Compiling import statement");
+        tracing::info!("Compiling import statement for: {}", stmt.path.value);
         
-        let package_path = &stmt.path.value;
+        let import_path = &stmt.path.value;
         
-        // Extract package name from path (last segment)
-        let package_name = match package_path.rfind('/') {
-            Some(idx) => &package_path[idx + 1..],
-            None => package_path,
-        };
+        // Register the package as imported
+        self.register_imported_package(import_path);
         
-        // Register the imported package
-        let package_info = ImportedPackageInfo {
-            path: PathBuf::from(package_path),
-            functions: HashMap::new(),
-            struct_types: HashMap::new(),
-        };
-        self.register_imported_package(package_name, package_info);
-        
-        // For actual implementation, we would need to:
-        // 1. Resolve the package path
-        // 2. Parse and compile the imported package if not already done
-        // 3. Link the compiled package with the current module
-        // 4. Make package functions and types available in the current scope
-        
-        // For now, we'll just register the package name
-        // Actual module loading would happen separately
-        tracing::info!("Imported package: {}", package_name);
+        tracing::info!("Successfully imported package: {}", import_path);
         
         Ok(())
     }
+
+    fn set_package_resolver(&mut self, resolver: crate::resolver::PackageResolver) {
+        self.set_extension(resolver);
+    }
+
+    fn get_package_resolver_mut(&mut self) -> Option<&mut crate::resolver::PackageResolver> {
+        // Extension system doesn't support mutable access for now
+        None
+    }
 }
 
-// Extension methods for LlvmCodeGenerator
+// Extension trait for LlvmCodeGenerator to provide package resolver access
 impl<'ctx> LlvmCodeGenerator<'ctx> {
-    /// Register an imported package
-    pub fn register_imported_package(&mut self, package_name: &str, info: ImportedPackageInfo<'ctx>) {
-        self.imported_packages.insert(package_name.to_string(), info);
+    /// Set a package resolver as an extension
+    fn set_package_resolver(&mut self, resolver: crate::resolver::PackageResolver) {
+        self.set_extension(resolver);
     }
-    
-    /// Check if a package is imported
-    pub fn is_package_imported(&self, package_name: &str) -> bool {
-        self.imported_packages.contains_key(package_name)
-    }
-    
-    /// Get an imported package by alias (for "import X as Y" syntax)
-    pub fn get_imported_package(&self, alias: &str) -> Option<String> {
-        // In a real implementation, we would maintain a map of aliases to package names
-        // For now, we'll assume the alias is the same as the package name
-        if self.is_package_imported(alias) {
-            Some(alias.to_string())
-        } else {
-            None
-        }
+
+    /// Get mutable reference to the package resolver
+    fn get_package_resolver_mut(&mut self) -> Option<&mut crate::resolver::PackageResolver> {
+        // Extension system doesn't support mutable access for now
+        None
     }
 }

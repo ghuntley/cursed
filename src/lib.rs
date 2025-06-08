@@ -60,6 +60,7 @@ pub mod stdlib;
 pub mod benchmark;
 pub mod stdlib_test;
 pub mod symbol;
+pub mod resolver;
 
 // Re-export cache related modules
 pub use crate::core::interface_registry_cache;
@@ -124,7 +125,7 @@ pub use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 pub use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
 
 // Re-export essential types
-pub use crate::core::symbol_table::Symbol;
+pub use crate::core::symbol_table::Symbol as CoreSymbol;
 pub use crate::core::symbol_table::SymbolScope;
 pub use crate::core::symbol_table::SymbolTable;
 pub use crate::core::CompiledFunction;
@@ -132,6 +133,11 @@ pub use crate::core::CompiledFunction;
 // Re-export specific AST types for convenience
 pub use crate::ast::base::Program;
 pub use crate::ast::traits::{Expression, Node, Statement};
+
+// Re-export resolver types for convenience
+pub use crate::resolver::{PackageResolver, DependencyTracker, PackageLoader};
+pub use crate::resolver::{PackageSymbolTable, Symbol, SymbolKind};
+pub use crate::resolver::{ResolverError, ResolverResult};
 
 // Foreign function interface for JIT execution
 use crate::object::Object;

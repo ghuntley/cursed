@@ -450,6 +450,10 @@ impl From<crate::error::Error> for CursedError {
             crate::error::Error::IO(io_err) => Self::from(io_err),
             crate::error::Error::Internal(msg) => Self::new(ErrorKind::Internal, msg),
             crate::error::Error::Validation(msg) => Self::new(ErrorKind::Validation, msg),
+            crate::error::Error::PackageNotFound(pkg) => Self::new(ErrorKind::NotFound, format!("Package not found: {}", pkg)),
+            crate::error::Error::SymbolNotFound(symbol, package) => Self::new(ErrorKind::NotFound, format!("Symbol '{}' not found in package '{}'", symbol, package)),
+            crate::error::Error::SymbolNotExported(symbol, package) => Self::new(ErrorKind::NotFound, format!("Symbol '{}' not exported from package '{}'", symbol, package)),
+            crate::error::Error::CircularDependency(deps) => Self::new(ErrorKind::Semantic, format!("Circular dependency: {}", deps.join(" -> "))),
         }
     }
 }

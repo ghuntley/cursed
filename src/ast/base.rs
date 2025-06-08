@@ -17,6 +17,15 @@ pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }
 
+impl Program {
+    /// Create a new empty program
+    pub fn new() -> Self {
+        Self {
+            statements: Vec::new(),
+        }
+    }
+}
+
 impl Node for Program {
     #[tracing::instrument(skip(self), fields(statements_count = self.statements.len()), level = "trace")]
     fn token_literal(&self) -> String {

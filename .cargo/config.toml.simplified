@@ -1,0 +1,13 @@
+[target.x86_64-unknown-linux-gnu]
+linker = "gcc"
+rustflags = [
+    "-C", "linker=gcc",
+    "-C", "link-arg=-fuse-ld=bfd",
+    "-C", "link-arg=-Wl,--disable-new-dtags",
+]
+
+[env]
+CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER = "gcc"
+
+[build]
+target = "x86_64-unknown-linux-gnu"

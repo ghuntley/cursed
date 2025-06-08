@@ -22,7 +22,7 @@ use std::any::Any;
 /// ```
 ///
 /// Both `x` and `print` would be represented as `Identifier` nodes in the AST.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Identifier {
     pub token: String,
     pub value: String,
