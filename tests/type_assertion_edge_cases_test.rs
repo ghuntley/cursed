@@ -289,6 +289,10 @@ fn test_type_assertion_with_source_location() {
     codegen.builder().position_at_end(entry_block);
     codegen.set_current_function(function);
     
+    // Create a variable for the test
+    let test_var = i32_type.const_int(42, false);
+    let _test_var_ptr = codegen.create_local_variable("some_var", i32_type.into(), Some(test_var.into())).unwrap();
+    
     // Create type assertion with detailed source information
     let type_assertion = TypeAssertion {
         token: "detailed_test".to_string(),

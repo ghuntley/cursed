@@ -15,6 +15,7 @@ use inkwell::types::{BasicType, BasicTypeEnum, StructType};
 use inkwell::values::{BasicValue, BasicValueEnum, StructValue};
 use inkwell::{AddressSpace, FloatPredicate, IntPredicate};
 use super::LlvmCodeGenerator;
+use super::string_type::CursedStringType;
 use tracing::{debug, instrument, warn};
 use std::collections::HashMap;
 
@@ -296,24 +297,14 @@ impl<'ctx> ZeroValueGeneration<'ctx> for LlvmCodeGenerator<'ctx> {
     
     #[instrument(skip(self), level = "debug")]
     fn create_empty_string(&self) -> Result<BasicValueEnum<'ctx>, Error> {
-        debug!("Creating empty string value");
+        debug!("Creating empty string value using CursedStringType");
         
-        // String is represented as a struct with ptr, len, cap
-        let string_struct = self.context().struct_type(&[
-            self.context().i8_type().ptr_type(AddressSpace::default()).into(), // data pointer
-            self.context().i64_type().into(), // length
-            self.context().i64_type().into(), // capacity
-        ], false);
+        // Use the CursedStringType to create an empty string
+        let string_type = CursedStringType::new(self.context());
+        let empty_string = string_type.create_empty_string(self.builder())
+            .map_err(|e| Error::from_str(&format!("Failed to create empty string: {}", e)))?;
         
-        let null_ptr = self.context().i8_type().ptr_type(AddressSpace::default()).const_null();
-        let zero_len = self.context().i64_type().const_zero();
-        let zero_cap = self.context().i64_type().const_zero();
-        
-        Ok(string_struct.const_named_struct(&[
-            null_ptr.into(),
-            zero_len.into(),
-            zero_cap.into(),
-        ]).into())
+        Ok(empty_string.into())
     }
     
     #[instrument(skip(self), level = "debug")]

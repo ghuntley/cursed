@@ -21,6 +21,7 @@ use crate::ast::declarations::SquadStatement;
 use crate::ast::expressions::BeLikeExpression;
 use crate::core::type_checker::Type;
 use super::context::LlvmCodeGenerator;
+use super::string_type::CursedStringType;
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Retrieves the LLVM struct type for a named struct in a specific package.
@@ -342,7 +343,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             "snack" => Ok(self.context.f32_type().into()),
             "meal" => Ok(self.context.f64_type().into()),
             "lit" => Ok(self.context.bool_type().into()),
-            "tea" => Ok(self.context.i8_type().ptr_type(inkwell::AddressSpace::default()).into()),
+            "tea" => {
+                let string_type = CursedStringType::new(&self.context);
+                Ok(string_type.as_basic_type())
+            },
             "byte" => Ok(self.context.i8_type().into()),
             "rune" => Ok(self.context.i32_type().into()),
             _ => {

@@ -1,7 +1,6 @@
 use std::process::Command;
 use std::io::{self, Write};
 use std::path::Path;
-use super::*;
 use std::fs;
 
 // Integration test for interface type assertions with the ? operator

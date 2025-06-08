@@ -48,6 +48,7 @@
 pub use self::context::LlvmCodeGenerator;
 pub use self::type_assertion::InterfaceTypeAssertion;
 pub use self::char_operations::CharOperations;
+pub use self::string_type::{CursedStringType, StringTypeUtils};
 
 // Re-export extension traits
 pub use self::llvm_code_generator_extensions::{
@@ -221,9 +222,10 @@ pub mod interface_registry; // Interface registry for type assertions
 mod statement;
 mod string_switch;
 mod string_utils;
+pub mod string_type;     // Core LLVM string type definition
 mod path_utils;
 pub mod struct_monomorphization;
-mod types;
+pub mod types;
 mod variables;
 mod intrinsics;      // Standard library intrinsics
 mod break_continue;  // Break and continue statement handling

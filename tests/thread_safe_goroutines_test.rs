@@ -18,7 +18,7 @@ fn test_thread_safe_goroutines() {
     thread_safe_goroutine::init_goroutine_runtime();
     
     // Create a shared counter that goroutines will increment
-    let counter = Arc::new(Mutex::new(0);
+    let counter = Arc::new(Mutex::new(0));
     
     // Create a callable that increments the counter
     struct Incrementer {
@@ -94,7 +94,7 @@ fn test_thread_safe_goroutine_channels() {
                 thread_safe_goroutine::send_on_channel("request", value).unwrap();
                 
                 // Simulate some work
-                thread::sleep(Duration::from_millis(10);
+                thread::sleep(Duration::from_millis(10));
             }
             
             Ok(ThreadSafeValue::Integer(5)) // Return the count of items sent
@@ -175,7 +175,7 @@ fn test_thread_safe_closure_goroutines() {
     thread_safe_goroutine::init_goroutine_runtime();
     
     // Create a shared counter
-    let counter = Arc::new(Mutex::new(0);
+    let counter = Arc::new(Mutex::new(0));
     
     // Launch multiple goroutines using the closure-based API
     for _ in 0..10 {
@@ -186,7 +186,7 @@ fn test_thread_safe_closure_goroutines() {
             *guard += 1;
             
             // Simulate some work
-            thread::sleep(Duration::from_millis(10);
+            thread::sleep(Duration::from_millis(10));
         }).unwrap();
     }
     
