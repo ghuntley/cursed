@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use cursed::codegen::llvm::interface_type_registry::InterfaceTypeRegistry;
+use cursed::codegen::llvm::InterfaceTypeRegistry;
 use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
 use cursed::error::Error;
 
@@ -70,9 +70,7 @@ fn test_real_registry_integration() {
     common::tracing::setup();
     
     // Create the ThreadSafeInterfaceExtensionRegistry
-    let extension_registry = std::sync::Arc::new(
-        cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
-    );
+    let mut extension_registry = cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
     
     // Create a test registry with the extension registry
     let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());

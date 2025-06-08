@@ -131,7 +131,7 @@ fn test_incremental_collection() {
         incremental_step_size: 2,            // Process 2 objects per step
         incremental_time_budget_ms: 5,       // 5ms per incremental step
         verbose: true,
-    });
+    }));
     
     // Create a scope for root tracking
     let _scope_guard = with_gc_scope(gc.clone());

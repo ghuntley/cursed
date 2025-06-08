@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,7 +43,7 @@ impl TypeChecker {
         _type_params: Vec<String>, 
         methods: Vec<(String, Vec<Type>, Option<Type>)>,
     ) {
-        self.interface_map.insert(interface_name.to_string(, methods);
+        self.interface_map.insert(interface_name.to_string(), methods);
     }
     
     fn check_interface_implementation(
@@ -53,7 +54,7 @@ impl TypeChecker {
         // Extract the interface name and type parameters
         let (interface_name, _) = match interface {
             Type::Interface(name, type_args) => (name, type_args),
-            _ => return Err("Expected an interface type".to_string(),
+            _ => return Err("Expected an interface type".to_string())
         };
         
         // Get the required methods for this interface
@@ -76,7 +77,7 @@ impl TypeChecker {
                     }
                 }
             }
-            _ => return Err("Only structs can implement interfaces".to_string(),
+            _ => return Err("Only structs can implement interfaces".to_string())
         };
         
         // Check each method in the interface against the implementing type
@@ -127,7 +128,7 @@ impl MonomorphizationManager {
     
     fn check_constraint(&self, concrete_type: &Type, interface_name: &str) -> Result<bool, String> {
         // Create an interface type from the name
-        let interface_type = Type::Interface(interface_name.to_string(), Vec::new();
+        let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
         
         // First, try to use the type checker for interface implementation checks if available
         if let Some(type_checker) = &self.type_checker {
@@ -168,14 +169,14 @@ impl MonomorphizationManager {
                     return Err(format!(
                         "Type '{:?}' does not implement interface '{}': missing required methods",
                         concrete_type, interface_name
-                    );
+                    ));
                 },
                 Err(e) => {
                     println!("Error checking interface implementation: {}", e);
                     return Err(format!(
                         "Type '{:?}' does not implement interface '{}': {}",
                         concrete_type, interface_name, e
-                    );
+                    ));
                 }
             }
         }
@@ -199,7 +200,7 @@ impl MonomorphizationManager {
                         return Err(format!(
                             "Type 'Point' does not implement interface '{}'",
                             interface_name
-                        );
+                        ));
                     }
                 },
                 _ => {}
@@ -247,10 +248,10 @@ fn test_constraint_checking_with_special_cases() {
     let comparable_methods = vec![
         ("compare".to_string(), vec![Type::Any], Some(Type::Normie)),
     ];
-    type_checker.register_interface("Comparable", vec!["T".to_string())], comparable_methods);
+    type_checker.register_interface("Comparable", vec!["T".to_string()], comparable_methods);
     
     // Create the monomorphization manager with the type checker
-    let type_checker_rc = Rc::new(RefCell::new(type_checker);
+    let type_checker_rc = Rc::new(RefCell::new(type_checker));
     let mono_manager = MonomorphizationManager::new().with_type_checker(type_checker_rc);
     
     // Test the special case of Point struct implementing Comparable
