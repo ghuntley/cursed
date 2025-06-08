@@ -755,7 +755,29 @@ impl<'a> Parser<'a> {
         
         self.next_token()?; // Skip past the identifier
 
-        // Create a proper DotExpression object
+        // Check if the left side is a simple identifier - if so, this might be a qualified identifier
+        if let Some(ident) = left.as_any().downcast_ref::<ast::Identifier>() {
+            // Check if this looks like a package reference (simple identifier followed by dot)
+            // This is a heuristic - we'll assume simple identifiers followed by dots are package references
+            if !ident.value.is_empty() {
+                println!("DEBUG DOT EXPR: Creating QualifiedIdentifier for {}.{}", ident.value, property);
+                let qualified_id = ast::expressions::QualifiedIdentifier::new(
+                    format!("{}.{}", ident.value, property),
+                    ident.value.clone(),
+                    property.clone(),
+                );
+                
+                // Check if this is a method call (qualified identifier followed by '(')
+                if self.current_token_is(Token::LParen) {
+                    println!("DEBUG DOT EXPR: Converting qualified identifier to method call");
+                    return self.parse_call_expression(Box::new(qualified_id));
+                }
+                
+                return Ok(Box::new(qualified_id));
+            }
+        }
+
+        // Create a regular DotExpression for complex left expressions
         let dot_expr = DotExpression {
             token: token.token_literal(),
             object: left,

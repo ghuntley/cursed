@@ -10,7 +10,7 @@ use crate::ast::pointer::types::PointerType;
 use crate::ast::pointer::operations::PointerDereference;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
-use super::dot_expressions::DotExpressionCompilation;
+use super::dot_expressions::QualifiedNameCompilation;
 use super::pointer_ops::PointerOperations;
 use super::basic_expressions::BasicExpressionOperations;
 use super::function_monomorphization::FunctionMonomorphization;

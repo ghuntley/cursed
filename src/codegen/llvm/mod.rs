@@ -80,7 +80,7 @@ pub use self::auto_interface_dispatcher_integration::AutoInterfaceDispatcherInte
 
 // Re-export traits for module functionality
 pub use self::container_layout::{ContainerLayout, ContainerLayoutExtension, ContainerLayoutManager};
-pub use self::dot_expressions::DotExpressionCompilation;
+pub use self::dot_expressions::QualifiedNameCompilation;
 pub use self::expression::ExpressionCompilation;
 pub use self::hook_dot_expressions::patch_main_function; // Temporary dot expression patch
 pub use self::memory_layout::{MemoryLayout, MemoryLayoutExtension, MemoryLayoutManager};
@@ -100,6 +100,7 @@ pub use self::assignment::AssignmentCompilation;
 pub use self::break_statement::BreakStatementCompilation;
 pub use self::continue_statement::ContinueStatementCompilation;
 pub use self::import_statement::ImportStatementCompilation;
+pub use self::qualified_name_errors::{QualifiedNameError, QualifiedNameErrorExt};
 pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
 pub use self::if_expression::IfExpressionCompilation;
@@ -233,6 +234,7 @@ mod assignment;      // Assignment expressions (a = b)
 mod break_statement; // Break statement implementation
 mod continue_statement; // Continue statement implementation
 mod import_statement; // Import statement implementation
+mod qualified_name_errors; // Qualified name error handling
 mod later_statement; // Later (defer) statement implementation
 mod switch_statement; // Switch statement implementation
 mod if_expression;   // If expression implementation

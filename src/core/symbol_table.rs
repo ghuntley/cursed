@@ -1,12 +1,11 @@
-//! Symbol table for name resolution and scope management
+//! Symbol Table
 //!
-//! This module implements the symbol table system for the CURSED language,
-//! providing scope-aware name resolution and tracking of variables, functions,
-//! and types. The symbol table helps the compiler manage nested scopes,
-//! variable declarations, and resolve identifiers during parsing and code
-//! generation.
+//! This module provides a basic symbol table implementation for the CURSED language.
+//! The symbol table tracks variable names, types, and scopes during compilation.
 //!
-//! Symbol tables are organized hierarchically to reflect lexical scoping
+//! ## Scoping
+//!
+//! The symbol table supports lexical scoping through a linked list of symbol table
 //! rules, with each table potentially having an outer (parent) scope.
 
 use std::collections::HashMap;
@@ -15,45 +14,55 @@ use std::fmt;
 /// The scope level of a symbol
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SymbolScope {
-    /// Global scope - accessible throughout the program
+    /// Global scope (module level)
     Global,
-    /// Local scope - accessible within a function
+    /// Local scope (within a function or block)
     Local,
-    /// Built-in scope - predefined symbols
+    /// Built-in scope (language built-ins)
     Builtin,
-    /// Free variable captured from an outer scope
+    /// Free variable (captured from outer scope)
     Free,
-    /// Function scope
+    /// Function parameter
     Function,
 }
 
-/// A symbol representing a variable or function
-#[derive(Debug, Clone, PartialEq)]
-pub struct Symbol {
-    /// The name of the symbol
-    pub name: String,
-    /// The scope of the symbol
-    pub scope: SymbolScope,
-    /// The index in the symbol table
-    pub index: usize,
-    /// The type of the symbol (if known)
-    pub type_name: Option<String>,
+impl fmt::Display for SymbolScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SymbolScope::Global => write!(f, "GLOBAL"),
+            SymbolScope::Local => write!(f, "LOCAL"),
+            SymbolScope::Builtin => write!(f, "BUILTIN"),
+            SymbolScope::Free => write!(f, "FREE"),
+            SymbolScope::Function => write!(f, "FUNCTION"),
+        }
+    }
 }
 
-/// Symbol table for tracking variables, functions, and their scopes
+/// A symbol in the symbol table
+#[derive(Debug, Clone)]
+pub struct Symbol {
+    /// Symbol name
+    pub name: String,
+    /// Symbol scope
+    pub scope: SymbolScope,
+    /// Symbol type (simplified as string for now)
+    pub symbol_type: String,
+    /// Whether the symbol is mutable
+    pub is_mutable: bool,
+}
+
+/// The main symbol table structure
 ///
-/// A SymbolTable represents a single scope in CURSED code (global, function, block, etc.)
-/// and maintains mappings from names to their Symbol definitions. Tables are linked
-/// in a hierarchical structure where each inner scope can access symbols from its
-/// outer (enclosing) scopes.
-#[derive(Debug, Clone, PartialEq)]
+/// This symbol table now integrates with package resolution for qualified name resolution.
 pub struct SymbolTable {
-    /// The outer (parent) symbol table, if any
+    /// The outer (parent) scope
     pub outer: Option<Box<SymbolTable>>,
     /// The symbols defined in this scope
     pub symbols: HashMap<String, Symbol>,
     /// The number of definitions in this scope
     pub num_definitions: usize,
+    /// Current package context for this symbol table
+    pub current_package: Option<String>,
 }
 
 impl SymbolTable {
@@ -63,6 +72,7 @@ impl SymbolTable {
             outer: None,
             symbols: HashMap::new(),
             num_definitions: 0,
+            current_package: None,
         }
     }
 
@@ -72,52 +82,113 @@ impl SymbolTable {
             outer: Some(Box::new(outer)),
             symbols: HashMap::new(),
             num_definitions: 0,
+            current_package: None,
         }
     }
 
-    /// Define a new symbol in this scope
-    #[tracing::instrument(skip(self), fields(symbol_name = name), level = "debug")]
-    pub fn define(&mut self, name: &str, type_name: Option<&str>) -> Symbol {
+    /// Create a new enclosed symbol table with package context
+    pub fn new_enclosed_with_context(outer: SymbolTable) -> Self {
+        let current_package = outer.current_package.clone();
+        Self {
+            outer: Some(Box::new(outer)),
+            symbols: HashMap::new(),
+            num_definitions: 0,
+            current_package,
+        }
+    }
+
+    /// Define a new symbol in the current scope
+    #[tracing::instrument(skip(self), fields(name = ?name), level = "debug")]
+    pub fn define(&mut self, name: String) -> Symbol {
         let symbol = Symbol {
-            name: name.to_string(),
+            name: name.clone(),
             scope: SymbolScope::Local,
-            index: self.num_definitions,
-            type_name: type_name.map(|s| s.to_string()),
+            symbol_type: "unknown".to_string(),
+            is_mutable: false,
         };
-
-        self.symbols.insert(name.to_string(), symbol.clone());
+        self.symbols.insert(name, symbol.clone());
         self.num_definitions += 1;
-
         symbol
     }
 
-    /// Look up a symbol by name
-    #[tracing::instrument(skip(self), fields(symbol_name = name), level = "debug")]
+    /// Define a symbol with specific type and mutability
+    #[tracing::instrument(skip(self), fields(name = ?name, symbol_type = ?symbol_type), level = "debug")]
+    pub fn define_typed(&mut self, name: String, symbol_type: String, is_mutable: bool, scope: SymbolScope) -> Symbol {
+        let symbol = Symbol {
+            name: name.clone(),
+            scope,
+            symbol_type,
+            is_mutable,
+        };
+        self.symbols.insert(name, symbol.clone());
+        self.num_definitions += 1;
+        symbol
+    }
+
+    /// Resolve a symbol by name, searching up the scope chain
+    #[tracing::instrument(skip(self), fields(name = ?name), level = "debug")]
     pub fn resolve(&self, name: &str) -> Option<Symbol> {
+        // First check current scope
         if let Some(symbol) = self.symbols.get(name) {
             return Some(symbol.clone());
         }
 
+        // Check if we have an outer scope
         if let Some(outer) = &self.outer {
-            return outer.resolve(name);
+            // Try to resolve in outer scope
+            if let Some(mut symbol) = outer.resolve(name) {
+                // Adjust scope if it's local in outer scope
+                if symbol.scope == SymbolScope::Local {
+                    symbol.scope = SymbolScope::Free;
+                }
+                return Some(symbol);
+            }
         }
 
         None
     }
+
+    /// Register an import in the symbol table
+    #[tracing::instrument(skip(self), fields(imported_package = package, alias = ?alias), level = "debug")]
+    pub fn register_import(&mut self, package: &str, alias: Option<&str>) -> Result<(), crate::error::Error> {
+        // For now, just store the import as a symbol
+        let import_name = alias.unwrap_or(package);
+        let symbol = Symbol {
+            name: import_name.to_string(),
+            scope: SymbolScope::Global,
+            symbol_type: "import".to_string(),
+            is_mutable: false,
+        };
+        self.symbols.insert(import_name.to_string(), symbol);
+        Ok(())
+    }
+
+    /// Define a symbol in the current package
+    #[tracing::instrument(skip(self), fields(symbol_name = name, symbol_type = ?symbol_type), level = "debug")]
+    pub fn define_package_symbol(&mut self, name: &str, symbol_type: &str) -> Result<(), crate::error::Error> {
+        let symbol = Symbol {
+            name: name.to_string(),
+            scope: SymbolScope::Global,
+            symbol_type: symbol_type.to_string(),
+            is_mutable: false,
+        };
+        self.symbols.insert(name.to_string(), symbol);
+        Ok(())
+    }
 }
 
 impl fmt::Display for SymbolTable {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "Scope with {} definitions:", self.num_definitions)?;
-
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SymbolTable {{")?;
         for (name, symbol) in &self.symbols {
-            writeln!(f, "  {}: {:?}", name, symbol)?;
+            write!(f, " {}:{}", name, symbol.scope)?;
         }
+        write!(f, " }}")
+    }
+}
 
-        if let Some(outer) = &self.outer {
-            writeln!(f, "Outer scope:\n{}", outer)?;
-        }
-
-        Ok(())
+impl Default for SymbolTable {
+    fn default() -> Self {
+        Self::new()
     }
 }

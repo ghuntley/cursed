@@ -176,6 +176,18 @@ pub enum Error {
     
     /// Validation error
     Validation(String),
+    
+    /// Package not found error
+    PackageNotFound(String),
+    
+    /// Symbol not found error
+    SymbolNotFound(String, String), // symbol_name, package_name
+    
+    /// Symbol not exported error
+    SymbolNotExported(String, String), // symbol_name, package_name
+    
+    /// Circular dependency error
+    CircularDependency(Vec<String>), // dependency chain
 }
 
 /// Utility for creating properly formatted error instances
@@ -318,6 +330,10 @@ impl PartialEq for Error {
             },
             (Error::Internal(a), Error::Internal(b)) => a == b,
             (Error::Validation(a), Error::Validation(b)) => a == b,
+            (Error::PackageNotFound(a), Error::PackageNotFound(b)) => a == b,
+            (Error::SymbolNotFound(a1, a2), Error::SymbolNotFound(b1, b2)) => a1 == b1 && a2 == b2,
+            (Error::SymbolNotExported(a1, a2), Error::SymbolNotExported(b1, b2)) => a1 == b1 && a2 == b2,
+            (Error::CircularDependency(a), Error::CircularDependency(b)) => a == b,
             _ => false,
         }
     }
@@ -367,6 +383,10 @@ impl Clone for Error {
             Error::IO(e) => Error::IO(std::io::Error::new(e.kind(), format!("{}", e))),
             Error::Internal(msg) => Error::Internal(msg.clone()),
             Error::Validation(msg) => Error::Validation(msg.clone()),
+            Error::PackageNotFound(msg) => Error::PackageNotFound(msg.clone()),
+            Error::SymbolNotFound(sym, pkg) => Error::SymbolNotFound(sym.clone(), pkg.clone()),
+            Error::SymbolNotExported(sym, pkg) => Error::SymbolNotExported(sym.clone(), pkg.clone()),
+            Error::CircularDependency(chain) => Error::CircularDependency(chain.clone()),
         }
     }
 }
@@ -550,6 +570,10 @@ impl Error {
             Error::IO(err) => err.to_string(),
             Error::Internal(msg) => msg.clone(),
             Error::Validation(msg) => msg.clone(),
+            Error::PackageNotFound(msg) => format!("Package not found: {}", msg),
+            Error::SymbolNotFound(sym, pkg) => format!("Symbol '{}' not found in package '{}'", sym, pkg),
+            Error::SymbolNotExported(sym, pkg) => format!("Symbol '{}' is not exported from package '{}'", sym, pkg),
+            Error::CircularDependency(chain) => format!("Circular dependency detected: {}", chain.join(" -> ")),
         }
     }
 

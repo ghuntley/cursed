@@ -19,6 +19,7 @@ use std::any::Any;
 ///
 /// * `token` - The original token from the lexer
 /// * `value` - The actual string value (without surrounding quotes)
+#[derive(Debug, Clone)]
 pub struct StringLiteral {
     pub token: String,
     pub value: String,

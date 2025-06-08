@@ -30,7 +30,7 @@ pub fn dot_expression_call_hook<'ctx>(
             
             // Execute the function using the registry
             match crate::stdlib::dot_registry::execute_dot(&package, function, arg_strings) {
-                Ok(result) => {
+                Ok(ref result) => {
                     // Create a global string with the result
                     let global_str = gen.create_global_string(
                         &result,
