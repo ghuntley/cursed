@@ -37,7 +37,7 @@ fn test_interface_hierarchy_visualization() {
     );
     
     // Update the registry to use the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
     registry.register_type(1001, "Reader".to_string());
     registry.register_type(1002, "FileReader".to_string());
     registry.register_type(1003, "JSONFileReader".to_string());
@@ -76,7 +76,7 @@ fn test_inheritance_path_visualization() {
     );
     
     // Create a test registry with the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
     
     // Register interfaces
     registry.register_type(1001, "Reader".to_string());
@@ -137,7 +137,7 @@ fn test_dot_graph_generation() {
     );
     
     // Create a test registry with the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
     
     // Register interfaces
     registry.register_type(1001, "Reader".to_string());
@@ -178,7 +178,7 @@ fn test_inheritance_cycle_detection() {
     );
     
     // Create a test registry with the extension registry
-    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone();
+    let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
     
     // Register interfaces
     registry.register_type(1001, "Reader".to_string());

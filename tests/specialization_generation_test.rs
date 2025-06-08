@@ -5,7 +5,7 @@ use cursed::ast::statements::FieldStatement;
 use cursed::ast::statements::ReturnStatement;
 use cursed::ast::traits::Expression;
 use cursed::ast::FunctionStatement;
-use cursed::ast::ParameterStatement;
+use cursed::ast::declarations::{Parameter, TypeParameter, GenericConstraint};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::MonomorphizationManager;
 use cursed::core::generic_instantiation::GenericInstantiator;
@@ -40,7 +40,7 @@ fn test_function_specialization() {
     assert_eq!(specialized_name, "add__Normie");
 
     // Verify the function is in the instantiation cache
-    assert!(mono_manager.is_function_instantiated("add", &[Type::Normie]))
+    assert!(mono_manager.is_function_instantiated("add", &[Type::Normie]));
 
     // Try specializing with a different type
     let specialized_name2 = mono_manager
@@ -96,7 +96,7 @@ fn test_struct_specialization() {
     assert_eq!(specialized_name, "Pair__Normie");
 
     // Verify it's in the cache
-    assert!(mono_manager.is_function_instantiated("Pair", &[Type::Normie]))
+    assert!(mono_manager.is_function_instantiated("Pair", &[Type::Normie]));
 
     // Specializing again should return the same name
     let specialized_name2 = mono_manager
@@ -112,31 +112,31 @@ fn test_struct_specialization() {
 /// Helper function to create a generic add function AST node
 fn create_generic_add_function() -> FunctionStatement {
     // Create type parameter T
-    let type_parameters = vec![Identifier {
-        token: "token".to_string(),
-        value: "T".to_string(),
-    }];
+    let type_parameters = vec![TypeParameter::new(
+        Token::Identifier("T".to_string()),
+        "T".to_string(),
+    )];
 
     // Create parameters a: T, b: T
     let parameters = vec![
-        ParameterStatement {
+        Parameter {
             token: "IDENT".to_string(),
             name: Identifier {
                 token: "token".to_string(),
                 value: "a".to_string(),
             },
-            type_name: Box::new(Identifier {
+            param_type: Box::new(Identifier {
                 token: "token".to_string(),
                 value: "T".to_string(),
             }),
         },
-        ParameterStatement {
+        Parameter {
             token: "IDENT".to_string(),
             name: Identifier {
                 token: "token".to_string(),
                 value: "b".to_string(),
             },
-            type_name: Box::new(Identifier {
+            param_type: Box::new(Identifier {
                 token: "token".to_string(),
                 value: "T".to_string(),
             }),
@@ -151,7 +151,7 @@ fn create_generic_add_function() -> FunctionStatement {
 
     // Create an infix expression for a + b
     let infix_expr = InfixExpression {
-        token: "+".to_string(),
+        token: Token::Plus,
         left: Box::new(Identifier {
             token: "token".to_string(),
             value: "a".to_string(),
@@ -170,7 +170,7 @@ fn create_generic_add_function() -> FunctionStatement {
     };
 
     let body = BlockStatement {
-        token: "lbrace".to_string(),
+        token: Token::LBrace,
         statements: vec![Box::new(return_statement)],
     };
 
@@ -192,10 +192,10 @@ fn create_generic_add_function() -> FunctionStatement {
 /// Helper function to create a generic pair struct AST node
 fn create_generic_pair_struct() -> cursed::ast::SquadStatement {
     // Create type parameter T
-    let type_parameters = vec![Identifier {
-        token: "token".to_string(),
-        value: "T".to_string(),
-    }];
+    let type_parameters = vec![TypeParameter::new(
+        Token::Identifier("T".to_string()),
+        "T".to_string(),
+    )];
 
     // Create fields first: T, second: T
     let fields = vec![
@@ -231,6 +231,7 @@ fn create_generic_pair_struct() -> cursed::ast::SquadStatement {
             value: "Pair".to_string(),
         },
         type_parameters,
+        generic_constraints: vec![],
         fields,
     }
 }

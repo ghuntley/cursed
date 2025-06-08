@@ -12,7 +12,6 @@ use cursed::codegen::llvm::{ExpressionCompilation, StatementCompilation};
 use cursed::codegen::llvm::IfExpressionCompilation;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
-use cursed::lexer::Token;
 use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use std::path::PathBuf;
@@ -53,7 +52,7 @@ fn test_assignment_type_inference() {
     
     // Compile the declaration
     let result = generator.compile_statement(&let_stmt);
-    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
     
     // Now assign a float value to the variable
     let assign_expr = InfixExpression {
@@ -125,7 +124,7 @@ fn test_assignment_type_coercion() {
     
     // Compile the declaration
     let result = generator.compile_statement(&let_stmt);
-    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile let statement: {:?}", result.err());
     
     // Now assign an integer value to the float variable - should be coerced
     let assign_expr = InfixExpression {
@@ -145,7 +144,7 @@ fn test_assignment_type_coercion() {
     let assign_result = generator.compile_expression(&assign_expr);
     
     // With proper type coercion, this should succeed
-    assert!(assign_result.is_ok(), "Assignment with type coercion failed: {:?}", assign_result.err())
+    assert!(assign_result.is_ok(), "Assignment with type coercion failed: {:?}", assign_result.err());
     
     // The result should be the coerced integer value (now a float)
     if let Ok(value) = assign_result {
@@ -162,7 +161,7 @@ fn test_assignment_type_coercion() {
     };
     
     let load_result = generator.compile_expression(&load_expr);
-    assert!(load_result.is_ok(), "Failed to load variable: {:?}", load_result.err())
+    assert!(load_result.is_ok(), "Failed to load variable: {:?}", load_result.err());
     
     let loaded_value = load_result.unwrap();
     println!("DEBUG: Loaded value type: {}", 
@@ -247,7 +246,7 @@ fn test_if_expression_with_assignment_type_inference() {
     
     // Compile the if expression
     let result = generator.compile_if_expression(&if_expr);
-    assert!(result.is_ok(), "Failed to compile if expression with assignment type inference: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile if expression with assignment type inference: {:?}", result.err());
     
     // Get the result and verify it's proper type inference
     let value = result.unwrap();
@@ -332,7 +331,7 @@ fn test_if_expression_with_mixed_types() {
     
     // Compile the if expression
     let result = generator.compile_if_expression(&if_expr);
-    assert!(result.is_ok(), "Failed to compile if expression with mixed types: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile if expression with mixed types: {:?}", result.err());
     
     // Get the result and verify it's proper type inference
     let value = result.unwrap();

@@ -21,11 +21,11 @@ fn create_test_error() -> Error {
 #[test]
 fn test_is_type_mismatch_error() {
     let err = create_test_error();
-    assert!(is_type_mismatch_error(&err);
+    assert!(is_type_mismatch_error(&err));
     
     // Non-type assertion error should return false
     let other_err = Error::Compilation("This is not a type error".to_string());
-    assert!(!is_type_mismatch_error(&other_err);
+    assert!(!is_type_mismatch_error(&other_err));
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn test_extract_type_info() {
     
     // Other error types should return None
     let other_err = Error::Compilation("This is not a type error".to_string());
-    assert!(extract_type_info(&other_err).is_none())
+    assert!(extract_type_info(&other_err).is_none());
 }
 
 // Simulate the ? operator usage with various error types
@@ -59,11 +59,11 @@ fn test_error_propagation_with_question_mark() {
     
     // Test that errors propagate correctly
     let result = calls_function_with_question_mark();
-    assert!(result.is_err())
+    assert!(result.is_err());
     
     // Verify the error type is preserved
     if let Err(err) = result {
-        assert!(is_type_mismatch_error(&err);
+        assert!(is_type_mismatch_error(&err));
         if let Some((source, target)) = extract_type_info(&err) {
             assert_eq!(source, "Reader");
             assert_eq!(target, "Writer");

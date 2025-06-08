@@ -47,7 +47,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
         ("age".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("Person", person_fields, Vec::new();
+    type_checker.register_struct("Person", person_fields, Vec::new());
     
     // 3. Register a to_string method for Person
     type_checker.register_struct_method(
@@ -58,8 +58,8 @@ fn test_interface_code_generation() -> Result<(), Error> {
     )?;
     
     // 4. Verify that Person implements Printable
-    let person_type = Type::Struct("Person".to_string(), Vec::new();
-    let printable_type = Type::Interface("Printable".to_string(), Vec::new();
+    let person_type = Type::Struct("Person".to_string(), Vec::new());
+    let printable_type = Type::Interface("Printable".to_string(), Vec::new());
     
     let implements = type_checker.check_interface_implementation(&person_type, &printable_type)?;
     assert!(implements, "Person should implement Printable");
@@ -89,7 +89,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // 6. Register Person as implementing Printable
     let mut person_methods = HashMap::new();
-    person_methods.insert("to_string".to_string(, function);
+    person_methods.insert("to_string".to_string(), function);
     
     codegen.register_interface_implementation(
         "Person",
@@ -121,7 +121,7 @@ fn test_interface_code_generation() -> Result<(), Error> {
     
     // Return the result
     if let Some(result) = method_result {
-        let _ = codegen.builder().build_return(Some(&result);
+        let _ = codegen.builder().build_return(Some(&result));
     } else {
         let _ = codegen.builder().build_return(None);
     }
@@ -173,14 +173,14 @@ fn test_interface_code_generation() -> Result<(), Error> {
     let success_result = codegen.context().i8_type()
         .ptr_type(inkwell::AddressSpace::default())
         .const_null();
-    let _ = codegen.builder().build_return(Some(&success_result);
+    let _ = codegen.builder().build_return(Some(&success_result));
     
     codegen.builder().position_at_end(is_false_block);
-    let _ = codegen.builder().build_return(Some(&success_result);
+    let _ = codegen.builder().build_return(Some(&success_result));
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string());
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
     }
     
     Ok(())

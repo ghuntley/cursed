@@ -1,9 +1,13 @@
 use cursed::codegen::llvm::EnhancedMonomorphization;
 use cursed::codegen::llvm::IntegratedMonomorphization;
 use cursed::codegen::llvm::StructMonomorphization;
+use cursed::codegen::llvm::StructFieldInference;
 
 #[path = "common/mod.rs"]
 mod common;
+
+#[path = "ast_factory.rs"]
+mod ast_factory;
 
 #[test]
 fn test_integrated_monomorphization() {
@@ -19,8 +23,18 @@ fn test_integrated_monomorphization() {
     
     // Import the enhanced and integrated monomorphization traits
     
+    // Register a basic LLVM struct type for testing
+    let container_name = "Container";
+    let normie_ptr = context.i32_type().ptr_type(Default::default()); // Normie pointer type
+    let container_ptr = context.i8_type().ptr_type(Default::default()); // Generic pointer for self-reference
+    let container_ty = context.struct_type(&[
+        normie_ptr.into(), // value: Normie
+        container_ptr.into(), // next: Container pointer
+    ], false);
+    code_gen.register_struct_type(container_name, container_ty).unwrap();
+    
     // Create a test generic struct
-    let ast_factory = common::ast_factory::AstFactory::new();
+    let ast_factory = ast_factory::AstFactory::new();
     let generic_struct = ast_factory.create_generic_struct(
         "Container",
         vec!["T"],
@@ -39,7 +53,7 @@ fn test_integrated_monomorphization() {
     );
     
     // Verify the result
-    assert!(result.is_ok(), "Integrated monomorphization failed: {:?}", result.err())
+    assert!(result.is_ok(), "Integrated monomorphization failed: {:?}", result.err());
     
     // Verify the accessors were created correctly by checking for their presence in the module
     let module = code_gen.module();

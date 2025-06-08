@@ -311,10 +311,10 @@ fn test_complex_error_chaining() {
     
     // Create LLVM code generator and compile the program
     use cursed::codegen::llvm::LlvmCodeGenerator;
-    let mut code_gen = LlvmCodeGenerator::new(&context, "complex_error_chaining_test", &PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "complex_error_chaining_test", PathBuf::from("test.csd"));
     
     // Generate code for the program
-    match code_gen.generate(&program) {
+    match code_gen.compile_program(&program) {
         Ok(_) => {
             info!("Successfully generated LLVM code for complex error chaining test program");
         },
@@ -561,10 +561,10 @@ fn test_error_context_preservation() {
     
     // Create LLVM code generator and compile the program
     use cursed::codegen::llvm::LlvmCodeGenerator;
-    let mut code_gen = LlvmCodeGenerator::new(&context, "error_context_preservation_test", &PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new(&context, "error_context_preservation_test", PathBuf::from("test.csd"));
     
     // Generate code for the program
-    match code_gen.generate(&program) {
+    match code_gen.compile_program(&program) {
         Ok(_) => {
             info!("Successfully generated LLVM code for error context preservation test program");
         },

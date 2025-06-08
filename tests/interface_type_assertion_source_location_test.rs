@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::PathBuf;
 use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::Node;
 use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedSourceLocationSupport};
@@ -21,7 +21,7 @@ fn test_enhanced_source_location_extraction() {
     
     // Create a code generator instance
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new("test_module", &context);
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_file.csd"));
     
     // Initialize the enhanced source location tracking with a test file path
     code_gen.init_enhanced_source_location_tracking(Some("test_file.csd"));
@@ -53,7 +53,7 @@ fn test_create_enhanced_source_location() {
     
     // Create a code generator instance
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new("test_module", &context);
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_file.csd"));
     
     // Initialize the enhanced source location tracking with a test file path
     code_gen.init_enhanced_source_location_tracking(Some("test_file.csd"));
@@ -102,7 +102,7 @@ fn test_source_location_cache() {
     
     // Create a code generator instance
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new("test_module", &context);
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test_file.csd"));
     
     // Initialize the enhanced source location tracking
     code_gen.init_enhanced_source_location_tracking(None);

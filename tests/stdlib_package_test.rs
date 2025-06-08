@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::rc::Rc;
 use cursed::object::Object;
 use cursed::stdlib::vibez;
 use cursed::stdlib::stringz;
@@ -18,22 +17,22 @@ mod simple_stdlib_tests {
     // Import packages we want to test
 
     // Function to create a string object from a Rust string
-    fn string_object(s: &str) -> Rc<Object> {
-        Rc::new(Object::String(s.to_string()))
+    fn string_object(s: &str) -> Arc<Object> {
+        Arc::new(Object::String(s.to_string()))
     }
 
     // Function to create a number object from a Rust i64
-    fn number_object(n: i64) -> Rc<Object> {
-        Rc::new(Object::Integer(n))
+    fn number_object(n: i64) -> Arc<Object> {
+        Arc::new(Object::Integer(n))
     }
 
     // Function to create a float object from a Rust f64
-    fn float_object(f: f64) -> Rc<Object> {
-        Rc::new(Object::Float(f))
+    fn float_object(f: f64) -> Arc<Object> {
+        Arc::new(Object::Float(f))
     }
 
     // Function to extract a string from a CURSED object
-    fn extract_string(obj: Rc<Object>) -> String {
+    fn extract_string(obj: Arc<Object>) -> String {
         match &*obj {
             Object::String(s) => s.clone(),
             _ => panic!("Expected string object, got {:?}", obj),
@@ -41,7 +40,7 @@ mod simple_stdlib_tests {
     }
 
     // Function to extract a number from a CURSED object
-    fn extract_number(obj: Rc<Object>) -> i64 {
+    fn extract_number(obj: Arc<Object>) -> i64 {
         match &*obj {
             Object::Integer(n) => *n,
             _ => panic!("Expected integer object, got {:?}", obj),
@@ -49,7 +48,7 @@ mod simple_stdlib_tests {
     }
 
     // Function to extract a float from a CURSED object
-    fn extract_float(obj: Rc<Object>) -> f64 {
+    fn extract_float(obj: Arc<Object>) -> f64 {
         match &*obj {
             Object::Float(f) => *f,
             Object::Integer(i) => *i as f64,
@@ -58,7 +57,7 @@ mod simple_stdlib_tests {
     }
 
     // Function to extract a boolean from a CURSED object
-    fn extract_bool(obj: Rc<Object>) -> bool {
+    fn extract_bool(obj: Arc<Object>) -> bool {
         match &*obj {
             Object::Boolean(b) => *b,
             _ => panic!("Expected boolean object, got {:?}", obj),
