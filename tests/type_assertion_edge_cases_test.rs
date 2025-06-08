@@ -197,9 +197,10 @@ fn test_type_assertion_error_conversion() {
     assert_eq!(cursed_error.code().unwrap(), "ASSERT-001");
     
     // Check context preservation
-    assert!(cursed_error.get_context("interface_type").is_some());
-    assert!(cursed_error.get_context("target_type").is_some());
-    assert!(cursed_error.get_context("actual_type").is_some());
+    let context = cursed_error.context();
+    assert!(context.iter().any(|(k, _)| k == "interface_type"));
+    assert!(context.iter().any(|(k, _)| k == "target_type"));
+    assert!(context.iter().any(|(k, _)| k == "actual_type"));
     
     info!("Type assertion error conversion test passed");
 }

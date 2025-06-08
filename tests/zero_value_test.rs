@@ -3,7 +3,6 @@
 //! This test suite verifies that all types in CURSED have proper zero value
 //! initialization following Go semantics.
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::core::type_checker::Type;
@@ -32,7 +31,7 @@ fn test_basic_type_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_zero_values");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_zero_values", std::path::PathBuf::from("test.csd"));
     
     // Test boolean (lit) - should be false
     let lit_zero = codegen.create_zero_value(&Type::Lit).unwrap();
@@ -58,13 +57,13 @@ fn test_basic_type_zero_values() {
     let snack_zero = codegen.create_zero_value(&Type::Snack).unwrap();
     assert!(snack_zero.is_float_value());
     let snack_float = snack_zero.into_float_value();
-    assert_eq!(snack_float.get_constant().unwrap(), 0.0);
+    assert_eq!(snack_float.get_constant().unwrap().0, 0.0);
     debug!("snack zero value: {:?}", snack_zero);
     
     let meal_zero = codegen.create_zero_value(&Type::Meal).unwrap();
     assert!(meal_zero.is_float_value());
     let meal_float = meal_zero.into_float_value();
-    assert_eq!(meal_float.get_constant().unwrap(), 0.0);
+    assert_eq!(meal_float.get_constant().unwrap().0, 0.0);
     debug!("meal zero value: {:?}", meal_zero);
     
     info!("Basic type zero values test passed");
@@ -79,7 +78,7 @@ fn test_composite_type_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_composite_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_composite_zero", std::path::PathBuf::from("test.csd"));
     
     // Test slice (should be nil - struct with null ptr, 0 len, 0 cap)
     let slice_type = Type::Slice(Box::new(Type::Normie));
@@ -121,7 +120,7 @@ fn test_string_zero_value() {
     let context = Context::create();
     let module = context.create_module("test_string_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Test tea (string) - should be empty string struct
     let tea_zero = codegen.create_zero_value(&Type::Tea).unwrap();
@@ -157,7 +156,7 @@ fn test_complex_zero_value() {
     let context = Context::create();
     let module = context.create_module("test_complex_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Test extra (complex) - should be 0+0i
     let extra_zero = codegen.create_zero_value(&Type::Extra).unwrap();
@@ -169,12 +168,12 @@ fn test_complex_zero_value() {
     let real_field = complex_struct.get_field_at_index(0).unwrap();
     assert!(real_field.is_float_value());
     let real = real_field.into_float_value();
-    assert_eq!(real.get_constant().unwrap(), 0.0);
+    assert_eq!(real.get_constant().unwrap().0, 0.0);
     
     let imag_field = complex_struct.get_field_at_index(1).unwrap();
     assert!(imag_field.is_float_value());
     let imag = imag_field.into_float_value();
-    assert_eq!(imag.get_constant().unwrap(), 0.0);
+    assert_eq!(imag.get_constant().unwrap().0, 0.0);
     
     info!("Complex zero value test passed");
 }
@@ -188,7 +187,7 @@ fn test_interface_zero_value() {
     let context = Context::create();
     let module = context.create_module("test_interface_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Test interface - should be nil interface (null data ptr, null type info)
     let interface_type = Type::Interface("TestInterface".to_string(), vec![]);
@@ -275,7 +274,7 @@ fn test_zero_value_memory_operations() {
     let context = Context::create();
     let module = context.create_module("test_memory_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a function to test memory operations
     let fn_type = context.void_type().fn_type(&[], false);
@@ -306,7 +305,7 @@ fn test_llvm_type_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_llvm_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Test basic LLVM types
     let i32_zero = codegen.create_zero_value_for_llvm_type(context.i32_type().into());
@@ -351,7 +350,7 @@ fn test_zero_value_errors() {
     let context = Context::create();
     let module = context.create_module("test_errors");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Test unknown type
     let unknown_result = codegen.create_zero_value(&Type::Unknown);
@@ -370,7 +369,7 @@ fn test_zero_value_variable_integration() {
     let context = Context::create();
     let module = context.create_module("test_integration");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a function for testing
     let fn_type = context.void_type().fn_type(&[], false);

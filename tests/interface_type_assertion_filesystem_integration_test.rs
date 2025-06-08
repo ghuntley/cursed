@@ -102,19 +102,19 @@ mod tests {
         let location = SourceLocation {
             line: 167,
             column: 22,
-            file: Some("examples/interface_type_assertion_filesystem_source_location.csd".to_string(),
+            file: Some("examples/interface_type_assertion_filesystem_source_location.csd".to_string()),
             source_line: "shape.(Circle)?".to_string(),
         };
         
         // Enhance an error message
-        let error_message = "Type assertion failed".to_string());
+        let error_message = "Type assertion failed".to_string();
         let enhanced = code_gen.enhance_error_with_source_context(error_message, &location);
         
         // Should contain the original error and context information
-        assert!(enhanced.contains("Type assertion failed");
-        assert!(enhanced.contains("Source context");
-        assert!(enhanced.contains(">");
-        assert!(enhanced.contains("^");
+        assert!(enhanced.contains("Type assertion failed"));
+        assert!(enhanced.contains("Source context"));
+        assert!(enhanced.contains(">"));
+        assert!(enhanced.contains("^"));
     }
     
     #[test]
@@ -136,6 +136,6 @@ mod tests {
         assert!(path.is_some(), "Path should be resolved");
         let path = path.unwrap();
         assert!(path.exists(), "Resolved path should exist");
-        assert!(path.to_string_lossy().contains("interface_type_assertion_filesystem_source_location.csd");
+        assert!(path.to_string_lossy().contains("interface_type_assertion_filesystem_source_location.csd"));
     }
 }

@@ -159,7 +159,7 @@ fn test_concurrent_gc_stress() {
     common::tracing::setup();
     
     // Create a garbage collector with a low threshold to trigger frequent collections
-    let gc = Arc::new(GarbageCollector::new();
+    let gc = Arc::new(GarbageCollector::new());
     
     let config = ConcurrentGcConfig {
         collection_interval_ms: 50,    // Very frequent collections
@@ -186,7 +186,7 @@ fn test_concurrent_gc_stress() {
             
             for i in 0..iterations_per_thread {
                 // Allocate an object
-                let obj = cgc.allocate(TestObject::new(t * 1000 + i);
+                let obj = cgc.allocate(TestObject::new(t * 1000 + i));
                 
                 // Sometimes create a chain
                 if !local_objects.is_empty() && i % 10 == 0 {
