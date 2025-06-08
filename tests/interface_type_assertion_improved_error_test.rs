@@ -47,7 +47,7 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
     // Create LLVM context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_program.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone();
+    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone());
     
     // Compile the program
     code_gen.compile(&program).map_err(|e| e.to_string())?;

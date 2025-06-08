@@ -3,13 +3,14 @@
 //! This test suite verifies that function literals can be parsed, compiled,
 //! and executed correctly, including closure capture mechanisms.
 
-use cursed::ast::expressions::{FunctionLiteral, ClosureCapture};
+// use cursed::ast::expressions::{FunctionLiteral, ClosureCapture}; // Not available
 use cursed::ast::declarations::Parameter;
 use cursed::ast::expressions::identifiers::Identifier;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::lexer::{Lexer, Token};
 use cursed::parser::Parser;
-use cursed::codegen::llvm::{LlvmCodeGenerator, function_literal::FunctionLiteralCompiler};
+// use cursed::codegen::llvm::{LlvmCodeGenerator, function_literal::FunctionLiteralCompiler}; // Not available
+use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;
 use std::collections::HashSet;
 

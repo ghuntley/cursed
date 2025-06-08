@@ -17,6 +17,7 @@ use super::context::LlvmCodeGenerator;
 use super::expression::ExpressionCompilation;
 use super::assignment::AssignmentCompilation;
 use super::variables::VariableHandling;
+use super::string_type::CursedStringType;
 
 /// Trait for handling basic expression operations
 pub trait BasicExpressionOperations<'ctx> {
@@ -102,15 +103,21 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
     }
     
     fn compile_string_literal(&mut self, lit: &StringLiteral) -> Result<BasicValueEnum<'ctx>, Error> {
-        let result = self.builder().build_global_string_ptr(&lit.value, "str");
-        match result {
-            Ok(global_value) => {
-                Ok(global_value.as_pointer_value().into())
-            },
-            Err(e) => {
-                Err(Error::from_str(&format!("Failed to build string: {}", e)))
-            }
-        }
+        // Use the CursedStringType to create a proper string struct
+        let string_type = CursedStringType::new(self.context());
+        
+        // Create a global string literal with the string type
+        let global_name = format!("str_literal_{}", self.string_literal_counter);
+        self.string_literal_counter += 1;
+        
+        let string_value = string_type.create_string_literal(
+            self.builder(),
+            self.module(),
+            &lit.value,
+            &global_name
+        ).map_err(|e| Error::from_str(&format!("Failed to create string literal: {}", e)))?;
+        
+        Ok(string_value.into())
     }
     
     fn compile_infix_expression(&mut self, expr: &InfixExpression) -> Result<BasicValueEnum<'ctx>, Error> {
