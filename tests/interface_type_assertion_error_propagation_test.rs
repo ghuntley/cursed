@@ -1,11 +1,12 @@
-use crate::ast::expressions::TypeAssertion;
-use crate::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
-use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::error::Error;
+use cursed::ast::expressions::TypeAssertion;
+use cursed::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
+use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::error::Error;
 use tracing::{debug, error, info};
 use std::sync::Arc;
 use inkwell::context::Context;
-use crate::common;
+
+mod common;
 
 // Test module for interface type assertion error propagation
 //
@@ -62,7 +63,7 @@ mod tests {
         );
         
         // Verify the Result was created successfully
-        assert!(success_result.is_ok())
+        assert!(success_result.is_ok());
         
         // Create a failure Result with error message
         let error_message = "Test error message";
@@ -74,7 +75,7 @@ mod tests {
         );
         
         // Verify the failure Result was created successfully
-        assert!(failure_result.is_ok())
+        assert!(failure_result.is_ok());
         
         info!("Successfully created Result structures for type assertions");
     }
@@ -118,7 +119,7 @@ mod tests {
         let unwrapped = codegen.unwrap_type_assertion_result(success_result);
         
         // Verify the unwrapping succeeded
-        assert!(unwrapped.is_ok())
+        assert!(unwrapped.is_ok());
         
         // Branch to the success block
         codegen.builder().build_unconditional_branch(success_block)

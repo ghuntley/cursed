@@ -38,7 +38,7 @@ fn test_enhanced_numeric_range() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(45), "Basic numeric range should sum to 45");
+            assert_eq!(result.as_int(), Some(45), "Basic numeric range should sum to 45");
         },
         Err(e) => panic!("Failed to run basic numeric range test: {}", e),
     }
@@ -65,7 +65,7 @@ fn test_enhanced_range_with_bounds() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(95), "Range with bounds should sum to 95");
+            assert_eq!(result.as_int(), Some(95), "Range with bounds should sum to 95");
         },
         Err(e) => panic!("Failed to run range with bounds test: {}", e),
     }
@@ -92,7 +92,7 @@ fn test_enhanced_range_with_step() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(40), "Range with step should sum to 40");
+            assert_eq!(result.as_int(), Some(40), "Range with step should sum to 40");
         },
         Err(e) => panic!("Failed to run range with step test: {}", e),
     }
@@ -119,7 +119,7 @@ fn test_enhanced_negative_step_range() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(50), "Range with negative step should sum to 50");
+            assert_eq!(result.as_int(), Some(50), "Range with negative step should sum to 50");
         },
         Err(e) => panic!("Failed to run negative step range test: {}", e),
     }
@@ -149,7 +149,7 @@ fn test_enhanced_empty_range() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(0), "Empty range should not execute any iterations");
+            assert_eq!(result.as_int(), Some(0), "Empty range should not execute any iterations");
         },
         Err(e) => panic!("Failed to run empty range test: {}", e),
     }
@@ -176,7 +176,7 @@ fn test_enhanced_large_range() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(10), "Large range should execute exactly 10 iterations");
+            assert_eq!(result.as_int(), Some(10), "Large range should execute exactly 10 iterations");
         },
         Err(e) => panic!("Failed to run large range test: {}", e),
     }
@@ -203,7 +203,7 @@ fn test_enhanced_negative_bounds_range() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(-40), "Range with negative bounds should sum to -40");
+            assert_eq!(result.as_int(), Some(-40), "Range with negative bounds should sum to -40");
         },
         Err(e) => panic!("Failed to run negative bounds range test: {}", e),
     }
@@ -230,7 +230,7 @@ fn test_enhanced_array_iteration() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(375000), "Array iteration should produce product 375000");
+            assert_eq!(result.as_int(), Some(375000), "Array iteration should produce product 375000");
         },
         Err(e) => panic!("Failed to run array iteration test: {}", e),
     }
@@ -289,7 +289,7 @@ fn test_enhanced_nested_range_loops() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(99), "Nested range loops should sum to 99");
+            assert_eq!(result.as_int(), Some(99), "Nested range loops should sum to 99");
         },
         Err(e) => panic!("Failed to run nested range loops test: {}", e),
     }
@@ -318,7 +318,7 @@ fn test_enhanced_map_key_iteration() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(3), "Map key iteration should count 3 keys");
+            assert_eq!(result.as_int(), Some(3), "Map key iteration should count 3 keys");
         },
         Err(e) => panic!("Failed to run map key iteration test: {}", e),
     }
@@ -346,7 +346,7 @@ fn test_enhanced_map_key_value_iteration() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(60), "Map key-value iteration should sum to 60");
+            assert_eq!(result.as_int(), Some(60), "Map key-value iteration should sum to 60");
         },
         Err(e) => panic!("Failed to run map key-value iteration test: {}", e),
     }
@@ -383,7 +383,7 @@ fn test_enhanced_break_continue_combined() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(42), "Break/continue combined loop should sum to 42");
+            assert_eq!(result.as_int(), Some(42), "Break/continue combined loop should sum to 42");
         },
         Err(e) => panic!("Failed to run break/continue combined test: {}", e),
     }
@@ -411,7 +411,7 @@ fn test_enhanced_range_variable_scoping() {
     
     match helper::run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_i64(), Some(42), "Variable scoping should preserve outer value");
+            assert_eq!(result.as_int(), Some(42), "Variable scoping should preserve outer value");
         },
         Err(e) => panic!("Failed to run variable scoping test: {}", e),
     }
