@@ -100,17 +100,23 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         None
     }
     
-    /// Compiles a struct declaration ("squad" in CURSED) to LLVM IR.
+    /// Compiles a struct declaration ("squad" in CURSED) to LLVM IR with recursive type support.
     ///
     /// This method translates a CURSED struct declaration into an LLVM struct type.
     /// It processes all the fields in the struct, determines their LLVM types, and
     /// creates a structured type that represents the struct's memory layout.
+    /// 
+    /// The method now supports recursive types by:
+    /// 1. Creating forward declarations for potentially recursive structs
+    /// 2. Handling recursive field types through pointers
+    /// 3. Properly resolving cycles in type definitions
     ///
     /// The process includes:
     /// 1. Extracting field names and types from the struct declaration
-    /// 2. Converting CURSED type names to LLVM types for each field
-    /// 3. Creating an LLVM struct type with the correct field types and layout
-    /// 4. Registering the struct type in the code generator's registry
+    /// 2. Creating forward declarations for recursive types
+    /// 3. Converting CURSED type names to LLVM types for each field
+    /// 4. Creating an LLVM struct type with the correct field types and layout
+    /// 5. Registering the struct type in the code generator's registry
     ///
     /// # Arguments
     ///
@@ -120,7 +126,30 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ///
     /// * `Result<(), String>` - Success or an error message
     pub fn compile_squad_statement(&mut self, squad_stmt: &SquadStatement) -> Result<(), String> {
+        use crate::codegen::llvm::recursive_types::RecursiveTypeLLVM;
+        
         let struct_name = &squad_stmt.name.value;
+        
+        // Check if this might be a recursive type by looking for self-references
+        let mut is_potentially_recursive = false;
+        for field in &squad_stmt.fields {
+            let type_name = &field.type_name.value;
+            
+            // Check for direct recursion (*StructName) or indirect recursion
+            if type_name.trim_start_matches('*') == struct_name {
+                is_potentially_recursive = true;
+                break;
+            }
+        }
+        
+        // Create forward declaration if potentially recursive
+        let struct_type = if is_potentially_recursive {
+            self.create_forward_declaration(struct_name)
+                .map_err(|e| format!("Failed to create forward declaration for {}: {}", struct_name, e))?
+        } else {
+            // For non-recursive types, we'll create the type normally
+            self.context.opaque_struct_type(struct_name)
+        };
         
         // Create a list of field types for the struct
         let mut field_types = Vec::new();
@@ -131,15 +160,28 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             let field_name = &field.name.value;
             let type_name = &field.type_name.value;
             
-            // Get the LLVM type for this field
-            let field_type = self.get_llvm_type_for_name(type_name)?;
+            // Get the LLVM type for this field, handling recursive references
+            let field_type = if type_name.starts_with('*') {
+                // Pointer type - might be recursive
+                let target_type_name = &type_name[1..];
+                if target_type_name == struct_name {
+                    // Recursive pointer - use the forward declared type
+                    struct_type.ptr_type(inkwell::AddressSpace::default()).into()
+                } else {
+                    // Regular pointer
+                    self.get_llvm_type_for_name(type_name)?
+                }
+            } else {
+                // Non-pointer field
+                self.get_llvm_type_for_name(type_name)?
+            };
             
             field_types.push(field_type);
             field_names.push(field_name.clone());
         }
         
-        // Create the struct type
-        let struct_type = self.context.struct_type(&field_types, false);
+        // Set the body of the struct type
+        struct_type.set_body(&field_types, false);
         
         // To avoid borrowing issues, clone the package name
         let package_name = self.current_package_name.clone();

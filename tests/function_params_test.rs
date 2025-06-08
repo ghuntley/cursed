@@ -73,7 +73,7 @@ slay map[K, V](key K) V {
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program();
     
-    assert!(program.is_ok(), "Failed to parse function with multiple generic parameters: {}", program.err().unwrap();
+    assert!(program.is_ok(), "Failed to parse function with multiple generic parameters: {}", program.err().unwrap());
     
     // Test complex generic function
     let input = r#"vibe test

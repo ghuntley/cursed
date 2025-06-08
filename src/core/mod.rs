@@ -27,6 +27,7 @@ pub mod interface_registry_lru_extension;
 pub mod type_checker;
 pub mod type_checker_interface_registry;
 pub mod type_infer;
+pub mod recursive_types;
 pub mod constraint_error;
 pub mod async_constraint_checker;
 pub mod constraint_recovery;

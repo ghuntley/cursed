@@ -591,6 +591,7 @@ impl<'a> Lexer<'a> {
             "periodt" => Token::Periodt,
             "vibe_check" => Token::VibeCheck,
             "mood" => Token::Mood,
+            "case" => Token::Case,
             "basic" => Token::Basic,
             "ghosted" => Token::Ghosted,
             "simp" => Token::Simp,

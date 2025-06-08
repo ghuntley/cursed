@@ -14,6 +14,7 @@ use inkwell::types::BasicTypeEnum;
 use crate::error::Error;
 
 use super::context::LlvmCodeGenerator;
+use super::zero_values_simple::SimpleZeroValueGeneration;
 use super::expression::ExpressionCompilation;
 use super::pointer_type_extension::PointerTypeExtension;
 
@@ -181,16 +182,8 @@ impl<'ctx> PointerOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         // For matching on type
         use inkwell::types::BasicTypeEnum;
         
-        let default_value: BasicValueEnum<'ctx> = match pointee_type {
-            BasicTypeEnum::IntType(int_type) => int_type.const_zero().into(),
-            BasicTypeEnum::FloatType(float_type) => float_type.const_zero().into(),
-            BasicTypeEnum::PointerType(ptr_type) => ptr_type.const_null().into(),
-            BasicTypeEnum::StructType(_) => {
-                // Use a dummy integer for structs
-                self.context().i32_type().const_zero().into()
-            },
-            _ => self.context().i32_type().const_zero().into()
-        };
+        // Use the simple zero value system for default values
+        let default_value = self.create_simple_zero_value_for_llvm_type(pointee_type);
         
         self.builder().build_unconditional_branch(merge_block)
             .map_err(|e| Error::codegen(format!("Failed to build branch: {}", e)))?;

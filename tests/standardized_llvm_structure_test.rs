@@ -2,6 +2,7 @@ use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::rc::Rc;
 use cursed::ast::expressions::{IntegerLiteral, FloatLiteral, Identifier};
 use cursed::ast::pointer::{PointerType, PointerDereference};
 use cursed::ast::traits::Expression;
@@ -57,9 +58,9 @@ fn test_standardized_structure() -> Result<(), Error> {
     let var3 = code_gen.builder().build_alloca(f64_type, "var3")?;
     
     // Add the variables to the code generator
-    let _ = code_gen.add_variable("var1", var1);
-    let _ = code_gen.add_variable("var2", var2);
-    let _ = code_gen.add_variable("var3", var3);
+    let _ = code_gen.add_variable("var1", var1, &cursed::core::type_checker::Type::Normie);
+    let _ = code_gen.add_variable("var2", var2, &cursed::core::type_checker::Type::Thicc);
+    let _ = code_gen.add_variable("var3", var3, &cursed::core::type_checker::Type::Meal);
     
     // Set some values
     let val1 = i32_type.const_int(42, false);

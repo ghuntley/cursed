@@ -35,14 +35,14 @@ fn test_enhanced_visualization() {
     let source_location = SourceLocation {
         line: 10,
         column: 15,
-        file: Some("test.csd".to_string(),
+        file: Some("test.csd".to_string()),
         source_line: "    let x = y.(SomeType)?".to_string(),
     };
     
     let context_lines = vec![
-        (9, "    // This is a test".to_string(),
-        (10, "    let x = y.(SomeType)?".to_string(),
-        (11, "    vibez.spill(x)".to_string(),
+        (9, "    // This is a test".to_string()),
+        (10, "    let x = y.(SomeType)?".to_string()),
+        (11, "    vibez.spill(x)".to_string()),
     ];
     
     let error = code_generator.create_enhanced_visual_error(
@@ -56,8 +56,8 @@ fn test_enhanced_visualization() {
     );
     
     let formatted = code_generator.format_visual_error_message(&error);
-    assert!(formatted.contains("Error");
-    assert!(formatted.contains("SomeType");
-    assert!(formatted.contains("ActualType");
-    assert!(formatted.contains("test.csd");
+    assert!(formatted.contains("Error"));
+    assert!(formatted.contains("SomeType"));
+    assert!(formatted.contains("ActualType"));
+    assert!(formatted.contains("test.csd"));
 }

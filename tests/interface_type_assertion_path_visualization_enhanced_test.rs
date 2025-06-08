@@ -301,7 +301,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
         Err(Error::Compilation(format!(
             "No path found from interface '{}' to interface '{}'",
             source_interface, target_interface
-        ))))
+        )))
     }
     
     fn generate_interface_hierarchy_dot(&self) -> Result<String, Error> {

@@ -1,4 +1,4 @@
-use cursed::ast::declarations::FunctionStatement;
+use cursed::ast::declarations::{FunctionStatement, Parameter, TypeParameter};
 use cursed::ast::expressions::Identifier;
 use cursed::ast::statements::block::BlockStatement;
 use cursed::ast::traits::{Expression, Node};
@@ -21,28 +21,28 @@ fn create_generic_function(
     return_type: Type,
 ) -> FunctionStatement {
     // Create type parameters
-    let type_parameters: Vec<Identifier> = type_params
+    let type_parameters: Vec<TypeParameter> = type_params
         .iter()
-        .map(|param| Identifier {
-            token: "token".to_string(),
-            value: param.to_string(),
-        })
+        .map(|param| TypeParameter::new(
+            Token::Identifier(param.to_string()),
+            param.to_string()
+        ))
         .collect();
 
     // Create function parameters
-    let parameters: Vec<cursed::ast::ParameterStatement> = param_types
+    let parameters: Vec<cursed::ast::Parameter> = param_types
         .iter()
         .enumerate()
         .map(|(i, param_type)| {
             let param_name = format!("param{}", i);
-            cursed::ast::ParameterStatement {
-                token: Token::Identifier("IDENT".to_string()),
+            cursed::ast::Parameter {
+                token: param_name.clone(),
                 name: Identifier {
-                    token: "token".to_string(),
+                    token: param_name.clone(),
                     value: param_name,
                 },
-                type_name: Box::new(Identifier {
-                    token: "token".to_string(),
+                param_type: Box::new(Identifier {
+                    token: param_type.to_string(),
                     value: param_type.to_string(),
                 }),
             }
@@ -63,9 +63,9 @@ fn create_generic_function(
 
     // Create the function statement
     FunctionStatement {
-        token: Token::Slay,
+        token: "function".to_string(),
         name: Identifier {
-            token: "token".to_string(),
+            token: name.to_string(),
             value: name.to_string(),
         },
         parameters,
@@ -178,7 +178,7 @@ fn test_specialization_caching() {
         "process",
         vec!["T"],
         vec![Type::TypeParam("T".to_string())],
-        Type::TypeParam("T".to_string(),
+        Type::TypeParam("T".to_string()),
     );
     
     // First specialization
@@ -196,10 +196,10 @@ fn test_specialization_caching() {
     
     // The module should only contain one function
     let mut count = 0;
-    code_gen.module().get_functions().for_each(|_| count += 1);
+    code_gen.module().get_functions().for_each(|_| { count += 1 });
     
     // There might be other functions in the module, but we should have exactly
     // one specialized function for our generic function
-    let function_exists = code_gen.module().get_function(&name1).is_some());
+    let function_exists = code_gen.module().get_function(&name1).is_some();
     assert!(function_exists, "Specialized function should exist");
 }

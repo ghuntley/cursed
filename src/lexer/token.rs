@@ -102,6 +102,7 @@ pub enum Token {
     Periodt,   // while (periodt)
     VibeCheck, // switch (vibe_check)
     Mood,      // case (mood)
+    Case,      // case (case) - for type switches
     Basic,     // default (basic)
     Ghosted,   // break (ghosted)
     Simp,      // continue (simp)
@@ -368,6 +369,7 @@ impl Token {
             Token::Periodt => String::from("periodt"),
             Token::VibeCheck => String::from("vibe_check"),
             Token::Mood => String::from("mood"),
+            Token::Case => String::from("case"),
             Token::Basic => String::from("basic"),
             Token::Ghosted => String::from("ghosted"),
             Token::Simp => String::from("simp"),

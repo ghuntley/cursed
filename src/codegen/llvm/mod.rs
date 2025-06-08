@@ -46,6 +46,8 @@
 
 // Re-export public types and functions
 pub use self::context::LlvmCodeGenerator;
+pub use self::type_assertion::InterfaceTypeAssertion;
+pub use self::char_operations::CharOperations;
 
 // Re-export extension traits
 pub use self::llvm_code_generator_extensions::{
@@ -103,10 +105,10 @@ pub use self::import_statement::ImportStatementCompilation;
 pub use self::qualified_name_errors::{QualifiedNameError, QualifiedNameErrorExt};
 pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
+pub use self::type_switch::TypeSwitchCompilation;
 pub use self::if_expression::IfExpressionCompilation;
 pub use self::struct_field_inference::StructFieldInference;
-// Interface type assertion trait
-pub use self::type_assertion::InterfaceTypeAssertion;
+// Interface type assertion trait (already exported above)
 // Improved interface type assertions with additional runtime information
 pub use self::interface_type_assertion::ImprovedTypeAssertion;
 // Enhanced interface type assertions with optimized implementation
@@ -197,6 +199,10 @@ mod builder;
 pub mod container_layout; // Container memory layout optimization
 pub mod llvm_code_generator_extensions; // Extension traits for LlvmCodeGenerator
 pub mod basic_value_extensions; // Extension traits for LLVM BasicValueEnum and types
+pub mod zero_values; // Zero value initialization for all CURSED types
+pub mod zero_values_simple; // Simple zero value initialization
+pub mod type_switch_simple; // Simple type switch compilation
+pub mod type_switch_fixed; // Fixed type switch compilation
 mod dot_expressions;  // Dot expression compilation (module.function)
 mod hook_dot_expressions; // Temporary patch for dot expressions
 pub mod enhanced_monomorphization; // Enhanced monomorphization with constraint checking
@@ -237,13 +243,15 @@ mod import_statement; // Import statement implementation
 mod qualified_name_errors; // Qualified name error handling
 mod later_statement; // Later (defer) statement implementation
 mod switch_statement; // Switch statement implementation
+mod type_switch;     // Type switch statement implementation
 mod if_expression;   // If expression implementation
 pub mod struct_field_inference; // Struct field type inference
+pub mod recursive_types; // Recursive type support
 // Dynamic dispatch for interfaces
 pub mod dynamic_dispatch;
 mod interface_implementation; // Interface implementation for code generator
 mod interface_type_integration; // Integration of type checker with interface implementation
-mod type_assertion; // Interface type assertion and conversion
+pub mod type_assertion; // Interface type assertion and conversion
 mod interface_type_assertion; // Improved interface type assertions with additional runtime information
 mod interface_type_assertion_errors; // Enhanced error handling for interface type assertions
 mod type_assertion_implementation; // Integrated type assertion implementation
@@ -253,6 +261,7 @@ mod enhanced_dynamic_dispatch; // Enhanced dynamic dispatch with improved error 
 mod optimized_dynamic_dispatch; // Optimized dynamic dispatch with inline caching and speculative dispatch
 mod integrated_interface_operations; // Unified interface operations system
 mod auto_interface_dispatcher; // Automatic code generation for interface method dispatching
+mod char_operations; // Character (sip) type operations
 mod auto_interface_dispatcher_integration; // Integration of auto interface dispatcher with the compiler
 mod interface_field_accessors; // Integration of improved field accessors with interface system
 mod interface_type_assertion_debugging; // Enhanced runtime debugging for interface type assertions

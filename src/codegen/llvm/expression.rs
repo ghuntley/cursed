@@ -94,7 +94,7 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             // Use our error propagation implementation with ? operator 
             use super::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
             // Call the version for TypeAssertionQuestion that automatically propagates errors
-            let result = self.compile_type_assertion_question(type_assertion)?;
+            let result = InterfaceTypeAssertion::compile_type_assertion_question(self, type_assertion)?;
             
             tracing::debug!("Successfully compiled type assertion with ? operator for {}", type_assertion.type_name);
             return Ok(result);

@@ -58,7 +58,7 @@ fn test_basic_interface_methods() -> Result<(), Error> {
     
     // Compile the program
     let compile_result = code_gen.compile_program(&program);
-    assert!(compile_result.is_ok(), "Program with interface methods failed to compile: {:?}", compile_result.err())
+    assert!(compile_result.is_ok(), "Program with interface methods failed to compile: {:?}", compile_result.err());
     
     // Verify the functions exist in the compiled module
     let module = code_gen.module();
@@ -139,7 +139,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // Compile the program
     let compile_result = code_gen.compile_program(&program);
-    assert!(compile_result.is_ok(), "Program with interface type assertions failed to compile: {:?}", compile_result.err())
+    assert!(compile_result.is_ok(), "Program with interface type assertions failed to compile: {:?}", compile_result.err());
     
     Ok(())
 }
