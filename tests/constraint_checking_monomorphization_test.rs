@@ -97,8 +97,8 @@ fn test_with_registry() {
         &Type::Struct("Point".to_string(), vec![]), 
         "Comparable"
     );
-    assert!(point_result.is_ok())
-    assert!(point_result.unwrap();
+    assert!(point_result.is_ok());
+    assert!(point_result.unwrap());
     
     // Check constraint: Custom struct doesn't implement non-registered interface
     let point_numeric_result = registry.check_implementation(

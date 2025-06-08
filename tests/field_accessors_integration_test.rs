@@ -19,7 +19,7 @@ mod common;
 fn test_field_accessors_integration() {
     setup();
     let context = Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd");
+    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
     
     // Create a simple generic struct for testing
     let generic_struct = create_test_generic_struct();
@@ -35,7 +35,7 @@ fn test_field_accessors_integration() {
         &type_args,
     );
     
-    assert!(result.is_ok(), "Failed to generate specialized struct with accessors: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to generate specialized struct with accessors: {:?}", result.err());
     
     // Verify the field accessors were created
     assert!(code_gen.module().get_function("Point_Normie_Tea_get_x").is_some(), 
@@ -79,7 +79,7 @@ fn test_field_accessors_integration() {
     );
     let cache_time = start.elapsed();
     
-    assert!(cache_result.is_ok(), "Failed to regenerate specialized struct with accessors: {:?}", cache_result.err())
+    assert!(cache_result.is_ok(), "Failed to regenerate specialized struct with accessors: {:?}", cache_result.err());
     println!("Cache regeneration took: {:?}", cache_time);
     
     // Verify module integrity

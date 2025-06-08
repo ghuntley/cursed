@@ -18,6 +18,7 @@ use crate::lexer::{Token, TokenType};
 use crate::ast::Block;
 use crate::codegen::llvm::expression::ExpressionCompilation;
 use crate::codegen::llvm::statement::StatementCompilation;
+use crate::codegen::llvm::zero_values_simple::SimpleZeroValueGeneration;
 use super::context::LlvmCodeGenerator;
 use crate::codegen::MonomorphizationManager;
 use std::collections::HashMap;
@@ -294,50 +295,8 @@ impl<'ctx> FunctionMonomorphization<'ctx> for LlvmCodeGenerator<'ctx> {
     
     /// Create a default value for a given type
     fn create_default_value_for_type(&self, typ: &Type) -> Result<BasicValueEnum<'ctx>, Error> {
-        match typ {
-            Type::Normie => Ok(self.context().i32_type().const_zero().into()),
-            Type::Smol => Ok(self.context().i8_type().const_zero().into()),
-            Type::Mid => Ok(self.context().i16_type().const_zero().into()),
-            Type::Thicc => Ok(self.context().i64_type().const_zero().into()),
-            Type::Snack => Ok(self.context().f32_type().const_zero().into()),
-            Type::Meal => Ok(self.context().f64_type().const_zero().into()),
-            Type::Lit => Ok(self.context().bool_type().const_zero().into()),
-            Type::Tea => {
-                // Create an empty string
-                let char_ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                Ok(char_ptr_type.const_null().into())
-            },
-            Type::Byte => Ok(self.context().i8_type().const_zero().into()),
-            Type::Rune => Ok(self.context().i32_type().const_zero().into()),
-            Type::Sip => Ok(self.context().i32_type().const_zero().into()),
-            Type::Extra => {
-                // Complex number is usually represented as a struct
-                // For simplicity, return a null pointer
-                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                Ok(ptr_type.const_null().into())
-            },
-            Type::Array(_, _) | Type::Slice(_) => {
-                // For arrays and slices, return a null pointer
-                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                Ok(ptr_type.const_null().into())
-            },
-            Type::Map(_, _) | Type::Channel(_) => {
-                // Maps and channels are also pointer types
-                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                Ok(ptr_type.const_null().into())
-            },
-            Type::Struct(_, _) | Type::Interface(_, _) => {
-                // For structs and interfaces, return a null pointer
-                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                Ok(ptr_type.const_null().into())
-            },
-            Type::Pointer(_) => {
-                // For pointers, return null
-                let ptr_type = self.context().i8_type().ptr_type(inkwell::AddressSpace::default());
-                Ok(ptr_type.const_null().into())
-            },
-            _ => Err(Error::from_str(&format!("Cannot create default value for type: {:?}", typ))),
-        }
+        // Use the simple zero value system
+        self.create_simple_zero_value(typ)
     }
 
     fn monomorphization_type_to_llvm_type(&self, type_name: &str) -> Result<BasicTypeEnum<'ctx>, Error> {

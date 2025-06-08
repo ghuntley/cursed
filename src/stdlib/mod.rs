@@ -684,7 +684,8 @@ pub use chadlogging::{Logger, Handler, Record, Attr, TextHandler, JSONHandler,
                     debug, info, warn, error, group, new, default};
 
 // Character classification exports - with explicit names to avoid conflicts
-pub use is_uppercase::{is_uppercase, is_lowercase, is_digit, is_alpha, 
+pub use is_uppercase::{is_uppercase, is_lowercase, is_digit, is_alpha, is_alphabetic, 
+                     is_numeric, is_whitespace, char_to_string,
                      to_uppercase as char_to_uppercase, to_lowercase as char_to_lowercase};
 
 // Generator trait exports

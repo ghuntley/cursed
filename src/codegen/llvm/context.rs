@@ -98,6 +98,8 @@ pub struct LlvmCodeGenerator<'ctx> {
     pub(crate) type_assertion_debug_config: Option<crate::codegen::llvm::interface_type_assertion_debug::TypeAssertionDebugConfig>,
     // Filesystem integration for source location tracking
     pub(crate) filesystem_integration: InterfaceTypeAssertionFilesystemIntegration,
+    // Runtime system for type assertions with panic support
+    pub(crate) type_assertion_runtime: Option<std::sync::Arc<crate::runtime::type_assertion_runtime::TypeAssertionRuntime>>,
     
     // Test-only fields for interface hierarchy mocking in unit tests
     #[cfg(test)]
@@ -220,6 +222,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             type_assertion_debug_config: None,
             // Initialize filesystem integration
             filesystem_integration: InterfaceTypeAssertionFilesystemIntegration::new(),
+            // Initialize type assertion runtime with default configuration
+            type_assertion_runtime: Some(std::sync::Arc::new(crate::runtime::type_assertion_runtime::TypeAssertionRuntime::new())),
             
             // Test-only fields for interface hierarchy mocking in unit tests
             #[cfg(test)]

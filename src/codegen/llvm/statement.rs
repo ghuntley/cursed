@@ -11,6 +11,8 @@ use crate::ast::statements::declarations::LetStatement;
 use crate::ast::FunctionStatement;
 use crate::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
 use crate::ast::control_flow::{BreakStatement, ContinueStatement};
+use crate::ast::control_flow::type_switch::TypeSwitchStatement;
+use crate::codegen::llvm::type_switch::TypeSwitchCompilation;
 use crate::ast::control_flow::range::RangeForStatement;
 use crate::ast::control_flow::range::RangeClause;
 use crate::ast::expressions::RangeExpression;
@@ -291,6 +293,14 @@ impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         // Switch (vibe_check) statement
         if let Some(switch_stmt) = any.downcast_ref::<SwitchStatement>() {
             self.compile_switch_statement_wrapper(switch_stmt)?;
+            return Ok(());
+        }
+        
+        // Type switch statement
+        if let Some(type_switch_stmt) = any.downcast_ref::<TypeSwitchStatement>() {
+            // Use fixed type switch compilation
+            use crate::codegen::llvm::type_switch_fixed::TypeSwitchCompilation as FixedTypeSwitchCompilation;
+            FixedTypeSwitchCompilation::compile_type_switch_statement(self, type_switch_stmt)?;
             return Ok(());
         }
         

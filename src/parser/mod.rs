@@ -36,6 +36,7 @@ mod statements;
 mod struct_field_inference;
 mod switch;
 mod type_assertion;
+mod type_switch;
 mod types;
 
 #[cfg(test)]

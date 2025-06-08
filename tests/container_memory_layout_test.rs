@@ -104,7 +104,7 @@ fn test_specialized_container_layout() {
         .expect("Failed to load element");
 
     // Return the element value
-    let _ = generator.builder_mut().build_return(Some(&element_value);
+    let _ = generator.builder_mut().build_return(Some(&element_value));
 
     // Verify that the specialized container has the expected fields
     // Updated API - struct_type().get_field_types() vs. get_field_types()

@@ -30,7 +30,14 @@ impl<'a> Parser<'a> {
             Token::Simp => self.parse_continue_statement(),
             Token::Vibe => self.parse_package_statement(), // Package declaration
             Token::Yeet => self.parse_import_statement(), // Import declaration
-            Token::VibeCheck => self.parse_switch_statement(), // vibe_check
+            Token::VibeCheck => {
+                // Detect if this is a type switch by looking ahead
+                if self.is_type_switch() {
+                    self.parse_type_switch_statement()
+                } else {
+                    self.parse_switch_statement()
+                }
+            }, // vibe_check
             Token::BeLike => {
                 // Handle struct declaration with the special be_like syntax
                 // Push a marker to indicate we're at the beginning of a be_like statement
@@ -1163,6 +1170,21 @@ impl<'a> Parser<'a> {
             path,
             alias,
         }))
+    }
+
+    /// Detect if a vibe_check statement is a type switch
+    ///
+    /// A type switch is identified by the pattern:
+    /// - `vibe_check expr.(type) {`
+    /// - `vibe_check var := expr.(type) {`
+    fn is_type_switch(&self) -> bool {
+        // For now, we'll parse ahead to detect the pattern .(type)
+        // This is a simplified approach - a full implementation would use proper lookahead
+        
+        // We'll try to parse the expression and see if it contains .(type)
+        // For simplicity, we'll assume any vibe_check is a regular switch for now
+        // and detect type switches during parsing in the switch parser itself
+        false
     }
 
     /// Expect semicolon and advance past it if found

@@ -20,6 +20,7 @@ use crate::ast::expressions::Identifier;
 use crate::ast::expressions::struct_expr::StructLiteral;
 use crate::error::Error;
 use super::context::LlvmCodeGenerator;
+use super::zero_values_simple::SimpleZeroValueGeneration;
 use super::pointer_type_extension::PointerTypeExtension;
 use super::pointer_ops::PointerOperations;
 use inkwell::types::BasicType;
@@ -231,13 +232,8 @@ impl<'ctx> VariableHandling<'ctx> for LlvmCodeGenerator<'ctx> {
         let var_ptr = self.builder().build_alloca(default_type, var_name)
             .map_err(|e| Error::from_str(&format!("Failed to allocate variable {}: {}", var_name, e)))?;
         
-        // Store a default value based on type
-        let default_value = match default_type {
-            t if t.is_int_type() => t.into_int_type().const_zero().into(),
-            t if t.is_float_type() => t.into_float_type().const_zero().into(),
-            t if t.is_pointer_type() => t.into_pointer_type().const_null().into(),
-            _ => self.context().i32_type().const_zero().into()
-        };
+        // Store a default value based on type using the simple zero value system
+        let default_value = self.create_simple_zero_value_for_llvm_type(default_type);
         
         self.store_to_pointer(var_ptr, default_value)?;
         

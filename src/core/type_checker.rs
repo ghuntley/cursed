@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::core::interface_type_checker::InterfaceTypeChecker;
 use crate::core::interface_registry::InterfaceRegistry;
+use crate::core::recursive_types::{RecursiveTypeRegistry, RecursiveTypeResolver};
 
 /// Represents a type in the CURSED type system
 ///
@@ -177,6 +178,63 @@ impl Type {
         }
     }
 
+    /// Check if this type has a well-defined zero value
+    pub fn has_zero_value(&self) -> bool {
+        match self {
+            // Basic types always have zero values
+            Type::Lit | Type::Smol | Type::Mid | Type::Normie | Type::Thicc |
+            Type::Snack | Type::Meal | Type::Tea | Type::Sip | Type::Byte | Type::Rune |
+            Type::Extra => true,
+            
+            // Composite types have zero values if their components do
+            Type::Array(elem_type, _) => elem_type.has_zero_value(),
+            Type::Slice(_) => true, // nil slice
+            Type::Map(_, _) => true, // nil map
+            Type::Pointer(_) => true, // nil pointer
+            Type::Channel(_) => true, // nil channel
+            Type::Function(_, _) => true, // nil function
+            
+            // User-defined types may have zero values (structs do)
+            Type::Struct(_, _) => true, // zero value for each field
+            Type::Interface(_, _) => true, // nil interface
+            Type::Generic(_, _) => true, // assume generic types have zero values
+            Type::Named(_) => true, // assume named types have zero values
+            Type::TypeParam(_) => true, // type parameters should have zero values
+            
+            Type::Unknown => false, // unknown types don't have zero values
+        }
+    }
+
+    /// Get the zero value description for this type
+    pub fn zero_value_description(&self) -> String {
+        match self {
+            Type::Lit => "false".to_string(),
+            Type::Smol | Type::Mid | Type::Normie | Type::Thicc => "0".to_string(),
+            Type::Snack | Type::Meal => "0.0".to_string(),
+            Type::Tea => "\"\"".to_string(),
+            Type::Sip | Type::Byte | Type::Rune => "0".to_string(),
+            Type::Extra => "0+0i".to_string(),
+            
+            Type::Array(elem_type, size) => {
+                let elem_zero = elem_type.zero_value_description();
+                format!("[{}]{{{}}}", size, (0..*size).map(|_| elem_zero.clone()).collect::<Vec<_>>().join(", "))
+            },
+            Type::Slice(_) => "nil".to_string(),
+            Type::Map(_, _) => "nil".to_string(),
+            Type::Pointer(_) => "nil".to_string(),
+            Type::Channel(_) => "nil".to_string(),
+            Type::Function(_, _) => "nil".to_string(),
+            Type::Interface(_, _) => "nil".to_string(),
+            
+            Type::Struct(name, _) => format!("{}{{}}", name),
+            Type::Generic(name, _) => format!("{}{{}}", name),
+            Type::Named(name) => format!("{}{{}}", name),
+            Type::TypeParam(name) => format!("zero({})", name),
+            
+            Type::Unknown => "undefined".to_string(),
+        }
+    }
+
     /// Convert type to string representation
     pub fn to_string(&self) -> String {
         match self {
@@ -271,6 +329,8 @@ pub struct TypeChecker {
     pub struct_methods_map: HashMap<String, Vec<(String, Vec<Type>, Option<Type>)>>,
     /// Registry of interface implementations
     pub interface_registry: Arc<Mutex<InterfaceRegistry>>,
+    /// Registry for recursive type definitions
+    pub recursive_type_registry: Arc<Mutex<RecursiveTypeRegistry>>,
 }
 
 impl TypeChecker {
@@ -283,6 +343,7 @@ impl TypeChecker {
             type_params_map: HashMap::new(),
             struct_methods_map: HashMap::new(),
             interface_registry: Arc::new(Mutex::new(InterfaceRegistry::new_with_defaults())),
+            recursive_type_registry: Arc::new(Mutex::new(RecursiveTypeRegistry::new())),
         }
     }
     
@@ -306,7 +367,19 @@ impl TypeChecker {
     fn collect_type_definitions(&mut self, program: &Program) -> Result<(), Error> {
         tracing::info!("Collecting type definitions from program");
         
-        // Process each statement in the program
+        // First pass: collect forward declarations for all type names
+        // This allows mutually recursive types to reference each other
+        for statement in &program.statements {
+            if let Some(squad_stmt) = statement.as_any().downcast_ref::<crate::ast::SquadStatement>() {
+                let struct_name = squad_stmt.name.value.clone();
+                self.add_forward_declaration(struct_name)?;
+            } else if let Some(collab_stmt) = statement.as_any().downcast_ref::<crate::ast::CollabStatement>() {
+                let interface_name = collab_stmt.name.value.clone();
+                self.add_forward_declaration(interface_name)?;
+            }
+        }
+        
+        // Second pass: register actual type definitions
         for statement in &program.statements {
             // Try to downcast to various statement types that define types
             if let Some(squad_stmt) = statement.as_any().downcast_ref::<crate::ast::SquadStatement>() {
@@ -319,10 +392,58 @@ impl TypeChecker {
             // Add more statement types as needed
         }
         
+        // Third pass: resolve all recursive types
+        self.resolve_all_recursive_types()?;
+        
         tracing::info!("Finished collecting type definitions");
         Ok(())
     }
     
+    /// Resolve all recursive types after collection
+    fn resolve_all_recursive_types(&mut self) -> Result<(), Error> {
+        tracing::info!("Resolving all recursive types");
+        
+        // First, detect cycles and get resolution order
+        let (cycles, resolution_order) = {
+            let registry = self.recursive_type_registry.lock()
+                .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+            
+            let cycles = registry.detect_cycles();
+            let resolution_order = registry.get_resolution_order()?;
+            (cycles, resolution_order)
+        };
+        
+        // Warn about cycles
+        if !cycles.is_empty() {
+            tracing::warn!(cycles = ?cycles, "Detected cycles in type definitions");
+        }
+        
+        tracing::debug!(resolution_order = ?resolution_order, "Type resolution order");
+        
+        // Now resolve types using a separate scope
+        {
+            let mut registry = self.recursive_type_registry.lock()
+                .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+            
+            // Get the resolution order to handle dependencies properly
+            for type_name in resolution_order {
+                match registry.resolve_type(&type_name) {
+                    Ok(resolved_type) => {
+                        // Update the type in our type map
+                        self.type_map.insert(type_name.clone(), resolved_type);
+                        tracing::debug!(type_name = %type_name, "Resolved recursive type");
+                    }
+                    Err(e) => {
+                        tracing::warn!(type_name = %type_name, error = %e, "Failed to resolve recursive type");
+                        return Err(e);
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
     /// Register a struct from a SquadStatement
     fn register_struct_from_statement(&mut self, squad_stmt: &crate::ast::SquadStatement) -> Result<(), Error> {
         let struct_name = squad_stmt.name.value.clone();
@@ -333,19 +454,104 @@ impl TypeChecker {
             .map(|param| param.value.clone())
             .collect();
             
-        // Process fields
+        // Process fields with proper type extraction
         let mut fields = HashMap::new();
+        let mut field_types = Vec::new();
+        
         for field in &squad_stmt.fields {
-            // In a real implementation, we would extract the field type
-            // For now, just use Unknown type as a placeholder
-            fields.insert(field.name.value.clone(), Type::Unknown);
+            let field_name = field.name.value.clone();
+            let field_type_name = field.type_name.value.clone();
+            
+            // Parse the field type, which might be recursive
+            let field_type = self.parse_field_type(&field_type_name)?;
+            fields.insert(field_name, field_type.clone());
+            field_types.push(Box::new(field_type));
         }
         
-        // Register the struct
+        // Create the struct type definition
+        let struct_type = if type_params.is_empty() {
+            Type::Struct(struct_name.clone(), field_types)
+        } else {
+            // For generic structs, create with type parameters
+            let type_param_types: Vec<Box<Type>> = type_params
+                .iter()
+                .map(|param| Box::new(Type::TypeParam(param.clone())))
+                .collect();
+            Type::Struct(struct_name.clone(), type_param_types)
+        };
+        
+        // Register as potentially recursive type
+        self.register_recursive_type(struct_name.clone(), struct_type)?;
+        
+        // Also register with the traditional struct map for compatibility
         self.register_struct(&struct_name, fields, type_params);
-        tracing::debug!(struct_name = struct_name, "Registered struct");
+        tracing::debug!(struct_name = struct_name, "Registered struct with recursive type support");
         
         Ok(())
+    }
+    
+    /// Parse a field type string into a Type enum with recursive type support
+    fn parse_field_type(&self, type_str: &str) -> Result<Type, Error> {
+        // Handle pointer types
+        if type_str.starts_with('*') {
+            let inner_type_str = &type_str[1..];
+            let inner_type = self.parse_field_type(inner_type_str)?;
+            return Ok(Type::Pointer(Box::new(inner_type)));
+        }
+        
+        // Handle array types
+        if type_str.starts_with('[') {
+            if let Some(end_bracket) = type_str.find(']') {
+                let size_str = &type_str[1..end_bracket];
+                let element_type_str = &type_str[end_bracket + 1..];
+                
+                if size_str.is_empty() {
+                    // Slice type []T
+                    let element_type = self.parse_field_type(element_type_str)?;
+                    return Ok(Type::Slice(Box::new(element_type)));
+                } else {
+                    // Array type [N]T
+                    let size: usize = size_str.parse()
+                        .map_err(|_| Error::from_str(&format!("Invalid array size: {}", size_str)))?;
+                    let element_type = self.parse_field_type(element_type_str)?;
+                    return Ok(Type::Array(Box::new(element_type), size));
+                }
+            }
+        }
+        
+        // Handle generic types with parameters (e.g., "List[T]", "Map[String, int]")
+        if let Some(bracket_start) = type_str.find('[') {
+            if let Some(bracket_end) = type_str.rfind(']') {
+                let base_name = &type_str[..bracket_start];
+                let params_str = &type_str[bracket_start + 1..bracket_end];
+                
+                if !params_str.is_empty() {
+                    // Parse type parameters
+                    let mut type_params = Vec::new();
+                    for param_str in params_str.split(',') {
+                        let param_type = self.parse_field_type(param_str.trim())?;
+                        type_params.push(Box::new(param_type));
+                    }
+                    
+                    return Ok(Type::Struct(base_name.to_string(), type_params));
+                }
+            }
+        }
+        
+        // Handle basic types
+        let basic_type = Type::new_basic(type_str);
+        if matches!(basic_type, Type::Named(_)) {
+            // This might be a user-defined type that could be recursive
+            // Check if it's already in our forward declarations
+            if let Ok(registry) = self.recursive_type_registry.lock() {
+                if registry.get_forward_declarations().contains(type_str) {
+                    tracing::debug!(type_name = %type_str, "Using forward declared type");
+                }
+            }
+            Ok(basic_type)
+        } else {
+            Ok(basic_type)
+        }
     }
     
     /// Register an interface from a CollabStatement
@@ -1181,5 +1387,125 @@ impl TypeChecker {
     /// Register a type in the type map
     pub fn register_type(&mut self, name: String, type_: Type) {
         self.type_map.insert(name, type_);
+    }
+
+    /// Register a recursive type definition
+    pub fn register_recursive_type(&mut self, name: String, definition: Type) -> Result<(), Error> {
+        let mut registry = self.recursive_type_registry.lock()
+            .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+        registry.register_type(name, definition)
+    }
+
+    /// Add a forward declaration for a type
+    pub fn add_forward_declaration(&mut self, name: String) -> Result<(), Error> {
+        let mut registry = self.recursive_type_registry.lock()
+            .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+        registry.add_forward_declaration(name);
+        Ok(())
+    }
+
+    /// Resolve a recursive type by name
+    pub fn resolve_recursive_type(&mut self, name: &str) -> Result<Type, Error> {
+        let mut registry = self.recursive_type_registry.lock()
+            .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+        registry.resolve_type(name)
+    }
+
+    /// Check if a type is recursive
+    pub fn is_recursive_type(&self, name: &str) -> Result<bool, Error> {
+        let registry = self.recursive_type_registry.lock()
+            .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+        Ok(registry.is_recursive(name))
+    }
+
+    /// Get the resolution order for recursive types
+    pub fn get_type_resolution_order(&self) -> Result<Vec<String>, Error> {
+        let registry = self.recursive_type_registry.lock()
+            .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+        registry.get_resolution_order()
+    }
+
+    /// Detect cycles in recursive type definitions
+    pub fn detect_recursive_cycles(&self) -> Result<Vec<Vec<String>>, Error> {
+        let registry = self.recursive_type_registry.lock()
+            .map_err(|_| Error::from_str("Failed to acquire recursive type registry lock"))?;
+        Ok(registry.detect_cycles())
+    }
+}
+
+impl RecursiveTypeResolver for TypeChecker {
+    /// Resolve recursive type references
+    fn resolve_recursive_types(&mut self, registry: &mut RecursiveTypeRegistry) -> Result<(), Error> {
+        // Get the resolution order to handle dependencies properly
+        let resolution_order = registry.get_resolution_order()?;
+        
+        for type_name in resolution_order {
+            match registry.resolve_type(&type_name) {
+                Ok(resolved_type) => {
+                    // Update the type in our type map
+                    self.type_map.insert(type_name.clone(), resolved_type);
+                    tracing::debug!(type_name = %type_name, "Resolved recursive type");
+                }
+                Err(e) => {
+                    tracing::warn!(type_name = %type_name, error = %e, "Failed to resolve recursive type");
+                    return Err(e);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Check if a type contains recursive references
+    fn contains_recursive_references(&self, type_def: &Type) -> bool {
+        match type_def {
+            Type::Named(name) => {
+                // Check if this named type is in our recursive registry
+                if let Ok(registry) = self.recursive_type_registry.lock() {
+                    registry.is_recursive(name)
+                } else {
+                    false
+                }
+            }
+            Type::Struct(name, type_args) => {
+                // Check the struct itself and its type arguments
+                if let Ok(registry) = self.recursive_type_registry.lock() {
+                    if registry.is_recursive(name) {
+                        return true;
+                    }
+                }
+                // Check type arguments recursively
+                type_args.iter().any(|arg| self.contains_recursive_references(arg))
+            }
+            Type::Interface(name, type_args) => {
+                // Similar to struct
+                if let Ok(registry) = self.recursive_type_registry.lock() {
+                    if registry.is_recursive(name) {
+                        return true;
+                    }
+                }
+                type_args.iter().any(|arg| self.contains_recursive_references(arg))
+            }
+            Type::Pointer(inner) => self.contains_recursive_references(inner),
+            Type::Array(inner, _) => self.contains_recursive_references(inner),
+            Type::Slice(inner) => self.contains_recursive_references(inner),
+            Type::Map(key, value) => {
+                self.contains_recursive_references(key) || self.contains_recursive_references(value)
+            }
+            Type::Function(params, return_type) => {
+                params.iter().any(|param| self.contains_recursive_references(param))
+                    || self.contains_recursive_references(return_type)
+            }
+            Type::Channel(inner) => self.contains_recursive_references(inner),
+            Type::Generic(name, type_args) => {
+                if let Ok(registry) = self.recursive_type_registry.lock() {
+                    if registry.is_recursive(name) {
+                        return true;
+                    }
+                }
+                type_args.iter().any(|arg| self.contains_recursive_references(arg))
+            }
+            _ => false, // Primitive types are not recursive
+        }
     }
 }
