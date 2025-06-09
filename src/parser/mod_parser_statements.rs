@@ -2,6 +2,42 @@
 
 use super::Parser;
 use crate::ast::*;
+// Define TypeAliasStatement locally for now
+use crate::ast::traits::{Node, Statement};
+use std::any::Any;
+
+#[derive(Debug, Clone)]
+pub struct TypeAliasStatement {
+    pub token: String,
+    pub name: String,
+    pub target_type: String,
+}
+
+impl Node for TypeAliasStatement {
+    fn string(&self) -> String {
+        format!("be_like {} {}", self.name, self.target_type)
+    }
+
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+}
+
+impl Statement for TypeAliasStatement {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Statement> {
+        Box::new(self.clone())
+    }
+}
+use crate::ast::conditionals::{IfStatement, SwitchStatement, SwitchCase, ForStatement, RangeForStatement, WhileStatement};
+use crate::ast::statements::{BreakStatement, ContinueStatement, ReturnStatement};
+use crate::ast::declarations::{FunctionStatement, SquadStatement, CollabStatement, FieldStatement, TypeParameter, GenericConstraint, MethodDeclaration};
+use crate::ast::identifiers::Identifier;
+use crate::ast::fields::FieldDefinition;
+use crate::ast::block::BlockStatement;
 use crate::error::Error;
 use crate::lexer::TokenType;
 
@@ -104,9 +140,10 @@ impl Parser {
         
         // Parse return type if present
         let return_type = if self.current_token_is(&TokenType::Identifier) {
-            let ret_type = self.current_token.literal.clone();
+            let ret_type_name = self.current_token.literal.clone();
             self.advance_token()?;
-            Some(ret_type)
+            // Convert to Expression - for now using a simple identifier expression
+            Some(Box::new(Identifier::new(ret_type_name.clone(), ret_type_name)) as Box<dyn Expression>)
         } else {
             None
         };
@@ -114,15 +151,21 @@ impl Parser {
         // Parse function body
         let body = self.parse_block_statement()?;
         
+        // Convert body to BlockStatement
+        let body_block = if let Some(block) = body.as_any().downcast_ref::<BlockStatement>() {
+            block.clone()
+        } else {
+            return Err(Error::Parse("Expected block statement".to_string()));
+        };
+        
         Ok(Box::new(FunctionStatement {
             token: token.literal,
             name: Identifier::new(name.clone(), name),
             parameters,
             return_type,
-            body: *body.as_any().downcast_ref::<BlockStatement>()
-                .ok_or_else(|| Error::Parse("Expected block statement".to_string()))?
-                .clone(),
+            body: body_block,
             type_parameters: generic_params,
+            generic_constraints: Vec::new(),
         }))
     }
     
@@ -147,10 +190,14 @@ impl Parser {
                 break;
             }
             
-            let field_name = self.expect_token(TokenType::Identifier)?.literal;
-            let field_type = self.expect_token(TokenType::Identifier)?.literal;
+            let field_name = self.expect_token(TokenType::Identifier)?.literal.clone();
+            let field_type = self.expect_token(TokenType::Identifier)?.literal.clone();
             
-            fields.push(FieldDefinition::new(field_name, field_type));
+            fields.push(FieldStatement::new(
+                field_name.clone(),
+                Identifier::new(field_name.clone(), field_name),
+                Identifier::new(field_type.clone(), field_type)
+            ));
             
             self.skip_newlines();
         }
@@ -159,9 +206,10 @@ impl Parser {
         
         Ok(Box::new(SquadStatement {
             token: token.literal,
-            name,
+            name: Identifier::new(name.clone(), name),
             fields,
             type_parameters: generic_params,
+            generic_constraints: Vec::new(),
         }))
     }
     
@@ -208,19 +256,18 @@ impl Parser {
             self.expect_token(TokenType::RightParen)?;
             
             let return_type = if self.current_token_is(&TokenType::Identifier) {
-                let ret_type = self.current_token.literal.clone();
+                let ret_type_name = self.current_token.literal.clone();
                 self.advance_token()?;
-                Some(ret_type)
+                Some(Box::new(Identifier::new(ret_type_name.clone(), ret_type_name)) as Box<dyn Expression>)
             } else {
                 None
             };
             
-            methods.push(FunctionDeclaration {
-                name: method_name,
-                parameters: params,
+            methods.push(MethodDeclaration::new(
+                Identifier::new(method_name.clone(), method_name),
+                params,
                 return_type,
-                type_parameters: Vec::new(),
-            });
+            ));
             
             self.skip_newlines();
         }
@@ -229,7 +276,7 @@ impl Parser {
         
         Ok(Box::new(CollabStatement {
             token: token.literal,
-            name,
+            name: Identifier::new(name.clone(), name),
             methods,
             type_parameters: generic_params,
         }))
@@ -262,7 +309,7 @@ impl Parser {
         
         Ok(Box::new(ReturnStatement {
             token: token.literal,
-            return_expression: value,
+            return_value: value,
         }))
     }
     
@@ -297,12 +344,17 @@ impl Parser {
             None
         };
         
-        Ok(Box::new(ParserIfStatement {
+        // Convert consequence to BlockStatement
+        let consequence_block = if let Some(block) = consequence.as_any().downcast_ref::<BlockStatement>() {
+            block.clone()
+        } else {
+            return Err(Error::Parse("Expected block statement".to_string()));
+        };
+        
+        Ok(Box::new(IfStatement {
             token: token.literal,
             condition,
-            consequence: *consequence.as_any().downcast_ref::<BlockStatement>()
-                .ok_or_else(|| Error::Parse("Expected block statement".to_string()))?
-                .clone(),
+            consequence: consequence_block,
             alternative,
         }))
     }
@@ -344,7 +396,12 @@ impl Parser {
                     self.skip_newlines();
                 }
                 
-                cases.push(ParserSwitchCase { values: case_values, body: statements });
+                // Convert statements to BlockStatement
+                let block = BlockStatement::new(
+                    "{".to_string(),
+                    statements
+                );
+                cases.push(SwitchCase::new(case_values, block));
                 
             } else if self.current_token_is(&TokenType::Basic) {
                 self.advance_token()?;
@@ -365,11 +422,18 @@ impl Parser {
         
         self.expect_token(TokenType::RightBrace)?;
         
-        Ok(Box::new(ParserSwitchStatement {
+        // Convert default case to BlockStatement if present
+        let default_block = if let Some(statements) = default_case {
+            Some(BlockStatement::new("{".to_string(), statements))
+        } else {
+            None
+        };
+        
+        Ok(Box::new(SwitchStatement {
             token: token.literal,
-            value,
+            value: Some(value),
             cases,
-            default_case: default_case,
+            default_case: default_block,
         }))
     }
     
@@ -412,15 +476,20 @@ impl Parser {
         
         let body = self.parse_block_statement()?;
         
-        Ok(Box::new(ParserForStatement {
-            token: token.literal,
+        // Convert body to BlockStatement
+        let body_block = if let Some(block) = body.as_any().downcast_ref::<BlockStatement>() {
+            block.clone()
+        } else {
+            return Err(Error::Parse("Expected block statement".to_string()));
+        };
+        
+        Ok(Box::new(ForStatement::new(
+            token.literal,
             init,
             condition,
             post,
-            body: *body.as_any().downcast_ref::<BlockStatement>()
-                .ok_or_else(|| Error::Parse("Expected block statement".to_string()))?
-                .clone(),
-        }))
+            body_block,
+        )))
     }
     
     /// Parse range-based for statement (bestie x := flex items)
@@ -449,14 +518,22 @@ impl Parser {
         let iterable = self.parse_expression()?;
         let body = self.parse_block_statement()?;
         
-        Ok(Box::new(ParserRangeForStatement {
+        // Convert body to BlockStatement
+        let body_block = if let Some(block) = body.as_any().downcast_ref::<BlockStatement>() {
+            block.clone()
+        } else {
+            return Err(Error::Parse("Expected block statement".to_string()));
+        };
+        
+        // Map to the correct structure
+        let variable = value_var.unwrap_or_else(|| "item".to_string());
+        
+        Ok(Box::new(RangeForStatement {
             token: token.literal,
-            key_var,
-            value_var,
+            variable,
+            index_variable: key_var,
             iterable,
-            body: *body.as_any().downcast_ref::<BlockStatement>()
-                .ok_or_else(|| Error::Parse("Expected block statement".to_string()))?
-                .clone(),
+            body: body_block,
         }))
     }
     
@@ -466,25 +543,36 @@ impl Parser {
         let condition = self.parse_expression()?;
         let body = self.parse_block_statement()?;
         
-        Ok(Box::new(ParserWhileStatement {
+        // Convert body to BlockStatement
+        let body_block = if let Some(block) = body.as_any().downcast_ref::<BlockStatement>() {
+            block.clone()
+        } else {
+            return Err(Error::Parse("Expected block statement".to_string()));
+        };
+        
+        Ok(Box::new(WhileStatement {
             token: token.literal,
             condition,
-            body: *body.as_any().downcast_ref::<BlockStatement>()
-                .ok_or_else(|| Error::Parse("Expected block statement".to_string()))?
-                .clone(),
+            body: body_block,
         }))
     }
     
     /// Parse break statement (ghosted)
     fn parse_break_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         let token = self.expect_token(TokenType::Ghosted)?;
-        Ok(Box::new(ParserBreakStatement { token: token.literal, label: None }))
+        Ok(Box::new(BreakStatement { 
+            token: token.literal,
+            label: None 
+        }))
     }
     
     /// Parse continue statement (simp)
     fn parse_continue_statement(&mut self) -> Result<Box<dyn Statement>, Error> {
         let token = self.expect_token(TokenType::Simp)?;
-        Ok(Box::new(ParserContinueStatement { token: token.literal, label: None }))
+        Ok(Box::new(ContinueStatement { 
+            token: token.literal, 
+            label: None 
+        }))
     }
     
     /// Parse block statement
@@ -527,14 +615,18 @@ impl Parser {
             loop {
                 let name = self.expect_token(TokenType::Identifier)?.literal;
                 
-                // Optional constraint
-                let constraint = if self.current_token_is(&TokenType::Identifier) {
-                    Some(self.current_token.literal.clone())
+                // Optional constraints (simplified for now)
+                let constraints = if self.current_token_is(&TokenType::Identifier) {
+                vec![self.current_token.literal.clone()]
                 } else {
-                    None
+                Vec::new()
                 };
                 
-                params.push(TypeParameter { name, constraint });
+                params.push(TypeParameter {
+                token: name.clone(),
+                name,
+                constraints,
+            });
                 
                 if self.current_token_is(&TokenType::Comma) {
                     self.advance_token()?;

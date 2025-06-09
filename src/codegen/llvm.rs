@@ -6,10 +6,20 @@ use std::path::PathBuf;
 pub mod debug_integration;
 pub mod web_vibez_integration;
 pub mod stdlib_registry;
+pub mod function_compilation;
+pub mod expression_compiler;
+pub mod variable_management;
+pub mod type_system;
+pub mod control_flow;
 
 pub use debug_integration::LlvmDebugCodeGenerator;
 pub use web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
 pub use stdlib_registry::{StdlibRegistry, StdlibLlvmIntegration, StdlibFunction};
+pub use function_compilation::{FunctionCompilation, FunctionContext};
+pub use expression_compiler::{LlvmExpressionCompiler, LlvmType, LlvmValue, ExpressionContext};
+pub use variable_management::{VariableManager, VariableHandling};
+pub use type_system::{LlvmTypeRegistry, TypeCompilationContext, CompiledStructType, CompiledInterfaceType, TypeCastingOperations};
+pub use control_flow::{ControlFlowCompilation, LlvmControlFlowCompiler, ControlFlowContext, LoopContext};
 
 // Temporary dummy types to help tests compile
 pub struct DummyModule {
@@ -97,6 +107,8 @@ pub struct LlvmCodeGenerator {
     debug_generator: LlvmDebugCodeGenerator,
     module_name: Option<String>,
     web_vibez_integration: Option<WebVibezLlvmIntegration<'static>>,
+    expression_compiler: LlvmExpressionCompiler,
+    type_context: TypeCompilationContext,
 }
 
 impl LlvmCodeGenerator {
@@ -105,6 +117,8 @@ impl LlvmCodeGenerator {
             debug_generator: LlvmDebugCodeGenerator::new(DebugConfig::default()),
             module_name: None,
             web_vibez_integration: None,
+            expression_compiler: LlvmExpressionCompiler::new(),
+            type_context: TypeCompilationContext::new("default_module".to_string()),
         })
     }
     
@@ -113,6 +127,8 @@ impl LlvmCodeGenerator {
             debug_generator: LlvmDebugCodeGenerator::new(debug_config),
             module_name: None,
             web_vibez_integration: None,
+            expression_compiler: LlvmExpressionCompiler::new(),
+            type_context: TypeCompilationContext::new("debug_module".to_string()),
         })
     }
     
@@ -212,7 +228,68 @@ impl LlvmCodeGenerator {
     
     /// Set current source location
     pub fn set_location(&mut self, location: SourceLocation) {
-        self.debug_generator.set_current_location(location);
+        self.debug_generator.set_current_location(location.clone());
+        self.expression_compiler.set_location(location);
+    }
+    
+    /// Compile an expression to LLVM IR
+    pub fn compile_expression(&mut self, expr: &dyn crate::ast::traits::Expression) -> Result<LlvmValue, Error> {
+        self.expression_compiler.compile_expression(expr)
+    }
+    
+    /// Get the expression compiler's generated IR
+    pub fn get_expression_ir(&self) -> String {
+        self.expression_compiler.get_ir()
+    }
+    
+    /// Clear expression compiler IR
+    pub fn clear_expression_ir(&mut self) {
+        self.expression_compiler.clear_ir();
+    }
+    
+    /// Get expression compilation context
+    pub fn get_expression_context(&self) -> &ExpressionContext {
+        self.expression_compiler.get_context()
+    }
+    
+    /// Compile a struct declaration (squad statement)
+    pub fn compile_struct(&mut self, squad: &crate::ast::declarations::SquadStatement) -> Result<CompiledStructType, Error> {
+        self.type_context.compile_struct(squad)
+    }
+    
+    /// Compile an interface declaration (collab statement)
+    pub fn compile_interface(&mut self, collab: &crate::ast::declarations::CollabStatement) -> Result<CompiledInterfaceType, Error> {
+        self.type_context.compile_interface(collab)
+    }
+    
+    /// Generate LLVM IR for type definitions
+    pub fn generate_type_definitions(&self) -> String {
+        self.type_context.generate_type_definitions()
+    }
+    
+    /// Generate struct constructor functions
+    pub fn generate_struct_constructors(&self) -> String {
+        self.type_context.generate_struct_constructors()
+    }
+    
+    /// Generate interface method dispatch functions
+    pub fn generate_interface_dispatch(&self) -> String {
+        self.type_context.generate_interface_dispatch()
+    }
+    
+    /// Get the type registry
+    pub fn get_type_registry(&self) -> &LlvmTypeRegistry {
+        self.type_context.registry()
+    }
+    
+    /// Check for type compilation errors
+    pub fn has_type_errors(&self) -> bool {
+        self.type_context.has_errors()
+    }
+    
+    /// Get type compilation errors
+    pub fn get_type_errors(&self) -> &[String] {
+        self.type_context.get_errors()
     }
 }
 

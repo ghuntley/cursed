@@ -10,6 +10,10 @@ pub enum Type {
     Snack,    // f32
     Meal,     // f64
     Tea,      // string
+    Smol,     // i8
+    Mid,      // i16
+    Sip,      // u32
+    Cap,      // u64
     
     // Composite types
     Array(Box<Type>, usize),

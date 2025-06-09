@@ -284,7 +284,7 @@ impl Parser {
             token,
             parameters,
             body,
-            return_type.map(|id| Box::new(id) as Box<dyn Expression>),
+            return_type.map(|id| id as Box<dyn Expression>),
         )))
     }
     
