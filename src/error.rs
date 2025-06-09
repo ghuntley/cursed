@@ -24,6 +24,8 @@ pub enum Error {
         message: String,
         source_location: Option<SourceLocation>,
     },
+    /// Type compilation errors
+    TypeCompilation(String),
 }
 
 /// Alias for CursedError to match expected naming
@@ -45,6 +47,7 @@ impl fmt::Display for Error {
                     write!(f, "Template error: {}", message)
                 }
             }
+            Error::TypeCompilation(msg) => write!(f, "Type compilation error: {}", msg),
         }
     }
 }
@@ -56,6 +59,8 @@ impl From<std::io::Error> for Error {
         Error::Io(err)
     }
 }
+
+
 
 impl Error {
     /// Create a REPL error
