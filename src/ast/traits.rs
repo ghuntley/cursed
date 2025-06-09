@@ -147,3 +147,17 @@ pub trait Locatable {
     fn source_location(&self) -> Option<&crate::error::SourceLocation>;
     fn set_source_location(&mut self, location: crate::error::SourceLocation);
 }
+
+/// Implement Clone for boxed Expression trait objects
+impl Clone for Box<dyn Expression> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}
+
+/// Implement Clone for boxed Statement trait objects  
+impl Clone for Box<dyn Statement> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}

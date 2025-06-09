@@ -92,12 +92,12 @@ impl MapTypeExpression {
         }
     }
     
-    pub fn get_key_type(&self) -> &dyn Expression {
-        &**self.key_type
+    pub fn get_key_type(&self) -> &Box<dyn Expression> {
+        &self.key_type
     }
     
-    pub fn get_value_type(&self) -> &dyn Expression {
-        &**self.value_type
+    pub fn get_value_type(&self) -> &Box<dyn Expression> {
+        &self.value_type
     }
 }
 

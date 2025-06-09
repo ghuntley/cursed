@@ -115,33 +115,33 @@ impl Expression for FunctionLiteral {
 #[derive(Debug, Clone)]
 pub struct Parameter {
     pub name: String,
-    pub param_type: Option<Box<dyn Expression>>,
+    pub param_type: String,
 }
 
 impl Parameter {
-    pub fn new(name: String, param_type: Option<Box<dyn Expression>>) -> Self {
+    pub fn new(name: String, param_type: String) -> Self {
         Self { name, param_type }
     }
     
     pub fn untyped(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            param_type: None,
+            param_type: String::new(),
         }
     }
     
-    pub fn typed(name: &str, param_type: Box<dyn Expression>) -> Self {
+    pub fn typed(name: &str, param_type: &str) -> Self {
         Self {
             name: name.to_string(),
-            param_type: Some(param_type),
+            param_type: param_type.to_string(),
         }
     }
 }
 
 impl Node for Parameter {
     fn string(&self) -> String {
-        if let Some(param_type) = &self.param_type {
-            format!("{} {}", self.name, param_type.string())
+        if !self.param_type.is_empty() {
+            format!("{} {}", self.name, self.param_type)
         } else {
             self.name.clone()
         }
