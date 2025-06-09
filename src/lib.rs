@@ -6,9 +6,33 @@
 // Core modules
 pub mod error;
 pub mod package_manager;
+pub mod ast;
+pub mod lexer;
+pub mod parser;
+pub mod core;
+pub mod codegen;
+pub mod memory;
+pub mod runtime;
+pub mod stdlib;
+pub mod profiling;
+pub mod docs;
+pub mod object;
+pub mod debug;
+
+// Build system
+pub mod build_system;
 
 // CLI utilities  
 pub mod cli;
+
+// REPL (Read-Eval-Print Loop)
+pub mod repl;
+
+// Language Server Protocol
+pub mod lsp;
+
+// Development tools
+pub mod tools;
 
 // Re-export commonly used types for convenience
 pub use error::{Error, SourceLocation};
@@ -16,6 +40,7 @@ pub use error::{Error, SourceLocation};
 /// Prelude module for common imports
 pub mod prelude {
     pub use crate::error::{Error, SourceLocation};
+    pub use crate::repl::CursedRepl;
 }
 
 /// Library version information
@@ -63,4 +88,38 @@ pub fn format(source: &str) -> Result<String, Error> {
     // Placeholder implementation
     tracing::info!("Formatting CURSED source code");
     Ok(source.to_string())
+}
+
+/// Execute CURSED code in REPL context
+pub fn execute_repl_code(code: &str, session_manager: &mut repl::SessionManager) -> Result<String, Error> {
+    use crate::repl::SessionManager;
+    
+    // This would integrate with the actual CURSED interpreter
+    // For now, provide a basic evaluation
+    tracing::info!("Executing REPL code: {}", code);
+    
+    let trimmed = code.trim();
+    
+    // Handle variable assignments
+    if trimmed.contains('=') && !trimmed.contains("==") {
+        return Ok("".to_string()); // Assignment doesn't return a value
+    }
+    
+    // Handle simple expressions
+    if trimmed.chars().all(|c| c.is_ascii_digit()) {
+        return Ok(trimmed.to_string());
+    }
+    
+    // Handle string literals
+    if trimmed.starts_with('"') && trimmed.ends_with('"') {
+        return Ok(trimmed.to_string());
+    }
+    
+    // Handle boolean literals
+    if trimmed == "true" || trimmed == "false" {
+        return Ok(trimmed.to_string());
+    }
+    
+    // Default evaluation result
+    Ok("(result)".to_string())
 }

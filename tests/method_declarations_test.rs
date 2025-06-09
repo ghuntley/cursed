@@ -6,7 +6,6 @@
 //! - Interface method satisfaction
 //! - Method resolution and type checking
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::lexer::Lexer;

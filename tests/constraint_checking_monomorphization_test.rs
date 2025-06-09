@@ -120,29 +120,29 @@ fn test_with_type_checker() {
     
     // Check constraint: Normie implements Comparable
     let normie_result = mono_manager.check_constraint(&Type::Normie, "Comparable");
-    assert!(normie_result.is_ok())
+    assert!(normie_result.is_ok());
     
     // Check constraint: Normie implements Numeric
     let numeric_result = mono_manager.check_constraint(&Type::Normie, "Numeric");
-    assert!(numeric_result.is_ok())
+    assert!(numeric_result.is_ok());
     
     // Check constraint: Lit doesn't implement Numeric
     let lit_result = mono_manager.check_constraint(&Type::Lit, "Numeric");
-    assert!(lit_result.is_err())
-    assert!(lit_result.unwrap_err().to_string().contains("does not implement interface"))
+    assert!(lit_result.is_err());
+    assert!(lit_result.unwrap_err().to_string().contains("does not implement interface"));
     
     // Check constraint: Custom struct implements an interface
     let point_result = mono_manager.check_constraint(
         &Type::Struct("Point".to_string(), vec![]), 
         "Comparable"
     );
-    assert!(point_result.is_ok())
+    assert!(point_result.is_ok());
     
     // Check constraint: Custom struct doesn't implement non-registered interface
     let point_numeric_result = mono_manager.check_constraint(
         &Type::Struct("Point".to_string(), vec![]), 
         "Numeric"
     );
-    assert!(point_numeric_result.is_err())
-    assert!(point_numeric_result.unwrap_err().to_string().contains("does not implement interface"))
+    assert!(point_numeric_result.is_err());
+    assert!(point_numeric_result.unwrap_err().to_string().contains("does not implement interface"));
 }

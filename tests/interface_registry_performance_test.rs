@@ -86,18 +86,20 @@ fn generate_test_data() -> (Vec<Type>, Vec<String>) {
         let outer_name = format!("Container{}", i);
         for j in 0..5 {
             let inner_name = format!("Element{}", j);
-            types.push(Type::Struct(vec![Type::Int32], false));outer_name.clone(),
+            types.push(Type::Struct(
+                outer_name.clone(),
                 vec![Box::new(Type::Struct(
                     inner_name.clone(),
                     vec![Box::new(Type::Normie)]
                 ))]
-            );
-            types.push(Type::Struct(vec![Type::Int32], false));outer_name.clone(),
+            ));
+            types.push(Type::Struct(
+                outer_name.clone(),
                 vec![Box::new(Type::Struct(
                     inner_name.clone(),
                     vec![Box::new(Type::Tea)]
                 ))]
-            );
+            ));
         }
     }
     

@@ -18,7 +18,6 @@ use cursed::docs::{
     PackageDocumentation, DocError, DocResult,
 };
 
-#[path = "common.rs"]
 mod common;
 
 /// Golden file test configuration

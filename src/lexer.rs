@@ -147,10 +147,7 @@ impl Lexer {
             }
             _ if ch.is_alphabetic() => self.read_identifier(location),
             _ if ch.is_numeric() => self.read_number(location),
-            _ => Err(Error::Parse {
-                message: format!("Unexpected character: {}", ch),
-                location,
-            }),
+            _ => Err(Error::Parse(format!("Unexpected character: {}", ch))),
         }
     }
     

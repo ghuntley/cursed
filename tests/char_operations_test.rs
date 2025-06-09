@@ -9,7 +9,6 @@ use cursed::runtime::unicode_char::*;
 use std::os::raw::c_int;
 use std::ffi::CStr;
 
-#[path = "common.rs"]
 mod common;
 
 #[cfg(test)]

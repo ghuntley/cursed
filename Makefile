@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help
 
 build:
 	devenv shell cargo build
@@ -465,4 +465,273 @@ docs-help:
 	@echo ""
 	@echo "For advanced options, run:"
 	@echo "  ./target/debug/cursed-doc --help"
+	@echo ""
+
+# CURSED Build System Integration
+# ===============================
+
+# Build the cursed-build tool
+cursed-build:
+	@echo "Building CURSED build system..."
+	devenv shell "cargo build --bin cursed-build"
+	@echo "CURSED build system ready: ./target/debug/cursed-build"
+
+# Build using the comprehensive build system
+cursed-build-comprehensive: cursed-build
+	@echo "Running comprehensive build with pipeline..."
+	devenv shell "./target/debug/cursed-build build --verbose"
+
+# Quick build (skip formatting and linting)
+cursed-build-quick: cursed-build
+	@echo "Running quick build..."
+	devenv shell "./target/debug/cursed-build build --quick --verbose"
+
+# Force rebuild (ignore cache)
+cursed-build-force: cursed-build
+	@echo "Running force rebuild..."
+	devenv shell "./target/debug/cursed-build build --force --verbose"
+
+# Parallel build with specific job count
+cursed-build-parallel: cursed-build
+	@echo "Running parallel build with $(JOBS) jobs..."
+	$(eval JOBS ?= 4)
+	devenv shell "./target/debug/cursed-build build --jobs $(JOBS) --verbose"
+
+# Release build with all optimizations
+cursed-build-release: cursed-build
+	@echo "Running release build with full pipeline..."
+	devenv shell "./target/debug/cursed-build build --release --verbose"
+
+# Initialize a new CURSED project
+cursed-build-init: cursed-build
+	@if [ -z "$(PROJECT)" ]; then \
+		echo "Error: Please specify PROJECT=<project_name>"; \
+		echo "Usage: make cursed-build-init PROJECT=my-project [TEMPLATE=cli|lib|web|api|game]"; \
+		exit 1; \
+	fi
+	$(eval TEMPLATE ?= cli)
+	@echo "Initializing CURSED project: $(PROJECT) with template: $(TEMPLATE)"
+	devenv shell "./target/debug/cursed-build init $(PROJECT) --template $(TEMPLATE)"
+
+# Build project with CURSED build system
+cursed-build-build: cursed-build
+	@echo "Building project with CURSED build system..."
+	devenv shell "./target/debug/cursed-build build"
+
+# Run project with CURSED build system
+cursed-build-run: cursed-build
+	@echo "Running project with CURSED build system..."
+	devenv shell "./target/debug/cursed-build run"
+
+# Test project with CURSED build system
+cursed-build-test: cursed-build
+	@echo "Testing project with CURSED build system..."
+	devenv shell "./target/debug/cursed-build test"
+
+# Clean project with CURSED build system
+cursed-build-clean: cursed-build
+	@echo "Cleaning project with CURSED build system..."
+	devenv shell "./target/debug/cursed-build clean"
+
+# Show available project templates
+cursed-build-templates: cursed-build
+	@echo "Available CURSED project templates:"
+	devenv shell "./target/debug/cursed-build templates --detailed"
+
+# Format code with build system integration
+cursed-build-fmt: cursed-build
+	@echo "Formatting code with CURSED build system..."
+	devenv shell "./target/debug/cursed-build format"
+
+# Lint code with build system integration
+cursed-build-lint: cursed-build
+	@echo "Linting code with CURSED build system..."
+	devenv shell "./target/debug/cursed-build lint"
+
+# Generate docs with build system integration
+cursed-build-docs: cursed-build
+	@echo "Generating documentation with CURSED build system..."
+	devenv shell "./target/debug/cursed-build docs"
+
+# Show project information
+cursed-build-info: cursed-build
+	@echo "Project information:"
+	devenv shell "./target/debug/cursed-build info --deps --config"
+
+# Package management through build system
+cursed-build-pkg-install: cursed-build
+	@echo "Installing dependencies through build system..."
+	devenv shell "./target/debug/cursed-build package install"
+
+cursed-build-pkg-add: cursed-build
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: Please specify PACKAGE=<package_name>"; \
+		echo "Usage: make cursed-build-pkg-add PACKAGE=package-name [VERSION=1.0.0]"; \
+		exit 1; \
+	fi
+	$(eval VERSION_ARG := $(if $(VERSION),--version $(VERSION),))
+	devenv shell "./target/debug/cursed-build package add $(PACKAGE) $(VERSION_ARG)"
+
+# Build system help
+cursed-build-help: cursed-build
+	@echo ""
+	@echo "CURSED Build System Commands"
+	@echo "============================"
+	@echo ""
+	@echo "Project Management:"
+	@echo "  cursed-build-init           - Initialize new project (requires PROJECT=name)"
+	@echo "  cursed-build-templates      - Show available templates"
+	@echo "  cursed-build-info           - Show project information"
+	@echo ""
+	@echo "Building and Testing:"
+	@echo "  cursed-build-build          - Build the current project"
+	@echo "  cursed-build-run            - Build and run the current project"
+	@echo "  cursed-build-test           - Run project tests"
+	@echo "  cursed-build-clean          - Clean build artifacts"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  cursed-build-fmt            - Format source code"
+	@echo "  cursed-build-lint           - Lint source code"
+	@echo "  cursed-build-docs           - Generate documentation"
+	@echo ""
+	@echo "Package Management:"
+	@echo "  cursed-build-pkg-install    - Install dependencies"
+	@echo "  cursed-build-pkg-add        - Add dependency (requires PACKAGE=name)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make cursed-build-init PROJECT=my-web-app TEMPLATE=web"
+	@echo "  make cursed-build-pkg-add PACKAGE=cursed-http VERSION=1.0.0"
+	@echo "  make cursed-build-build"
+	@echo "  make cursed-build-run"
+	@echo ""
+	@echo "CLI Usage:"
+	@echo "  ./target/debug/cursed-build --help         # Show all options"
+	@echo "  ./target/debug/cursed-build init --help    # Help for specific command"
+	@echo ""
+	@echo "Enhanced Build Commands:"
+	@echo "  make cursed-build-comprehensive  # Full pipeline build"
+	@echo "  make cursed-build-quick          # Quick build (skip fmt/lint)"
+	@echo "  make cursed-build-force          # Force rebuild (ignore cache)"
+	@echo "  make cursed-build-parallel JOBS=8 # Parallel build with job limit"
+	@echo "  make cursed-build-release        # Release build with optimizations"
+	@echo ""
+
+# =============================================================================
+# Debug Information Generation
+# =============================================================================
+
+# Build debug tool
+debug-build:
+	@echo "Building CURSED debug tool..."
+	LIBRARY_PATH="/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib" RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd" devenv shell cargo build --bin cursed-debug
+
+# Test debug functionality
+debug-test: debug-build
+	@echo "Testing debug information generation..."
+	LIBRARY_PATH="/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib" RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd" devenv shell cargo test --test debug_integration_test
+
+# Generate LLVM IR with debug information
+debug-ir: debug-build
+	@echo "Generating LLVM IR with debug information..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-ir FILE=path/to/file.csd [OUTPUT=output/dir]"; \
+		exit 1; \
+	fi
+	@mkdir -p $(or $(OUTPUT),debug)
+	LIBRARY_PATH="/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib" RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd" devenv shell "cargo run --bin cursed-debug $(FILE) --format llvm-ir --output $(or $(OUTPUT),debug) $(ARGS)"
+
+# Generate DWARF debug information
+debug-dwarf: debug-build
+	@echo "Generating DWARF debug information..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-dwarf FILE=path/to/file.csd [OUTPUT=output/dir]"; \
+		exit 1; \
+	fi
+	@mkdir -p $(or $(OUTPUT),debug)
+	devenv shell "./target/debug/cursed-debug $(FILE) --format dwarf --output $(or $(OUTPUT),debug) $(ARGS)"
+
+# Generate GDB debugging script
+debug-gdb: debug-build
+	@echo "Generating GDB debugging script..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-gdb FILE=path/to/file.csd [OUTPUT=output/dir]"; \
+		exit 1; \
+	fi
+	@mkdir -p $(or $(OUTPUT),debug)
+	devenv shell "./target/debug/cursed-debug $(FILE) --format gdb-script --output $(or $(OUTPUT),debug) $(ARGS)"
+
+# Generate LLDB debugging script
+debug-lldb: debug-build
+	@echo "Generating LLDB debugging script..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-lldb FILE=path/to/file.csd [OUTPUT=output/dir]"; \
+		exit 1; \
+	fi
+	@mkdir -p $(or $(OUTPUT),debug)
+	devenv shell "./target/debug/cursed-debug $(FILE) --format lldb-script --output $(or $(OUTPUT),debug) $(ARGS)"
+
+# Generate VS Code debugging configuration
+debug-vscode: debug-build
+	@echo "Generating VS Code debugging configuration..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-vscode FILE=path/to/file.csd [OUTPUT=output/dir]"; \
+		exit 1; \
+	fi
+	@mkdir -p $(or $(OUTPUT),.vscode)
+	devenv shell "./target/debug/cursed-debug $(FILE) --format vscode-config --output $(or $(OUTPUT),.vscode) $(ARGS)"
+
+# Generate comprehensive debug report
+debug-report: debug-build
+	@echo "Generating comprehensive debug report..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-report FILE=path/to/file.csd [OUTPUT=output/dir]"; \
+		exit 1; \
+	fi
+	@mkdir -p $(or $(OUTPUT),debug)
+	devenv shell "./target/debug/cursed-debug $(FILE) --format report --output $(or $(OUTPUT),debug) --validate --stats $(ARGS)"
+
+# Validate debug information
+debug-validate: debug-build
+	@echo "Validating debug information..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make debug-validate FILE=path/to/file.csd"; \
+		exit 1; \
+	fi
+	devenv shell "./target/debug/cursed-debug $(FILE) --validate --stats --verbose $(ARGS)"
+
+# Debug help
+debug-help:
+	@echo "CURSED Debug Information Generation"
+	@echo "=================================="
+	@echo ""
+	@echo "Available debug targets:"
+	@echo "  debug-build       Build the debug tool"
+	@echo "  debug-test        Test debug functionality"
+	@echo "  debug-ir          Generate LLVM IR with debug info"
+	@echo "  debug-dwarf       Generate DWARF debug information"
+	@echo "  debug-gdb         Generate GDB debugging script"
+	@echo "  debug-lldb        Generate LLDB debugging script"
+	@echo "  debug-vscode      Generate VS Code debug configuration"
+	@echo "  debug-report      Generate comprehensive debug report"
+	@echo "  debug-validate    Validate debug information"
+	@echo ""
+	@echo "Usage examples:"
+	@echo "  make debug-ir FILE=examples/hello.csd"
+	@echo "  make debug-gdb FILE=examples/fibonacci.csd OUTPUT=debug/"
+	@echo "  make debug-report FILE=myprogram.csd"
+	@echo "  make debug-validate FILE=myprogram.csd"
+	@echo ""
+	@echo "Additional arguments can be passed via ARGS variable:"
+	@echo "  make debug-ir FILE=test.csd ARGS='--debug-level 3 --include-source'"
+	@echo "  make debug-dwarf FILE=test.csd ARGS='--dwarf-version 5 --compress'"
+	@echo "  make debug-report FILE=test.csd ARGS='--verbose'"
+	@echo ""
+	@echo "Debug levels:"
+	@echo "  0 - No debug information"
+	@echo "  1 - Line tables only (minimal)"
+	@echo "  2 - Full debug information (default)"
+	@echo "  3 - Enhanced debug with additional metadata"
+	@echo ""
+	@echo "For complete usage information:"
+	@echo "  ./target/debug/cursed-debug --help"
 	@echo ""

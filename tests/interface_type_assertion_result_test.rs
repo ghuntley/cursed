@@ -84,7 +84,7 @@ mod tests {
             Ok(_) => {},
             Err(err) => {
                 // Check that we get a compilation error, not a panic
-                assert!(matches!(err, Error::Compilation(_))
+                assert!(matches!(err, Error::Compilation(_)));
             }
         }
     }
@@ -112,10 +112,10 @@ mod tests {
         codegen.set_current_function(function);
         
         // Create a test value (a null pointer in this case)
-        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null());
+        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default()).const_null();
         
         // Create a success result
-        let result = codegen.create_success_result(null_ptr.into();
+        let result = codegen.create_success_result(null_ptr.into());
         
         // Verify that the result is created successfully
         assert!(result.is_ok())
@@ -149,8 +149,7 @@ mod tests {
             .with_location(SourceLocation {
                 line: 42,
                 column: 10,
-                file: Some("test.csd".to_string(),
-                source_line: "val, ok = obj.(ConcreteType)".to_string(),
+                file: Some("test.csd".to_string()),
             });
         
         // Create an error result

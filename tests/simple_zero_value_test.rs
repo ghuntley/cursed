@@ -1,6 +1,5 @@
 //! Simple tests for zero value initialization
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::core::type_checker::Type;

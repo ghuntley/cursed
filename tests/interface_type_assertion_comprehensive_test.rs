@@ -378,7 +378,7 @@ fn test_debug_verbosity_levels() {
                     poppin(); // Should not reach here
                 } drip (e) {
                     debug("Error caught as expected with debug level %s: %s", 
-                          "#, debug_level, r#"%s", e.message);
+                          debug_level, e.message);
                 }
             }
         "#;

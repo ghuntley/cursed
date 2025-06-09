@@ -17,7 +17,12 @@ pub enum Error {
     Runtime(String),
     /// Package manager errors
     Package(String),
+    /// REPL errors
+    Repl(String),
 }
+
+/// Alias for CursedError to match expected naming
+pub type CursedError = Error;
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -27,6 +32,7 @@ impl fmt::Display for Error {
             Error::Compile(msg) => write!(f, "Compilation error: {}", msg),
             Error::Runtime(msg) => write!(f, "Runtime error: {}", msg),
             Error::Package(msg) => write!(f, "Package error: {}", msg),
+            Error::Repl(msg) => write!(f, "REPL error: {}", msg),
         }
     }
 }
@@ -38,6 +44,15 @@ impl From<std::io::Error> for Error {
         Error::Io(err)
     }
 }
+
+impl Error {
+    /// Create a REPL error
+    pub fn repl_error(msg: String) -> Self {
+        Error::Repl(msg)
+    }
+}
+
+
 
 /// Source location information for errors
 #[derive(Debug, Clone)]

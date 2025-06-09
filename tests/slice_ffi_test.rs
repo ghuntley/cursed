@@ -6,7 +6,6 @@
 use std::ffi::c_void;
 use cursed::runtime::slice_runtime::*;
 
-#[path = "common.rs"]
 mod common;
 
 #[test]

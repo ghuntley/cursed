@@ -4,7 +4,6 @@
 //! Tests cover basic defer functionality, LIFO execution order, and integration
 //! with function returns and error handling.
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::ast::statements::{DeferStatement, ExpressionStatement};

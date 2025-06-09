@@ -23,7 +23,6 @@ use tempfile::TempDir;
 // Mock imports for testing infrastructure
 use std::collections::HashMap;
 
-#[path = "common.rs"]
 mod common;
 
 /// Test configuration for documentation integration testing

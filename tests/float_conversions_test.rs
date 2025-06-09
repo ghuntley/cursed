@@ -8,7 +8,6 @@
 //! - Precision loss scenarios
 //! - Overflow and underflow conditions
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::codegen::llvm::{LlvmCodeGenerator, FloatConversion};

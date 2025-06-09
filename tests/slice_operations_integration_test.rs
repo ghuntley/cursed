@@ -12,7 +12,6 @@ use inkwell::AddressSpace;
 use std::error::Error;
 use tracing_test::traced_test;
 
-#[path = "common.rs"]
 mod common;
 
 /// Helper function to create a mock slice struct for testing

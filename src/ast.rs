@@ -4,10 +4,10 @@ pub trait Node {
     fn string(&self) -> String;
 }
 
-pub trait Statement: Node {}
+pub trait Statement: Node + std::fmt::Debug {}
 pub trait Expression: Node {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }

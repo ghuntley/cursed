@@ -85,11 +85,11 @@ printn(yolo)\n", code);
         .map_err(|e| format!("Failed to run test: {}", e))?;
     
     if !success {
-        return Err(format!("Test execution failed:\n{}", output);
+        return Err(format!("Test execution failed:\n{}", output));
     }
     
     // Check if the output contains the expected value
-    let expected_str = expected_value.to_string());
+    let expected_str = expected_value.to_string();
     assert_output_contains(&output, &expected_str)
 }
 

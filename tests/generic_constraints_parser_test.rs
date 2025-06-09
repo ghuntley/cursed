@@ -13,7 +13,6 @@ use cursed::parser::Parser;
 use std::io::Cursor;
 use tracing::{debug, error, info, instrument, warn};
 
-#[path = "common.rs"]
 mod common;
 
 /// Initialize tracing for tests

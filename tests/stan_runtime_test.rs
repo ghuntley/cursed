@@ -3,8 +3,7 @@
 //! This module tests the runtime behavior of compiled stan expressions,
 //! including goroutine execution and scheduling.
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use cursed::ast::expressions::concurrency::StanExpression;
 use cursed::ast::expressions::Identifier;

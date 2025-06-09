@@ -1,16 +1,15 @@
 //! Basic tests for documentation comment parsing in CURSED language
 
 use cursed::error::SourceLocation;
-use cursed::parser::DocumentationComment;
+use cursed::docs::DocumentationComment;
 
 /// Test basic documentation comment structure creation
 #[test]
 fn test_documentation_comment_creation() {
-    let location = SourceLocation { 
+    let location = SourceLocation {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let doc = DocumentationComment::new(location);
     
@@ -29,7 +28,6 @@ fn test_parse_simple_documentation() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     doc.raw_content = "/// Simple documentation comment".to_string();
@@ -47,7 +45,6 @@ fn test_parse_summary_and_description() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     doc.raw_content = "/// Brief summary of the function\n///\n/// This is a detailed description\n/// that spans multiple lines".to_string();
@@ -65,7 +62,6 @@ fn test_parse_structured_tags() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     doc.raw_content = "/// Calculate the sum of two numbers\n/// @param x the first number\n/// @param y the second number\n/// @return the sum of x and y".to_string();
@@ -88,7 +84,6 @@ fn test_parse_code_examples() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     doc.raw_content = "/// Example usage:\n/// ```cursed\n/// sus x = 42\n/// facts result = add(x, 8)\n/// ```".to_string();
@@ -107,7 +102,6 @@ fn test_documentation_validation() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     
@@ -131,7 +125,6 @@ fn test_documentation_helper_methods() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     
@@ -144,7 +137,7 @@ fn test_documentation_helper_methods() {
     assert_eq!(params[1], "y second value");
     
     let return_doc = doc.get_return_documentation();
-    assert_eq!(return_doc, Some("computed result"));
+    assert_eq!(return_doc, Some("computed result".to_string()));
     
     let examples = doc.get_examples();
     assert_eq!(examples.len(), 0);
@@ -157,7 +150,6 @@ fn test_documentation_with_unicode() {
         line: 1, 
         column: 1, 
         file: Some("test".to_string()),
-        source_line: "".to_string(),
     };
     let mut doc = DocumentationComment::new(location);
     doc.raw_content = "/// Calculate π approximation using 🌟 method\n/// @param ε precision tolerance (ε > 0)\n/// @return approximated π value".to_string();

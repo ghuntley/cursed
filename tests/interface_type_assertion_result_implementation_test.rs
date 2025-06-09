@@ -13,7 +13,7 @@ use common::tracing::setup as init_tracing;
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 
 #[test]

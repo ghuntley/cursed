@@ -3,8 +3,7 @@
 //! This module tests the LLVM IR generation for stan expressions,
 //! ensuring proper goroutine runtime integration.
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use cursed::ast::expressions::concurrency::StanExpression;
 use cursed::ast::expressions::Identifier;

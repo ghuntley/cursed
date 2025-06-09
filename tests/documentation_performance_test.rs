@@ -17,7 +17,6 @@ use cursed::docs::{
     PackageDocumentation, DocError, DocResult,
 };
 
-#[path = "common.rs"]
 mod common;
 
 /// Performance test configuration

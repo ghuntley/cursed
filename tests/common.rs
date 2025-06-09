@@ -1,26 +1,39 @@
-/// Common utilities for tests
+//! Common test utilities and setup for integration tests
+
 pub mod tracing {
     use std::sync::Once;
-    
+
     static INIT: Once = Once::new();
-    
+
+    /// Initialize tracing for tests (call once per test)
     pub fn setup() {
         INIT.call_once(|| {
-            let _ = tracing_subscriber::fmt()
+            tracing_subscriber::fmt()
                 .with_env_filter("debug")
-                .try_init();
+                .with_test_writer()
+                .init();
         });
     }
 }
 
+/// Convenience macro for initializing tracing in tests
+#[macro_export]
+macro_rules! init_tracing {
+    () => {
+        $crate::common::tracing::setup();
+    };
+}
+
 pub mod timing {
     use std::time::Instant;
-    
+    use tracing::info;
+
+    /// Timer utility for benchmarking operations in tests
     pub struct Timer {
         name: String,
         start: Instant,
     }
-    
+
     impl Timer {
         pub fn new(name: &str) -> Self {
             Self {
@@ -29,13 +42,11 @@ pub mod timing {
             }
         }
     }
-    
+
     impl Drop for Timer {
         fn drop(&mut self) {
             let elapsed = self.start.elapsed();
-            tracing::info!("{} took {:?}", self.name, elapsed);
+            info!("Operation '{}' completed in {:?}", self.name, elapsed);
         }
     }
 }
-
-// Tracing initialization macro moved to tests/common/mod.rs

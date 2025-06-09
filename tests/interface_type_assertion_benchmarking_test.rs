@@ -21,7 +21,7 @@ use cursed::{
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 
 // Constants for benchmark configuration

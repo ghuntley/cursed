@@ -9,7 +9,6 @@ use cursed::error::Error;
 use std::collections::HashMap;
 use tracing::{debug, info};
 
-#[path = "common.rs"]
 mod common;
 
 /// Test runtime type checking for basic types

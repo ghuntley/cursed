@@ -17,8 +17,7 @@ use cursed::memory::{
 use cursed::runtime::goroutine::get_global_scheduler;
 
 // Common test infrastructure
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use common::tracing::{init_tracing, Timer};
 

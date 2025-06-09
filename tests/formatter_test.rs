@@ -7,7 +7,6 @@ use cursed::tools::{CursedFormatter, FormatterConfig, BraceStyle};
 use cursed::lexer::{Lexer, TokenType};
 use cursed::parser::Parser;
 
-#[path = "common.rs"]
 mod common;
 
 #[test]

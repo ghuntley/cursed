@@ -15,7 +15,6 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::fs;
 
-#[path = "common.rs"]
 mod common;
 
 macro_rules! init_tracing {

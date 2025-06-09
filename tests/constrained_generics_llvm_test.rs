@@ -25,7 +25,6 @@ use inkwell::builder::Builder;
 use std::collections::HashMap;
 use tracing::{debug, info};
 
-#[path = "common.rs"]
 mod common;
 
 /// Helper to create a mock generic function with constraints

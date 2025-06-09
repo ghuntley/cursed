@@ -17,7 +17,6 @@ use std::path::PathBuf;
 use tempfile::TempDir;
 use tracing::{debug, info};
 
-#[path = "common.rs"]
 mod common;
 
 /// Helper to create a simple test module with a function

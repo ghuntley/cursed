@@ -10,8 +10,7 @@ use cursed::ast::declarations::{Parameter, TypeParameter, FieldDeclaration};
 use cursed::lexer::token::{Token, TokenType};
 use std::collections::HashMap;
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 /// Initialize tracing for tests
 macro_rules! init_tracing {

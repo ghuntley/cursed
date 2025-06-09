@@ -1,6 +1,5 @@
 //! Basic float conversion tests that work with current codebase
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::codegen::llvm::FloatTypeConverter;

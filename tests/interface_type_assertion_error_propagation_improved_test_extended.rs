@@ -26,7 +26,7 @@ use tracing::{debug, info, warn};
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 
 /// Helper function to create a simple JIT compiler for testing

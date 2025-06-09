@@ -3,8 +3,7 @@
 //! This module tests the complete compilation pipeline for stan expressions,
 //! including parsing, AST creation, and LLVM IR generation.
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use cursed::ast::expressions::concurrency::StanExpression;
 use cursed::ast::expressions::{Identifier, FunctionLiteral, CallExpression};

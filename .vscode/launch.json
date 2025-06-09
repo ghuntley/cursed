@@ -1,0 +1,34 @@
+{
+  "configurations": [
+    {
+      "MIMode": "gdb",
+      "args": [],
+      "cwd": "",
+      "debugServerArgs": "",
+      "debugServerPath": "",
+      "environment": [],
+      "externalConsole": false,
+      "logging": {
+        "engineLogging": true,
+        "trace": true,
+        "traceResponse": true
+      },
+      "miDebuggerPath": "/usr/bin/gdb",
+      "name": "Debug CURSED Program",
+      "preLaunchTask": "",
+      "program": ".vscode/test_simple",
+      "request": "launch",
+      "serverStarted": "",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "ignoreFailures": true,
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "stopAtEntry": false,
+      "type": "cppdbg"
+    }
+  ],
+  "version": "0.2.0"
+}

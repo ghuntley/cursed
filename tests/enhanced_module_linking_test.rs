@@ -13,7 +13,6 @@ use inkwell::types::BasicType;
 use std::path::PathBuf;
 use tracing::{debug, info};
 
-#[path = "common.rs"]
 mod common;
 
 /// Helper to create a module with a complex function

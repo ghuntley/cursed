@@ -18,7 +18,7 @@ use tracing::{debug, info, warn};
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 
 #[test]

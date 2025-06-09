@@ -160,8 +160,8 @@ fn test_interface_vtable_generation() -> Result<(), Error> {
     
     // Register methods for the implementation
     let mut method_map = HashMap::new();
-    method_map.insert("write".to_string(, write_fn);
-    method_map.insert("flush".to_string(, flush_fn);
+    method_map.insert("write".to_string(), write_fn);
+    method_map.insert("flush".to_string(), flush_fn);
     
     // Create vtable implementation for StringBuffer -> Writer
     let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new());
