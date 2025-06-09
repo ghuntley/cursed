@@ -70,6 +70,9 @@ pub mod select;
 pub mod documentation;
 pub mod collections;
 
+// Additional modules for parser support
+pub mod parser_support;
+
 // Re-export commonly used types
 pub use traits::{Node, Expression, Statement, TypeNode, GenericNode, Visitable, Visitor, Mutable, MutVisitor, Locatable, StatementExtensions, TypeParameter};
 pub use expressions::*;
@@ -96,6 +99,16 @@ pub use type_switch::*;
 pub use select::*;
 pub use documentation::*;
 pub use collections::*;
+// Specific imports to avoid conflicts
+pub use parser_support::{
+    VariableStatement,
+    ExpressionStatement as ParserExpressionStatement,
+    ArrayLiteral as ParserArrayLiteral, 
+    HashLiteral as ParserHashLiteral,
+    NilLiteral as ParserNilLiteral,
+    IndexExpression as ParserIndexExpression,
+    DotExpression as ParserDotExpression,
+};
 
 /// Root AST node representing a complete CURSED program
 #[derive(Debug, Clone)]
