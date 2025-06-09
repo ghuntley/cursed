@@ -65,6 +65,10 @@ use type_assertion_implementation::register_type_assertion_implementation;
 // Re-export common utilities for interface type assertions
 pub use self::interface_type_assertion_common::{get_result_type, get_source_location_type, build_struct_value, call_error_propagation_function, is_string_type_by_name, create_string_constant_from_codegen, find_inheritance_path, InterfaceRegistry, InterfacePathFinder, get_interface_registry, get_interface_path_finder, detect_diamond_inheritance, MutableInterfaceRegistry, get_interface_registry_mut};
 
+// Re-export slice operations
+pub use self::slice_literal::{SliceLiteralCompiler, create_slice_literal_compiler};
+pub use self::slice_operations::{SliceOperations, create_slice_operations};
+
 // Re-export binary compiler
 pub use self::binary_compiler::BinaryCompiler;
 
@@ -306,6 +310,8 @@ pub mod interface_type_assertion_error_visualization_enhanced; // Enhanced error
 pub mod interface_type_assertion_diamond_inheritance; // Specialized detection and visualization of diamond inheritance patterns
 pub mod interface_type_assertion_diamond_inheritance_handler; // Enhanced handler for diamond inheritance pattern detection and visualization
 pub mod interface_type_assertion_benchmarking; // Performance benchmarking for interface type assertions
+pub mod slice_literal; // Slice literal compilation
+pub mod slice_operations; // Slice operations and manipulation
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

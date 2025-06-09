@@ -5,7 +5,8 @@ use tracing::{debug, error, info, trace, warn};
 use cursed::ast::types::{InterfaceType, StructType, Type};
 use cursed::ast::expressions::TypeAssertion;
 use cursed::parser::Parser;
-use cursed::codegen::llvm::LlvmCodeGenerator;
+use cursed::codegen::llvm::{LlvmCodeGenerator, InterfaceImplementation, EnhancedDynamicDispatch, IntegratedInterfaceOperations};
+use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
 use cursed::core::jit::JitCompiler;
 use cursed::error::Error;
 
@@ -654,7 +655,8 @@ fn compile_and_run(source: &str) -> Result<(), Error> {
     let program = parser.parse_program()?;
     
     // Set up the LLVM code generator
-    let code_generator = LlvmCodeGenerator::new("test_module")?;
+    let context = inkwell::context::Context::create();
+    let code_generator = LlvmCodeGenerator::new_for_test(&context)?;
     
     // Generate LLVM IR code
     let module = code_generator.compile_program(&program)?;
