@@ -1,42 +1,58 @@
 //! LLVM optimization support
+//!
+//! This module provides backward compatibility for the existing optimization API
+//! while integrating with the new comprehensive optimization system.
 
 use inkwell::module::Module;
-use inkwell::passes::PassManager;
+use super::optimization_passes::{OptimizationManager, create_optimization_manager};
 
 /// Apply standard optimizations to the LLVM module.
+/// 
+/// This function provides backward compatibility with the existing API while
+/// using the new comprehensive optimization system internally.
 #[tracing::instrument(skip(module), fields(module_name = ?module.get_name().to_string_lossy(), optimization_level = optimization_level), level = "debug")]
 pub fn apply_optimizations<'ctx>(module: &Module<'ctx>, optimization_level: u32) -> Result<(), String> {
     tracing::info!(optimization_level = optimization_level, "Applying LLVM optimizations");
-    // Create function pass manager
-    let pass_manager = PassManager::create(module);
     
-    // Add standard optimization passes based on optimization level
-    // NOTE: The optimization methods are currently disabled as they don't match
-    // the current inkwell API. We'll need to update this once we verify the correct API.
-    match optimization_level {
-        0 => {
-            // No optimizations
-        },
-        1 | 2 | _ => {
-            // Basic/Advanced optimizations disabled for now
-            // We would add various passes here once we update to match the current inkwell API
-        }
-    }
+    // Create optimization manager for the specified level
+    let mut manager = OptimizationManager::for_level(optimization_level as u8)?;
     
-    // Initialize the pass manager
-    pass_manager.initialize();
+    // Apply optimizations using the new system
+    manager.optimize_module(module)?;
     
-    // Run the pass manager on the module functions
-    let function_count = module.get_functions().count();
-    tracing::debug!(function_count = function_count, "Running pass manager on module functions");
+    // Log optimization statistics
+    let stats = manager.get_stats();
+    tracing::info!(
+        total_time = ?stats.total_time,
+        functions_optimized = stats.functions_optimized,
+        passes_applied = stats.passes_applied,
+        size_reduction = %format!("{:.2}%", stats.size_reduction_percentage()),
+        "LLVM optimization complete"
+    );
     
-    for function in module.get_functions() {
-        let function_name = function.get_name().to_string_lossy();
-        tracing::trace!(function = %function_name, "Optimizing function");
-        pass_manager.run_on(&function);
-    }
+    Ok(())
+}
+
+/// Apply optimizations with a specific optimization level string (O0, O1, O2, O3, Os, Oz)
+#[tracing::instrument(skip(module), fields(module_name = ?module.get_name().to_string_lossy(), optimization_level = %level), level = "debug")]
+pub fn apply_optimizations_with_level<'ctx>(module: &Module<'ctx>, level: &str) -> Result<(), String> {
+    tracing::info!(optimization_level = %level, "Applying LLVM optimizations");
     
-    tracing::info!("LLVM optimization complete");
+    // Create optimization manager for the specified level
+    let mut manager = create_optimization_manager(level)?;
+    
+    // Apply optimizations
+    manager.optimize_module(module)?;
+    
+    // Log optimization statistics
+    let stats = manager.get_stats();
+    tracing::info!(
+        total_time = ?stats.total_time,
+        functions_optimized = stats.functions_optimized,
+        passes_applied = stats.passes_applied,
+        size_reduction = %format!("{:.2}%", stats.size_reduction_percentage()),
+        "LLVM optimization complete"
+    );
     
     Ok(())
 }

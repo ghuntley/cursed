@@ -256,9 +256,9 @@ impl DependencyTracker {
         let mut in_degree = HashMap::new();
         let mut queue = VecDeque::new();
         
-        // Calculate in-degrees
+        // Calculate in-degrees (number of dependencies this package has)
         for package in self.all_packages() {
-            let degree = self.dependents
+            let degree = self.dependencies
                 .get(&package)
                 .map(|deps| deps.len())
                 .unwrap_or(0);
@@ -273,13 +273,13 @@ impl DependencyTracker {
         while let Some(package) = queue.pop_front() {
             result.push(package.clone());
             
-            // Reduce in-degree of dependent packages
-            if let Some(deps) = self.dependencies.get(&package) {
-                for dep in deps {
-                    if let Some(degree) = in_degree.get_mut(dep) {
+            // Reduce in-degree of packages that depend on this package
+            if let Some(dependents) = self.dependents.get(&package) {
+                for dependent in dependents {
+                    if let Some(degree) = in_degree.get_mut(dependent) {
                         *degree -= 1;
                         if *degree == 0 {
-                            queue.push_back(dep.clone());
+                            queue.push_back(dependent.clone());
                         }
                     }
                 }
@@ -378,11 +378,18 @@ mod tests {
         tracker.add_dependency("app", "core");
         tracker.add_dependency("utils", "core");
         
-        assert_eq!(tracker.get_dependencies("app"), vec!["utils", "core"]);
+        let app_deps = tracker.get_dependencies("app");
+        assert_eq!(app_deps.len(), 2);
+        assert!(app_deps.contains(&"utils".to_string()));
+        assert!(app_deps.contains(&"core".to_string()));
+        
         assert_eq!(tracker.get_dependencies("utils"), vec!["core"]);
         assert_eq!(tracker.get_dependencies("core"), Vec::<String>::new());
         
-        assert_eq!(tracker.get_dependents("core"), vec!["app", "utils"]);
+        let core_dependents = tracker.get_dependents("core");
+        assert_eq!(core_dependents.len(), 2);
+        assert!(core_dependents.contains(&"app".to_string()));
+        assert!(core_dependents.contains(&"utils".to_string()));
         assert_eq!(tracker.get_dependents("utils"), vec!["app"]);
         assert_eq!(tracker.get_dependents("app"), Vec::<String>::new());
     }

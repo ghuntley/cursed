@@ -48,6 +48,13 @@
 pub use self::context::LlvmCodeGenerator;
 pub use self::type_assertion::InterfaceTypeAssertion;
 pub use self::char_operations::CharOperations;
+pub use self::optimization_passes::{OptimizationManager, OptimizationConfig, OptimizationPass, OptimizationStats, create_optimization_manager};
+
+// Re-export separate compilation functionality
+pub use self::separate_compilation::{SeparateCompiler, PackageMetadata, compile_package_file, compile_package_files, compile_and_link_packages};
+pub use self::executable_linking::{ExecutableLinker, ExecutableLinkingConfig, LinkingStrategy, TargetPlatform, LinkingStatistics, link_modules_to_executable};
+pub use self::package_compilation::{PackageCompilationPipeline, PackageCompilationConfig, CompiledPackage, compile_single_package, compile_and_link_packages as compile_and_link_packages_pipeline};
+pub use self::module_linking::{ModuleLinker, SymbolInfo, SymbolType, link_modules_with_metadata};
 pub use self::string_type::{CursedStringType, StringTypeUtils};
 pub use self::stdlib_integration::{StdlibLlvmIntegration, StdlibRegistry, StdlibFunctionInfo};
 pub use self::gc_integration::{LlvmGcIntegration, GcTypeMetadata};
@@ -83,6 +90,18 @@ pub use self::binary_compiler::BinaryCompiler;
 
 // Re-export binary compiler types
 pub use self::binary_compiler::DebugInfoLevel;
+
+// Re-export IR output functionality
+pub use self::ir_output::{
+    IrOutputGenerator, IrOutputConfig, IrOutputFormat, GeneratedFiles,
+    generate_ir_output, generate_ir_output_default
+};
+
+// Re-export separate compilation IR output
+pub use self::separate_ir_output::{
+    SeparateIrOutput, SeparateIrOutputConfig, SeparateGeneratedFiles,
+    SeparateCompilerIrExt, generate_separate_ir_output
+};
 // Interface implementation and dynamic dispatch
 pub use self::dynamic_dispatch::{InterfaceManager, InterfaceStructure, VTable, VTableImpl};
 pub use self::interface_implementation::InterfaceImplementation;
@@ -225,6 +244,13 @@ pub mod integrated_monomorphization; // Integrated monomorphization system
 pub mod improved_field_accessors; // Improved field accessors with proper error handling
 pub mod lru_field_accessors; // LRU cached field accessors with optimized performance
 pub mod interface_field_accessors_lru; // Interface field accessors with LRU caching
+
+// Separate compilation modules
+pub mod separate_compilation; // Core separate compilation functionality
+pub mod executable_linking; // Executable linking and binary generation
+pub mod package_compilation; // Package-level compilation pipeline
+pub mod module_linking;      // LLVM module linking and symbol resolution
+
 mod errors;
 mod expression;
 pub mod function_monomorphization;
@@ -244,6 +270,8 @@ mod variables;
 mod intrinsics;      // Standard library intrinsics
 mod stdlib_integration; // Standard library LLVM integration
 mod gc_integration;   // Garbage collection LLVM integration
+pub mod optimization; // Legacy optimization API
+pub mod optimization_passes; // Comprehensive optimization pass system
 mod break_continue;  // Break and continue statement handling
 mod control_flow;    // Control flow statements
 // Range clause implementation with proper error handling
@@ -328,6 +356,8 @@ pub mod slice_operations; // Slice operations and manipulation
 pub mod map_operations; // Map (hash table) operations and manipulation
 pub mod map_runtime; // Map runtime function implementations
 mod hash; // Hash map literal and indexing compilation
+mod ir_output; // LLVM IR and bitcode output generation
+mod separate_ir_output; // IR output for separate compilation
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

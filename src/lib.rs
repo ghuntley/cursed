@@ -67,6 +67,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 
 // Re-export the AST module with the new structure
 pub mod ast;
+pub mod cli;
 pub mod code;
 pub mod codegen;
 pub mod core;
