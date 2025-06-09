@@ -30,14 +30,7 @@ num-traits = "0.2"  # For numerical traits
 libc = "0.2"  # For C functions like strlen
 inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 
-# Cryptography related dependencies
-sha1 = "0.10"  # SHA-1 hash algorithm
-sha2 = "0.10"  # SHA-2 hash algorithms
-md5 = "0.7"    # MD5 hash algorithm
-hmac = "0.12"  # HMAC message authentication
-bcrypt = "0.15" # Password hashing
-aes = "0.8"     # AES encryption
-block-modes = "0.9" # Block cipher operation modes
+# Basic cryptography dependencies
 hex = "0.4"     # Hex encoding/decoding
 rand = "0.8"    # Random number generation
 
@@ -84,7 +77,12 @@ tempfile = "3.8"  # Temporary directories for testing
 pulldown-cmark = "0.9"  # Markdown parsing and HTML generation
 handlebars = "4.4"      # Template engine for HTML generation
 
-# We removed reqwest dependency since we're using mock HTTP responses only
+# Package management dependencies (simplified for now)
+semver = "1.0"          # Semantic version parsing and comparison
+url = "2.4"             # URL parsing and manipulation
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
 
 [features]
 # Enable binary compilation support
@@ -112,29 +110,15 @@ members = [
 name = "cursed"
 path = "src/main.rs"
 
-[[bin]]
-name = "cursed-compile"
-path = "src/bin/cursed_compile.rs"
+
 
 [[bin]]
-name = "test_preprocessor"
-path = "src/test_preprocessor.rs"
+name = "cursed-pkg"
+path = "src/bin/cursed_pkg.rs"
 
 [[bin]]
-name = "language_benchmark"
-path = "src/bin/language_benchmark.rs"
-
-[[bin]]
-name = "bootstrap-verify"
-path = "src/bin/bootstrap_verify.rs"
-
-[[bin]]
-name = "cursed-fmt"
-path = "src/bin/cursed_fmt.rs"
-
-[[bin]]
-name = "cursed-doc"
-path = "src/bin/cursed_doc.rs"
+name = "cursed-pkg-simple"
+path = "src/bin/cursed_pkg_simple.rs"
 
 
 

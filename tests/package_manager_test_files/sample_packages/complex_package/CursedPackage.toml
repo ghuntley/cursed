@@ -1,0 +1,80 @@
+[package]
+name = "complex-web-framework"
+version = "2.1.0"
+description = "A comprehensive web framework for CURSED with advanced features and multiple dependencies"
+authors = [
+    "Lead Developer <lead@cursed-framework.org>",
+    "Framework Team <team@cursed-framework.org>"
+]
+license = "Apache-2.0"
+repository = "https://github.com/cursed-packages/complex-web-framework"
+keywords = ["web", "framework", "http", "server", "cursed"]
+categories = ["web-programming", "frameworks"]
+
+[dependencies]
+# HTTP utilities with specific version requirements
+http-utils = "^1.3.0"
+
+# Template engine with features
+template-engine = { version = "~2.2.0", features = ["async", "caching"] }
+
+# Database integration
+database-driver = { version = "2.1.0", optional = true }
+
+# Security middleware
+security-middleware = "1.0.0"
+
+# Configuration management
+config-manager = { version = "^1.2.0", features = ["toml", "yaml", "env"] }
+
+# Logging framework
+logging-framework = { version = "3.0.0", features = ["json", "structured"] }
+
+# Metrics and monitoring
+metrics-collector = "^2.1.0"
+
+# JSON handling
+json-parser = "1.5.0"
+
+# Async runtime
+async-runtime = { version = "^1.8.0", features = ["tokio-compat"] }
+
+# Git dependency example
+validation-utils = { git = "https://github.com/cursed-packages/validation-utils", branch = "main" }
+
+# Path dependency example
+custom-middleware = { path = "../middleware-library" }
+
+[dev-dependencies]
+# Testing framework
+test-framework = "^2.0.0"
+
+# HTTP testing utilities
+http-test-client = "1.4.0"
+
+# Mock utilities
+mock-framework = { version = "1.2.0", features = ["async"] }
+
+# Benchmarking tools
+benchmark-utils = "0.5.0"
+
+# Code coverage
+coverage-reporter = "1.1.0"
+
+[features]
+default = ["http", "templates"]
+full = ["http", "templates", "database", "metrics", "security"]
+http = ["http-utils"]
+templates = ["template-engine"]
+database = ["database-driver"]
+metrics = ["metrics-collector"]
+security = ["security-middleware", "validation-utils"]
+async = ["async-runtime"]
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[profile.dev]
+opt-level = 0
+debug = true

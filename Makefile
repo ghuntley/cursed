@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help
 
 build:
 	devenv shell cargo build
@@ -245,6 +245,81 @@ cursed-lint-help:
 	@echo "  make cursed-lint-check                    # CI linting"
 	@echo "  make cursed-lint-fix                      # Auto-fix issues"
 	@echo "  make cursed-lint-dir DIR=examples         # Lint examples/"
+
+# Package Management Targets
+# ===========================
+
+# Install packages for current project
+pkg-install:
+	@echo "Installing package dependencies..."
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg install"
+
+# Update all package dependencies
+pkg-update:
+	@echo "Updating package dependencies..."
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg update"
+
+# Check for dependency updates and vulnerabilities
+pkg-check:
+	@echo "Checking package dependencies..."
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg check"
+
+# Clean package cache
+pkg-clean:
+	@echo "Cleaning package cache..."
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg clean"
+
+# Search for packages in registry
+pkg-search:
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: Please specify PACKAGE=<package_name>"; \
+		exit 1; \
+	fi
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg search $(PACKAGE)"
+
+# Show package information
+pkg-info:
+	@if [ -z "$(PACKAGE)" ]; then \
+		echo "Error: Please specify PACKAGE=<package_name>"; \
+		exit 1; \
+	fi
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg info $(PACKAGE)"
+
+# Initialize package manifest for current project
+pkg-init:
+	@echo "Initializing package manifest..."
+	devenv shell "cargo build --bin cursed-pkg"
+	devenv shell "./target/debug/cursed-pkg init"
+
+# Build project with package dependencies
+build-with-packages: pkg-install build
+
+# Test project with package dependencies
+test-with-packages: pkg-install test
+
+# Package management help
+pkg-help:
+	@echo "Package Management Commands:"
+	@echo "  pkg-install          - Install dependencies from cursed.toml"
+	@echo "  pkg-update           - Update all dependencies to latest versions"
+	@echo "  pkg-check            - Check dependencies for updates and vulnerabilities"
+	@echo "  pkg-clean            - Clean package cache"
+	@echo "  pkg-search           - Search for packages (requires PACKAGE=name)"
+	@echo "  pkg-info             - Show package information (requires PACKAGE=name)"
+	@echo "  pkg-init             - Initialize cursed.toml manifest"
+	@echo "  build-with-packages  - Install dependencies and build"
+	@echo "  test-with-packages   - Install dependencies and test"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make pkg-search PACKAGE=http"
+	@echo "  make pkg-info PACKAGE=serde"
+	@echo "  make build-with-packages"
 
 # Documentation Generation Targets
 # =================================

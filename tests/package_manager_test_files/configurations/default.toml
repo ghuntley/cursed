@@ -1,0 +1,116 @@
+# Default CURSED Package Manager Configuration
+# This configuration is used for standard testing scenarios
+
+[registry]
+# Main package registry URL
+url = "https://packages.cursed-lang.org"
+
+# Alternative registries for testing
+[registry.alternatives]
+beta = "https://beta.packages.cursed-lang.org"
+local = "http://localhost:8080/registry"
+
+[cache]
+# Cache directory (relative to user cache directory)
+directory = "cursed/packages"
+
+# Maximum cache size in bytes (1GB)
+max_size = 1073741824
+
+# Cache cleanup strategy: "lru", "fifo", "size"
+cleanup_strategy = "lru"
+
+# Cache verification interval in hours
+verification_interval = 24
+
+[network]
+# Request timeout in seconds
+timeout = 30
+
+# Maximum number of parallel downloads
+parallel_downloads = 4
+
+# Retry configuration
+max_retries = 3
+retry_delay = 1000  # milliseconds
+
+# User agent for HTTP requests
+user_agent = "cursed-pkg/0.1.0"
+
+[resolution]
+# Dependency resolution strategy: "highest", "lowest", "latest"
+version_strategy = "highest"
+
+# Allow pre-release versions
+allow_prerelease = false
+
+# Maximum dependency depth to prevent infinite recursion
+max_depth = 100
+
+# Conflict resolution: "fail", "warn", "auto"
+conflict_resolution = "warn"
+
+[workspace]
+# Default workspace directory
+directory = "."
+
+# Package manifest file name
+manifest_file = "CursedPackage.toml"
+
+# Source directory
+source_directory = "src"
+
+# Build directory
+build_directory = "build"
+
+# Test directory
+test_directory = "tests"
+
+[security]
+# Verify package checksums
+verify_checksums = true
+
+# Require HTTPS for registry communication
+require_https = true
+
+# Trust level for packages: "strict", "normal", "permissive"
+trust_level = "normal"
+
+[logging]
+# Log level: "trace", "debug", "info", "warn", "error"
+level = "info"
+
+# Log format: "json", "text", "pretty"
+format = "pretty"
+
+# Log to file
+file = "cursed-pkg.log"
+
+# Include timestamps
+timestamps = true
+
+[development]
+# Enable development mode features
+enabled = false
+
+# Use local registry for testing
+use_local_registry = false
+
+# Skip package verification in dev mode
+skip_verification = false
+
+# Verbose output
+verbose = false
+
+[features]
+# Enable experimental features
+experimental = false
+
+# Enable package signing verification
+package_signing = false
+
+# Enable dependency tree visualization
+dependency_visualization = true
+
+# Enable package metrics collection
+metrics_collection = false

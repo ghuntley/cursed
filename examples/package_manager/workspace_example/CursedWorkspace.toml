@@ -1,0 +1,60 @@
+[workspace]
+name = "cursed-productivity-suite"
+version = "1.0.0"
+authors = ["CURSED Team <team@cursed-lang.org>"]
+
+# Workspace member packages
+members = [
+    "packages/core",
+    "packages/cli",
+    "packages/web",
+    "packages/server",
+    "tools/generator",
+    "tools/validator"
+]
+
+# Exclude experimental packages
+exclude = [
+    "experimental/*",
+    "scratch/*"
+]
+
+# Shared dependencies across all packages
+[workspace.dependencies]
+# Core utilities used by all packages
+json_utils = "2.1.0"
+log_manager = "1.5.0"
+error_handling = "3.0.0"
+config_parser = "1.2.0"
+
+# Testing dependencies
+test_framework = "2.0.0"
+mock_server = "1.1.0"
+
+# Build dependencies
+code_generator = "1.0.0"
+
+# Shared package metadata
+[workspace.package]
+authors = ["CURSED Team <team@cursed-lang.org>"]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cursed-lang/productivity-suite"
+documentation = "https://docs.cursed-lang.org/productivity-suite"
+
+# Dependency resolution configuration
+resolver = "2"
+
+# Workspace-wide build configuration
+[workspace.profiles.dev]
+optimization = "none"
+debug = true
+
+[workspace.profiles.release]
+optimization = "max"
+debug = false
+strip = true
+
+[workspace.profiles.test]
+optimization = "fast"
+debug = true
