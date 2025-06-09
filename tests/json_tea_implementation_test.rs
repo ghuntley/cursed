@@ -159,7 +159,7 @@ fn test_json_unmarshal_objects() {
 #[test]
 fn test_json_unmarshal_complex() {
     // Test complex nested structure
-    let json = r#"{
+    let json = r#"{"
         "users": [
             {"name": "zoomer", "skills": ["coding", "tiktok"]},
             {"name": "boomer", "skills": ["email", "facebook"]}
@@ -169,7 +169,7 @@ fn test_json_unmarshal_complex() {
             "active_users": 2
         },
         "settings": null
-    }"#;
+    }"#";
 
     let args = vec![Arc::new(Object::String(json.to_string())), Arc::new(Object::Null)];
     let result = json_tea::unmarshal(&args).unwrap();

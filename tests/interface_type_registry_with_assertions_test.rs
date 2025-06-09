@@ -1,5 +1,5 @@
 use std::env;
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -22,13 +22,14 @@ mod tracing_setup;
 /// Test type assertion with enhanced error reporting
 #[test]
 fn test_type_assertion_with_enhanced_error_reporting() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!(test_case = "type_assertion_with_enhanced_error_reporting", "Starting test");
     
     // Set debug mode to verbose for maximum error information
     env::set_var("CURSED_TYPE_DEBUG", "verbose");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Drawable {
@@ -88,7 +89,7 @@ fn test_type_assertion_with_enhanced_error_reporting() {
                 debug("Expected error occurred: %s", e.message);
             };
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {

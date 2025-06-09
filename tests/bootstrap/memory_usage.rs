@@ -33,6 +33,7 @@ struct ResourceUsage {
 #[instrument]
 #[test]
 fn test_compilation_memory_usage() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test memory usage for different program sizes
@@ -70,6 +71,7 @@ fn test_compilation_memory_usage() {
 #[instrument]
 #[test]
 fn test_memory_leak_detection() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Compile the same program multiple times to detect memory leaks
@@ -101,6 +103,7 @@ fn test_memory_leak_detection() {
 #[instrument]
 #[test]
 fn test_concurrent_compilation_memory() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test memory usage when running multiple compilations concurrently
@@ -131,6 +134,7 @@ fn test_concurrent_compilation_memory() {
 #[instrument]
 #[test]
 fn test_large_program_memory_scaling() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test how memory usage scales with program size
@@ -165,6 +169,7 @@ fn test_large_program_memory_scaling() {
 #[instrument]
 #[test]
 fn test_bootstrap_stage_memory_comparison() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Compare memory usage between different bootstrap stages
@@ -190,6 +195,7 @@ fn test_bootstrap_stage_memory_comparison() {
 #[instrument]
 #[test]
 fn test_memory_fragmentation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test for memory fragmentation during compilation
@@ -211,6 +217,7 @@ fn test_memory_fragmentation() {
 #[instrument]
 #[test]
 fn test_resource_cleanup() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that resources are properly cleaned up after compilation
@@ -251,6 +258,7 @@ fn test_resource_cleanup() {
 #[instrument]
 #[test]
 fn test_disk_usage_during_compilation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test disk space usage during compilation
@@ -732,7 +740,7 @@ fn create_sized_test_program(lines: usize) -> String {
 fn create_fragmentation_test_program() -> String {
     // Program that might cause memory fragmentation
     let mut program = String::new();
-    program.push_str(r#"
+    program.push_str(r#""
 struct Node {
     value: int
     data: [100]int
@@ -755,7 +763,7 @@ func main() {
     
     return sum
 }
-"#);
+"#)";
     program
 }
 

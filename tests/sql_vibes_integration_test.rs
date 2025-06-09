@@ -10,6 +10,7 @@ mod common;
 /// Test basic connection functionality
 #[test]
 fn test_basic_connection_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test connection creation
@@ -34,6 +35,7 @@ fn test_basic_connection_functionality() {
 /// Test SQLite driver end-to-end functionality
 #[test]
 fn test_sqlite_driver_end_to_end() {
+    // init_tracing!();
     common::tracing::setup();
     
     let driver = SqliteDriver::new();
@@ -108,6 +110,7 @@ fn test_sqlite_driver_end_to_end() {
 /// Test PostgreSQL driver basic functionality
 #[test]
 fn test_postgres_driver_basic_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     let driver = PostgresDriver::new();
@@ -137,6 +140,7 @@ fn test_postgres_driver_basic_functionality() {
 /// Test MySQL driver basic functionality
 #[test]
 fn test_mysql_driver_basic_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     let driver = MySqlDriver::new();
@@ -166,6 +170,7 @@ fn test_mysql_driver_basic_functionality() {
 /// Test mock driver comprehensive functionality
 #[test]
 fn test_mock_driver_comprehensive_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     let driver = MockDriver::new();
@@ -290,6 +295,7 @@ fn test_mock_driver_comprehensive_functionality() {
 /// Test parameter handling across different parameter types
 #[test]
 fn test_parameter_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test named parameters
@@ -336,6 +342,7 @@ fn test_parameter_handling() {
 /// Test ResultSet and Row functionality
 #[test]
 fn test_result_set_and_row_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test empty result set
@@ -420,6 +427,7 @@ fn test_result_set_and_row_functionality() {
 /// Test error handling scenarios
 #[test]
 fn test_error_handling_scenarios() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test invalid connection strings
@@ -452,6 +460,7 @@ fn test_error_handling_scenarios() {
 /// Test concurrent access to driver registry
 #[test] 
 fn test_concurrent_driver_access() {
+    // init_tracing!();
     common::tracing::setup();
     
     use std::sync::Arc;

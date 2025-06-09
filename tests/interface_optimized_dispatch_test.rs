@@ -70,6 +70,7 @@ fn setup_shape_hierarchy() -> Result<TypeChecker, Error> {
 /// Test for optimized dynamic dispatch with shape interfaces
 #[test]
 fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
+    // init_tracing!();
     // Set up tracing
     common::tracing::setup();
     tracing::info!("Starting optimized dynamic dispatch test");
@@ -330,6 +331,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
 /// Test for speculative dispatch with multiple shape types
 #[test]
 fn test_speculative_dispatch() -> Result<(), Error> {
+    // init_tracing!();
     // Set up tracing
     common::tracing::setup();
     tracing::info!("Starting speculative dispatch test");

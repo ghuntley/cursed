@@ -13,7 +13,7 @@ use tracing_test::traced_test;
 #[traced_test]
 #[test]
 fn test_extract_from_simple_cursed_program() {
-    let source = r#"
+    let source = r#""
 /// This is a test squad for documentation
 /// 
 /// # Examples
@@ -35,7 +35,7 @@ slay fibonacci(n normie) -> normie {
     }
     yolo fibonacci(n - 1) + fibonacci(n - 2)
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::with_source_path("test.csd".to_string());
     let items = extractor.extract_from_source(source, Some("test.csd".to_string())).unwrap();
@@ -63,7 +63,7 @@ slay fibonacci(n normie) -> normie {
 #[traced_test]
 #[test]
 fn test_extract_interface_with_methods() {
-    let source = r#"
+    let source = r#""
 /// A drawable interface for graphics operations
 /// 
 /// This collab defines the basic drawing capabilities
@@ -79,7 +79,7 @@ squad Circle {
     radius float64
     color facts_string
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let items = extractor.extract_from_source(source, None).unwrap();
@@ -98,7 +98,7 @@ squad Circle {
 #[traced_test]
 #[test]
 fn test_generic_types_extraction() {
-    let source = r#"
+    let source = r#""
 /// A generic container squad
 /// 
 /// @param T - the type of elements to store
@@ -114,7 +114,7 @@ squad Container[T] {
 slay process[T, U](items []T, callback slay(T) -> U) -> []U {
     // Implementation would go here
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let items = extractor.extract_from_source(source, None).unwrap();
@@ -134,7 +134,7 @@ slay process[T, U](items []T, callback slay(T) -> U) -> []U {
 #[traced_test]
 #[test]
 fn test_complex_cursed_keywords() {
-    let source = r#"
+    let source = r#""
 /// Test all CURSED keywords in documentation
 /// 
 /// This function demonstrates various CURSED language constructs
@@ -160,7 +160,7 @@ slay complex_example(input normie) -> normie {
     
     yolo result
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let items = extractor.extract_from_source(source, None).unwrap();
@@ -175,7 +175,7 @@ slay complex_example(input normie) -> normie {
 #[traced_test]
 #[test]
 fn test_type_resolver_integration() {
-    let source = r#"
+    let source = r#""
 squad Person {
     name facts_string
     age normie
@@ -197,7 +197,7 @@ squad Rectangle {
     width float64
     height float64
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let items = extractor.extract_from_source(source, None).unwrap();
@@ -227,7 +227,7 @@ squad Rectangle {
 #[traced_test]
 #[test]
 fn test_documentation_comment_parsing() {
-    let source = r#"
+    let source = r#""
 /// This is a comprehensive documentation comment
 /// that spans multiple lines and includes various
 /// documentation tags.
@@ -254,7 +254,7 @@ fn test_documentation_comment_parsing() {
 slay calculate(input normie, options CalculationOptions) -> normie {
     yolo input * 2
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let items = extractor.extract_from_source(source, None).unwrap();
@@ -270,7 +270,7 @@ slay calculate(input normie, options CalculationOptions) -> normie {
 #[traced_test]
 #[test]
 fn test_package_level_documentation() {
-    let source = r#"
+    let source = r#""
 /// Package cursed_math provides mathematical operations
 /// optimized for the CURSED programming language.
 /// 
@@ -288,7 +288,7 @@ slay abs(x normie) -> normie {
     }
     yolo x
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     extractor.set_module("math".to_string());
@@ -312,12 +312,12 @@ slay abs(x normie) -> normie {
 #[test]
 fn test_error_handling_and_edge_cases() {
     // Test with malformed source
-    let malformed_source = r#"
+    let malformed_source = r#""
 /// This is valid documentation
 /// but the code below has syntax errors
 slay broken_function(x normie {
     // Missing closing parenthesis
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let result = extractor.extract_from_source(malformed_source, None);
@@ -334,7 +334,7 @@ slay broken_function(x normie {
 #[traced_test]
 #[test]
 fn test_complex_type_resolution() {
-    let source = r#"
+    let source = r#""
 /// Complex type examples with slices, maps, channels, and pointers
 squad DataProcessor {
     input_data []normie
@@ -353,7 +353,7 @@ squad Configuration {
     max_iterations normie
     timeout float64
 }
-"#;
+"#";
 
     let mut extractor = AstExtractor::new();
     let items = extractor.extract_from_source(source, None).unwrap();
@@ -411,7 +411,7 @@ fn test_performance_with_large_program() {
     let mut large_source = String::new();
     
     for i in 0..100 {
-        large_source.push_str(&format!(r#"
+        large_source.push_str(&format!(r#""
 /// Documentation for function {}
 /// This function demonstrates performance testing
 /// with a large number of functions.
@@ -426,7 +426,7 @@ squad Struct_{} {{
     field3 float64
 }}
 
-"#, i, i, i, i, i));
+"#, i, i, i, i, i))";
     }
 
     let start = std::time::Instant::now();

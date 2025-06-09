@@ -15,7 +15,7 @@ use cursed::object::Object;
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
 use cursed::ast::traits::Expression;
-use cursed::ast::expressions::ErrorPropagation;
+use cursed::ast::ErrorPropagation;
 use cursed::error::Error;
 use std::collections::HashMap;
 
@@ -300,7 +300,7 @@ mod integration_tests {
     
     #[test]
     fn test_error_propagation_expression_creation() {
-        use cursed::ast::expressions::Identifier;
+        use cursed::ast::Identifier;
         
         let identifier = Box::new(Identifier {
             token: "result".to_string(),

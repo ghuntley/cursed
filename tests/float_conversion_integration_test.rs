@@ -17,6 +17,7 @@ use tracing::{info, debug, error};
 /// Integration test for full pipeline float conversions
 #[test]
 fn test_float_conversion_full_pipeline() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing float conversion through full CURSED pipeline");
 
@@ -27,29 +28,29 @@ fn test_float_conversion_full_pipeline() {
     // Test CURSED code snippets that use float conversions
     let test_programs = vec![
         // Basic float to int conversion
-        r#"
+        r#""
         sus x = 3.14 as normie
-        "#,
+        "#,"
         
         // Float to float conversion
-        r#"
+        r#""
         sus snack_val = 2.718 as snack
         sus meal_val = snack_val as meal
-        "#,
+        "#,"
         
         // Float to bool conversion
-        r#"
+        r#""
         sus is_nonzero = 42.0 as lit
         sus is_zero = 0.0 as lit
-        "#,
+        "#,"
         
         // Complex conversion chain
-        r#"
+        r#""
         sus original = 123.456 as meal
         sus truncated = original as snack
         sus as_int = truncated as normie
         sus back_to_float = as_int as meal
-        "#,
+        "#,"
     ];
 
     for (i, program) in test_programs.iter().enumerate() {
@@ -73,6 +74,7 @@ fn test_float_conversion_full_pipeline() {
 /// Test IEEE 754 compliance in conversions
 #[test]
 fn test_ieee754_compliance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing IEEE 754 compliance in float conversions");
 
@@ -123,6 +125,7 @@ fn test_ieee754_compliance() {
 /// Test bounds checking for float-to-int conversions
 #[test]
 fn test_conversion_bounds_checking() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing bounds checking for float-to-int conversions");
 
@@ -197,6 +200,7 @@ fn test_conversion_bounds_checking() {
 /// Test precision preservation and loss scenarios
 #[test]
 fn test_precision_handling() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing precision preservation and loss in float conversions");
 
@@ -259,6 +263,7 @@ fn test_precision_handling() {
 /// Test error handling and edge cases
 #[test]
 fn test_conversion_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing error handling in float conversions");
 
@@ -308,6 +313,7 @@ fn test_conversion_error_handling() {
 /// Test performance characteristics of float conversions
 #[test]
 fn test_conversion_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing performance characteristics of float conversions");
 
@@ -360,6 +366,7 @@ fn test_conversion_performance() {
 /// Test CURSED type system integration
 #[test]
 fn test_cursed_type_integration() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing integration with CURSED type system");
 

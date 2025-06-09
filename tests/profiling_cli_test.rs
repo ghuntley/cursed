@@ -11,6 +11,7 @@ mod common;
 /// Test basic CLI help functionality
 #[test]
 fn test_cli_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -33,6 +34,7 @@ fn test_cli_help() {
 /// Test CLI version flag
 #[test]
 fn test_cli_version() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -48,6 +50,7 @@ fn test_cli_version() {
 /// Test CLI profile command structure
 #[test]
 fn test_profile_command_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -66,6 +69,7 @@ fn test_profile_command_help() {
 /// Test CLI benchmark command structure
 #[test]
 fn test_benchmark_command_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -84,12 +88,13 @@ fn test_benchmark_command_help() {
 /// Test CLI configuration file handling
 #[test]
 fn test_cli_config_file() {
+    // init_tracing!();
     common::tracing::setup();
     
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("profiler.toml");
     
-    let config_content = r#"
+    let config_content = r#""
 default_output_dir = "custom_output"
 default_cpu_frequency = 200
 default_memory_threshold = 2048
@@ -102,7 +107,7 @@ max_functions_in_report = 25
 [benchmarking]
 warmup_iterations = 5
 measurement_iterations = 20
-"#;
+"#";
     
     fs::write(&config_path, config_content).unwrap();
     
@@ -123,6 +128,7 @@ measurement_iterations = 20
 /// Test CLI with invalid arguments
 #[test]
 fn test_cli_invalid_arguments() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -139,6 +145,7 @@ fn test_cli_invalid_arguments() {
 /// Test CLI analyze command structure
 #[test]
 fn test_analyze_command_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -157,6 +164,7 @@ fn test_analyze_command_help() {
 /// Test CLI report command structure
 #[test]
 fn test_report_command_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -175,6 +183,7 @@ fn test_report_command_help() {
 /// Test CLI compare command structure
 #[test]
 fn test_compare_command_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -193,6 +202,7 @@ fn test_compare_command_help() {
 /// Test CLI visualize command structure
 #[test]
 fn test_visualize_command_help() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -211,6 +221,7 @@ fn test_visualize_command_help() {
 /// Test CLI with mock profiling data
 #[test]
 fn test_cli_with_mock_data() {
+    // init_tracing!();
     common::tracing::setup();
     
     let temp_dir = TempDir::new().unwrap();
@@ -247,6 +258,7 @@ fn test_cli_with_mock_data() {
 /// Test CLI global flags
 #[test]
 fn test_cli_global_flags() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test verbose flag
@@ -278,6 +290,7 @@ fn test_cli_global_flags() {
 /// Test CLI benchmark command with mock suite
 #[test]
 fn test_benchmark_command_mock() {
+    // init_tracing!();
     common::tracing::setup();
     
     let temp_dir = TempDir::new().unwrap();
@@ -311,6 +324,7 @@ fn test_benchmark_command_mock() {
 /// Test CLI error handling for missing files
 #[test]
 fn test_cli_missing_file_error() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -333,6 +347,7 @@ fn test_cli_missing_file_error() {
 /// Test CLI configuration validation
 #[test]
 fn test_cli_config_validation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let temp_dir = TempDir::new().unwrap();
@@ -358,6 +373,7 @@ fn test_cli_config_validation() {
 /// Test CLI with environment variables
 #[test]
 fn test_cli_environment_variables() {
+    // init_tracing!();
     common::tracing::setup();
     
     let output = Command::new("cargo")
@@ -374,6 +390,7 @@ fn test_cli_environment_variables() {
 /// Test CLI command chaining and pipelines
 #[test]
 fn test_cli_command_pipeline() {
+    // init_tracing!();
     common::tracing::setup();
     
     let temp_dir = TempDir::new().unwrap();
@@ -411,6 +428,7 @@ fn test_cli_command_pipeline() {
 /// Test CLI with different output formats
 #[test]
 fn test_cli_output_formats() {
+    // init_tracing!();
     common::tracing::setup();
     
     let formats = ["json", "html", "csv"];
@@ -433,6 +451,7 @@ fn test_cli_output_formats() {
 /// Test CLI memory management during execution
 #[test]
 fn test_cli_memory_usage() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test that CLI doesn't consume excessive memory
@@ -454,6 +473,7 @@ fn test_cli_memory_usage() {
 /// Test CLI interrupt handling
 #[test]
 fn test_cli_signal_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test that CLI handles basic execution without hanging
@@ -470,6 +490,7 @@ fn test_cli_signal_handling() {
 /// Test CLI with complex argument combinations
 #[test]
 fn test_cli_complex_arguments() {
+    // init_tracing!();
     common::tracing::setup();
     
     let temp_dir = TempDir::new().unwrap();

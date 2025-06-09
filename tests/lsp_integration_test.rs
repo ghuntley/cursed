@@ -53,7 +53,7 @@ impl LspTestFixture {
         // Main CURSED file
         std::fs::write(
             workspace_path.join("main.csd"),
-            r#"
+            r#""
 use "std/fmt"
 
 squad Person {
@@ -103,14 +103,14 @@ squad Container<T> {
 collab Iterator<T> {
     next() -> Option<T>,
 }
-"#,
+"#,"
         )?;
 
         // Library file
         std::fs::create_dir_all(workspace_path.join("lib"))?;
         std::fs::write(
             workspace_path.join("lib").join("utils.csd"),
-            r#"
+            r#""
 slay format_string(input: string) -> string {
     bounce "Formatted: " + input
 }
@@ -132,13 +132,13 @@ vibes Status {
     Inactive,
     Pending,
 }
-"#,
+"#,"
         )?;
 
         // Package configuration
         std::fs::write(
             workspace_path.join("CursedPackage.toml"),
-            r#"
+            r#""
 [package]
 name = "test-project"
 version = "0.1.0"
@@ -146,13 +146,13 @@ authors = ["Test Author"]
 
 [dependencies]
 std = "*"
-"#,
+"#,"
         )?;
 
         // Build configuration
         std::fs::write(
             workspace_path.join("CursedBuild.toml"),
-            r#"
+            r#""
 [build]
 target = "native"
 optimization = "release"
@@ -160,7 +160,7 @@ optimization = "release"
 [features]
 default = ["std"]
 std = []
-"#,
+"#,"
         )?;
 
         Ok(())

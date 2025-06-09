@@ -78,7 +78,7 @@ impl<'ctx> MapFunctionalTester<'ctx> {
         if source.contains("{}") {
             patterns.push("empty_map_literal".to_string());
         }
-        if source.contains("\"") && source.contains(":") {
+        if source.contains("\"") && source.contains(":") {"
             patterns.push("string_key_map".to_string());
         }
         if source.contains("[") && source.contains("]") {
@@ -102,7 +102,7 @@ fn test_map_as_configuration_store() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let config_source = r#"
+    let config_source = r#""
         vibe test_config_map
 
         slay load_config() {
@@ -135,7 +135,7 @@ fn test_map_as_configuration_store() {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(config_source);
     assert!(program.is_ok(), "Configuration map program failed to parse");
@@ -157,7 +157,7 @@ fn test_map_data_aggregation() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let aggregation_source = r#"
+    let aggregation_source = r#""
         vibe test_data_aggregation
 
         slay process_sales_data() {
@@ -203,7 +203,7 @@ fn test_map_data_aggregation() {
             sus winner = get_top_region(aggregated)
             yolo 1  // Success if completed
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(aggregation_source);
     assert!(program.is_ok(), "Data aggregation program failed to parse");
@@ -225,7 +225,7 @@ fn test_map_caching_memoization() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let caching_source = r#"
+    let caching_source = r#""
         vibe test_caching
 
         sus fibonacci_cache = {}
@@ -269,7 +269,7 @@ fn test_map_caching_memoization() {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(caching_source);
     assert!(program.is_ok(), "Caching program failed to parse");
@@ -291,7 +291,7 @@ fn test_map_frequency_counting() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let frequency_source = r#"
+    let frequency_source = r#""
         vibe test_frequency_counting
 
         slay count_word_frequencies(text) {
@@ -347,7 +347,7 @@ fn test_map_frequency_counting() {
             
             yolo 1  // Success
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(frequency_source);
     assert!(program.is_ok(), "Frequency counting program failed to parse");
@@ -369,7 +369,7 @@ fn test_map_graph_algorithms() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let graph_source = r#"
+    let graph_source = r#""
         vibe test_graph_algorithms
 
         slay create_graph() {
@@ -424,7 +424,7 @@ fn test_map_graph_algorithms() {
             
             yolo 1  // Success
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(graph_source);
     assert!(program.is_ok(), "Graph algorithms program failed to parse");
@@ -446,7 +446,7 @@ fn test_map_state_management() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let state_source = r#"
+    let state_source = r#""
         vibe test_state_management
 
         slay create_initial_state() {
@@ -495,7 +495,7 @@ fn test_map_state_management() {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(state_source);
     assert!(program.is_ok(), "State management program failed to parse");
@@ -517,7 +517,7 @@ fn test_map_inventory_management() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let inventory_source = r#"
+    let inventory_source = r#""
         vibe test_inventory_management
 
         slay create_inventory() {
@@ -581,7 +581,7 @@ fn test_map_inventory_management() {
             
             yolo 1  // Success
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(inventory_source);
     assert!(program.is_ok(), "Inventory management program failed to parse");
@@ -605,39 +605,39 @@ fn test_map_performance_scaling() {
     
     // Test small map
     let small_map_elements: Vec<String> = (0..10).map(|i| format!(r#""key{}": {}"#, i, i)).collect();
-    let small_map_source = format!(r#"
+    let small_map_source = format!(r#""
         vibe test_small_map
         slay main() normie {{
             sus small_map = {{{}}}
             yolo 1
         }}
-    "#, small_map_elements.join(", "));
+    "#, small_map_elements.join(", "))";
     
     let small_result = tester.check_compilation(&small_map_source);
     assert!(small_result.is_ok(), "Small map compilation check failed");
     
     // Test medium map
     let medium_map_elements: Vec<String> = (0..100).map(|i| format!(r#""key{}": {}"#, i, i)).collect();
-    let medium_map_source = format!(r#"
+    let medium_map_source = format!(r#""
         vibe test_medium_map
         slay main() normie {{
             sus medium_map = {{{}}}
             yolo 1
         }}
-    "#, medium_map_elements.join(", "));
+    "#, medium_map_elements.join(", "))";
     
     let medium_result = tester.check_compilation(&medium_map_source);
     assert!(medium_result.is_ok(), "Medium map compilation check failed");
     
     // Test large map
     let large_map_elements: Vec<String> = (0..1000).map(|i| format!(r#""key{}": {}"#, i, i)).collect();
-    let large_map_source = format!(r#"
+    let large_map_source = format!(r#""
         vibe test_large_map
         slay main() normie {{
             sus large_map = {{{}}}
             yolo 1
         }}
-    "#, large_map_elements.join(", "));
+    "#, large_map_elements.join(", "))";
     
     let large_result = tester.check_compilation(&large_map_source);
     // Large maps might have compilation limitations
@@ -661,7 +661,7 @@ fn test_map_error_handling_comprehensive() {
     let tester = MapFunctionalTester::new(&context);
     
     // Test handling of various error scenarios
-    let error_handling_source = r#"
+    let error_handling_source = r#""
         vibe test_error_handling
 
         slay safe_map_access(map, key, default_value) {
@@ -706,7 +706,7 @@ fn test_map_error_handling_comprehensive() {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(error_handling_source);
     assert!(program.is_ok(), "Error handling program failed to parse");
@@ -728,7 +728,7 @@ fn test_map_data_transformations() {
     let context = Context::create();
     let tester = MapFunctionalTester::new(&context);
     
-    let transformation_source = r#"
+    let transformation_source = r#""
         vibe test_data_transformations
 
         slay transform_user_data(raw_users) {
@@ -789,7 +789,7 @@ fn test_map_data_transformations() {
             
             yolo 1  // Success
         }
-    "#;
+    "#";
     
     let program = tester.parse_and_validate(transformation_source);
     assert!(program.is_ok(), "Data transformation program failed to parse");
@@ -824,11 +824,11 @@ fn test_map_functional_integration_summary() {
     test_results.insert("complex_structures", tester.parse_and_validate(complex_source).is_ok());
     
     // Test patterns
-    let patterns_source = r#"
+    let patterns_source = r#""
         bestie key, value := flex {"a": 1, "b": 2} {
             // iteration pattern
         }
-    "#;
+    "#";
     test_results.insert("iteration_patterns", tester.parse_and_validate(patterns_source).is_ok());
     
     // Report results

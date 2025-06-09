@@ -56,6 +56,7 @@ macro_rules! traced_test {
     (fn $name:ident() $body:block) => {
         #[test]
         fn $name() {
+    // init_tracing!();
             $crate::test_helpers::init_test_tracing(stringify!($name), None);
             $body
         }

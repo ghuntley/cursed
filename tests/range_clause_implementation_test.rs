@@ -23,7 +23,7 @@ fn test_enhanced_numeric_range() {
     init_tracing!();
 
     // Test basic range statement with improved syntax
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0;
 
@@ -34,7 +34,7 @@ fn test_enhanced_numeric_range() {
             
             return sum // Should be 0+1+2+3+4+5+6+7+8+9 = 45
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -50,7 +50,7 @@ fn test_enhanced_range_with_bounds() {
     init_tracing!();
 
     // Test range with explicit start and end bounds
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0;
 
@@ -61,7 +61,7 @@ fn test_enhanced_range_with_bounds() {
             
             return sum // Should be 5+6+7+8+9+10+11+12+13+14 = 95
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -77,7 +77,7 @@ fn test_enhanced_range_with_step() {
     init_tracing!();
 
     // Test range with explicit step value
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0;
 
@@ -88,7 +88,7 @@ fn test_enhanced_range_with_step() {
             
             return sum // Should be 0+4+8+12+16 = 40
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -104,7 +104,7 @@ fn test_enhanced_negative_step_range() {
     init_tracing!();
 
     // Test range with negative step value for decrementing iteration
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0;
 
@@ -115,7 +115,7 @@ fn test_enhanced_negative_step_range() {
             
             return sum // Should be 20+15+10+5 = 50
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -131,7 +131,7 @@ fn test_enhanced_empty_range() {
     init_tracing!();
 
     // Test range that produces no iterations
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 100
             sus count lit = 0;
@@ -145,7 +145,7 @@ fn test_enhanced_empty_range() {
             
             return count // Should be 0 iterations
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -161,7 +161,7 @@ fn test_enhanced_large_range() {
     init_tracing!();
 
     // Test range with large numbers close to integer limits
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus count lit = 0;
 
@@ -172,7 +172,7 @@ fn test_enhanced_large_range() {
             
             return count // Should be 10 iterations
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -188,7 +188,7 @@ fn test_enhanced_negative_bounds_range() {
     init_tracing!();
 
     // Test range with negative start and end values
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0;
 
@@ -199,7 +199,7 @@ fn test_enhanced_negative_bounds_range() {
             
             return sum // Should be -10+(-9)+(-8)+(-7)+(-6) = -40
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -215,7 +215,7 @@ fn test_enhanced_array_iteration() {
     init_tracing!();
 
     // Test iterating over an array using range
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus values = [5, 10, 15, 20, 25]
             sus product lit = 1
@@ -226,7 +226,7 @@ fn test_enhanced_array_iteration() {
             
             return product // Should be 5*10*15*20*25 = 375000
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -242,7 +242,7 @@ fn test_enhanced_mixed_type_array() {
     init_tracing!();
 
     // Test iterating over an array with mixed types (should coerce to float)
-    let input = r#"
+    let input = r#""
         slay main() normie {
             sus values = [5, 10.5, 15, 20.5, 25]
             sus sum normie = 0.0
@@ -253,7 +253,7 @@ fn test_enhanced_mixed_type_array() {
             
             return sum // Should be 5+10.5+15+20.5+25 = 76.0
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -269,7 +269,7 @@ fn test_enhanced_nested_range_loops() {
     init_tracing!();
 
     // Test nested range loops with proper scoping
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -285,7 +285,7 @@ fn test_enhanced_nested_range_loops() {
             // = 0+1+2+10+11+12+20+21+22 = 99
             return sum
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -301,7 +301,7 @@ fn test_enhanced_map_key_iteration() {
     init_tracing!();
 
     // Test iterating over map keys
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus scores = {"Alice": 10, "Bob": 20, "Charlie": 30}
             sus count lit = 0;
@@ -314,7 +314,7 @@ fn test_enhanced_map_key_iteration() {
             
             return count // Should be 3 keys
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -330,7 +330,7 @@ fn test_enhanced_map_key_value_iteration() {
     init_tracing!();
 
     // Test iterating over map key-value pairs
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus scores = {"Alice": 10, "Bob": 20, "Charlie": 30}
             sus sum lit = 0;
@@ -342,7 +342,7 @@ fn test_enhanced_map_key_value_iteration() {
             
             return sum // Should be 10+20+30 = 60
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -358,7 +358,7 @@ fn test_enhanced_break_continue_combined() {
     init_tracing!();
 
     // Test combining break and continue in the same loop
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -379,7 +379,7 @@ fn test_enhanced_break_continue_combined() {
             
             return sum // Should add 0+2+4+6+8+10+12=42, then break
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -395,7 +395,7 @@ fn test_enhanced_range_variable_scoping() {
     init_tracing!();
 
     // Test variable scoping within range loops
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus outer lit = 42
             
@@ -407,7 +407,7 @@ fn test_enhanced_range_variable_scoping() {
     //
             return outer
         }
-    "#;
+    "#";
     
     match helper::run_jit_test(input) {
         Ok(result) => {
@@ -423,7 +423,7 @@ fn test_implementation_comparison() {
     helper::setup_tracing();
     
     // Test both implementations with the same input
-    let input = r#"
+    let input = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -433,7 +433,7 @@ fn test_implementation_comparison() {
             
             return sum
         }
-    "#;
+    "#";
     
     // This test will only work once the enhanced implementation is integrated
     // For now, we'll check that the test utility works correctly

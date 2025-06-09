@@ -2,7 +2,7 @@ use cursed::core::generic_instantiation::{GenericInstantiator, GenericTypeChecke
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
 use cursed::ast::{Expression, Node};
-use cursed::ast::expressions::{Identifier, StringLiteral};
+use cursed::ast::{Identifier, StringLiteral};
 use cursed::lexer::Token;
 
 #[cfg(test)]

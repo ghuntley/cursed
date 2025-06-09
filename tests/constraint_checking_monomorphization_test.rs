@@ -1,6 +1,6 @@
-use cursed::ast::base::*;
-use cursed::ast::declarations::*;
-use cursed::ast::expressions::*;
+use cursed::ast::*;
+use cursed::ast::*;
+use cursed::ast::*;
 use cursed::ast::literals::*;
 use cursed::ast::traits::Node;
 use cursed::core::type_checker::{Type, TypeChecker};
@@ -62,6 +62,7 @@ fn setup_type_checker() -> TypeChecker {
 
 #[test]
 fn test_constraint_checking_during_monomorphization() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     

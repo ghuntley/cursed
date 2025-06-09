@@ -18,14 +18,14 @@ fn init_test_tracing() {
 fn test_qualified_function_call() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "math"
     
     func main() {
         let result = math.sqrt(25.0);
         vibez.spill("Square root result:", result);
     }
-    "#;
+    "#";
     
     // This test verifies that:
     // 1. The import statement is parsed correctly
@@ -62,7 +62,7 @@ fn test_qualified_function_call() {
 fn test_qualified_constant_access() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "math"
     
     func main() {
@@ -70,7 +70,7 @@ fn test_qualified_constant_access() {
         let e_value = math.E;
         vibez.spill("Pi:", pi_value, "E:", e_value);
     }
-    "#;
+    "#";
     
     // This test verifies:
     // 1. Qualified constant access works
@@ -92,7 +92,7 @@ fn test_qualified_constant_access() {
 fn test_qualified_type_usage() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "http"
     
     struct MyRequest {
@@ -106,7 +106,7 @@ fn test_qualified_type_usage() {
             custom_field: "test",
         };
     }
-    "#;
+    "#";
     
     // This test verifies:
     // 1. Qualified types can be used in struct fields
@@ -127,14 +127,14 @@ fn test_qualified_type_usage() {
 fn test_import_aliases() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "mathematics" as "math"
     
     func main() {
         let result = math.sqrt(16.0);
         vibez.spill("Result:", result);
     }
-    "#;
+    "#";
     
     // This test verifies:
     // 1. Import aliases are parsed correctly
@@ -156,14 +156,14 @@ fn test_import_aliases() {
 fn test_chained_access() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "http"
     
     func main() {
         let req = http.Request{};
         let header_value = req.headers.get("Content-Type");
     }
-    "#;
+    "#";
     
     // This test verifies:
     // 1. Chained property access works
@@ -185,11 +185,11 @@ fn test_error_cases() {
     init_test_tracing();
     
     // Test undefined package
-    let code1 = r#"
+    let code1 = r#""
     func main() {
         let result = undefined_package.function();
     }
-    "#;
+    "#";
     
     match cursed::parse_string(code1) {
         Ok(_) => {
@@ -202,13 +202,13 @@ fn test_error_cases() {
     }
     
     // Test undefined symbol
-    let code2 = r#"
+    let code2 = r#""
     yeet "math"
     
     func main() {
         let result = math.undefined_function();
     }
-    "#;
+    "#";
     
     match cursed::parse_string(code2) {
         Ok(_) => {
@@ -224,7 +224,7 @@ fn test_error_cases() {
 fn test_stdlib_qualified_calls() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     func main() {
         vibez.spill("Hello from qualified name!");
         
@@ -234,7 +234,7 @@ fn test_stdlib_qualified_calls() {
         let escaped = htmlrizzler.escape_html("<script>alert('test')</script>");
         vibez.spill("Escaped HTML:", escaped);
     }
-    "#;
+    "#";
     
     // This test verifies that standard library functions work with qualified names
     
@@ -264,7 +264,7 @@ fn test_stdlib_qualified_calls() {
 fn test_mixed_dot_expressions() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "http"
     
     struct MyStruct {
@@ -282,7 +282,7 @@ fn test_mixed_dot_expressions() {
         // Mixed usage
         vibez.spill("Field:", field_value, "HTTP result:", result);
     }
-    "#;
+    "#";
     
     // This test verifies that regular dot expressions and qualified names coexist
     
@@ -313,7 +313,7 @@ fn compile_with_qualified_names(code: &str) -> Result<String, String> {
 fn test_end_to_end_compilation() {
     init_test_tracing();
     
-    let code = r#"
+    let code = r#""
     yeet "math"
     
     func main() {
@@ -321,7 +321,7 @@ fn test_end_to_end_compilation() {
         let result = math.sqrt(x);
         vibez.spill("Square root of", x, "is", result);
     }
-    "#;
+    "#";
     
     match compile_with_qualified_names(code) {
         Ok(llvm_ir) => {
@@ -344,12 +344,12 @@ fn test_backward_compatibility() {
     init_test_tracing();
     
     // This code should still work without qualified names
-    let code = r#"
+    let code = r#""
     func main() {
         let x = 42;
         vibez.spill("The answer is", x);
     }
-    "#;
+    "#";
     
     match cursed::parse_string(code) {
         Ok(program) => {

@@ -14,6 +14,7 @@ use cursed::error::Error;
 /// Test basic buffered channel operations
 #[test]
 fn test_buffered_channel_basic_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut channel = BufferedChannel::new("int".to_string(), 3);
@@ -52,6 +53,7 @@ fn test_buffered_channel_basic_operations() {
 /// Test channel closing behavior
 #[test]
 fn test_buffered_channel_close_behavior() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut channel = BufferedChannel::new("int".to_string(), 2);
@@ -80,6 +82,7 @@ fn test_buffered_channel_close_behavior() {
 /// Test thread-safe buffered channel operations
 #[test]
 fn test_thread_safe_buffered_channel() {
+    // init_tracing!();
     common::tracing::setup();
     
     let channel = ThreadSafeBufferedChannel::new("int".to_string(), 5);
@@ -104,6 +107,7 @@ fn test_thread_safe_buffered_channel() {
 /// Test concurrent access to buffered channels
 #[test]
 fn test_concurrent_buffered_channel_access() {
+    // init_tracing!();
     common::tracing::setup();
     
     let channel = Arc::new(ThreadSafeBufferedChannel::new("int".to_string(), 10));
@@ -157,6 +161,7 @@ fn test_concurrent_buffered_channel_access() {
 /// Test blocking operations with timeouts
 #[test]
 fn test_blocking_operations_with_timeout() {
+    // init_tracing!();
     common::tracing::setup();
     
     let channel = ThreadSafeBufferedChannel::new("int".to_string(), 1);
@@ -177,6 +182,7 @@ fn test_blocking_operations_with_timeout() {
 /// Test channel buffer overflow and underflow scenarios
 #[test]
 fn test_buffer_overflow_underflow_scenarios() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut channel = BufferedChannel::new("string".to_string(), 2);
@@ -199,6 +205,7 @@ fn test_buffer_overflow_underflow_scenarios() {
 /// Test circular buffer efficiency
 #[test]
 fn test_circular_buffer_efficiency() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut channel = BufferedChannel::new("int".to_string(), 3);
@@ -224,6 +231,7 @@ fn test_circular_buffer_efficiency() {
 /// Test channel statistics accuracy
 #[test]
 fn test_channel_statistics() {
+    // init_tracing!();
     common::tracing::setup();
     
     let channel = ThreadSafeBufferedChannel::new("float".to_string(), 5);
@@ -255,6 +263,7 @@ fn test_channel_statistics() {
 /// Test multiple data types in channels
 #[test]
 fn test_multiple_data_types() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test with integers
@@ -281,6 +290,7 @@ fn test_multiple_data_types() {
 /// Test channel clone behavior
 #[test]
 fn test_channel_clone_behavior() {
+    // init_tracing!();
     common::tracing::setup();
     
     let channel1 = ThreadSafeBufferedChannel::new("int".to_string(), 3);
@@ -298,6 +308,7 @@ fn test_channel_clone_behavior() {
 /// Test error conditions and edge cases
 #[test]
 fn test_error_conditions_and_edge_cases() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test zero capacity channel
@@ -321,6 +332,7 @@ fn test_error_conditions_and_edge_cases() {
 /// Test performance characteristics
 #[test]
 fn test_performance_characteristics() {
+    // init_tracing!();
     common::tracing::setup();
     
     let channel = ThreadSafeBufferedChannel::new("int".to_string(), 1000);
@@ -348,6 +360,7 @@ fn test_performance_characteristics() {
 /// Test integration with existing channel system
 #[test]
 fn test_integration_with_existing_system() {
+    // init_tracing!();
     common::tracing::setup();
     
     let buffered_channel = BufferedChannel::new("int".to_string(), 5);

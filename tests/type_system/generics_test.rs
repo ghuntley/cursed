@@ -85,7 +85,7 @@ fn test_generic_type_instantiation() {
 
 #[test]
 fn test_generic_function_parsing() {
-    let input = "
+    let input = ""
         vibe main
         
         slay map[T, U](items []T, transformer slay(T) U) []U {
@@ -99,7 +99,7 @@ fn test_generic_function_parsing() {
             
             yolo result
         }
-    ";
+    "";
     
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);

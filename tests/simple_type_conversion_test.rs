@@ -14,6 +14,7 @@ fn init_tracing() {
 
 #[test]
 fn test_conversion_matrix_basic_functionality() {
+    // init_tracing!();
     init_tracing();
     info!("Testing conversion matrix basic functionality");
 
@@ -39,6 +40,7 @@ fn test_conversion_matrix_basic_functionality() {
 
 #[test]
 fn test_integer_to_float_conversion_matrix() {
+    // init_tracing!();
     init_tracing();
     info!("Testing integer to float conversion matrix");
 
@@ -59,6 +61,7 @@ fn test_integer_to_float_conversion_matrix() {
 
 #[test]
 fn test_float_to_integer_conversion_matrix() {
+    // init_tracing!();
     init_tracing();
     info!("Testing float to integer conversion matrix");
 
@@ -79,6 +82,7 @@ fn test_float_to_integer_conversion_matrix() {
 
 #[test]
 fn test_boolean_conversion_matrix() {
+    // init_tracing!();
     init_tracing();
     info!("Testing boolean conversion matrix");
 
@@ -99,6 +103,7 @@ fn test_boolean_conversion_matrix() {
 
 #[test]
 fn test_all_integer_type_combinations() {
+    // init_tracing!();
     init_tracing();
     info!("Testing all integer type combinations");
 
@@ -130,6 +135,7 @@ fn test_all_integer_type_combinations() {
 
 #[test]
 fn test_comprehensive_conversion_coverage() {
+    // init_tracing!();
     init_tracing();
     info!("Testing comprehensive conversion coverage");
 

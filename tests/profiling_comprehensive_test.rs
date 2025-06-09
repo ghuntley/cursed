@@ -16,6 +16,7 @@ mod common;
 /// Test the complete profiling workflow
 #[test]
 fn test_complete_profiling_workflow() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create profiler with comprehensive configuration
@@ -53,6 +54,7 @@ fn test_complete_profiling_workflow() {
 /// Test benchmarking framework
 #[test]
 fn test_benchmarking_framework() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = BenchmarkConfig {
@@ -100,6 +102,7 @@ fn test_benchmarking_framework() {
 /// Test memory profiling capabilities
 #[test]
 fn test_memory_profiling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut profiler = cursed::profiling::memory::MemoryProfiler::new(1024);
@@ -136,6 +139,7 @@ fn test_memory_profiling() {
 /// Test concurrency profiling
 #[test]
 fn test_concurrency_profiling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let profiler = cursed::profiling::concurrency::ConcurrencyProfiler::new();
@@ -175,6 +179,7 @@ fn test_concurrency_profiling() {
 /// Test I/O profiling
 #[test]
 fn test_io_profiling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let profiler = cursed::profiling::io::IoProfiler::new();
@@ -211,6 +216,7 @@ fn test_io_profiling() {
 /// Test report generation
 #[test]
 fn test_report_generation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = ReportConfig::default();
@@ -232,6 +238,7 @@ fn test_report_generation() {
 /// Test visualization generation
 #[test]
 fn test_visualization_generation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = VisualizationConfig::default();
@@ -259,6 +266,7 @@ fn test_visualization_generation() {
 /// Test performance analysis
 #[test]
 fn test_performance_analysis() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = AnalysisConfig::default();
@@ -279,6 +287,7 @@ fn test_performance_analysis() {
 /// Test build integration
 #[test]
 fn test_build_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = BuildConfig::default();
@@ -299,6 +308,7 @@ fn test_build_integration() {
 /// Test CLI configuration
 #[test]
 fn test_cli_configuration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = cursed::profiling::cli::CliConfig::default();
@@ -311,6 +321,7 @@ fn test_cli_configuration() {
 /// Test profiler configuration validation
 #[test]
 fn test_profiler_configuration_validation() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test valid configuration
@@ -338,6 +349,7 @@ fn test_profiler_configuration_validation() {
 /// Test error handling
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut profiler = ProfilerBuilder::new().build();
@@ -372,6 +384,7 @@ fn test_error_handling() {
 /// Test regression detection
 #[test]
 fn test_regression_detection() {
+    // init_tracing!();
     common::tracing::setup();
     
     use cursed::profiling::benchmarking::{
@@ -414,6 +427,7 @@ fn test_regression_detection() {
 /// Test concurrent profiling
 #[test]
 fn test_concurrent_profiling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let profiler = std::sync::Arc::new(std::sync::Mutex::new(
@@ -456,6 +470,7 @@ fn test_concurrent_profiling() {
 /// Test memory leak detection
 #[test]
 fn test_memory_leak_detection() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut data = cursed::profiling::memory::MemoryProfileData::new();
@@ -484,6 +499,7 @@ fn test_memory_leak_detection() {
 /// Test performance optimization recommendations
 #[test]
 fn test_optimization_recommendations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = AnalysisConfig::default();
@@ -516,6 +532,7 @@ fn test_optimization_recommendations() {
 /// Integration test with multiple profiling modes
 #[test]
 fn test_multi_mode_profiling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let _timer = common::timing::Timer::new("multi_mode_profiling");

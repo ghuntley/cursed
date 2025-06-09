@@ -4,7 +4,7 @@
 //! that create the `{i64, i8*}` struct representing CURSED strings.
 
 use std::path::PathBuf;
-use cursed::ast::expressions::literals::StringLiteral;
+use cursed::ast::literals::StringLiteral;
 use cursed::codegen::llvm::{LlvmCodeGenerator, CursedStringType, StringTypeUtils, BasicExpressionOperations, PointerTypeExtension};
 use cursed::codegen::llvm::zero_values::ZeroValueGeneration;
 use cursed::error::Error;

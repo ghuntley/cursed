@@ -49,6 +49,7 @@ mod tests {
     
     #[test]
     fn test_basic_allocation() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing_setup::setup();
         info!("Starting basic allocation test");

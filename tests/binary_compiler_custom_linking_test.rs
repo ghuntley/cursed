@@ -29,7 +29,7 @@ fn test_custom_runtime_library_linking() {
     }
     
     // Create a simple program that would use a custom library
-    let code = r#"
+    let code = r#""
 vibe custom_lib_test
 
 import "cursed:stdlib/vibez"
@@ -39,7 +39,7 @@ slay main() {
     vibe 0;
     yolo 0;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);
@@ -95,7 +95,7 @@ fn test_platform_specific_optimizations() {
     }
     
     // Create a math-heavy program to benefit from CPU-specific optimizations
-    let code = r#"
+    let code = r#""
 vibe platform_opt_test
 
 slay calculate(x: int, y: int) -> int {
@@ -116,7 +116,7 @@ slay main() {
     vibe 0;
     yolo 0;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);

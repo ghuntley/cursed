@@ -21,9 +21,9 @@ fn test_parse_single_import() {
     common::tracing::setup();
     info!("Testing single import parsing");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "math"
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -63,9 +63,9 @@ fn test_parse_import_with_alias() {
     common::tracing::setup();
     info!("Testing import with alias parsing");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet m "math"
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -110,11 +110,11 @@ fn test_parse_standard_library_import() {
     common::tracing::setup();
     info!("Testing standard library import parsing");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "std/io"
 yeet "std/math"
 yeet "std/string"
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -149,13 +149,13 @@ fn test_parse_multi_import_block() {
     common::tracing::setup();
     info!("Testing multi-import block parsing");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet (
     "math";
     "string";
     io "std/io"
 )
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -201,11 +201,11 @@ fn test_parse_relative_import() {
     common::tracing::setup();
     info!("Testing relative import parsing");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "./utils"
 yeet "../shared"
 yeet "../../common"
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -241,7 +241,7 @@ fn test_import_error_cases() {
     let test_cases = vec![
         ("yeet", "Missing import path"),
         ("yeet unquoted_path", "Unquoted import path"),
-        ("yeet \"unclosed", "Unclosed string literal"),
+        ("yeet \"unclosed", "Unclosed string literal"),"
         ("yeet \"\"", "Empty import path"),
         ("yeet alias", "Missing path after alias"),
     ];
@@ -281,10 +281,10 @@ fn test_import_with_dot_notation() {
     common::tracing::setup();
     info!("Testing import with dot notation paths");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "github.com/user/package"
 yeet "example.org/lib"
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

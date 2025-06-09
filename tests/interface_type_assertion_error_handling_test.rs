@@ -3,8 +3,8 @@ use inkwell::context::Context;
 use std::path::PathBuf;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
-use cursed::ast::expressions::TypeAssertion;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::TypeAssertion;
+use cursed::ast::Identifier;
 use cursed::ast::traits::Expression;
 use cursed::lexer::Token;
 

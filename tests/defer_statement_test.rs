@@ -6,8 +6,8 @@
 
 mod common;
 
-use cursed::ast::statements::{DeferStatement, ExpressionStatement};
-use cursed::ast::expressions::{Identifier, IntegerLiteral, CallExpression, StringLiteral};
+use cursed::ast::{DeferStatement, ExpressionStatement};
+use cursed::ast::{Identifier, IntegerLiteral, CallExpression, StringLiteral};
 use cursed::ast::traits::{Node, Statement};
 use cursed::lexer::Token;
 use cursed::parser::Parser;
@@ -17,6 +17,7 @@ use tracing::{info, debug};
 
 #[test]
 fn test_defer_statement_ast() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer statement AST creation");
@@ -47,17 +48,18 @@ fn test_defer_statement_ast() {
 
 #[test]
 fn test_defer_statement_parsing() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer statement parsing");
     
-    let input = r#"
+    let input = r#""
         slay test_function() {
             sus x = 5;
             later vibez.spill("Deferred message");
             yolo x;
         }
-    "#;
+    "#";
     
     let mut lexer = cursed::lexer::Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -81,11 +83,12 @@ fn test_defer_statement_parsing() {
 
 #[test]
 fn test_defer_lifo_order() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer LIFO execution order");
     
-    let input = r#"
+    let input = r#""
         slay test_defer_order() {
             later vibez.spill("First defer");
             later vibez.spill("Second defer");
@@ -93,7 +96,7 @@ fn test_defer_lifo_order() {
             vibez.spill("Normal statement");
             yolo 0;
         }
-    "#;
+    "#";
     
     let mut lexer = cursed::lexer::Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -120,11 +123,12 @@ fn test_defer_lifo_order() {
 
 #[test]
 fn test_defer_with_variables() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer statement with variable capture");
     
-    let input = r#"
+    let input = r#""
         slay test_defer_variables() {
             sus x = 10;
             sus y = 20;
@@ -137,7 +141,7 @@ fn test_defer_with_variables() {
             
             yolo x + y;
         }
-    "#;
+    "#";
     
     let mut lexer = cursed::lexer::Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -161,11 +165,12 @@ fn test_defer_with_variables() {
 
 #[test]
 fn test_defer_in_nested_blocks() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer statements in nested blocks");
     
-    let input = r#"
+    let input = r#""
         slay test_nested_defer() {
             later vibez.spill("Outer defer");
             
@@ -177,7 +182,7 @@ fn test_defer_in_nested_blocks() {
             later vibez.spill("Another outer defer");
             yolo 0;
         }
-    "#;
+    "#";
     
     let mut lexer = cursed::lexer::Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -203,11 +208,12 @@ fn test_defer_in_nested_blocks() {
 
 #[test]
 fn test_defer_with_early_return() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer statements with early return");
     
-    let input = r#"
+    let input = r#""
         slay test_early_return(normie condition) {
             later vibez.spill("This should always run");
             
@@ -219,7 +225,7 @@ fn test_defer_with_early_return() {
             vibez.spill("This might not run");
             yolo 0;
         }
-    "#;
+    "#";
     
     let mut lexer = cursed::lexer::Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -243,6 +249,7 @@ fn test_defer_with_early_return() {
 #[cfg(feature = "llvm")]
 #[test]
 fn test_defer_llvm_compilation() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer statement LLVM compilation");
@@ -282,18 +289,19 @@ fn test_defer_llvm_compilation() {
 
 #[test]
 fn test_multiple_defer_compilation() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing multiple defer statements compilation");
     
-    let input = r#"
+    let input = r#""
         slay main() {
             later vibez.spill("First");
             later vibez.spill("Second");
             later vibez.spill("Third");
             yolo 0;
         }
-    "#;
+    "#";
     
     let mut lexer = cursed::lexer::Lexer::new(input);
     let mut parser = Parser::new(lexer);

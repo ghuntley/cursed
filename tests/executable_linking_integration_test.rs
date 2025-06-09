@@ -58,6 +58,7 @@ fn create_package_metadata(
 
 #[test]
 fn test_executable_linker_creation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing executable linker creation");
     
@@ -76,6 +77,7 @@ fn test_executable_linker_creation() {
 
 #[test] 
 fn test_basic_symbol_resolution() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing basic symbol resolution");
     
@@ -112,6 +114,7 @@ fn test_basic_symbol_resolution() {
 
 #[test]
 fn test_linking_strategies() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing different linking strategies");
     
@@ -159,6 +162,7 @@ fn test_linking_strategies() {
 
 #[test]
 fn test_target_platform_configuration() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing target platform configuration");
     
@@ -191,6 +195,7 @@ fn test_target_platform_configuration() {
 
 #[test]
 fn test_package_name_extraction() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing package name extraction from symbols");
     
@@ -208,6 +213,7 @@ fn test_package_name_extraction() {
 
 #[test]
 fn test_module_linking_with_dependencies() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing module linking with dependencies");
     
@@ -248,6 +254,7 @@ fn test_module_linking_with_dependencies() {
 
 #[test]
 fn test_entry_point_validation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing entry point validation");
     
@@ -277,6 +284,7 @@ fn test_entry_point_validation() {
 
 #[test]
 fn test_missing_entry_point_error() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing missing entry point error handling");
     
@@ -304,6 +312,7 @@ fn test_missing_entry_point_error() {
 
 #[test]
 fn test_convenience_function() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing convenience function for linking");
     
@@ -349,6 +358,7 @@ fn test_convenience_function() {
 
 #[test]
 fn test_runtime_initialization_generation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing runtime initialization code generation");
     
@@ -370,6 +380,7 @@ fn test_runtime_initialization_generation() {
 
 #[test]
 fn test_linking_statistics() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing linking statistics collection");
     
@@ -403,6 +414,7 @@ fn test_linking_statistics() {
 
 #[test]
 fn test_error_handling_in_symbol_resolution() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing error handling in symbol resolution");
     
@@ -425,6 +437,7 @@ fn test_error_handling_in_symbol_resolution() {
 
 #[test]
 fn test_function_body_copying_detection() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing function body copying detection");
     

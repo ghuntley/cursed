@@ -9,6 +9,7 @@ mod common;
 
 #[test]
 fn test_dynamic_worker_sizing() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -58,6 +59,7 @@ fn test_dynamic_worker_sizing() {
 
 #[test]
 fn test_extension_trait_with_worker_config() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -102,6 +104,7 @@ fn test_extension_trait_with_worker_config() {
 
 #[test]
 fn test_cpu_detection_and_scaling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();

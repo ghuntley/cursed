@@ -7,7 +7,7 @@
 
 use cursed::parser::Parser;
 use cursed::lexer::Lexer;
-use cursed::ast::control_flow::channel_range::{ChannelRangeForStatement, ChannelRangeClause};
+use cursed::ast::channel_range::{ChannelRangeForStatement, ChannelRangeClause};
 use cursed::ast::Statement;
 
 #[cfg(test)]
@@ -16,11 +16,11 @@ mod tests {
     
     #[test]
     fn test_channel_range_parse_simple() {
-        let input = r#"
+        let input = r#""
         bestie value := flex <-ch {
             vibez.println(value)
         }
-        "#;
+        "#";
         
         let mut lexer = Lexer::new(input);
         let tokens = lexer.tokenize().unwrap();
@@ -40,14 +40,14 @@ mod tests {
     
     #[test]
     fn test_channel_range_parse_with_ok() {
-        let input = r#"
+        let input = r#""
         bestie value, ok := flex <-ch {
             if !ok {
                 break
             }
             processValue(value)
         }
-        "#;
+        "#";
         
         let mut lexer = Lexer::new(input);
         let tokens = lexer.tokenize().unwrap();
@@ -68,11 +68,11 @@ mod tests {
     
     #[test]
     fn test_channel_range_string_representation() {
-        let input = r#"
+        let input = r#""
         bestie msg, open := flex <-messageChannel {
             handleMessage(msg, open)
         }
-        "#;
+        "#";
         
         let mut lexer = Lexer::new(input);
         let tokens = lexer.tokenize().unwrap();

@@ -1,5 +1,5 @@
-use cursed::ast::control_flow::{SwitchStatement, SwitchCase};
-use cursed::ast::expressions::{IntegerLiteral, StringLiteral, Identifier};
+use cursed::ast::{SwitchStatement, SwitchCase};
+use cursed::ast::{IntegerLiteral, StringLiteral, Identifier};
 use cursed::ast::{Expression, Node, Statement};
 use cursed::error::Error;
 use cursed::lexer::Lexer;
@@ -13,7 +13,7 @@ use cursed::codegen::llvm::LlvmCodeGenerator;
 #[test]
 fn test_switch_statement_compilation() {
     // Test compiling a switch statement
-    let test_code = r#"
+    let test_code = r#""
     slay test_switch(i32 x) i32 {
         i32 result = 0;
         
@@ -31,7 +31,7 @@ fn test_switch_statement_compilation() {
         
         yolo result;
     }
-    "#;
+    "#";
     
     // Parse and generate code
     let mut lexer = Lexer::new(test_code);
@@ -54,7 +54,7 @@ fn test_switch_statement_compilation() {
 #[test]
 fn test_string_switch_statement_parsing() {
     // Test parsing a switch statement with string cases
-    let test_code = r#"
+    let test_code = r#""
     slay test_switch(txt day) i32 {
         vibe_check day {
             mood "Monday": {
@@ -69,7 +69,7 @@ fn test_string_switch_statement_parsing() {
         }
         yolo 0;
     }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(test_code);
     let mut parser = Parser::new(lexer).unwrap();

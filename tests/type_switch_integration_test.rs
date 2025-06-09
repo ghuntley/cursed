@@ -3,7 +3,7 @@
 //! These tests verify that type switches work correctly at runtime,
 //! including proper type checking, variable binding, and control flow.
 
-use cursed::ast::control_flow::type_switch::{TypeSwitchStatement, TypeCase, DefaultTypeCase};
+use cursed::ast::type_switch::{TypeSwitchStatement, TypeCase, DefaultTypeCase};
 use cursed::codegen::llvm::TypeSwitchCompilation;
 use cursed::error::Error;
 use std::collections::HashMap;
@@ -14,6 +14,7 @@ mod common;
 /// Test runtime type checking for basic types
 #[test]
 fn test_runtime_type_checking() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing runtime type checking for basic types");
     
@@ -45,6 +46,7 @@ fn test_runtime_type_checking() -> Result<(), Error> {
 /// Test type switch control flow
 #[test]
 fn test_type_switch_control_flow() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing type switch control flow");
     
@@ -68,6 +70,7 @@ fn test_type_switch_control_flow() -> Result<(), Error> {
 /// Test type variable binding
 #[test]
 fn test_type_variable_binding() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing type variable binding");
     
@@ -92,6 +95,7 @@ fn test_type_variable_binding() -> Result<(), Error> {
 /// Test multiple types in single case
 #[test]
 fn test_multiple_types_single_case() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing multiple types in single case");
     
@@ -118,6 +122,7 @@ fn test_multiple_types_single_case() -> Result<(), Error> {
 /// Test interface type switches
 #[test]
 fn test_interface_type_switches() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing interface type switches");
     
@@ -142,6 +147,7 @@ fn test_interface_type_switches() -> Result<(), Error> {
 /// Test nested type switches
 #[test]
 fn test_nested_type_switches() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing nested type switches");
     
@@ -164,6 +170,7 @@ fn test_nested_type_switches() -> Result<(), Error> {
 /// Test type switch performance characteristics
 #[test]
 fn test_type_switch_performance() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing type switch performance characteristics");
     
@@ -191,6 +198,7 @@ fn test_type_switch_performance() -> Result<(), Error> {
 /// Test type switch with complex inheritance hierarchies
 #[test]
 fn test_complex_inheritance_type_switches() -> Result<(), Error> {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing type switches with complex inheritance hierarchies");
     

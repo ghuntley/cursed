@@ -7,8 +7,8 @@
 //! - Compilation time benchmarks
 //! - Cache effectiveness for constraint validation
 
-use cursed::ast::declarations::{FunctionStatement, SquadStatement, GenericConstraint, Parameter, TypeParameter};
-use cursed::ast::expressions::{CallExpression, Identifier};
+use cursed::ast::{FunctionStatement, SquadStatement, GenericConstraint, Parameter, TypeParameter};
+use cursed::ast::{CallExpression, Identifier};
 use cursed::codegen::llvm::constrained_generics::{
     ConstrainedGenericsCodegen, ConstrainedGenericConfig, MonomorphizationStrategy,
     ConstrainedGenericsExtension
@@ -226,6 +226,7 @@ fn setup_perf_llvm_generator() -> (Context, LlvmCodeGenerator<'static>) {
 
 #[test]
 fn test_full_specialization_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing full specialization performance");
 
@@ -258,6 +259,7 @@ fn test_full_specialization_performance() {
 
 #[test]
 fn test_type_erasure_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type erasure performance");
 
@@ -290,6 +292,7 @@ fn test_type_erasure_performance() {
 
 #[test]
 fn test_hybrid_strategy_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing hybrid strategy performance");
 
@@ -322,6 +325,7 @@ fn test_hybrid_strategy_performance() {
 
 #[test]
 fn test_constraint_validation_cache_effectiveness() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constraint validation cache effectiveness");
 
@@ -363,6 +367,7 @@ fn test_constraint_validation_cache_effectiveness() {
 
 #[test]
 fn test_specialization_name_generation_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing specialization name generation performance");
 
@@ -386,6 +391,7 @@ fn test_specialization_name_generation_performance() {
 
 #[test]
 fn test_type_mangling_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type mangling performance");
 
@@ -418,6 +424,7 @@ fn test_type_mangling_performance() {
 
 #[test]
 fn test_memory_usage_different_strategies() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing memory usage characteristics of different strategies");
 
@@ -476,6 +483,7 @@ fn test_memory_usage_different_strategies() {
 
 #[test]
 fn test_constraint_checking_scalability() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constraint checking scalability");
 
@@ -511,6 +519,7 @@ fn test_constraint_checking_scalability() {
 
 #[test]
 fn test_cache_key_generation_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing cache key generation performance under load");
 
@@ -539,6 +548,7 @@ fn test_cache_key_generation_performance() {
 
 #[test]
 fn test_gc_metadata_registration_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing GC metadata registration performance");
 
@@ -565,6 +575,7 @@ fn test_gc_metadata_registration_performance() {
 
 #[test]
 fn test_optimization_effectiveness() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing optimization effectiveness comparison");
 
@@ -622,6 +633,7 @@ fn test_optimization_effectiveness() {
 
 #[test]
 fn test_recursive_type_performance() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing performance with recursive/nested types");
 

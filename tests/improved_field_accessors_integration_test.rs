@@ -1,8 +1,8 @@
 use cursed::prelude::*;
-use cursed::ast::declarations::*;
-use cursed::ast::statements::*;
-use cursed::ast::statements::fields::FieldStatement;
-use cursed::ast::expressions::*;
+use cursed::ast::*;
+use cursed::ast::*;
+use cursed::ast::fields::FieldStatement;
+use cursed::ast::*;
 use cursed::ast::operators::*;
 use cursed::ast::types::*;
 use cursed::ast::traits::*;
@@ -29,7 +29,7 @@ fn setup() {
 }
 
 /// Test source code with generic struct and interface
-const TEST_CODE: &str = r#"
+const TEST_CODE: &str = r#""
 vibe main;
 
 collab Identifiable<T> {
@@ -60,10 +60,11 @@ slay main() {
     vibez.spill(id1.id();
     vibez.spill(id2.id();
 }
-"#;
+"#";
 
 #[test]
 fn test_improved_field_accessors_integration() {
+    // init_tracing!();
     setup();
     let _span = info_span!("test", test = "improved_field_accessors_integration").entered();
     info!("Starting test for improved field accessors integration");
@@ -108,6 +109,7 @@ fn test_improved_field_accessors_integration() {
 
 #[test]
 fn test_field_accessor_error_propagation() {
+    // init_tracing!();
     setup();
     let _span = info_span!("test", test = "field_accessor_error_propagation").entered();
     info!("Starting test for field accessor error propagation");

@@ -80,6 +80,7 @@ impl Traceable for TestObject {
 
 #[test]
 fn test_weak_reference_gc_connection() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting weak reference GC connection test");
@@ -123,6 +124,7 @@ fn test_weak_reference_gc_connection() {
 
 #[test]
 fn test_object_finalization() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting object finalization test");
@@ -172,6 +174,7 @@ fn test_object_finalization() {
 
 #[test]
 fn test_circular_references_with_finalization() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting circular references with finalization test");
@@ -272,6 +275,7 @@ fn test_circular_references_with_finalization() {
 
 #[test]
 fn test_incremental_collection_with_finalization() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting incremental collection with finalization test");

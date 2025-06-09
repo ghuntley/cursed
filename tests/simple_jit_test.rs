@@ -22,13 +22,13 @@ fn test_simple_jit() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     info!("Starting simple JIT test");
     // A very simple test program
-    let input = r#"
+    let input = r#""
     slay main() {
         sus x = 42;
         puts(x);
         yolo x;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

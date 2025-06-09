@@ -2,7 +2,7 @@
 //!
 //! This test suite validates basic AST functionality without complex parser integration.
 
-use cursed::ast::declarations::{
+use cursed::ast::{
     EnhancedConstraint, EnhancedTypeParameter, MultiParamGeneric, 
     TypeBound, Variance, WhereClause
 };

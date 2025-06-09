@@ -3,7 +3,7 @@
 //! This test suite validates the parser implementation for enhanced generic constraints,
 //! including error handling, complex syntax, and integration with existing AST nodes.
 
-use cursed::ast::declarations::{
+use cursed::ast::{
     EnhancedConstraint, MultiParamGeneric, WhereClause
 };
 use cursed::ast::{Expression, Node, Statement};
@@ -25,7 +25,7 @@ macro_rules! init_tracing {
 /// Helper function to create a parser from source code
 fn create_parser(input: &str) -> Parser {
     let cursor = Cursor::new(input.as_bytes());
-    let mut lexer = Lexer::new(cursor);
+    let mut lexer = Lexer::new(cursor.to_string());
     let tokens = lexer.tokenize().unwrap();
     Parser::new(tokens)
 }
@@ -407,7 +407,7 @@ fn test_integration_with_existing_ast() {
     );
 
     // Test Node trait
-    assert_eq!(generic.token_literal(), "[");
+    assert_eq!(generic.literal.clone(), "[");
     assert!(!generic.string().is_empty());
 
     // Test Statement trait

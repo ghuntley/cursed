@@ -327,7 +327,7 @@ async fn create_sample_project(project_path: &PathBuf) {
     fs::create_dir_all(project_path).expect("Failed to create project directory");
     
     // Create build configuration
-    let config = r#"
+    let config = r#""
 [project]
 name = "test-project"
 version = "0.1.0"
@@ -358,7 +358,7 @@ severity = "warning"
 
 [tools.docs]
 generate_on_build = false
-"#;
+"#";
     
     fs::write(project_path.join("CursedBuild.toml"), config)
         .expect("Failed to write build configuration");
@@ -367,12 +367,12 @@ generate_on_build = false
     let src_dir = project_path.join("src");
     fs::create_dir_all(&src_dir).expect("Failed to create src directory");
     
-    let main_content = r#"
+    let main_content = r#""
 slay main() {
     facts message = "Hello, CURSED!"
     periodt message
 }
-"#;
+"#";
     
     fs::write(src_dir.join("main.csd"), main_content)
         .expect("Failed to write main source file");
@@ -382,7 +382,7 @@ async fn create_sample_project_with_cross_targets(project_path: &PathBuf) {
     create_sample_project(project_path).await;
     
     // Add cross-compilation configuration
-    let cross_config = r#"
+    let cross_config = r#""
 
 [tools.targets.windows]
 triple = "x86_64-pc-windows-gnu"
@@ -391,7 +391,7 @@ linker = "x86_64-w64-mingw32-gcc"
 [tools.targets.macos]
 triple = "x86_64-apple-darwin"
 linker = "x86_64-apple-darwin-ld"
-"#;
+"#";
     
     let config_path = project_path.join("CursedBuild.toml");
     let mut current_config = fs::read_to_string(&config_path)
@@ -406,7 +406,7 @@ async fn create_sample_project_with_multiple_targets(project_path: &PathBuf) {
     create_sample_project(project_path).await;
     
     // Add multiple targets configuration
-    let multi_target_config = r#"
+    let multi_target_config = r#""
 
 [[targets]]
 name = "test-lib"
@@ -417,7 +417,7 @@ path = "src/lib.csd"
 name = "test-tool"
 type = "bin"
 path = "src/tool.csd"
-"#;
+"#";
     
     let config_path = project_path.join("CursedBuild.toml");
     let mut current_config = fs::read_to_string(&config_path)
@@ -430,22 +430,22 @@ path = "src/tool.csd"
     // Create additional source files
     let src_dir = project_path.join("src");
     
-    let lib_content = r#"
+    let lib_content = r#""
 slay add(a: i32, b: i32) -> i32 {
     sus result = a + b
     return result
 }
-"#;
+"#";
     
     fs::write(src_dir.join("lib.csd"), lib_content)
         .expect("Failed to write lib source file");
     
-    let tool_content = r#"
+    let tool_content = r#""
 slay main() {
     facts version = "1.0.0"
     periodt "Tool version:", version
 }
-"#;
+"#";
     
     fs::write(src_dir.join("tool.csd"), tool_content)
         .expect("Failed to write tool source file");
@@ -455,7 +455,7 @@ async fn create_sample_project_with_tools(project_path: &PathBuf) {
     create_sample_project(project_path).await;
     
     // Enable tools in configuration
-    let tools_config = r#"
+    let tools_config = r#""
 
 [tools.formatter]
 format_on_build = true
@@ -470,7 +470,7 @@ severity = "warning"
 [tools.docs]
 generate_on_build = true
 format = "html"
-"#;
+"#";
     
     let config_path = project_path.join("CursedBuild.toml");
     let current_config = fs::read_to_string(&config_path)

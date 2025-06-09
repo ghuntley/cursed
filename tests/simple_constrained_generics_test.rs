@@ -10,6 +10,7 @@ use tracing::{debug, info};
 
 #[test]
 fn test_monomorphization_strategy_enum() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing MonomorphizationStrategy enum");
 
@@ -35,6 +36,7 @@ fn test_monomorphization_strategy_enum() {
 
 #[test]
 fn test_constrained_generic_config() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing ConstrainedGenericConfig");
 
@@ -73,6 +75,7 @@ fn test_constrained_generic_config() {
 
 #[test]
 fn test_type_mangling_helpers() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type mangling helpers");
 
@@ -102,10 +105,11 @@ fn test_type_mangling_helpers() {
 
 #[test]
 fn test_constraint_types() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constraint-related types");
 
-    use cursed::ast::declarations::GenericConstraint;
+    use cursed::ast::GenericConstraint;
     use cursed::lexer::token::Token;
 
     // Test that we can create GenericConstraint instances
@@ -125,6 +129,7 @@ fn test_constraint_types() {
 
 #[test]
 fn test_performance_measurement_concept() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing performance measurement concept");
 
@@ -150,6 +155,7 @@ fn test_performance_measurement_concept() {
 
 #[test]
 fn test_specialization_naming_concept() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing specialization naming concept");
 
@@ -176,6 +182,7 @@ fn test_specialization_naming_concept() {
 
 #[test]
 fn test_cache_key_generation_concept() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing cache key generation concept");
 
@@ -221,10 +228,11 @@ fn test_cache_key_generation_concept() {
 
 #[test]
 fn test_constraint_validation_concept() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constraint validation concept");
 
-    use cursed::ast::declarations::GenericConstraint;
+    use cursed::ast::GenericConstraint;
     use cursed::lexer::token::Token;
     use cursed::core::type_checker::Type;
 
@@ -265,6 +273,7 @@ fn test_constraint_validation_concept() {
 
 #[test]
 fn test_gc_metadata_concept() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing GC metadata concept");
 
@@ -303,6 +312,7 @@ fn test_gc_metadata_concept() {
 
 #[test]
 fn test_optimization_config_combinations() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing optimization configuration combinations");
 

@@ -8,10 +8,10 @@
 //! - Nested type switch scenarios
 //! - Performance characteristics
 
-use cursed::ast::control_flow::type_switch::{TypeSwitchStatement, TypeCase, DefaultTypeCase, TypePattern};
-use cursed::ast::expressions::Identifier;
+use cursed::ast::type_switch::{TypeSwitchStatement, TypeCase, DefaultTypeCase, TypePattern};
+use cursed::ast::Identifier;
 use cursed::ast::traits::{Expression, Statement};
-use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::block::BlockStatement;
 use cursed::codegen::llvm::{LlvmCodeGenerator, TypeSwitchCompilation};
 use cursed::error::Error;
 use std::sync::Arc;
@@ -22,6 +22,7 @@ mod common;
 /// Test basic type switch compilation
 #[test]
 fn test_basic_type_switch() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing basic type switch compilation");
     
@@ -50,6 +51,7 @@ fn test_basic_type_switch() -> Result<(), Error> {
 /// Test type switch with multiple types in single case
 #[test]
 fn test_multiple_type_case() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type switch with multiple types in single case");
     
@@ -75,6 +77,7 @@ fn test_multiple_type_case() -> Result<(), Error> {
 /// Test type switch with variable binding
 #[test]
 fn test_type_switch_variable_binding() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type switch with variable binding");
     
@@ -100,6 +103,7 @@ fn test_type_switch_variable_binding() -> Result<(), Error> {
 /// Test interface type switches
 #[test]
 fn test_interface_type_switch() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing interface type switch");
     
@@ -125,6 +129,7 @@ fn test_interface_type_switch() -> Result<(), Error> {
 /// Test nested type switch scenarios
 #[test]
 fn test_nested_type_switch() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing nested type switch scenarios");
     
@@ -150,6 +155,7 @@ fn test_nested_type_switch() -> Result<(), Error> {
 /// Test type case checking functionality
 #[test]
 fn test_type_case_check() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type case check functionality");
     
@@ -178,6 +184,7 @@ fn test_type_case_check() -> Result<(), Error> {
 /// Test type variable binding
 #[test]
 fn test_type_variable_binding() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type variable binding");
     
@@ -208,6 +215,7 @@ fn test_type_variable_binding() -> Result<(), Error> {
 /// Test type ID constant creation
 #[test]
 fn test_type_id_constants() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type ID constant creation");
     
@@ -235,6 +243,7 @@ fn test_type_id_constants() -> Result<(), Error> {
 /// Performance test for type switch compilation
 #[test]
 fn test_type_switch_performance() -> Result<(), Error> {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type switch compilation performance");
     

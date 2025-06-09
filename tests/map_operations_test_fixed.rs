@@ -17,6 +17,7 @@ mod common;
 /// Test basic map operations creation
 #[test]
 fn test_create_map_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let ops = create_map_operations();
@@ -27,6 +28,7 @@ fn test_create_map_operations() {
 /// Test map type creation and structure
 #[test]
 fn test_map_type_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -56,6 +58,7 @@ fn test_map_type_creation() {
 /// Test map literal creation
 #[test]
 fn test_map_literal_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -96,6 +99,7 @@ fn test_map_literal_creation() {
 /// Test map length operation
 #[test]
 fn test_map_len() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -128,6 +132,7 @@ fn test_map_len() {
 /// Test map get operation
 #[test]
 fn test_map_get() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -159,6 +164,7 @@ fn test_map_get() {
 /// Test map set operation
 #[test]
 fn test_map_set() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -196,6 +202,7 @@ fn test_map_set() {
 /// Test map has_key operation
 #[test]
 fn test_map_has_key() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -231,6 +238,7 @@ fn test_map_has_key() {
 /// Test map delete operation
 #[test]
 fn test_map_delete() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -267,6 +275,7 @@ fn test_map_delete() {
 /// Test map runtime initialization
 #[test]
 fn test_map_runtime_init() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -289,6 +298,7 @@ fn test_map_runtime_init() {
 /// Test different hash strategies
 #[test]
 fn test_different_hash_strategies() {
+    // init_tracing!();
     common::tracing::setup();
     
     use cursed::codegen::llvm::{create_map_operations_linear_probing, create_map_operations_quadratic_probing};
@@ -320,13 +330,14 @@ fn test_different_hash_strategies() {
 /// Integration test with expression compilation
 #[test]
 fn test_map_expression_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     // This test would ideally test the integration with the expression compilation system
     // For now, it's a placeholder to verify the module loads correctly
 
     // Test that we can import the necessary types
-    use cursed::ast::expressions::{HashLiteral, IndexExpression};
+    use cursed::ast::{HashLiteral, IndexExpression};
     use cursed::core::type_checker::Type;
 
     // Test that map types can be created
@@ -347,6 +358,7 @@ fn test_map_expression_integration() {
 /// Test error handling and edge cases
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();

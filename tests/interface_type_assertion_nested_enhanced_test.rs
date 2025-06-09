@@ -78,7 +78,7 @@ fn test_enhanced_nested_interface_type_assertions() {
     init_tracing!();
     
     // This test verifies enhanced nested interface type assertions
-    let input = r#"
+    let input = r#""
         // Define a hierarchy of interfaces
         collab Renderer {
             render() tea;
@@ -258,7 +258,7 @@ fn test_enhanced_nested_interface_type_assertions() {
             
             return finalResult
         }
-    "#;
+    "#";
     
     // Run the test and verify enhanced nested interface assertions work correctly
     match run_jit_test(input) {
@@ -274,7 +274,7 @@ fn test_interface_extension_hierarchy() {
     init_tracing!();
     
     // This test specifically tests interface extension hierarchies
-    let input = r#"
+    let input = r#""
         // Define a deep hierarchy of interfaces with extensions
         collab BaseInterface {
             baseMethod() tea;
@@ -394,7 +394,7 @@ fn test_interface_extension_hierarchy() {
             sus result = testInterfaceHierarchy(implementor)
             return result
         }
-    "#;
+    "#";
     
     // Run the test and verify the interface extension hierarchy works correctly
     match run_jit_test(input) {

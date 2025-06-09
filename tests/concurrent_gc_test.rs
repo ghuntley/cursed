@@ -69,6 +69,7 @@ unsafe impl Sync for TestObject {}
 
 #[test]
 fn test_concurrent_gc_basic() {
+    // init_tracing!();
     // Set up tracing
     common::tracing::setup();
     
@@ -155,6 +156,7 @@ fn test_concurrent_gc_basic() {
 
 #[test]
 fn test_concurrent_gc_stress() {
+    // init_tracing!();
     // Set up tracing
     common::tracing::setup();
     

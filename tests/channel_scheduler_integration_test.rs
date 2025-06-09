@@ -25,6 +25,7 @@ mod common;
 
 #[test]
 fn test_channel_scheduler_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -41,6 +42,7 @@ fn test_channel_scheduler_creation() {
 
 #[test]
 fn test_blocking_channel_operations_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -123,6 +125,7 @@ fn test_blocking_channel_operations_integration() {
 
 #[test]
 fn test_goroutine_parking_unparking() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -180,6 +183,7 @@ fn test_goroutine_parking_unparking() {
 
 #[test] 
 fn test_channel_wait_queues() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -265,6 +269,7 @@ fn test_channel_wait_queues() {
 
 #[test]
 fn test_channel_operation_cancellation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -318,6 +323,7 @@ fn test_channel_operation_cancellation() {
 
 #[test]
 fn test_channel_scheduler_performance() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -408,6 +414,7 @@ fn test_channel_scheduler_performance() {
 
 #[test]
 fn test_fair_scheduling_for_channel_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -491,6 +498,7 @@ fn test_fair_scheduling_for_channel_operations() {
 
 #[test]
 fn test_channel_scheduler_cleanup_and_optimization() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());
@@ -562,6 +570,7 @@ fn test_channel_scheduler_cleanup_and_optimization() {
 
 #[test]
 fn test_integration_with_goroutine_lifecycle() {
+    // init_tracing!();
     common::tracing::setup();
     
     let gc = Arc::new(GarbageCollector::new());

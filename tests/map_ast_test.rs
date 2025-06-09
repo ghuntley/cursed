@@ -3,7 +3,7 @@
 //! This module tests the map literal and map type expression AST nodes
 //! to ensure they properly represent map structures and their operations.
 
-use cursed::ast::expressions::{MapLiteral, MapTypeExpression, Identifier, IntegerLiteral, StringLiteral};
+use cursed::ast::{MapLiteral, MapTypeExpression, Identifier, IntegerLiteral, StringLiteral};
 use cursed::ast::{Expression, Node};
 use cursed::lexer::Token;
 

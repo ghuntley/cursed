@@ -155,13 +155,13 @@ fn test_cross_compilation_target() {
     }
     
     // Minimal program for cross-compilation test
-    let code = r#"
+    let code = r#""
 vibe test
 
 slay main() {
     // Empty function
 }
-    "#;
+    "#";
     
     // Parse the program
     let program = parse_program(code);
@@ -230,13 +230,13 @@ fn test_size_optimization() {
     }
     
     // Create a minimal program for size optimization test
-    let code = r#"
+    let code = r#""
 vibe test
 
 slay main() {
     // Empty function
 }
-    "#;
+    "#";
     
     // Parse the program
     let program = parse_program(code);

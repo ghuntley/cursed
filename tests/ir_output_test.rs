@@ -1,12 +1,12 @@
 //! Tests for LLVM IR and bitcode output functionality.
 
-use cursed::ast::base::Program;
-use cursed::ast::statements::declarations::PackageStatement;
-use cursed::ast::statements::declarations::FunctionDeclaration;
-use cursed::ast::expressions::literals::IntLiteral;
-use cursed::ast::expressions::call::CallExpression;
-use cursed::ast::statements::PrintStatement;
-use cursed::ast::base::Block;
+use cursed::ast::Program;
+use cursed::ast::PackageStatement;
+use cursed::ast::FunctionDeclaration;
+use cursed::ast::literals::IntLiteral;
+use cursed::ast::call::CallExpression;
+use cursed::ast::PrintStatement;
+use cursed::ast::Block;
 use cursed::ast::traits::{Node, Statement};
 use cursed::codegen::llvm::{
     IrOutputGenerator, IrOutputConfig, IrOutputFormat, LlvmCodeGenerator,
@@ -39,13 +39,13 @@ fn test_basic_ir_output() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a simple CURSED program
-    let source = r#"
+    let source = r#""
 vibe test
 
 slay main() {
     vibez.spill("Hello, World!")
 }
-"#;
+"#";
 
     // Parse the program
     let mut lexer = Lexer::new(source);
@@ -96,13 +96,13 @@ fn test_bitcode_output() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a simple CURSED program
-    let source = r#"
+    let source = r#""
 vibe test
 
 slay main() {
     vibez.spill("Bitcode test")
 }
-"#;
+"#";
 
     // Parse the program
     let mut lexer = Lexer::new(source);
@@ -154,7 +154,7 @@ fn test_both_outputs() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a CURSED program
-    let source = r#"
+    let source = r#""
 vibe test
 
 slay add(x normie, y normie) normie {
@@ -165,7 +165,7 @@ slay main() {
     sus result = add(5, 3)
     vibez.spill("Result:", result)
 }
-"#;
+"#";
 
     // Parse the program
     let mut lexer = Lexer::new(source);
@@ -220,13 +220,13 @@ fn test_preserve_structure() {
     let input_path = PathBuf::from("src/examples/hello.csd");
 
     // Create a simple program
-    let source = r#"
+    let source = r#""
 vibe hello
 
 slay main() {
     vibez.spill("Hello from nested directory!")
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -271,13 +271,13 @@ fn test_convenience_functions() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a simple program
-    let source = r#"
+    let source = r#""
 vibe convenience
 
 slay test_function() {
     vibez.spill("Testing convenience functions")
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -341,7 +341,7 @@ fn test_ir_content_validation() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a program with various constructs
-    let source = r#"
+    let source = r#""
 vibe validation
 
 slay factorial(n normie) normie {
@@ -356,7 +356,7 @@ slay main() {
     sus result = factorial(5)
     vibez.spill("Factorial of 5 is:", result)
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -404,13 +404,13 @@ fn test_file_naming() {
     let context = Context::create();
     let temp_dir = TempDir::new().unwrap();
 
-    let source = r#"
+    let source = r#""
 vibe naming
 
 slay main() {
     vibez.spill("File naming test")
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");

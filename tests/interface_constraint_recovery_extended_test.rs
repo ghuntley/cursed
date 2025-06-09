@@ -16,6 +16,7 @@ mod common;
 
 #[test]
 fn test_constraint_path_finding() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -58,6 +59,7 @@ fn test_constraint_path_finding() {
 
 #[test]
 fn test_fix_suggestions() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -84,6 +86,7 @@ fn test_fix_suggestions() {
 
 #[test]
 fn test_implementation_guide_generation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -114,6 +117,7 @@ fn test_implementation_guide_generation() {
 
 #[test]
 fn test_extended_error_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -138,6 +142,7 @@ fn test_extended_error_creation() {
 
 #[test]
 fn test_similar_type_finding() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -162,6 +167,7 @@ fn test_similar_type_finding() {
 
 #[test]
 fn test_is_close_to_implementing() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -182,6 +188,7 @@ fn test_is_close_to_implementing() {
 
 #[test]
 fn test_integrated_constraint_recovery() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();

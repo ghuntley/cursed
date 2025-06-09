@@ -11,6 +11,7 @@ mod config_option_tests {
 
     #[test]
     fn test_default_configuration() {
+    // init_tracing!();
         common::tracing::setup();
         
         let config = FormatterConfig::default();
@@ -22,6 +23,7 @@ mod config_option_tests {
 
     #[test]
     fn test_custom_configuration() {
+    // init_tracing!();
         common::tracing::setup();
         
         let config = FormatterConfig {
@@ -37,6 +39,7 @@ mod config_option_tests {
 
     #[test]
     fn test_brace_style_variants() {
+    // init_tracing!();
         common::tracing::setup();
         
         let same_line = BraceStyle::SameLine;

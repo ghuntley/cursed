@@ -8,7 +8,7 @@ use cursed::error::Error;
 #[test]
 fn test_type_system_integration() {
     // Test code with various type system features
-    let input = "
+    let input = ""
         vibe main
         
         fr fr User-defined struct with generic parameters
@@ -93,7 +93,7 @@ fn test_type_system_integration() {
             puts(r1)
             puts(r2)
         }
-    ";
+    "";
     
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);

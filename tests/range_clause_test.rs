@@ -74,9 +74,9 @@ fn run_test(code: &str, expected_value: i64) -> Result<(), String> {
     let test_file = format!("tests/temp/range_test_{}.csd", generate_id());
     
     // Add a print statement to output the result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -95,8 +95,9 @@ printn(yolo)\n", code);
 
 #[test]
 fn test_numeric_range() -> Result<(), String> {
+    // init_tracing!();
     // Test basic numeric range (equivalent to for i := 0; i < 10; i++)
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -107,7 +108,7 @@ fn test_numeric_range() -> Result<(), String> {
             
             yolo sum  fr Should be 45 (0+1+2+...+9)
         }
-    "#;
+    "#";
     
     // Sum of 0-9 = 45
     run_test(code, 45)
@@ -115,8 +116,9 @@ fn test_numeric_range() -> Result<(), String> {
 
 #[test]
 fn test_range_with_start_end() -> Result<(), String> {
+    // init_tracing!();
     // Test range with start and end values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -127,7 +129,7 @@ fn test_range_with_start_end() -> Result<(), String> {
             
             yolo sum  fr Should be 35 (5+6+7+8+9)
         }
-    "#;
+    "#";
     
     // Sum of 5-9 = 35
     run_test(code, 35)
@@ -135,8 +137,9 @@ fn test_range_with_start_end() -> Result<(), String> {
 
 #[test]
 fn test_range_with_step() -> Result<(), String> {
+    // init_tracing!();
     // Test range with start, end, and step values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -147,7 +150,7 @@ fn test_range_with_step() -> Result<(), String> {
             
             yolo sum  fr Should be 30 (0+2+4+6+8)
         }
-    "#;
+    "#";
     
     // Sum of 0,2,4,6,8 = 30
     run_test(code, 30)
@@ -155,8 +158,9 @@ fn test_range_with_step() -> Result<(), String> {
 
 #[test]
 fn test_array_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over array elements
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 20, 30, 40, 50]
             sus sum lit = 0
@@ -168,7 +172,7 @@ fn test_array_iteration() -> Result<(), String> {
             
             yolo sum  fr Should be 150 (10+20+30+40+50)
         }
-    "#;
+    "#";
     
     // Sum of 10+20+30+40+50 = 150
     run_test(code, 150)
@@ -176,8 +180,9 @@ fn test_array_iteration() -> Result<(), String> {
 
 #[test]
 fn test_array_index_value_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over array with both index and value
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 20, 30, 40, 50]
             sus sum lit = 0
@@ -190,7 +195,7 @@ fn test_array_index_value_iteration() -> Result<(), String> {
             
             yolo sum  fr Should be 160 (0+10 + 1+20 + 2+30 + 3+40 + 4+50)
         }
-    "#;
+    "#";
     
     // Sum of (0+10)+(1+20)+(2+30)+(3+40)+(4+50) = 160
     run_test(code, 160)
@@ -198,8 +203,9 @@ fn test_array_index_value_iteration() -> Result<(), String> {
 
 #[test]
 fn test_map_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over map values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus scores = {
                 "Alice": 90,
@@ -215,7 +221,7 @@ fn test_map_iteration() -> Result<(), String> {
             
             yolo sum  fr Should be 270 (90+85+95)
         }
-    "#;
+    "#";
     
     // Sum of 90+85+95 = 270
     run_test(code, 270)
@@ -223,8 +229,9 @@ fn test_map_iteration() -> Result<(), String> {
 
 #[test]
 fn test_map_key_value_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over map with both key and value
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus scores = {
                 "Alice": 90,
@@ -246,7 +253,7 @@ fn test_map_key_value_iteration() -> Result<(), String> {
             fr Return score sum * name length sum: (90+85+95) * (5+3+7)
             yolo sum * lengthSum
         }
-    "#;
+    "#";
     
     // (90+85+95) * (5+3+7) = 270 * 15 = 4050
     run_test(code, 4050)
@@ -254,8 +261,9 @@ fn test_map_key_value_iteration() -> Result<(), String> {
 
 #[test]
 fn test_break_in_range() -> Result<(), String> {
+    // init_tracing!();
     // Test break statement in range loop
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -269,7 +277,7 @@ fn test_break_in_range() -> Result<(), String> {
             
             yolo sum  fr Should be exactly 10 (0+1+2+3+4)
         }
-    "#;
+    "#";
     
     // Sum until it reaches 10+ (0+1+2+3+4 = 10)
     run_test(code, 10)
@@ -277,8 +285,9 @@ fn test_break_in_range() -> Result<(), String> {
 
 #[test]
 fn test_continue_in_range() -> Result<(), String> {
+    // init_tracing!();
     // Test continue statement in range loop
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -293,7 +302,7 @@ fn test_continue_in_range() -> Result<(), String> {
             
             yolo sum  fr Should be sum of odd numbers (1+3+5+7+9 = 25)
         }
-    "#;
+    "#";
     
     // Sum of odd numbers 1+3+5+7+9 = 25
     run_test(code, 25)

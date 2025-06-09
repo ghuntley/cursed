@@ -5,9 +5,9 @@
 //! where clause constraints, multi-parameter generic constraints, and constraint
 //! satisfaction during type checking.
 
-use cursed::ast::declarations::{GenericConstraint, FunctionStatement, SquadStatement, CollabStatement, Parameter, TypeParameter};
-use cursed::ast::declarations::{FieldDeclaration, MethodDeclaration};
-use cursed::ast::expressions::calls::CallExpression;
+use cursed::ast::{GenericConstraint, FunctionStatement, SquadStatement, CollabStatement, Parameter, TypeParameter};
+use cursed::ast::{FieldDeclaration, MethodDeclaration};
+use cursed::ast::calls::CallExpression;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::core::constraint_resolver::{ConstraintResolver, ConstraintResolutionResult, ConstraintViolation};
 use cursed::core::constraint_validator::{ConstraintValidator, ValidationContext, ValidationResult};

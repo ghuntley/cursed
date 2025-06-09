@@ -18,6 +18,7 @@ mod common;
 
 #[test]
 fn test_jit_debug() -> Result<(), Error> {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Starting JIT debug test");
@@ -75,14 +76,15 @@ fn test_jit_debug() -> Result<(), Error> {
 
 #[test]
 fn test_jit_through_compilation() -> Result<(), Error> {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Starting JIT through compilation test");
-    let input = r#"
+    let input = r#""
     slay main() {
         yolo 42;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     debug!("Parsing input code");

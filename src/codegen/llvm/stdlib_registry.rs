@@ -57,6 +57,7 @@ impl StdlibRegistry {
         registry.register_concurrenz_functions();
         registry.register_web_vibez_functions(); // New HTTP package
         registry.register_sql_vibes_functions(); // New database package
+        registry.register_database_packages(); // Additional database functions
         registry.register_json_tea_functions();
         registry.register_regex_vibez_functions();
         registry.register_cryptz_functions();
@@ -1000,31 +1001,19 @@ impl StdlibRegistry {
                 param_types: vec!["connection".to_string(), "string".to_string(), "parameters...".to_string()],
                 requires_gc: true,
                 is_variadic: true,
-                description: "Execute SQL query and return result set".to_string(),
+                description: "Execute SQL query with parameters".to_string(),
                 llvm_name: "sql_vibes.query".to_string(),
             },
             StdlibFunction {
                 name: "execute".to_string(),
                 package: "sql_vibes".to_string(),
-                return_type: "i64".to_string(),
+                return_type: "execute_result".to_string(),
                 param_types: vec!["connection".to_string(), "string".to_string(), "parameters...".to_string()],
-                requires_gc: false,
+                requires_gc: true,
                 is_variadic: true,
-                description: "Execute SQL statement and return affected rows".to_string(),
+                description: "Execute SQL statement (INSERT, UPDATE, DELETE)".to_string(),
                 llvm_name: "sql_vibes.execute".to_string(),
             },
-            StdlibFunction {
-                name: "batch_execute".to_string(),
-                package: "sql_vibes".to_string(),
-                return_type: "array".to_string(),
-                param_types: vec!["connection".to_string(), "array".to_string()],
-                requires_gc: true,
-                is_variadic: false,
-                description: "Execute multiple SQL statements in batch".to_string(),
-                llvm_name: "sql_vibes.batch_execute".to_string(),
-            },
-            
-            // Prepared Statement Functions
             StdlibFunction {
                 name: "prepare".to_string(),
                 package: "sql_vibes".to_string(),
@@ -1032,8 +1021,264 @@ impl StdlibRegistry {
                 param_types: vec!["connection".to_string(), "string".to_string()],
                 requires_gc: true,
                 is_variadic: false,
-                description: "Prepare SQL statement for repeated execution".to_string(),
+                description: "Prepare SQL statement for reuse".to_string(),
                 llvm_name: "sql_vibes.prepare".to_string(),
+            },
+            
+            // Transaction Management Functions
+            StdlibFunction {
+                name: "begin_transaction".to_string(),
+                package: "sql_vibes".to_string(),
+                return_type: "transaction".to_string(),
+                param_types: vec!["connection".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Begin database transaction".to_string(),
+                llvm_name: "sql_vibes.begin_transaction".to_string(),
+            },
+            StdlibFunction {
+                name: "commit".to_string(),
+                package: "sql_vibes".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["transaction".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Commit database transaction".to_string(),
+                llvm_name: "sql_vibes.commit".to_string(),
+            },
+            StdlibFunction {
+                name: "rollback".to_string(),
+                package: "sql_vibes".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["transaction".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Rollback database transaction".to_string(),
+                llvm_name: "sql_vibes.rollback".to_string(),
+            },
+            
+            // Connection Pool Functions
+            StdlibFunction {
+                name: "create_pool".to_string(),
+                package: "sql_vibes".to_string(),
+                return_type: "connection_pool".to_string(),
+                param_types: vec!["string".to_string(), "pool_config".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Create database connection pool".to_string(),
+                llvm_name: "sql_vibes.create_pool".to_string(),
+            },
+            StdlibFunction {
+                name: "get_pooled_connection".to_string(),
+                package: "sql_vibes".to_string(),
+                return_type: "connection".to_string(),
+                param_types: vec!["connection_pool".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Get connection from pool".to_string(),
+                llvm_name: "sql_vibes.get_pooled_connection".to_string(),
+            },
+            StdlibFunction {
+                name: "return_to_pool".to_string(),
+                package: "sql_vibes".to_string(),
+                return_type: "void".to_string(),
+                param_types: vec!["connection_pool".to_string(), "connection".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Return connection to pool".to_string(),
+                llvm_name: "sql_vibes.return_to_pool".to_string(),
+            },
+            
+            // Database Core Functions
+            StdlibFunction {
+                name: "register_driver".to_string(),
+                package: "db_core".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["string".to_string(), "driver".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Register database driver".to_string(),
+                llvm_name: "db_core.register_driver".to_string(),
+            },
+            StdlibFunction {
+                name: "get_driver".to_string(),
+                package: "db_core".to_string(),
+                return_type: "driver".to_string(),
+                param_types: vec!["string".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Get database driver by name".to_string(),
+                llvm_name: "db_core.get_driver".to_string(),
+            },
+            StdlibFunction {
+                name: "list_drivers".to_string(),
+                package: "db_core".to_string(),
+                return_type: "slice".to_string(),
+                param_types: vec![],
+                requires_gc: true,
+                is_variadic: false,
+                description: "List all available drivers".to_string(),
+                llvm_name: "db_core.list_drivers".to_string(),
+            },
+            
+            // Migration Functions
+            StdlibFunction {
+                name: "run_migrations".to_string(),
+                package: "db_migrate".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "string".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Run database migrations from directory".to_string(),
+                llvm_name: "db_migrate.run_migrations".to_string(),
+            },
+            StdlibFunction {
+                name: "migration_status".to_string(),
+                package: "db_migrate".to_string(),
+                return_type: "migration_info".to_string(),
+                param_types: vec!["connection".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Get migration status information".to_string(),
+                llvm_name: "db_migrate.migration_status".to_string(),
+            },
+            
+            // ORM Functions
+            StdlibFunction {
+                name: "create_entity".to_string(),
+                package: "db_orm".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "entity".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Create entity in database".to_string(),
+                llvm_name: "db_orm.create_entity".to_string(),
+            },
+            StdlibFunction {
+                name: "find_by_id".to_string(),
+                package: "db_orm".to_string(),
+                return_type: "entity".to_string(),
+                param_types: vec!["connection".to_string(), "type".to_string(), "any".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Find entity by ID".to_string(),
+                llvm_name: "db_orm.find_by_id".to_string(),
+            },
+            StdlibFunction {
+                name: "update_entity".to_string(),
+                package: "db_orm".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "entity".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Update entity in database".to_string(),
+                llvm_name: "db_orm.update_entity".to_string(),
+            },
+            StdlibFunction {
+                name: "delete_entity".to_string(),
+                package: "db_orm".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "entity".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Delete entity from database".to_string(),
+                llvm_name: "db_orm.delete_entity".to_string(),
+            },
+            
+            // NoSQL Functions
+            StdlibFunction {
+                name: "insert_document".to_string(),
+                package: "db_nosql".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "string".to_string(), "document".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Insert document into collection".to_string(),
+                llvm_name: "db_nosql.insert_document".to_string(),
+            },
+            StdlibFunction {
+                name: "find_documents".to_string(),
+                package: "db_nosql".to_string(),
+                return_type: "document_result".to_string(),
+                param_types: vec!["connection".to_string(), "string".to_string(), "query_filter".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Find documents in collection".to_string(),
+                llvm_name: "db_nosql.find_documents".to_string(),
+            },
+            StdlibFunction {
+                name: "update_document".to_string(),
+                package: "db_nosql".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "string".to_string(), "query_filter".to_string(), "document".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Update documents in collection".to_string(),
+                llvm_name: "db_nosql.update_document".to_string(),
+            },
+            StdlibFunction {
+                name: "delete_document".to_string(),
+                package: "db_nosql".to_string(),
+                return_type: "error".to_string(),
+                param_types: vec!["connection".to_string(), "string".to_string(), "query_filter".to_string()],
+                requires_gc: false,
+                is_variadic: false,
+                description: "Delete documents from collection".to_string(),
+                llvm_name: "db_nosql.delete_document".to_string(),
+            },
+        ];
+        
+        self.register_package("sql_vibes", sql_vibes_functions);
+        self.register_package("db_core", vec![]);
+        self.register_package("db_pool", vec![]);
+        self.register_package("db_migrate", vec![]);
+        self.register_package("db_orm", vec![]);
+        self.register_package("db_nosql", vec![]);
+    }
+    
+    /// Register additional database package functions 
+    fn register_database_packages(&mut self) {
+        // Register db_query advanced functions
+        let db_query_functions = vec![
+            StdlibFunction {
+                name: "build_select".to_string(),
+                package: "db_query".to_string(),
+                return_type: "query_builder".to_string(),
+                param_types: vec!["string...".to_string()],
+                requires_gc: true,
+                is_variadic: true,
+                description: "Build SELECT query with specified columns".to_string(),
+                llvm_name: "db_query.build_select".to_string(),
+            },
+            StdlibFunction {
+                name: "build_insert".to_string(),
+                package: "db_query".to_string(),
+                return_type: "query_builder".to_string(),
+                param_types: vec!["string".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Build INSERT query for table".to_string(),
+                llvm_name: "db_query.build_insert".to_string(),
+            },
+            StdlibFunction {
+                name: "build_update".to_string(),
+                package: "db_query".to_string(),
+                return_type: "query_builder".to_string(),
+                param_types: vec!["string".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Build UPDATE query for table".to_string(),
+                llvm_name: "db_query.build_update".to_string(),
+            },
+            StdlibFunction {
+                name: "build_delete".to_string(),
+                package: "db_query".to_string(),
+                return_type: "query_builder".to_string(),
+                param_types: vec!["string".to_string()],
+                requires_gc: true,
+                is_variadic: false,
+                description: "Build DELETE query for table".to_string(),
+                llvm_name: "db_query.build_delete".to_string(),
             },
             StdlibFunction {
                 name: "execute_prepared".to_string(),
@@ -1277,7 +1522,7 @@ impl StdlibRegistry {
             },
         ];
         
-        self.register_package("sql_vibes", sql_vibes_functions);
+        self.register_package("db_query", db_query_functions);
     }
     
     /// Register a package with its functions

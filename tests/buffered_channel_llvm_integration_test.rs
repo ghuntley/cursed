@@ -14,6 +14,7 @@ use cursed::runtime::channel::{
 /// Test FFI channel creation for buffered channels
 #[test]
 fn test_ffi_buffered_channel_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test creating a buffered channel with capacity 5
@@ -34,6 +35,7 @@ fn test_ffi_buffered_channel_creation() {
 /// Test FFI try_send operations
 #[test]
 fn test_ffi_try_send_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a buffered channel with capacity 2
@@ -61,6 +63,7 @@ fn test_ffi_try_send_operations() {
 /// Test FFI try_receive operations
 #[test]
 fn test_ffi_try_receive_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a buffered channel with capacity 2
@@ -94,6 +97,7 @@ fn test_ffi_try_receive_operations() {
 /// Test FFI blocking send and receive operations
 #[test]
 fn test_ffi_blocking_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a buffered channel with capacity 1
@@ -113,6 +117,7 @@ fn test_ffi_blocking_operations() {
 /// Test FFI channel statistics
 #[test]
 fn test_ffi_channel_statistics() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a buffered channel with capacity 5
@@ -149,6 +154,7 @@ fn test_ffi_channel_statistics() {
 /// Test FFI channel closing
 #[test]
 fn test_ffi_channel_closing() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a buffered channel
@@ -186,6 +192,7 @@ fn test_ffi_channel_closing() {
 /// Test FFI with different element sizes
 #[test]
 fn test_ffi_different_element_sizes() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test byte-sized elements
@@ -220,6 +227,7 @@ fn test_ffi_different_element_sizes() {
 /// Test FFI error conditions
 #[test]
 fn test_ffi_error_conditions() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test null pointer handling
@@ -255,6 +263,7 @@ fn test_ffi_error_conditions() {
 /// Test FFI memory safety
 #[test]
 fn test_ffi_memory_safety() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create multiple channels to test memory handling

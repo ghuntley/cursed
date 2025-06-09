@@ -390,24 +390,57 @@ pub fn register_database_functions(generator: &mut LlvmCodeGenerator) -> Result<
 /// slay FFI function for opening database connections
 #[no_mangle]
 pub extern "C" fn cursed_db_open(driver_name: *const std::os::raw::c_char, data_source: *const std::os::raw::c_char) -> *mut std::os::raw::c_void {
-    // In a real implementation, this would:
-    // 1. Convert C strings to Rust strings
-    // 2. Call the Rust database opening function
-    // 3. Return a pointer to the connection object
-    // 4. Handle errors appropriately
+    use std::ffi::CStr;
+    use crate::stdlib::packages::db_core;
     
-    std::ptr::null_mut()
+    // Convert C strings to Rust strings
+    let driver_str = unsafe {
+        if driver_name.is_null() { return std::ptr::null_mut(); }
+        match CStr::from_ptr(driver_name).to_str() {
+            Ok(s) => s,
+            Err(_) => return std::ptr::null_mut(),
+        }
+    };
+    
+    let dsn_str = unsafe {
+        if data_source.is_null() { return std::ptr::null_mut(); }
+        match CStr::from_ptr(data_source).to_str() {
+            Ok(s) => s,
+            Err(_) => return std::ptr::null_mut(),
+        }
+    };
+    
+    // Attempt to connect to database
+    match db_core::utils::connect(driver_str, dsn_str) {
+        Ok(connection) => {
+            // Convert connection to opaque pointer
+            Box::into_raw(Box::new(connection)) as *mut std::os::raw::c_void
+        },
+        Err(_) => std::ptr::null_mut(),
+    }
 }
 
 /// slay FFI function for executing queries
 #[no_mangle]
 pub extern "C" fn cursed_db_query(connection: *mut std::os::raw::c_void, query: *const std::os::raw::c_char) -> *mut std::os::raw::c_void {
-    // In a real implementation, this would:
-    // 1. Convert connection pointer and query string
-    // 2. Execute the query
-    // 3. Return query results
-    // 4. Handle errors appropriately
+    use std::ffi::CStr;
+    use crate::stdlib::packages::db_core::DatabaseConnection;
     
+    if connection.is_null() || query.is_null() { return std::ptr::null_mut(); }
+    
+    // Convert query string
+    let query_str = unsafe {
+        match CStr::from_ptr(query).to_str() {
+            Ok(s) => s,
+            Err(_) => return std::ptr::null_mut(),
+        }
+    };
+    
+    // Convert connection pointer back to connection object
+    let conn = unsafe { &mut *(connection as *mut Box<dyn DatabaseConnection>) };
+    
+    // Execute query (this would be async in real implementation)
+    // For now, return a placeholder
     std::ptr::null_mut()
 }
 

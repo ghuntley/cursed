@@ -11,6 +11,7 @@ mod common;
 
 #[test]
 fn test_enhanced_visualization() {
+    // init_tracing!();
     init_test_tracing();
     
     // Create a simple test context

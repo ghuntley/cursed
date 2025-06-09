@@ -98,6 +98,7 @@ unsafe impl Sync for ThreadSafeCircularNode {}
 
 #[test]
 fn test_circular_reference_collection() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting circular reference collection test");
@@ -158,6 +159,7 @@ fn test_circular_reference_collection() {
 
 #[test]
 fn test_thread_safe_circular_reference_collection() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting thread-safe circular reference collection test");
@@ -228,6 +230,7 @@ fn test_thread_safe_circular_reference_collection() {
 
 #[test]
 fn test_weak_reference_cycle_breaking() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting weak reference cycle breaking test");
@@ -320,6 +323,7 @@ fn test_weak_reference_cycle_breaking() {
 
 #[test]
 fn test_multithreaded_gc_stress() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::setup();
     info!("Starting multithreaded GC stress test");

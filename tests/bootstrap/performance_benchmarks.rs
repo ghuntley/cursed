@@ -24,6 +24,7 @@ struct BenchmarkResult {
 #[instrument]
 #[test]
 fn test_compile_time_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     let mut results = Vec::new();
     
@@ -57,6 +58,7 @@ fn test_compile_time_benchmarks() {
 #[instrument]
 #[test]
 fn test_memory_usage_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     let mut results = Vec::new();
     
@@ -85,6 +87,7 @@ fn test_memory_usage_benchmarks() {
 #[instrument]
 #[test]
 fn test_binary_size_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     let mut results = Vec::new();
     
@@ -113,6 +116,7 @@ fn test_binary_size_benchmarks() {
 #[instrument]
 #[test]
 fn test_throughput_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     let mut results = Vec::new();
     
@@ -142,6 +146,7 @@ fn test_throughput_benchmarks() {
 #[instrument]
 #[test]
 fn test_stage_comparison_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Compare performance between different compiler stages
@@ -161,6 +166,7 @@ fn test_stage_comparison_benchmarks() {
 #[instrument]
 #[test]
 fn test_optimization_impact_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test impact of different optimization levels
@@ -183,6 +189,7 @@ fn test_optimization_impact_benchmarks() {
 #[instrument]
 #[test]
 fn test_incremental_compilation_benchmarks() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test incremental compilation performance

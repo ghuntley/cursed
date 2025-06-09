@@ -174,7 +174,7 @@ fn test_source_preprocessing() {
     let system = FeatureDetectionSystem::new(BootstrapStage::Stage1, version);
     let mut compiler = ConditionalCompiler::new(Some(system));
     
-    let source = r#"
+    let source = r#""
 slay main() {
     #if_feature basic_types
     sus x: normie = 42
@@ -190,7 +190,7 @@ slay main() {
     
     vibez.spill("Hello, World!")
 }
-"#;
+"#";
     
     let processed = compiler.process_source(source).unwrap();
     

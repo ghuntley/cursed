@@ -10,13 +10,14 @@ use std::path::PathBuf;
 // Test for JIT integration with improved print support
 #[test]
 fn test_jit_print_support() -> Result<(), Error> {
+    // init_tracing!();
     // Initialize tracing for better diagnostics (if common test module is used)
     if let Ok(()) = setup_test_tracing() {
         tracing::info!("Test tracing initialized");
     }
     
     // Create a simple CURSED program that prints different types
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -36,7 +37,7 @@ fn test_jit_print_support() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the program
     let mut lexer = Lexer::new(input);

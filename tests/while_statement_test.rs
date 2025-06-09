@@ -7,11 +7,12 @@ mod common;
 
 #[test]
 fn test_while_statement() -> Result<(), Error> {
+    // init_tracing!();
     // Initialize tracing
     common::tracing::setup();
 
     // Test a basic while loop that counts from 0 to 9
-    let program = r#"
+    let program = r#""
     slay main() lit {
         sus counter = 0;
         periodt (counter < 10) {
@@ -19,7 +20,7 @@ fn test_while_statement() -> Result<(), Error> {
         }
         yolo counter;
     }
-    "#;
+    "#";
 
     // Run the program in the JIT
     let result = common::run_jit_test_int(program)?;
@@ -32,11 +33,12 @@ fn test_while_statement() -> Result<(), Error> {
 
 #[test]
 fn test_while_statement_with_break() -> Result<(), Error> {
+    // init_tracing!();
     // Initialize tracing
     common::tracing::setup();
 
     // Test a while loop with a break statement
-    let program = r#"
+    let program = r#""
     slay main() lit {
         sus counter = 0;
         periodt (based) {
@@ -47,7 +49,7 @@ fn test_while_statement_with_break() -> Result<(), Error> {
         }
         yolo counter;
     }
-    "#;
+    "#";
 
     // Run the program in the JIT
     let result = common::run_jit_test_int(program)?;

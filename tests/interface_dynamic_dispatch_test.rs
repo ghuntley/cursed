@@ -81,6 +81,7 @@ fn setup_interface_hierarchy() -> Result<TypeChecker, Error> {
 
 #[test]
 fn test_multiple_interface_implementations() -> Result<(), Error> {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting multiple interface implementation test");
     
@@ -119,6 +120,7 @@ fn test_multiple_interface_implementations() -> Result<(), Error> {
 
 #[test]
 fn test_interface_vtable_generation() -> Result<(), Error> {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting interface vtable generation test");
     

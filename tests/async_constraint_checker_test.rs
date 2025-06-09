@@ -10,6 +10,7 @@ mod common;
 
 #[test]
 fn test_async_constraint_checker_parallel_execution() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -74,6 +75,7 @@ fn test_async_constraint_checker_parallel_execution() {
 
 #[test]
 fn test_parallel_generic_constraint_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -106,6 +108,7 @@ fn test_parallel_generic_constraint_checking() {
 
 #[test]
 fn test_concurrent_complex_constraint_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -150,6 +153,7 @@ fn test_concurrent_complex_constraint_checking() {
 
 #[test]
 fn test_stress_parallel_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -181,6 +185,7 @@ fn test_stress_parallel_checking() {
 
 #[test]
 fn test_parallel_mismatched_type_params() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();

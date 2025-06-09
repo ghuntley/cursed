@@ -1,13 +1,13 @@
-use cursed::ast::expressions::identifiers::Identifier;
-use cursed::ast::expressions::InfixExpression;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::FieldStatement;
-use cursed::ast::statements::ReturnStatement;
+use cursed::ast::identifiers::Identifier;
+use cursed::ast::InfixExpression;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::FieldStatement;
+use cursed::ast::ReturnStatement;
 use cursed::ast::traits::Expression;
 use cursed::ast::FunctionStatement;
-use cursed::ast::declarations::{Parameter, TypeParameter, GenericConstraint};
+use cursed::ast::{Parameter, TypeParameter, GenericConstraint};
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::MonomorphizationManager;
+
 use cursed::core::generic_instantiation::GenericInstantiator;
 use cursed::core::type_checker::Type;
 use cursed::lexer::token::Token;

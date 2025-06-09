@@ -14,6 +14,7 @@ mod common;
 
 #[test]
 fn test_interface_registry_primitive_types() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -41,6 +42,7 @@ fn test_interface_registry_primitive_types() {
 
 #[test]
 fn test_interface_registry_custom_types() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -68,6 +70,7 @@ fn test_interface_registry_custom_types() {
 
 #[test]
 fn test_interface_registry_adding_custom_implementations() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -94,6 +97,7 @@ fn test_interface_registry_adding_custom_implementations() {
 
 #[test]
 fn test_monomorphization_with_interface_registry() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     

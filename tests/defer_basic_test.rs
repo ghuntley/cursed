@@ -12,6 +12,7 @@ use tracing::{info, debug};
 
 #[test]
 fn test_defer_keyword_lexing() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer keyword lexing");
@@ -32,15 +33,16 @@ fn test_defer_keyword_lexing() {
 
 #[test]
 fn test_basic_defer_parsing() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing basic defer statement parsing");
     
-    let input = r#"
+    let input = r#""
         slay test_function() {
             later vibez.spill("Hello");
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -61,18 +63,19 @@ fn test_basic_defer_parsing() {
 
 #[test] 
 fn test_multiple_defer_parsing() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing multiple defer statements parsing");
     
-    let input = r#"
+    let input = r#""
         slay main() {
             later vibez.spill("First");
             later vibez.spill("Second"); 
             later vibez.spill("Third");
             yolo 0;
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -91,6 +94,7 @@ fn test_multiple_defer_parsing() {
 
 #[test]
 fn test_defer_token_literal() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer token literal");
@@ -103,17 +107,18 @@ fn test_defer_token_literal() {
 
 #[test]
 fn test_defer_in_nested_context() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer in nested context");
     
-    let input = r#"
+    let input = r#""
         slay test_nested() {
             lowkey (based) {
                 later vibez.spill("Inside if block");
             }
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -132,17 +137,18 @@ fn test_defer_in_nested_context() {
 
 #[test]
 fn test_defer_with_simple_statement() {
+    // init_tracing!();
     common::tracing::setup();
     
     info!("Testing defer with simple statement");
     
-    let input = r#"
+    let input = r#""
         slay simple_defer() {
             sus x = 5;
             later x = 10;
             yolo x;
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);

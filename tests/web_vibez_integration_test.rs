@@ -2,6 +2,7 @@
 /// 
 /// Tests the complete routing and middleware system working together
 
+use cursed::stdlib::web_vibez::Middleware;
 use cursed::stdlib::web_vibez::{
     Router, RouterConfig, Route, RouteGroup, HttpMethod, StatusCode,
     RouteMatcher, RoutePattern, ChainBuilder, MiddlewareOrdering, ChainExecution,

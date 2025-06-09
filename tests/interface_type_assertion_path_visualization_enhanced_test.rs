@@ -349,6 +349,7 @@ impl InterfaceTypeAssertionPathVisualization<'_> for MockLlvmCodeGenerator {
 
 #[test]
 fn test_generate_interface_hierarchy_dot_enhanced() {
+    // init_tracing!();
     let generator = MockLlvmCodeGenerator::new();
     
     // Test the enhanced dot generation with proper error handling
@@ -375,6 +376,7 @@ fn test_generate_interface_hierarchy_dot_enhanced() {
 
 #[test]
 fn test_find_interface_path_success() {
+    // init_tracing!();
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding a path in a simple case
@@ -386,6 +388,7 @@ fn test_find_interface_path_success() {
 
 #[test]
 fn test_find_interface_path_failure() {
+    // init_tracing!();
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding a path that doesn't exist
@@ -404,6 +407,7 @@ fn test_find_interface_path_failure() {
 
 #[test]
 fn test_visualize_interface_path_enhanced() {
+    // init_tracing!();
     let generator = MockLlvmCodeGenerator::new();
     
     // Test the enhanced path visualization
@@ -426,6 +430,7 @@ fn test_visualize_interface_path_enhanced() {
 
 #[test]
 fn test_find_alternative_paths_enhanced() {
+    // init_tracing!();
     let generator = MockLlvmCodeGenerator::new();
     
     // Test finding alternative paths
@@ -443,6 +448,7 @@ fn test_find_alternative_paths_enhanced() {
 
 #[test]
 fn test_generate_path_error_message_enhanced() {
+    // init_tracing!();
     let generator = MockLlvmCodeGenerator::new();
     
     // Test generating enhanced error message with alternatives
@@ -468,6 +474,7 @@ fn test_generate_path_error_message_enhanced() {
 
 #[test]
 fn test_extract_source_type_from_error() {
+    // init_tracing!();
     // Test the enhanced extractor with standard format
     let error = "Type assertion error at test.csd:123: Value of type 'Foo' cannot be asserted as type 'Bar'";
     assert_eq!(extract_source_type_from_error(error), Some("Foo".to_string()));
@@ -483,6 +490,7 @@ fn test_extract_source_type_from_error() {
 
 #[test]
 fn test_extract_target_type_from_error() {
+    // init_tracing!();
     // Test the enhanced extractor with standard format
     let error = "Type assertion error at test.csd:123: Value of type 'Foo' cannot be asserted as type 'Bar'";
     assert_eq!(extract_target_type_from_error(error), Some("Bar".to_string()));

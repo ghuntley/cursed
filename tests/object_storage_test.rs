@@ -349,5 +349,6 @@ fn test_multiple_objects() {
 // Create a dummy test to keep cargo happy
 #[test]
 fn dummy_object_storage_test() {
+    // init_tracing!();
     assert!(true, "Dummy test always passes");
 }

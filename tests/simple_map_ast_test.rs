@@ -5,9 +5,9 @@
 
 #[cfg(test)]
 mod tests {
-    use cursed::ast::expressions::{MapLiteral, MapTypeExpression};
+    use cursed::ast::{MapLiteral, MapTypeExpression};
     use cursed::ast::{Expression, Node};
-    use cursed::lexer::Token;
+    use cursed::lexer::{Token, TokenType};
 
     // Simple test expression for use in testing
     struct TestIdentifier {
@@ -25,7 +25,7 @@ mod tests {
 
     impl Node for TestIdentifier {
         fn token_literal(&self) -> String {
-            self.token.token_literal()
+        self.token.literal.clone()
         }
 
         fn string(&self) -> String {
@@ -62,7 +62,7 @@ mod tests {
 
     impl Node for TestLiteral {
         fn token_literal(&self) -> String {
-            self.token.token_literal()
+        self.token.literal.clone()
         }
 
         fn string(&self) -> String {
@@ -86,25 +86,25 @@ mod tests {
 
     #[test]
     fn test_map_literal_creation_basic() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         
         let pairs = vec![
             (
                 Box::new(TestLiteral {
                     value: "\"name\"".to_string(),
-                    token: Token::String("name".to_string()),
+                    token: Token::new(TokenType::String, "name".to_string()),
                 }) as Box<dyn Expression>,
                 Box::new(TestLiteral {
                     value: "42".to_string(),
-                    token: Token::Int(42),
+                    token: Token::new(TokenType::Integer, "42"),
                 }) as Box<dyn Expression>
             ),
         ];
@@ -119,25 +119,25 @@ mod tests {
 
     #[test]
     fn test_map_literal_string_representation() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         
         let pairs = vec![
             (
                 Box::new(TestLiteral {
                     value: "\"name\"".to_string(),
-                    token: Token::String("name".to_string()),
+                    token: Token::new(TokenType::String, "name".to_string()),
                 }) as Box<dyn Expression>,
                 Box::new(TestLiteral {
                     value: "42".to_string(),
-                    token: Token::Int(42),
+                    token: Token::new(TokenType::Integer, "42"),
                 }) as Box<dyn Expression>
             ),
         ];
@@ -150,14 +150,14 @@ mod tests {
 
     #[test]
     fn test_empty_map_literal() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         
         let map_literal = MapLiteral::new(token, key_type, value_type, vec![]);
@@ -169,14 +169,14 @@ mod tests {
 
     #[test]
     fn test_map_type_expression_creation() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         
         let map_type = MapTypeExpression::new(token, key_type, value_type);
@@ -187,14 +187,14 @@ mod tests {
 
     #[test]
     fn test_map_type_expression_string_representation() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         
         let map_type = MapTypeExpression::new(token, key_type, value_type);
@@ -204,25 +204,25 @@ mod tests {
 
     #[test]
     fn test_map_literal_clone() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         
         let pairs = vec![
             (
                 Box::new(TestLiteral {
                     value: "\"key\"".to_string(),
-                    token: Token::String("key".to_string()),
+                    token: Token::new(TokenType::String, "key".to_string()),
                 }) as Box<dyn Expression>,
                 Box::new(TestLiteral {
                     value: "100".to_string(),
-                    token: Token::Int(100),
+                    token: Token::new(TokenType::Integer, "100"),
                 }) as Box<dyn Expression>
             ),
         ];
@@ -236,14 +236,14 @@ mod tests {
 
     #[test]
     fn test_map_type_expression_clone() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "CustomKey".to_string(),
-            token: Token::Identifier("CustomKey".to_string()),
+            token: Token::new(TokenType::Identifier, "CustomKey".to_string()),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "CustomValue".to_string(),
-            token: Token::Identifier("CustomValue".to_string()),
+            token: Token::new(TokenType::Identifier, "CustomValue".to_string()),
         }) as Box<dyn Expression>;
         
         let map_type = MapTypeExpression::new(token, key_type, value_type);
@@ -255,35 +255,35 @@ mod tests {
 
     #[test]
     fn test_map_literal_with_multiple_pairs() {
-        let token = Token::Tea;
+        let token = Token::new(TokenType::String, "tea");
         let key_type = Box::new(TestIdentifier {
             name: "normie".to_string(),
-            token: Token::Normie,
+            token: Token::new(TokenType::Integer, "42"),
         }) as Box<dyn Expression>;
         let value_type = Box::new(TestIdentifier {
             name: "tea".to_string(),
-            token: Token::Tea,
+            token: Token::new(TokenType::String, "tea"),
         }) as Box<dyn Expression>;
         
         let pairs = vec![
             (
                 Box::new(TestLiteral {
                     value: "1".to_string(),
-                    token: Token::Int(1),
+                    token: Token::new(TokenType::Integer, "1"),
                 }) as Box<dyn Expression>,
                 Box::new(TestLiteral {
                     value: "\"one\"".to_string(),
-                    token: Token::String("one".to_string()),
+                    token: Token::new(TokenType::String, "one".to_string()),
                 }) as Box<dyn Expression>
             ),
             (
                 Box::new(TestLiteral {
                     value: "2".to_string(),
-                    token: Token::Int(2),
+                    token: Token::new(TokenType::Integer, "2"),
                 }) as Box<dyn Expression>,
                 Box::new(TestLiteral {
                     value: "\"two\"".to_string(),
-                    token: Token::String("two".to_string()),
+                    token: Token::new(TokenType::String, "two".to_string()),
                 }) as Box<dyn Expression>
             ),
         ];

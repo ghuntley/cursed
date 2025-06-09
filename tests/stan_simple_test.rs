@@ -5,10 +5,10 @@
 
 mod common;
 
-use cursed::ast::expressions::concurrency::StanExpression;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::concurrency::StanExpression;
+use cursed::ast::Identifier;
 use cursed::ast::traits::{Expression, Node};
-use cursed::lexer::{Lexer, Token};
+use cursed::lexer::{Lexer, {Token, TokenType}};
 use cursed::parser::Parser;
 use tracing::{debug, info};
 
@@ -25,7 +25,7 @@ fn test_stan_token_recognition() {
     info!("Testing stan token recognition");
     
     let input = "stan";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     
     let token = lexer.next_token().expect("Failed to get token");
     assert_eq!(token, Token::new(TokenType::Stan, "stan"));
@@ -51,7 +51,7 @@ fn test_stan_expression_creation() {
     };
     
     // Test the AST interface
-    assert_eq!(stan_expr.token_literal(), "stan");
+    assert_eq!(stan_expr.literal.clone(), "stan");
     assert_eq!(stan_expr.string(), "stan test_func");
     
     debug!("StanExpression creation test passed");
@@ -63,7 +63,7 @@ fn test_stan_parsing_simple() {
     info!("Testing simple stan parsing");
     
     let input = "stan foo;";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     
     // Test that we can at least create a parser and it recognizes stan token
     match Parser::new(lexer) {
@@ -93,7 +93,7 @@ fn test_multiple_stan_tokens() {
     info!("Testing multiple stan tokens");
     
     let input = "stan foo stan bar";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     
     // First stan
     let token1 = lexer.next_token().expect("Failed to get first token");
@@ -101,7 +101,7 @@ fn test_multiple_stan_tokens() {
     
     // foo identifier  
     let token2 = lexer.next_token().expect("Failed to get second token");
-    assert!(matches!(token2, Token::Identifier(_)));
+    assert!(matches!(token2, Token::new(TokenType::Identifier, _)));
     
     // Second stan
     let token3 = lexer.next_token().expect("Failed to get third token");
@@ -109,7 +109,7 @@ fn test_multiple_stan_tokens() {
     
     // bar identifier
     let token4 = lexer.next_token().expect("Failed to get fourth token");
-    assert!(matches!(token4, Token::Identifier(_)));
+    assert!(matches!(token4, Token::new(TokenType::Identifier, _)));
     
     debug!("Multiple stan tokens test passed");
 }
@@ -120,7 +120,7 @@ fn test_stan_with_function_call() {
     info!("Testing stan with function call syntax");
     
     let input = "stan func();";
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     
     match Parser::new(lexer) {
         Ok(mut parser) => {

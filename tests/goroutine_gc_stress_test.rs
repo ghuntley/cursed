@@ -14,7 +14,7 @@ use cursed::memory::{
     GarbageCollector, GoroutineGarbageCollector, get_global_goroutine_gc,
     SafePointType, Traceable, Tag, Visitor
 };
-use cursed::runtime::goroutine::get_global_scheduler;
+
 
 // Common test infrastructure
 mod common;

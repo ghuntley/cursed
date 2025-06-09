@@ -12,7 +12,7 @@ mod llvm_test_helpers;
 #[test]
 fn test_cross_module_integration() -> Result<(), Error> {
     // Test code that exercises interactions between different modules
-    let input = r#"vibe cross_module_test
+    let input = r#"vibe cross_module_test"
 
 be_like Counter squad {
     value normie
@@ -68,7 +68,7 @@ slay test_cross_module() normie {
     //
     yolo x + counter.value   // Should be 20 + 6 = 26
 }
-"#;
+"#";
 
     // Run the test and verify the result
     // Skip executing the test for now as it fails with function not found
@@ -84,7 +84,7 @@ slay test_cross_module() normie {
 #[test]
 fn test_module_error_handling() -> Result<(), Error> {
     // Test code that exercises error handling across modules
-    let input = r#"vibe error_handling_test
+    let input = r#"vibe error_handling_test"
 
 slay test_error_handling() normie {
     // This test creates scenarios that could lead to errors
@@ -109,7 +109,7 @@ slay test_error_handling() normie {
     puts(99)  // Should reach this point without crashing
     yolo result2  // Should be 0 + 42 = 42
 }
-"#;
+"#";
 
     // Run the test and verify the result
     // Return a placeholder for now since we're skipping the test

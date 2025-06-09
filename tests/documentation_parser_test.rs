@@ -19,6 +19,7 @@ mod common;
 /// Test basic documentation comment structure creation
 #[test]
 fn test_documentation_comment_creation() {
+    // init_tracing!();
     
     let location = SourceLocation { 
         line: 1, 
@@ -183,7 +184,7 @@ fn test_comprehensive_documentation_parsing() {
     
     let location = SourceLocation { line: 1, column: 1 };
     let mut doc = DocumentationComment::new(location);
-    doc.raw_content = r#"/// Calculate fibonacci number at given position
+    doc.raw_content = r#"/// Calculate fibonacci number at given position"
 ///
 /// This function computes the nth fibonacci number using
 /// an iterative approach for better performance.
@@ -207,7 +208,7 @@ fn test_comprehensive_documentation_parsing() {
 ///     }
 ///     yolo b
 /// }
-/// ```"#.to_string();
+/// ```"#.to_string()";
     
     doc.parse_content();
     doc.parse_tags();
@@ -258,13 +259,13 @@ fn test_malformed_documentation_handling() {
 fn test_parser_integration() {
     common::tracing::setup();
     
-    let input = r#"/// fr fr Add two numbers together
+    let input = r#"/// fr fr Add two numbers together"
 /// fr fr @param x first number
 /// fr fr @param y second number  
 /// fr fr @return sum of the numbers
 slay add(x: int, y: int) -> int {
     yolo x + y
-}"#;
+}"#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -291,13 +292,13 @@ fn test_function_documentation_complex_params() {
     
     let location = SourceLocation { line: 1, column: 1 };
     let mut doc = DocumentationComment::new(location);
-    doc.raw_content = r#"/// Process HTTP request with middleware
+    doc.raw_content = r#"/// Process HTTP request with middleware"
 /// @param request the incoming HTTP request object containing headers and body
 /// @param middleware array of middleware functions to apply
 /// @param context request context with user authentication and session data
 /// @return processed response with applied middleware transformations
 /// @throws HTTPError when request processing fails
-/// @since v1.2.0"#.to_string();
+/// @since v1.2.0"#.to_string()";
     
     doc.parse_tags();
     
@@ -318,11 +319,11 @@ fn test_function_documentation_complex_params() {
 fn test_package_documentation() {
     common::tracing::setup();
     
-    let input = r#"/// fr fr HTTP server implementation for CURSED language
+    let input = r#"/// fr fr HTTP server implementation for CURSED language"
 /// fr fr
 /// fr fr This package provides a fast and secure HTTP server
 /// fr fr with support for middleware, routing, and WebSocket connections.
-vibe http_server"#;
+vibe http_server"#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -344,14 +345,14 @@ fn test_struct_documentation() {
     
     let location = SourceLocation { line: 1, column: 1 };
     let mut doc = DocumentationComment::new(location);
-    doc.raw_content = r#"/// User profile information
+    doc.raw_content = r#"/// User profile information"
 /// 
 /// Contains all the necessary information about a user
 /// including authentication credentials and preferences.
 ///
 /// @field username unique identifier for the user
 /// @field email contact email address
-/// @field created_at timestamp when account was created"#.to_string();
+/// @field created_at timestamp when account was created"#.to_string()";
     
     doc.parse_content();
     doc.parse_tags();
@@ -372,7 +373,7 @@ fn test_multiple_language_examples() {
     
     let location = SourceLocation { line: 1, column: 1 };
     let mut doc = DocumentationComment::new(location);
-    doc.raw_content = r#"/// Multi-language example
+    doc.raw_content = r#"/// Multi-language example"
 /// ```cursed
 /// sus server = HttpServer::new()
 /// server.listen(8080)
@@ -385,7 +386,7 @@ fn test_multiple_language_examples() {
 /// ```
 /// ```bash
 /// curl http://localhost:8080/api/users
-/// ```"#.to_string();
+/// ```"#.to_string()";
     
     doc.parse_examples();
     

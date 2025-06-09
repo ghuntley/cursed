@@ -1,12 +1,12 @@
 use std::sync::Arc;
 use std::cell::RefCell;
-use cursed::ast::expressions::TypeAssertion;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::TypeAssertion;
+use cursed::ast::Identifier;
 use cursed::ast::traits::{Expression, Node};
-use cursed::lexer::Token;
+use cursed::lexer::{Token, TokenType};
 use cursed::lexer::TokenType;
-use cursed::ast::statements::InterfaceDeclaration;
-use cursed::ast::statements::StructDeclaration;
+use cursed::ast::InterfaceDeclaration;
+use cursed::ast::StructDeclaration;
 use cursed::ast::Method;
 use cursed::ast::TypeParameter;
 use cursed::codegen::llvm::interface_type_assertion_error_propagation_improved::*;
@@ -39,6 +39,7 @@ fn create_test_compiler<'ctx>(context: &'ctx Context) -> LlvmCodeGenerator<'ctx>
 
 #[test]
 fn test_realistic_interface_hierarchy_with_error_propagation() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     
@@ -149,6 +150,7 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
 
 #[test]
 fn test_improved_error_propagation_with_complex_interfaces() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     
@@ -212,6 +214,7 @@ fn test_improved_error_propagation_with_complex_interfaces() {
 
 #[test]
 fn test_detailed_error_context_in_propagation() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     

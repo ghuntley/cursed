@@ -10,6 +10,7 @@ mod common;
 /// Test basic connection functionality
 #[test]
 fn test_basic_connection_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test connection creation
@@ -36,6 +37,7 @@ fn test_basic_connection_functionality() {
 /// Test query execution functionality
 #[test] 
 fn test_query_execution() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut conn = connect("sqlite://test.db").unwrap();
@@ -73,6 +75,7 @@ fn test_query_execution() {
 /// Test statement execution functionality
 #[test]
 fn test_statement_execution() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut conn = connect("sqlite://test.db").unwrap();
@@ -109,6 +112,7 @@ fn test_statement_execution() {
 /// Test parameter handling with different types
 #[test]
 fn test_parameter_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test named parameters
@@ -155,6 +159,7 @@ fn test_parameter_handling() {
 /// Test ResultSet and Row functionality
 #[test]
 fn test_result_set_functionality() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test empty result set
@@ -216,6 +221,7 @@ fn test_result_set_functionality() {
 /// Test error handling scenarios
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test invalid connection string
@@ -252,6 +258,7 @@ fn test_error_handling() {
 /// Test quick_query helper function
 #[test]
 fn test_quick_query_helper() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test successful quick query
@@ -277,6 +284,7 @@ fn test_quick_query_helper() {
 /// Test SQL value types and conversions
 #[test]
 fn test_sql_value_types() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test different SQL value types
@@ -317,6 +325,7 @@ fn test_sql_value_types() {
 /// Test concurrent access to connections
 #[test] 
 fn test_concurrent_connections() {
+    // init_tracing!();
     common::tracing::setup();
     
     use std::thread;

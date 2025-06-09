@@ -1,12 +1,12 @@
-use cursed::ast::base::Program;
-use cursed::ast::expressions::Identifier;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::ExpressionStatement;
+use cursed::ast::Program;
+use cursed::ast::Identifier;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::ExpressionStatement;
 use cursed::ast::traits::Expression;
 use cursed::ast::FunctionStatement;
 use cursed::ast::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::MonomorphizationManager;
+
 use cursed::core::type_checker::Type;
 use cursed::lexer::Token;
 use inkwell::context::Context;

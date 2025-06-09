@@ -14,6 +14,7 @@ fn setup() {
 
 #[test]
 fn test_lru_field_accessor_compilation() {
+    // init_tracing!();
     setup();
     let _span = info_span!("test", test = "lru_field_accessor_compilation").entered();
     info!("Starting basic LRU field accessor compilation test");
@@ -51,6 +52,7 @@ fn test_lru_field_accessor_compilation() {
 
 #[test]
 fn test_lru_cache_eviction() {
+    // init_tracing!();
     setup();
     let _span = info_span!("test", test = "lru_cache_eviction").entered();
     info!("Starting LRU cache eviction test");
@@ -87,6 +89,7 @@ fn test_lru_cache_eviction() {
 
 #[test]
 fn test_multi_instance_cache_independence() {
+    // init_tracing!();
     setup();
     let _span = info_span!("test", test = "multi_instance_cache_independence").entered();
     info!("Starting multi-instance cache independence test");

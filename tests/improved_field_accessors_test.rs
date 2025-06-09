@@ -1,9 +1,9 @@
 use cursed::error::Error;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ImprovedFieldAccessors;
-use cursed::ast::declarations::SquadStatement;
+use cursed::ast::SquadStatement;
 use cursed::ast::FieldDefinition;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::Identifier;
 use cursed::core::type_checker::Type;
 
 // Tests for the improved field accessors implementation
@@ -17,6 +17,7 @@ mod common;
 
 #[test]
 fn test_improved_field_accessors() {
+    // init_tracing!();
     // Initialize tracing for test debugging
     common::tracing::setup();
     

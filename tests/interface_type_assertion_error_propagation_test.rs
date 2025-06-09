@@ -1,4 +1,4 @@
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use cursed::codegen::llvm::interface_type_assertion_error_propagation::InterfaceTypeAssertionErrorPropagation;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
@@ -26,6 +26,7 @@ mod tests {
 
     #[test]
     fn test_interface_type_assertion_error_propagation_setup() {
+    // init_tracing!();
         setup();
         info!("Testing interface type assertion error propagation setup");
         assert!(true);
@@ -33,6 +34,7 @@ mod tests {
 
     #[test]
     fn test_interface_type_assertion_result_creation() {
+    // init_tracing!();
         setup();
         info!("Testing interface type assertion result creation");
         
@@ -82,6 +84,7 @@ mod tests {
 
     #[test]
     fn test_result_unwrap_success_case() {
+    // init_tracing!();
         setup();
         info!("Testing unwrapping successful Result");
         

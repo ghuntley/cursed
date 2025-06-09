@@ -81,7 +81,7 @@ fn test_null_interface_error_handling() {
     init_tracing!();
     
     // This test verifies that null interfaces are properly handled in type assertions
-    let input = r#"
+    let input = r#""
         // Define an interface
         collab Logger {
             log(message tea) void;
@@ -136,7 +136,7 @@ fn test_null_interface_error_handling() {
                 return 1;
             }
         }
-    "#;
+    "#";
     
     // The test should handle the null logger gracefully and return success (0)
     match run_jit_test(input) {
@@ -153,7 +153,7 @@ fn test_multi_level_error_propagation() {
     init_tracing!();
     
     // This test verifies that errors propagate through multiple levels of function calls
-    let input = r#"
+    let input = r#""
         // Define an interface
         collab Validator {
             validate(value tea) bool;
@@ -204,7 +204,7 @@ fn test_multi_level_error_propagation() {
             // The results should show the proper error propagation through all levels
             return result1 + " | " + result2;
         }
-    "#;
+    "#";
     
     // The test should successfully compile and run, demonstrating proper error propagation
     match run_jit_test(input) {
@@ -221,7 +221,7 @@ fn test_complex_assertion_chain() {
     init_tracing!();
     
     // This test checks a complex chain of type assertions with error recovery
-    let input = r#"
+    let input = r#""
         // Define interfaces
         collab Reader {
             read() tea;
@@ -317,7 +317,7 @@ fn test_complex_assertion_chain() {
             
             return result1 + "\n" + result2 + "\n" + result3;
         }
-    "#;
+    "#";
     
     // The test should successfully compile and run, demonstrating complex assertion chains
     match run_jit_test(input) {

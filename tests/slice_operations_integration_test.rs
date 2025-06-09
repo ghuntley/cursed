@@ -78,6 +78,7 @@ fn create_mock_slice<'ctx>(
 #[traced_test]
 #[test]
 fn test_slice_len() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -110,6 +111,7 @@ fn test_slice_len() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_cap() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -142,6 +144,7 @@ fn test_slice_cap() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_bounds_checking() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -179,6 +182,7 @@ fn test_slice_bounds_checking() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_copy() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -218,6 +222,7 @@ fn test_slice_copy() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_subslice() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -262,6 +267,7 @@ fn test_slice_subslice() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_append() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -304,6 +310,7 @@ fn test_slice_append() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_index() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -349,6 +356,7 @@ fn test_slice_index() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_operations_creation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test that we can create slice operations instance
@@ -362,6 +370,7 @@ fn test_slice_operations_creation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_operations_different_types() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -414,6 +423,7 @@ fn test_slice_operations_different_types() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_memory_safety() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();

@@ -13,6 +13,7 @@ mod common;
 /// Test basic extension relationship checking using the registry directly
 #[test]
 fn test_basic_interface_extension_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a test registry and register some types
@@ -43,6 +44,7 @@ fn test_basic_interface_extension_checking() {
 /// Test extension relationship lookup with non-existent interfaces
 #[test]
 fn test_extension_checking_non_existent_interfaces() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a test registry with just a few types

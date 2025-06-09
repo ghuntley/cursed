@@ -28,6 +28,7 @@ mod common;
 /// assertion example with ? operator
 #[test]
 fn test_interface_type_assertion_question_operator_example() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting interface type assertion question operator end-to-end test");
@@ -113,13 +114,14 @@ fn test_interface_type_assertion_question_operator_example() {
 /// with interface type assertions and the ? operator
 #[test]
 fn test_interface_type_assertion_error_propagation() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting interface type assertion error propagation test");
     let _timer = Timer::new("interface_type_assertion_error_propagation");
     
     // Create minimal test code that will trigger error propagation
-    let code = r#"
+    let code = r#""
     vibe test;
     
     // Error interface
@@ -224,7 +226,7 @@ fn test_interface_type_assertion_error_propagation() {
             vibez.spill("Error: expected success but got failure: " + result2.err.error();
         }
     }
-    "#;
+    "#";
     
     // Parse the code
     let mut lexer = Lexer::new(code);
@@ -278,13 +280,14 @@ fn test_interface_type_assertion_error_propagation() {
 /// Test specifically focused on nested error propagation with multiple levels of ? operator usage
 #[test]
 fn test_nested_interface_type_assertion_propagation() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting nested interface type assertion propagation test");
     let _timer = Timer::new("nested_interface_type_assertion_propagation");
     
     // Create test code with deeply nested ? operators
-    let code = r#"
+    let code = r#""
     vibe nested_test;
     
     // Error interface
@@ -479,7 +482,7 @@ fn test_nested_interface_type_assertion_propagation() {
             vibez.spill("Error properly propagated: " + genericResult.err.error();
         }
     }
-    "#;
+    "#";
     
     // Parse the code
     let mut lexer = Lexer::new(code);

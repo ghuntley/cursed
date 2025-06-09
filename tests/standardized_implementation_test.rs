@@ -14,7 +14,7 @@ use std::path::PathBuf;
 #[test]
 fn test_standardized_address_of() -> Result<(), Error> {
     // Simple test program with address-of operations
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -31,7 +31,7 @@ fn test_standardized_address_of() -> Result<(), Error> {
         // Return 0 if the test passed
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -93,7 +93,7 @@ fn test_standardized_address_of() -> Result<(), Error> {
 /// Test address-of and pointer modification
 #[test]
 fn test_standardized_pointer_modification() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -112,7 +112,7 @@ fn test_standardized_pointer_modification() -> Result<(), Error> {
         // Return 0 if successful
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -166,7 +166,7 @@ fn test_standardized_pointer_modification() -> Result<(), Error> {
 /// Test pointer to struct types
 #[test]
 fn test_standardized_struct_pointer() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe test;
 
     be_like Point squad {
@@ -192,7 +192,7 @@ fn test_standardized_struct_pointer() -> Result<(), Error> {
         // Return 0 for success
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

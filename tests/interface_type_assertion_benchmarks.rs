@@ -160,6 +160,7 @@ mod tests {
     /// Benchmark standard type assertion without caching
     #[test]
     fn benchmark_standard_no_cache() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_standard_no_cache");
         
@@ -177,6 +178,7 @@ mod tests {
     /// Benchmark standard type assertion with basic caching
     #[test]
     fn benchmark_standard_with_cache() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_standard_with_cache");
         
@@ -195,6 +197,7 @@ mod tests {
     /// Benchmark standard type assertion with LRU caching
     #[test]
     fn benchmark_standard_with_lru_cache() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_standard_with_lru_cache");
         
@@ -212,6 +215,7 @@ mod tests {
     /// Benchmark improved type assertion without caching
     #[test]
     fn benchmark_improved_no_cache() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_improved_no_cache");
         
@@ -229,6 +233,7 @@ mod tests {
     /// Benchmark improved type assertion with LRU caching
     #[test]
     fn benchmark_improved_with_lru_cache() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_improved_with_lru_cache");
         
@@ -246,6 +251,7 @@ mod tests {
     /// Benchmark with different cache sizes to determine optimal sizing
     #[test]
     fn benchmark_cache_size_impact() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_cache_size_impact");
         
@@ -318,6 +324,7 @@ mod tests {
     /// Benchmark with different eviction strategies
     #[test]
     fn benchmark_eviction_strategies() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_eviction_strategies");
         
@@ -331,6 +338,7 @@ mod tests {
     /// Benchmark the overhead of thread-safe vs non-thread-safe implementations
     #[test]
     fn benchmark_thread_safety_overhead() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_thread_safety_overhead");
         

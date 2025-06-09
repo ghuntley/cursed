@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use cursed::ast::statements::BlockStatement;
+use cursed::ast::BlockStatement;
 use cursed::ast::Program;
 // use cursed::code::JitOptions; // Not available
 use cursed::lexer::Lexer;
@@ -43,7 +43,7 @@ fn test_basic_interface_type_assertion() {
     init_tracing!();
     
     // Test program with interface definition, implementation, and type assertion
-    let input = r#"
+    let input = r#""
         be_like Greeter collab {
             greet(name tea) tea
         }
@@ -70,7 +70,7 @@ fn test_basic_interface_type_assertion() {
                 yolo sus    // Failed type assertion
             }
         }
-    "#;
+    "#";
     
     // Run the test
     let result = run_jit_test(input).unwrap();
@@ -84,7 +84,7 @@ fn test_interface_type_assertion_failure() {
     init_tracing!();
     
     // Test program with interface definition, implementation, and type assertion
-    let input = r#"
+    let input = r#""
         be_like Greeter collab {
             greet(name tea) tea
         }
@@ -115,7 +115,7 @@ fn test_interface_type_assertion_failure() {
                 yolo sus    // Failed type assertion
             }
         }
-    "#;
+    "#";
     
     // Run the test
     let result = run_jit_test(input).unwrap();
@@ -129,7 +129,7 @@ fn test_interface_type_assertion_null_check() {
     init_tracing!();
     
     // Test program with interface definition, implementation, and type assertion
-    let input = r#"
+    let input = r#""
         be_like Greeter collab {
             greet(name tea) tea
         }
@@ -151,7 +151,7 @@ fn test_interface_type_assertion_null_check() {
                 yolo sus    // Failed type assertion
             }
         }
-    "#;
+    "#";
     
     // Run the test
     let result = run_jit_test(input).unwrap();

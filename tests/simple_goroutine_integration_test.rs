@@ -5,9 +5,9 @@
 
 use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
 use std::time::{Duration, Instant};
-use cursed::ast::expressions::concurrency::StanExpression;
+use cursed::ast::concurrency::StanExpression;
 use cursed::ast::*;
-use cursed::lexer::Token;
+use cursed::lexer::{Token, TokenType};
 
 #[test]
 fn test_basic_goroutine_ast_creation() {
@@ -94,7 +94,7 @@ fn test_complex_goroutine_expressions() {
                 value: 42,
             }),
             Box::new(StringLiteral {
-                token: Token::String("hello".to_string()),
+                token: Token::new(TokenType::String, "hello".to_string()),
                 value: "hello".to_string(),
             }),
         ],

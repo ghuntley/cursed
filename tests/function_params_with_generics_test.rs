@@ -7,12 +7,12 @@ use cursed::ast::traits::{Node, Statement, Expression};
 #[test]
 fn test_function_with_generic_parameters() {
     // Test a function with generic parameters
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay add[T](x T, y T) T {
     yolo x + y
 }
-"#;
+"#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -73,12 +73,12 @@ slay add[T](x T, y T) T {
 #[test]
 fn test_function_with_multiple_generic_parameters() {
     // Test a function with multiple generic parameters
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay pair[A, B](first A, second B) {
     yolo first
 }
-"#;
+"#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -116,12 +116,12 @@ slay pair[A, B](first A, second B) {
 #[test]
 fn test_function_with_generic_constraints() {
     // Test a function with generic constraints
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay sort[T: Comparable](items []T) []T {
     yolo sortImplementation(items)
 }
-"#;
+"#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

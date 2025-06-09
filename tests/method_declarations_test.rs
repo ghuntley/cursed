@@ -12,7 +12,7 @@ use cursed::lexer::Lexer;
 use cursed::parser::Parser;
 use cursed::codegen::llvm::{LlvmCodeGenerator, MethodCompilation, MethodResolution};
 use cursed::ast::traits::Statement;
-use cursed::ast::declarations::{MethodDeclaration, CollabStatement, SquadStatement};
+use cursed::ast::{MethodDeclaration, CollabStatement, SquadStatement};
 use common::init_tracing;
 use inkwell::context::Context;
 use std::path::PathBuf;
@@ -21,11 +21,11 @@ use std::path::PathBuf;
 fn test_basic_method_parsing() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         slay (p Person) getName() normie {
             yolo p.name
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -48,11 +48,11 @@ fn test_basic_method_parsing() {
 fn test_pointer_receiver_method_parsing() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         slay (p @Person) setName(name normie) {
             p.name = name
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -76,11 +76,11 @@ fn test_pointer_receiver_method_parsing() {
 fn test_method_with_return_type() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         slay (c Circle) area() snack {
             yolo 3.14 * c.radius * c.radius
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -102,7 +102,7 @@ fn test_method_with_return_type() {
 fn test_interface_method_signatures() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         be_like Stringer collab {
             toString() normie
         }
@@ -110,7 +110,7 @@ fn test_interface_method_signatures() {
         be_like Comparable collab {
             compare(other Comparable) normie
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -142,11 +142,11 @@ fn test_interface_method_signatures() {
 fn test_method_compilation() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         slay (p Person) getName() normie {
             yolo 42
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -209,11 +209,11 @@ fn test_method_resolution() {
 fn test_interface_satisfaction_check() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         be_like Stringer collab {
             toString() normie
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -261,7 +261,7 @@ fn test_interface_satisfaction_check() {
 fn test_multiple_methods_on_same_type() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         slay (p Person) getName() normie {
             yolo p.name
         }
@@ -273,7 +273,7 @@ fn test_multiple_methods_on_same_type() {
         slay (p Person) getAge() normie {
             yolo p.age
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -311,11 +311,11 @@ fn test_multiple_methods_on_same_type() {
 fn test_generic_method_parsing() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         slay (s Stack[T]) push[T](item T) {
             s.items = append(s.items, item)
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");
@@ -339,11 +339,11 @@ fn test_generic_method_parsing() {
 fn test_method_call_parsing() {
     init_tracing!();
     
-    let input = r#"
+    let input = r#""
         person.getName()
         person.setAge(25)
         circle.area()
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).expect("Failed to create parser");

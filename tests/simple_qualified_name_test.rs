@@ -4,7 +4,7 @@
 
 #[cfg(test)]
 mod tests {
-    use cursed::ast::expressions::{QualifiedName, QualifiedSymbolKind};
+    use cursed::ast::{QualifiedName, QualifiedSymbolKind};
     use cursed::ast::Node;
 
     #[test]

@@ -1,10 +1,10 @@
-use cursed::ast::declarations::{FunctionStatement, Parameter, TypeParameter};
-use cursed::ast::expressions::Identifier;
-use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::{FunctionStatement, Parameter, TypeParameter};
+use cursed::ast::Identifier;
+use cursed::ast::block::BlockStatement;
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::{FunctionMonomorphization, EnhancedMonomorphization};
-use cursed::codegen::MonomorphizationManager;
+
 use cursed::core::type_checker::Type;
 use cursed::lexer::Token;
 use inkwell::context::Context;

@@ -11,6 +11,7 @@ use tracing::{info, instrument, warn};
 #[instrument]
 #[test]
 fn test_stage2_compilation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 2 compiler source can be compiled by Stage 1
@@ -30,14 +31,15 @@ fn test_stage2_compilation() {
 #[instrument]
 #[test]
 fn test_stage2_basic_functionality() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Create a minimal test program for Stage 2 to compile
-    let test_program = r#"
+    let test_program = r#""
 func main() {
     return 42
 }
-"#;
+"#";
     
     // First compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
@@ -61,14 +63,15 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_error_handling() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Create an invalid test program for Stage 2 to reject
-    let invalid_program = r#"
+    let invalid_program = r#""
 func main( {  // Missing closing parenthesis
     return 42
 }
-"#;
+"#";
     
     // First compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
@@ -102,10 +105,11 @@ func main( {  // Missing closing parenthesis
 #[instrument]
 #[test]
 fn test_stage2_lexer_functionality() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 2 can handle various token types
-    let source_with_tokens = r#"
+    let source_with_tokens = r#""
 // This is a comment
 func test_tokens() {
     let number = 42
@@ -123,7 +127,7 @@ func test_tokens() {
 func main() {
     return test_tokens()
 }
-"#;
+"#";
     
     // Compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
@@ -154,10 +158,11 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_parser_functionality() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test Stage 2 parser with nested structures
-    let nested_source = r#"
+    let nested_source = r#""
 struct Point {
     x: int
     y: int
@@ -175,7 +180,7 @@ func main() {
     let dist = calculate_distance(p1, p2)
     return dist  // Should be 25
 }
-"#;
+"#";
     
     // Compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
@@ -205,14 +210,15 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_output_generation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 2 can generate output files
-    let simple_source = r#"
+    let simple_source = r#""
 func main() {
     return 0
 }
-"#;
+"#";
     
     // Compile Stage 2 compiler
     let stage2_source = create_stage2_compiler_test();
@@ -263,6 +269,7 @@ func main() {
 #[instrument]
 #[test]
 fn test_stage2_memory_efficiency() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test Stage 2 compiler memory usage

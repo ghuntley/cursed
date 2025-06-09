@@ -5,8 +5,8 @@
 //! correctly during normal type checking operations.
 
 use cursed::core::type_checker::{Type, TypeChecker};
-use cursed::ast::declarations::{GenericConstraint, FunctionStatement, SquadStatement};
-use cursed::ast::declarations::{Parameter, TypeParameter, FieldDeclaration};
+use cursed::ast::{GenericConstraint, FunctionStatement, SquadStatement};
+use cursed::ast::{Parameter, TypeParameter, FieldDeclaration};
 use cursed::lexer::token::{Token, TokenType};
 use std::collections::HashMap;
 
@@ -134,7 +134,7 @@ fn test_type_checker_type_method_queries() {
     assert!(methods.is_empty());
     
     // Test with struct type
-    let struct_type = Type::Struct("TestStruct".to_string(), Vec::new());
+    let struct_type = Type::Custom("Struct".to_string()), Vec::new());
     let result = type_checker.get_type_methods(&struct_type);
     assert!(result.is_ok());
     

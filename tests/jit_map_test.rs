@@ -19,13 +19,13 @@ mod tracing_setup;
 fn test_jit_map_basic() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     // Test basic map operations
-    let input = r#"
+    let input = r#""
     vibe test
 
     slay main() {
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -99,7 +99,7 @@ fn test_jit_map_basic() -> Result<(), Error> {
 fn test_jit_map_mutation() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     // Test map mutation operations
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -115,7 +115,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
             yolo 0;
         }
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -189,7 +189,7 @@ fn test_jit_map_mutation() -> Result<(), Error> {
 fn test_jit_map_missing_key() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     // Test map with missing key
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -204,7 +204,7 @@ fn test_jit_map_missing_key() -> Result<(), Error> {
             yolo 0;
         }
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

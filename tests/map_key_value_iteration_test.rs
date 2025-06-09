@@ -74,9 +74,9 @@ fn run_test(code: &str, expected_value: i64) -> Result<(), String> {
     let test_file = format!("tests/temp/map_kv_test_{}.csd", generate_id());
     
     // Add a print statement to output the result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -103,9 +103,9 @@ fn run_string_test(code: &str, expected_value: &str) -> Result<(), String> {
     let test_file = format!("tests/temp/map_kv_test_{}.csd", generate_id());
     
     // Add a print statement to output the string result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -123,8 +123,9 @@ printn(yolo)\n", code);
 
 #[test]
 fn test_map_value_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iterating over map values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
             sus total lit = 0
@@ -136,7 +137,7 @@ fn test_map_value_iteration() -> Result<(), String> {
             
             yolo total  fr Should be 95+87+92 = 274
         }
-    "#;
+    "#";
     
     // Sum of all scores 95+87+92 = 274
     run_test(code, 274)
@@ -144,8 +145,9 @@ fn test_map_value_iteration() -> Result<(), String> {
 
 #[test]
 fn test_map_key_value_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iterating over map keys and values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
             sus total lit = 0
@@ -159,7 +161,7 @@ fn test_map_key_value_iteration() -> Result<(), String> {
             
             yolo total + nameSum  fr Sum of scores (274) plus sum of name lengths
         }
-    "#;
+    "#";
     
     // Sum of scores (95+87+92=274) plus sum of name lengths (5+3+7=15) = 289
     run_test(code, 289)
@@ -167,8 +169,9 @@ fn test_map_key_value_iteration() -> Result<(), String> {
 
 #[test]
 fn test_map_key_only_access() -> Result<(), String> {
+    // init_tracing!();
     // Test accessing only keys in key-value iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus users = {"Alice": 30, "Bob": 25, "Charlie": 35}
             sus nameCount lit = 0
@@ -182,7 +185,7 @@ fn test_map_key_only_access() -> Result<(), String> {
             
             yolo nameCount  fr Should be 2 (Alice and Charlie)
         }
-    "#;
+    "#";
     
     // Count of names longer than 4 characters: 2 (Alice and Charlie) 
     run_test(code, 2)
@@ -190,8 +193,9 @@ fn test_map_key_only_access() -> Result<(), String> {
 
 #[test]
 fn test_map_with_modification() -> Result<(), String> {
+    // init_tracing!();
     // Test modifying map during iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus ages = {"Alice": 30, "Bob": 25, "Charlie": 35}
             
@@ -213,7 +217,7 @@ fn test_map_with_modification() -> Result<(), String> {
             
             yolo sum  fr Should be (30+5)+(25+5)+(35+5) = 35+30+40 = 105
         }
-    "#;
+    "#";
     
     // Sum of all ages increased by 5: (30+5)+(25+5)+(35+5) = 105
     run_test(code, 105)
@@ -221,8 +225,9 @@ fn test_map_with_modification() -> Result<(), String> {
 
 #[test]
 fn test_empty_map_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iterating over an empty map
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus emptyMap = {}
             sus iterationCount lit = 0
@@ -234,7 +239,7 @@ fn test_empty_map_iteration() -> Result<(), String> {
             
             yolo iterationCount  fr Should be 0
         }
-    "#;
+    "#";
     
     // Should not iterate, count remains 0
     run_test(code, 0)
@@ -242,8 +247,9 @@ fn test_empty_map_iteration() -> Result<(), String> {
 
 #[test]
 fn test_nested_map_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration with nested maps
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus departments = {
                 "Engineering": {"Alice": 100000, "Bob": 95000},
@@ -261,7 +267,7 @@ fn test_nested_map_iteration() -> Result<(), String> {
             
             yolo total  fr Should be 100000+95000+85000+90000 = 370000
         }
-    "#;
+    "#";
     
     // Sum of all salaries: 100000+95000+85000+90000 = 370000
     run_test(code, 370000)
@@ -269,8 +275,9 @@ fn test_nested_map_iteration() -> Result<(), String> {
 
 #[test]
 fn test_map_with_break() -> Result<(), String> {
+    // init_tracing!();
     // Test map iteration with break
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus users = {"Alice": 30, "Bob": 25, "Charlie": 35, "Diana": 28}
             sus count lit = 0
@@ -286,7 +293,7 @@ fn test_map_with_break() -> Result<(), String> {
             
             yolo count  fr Should iterate up to 3 times (including Charlie)
         }
-    "#;
+    "#";
     
     // Should count until Charlie is found (3)
     run_test(code, 3)

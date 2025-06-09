@@ -26,14 +26,14 @@ fn test_binary_size_optimization() {
     }
     
     // Create a simple program
-    let code = r#"
+    let code = r#""
 vibe test
 
 slay main() {
     vibe 42;
     yolo 42;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);
@@ -103,14 +103,14 @@ fn test_debug_info_generation() {
     }
     
     // Create a simple program
-    let code = r#"
+    let code = r#""
 vibe test
 
 slay main() {
     vibe 42;
     yolo 42;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);

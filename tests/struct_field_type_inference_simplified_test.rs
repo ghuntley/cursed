@@ -1,6 +1,6 @@
-use cursed::ast::expressions::identifiers::Identifier;
-use cursed::ast::expressions::literals::{IntegerLiteral, FloatLiteral};
-use cursed::ast::expressions::struct_expr::{StructLiteral, KeyValuePair};
+use cursed::ast::identifiers::Identifier;
+use cursed::ast::literals::{IntegerLiteral, FloatLiteral};
+use cursed::ast::struct_expr::{StructLiteral, KeyValuePair};
 use cursed::ast::traits::Expression;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;

@@ -15,6 +15,7 @@ mod tests {
 
     #[test]
     fn test_linter_creation() {
+    // init_tracing!();
         common::tracing::setup();
         
         let linter = CursedLinter::new();
@@ -24,6 +25,7 @@ mod tests {
 
     #[test]
     fn test_custom_config() {
+    // init_tracing!();
         common::tracing::setup();
         
         let config = LinterConfig {
@@ -44,6 +46,7 @@ mod tests {
 
     #[test]
     fn test_line_length_violation() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::with_config(LinterConfig {
@@ -66,6 +69,7 @@ mod tests {
 
     #[test]
     fn test_trailing_whitespace_detection() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -83,6 +87,7 @@ mod tests {
 
     #[test]
     fn test_mixed_indentation_detection() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -100,6 +105,7 @@ mod tests {
 
     #[test]
     fn test_severity_filtering() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::with_config(LinterConfig {
@@ -123,6 +129,7 @@ mod tests {
 
     #[test]
     fn test_gen_z_naming_enforcement() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::with_config(LinterConfig {
@@ -142,6 +149,7 @@ mod tests {
 
     #[test]
     fn test_issue_summary() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::with_config(LinterConfig {
@@ -162,6 +170,7 @@ mod tests {
 
     #[test]
     fn test_has_errors_detection() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -177,6 +186,7 @@ mod tests {
 
     #[test]
     fn test_empty_source() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -186,6 +196,7 @@ mod tests {
 
     #[test]
     fn test_clean_source() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -199,12 +210,13 @@ mod tests {
 
     #[test]
     fn test_cursed_language_keywords() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
         
         // Test Gen Z slang keywords
-        let source = r#"
+        let source = r#""
             vibe main
 
             yeet "std.io"
@@ -222,7 +234,7 @@ mod tests {
                 facts message = "calculation complete, no cap"
                 yolo result
             }
-        "#;
+        "#";
         
         let issues = linter.lint_source(source, None).unwrap();
         
@@ -233,6 +245,7 @@ mod tests {
 
     #[test]
     fn test_different_severities() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::with_config(LinterConfig {
@@ -253,6 +266,7 @@ mod tests {
 
     #[test]
     fn test_utility_functions() {
+    // init_tracing!();
         common::tracing::setup();
         
         // Test standalone utility function
@@ -265,6 +279,7 @@ mod tests {
 
     #[test]
     fn test_issue_display() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -285,12 +300,13 @@ mod tests {
 
     #[test]
     fn test_complex_source_structure() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
         
         // More complex CURSED source with multiple constructs
-        let source = r#"
+        let source = r#""
             vibe calculator
 
             facts PI = 3.14159
@@ -316,7 +332,7 @@ mod tests {
                 sus distance = calculate_distance(point1, point2)
                 yolo distance
             }
-        "#;
+        "#";
         
         let issues = linter.lint_source(source, None).unwrap();
         
@@ -329,6 +345,7 @@ mod tests {
 
     #[test]
     fn test_configuration_disabling() {
+    // init_tracing!();
         common::tracing::setup();
         
         // Test with various checks disabled
@@ -357,6 +374,7 @@ mod tests {
 
     #[test]
     fn test_multiline_issues() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::with_config(LinterConfig {
@@ -392,16 +410,17 @@ mod integration_tests {
 
     #[test]
     fn test_lint_file_integration() {
+    // init_tracing!();
         common::tracing::setup();
         
         // Create a temporary directory and file
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.csd");
         
-        let source_content = r#"sus variable_with_trailing_space 
+        let source_content = r#"sus variable_with_trailing_space"
 slay function_name() {
     yolo 42
-}"#;
+}"#";
         
         fs::write(&file_path, source_content).unwrap();
         
@@ -421,6 +440,7 @@ slay function_name() {
 
     #[test]
     fn test_nonexistent_file() {
+    // init_tracing!();
         common::tracing::setup();
         
         let mut linter = CursedLinter::new();
@@ -432,6 +452,7 @@ slay function_name() {
 
     #[test]
     fn test_empty_file() {
+    // init_tracing!();
         common::tracing::setup();
         
         let temp_dir = TempDir::new().unwrap();

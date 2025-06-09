@@ -12,6 +12,7 @@ use tracing::{info, instrument, warn};
 #[instrument]
 #[test]
 fn test_stage1_to_stage2_compilation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that Stage 1 (Rust) can compile Stage 2 (CURSED)
@@ -36,6 +37,7 @@ fn test_stage1_to_stage2_compilation() {
 #[instrument]
 #[test]
 fn test_stage2_to_stage3_compilation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // First compile Stage 2 with Stage 1
@@ -66,6 +68,7 @@ fn test_stage2_to_stage3_compilation() {
 #[instrument]
 #[test]
 fn test_complete_bootstrap_cycle() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     let mut overall_metrics = BootstrapTestMetrics::default();
@@ -125,6 +128,7 @@ fn test_complete_bootstrap_cycle() {
 #[instrument]
 #[test]
 fn test_bootstrap_convergence() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that the bootstrap process converges (produces stable results)
@@ -163,6 +167,7 @@ fn test_bootstrap_convergence() {
 #[instrument]
 #[test]
 fn test_cross_compilation_bootstrap() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that the bootstrap process works with different target architectures
@@ -186,6 +191,7 @@ fn test_cross_compilation_bootstrap() {
 #[instrument]
 #[test]
 fn test_bootstrap_with_optimizations() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test bootstrap process with different optimization levels
@@ -289,11 +295,11 @@ fn verify_compiler_functionality(
     compiler_path: &PathBuf,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Create a simple test program
-    let test_source = r#"
+    let test_source = r#""
 func main() {
     return 42
 }
-"#;
+"#";
     
     // Create temporary source file
     let temp_source = std::env::temp_dir().join("bootstrap_test_temp.csd");

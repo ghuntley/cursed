@@ -266,11 +266,11 @@ impl SimpleDocumentationTest {
         fs::create_dir_all(&output_dir)?;
         
         // Test writing HTML file
-        let html_content = r#"<!DOCTYPE html>
+        let html_content = r#"<!DOCTYPE html>"
 <html>
 <head><title>Test Documentation</title></head>
 <body><h1>Test Content</h1></body>
-</html>"#;
+</html>"#";
         
         let html_file = output_dir.join("index.html");
         fs::write(&html_file, html_content)?;
@@ -298,6 +298,7 @@ impl SimpleDocumentationTest {
 
 #[test]
 fn test_documentation_fixtures_infrastructure() {
+    // init_tracing!();
     let test = SimpleDocumentationTest::new().expect("Failed to create test");
     
     test.test_fixtures_exist().expect("Fixtures test failed");
@@ -312,6 +313,7 @@ fn test_documentation_fixtures_infrastructure() {
 
 #[test]
 fn test_sample_package_analysis() {
+    // init_tracing!();
     let test = SimpleDocumentationTest::new().expect("Failed to create test");
     
     let sample_file = test.config.fixtures_dir.join("sample_package.csd");
@@ -335,6 +337,7 @@ fn test_sample_package_analysis() {
 
 #[test]
 fn test_undocumented_package_comparison() {
+    // init_tracing!();
     let test = SimpleDocumentationTest::new().expect("Failed to create test");
     
     let sample_file = test.config.fixtures_dir.join("sample_package.csd");
@@ -360,6 +363,7 @@ fn test_undocumented_package_comparison() {
 
 #[test]
 fn test_complex_types_structure() {
+    // init_tracing!();
     let test = SimpleDocumentationTest::new().expect("Failed to create test");
     
     let complex_file = test.config.fixtures_dir.join("complex_types.csd");
@@ -379,6 +383,7 @@ fn test_complex_types_structure() {
 
 #[test]
 fn test_cross_references_coverage() {
+    // init_tracing!();
     let test = SimpleDocumentationTest::new().expect("Failed to create test");
     
     let cross_ref_file = test.config.fixtures_dir.join("cross_references.csd");
@@ -406,6 +411,7 @@ fn test_cross_references_coverage() {
 
 #[test]
 fn test_documentation_test_runner_script() {
+    // init_tracing!();
     // Test that the runner script exists and is executable
     let script_path = PathBuf::from("tests/run_documentation_tests.sh");
     
@@ -433,6 +439,7 @@ fn test_documentation_test_runner_script() {
 
 #[test]
 fn test_golden_file_test_infrastructure() {
+    // init_tracing!();
     // Verify that golden file test infrastructure exists
     let golden_test_path = PathBuf::from("tests/documentation_golden_test.rs");
     assert!(golden_test_path.exists(), "Golden file test missing");
@@ -455,6 +462,7 @@ fn test_golden_file_test_infrastructure() {
 /// Integration test summary
 #[test]
 fn test_documentation_integration_summary() {
+    // init_tracing!();
     println!("\n=== CURSED Documentation Integration Test Summary ===");
     
     // Run all infrastructure tests

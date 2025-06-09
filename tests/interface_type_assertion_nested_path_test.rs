@@ -41,7 +41,7 @@ fn test_interface_type_assertion_nested_path_tracking() {
     init_tracing!();
     
     // Define a program with a complex nested interface hierarchy
-    let input = r#"
+    let input = r#""
         // Define a complex interface hierarchy
         collab BasicObject {
             id() lit;
@@ -164,7 +164,7 @@ fn test_interface_type_assertion_nested_path_tracking() {
             
             return result
         }
-    "#;
+    "#";
     
     // Parse the test and verify it compiles correctly
     match parse_test(input) {
@@ -185,7 +185,7 @@ fn test_interface_type_assertion_diamond_inheritance() {
     init_tracing!();
     
     // Define a program with diamond inheritance pattern
-    let input = r#"
+    let input = r#""
         // Define a diamond inheritance pattern
         collab Base {
             baseMethod() tea;
@@ -260,7 +260,7 @@ fn test_interface_type_assertion_diamond_inheritance() {
             
             return result
         }
-    "#;
+    "#";
     
     // Parse the test and verify it compiles correctly
     match parse_test(input) {
@@ -281,7 +281,7 @@ fn test_interface_type_assertion_path_error_propagation() {
     init_tracing!();
     
     // Test with error propagation that includes path information
-    let input = r#"
+    let input = r#""
         // Define interfaces
         collab Animal {
             makeSound() tea;
@@ -363,7 +363,7 @@ fn test_interface_type_assertion_path_error_propagation() {
             
             return result
         }
-    "#;
+    "#";
     
     // Parse the test and verify it compiles correctly
     match parse_test(input) {

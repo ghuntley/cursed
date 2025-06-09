@@ -1,7 +1,7 @@
-use cursed::ast::control_flow::{CaseStatement, SwitchStatement};
-use cursed::ast::expressions::StringLiteral;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::declarations::ReturnStatement;
+use cursed::ast::{CaseStatement, SwitchStatement};
+use cursed::ast::StringLiteral;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::ReturnStatement;
 use cursed::ast::{Expression, Node, Statement};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::Token;

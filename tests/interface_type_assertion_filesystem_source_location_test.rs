@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 use std::sync::Once;
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::Node;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::llvm_code_generator_extensions::SourceLocationExtensions;
@@ -30,6 +30,7 @@ pub fn init_tracing() {
 
 #[test]
 fn test_filesystem_integration_initialization() {
+    // init_tracing!();
     init_tracing();
     
     // Create a new LLVM context and code generator
@@ -48,6 +49,7 @@ fn test_filesystem_integration_initialization() {
 
 #[test]
 fn test_source_line_retrieval() {
+    // init_tracing!();
     init_tracing();
     
     // Create a temporary test file
@@ -96,6 +98,7 @@ fn test_source_line_retrieval() {
 
 #[test]
 fn test_formatting_error_with_source_context() {
+    // init_tracing!();
     init_tracing();
     
     // Create a temporary test file
@@ -160,6 +163,7 @@ fn test_formatting_error_with_source_context() {
 
 #[test]
 fn test_source_location_with_node() {
+    // init_tracing!();
     init_tracing();
     
     // Create a simple mock Node for testing

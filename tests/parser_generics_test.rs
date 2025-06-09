@@ -15,12 +15,12 @@ mod tracing_setup;
 fn test_parse_generic_struct() {
     tracing_setup::init_test_tracing();
     info!("Starting generic struct parsing test");
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Box[T] squad {
     value T
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -126,12 +126,12 @@ be_like Box[T] squad {
 fn test_parse_generic_function() {
     tracing_setup::init_test_tracing();
     info!("Starting generic function parsing test");
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay foo[T](x normie) T {
     yolo x
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -290,10 +290,10 @@ slay foo[T](x normie) T {
 fn test_parse_generic_instantiation() {
     tracing_setup::init_test_tracing();
     info!("Starting generic instantiation parsing test");
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 sus box_int = Box[normie]{value: 42}
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -434,10 +434,10 @@ sus box_int = Box[normie]{value: 42}
 fn test_parse_generic_function_call() {
     tracing_setup::init_test_tracing();
     info!("Starting generic function call parsing test");
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 sus result = identity[normie](42)
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

@@ -357,12 +357,12 @@ fn test_package_resolution_with_imports() {
     common::tracing::setup();
     info!("Testing package resolution integration with import parsing");
     
-    let input = r#"vibe mypackage
+    let input = r#"vibe mypackage"
 yeet "std/io"
 yeet "std/math" 
 yeet utils "./utils"
 yeet http "std/http"
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

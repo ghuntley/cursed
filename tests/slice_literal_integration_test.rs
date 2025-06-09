@@ -3,9 +3,9 @@
 //! These tests verify that slice literals can be properly compiled to LLVM IR
 //! and that the resulting code produces correct behavior.
 
-use cursed::ast::expressions::slice_literal::SliceLiteral;
-use cursed::ast::expressions::literals::IntegerLiteral;
-use cursed::ast::expressions::identifiers::Identifier;
+use cursed::ast::slice_literal::SliceLiteral;
+use cursed::ast::literals::IntegerLiteral;
+use cursed::ast::identifiers::Identifier;
 use cursed::codegen::llvm::{SliceLiteralCompiler, create_slice_literal_compiler};
 use cursed::core::type_checker::Type;
 use cursed::lexer::Token;
@@ -21,6 +21,7 @@ mod common;
 #[traced_test]
 #[test]
 fn test_empty_slice_literal_compilation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -63,6 +64,7 @@ fn test_empty_slice_literal_compilation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_integer_slice_literal_compilation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -109,6 +111,7 @@ fn test_integer_slice_literal_compilation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_struct_type_creation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -136,6 +139,7 @@ fn test_slice_struct_type_creation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_memory_allocation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -172,6 +176,7 @@ fn test_slice_memory_allocation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_empty_slice_creation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -200,6 +205,7 @@ fn test_empty_slice_creation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_literal_string_representation() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test empty slice string representation
@@ -232,6 +238,7 @@ fn test_slice_literal_string_representation() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_literal_properties() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let token = Token::LeftBracket;
@@ -261,6 +268,7 @@ fn test_slice_literal_properties() -> Result<(), Box<dyn Error>> {
 #[traced_test]
 #[test]
 fn test_slice_literal_cloning() -> Result<(), Box<dyn Error>> {
+    // init_tracing!();
     common::tracing::setup();
     
     let token = Token::LeftBracket;

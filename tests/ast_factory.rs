@@ -1,7 +1,7 @@
 use cursed::ast::*;
-use cursed::ast::declarations::*;
-use cursed::ast::statements::fields::FieldStatement;
-use cursed::ast::expressions::identifiers::Identifier;
+use cursed::ast::*;
+use cursed::ast::fields::FieldStatement;
+use cursed::ast::identifiers::Identifier;
 use cursed::lexer::token::Token;
 
 // AST factory for creating test AST nodes

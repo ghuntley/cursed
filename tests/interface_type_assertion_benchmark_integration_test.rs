@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::collections::HashSet;
-use cursed::benchmark::interface_type_assertion_benchmark::{InterfaceTypeAssertionBenchmark, InterfaceTypeAssertionBenchmarkConfig};
+::interface_type_assertion_benchmark::{InterfaceTypeAssertionBenchmark, InterfaceTypeAssertionBenchmarkConfig};
 use cursed::codegen::llvm::EnhancedInterfacePathFinder;
 use cursed::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 use cursed::codegen::llvm::LlvmCodeGenerator;

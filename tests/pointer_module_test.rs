@@ -19,7 +19,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
     // 3. Changing values through pointers
     // 4. Handling pointers to complex types (structs)
     // 5. Multiple levels of pointers (pointer to pointer)
-    let input = r#"
+    let input = r#""
     vibe test;
 
     be_like Point squad {
@@ -54,7 +54,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
         // All tests passed if we got here
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -162,7 +162,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
 #[test]
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_null_pointer_handling() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -191,7 +191,7 @@ fn test_null_pointer_handling() -> Result<(), Error> {
         }
         yolo 0;  // It's not null
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

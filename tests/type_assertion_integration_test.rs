@@ -6,7 +6,7 @@
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
 
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion, Identifier, StringLiteral};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion, Identifier, StringLiteral};
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::token::Token;
@@ -38,6 +38,7 @@ fn create_test_type_assertion_question() -> Box<TypeAssertionQuestion> {
 
 #[test]
 fn test_type_assertion_basic_functionality() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting basic type assertion functionality test");
 
@@ -57,6 +58,7 @@ fn test_type_assertion_basic_functionality() {
 
 #[test]
 fn test_type_assertion_question_basic_functionality() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting type assertion with question mark functionality test");
 
@@ -76,6 +78,7 @@ fn test_type_assertion_question_basic_functionality() {
 
 #[test]
 fn test_type_assertion_hash_function() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting type assertion hash function test");
 
@@ -95,6 +98,7 @@ fn test_type_assertion_hash_function() {
 
 #[test]
 fn test_type_assertion_tuple_building() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting tuple building test");
 
@@ -121,6 +125,7 @@ fn test_type_assertion_tuple_building() {
 
 #[test]
 fn test_type_id_generation() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting type ID generation test");
 
@@ -139,6 +144,7 @@ fn test_type_id_generation() {
 
 #[test] 
 fn test_pointer_type_helper() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting pointer type helper test");
 
@@ -156,6 +162,7 @@ fn test_pointer_type_helper() {
 
 #[test]
 fn test_registry_initialization() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting registry initialization test");
 
@@ -171,6 +178,7 @@ fn test_registry_initialization() {
 
 #[test]
 fn test_interface_path_visualization() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting interface path visualization test");
 

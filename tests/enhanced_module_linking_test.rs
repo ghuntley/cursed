@@ -89,6 +89,7 @@ fn create_test_metadata(name: &str, deps: Vec<&str>, exports: Vec<&str>) -> Pack
 
 #[test]
 fn test_function_body_copying() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing function body copying in module linking");
     
@@ -122,6 +123,7 @@ fn test_function_body_copying() {
 
 #[test]
 fn test_function_attribute_copying() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing function attribute copying");
     
@@ -151,6 +153,7 @@ fn test_function_attribute_copying() {
 
 #[test]
 fn test_instruction_copying_support() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing instruction copying support");
     
@@ -210,6 +213,7 @@ fn test_instruction_copying_support() {
 
 #[test]
 fn test_value_mapping_in_function_copying() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing value mapping in function copying");
     
@@ -246,6 +250,7 @@ fn test_value_mapping_in_function_copying() {
 
 #[test]
 fn test_module_linking_with_function_bodies() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing complete module linking with function bodies");
     
@@ -289,6 +294,7 @@ fn test_module_linking_with_function_bodies() {
 
 #[test]
 fn test_error_handling_in_function_copying() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing error handling in function copying");
     
@@ -322,6 +328,7 @@ fn test_error_handling_in_function_copying() {
 
 #[test]
 fn test_duplicate_function_handling() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing duplicate function handling");
     
@@ -356,6 +363,7 @@ fn test_duplicate_function_handling() {
 
 #[test]
 fn test_linkage_preservation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing linkage preservation during copying");
     
@@ -389,6 +397,7 @@ fn test_linkage_preservation() {
 
 #[test]
 fn test_constant_value_handling() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constant value handling in instruction copying");
     

@@ -5,7 +5,7 @@
 
 use cursed::codegen::llvm::{LlvmCodeGenerator, StdlibLlvmIntegration, StdlibRegistry};
 use cursed::ast::*;
-use cursed::ast::expressions::*;
+use cursed::ast::*;
 use cursed::ast::traits::*;
 use inkwell::context::Context;
 use std::path::PathBuf;
@@ -24,6 +24,7 @@ macro_rules! init_tracing {
 #[traced_test]
 #[test]
 fn test_stdlib_registry_initialization() {
+    // init_tracing!();
     let registry = StdlibRegistry::new();
     
     // Test core functions are registered
@@ -61,6 +62,7 @@ fn test_stdlib_registry_initialization() {
 #[traced_test]
 #[test]
 fn test_function_info_metadata() {
+    // init_tracing!();
     let registry = StdlibRegistry::new();
     
     // Test len function info
@@ -93,6 +95,7 @@ fn test_function_info_metadata() {
 #[traced_test]
 #[test]
 fn test_llvm_integration_initialization() {
+    // init_tracing!();
     let context = Context::create();
     let module = context.create_module("test_stdlib");
     
@@ -113,6 +116,7 @@ fn test_llvm_integration_initialization() {
 #[traced_test]
 #[test]
 fn test_llvm_function_declaration_generation() {
+    // init_tracing!();
     let context = Context::create();
     let module = context.create_module("test_stdlib");
     
@@ -145,6 +149,7 @@ fn test_llvm_function_declaration_generation() {
 #[traced_test]
 #[test]
 fn test_code_generator_stdlib_integration() {
+    // init_tracing!();
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new());
     
@@ -176,6 +181,7 @@ fn test_code_generator_stdlib_integration() {
 #[traced_test]
 #[test]
 fn test_direct_function_call_compilation() {
+    // init_tracing!();
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new());
     
@@ -208,6 +214,7 @@ fn test_direct_function_call_compilation() {
 #[traced_test]
 #[test]
 fn test_qualified_function_call_compilation() {
+    // init_tracing!();
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new());
     
@@ -245,6 +252,7 @@ fn test_qualified_function_call_compilation() {
 #[traced_test]
 #[test]
 fn test_type_mapping_coverage() {
+    // init_tracing!();
     let context = Context::create();
     let module = context.create_module("test_stdlib");
     let integration = StdlibLlvmIntegration::new(&context, &module);
@@ -279,6 +287,7 @@ fn test_type_mapping_coverage() {
 #[traced_test]
 #[test]
 fn test_gc_integration_with_stdlib() {
+    // init_tracing!();
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new());
     
@@ -315,6 +324,7 @@ fn test_gc_integration_with_stdlib() {
 #[traced_test]
 #[test]
 fn test_runtime_function_declarations() {
+    // init_tracing!();
     let context = Context::create();
     let mut generator = LlvmCodeGenerator::new());
     
@@ -346,6 +356,7 @@ fn test_runtime_function_declarations() {
 #[traced_test]
 #[test]
 fn test_comprehensive_package_coverage() {
+    // init_tracing!();
     let registry = StdlibRegistry::new();
     
     // Test all major packages are represented

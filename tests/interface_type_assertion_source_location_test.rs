@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::Node;
 use cursed::codegen::llvm::{LlvmCodeGenerator, EnhancedSourceLocationSupport};
 use cursed::error::SourceLocation;
@@ -16,6 +16,7 @@ mod common;
 
 #[test]
 fn test_enhanced_source_location_extraction() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     
@@ -48,6 +49,7 @@ fn test_enhanced_source_location_extraction() {
 
 #[test]
 fn test_create_enhanced_source_location() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     
@@ -97,6 +99,7 @@ impl Node for MockNode {
 
 #[test]
 fn test_source_location_cache() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     

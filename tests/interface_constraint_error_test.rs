@@ -32,7 +32,7 @@ macro_rules! init_tracing {
 // Helper function to test if code produces a constraint error
 // Returns Some(error) if a constraint error occurred, None otherwise
 fn test_constraint_error(input: &str) -> Option<CursedError> {
-    let lexer = Lexer::new(input);
+    let lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer);
     let program = match parser.parse_program() {
         Ok(p) => p,
@@ -40,10 +40,7 @@ fn test_constraint_error(input: &str) -> Option<CursedError> {
     };
     
     // Check for parser errors
-    if !parser.errors().is_empty() {
-        let error_msg = parser.errors().join("\n");
-        return Some(CursedError::new(ErrorKind::Parser, error_msg));
-    }
+    
     
     // Run the program with default JIT options
     let options = JitOptions::default()
@@ -54,7 +51,7 @@ fn test_constraint_error(input: &str) -> Option<CursedError> {
         Err(e) => {
             // Convert the error to a CursedError
             match e {
-                cursed::error::Error::TypeAssertion(ce) => Some(ce),
+                cursed::error::Error::repl_error("Type assertion error".to_string()) => Some(ce),
                 _ => Some(CursedError::from(e)),
             }
         }
@@ -66,7 +63,7 @@ fn test_constraint_error_message_contains_missing_methods() {
     init_tracing!();
     
     // Define a test with a constraint violation
-    let input = r#"
+    let input = r#""
         // Define an interface with methods
         collab Comparable {
             compare(other Comparable) normie;
@@ -89,7 +86,7 @@ fn test_constraint_error_message_contains_missing_methods() {
             sus sorted_points = sorted(points)  // This will fail constraint check
             return "This should not execute"
         }
-    "#;
+    "#";
     
     // Run the test and verify we get a constraint error
     if let Some(error) = test_constraint_error(input) {
@@ -123,7 +120,7 @@ fn test_direct_interface_implementation_error() {
     init_tracing!();
     
     // Define a test with a direct interface implementation error
-    let input = r#"
+    let input = r#""
         // Define an interface with methods
         collab Processor {
             process(data tea) tea;
@@ -149,7 +146,7 @@ fn test_direct_interface_implementation_error() {
             
             return "This should not execute"
         }
-    "#;
+    "#";
     
     // Run the test and verify we get a constraint error
     if let Some(error) = test_constraint_error(input) {

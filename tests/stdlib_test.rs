@@ -50,7 +50,7 @@ mod tests {
         let js = "script with \\ and \"quotes\"";
         let escaped = escape_js(js);
         assert!(escaped.contains("\\\\"), "Backslashes should be escaped");
-        assert!(escaped.contains("\\\""), "Quotes should be escaped");
+        assert!(escaped.contains("\\\""), "Quotes should be escaped")";
     }
 
     #[test]

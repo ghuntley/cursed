@@ -1,6 +1,6 @@
 use cursed::core::type_checker::{Type, TypeChecker};
-use cursed::ast::expressions::collections::HashLiteral;
-use cursed::ast::expressions::{StringLiteral, IntegerLiteral};
+use cursed::ast::collections::HashLiteral;
+use cursed::ast::{StringLiteral, IntegerLiteral};
 use cursed::ast::Expression;
 use cursed::ast::Token;
 use cursed::lexer::TokenType;

@@ -6,7 +6,7 @@
 use cursed::bootstrap::{BootstrapSubset, SubsetValidator, BootstrapConfig, BootstrapConfigBuilder};
 use cursed::lexer::{Lexer, Token};
 use cursed::parser::Parser;
-use cursed::ast::base::Program;
+use cursed::ast::Program;
 use cursed::error::Error;
 
 /// Test basic bootstrap subset functionality
@@ -222,13 +222,13 @@ fn test_config_validation() {
 /// Test parsing and validation of minimal valid bootstrap program
 #[test]
 fn test_minimal_bootstrap_program() {
-    let source = r#"
+    let source = r#""
 vibe main
 
 slay main() {
     vibez.spill("Hello, bootstrap!")
 }
-"#;
+"#";
 
     // Parse the program
     let mut lexer = Lexer::new(source);
@@ -261,7 +261,7 @@ slay main() {
 /// Test parsing and validation of program with disallowed features
 #[test]
 fn test_disallowed_features_program() {
-    let source = r#"
+    let source = r#""
 vibe main
 
 squad Person {
@@ -273,7 +273,7 @@ slay main() {
     sus p = Person{name: "Alice", age: 30}
     vibez.spill(p.name)
 }
-"#;
+"#";
 
     // Parse the program
     let mut lexer = Lexer::new(source);

@@ -12,7 +12,7 @@ mod llvm_test_helpers;
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_pointer_simple() -> Result<(), Error> {
     // Test code that exercises pointer operations
-    let input = r#"vibe pointer_simple_test
+    let input = r#"vibe pointer_simple_test"
 
 slay test_pointer_simple() normie {
     sus x = 42                 // Integer variable
@@ -37,7 +37,7 @@ slay test_pointer_simple() normie {
     
     yolo value                 // Return the original value (42)
 }
-"#;
+"#";
 
     // Run the test and verify the result
     let result = run_code_test::<i32>(input, "test_pointer_simple")?;
@@ -52,7 +52,7 @@ slay test_pointer_simple() normie {
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_pointer_null() -> Result<(), Error> {
     // Test code that exercises null pointer handling
-    let input = r#"vibe pointer_null_test
+    let input = r#"vibe pointer_null_test"
 
 slay test_pointer_null() normie {
     sus null_ptr = @normie(0)       // Create a null pointer (special syntax in our language)
@@ -74,7 +74,7 @@ slay test_pointer_null() normie {
     //
     yolo default_value + result    // Should be 42 + 0 = 42
 }
-"#;
+"#";
 
     // Run the test and verify the result
     let result = run_code_test::<i32>(input, "test_pointer_null")?;
@@ -89,7 +89,7 @@ slay test_pointer_null() normie {
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_pointer_struct() -> Result<(), Error> {
     // Test code that exercises struct field access through pointers
-    let input = r#"vibe pointer_struct_test
+    let input = r#"vibe pointer_struct_test"
 
 be_like Point squad {
     x normie
@@ -124,7 +124,7 @@ slay test_pointer_struct() normie {
     //
     yolo x_val + y_val              // Should be 10 + 20 = 30
 }
-"#;
+"#";
 
     // Run the test and verify the result
     let result = run_code_test::<i32>(input, "test_pointer_struct")?;

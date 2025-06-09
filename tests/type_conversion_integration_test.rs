@@ -1,9 +1,9 @@
 //! Integration tests for type conversions in CURSED LLVM codegen
 
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::ast::expressions::TypeConversionExpression;
-use cursed::ast::expressions::literals::IntegerLiteral;
-use cursed::ast::expressions::literals::FloatLiteral;
+use cursed::ast::TypeConversionExpression;
+use cursed::ast::literals::IntegerLiteral;
+use cursed::ast::literals::FloatLiteral;
 use cursed::ast::Expression;
 use inkwell::context::Context;
 use inkwell::module::Module;

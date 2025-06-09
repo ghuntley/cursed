@@ -11,6 +11,7 @@ mod common;
 
 #[test]
 fn test_recovery_for_comparable_interface() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -50,6 +51,7 @@ fn test_recovery_for_comparable_interface() {
 
 #[test]
 fn test_recovery_for_numeric_interface() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -93,6 +95,7 @@ fn test_recovery_for_numeric_interface() {
 
 #[test]
 fn test_recovery_for_container_interface() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -128,6 +131,7 @@ fn test_recovery_for_container_interface() {
 
 #[test]
 fn test_error_message_formatting() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -153,6 +157,7 @@ fn test_error_message_formatting() {
 
 #[test]
 fn test_recovery_strategy_recommendation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -179,6 +184,7 @@ fn test_recovery_strategy_recommendation() {
 
 #[test]
 fn test_registry_extension_methods() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -205,6 +211,7 @@ fn test_registry_extension_methods() {
 
 #[test]
 fn test_constraint_check_with_recovery() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();

@@ -17,6 +17,7 @@ mod common;
 /// Test basic string type creation and validation
 #[test]
 fn test_string_type_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -42,6 +43,7 @@ fn test_string_type_creation() {
 /// Test string literal creation and validation
 #[test]
 fn test_string_literal_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -92,6 +94,7 @@ fn test_string_literal_creation() {
 /// Test empty string creation
 #[test]
 fn test_empty_string_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -132,6 +135,7 @@ fn test_empty_string_creation() {
 /// Test string value creation from components
 #[test]
 fn test_string_value_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -192,6 +196,7 @@ fn test_string_value_creation() {
 /// Test type conversion utilities
 #[test]
 fn test_type_conversion_utilities() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -227,6 +232,7 @@ fn test_type_conversion_utilities() {
 /// Test operation validation
 #[test]
 fn test_operation_validation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let tea_type = Type::Tea;
@@ -260,6 +266,7 @@ fn test_operation_validation() {
 /// Test type caching functionality
 #[test]
 fn test_type_caching() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -295,6 +302,7 @@ fn test_type_caching() {
 /// Test integration with existing type system
 #[test]
 fn test_type_system_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -327,6 +335,7 @@ fn test_type_system_integration() {
 /// Test string type with different CURSED types
 #[test]
 fn test_cursed_type_compatibility() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -384,6 +393,7 @@ fn test_cursed_type_compatibility() {
 /// Test error handling and edge cases
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -427,6 +437,7 @@ fn test_error_handling() {
 /// Test memory layout and alignment
 #[test]
 fn test_memory_layout() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -457,6 +468,7 @@ fn test_memory_layout() {
 /// Performance test for type creation and caching
 #[test]
 fn test_performance() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();

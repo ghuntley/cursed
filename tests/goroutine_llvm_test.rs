@@ -1,8 +1,8 @@
 //! LLVM code generation tests for goroutines
 
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::ast::expressions::concurrency::StanExpression;
-use cursed::ast::expressions::{StringLiteral, CallExpression, Identifier};
+use cursed::ast::concurrency::StanExpression;
+use cursed::ast::{StringLiteral, CallExpression, Identifier};
 use cursed::ast::traits::Expression;
 use cursed::lexer::Token;
 use cursed::memory::GarbageCollector;

@@ -11,9 +11,10 @@ use tracing::{info, instrument};
 #[instrument]
 #[test]
 fn test_minimal_arithmetic() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func main() {
     let x = 10
     let y = 20
@@ -23,7 +24,7 @@ func main() {
     let quotient = y / x
     return sum + diff + product + quotient
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_arithmetic", source, None)
         .expect("Minimal arithmetic test failed");
@@ -32,9 +33,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_control_flow() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func main() {
     let result = 0
     
@@ -56,7 +58,7 @@ func main() {
     
     return result  // Should be 8 (1 + 2 + 5)
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_control_flow", source, None)
         .expect("Minimal control flow test failed");
@@ -65,9 +67,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_functions() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func add(a: int, b: int) int {
     return a + b
 }
@@ -81,7 +84,7 @@ func main() {
     let product = multiply(4, 2)
     return sum + product  // Should be 16
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_functions", source, None)
         .expect("Minimal functions test failed");
@@ -90,9 +93,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_variables() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func main() {
     // Test variable declarations
     let x = 42
@@ -106,7 +110,7 @@ func main() {
     
     return x + y + z + w  // Should be 64
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_variables", source, None)
         .expect("Minimal variables test failed");
@@ -115,9 +119,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_structs() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 struct Point {
     x: int
     y: int
@@ -127,7 +132,7 @@ func main() {
     let p = Point{x: 10, y: 20}
     return p.x + p.y  // Should be 30
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_structs", source, None)
         .expect("Minimal structs test failed");
@@ -136,9 +141,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_arrays() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func main() {
     let arr = [1, 2, 3, 4, 5]
     let sum = 0
@@ -149,7 +155,7 @@ func main() {
     
     return sum  // Should be 15
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_arrays", source, None)
         .expect("Minimal arrays test failed");
@@ -158,9 +164,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_strings() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func main() {
     let greeting = "Hello"
     let name = "World"
@@ -173,7 +180,7 @@ func main() {
         return 0
     }
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_strings", source, None)
         .expect("Minimal strings test failed");
@@ -182,9 +189,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_error_handling() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func divide(a: int, b: int) int {
     if b == 0 {
         return -1  // Error case
@@ -202,7 +210,7 @@ func main() {
         return 0  // Failure
     }
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_error_handling", source, None)
         .expect("Minimal error handling test failed");
@@ -211,9 +219,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_boolean_logic() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 func main() {
     let a = true
     let b = false
@@ -229,7 +238,7 @@ func main() {
         return 0  // Failure
     }
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_boolean_logic", source, None)
         .expect("Minimal boolean logic test failed");
@@ -238,9 +247,10 @@ func main() {
 #[instrument]
 #[test]
 fn test_minimal_nested_structures() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
-    let source = r#"
+    let source = r#""
 struct Address {
     street: string
     number: int
@@ -268,7 +278,7 @@ func main() {
         return 0  // Failure
     }
 }
-"#;
+"#";
     
     test_minimal_subset_program(&config, "minimal_nested_structures", source, None)
         .expect("Minimal nested structures test failed");
@@ -277,6 +287,7 @@ func main() {
 #[instrument]
 #[test]
 fn test_bootstrap_subset_completeness() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that all minimal subset features work together

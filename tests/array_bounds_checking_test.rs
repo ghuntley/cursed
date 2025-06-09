@@ -126,14 +126,14 @@ fn test_array_access_in_bounds() {
     tracing_setup::init_test_tracing();
     
     // This test verifies that normal in-bounds array access works correctly
-    let content = r#"vibe array_test;
+    let content = r#"vibe array_test";
 
 slay main() {
     sus arr normie = [1, 2, 3, 4, 5];
     puts(arr[2]); // Should print 3 (0-indexed)
     yolo 0;
 }
-"#;
+"#";
 
     // Create a temporary test file
     let test_file = create_test_file("array_in_bounds.csd", content)
@@ -165,7 +165,7 @@ fn test_array_access_out_of_bounds() {
     tracing_setup::init_test_tracing();
     
     // This test verifies that out-of-bounds array access is detected
-    let content = r#"vibe array_test;
+    let content = r#"vibe array_test";
 
 slay main() {
     sus arr normie = [1, 2, 3];
@@ -174,7 +174,7 @@ slay main() {
     puts("This should not print");
     yolo 0;
 }
-"#;
+"#";
 
     // Create a temporary test file
     let test_file = create_test_file("array_out_of_bounds.csd", content)
@@ -204,7 +204,7 @@ fn test_negative_array_index() {
     tracing_setup::init_test_tracing();
     
     // This test verifies that negative array indices are rejected
-    let content = r#"vibe array_test;
+    let content = r#"vibe array_test";
 
 slay main() {
     sus arr normie = [10, 20, 30];
@@ -213,7 +213,7 @@ slay main() {
     puts("This should not print");
     yolo 0;
 }
-"#;
+"#";
 
     // Create a temporary test file
     let test_file = create_test_file("array_negative_index.csd", content)
@@ -244,7 +244,7 @@ fn test_dynamic_index_calculation() {
     tracing_setup::init_test_tracing();
     
     // This test verifies bounds checking with dynamically calculated indices
-    let content = r#"vibe array_test;
+    let content = r#"vibe array_test";
 
 slay test_dynamic_index(thicc idx) {
     sus arr normie = [100, 200, 300, 400, 500];
@@ -267,7 +267,7 @@ slay main() {
     
     yolo 0;
 }
-"#;
+"#";
 
     // Create a temporary test file
     let test_file = create_test_file("array_dynamic_index.csd", content)

@@ -5,7 +5,7 @@
 //! runtime execution. They ensure the parser → AST → LLVM → runtime pipeline
 //! operates seamlessly for map operations.
 
-use cursed::ast::expressions::collections::HashLiteral;
+use cursed::ast::collections::HashLiteral;
 use cursed::ast::Expression;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
@@ -129,6 +129,7 @@ impl<'ctx> MapIntegration<'ctx> {
 /// Test the complete parsing pipeline for map literals
 #[test]
 fn test_map_literal_parsing_pipeline() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map literal parsing pipeline");
     
@@ -158,6 +159,7 @@ fn test_map_literal_parsing_pipeline() {
 /// Test AST generation and manipulation for map literals
 #[test] 
 fn test_map_literal_ast_generation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map literal AST generation");
     
@@ -191,6 +193,7 @@ fn test_map_literal_ast_generation() {
 /// Test map operations compilation to LLVM
 #[test]
 fn test_map_llvm_compilation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing LLVM compilation of map operations");
     
@@ -228,6 +231,7 @@ fn test_map_llvm_compilation() {
 /// Test map literal creation and initialization
 #[test]
 fn test_map_creation_and_initialization() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map creation and initialization");
     
@@ -259,6 +263,7 @@ fn test_map_creation_and_initialization() {
 /// Test map indexing operations (reading and writing)
 #[test]
 fn test_map_indexing_operations() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map indexing operations");
     
@@ -266,7 +271,7 @@ fn test_map_indexing_operations() {
     let integration = MapIntegration::new(&context);
     
     // Test program with map indexing
-    let source = r#"
+    let source = r#""
         vibe test_map_indexing
 
         slay main() normie {
@@ -278,7 +283,7 @@ fn test_map_indexing_operations() {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     // Parse and validate the program
     let is_valid = integration.validate_program(source);
@@ -290,6 +295,7 @@ fn test_map_indexing_operations() {
 /// Test map operations with different key/value type combinations
 #[test]
 fn test_map_type_combinations() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map operations with different type combinations");
     
@@ -337,6 +343,7 @@ fn test_map_type_combinations() {
 /// Test edge cases: empty maps, single-element maps, large maps
 #[test]
 fn test_map_edge_cases() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map edge cases");
     
@@ -373,6 +380,7 @@ fn test_map_edge_cases() {
 /// Test error cases: accessing non-existent keys, type mismatches
 #[test]
 fn test_map_error_cases() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map error cases");
     
@@ -406,6 +414,7 @@ fn test_map_error_cases() {
 /// Test map integration with other language features
 #[test]
 fn test_map_integration_with_language_features() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map integration with other language features");
     
@@ -413,7 +422,7 @@ fn test_map_integration_with_language_features() {
     let integration = MapIntegration::new(&context);
     
     // Test map with function calls
-    let function_source = r#"
+    let function_source = r#""
         vibe test_map_functions
 
         slay get_score() normie {
@@ -424,14 +433,14 @@ fn test_map_integration_with_language_features() {
             sus scores = {"alice": get_score(), "bob": 87}
             yolo 0
         }
-    "#;
+    "#";
     
     let is_valid = integration.validate_program(function_source);
     assert!(is_valid.is_ok(), "Failed to parse map with function integration");
     info!("Map integration with functions validated");
     
     // Test map with control flow
-    let control_flow_source = r#"
+    let control_flow_source = r#""
         vibe test_map_control
 
         slay main() normie {
@@ -443,7 +452,7 @@ fn test_map_integration_with_language_features() {
                 yolo 0
             }
         }
-    "#;
+    "#";
     
     let is_valid = integration.validate_program(control_flow_source);
     assert!(is_valid.is_ok(), "Failed to parse map with control flow integration");
@@ -455,6 +464,7 @@ fn test_map_integration_with_language_features() {
 /// Test map iteration scenarios
 #[test]
 fn test_map_iteration_scenarios() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map iteration scenarios");
     
@@ -462,7 +472,7 @@ fn test_map_iteration_scenarios() {
     let integration = MapIntegration::new(&context);
     
     // Test basic map iteration structure
-    let iteration_source = r#"
+    let iteration_source = r#""
         vibe test_map_iteration
 
         slay main() normie {
@@ -475,14 +485,14 @@ fn test_map_iteration_scenarios() {
             
             yolo total
         }
-    "#;
+    "#";
     
     let is_valid = integration.validate_program(iteration_source);
     assert!(is_valid.is_ok(), "Failed to parse map iteration program");
     info!("Map iteration structure validated");
     
     // Test value-only iteration
-    let value_iteration_source = r#"
+    let value_iteration_source = r#""
         vibe test_map_value_iteration
 
         slay main() normie {
@@ -495,7 +505,7 @@ fn test_map_iteration_scenarios() {
             
             yolo total
         }
-    "#;
+    "#";
     
     let is_valid = integration.validate_program(value_iteration_source);
     assert!(is_valid.is_ok(), "Failed to parse value-only iteration program");
@@ -507,6 +517,7 @@ fn test_map_iteration_scenarios() {
 /// Test map memory management and garbage collection integration
 #[test]
 fn test_map_memory_management() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map memory management");
     
@@ -514,7 +525,7 @@ fn test_map_memory_management() {
     let integration = MapIntegration::new(&context);
     
     // Test map creation and cleanup
-    let memory_source = r#"
+    let memory_source = r#""
         vibe test_map_memory
 
         slay create_large_map() {
@@ -533,7 +544,7 @@ fn test_map_memory_management() {
             // Map should be properly managed by GC
             yolo 0
         }
-    "#;
+    "#";
     
     let is_valid = integration.validate_program(memory_source);
     assert!(is_valid.is_ok(), "Failed to parse memory management program");
@@ -545,6 +556,7 @@ fn test_map_memory_management() {
 /// Performance test for map operations
 #[test]
 fn test_map_performance() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map performance characteristics");
     
@@ -576,6 +588,7 @@ fn test_map_performance() {
 /// Integration test that simulates a complete compilation pipeline
 #[test]
 fn test_complete_map_pipeline_simulation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing complete map pipeline simulation");
     

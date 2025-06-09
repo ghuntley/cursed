@@ -1,7 +1,7 @@
 use cursed::prelude::*;
-use cursed::ast::declarations::*;
-use cursed::ast::statements::*;
-use cursed::ast::expressions::*;
+use cursed::ast::*;
+use cursed::ast::*;
+use cursed::ast::*;
 use cursed::ast::operators::*;
 use cursed::ast::types::*;
 use cursed::ast::traits::*;
@@ -28,7 +28,7 @@ fn setup() {
 }
 
 /// Test source code with interface implementation
-const TEST_CODE: &str = r#"
+const TEST_CODE: &str = r#""
 vibe main;
 
 collab Container {
@@ -61,10 +61,11 @@ slay main() {
     vibez.spill(v.size();
     vibez.spill(m.size();
 }
-"#;
+"#";
 
 #[test]
 fn test_interface_field_accessors_lru() {
+    // init_tracing!();
     setup();
     let _span = info_span!("test", test = "interface_field_accessors_lru").entered();
     info!("Starting test for LRU cached interface field accessors");

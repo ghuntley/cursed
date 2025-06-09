@@ -72,6 +72,7 @@ fn setup_interface_inheritance(compiler: &mut LlvmCodeGenerator) -> Result<(), E
 
 #[test]
 fn test_generate_interface_hierarchy_dot_enhanced() {
+    // init_tracing!();
     with_test_compiler(|compiler| {
         // Set up test interfaces
         setup_interface_inheritance(compiler).expect("Failed to set up interface inheritance");
@@ -103,6 +104,7 @@ fn test_generate_interface_hierarchy_dot_enhanced() {
 
 #[test]
 fn test_visualize_interface_path_enhanced() {
+    // init_tracing!();
     with_test_compiler(|compiler| {
         // Set up test interfaces
         setup_interface_inheritance(compiler).expect("Failed to set up interface inheritance");
@@ -129,6 +131,7 @@ fn test_visualize_interface_path_enhanced() {
 
 #[test]
 fn test_find_alternative_paths_enhanced() {
+    // init_tracing!();
     with_test_compiler(|compiler| {
         // Set up test interfaces
         setup_interface_inheritance(compiler).expect("Failed to set up interface inheritance");
@@ -155,6 +158,7 @@ fn test_find_alternative_paths_enhanced() {
 
 #[test]
 fn test_generate_path_error_message_enhanced() {
+    // init_tracing!();
     with_test_compiler(|compiler| {
         // Set up test interfaces
         setup_interface_inheritance(compiler).expect("Failed to set up interface inheritance");

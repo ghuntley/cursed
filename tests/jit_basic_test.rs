@@ -37,6 +37,7 @@ fn run_cursed_file(file_path: &str) -> io::Result<(String, bool)> {
 /// Tests JIT execution of a minimal program
 #[test]
 fn test_jit_minimal() {
+    // init_tracing!();
     // Initialize tracing for this test
     tracing_setup::init_test_tracing();
     let test_file = "tests/minimal_test.csd";
