@@ -284,6 +284,11 @@ impl<T: Entity> Repository<T> {
         FluentQueryBuilder::new(T::table_name(), self.db.clone())
     }
 
+    /// slay Get database connection
+    pub fn db(&self) -> &Arc<DB> {
+        &self.db
+    }
+
     /// bestie Bulk insert entities with transaction
     #[instrument(skip(self, entities))]
     pub async fn bulk_insert_vibes(&self, entities: &[T]) -> Result<Vec<T>, DatabaseError> {
@@ -300,7 +305,7 @@ impl<T: Entity> Repository<T> {
         
         // Use transaction for bulk operation  
         let ctx = super::VibeContext::default();
-        let tx = self.db.begin_tx(ctx, None)?;
+        let mut tx = self.db.begin_tx(ctx, None)?;
         
         let mut results = Vec::new();
         for entity in entities {

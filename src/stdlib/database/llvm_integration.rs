@@ -391,7 +391,6 @@ pub fn register_database_functions(generator: &mut LlvmCodeGenerator) -> Result<
 #[no_mangle]
 pub extern "C" fn cursed_db_open(driver_name: *const std::os::raw::c_char, data_source: *const std::os::raw::c_char) -> *mut std::os::raw::c_void {
     use std::ffi::CStr;
-    use crate::stdlib::packages::db_core;
     
     // Convert C strings to Rust strings
     let driver_str = unsafe {
@@ -410,12 +409,15 @@ pub extern "C" fn cursed_db_open(driver_name: *const std::os::raw::c_char, data_
         }
     };
     
-    // Attempt to connect to database
-    match db_core::utils::connect(driver_str, dsn_str) {
-        Ok(connection) => {
-            // Convert connection to opaque pointer
-            Box::into_raw(Box::new(connection)) as *mut std::os::raw::c_void
-        },
+    // For FFI, we need to handle async operations differently
+    // This is a placeholder that would need a runtime executor
+    // In practice, this would use a blocking wrapper or different approach
+    match std::panic::catch_unwind(|| {
+        // Placeholder connection creation - would need actual async runtime integration
+        // For now, return null to indicate this needs proper async handling
+        std::ptr::null_mut()
+    }) {
+        Ok(result) => result,
         Err(_) => std::ptr::null_mut(),
     }
 }

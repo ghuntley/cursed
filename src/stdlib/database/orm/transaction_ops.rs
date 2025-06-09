@@ -73,8 +73,8 @@ impl<T: Entity> TransactionalRepository<T> {
     pub async fn begin_transaction(&self) -> Result<Arc<Tx>, DatabaseError> {
         debug!("Beginning new transaction");
         
-        // Create transaction (placeholder - would use actual DB transaction)
-        let tx = Arc::new(Tx::new()); // Simplified
+        // Create transaction using DB connection
+        let tx = Arc::new(self.repository.db().begin()?); // Use proper DB transaction
         
         // Store current transaction
         if let Ok(mut current_tx) = self.current_transaction.lock() {
@@ -179,7 +179,7 @@ impl TransactionScope {
         }
         
         // Start transaction
-        let tx = Arc::new(Tx::new()); // Placeholder
+        let tx = Arc::new(self.db.begin()?); // Use proper DB transaction
         
         if let Ok(mut transaction) = self.transaction.lock() {
             *transaction = Some(tx);
@@ -634,13 +634,7 @@ pub struct UnitOfWorkStats {
     pub transaction_metrics: TransactionMetrics,
 }
 
-// Placeholder Tx implementation for compilation
-impl Tx {
-    fn new() -> Self {
-        // Placeholder implementation
-        unimplemented!("Placeholder Tx implementation")
-    }
-}
+// Note: Tx implementation is provided by the core database module
 
 #[cfg(test)]
 mod tests {

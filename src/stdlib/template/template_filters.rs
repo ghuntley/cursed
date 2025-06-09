@@ -784,7 +784,6 @@ fn is_truthy(obj: &CursedObject) -> bool {
         CursedObject::String(s) => !s.is_empty(),
         CursedObject::Array(arr) => !arr.is_empty(),
         CursedObject::Map(map) => !map.is_empty(),
-        _ => true,
     }
 }
 

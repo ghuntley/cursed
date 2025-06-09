@@ -97,7 +97,6 @@ impl TemplateFormatRenderer {
                 }
                 Ok(output)
             }
-            _ => Ok(format!("{:?}", data)),
         }
     }
 
@@ -128,7 +127,6 @@ impl TemplateFormatRenderer {
                 html.push_str("</dl>");
                 Ok(html)
             }
-            _ => Ok(self.escape_html(&format!("{:?}", data))),
         }
     }
 
@@ -198,10 +196,6 @@ impl TemplateFormatRenderer {
                 xml.push_str(&format!("{}</{}>\n", indent, safe_tag));
                 Ok(xml)
             }
-            _ => {
-                Ok(format!("{}<{}>{}</{}>\n", indent, safe_tag, 
-                    self.escape_xml(&format!("{:?}", data)), safe_tag))
-            }
         }
     }
 
@@ -229,7 +223,6 @@ impl TemplateFormatRenderer {
                 }
                 Ok(md)
             }
-            _ => Ok(format!("{:?}", data)),
         }
     }
 
@@ -682,7 +675,6 @@ impl TemplateFormatRenderer {
                 }
                 Ok(JsonValue::Object(json_map))
             }
-            _ => Ok(JsonValue::String(format!("{:?}", obj))),
         }
     }
 

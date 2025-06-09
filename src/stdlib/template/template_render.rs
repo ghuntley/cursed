@@ -593,7 +593,6 @@ impl TemplateRenderer {
             CursedObject::String(s) => !s.is_empty(),
             CursedObject::Array(arr) => !arr.is_empty(),
             CursedObject::Map(map) => !map.is_empty(),
-            _ => true,
         }
     }
 

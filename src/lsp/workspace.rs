@@ -567,62 +567,6 @@ impl WorkspaceManager {
             symbols,
         }
     }
-
-    /// Scan workspace for files
-    pub async fn scan_workspace(&self) {
-        // TODO: Implement workspace scanning
-    }
-
-    /// Set workspace folders
-    pub async fn set_workspace_folders(&self, _folders: Vec<WorkspaceFolder>) {
-        // TODO: Implement workspace folder setting
-    }
-
-    /// Get workspace folders
-    pub async fn get_workspace_folders(&self) -> Vec<WorkspaceFolder> {
-        // TODO: Implement workspace folder getting
-        Vec::from([])
-    }
-
-    /// Scan directory for files
-    pub async fn scan_directory(&self, _path: &Path) {
-        // TODO: Implement directory scanning
-    }
-
-    /// Update workspace symbols
-    pub async fn update_workspace_symbols(&self) {
-        // TODO: Implement workspace symbol updating
-    }
-
-    /// Check if path should be ignored
-    pub fn should_ignore_path(&self, _path: &Path) -> bool {
-        // TODO: Implement path ignore checking
-        false
-    }
-
-    /// Classify file type
-    pub fn classify_file(&self, _path: &Path) -> Option<ProjectFileType> {
-        // TODO: Implement file classification
-        Some(ProjectFileType::CursedSource)
-    }
-
-    /// Extract symbols from content
-    pub fn extract_symbols_from_content(&self, _content: &str, _uri: &Url) -> Vec<SymbolInformation> {
-        // TODO: Implement symbol extraction
-        Vec::from([])
-    }
-
-    /// Get files by type
-    pub async fn get_files_by_type(&self, _file_type: ProjectFileType) -> Vec<ProjectFile> {
-        // TODO: Implement files by type
-        Vec::from([])
-    }
-
-    /// Get config files
-    pub async fn get_config_files(&self) -> Vec<ProjectFile> {
-        // TODO: Implement config files
-        Vec::from([])
-    }
 }
 
 /// Workspace statistics
