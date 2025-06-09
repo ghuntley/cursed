@@ -1,0 +1,73 @@
+# CURSED Package Configuration
+# This is an example CursedPackage.toml file for the CURSED programming language
+
+[package]
+name = "my-cursed-app"
+version = "0.1.0"
+description = "A fire CURSED application that slaps different"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+repository = "https://github.com/yourusername/my-cursed-app"
+keywords = ["web", "api", "cursed", "gen-z"]
+categories = ["web-programming", "api"]
+
+# Production dependencies
+[dependencies]
+json = "^1.0.0"
+http = { version = "^2.1.0", features = ["ssl"] }
+crypto = "~1.5.0"
+database = { git = "https://github.com/cursed-lang/database.git", branch = "main" }
+local-utils = { path = "../local-utils" }
+
+# Development dependencies (only used during development/testing)
+[dev-dependencies]
+test-utils = "0.3.0"
+benchmark = "0.2.0"
+mock-server = { version = "0.1.0", optional = true }
+
+# Features (optional functionality)
+[features]
+default = ["json", "http"]
+ssl = ["http/ssl"]
+database-sqlite = ["database/sqlite"]
+database-postgres = ["database/postgres"]
+
+# Build configuration
+[build]
+optimization-level = 2
+target = "x86_64-unknown-linux-gnu"
+debug-symbols = true
+
+# Package metadata
+[package.metadata]
+documentation = "https://docs.cursed-lang.org/packages/my-cursed-app"
+homepage = "https://cursed-lang.org"
+minimum-cursed-version = "1.0.0"
+
+# Examples configuration
+[[example]]
+name = "basic-server"
+path = "examples/basic_server.csd"
+description = "A basic HTTP server example"
+
+[[example]]
+name = "cli-tool"
+path = "examples/cli_tool.csd"
+description = "Command-line tool example"
+
+# Binary configuration
+[[bin]]
+name = "my-app"
+path = "src/main.csd"
+description = "Main application binary"
+
+[[bin]]
+name = "my-app-cli"
+path = "src/cli.csd"
+description = "CLI tool binary"
+
+# Test configuration
+[test]
+timeout = 60
+parallel = true
+features = ["test-utils"]

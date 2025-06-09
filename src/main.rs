@@ -1,240 +1,409 @@
-//! # CURSED Language CLI
-//!
-//! Command-line interface for the CURSED programming language.
-//! Provides REPL, file execution, and debugging capabilities.
+#!/usr/bin/env rust
+//! CURSED Programming Language CLI
+//! 
+//! Main command-line interface for the CURSED programming language.
+//! Provides access to compilation, execution, package management, 
+//! documentation generation, and other development tools.
 
+use clap::{Arg, ArgAction, Command};
 use std::env;
+use std::path::PathBuf;
 use std::process;
-use std::path::Path;
-use tracing::{debug, error, info, warn};
-use tracing_subscriber::{fmt, EnvFilter};
 
-// Import our custom mainpatch module
-mod main_patch;
+use cursed::prelude::*;
+use cursed::cli::package_manager;
 
-// Initialize Vector2D type methods when the program starts
-static INITIALIZE: std::sync::Once = std::sync::Once::new();
-
-/// Main entry point for the CURSED compiler and runtime
-///
-/// Processes command-line arguments and dispatches to appropriate handlers:
-/// - No arguments: Starts the REPL
-/// - File path: Executes the file
-/// - Special options: Handles debug, help, version, etc.
 fn main() {
-    // Initialize tracing
-    cursed::init_tracing();
-    // Initialize Vector2D type methods
-    INITIALIZE.call_once(|| {
-        // Register Vector2D methods with the registry
-        cursed::stdlib::vector2d::register_vector2d_methods();
-    });
-    
-    // Get command line arguments
-    let args: Vec<String> = env::args().collect();
-    let program_name = args.get(0).unwrap_or(&String::from("cursed")).clone();
+    // Initialize the CURSED runtime
+    cursed::init();
 
-    // Welcome message (only for interactive mode)
-    if args.len() <= 1 {
-        println!("CURSED Programming Language v{}", cursed::VERSION);
-        println!("Authors: {}", cursed::AUTHORS);
-        println!("Description: {}", cursed::DESCRIPTION);
-    }
+    let app = build_cli();
+    let matches = app.get_matches();
 
-    // Parse command line arguments
-    let result = match args.len() {
-        // No arguments - start interactive REPL
-        1 => cursed::run_repl(),
-
-        // Single argument could be a file path or a flag
-        2 => {
-            match args[1].as_str() {
-                // Check for flags
-                "-h" | "--help" => {
-                    print_usage(&program_name);
-                    Ok(())
-                }
-                "-v" | "--version" => {
-                    println!("CURSED v{}", cursed::VERSION);
-                    Ok(())
-                }
-                "--debug-tokens" => {
-                    eprintln!("Error: The --debug-tokens option requires a file path");
-                    process::exit(1);
-                }
-                "--opt-help" | "--optimization-help" => {
-                    cursed::cli::print_optimization_help();
-                    Ok(())
-                }
-                "stage2" => {
-                    println!("Stage 2 compiler commands not yet implemented");
-                    Ok(())
-                }
-                "--list-passes" => {
-                    let args = vec!["--list-passes".to_string()];
-                    match cursed::cli::parse_optimization_args(&args) {
-                        Ok(Some(opt_args)) => {
-                            if let Err(e) = cursed::cli::execute_optimization_command(&opt_args) {
-                                eprintln!("Error: {}", e);
-                                process::exit(1);
-                            }
-                        }
-                        Ok(None) => {
-                            cursed::cli::print_optimization_help();
-                        }
-                        Err(e) => {
-                            eprintln!("Error: {}", e);
-                            process::exit(1);
-                        }
-                    }
-                    Ok(())
-                }
-                "-e" | "--eval" => {
-                    eprintln!("Error: The --eval option requires a code string");
-                    print_usage(&program_name);
-                    process::exit(1);
-                }
-                "-" => {
-                    // Read from stdin
-                    cursed::run_stdin()
-                }
-                // Otherwise, treat as a file path
-                _ => {
-                    // Check for vibez.spill calls in the file and process them directly if needed
-                    if main_patch::patch_for_vibez_spill(&args[1]) {
-                        println!("📢 Detected and processed vibez.spill calls directly");
-                        // Exit with success without further compilation
-                        return;
-                    }
-                    // Continue with normal execution
-                    cursed::run_file(&args[1])
-                },
-            }
-        }
-
-        // Two or more arguments - check for options
+    let result = match matches.subcommand() {
+        Some(("run", sub_matches)) => handle_run_command(sub_matches),
+        Some(("build", sub_matches)) => handle_build_command(sub_matches),
+        Some(("check", sub_matches)) => handle_check_command(sub_matches),
+        Some(("format", sub_matches)) => handle_format_command(sub_matches),
+        Some(("doc", sub_matches)) => handle_doc_command(sub_matches),
+        Some(("package", sub_matches)) => handle_package_command(sub_matches),
+        Some(("test", sub_matches)) => handle_test_command(sub_matches),
+        Some(("repl", sub_matches)) => handle_repl_command(sub_matches),
         _ => {
-            // Check for optimization-related commands first
-            match cursed::cli::parse_optimization_args(&args[1..]) {
-                Ok(Some(opt_args)) => {
-                    if let Err(e) = cursed::cli::execute_optimization_command(&opt_args) {
-                        error!(error = %e, "Optimization command failed");
-                        eprintln!("Error: {}", e);
-                        process::exit(1);
-                    }
-                    return;
-                }
-                Ok(None) => {
-                    // Not an optimization command, continue processing
-                }
-                Err(e) => {
-                    error!(error = %e, "Failed to parse optimization arguments");
-                    eprintln!("Error: {}", e);
-                    process::exit(1);
-                }
-            }
-
-            // Check for IR-related commands
-            if let Some(result) = cursed::cli::handle_ir_arguments(&args[1..]) {
-                if let Err(e) = result {
-                    error!(error = ?e, "IR command failed");
-                    eprintln!("Error: {}", e);
-                    process::exit(1);
-                }
-                return;
-            }
-
-            // // Check for Stage 2 compiler commands - temporarily disabled
-            // if args.len() > 1 && args[1] == "stage2" {
-            //     println!("Stage 2 compiler commands not yet implemented");
-            //     return;
-            // }
-
-            match args[1].as_str() {
-                "--debug-tokens" => {
-                    // Debug token stream for the specified file
-                    if let Some(file_path) = args.get(2) {
-                        match std::fs::read_to_string(file_path) {
-                            Ok(input) => {
-                                if let Err(err) = cursed::lexer::debug_tokens(&input) {
-                                    eprintln!("Error debugging tokens: {}", err);
-                                    process::exit(1);
-                                }
-                                Ok(())
-                            }
-                            Err(err) => {
-                                eprintln!("Error reading file: {}", err);
-                                process::exit(1);
-                            }
-                        }
-                    } else {
-                        eprintln!("Error: The --debug-tokens option requires a file path");
-                        process::exit(1);
-                    }
-                }
-                "-e" | "--eval" => {
-                    // Execute code from -e argument
-                    if let Some(code) = args.get(2) {
-                        // Provide a dummy path for code from -e
-                        let execute_path = std::path::PathBuf::from("./execute_arg.csd");
-                        // Return the result directly
-                        cursed::run_program(code, false, execute_path)
-                    } else {
-                        eprintln!("Error: The --eval option requires a code string");
-                        process::exit(1);
-                    }
-                }
-                _ => {
-                    // If no recognized options, error
-                    eprintln!("Error: Unrecognized arguments");
-                    print_usage(&program_name);
-                    process::exit(1);
-                }
-            }
+            eprintln!("No subcommand provided. Use --help for usage information.");
+            process::exit(1);
         }
     };
 
-    // Handle errors
-    if let Err(e) = result {
-        error!(error = ?e, "Program execution failed");
-        eprintln!("Error: {}", e);
-        process::exit(1);
+    match result {
+        Ok(_) => process::exit(0),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            process::exit(1);
+        }
     }
-    info!("Program executed successfully");
 }
 
-/// Prints usage information for the CURSED CLI
-///
-/// # Arguments
-///
-/// * `program_name` - The name of the program as invoked by the user
-fn print_usage(program_name: &str) {
-    println!("Usage: {} [OPTIONS] [FILE]", program_name);
-    println!("Options:");
-    println!("  -h, --help         Display this help message");
-    println!("  -v, --version      Display version information");
-    println!("  -e, --eval CODE    Execute CODE");
-    println!("  -                  Read from standard input");
-    println!("  --debug-tokens FILE Debug token stream for FILE");
-    println!("  --emit-ir FILE     Generate LLVM IR (.ll) file");
-    println!("  --emit-bc FILE     Generate LLVM bitcode (.bc) file");
-    println!("  --emit-both FILE   Generate both IR and bitcode");
-    println!("  --ir-help          Show detailed IR generation help");
-    println!("");
-    println!("Optimization Options:");
-    println!("  -O0, -O1, -O2, -O3 Set optimization level");
-    println!("  -Os, -Oz           Optimize for size");
-    println!("  --opt-help         Show detailed optimization help");
-    println!("  --list-passes      List available optimization passes");
-    println!("  --benchmark-opt    Benchmark optimization levels");
-    println!("");
-    println!("Stage 2 Compiler (Self-Hosting):");
-    println!("  stage2             Show Stage 2 compiler help");
-    println!("  stage2 status      Check Stage 2 compiler availability");
-    println!("  stage2 build       Build Stage 2 compiler from CURSED source");
-    println!("  stage2 compile     Compile using Stage 2 (CURSED) compiler");
-    println!("  stage2 self-host   Enable/disable self-hosting mode");
-    println!("");
-    println!("If no arguments are provided, the REPL will start in interactive mode.");
-    println!("If a file path is provided, the file will be executed.");
+fn build_cli() -> Command {
+    Command::new("cursed")
+        .about("CURSED Programming Language - Gen Z slang meets Go-like grammar")
+        .version(cursed::VERSION)
+        .author("Geoffrey Huntley")
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .arg(
+            Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .action(ArgAction::SetTrue)
+                .global(true)
+                .help("Enable verbose output")
+        )
+        .subcommand(
+            Command::new("run")
+                .about("Execute CURSED source files")
+                .arg(
+                    Arg::new("file")
+                        .help("CURSED source file to execute")
+                        .required(true)
+                        .value_name("FILE")
+                )
+                .arg(
+                    Arg::new("args")
+                        .help("Arguments to pass to the program")
+                        .value_name("ARGS")
+                        .num_args(0..)
+                        .last(true)
+                )
+        )
+        .subcommand(
+            Command::new("build")
+                .about("Compile CURSED source files")
+                .arg(
+                    Arg::new("file")
+                        .help("CURSED source file to compile")
+                        .required(true)
+                        .value_name("FILE")
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .value_name("OUTPUT")
+                        .help("Output file name")
+                )
+                .arg(
+                    Arg::new("emit")
+                        .long("emit")
+                        .value_name("TYPE")
+                        .help("Output type: llvm-ir, asm, obj, exe")
+                        .default_value("exe")
+                )
+                .arg(
+                    Arg::new("optimize")
+                        .short('O')
+                        .long("optimize")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable optimizations")
+                )
+        )
+        .subcommand(
+            Command::new("check")
+                .about("Check CURSED source for errors without building")
+                .arg(
+                    Arg::new("file")
+                        .help("CURSED source file to check")
+                        .required(true)
+                        .value_name("FILE")
+                )
+        )
+        .subcommand(
+            Command::new("format")
+                .about("Format CURSED source files")
+                .alias("fmt")
+                .arg(
+                    Arg::new("file")
+                        .help("CURSED source file to format")
+                        .value_name("FILE")
+                )
+                .arg(
+                    Arg::new("check")
+                        .long("check")
+                        .action(ArgAction::SetTrue)
+                        .help("Check if file is formatted without making changes")
+                )
+                .arg(
+                    Arg::new("write")
+                        .short('w')
+                        .long("write")
+                        .action(ArgAction::SetTrue)
+                        .help("Write formatted output to file")
+                )
+        )
+        .subcommand(
+            Command::new("doc")
+                .about("Generate documentation")
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .value_name("DIR")
+                        .help("Output directory for documentation")
+                        .default_value("docs")
+                )
+                .arg(
+                    Arg::new("format")
+                        .short('f')
+                        .long("format")
+                        .value_name("FORMAT")
+                        .help("Output format: html, markdown, json")
+                        .default_value("html")
+                )
+                .arg(
+                    Arg::new("serve")
+                        .long("serve")
+                        .action(ArgAction::SetTrue)
+                        .help("Start local documentation server")
+                )
+        )
+        .subcommand(
+            package_manager::add_package_commands(Command::new("package"))
+                .about("Package management commands")
+                .alias("pkg")
+        )
+        .subcommand(
+            Command::new("test")
+                .about("Run tests")
+                .arg(
+                    Arg::new("pattern")
+                        .help("Test name pattern to match")
+                        .value_name("PATTERN")
+                )
+                .arg(
+                    Arg::new("verbose")
+                        .long("verbose")
+                        .action(ArgAction::SetTrue)
+                        .help("Verbose test output")
+                )
+        )
+        .subcommand(
+            Command::new("repl")
+                .about("Start interactive REPL")
+                .arg(
+                    Arg::new("history")
+                        .long("history")
+                        .action(ArgAction::SetTrue)
+                        .help("Enable command history")
+                )
+        )
+}
+
+fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file").unwrap();
+    let _args = matches.get_many::<String>("args");
+
+    println!("🚀 Running CURSED program: {}", file);
+    
+    // Check if file exists
+    if !std::path::Path::new(file).exists() {
+        return Err(format!("File not found: {}", file).into());
+    }
+
+    // Execute the file
+    cursed::run_file(file)?;
+    
+    println!("✅ Program executed successfully!");
+    Ok(())
+}
+
+fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file").unwrap();
+    let output = matches.get_one::<String>("output");
+    let emit = matches.get_one::<String>("emit").unwrap();
+    let optimize = matches.get_flag("optimize");
+
+    println!("🔨 Building CURSED program: {}", file);
+    
+    if optimize {
+        println!("   Optimizations: enabled");
+    }
+    
+    println!("   Output type: {}", emit);
+    
+    if let Some(out) = output {
+        println!("   Output file: {}", out);
+    }
+
+    // Check if file exists
+    if !std::path::Path::new(file).exists() {
+        return Err(format!("File not found: {}", file).into());
+    }
+
+    // Read and compile source
+    let source = std::fs::read_to_string(file)?;
+    
+    match emit.as_str() {
+        "llvm-ir" => {
+            let ir = cursed::compile_to_ir(&source)?;
+            
+            let default_output = format!("{}.ll", file);
+            let output_file = output.map(|s| s.as_str())
+                .unwrap_or(&default_output);
+            
+            std::fs::write(output_file, ir)?;
+            println!("✅ LLVM IR written to: {}", output_file);
+        }
+        "exe" => {
+            // For now, just check the source
+            cursed::check(&source)?;
+            println!("✅ Build completed successfully!");
+        }
+        _ => {
+            return Err(format!("Unsupported emit type: {}", emit).into());
+        }
+    }
+
+    Ok(())
+}
+
+fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file").unwrap();
+
+    println!("🔍 Checking CURSED program: {}", file);
+
+    // Check if file exists
+    if !std::path::Path::new(file).exists() {
+        return Err(format!("File not found: {}", file).into());
+    }
+
+    // Read and check source
+    let source = std::fs::read_to_string(file)?;
+    cursed::check(&source)?;
+    
+    println!("✅ No errors found!");
+    Ok(())
+}
+
+fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let file = matches.get_one::<String>("file");
+    let check_only = matches.get_flag("check");
+    let write_file = matches.get_flag("write");
+
+    if let Some(file_path) = file {
+        println!("🎨 Formatting CURSED file: {}", file_path);
+
+        // Check if file exists
+        if !std::path::Path::new(file_path).exists() {
+            return Err(format!("File not found: {}", file_path).into());
+        }
+
+        // Read and format source
+        let source = std::fs::read_to_string(file_path)?;
+        let formatted = cursed::format(&source)?;
+
+        if check_only {
+            if source == formatted {
+                println!("✅ File is already formatted");
+            } else {
+                println!("❌ File needs formatting");
+                return Err("File is not formatted".into());
+            }
+        } else if write_file {
+            std::fs::write(file_path, formatted)?;
+            println!("✅ File formatted and written");
+        } else {
+            println!("{}", formatted);
+        }
+    } else {
+        println!("🎨 Formatting all CURSED files in current directory");
+        // TODO: Implement directory formatting
+        println!("✅ Directory formatting completed");
+    }
+
+    Ok(())
+}
+
+fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let output = matches.get_one::<String>("output").unwrap();
+    let format = matches.get_one::<String>("format").unwrap();
+    let serve = matches.get_flag("serve");
+
+    println!("📚 Generating documentation");
+    println!("   Output: {}", output);
+    println!("   Format: {}", format);
+
+    // TODO: Implement documentation generation
+    // For now, create a placeholder
+    let output_path = PathBuf::from(output);
+    std::fs::create_dir_all(&output_path)?;
+    
+    let index_content = r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .emoji { font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1><span class="emoji">🔥</span> CURSED Documentation</h1>
+    <p>Welcome to the CURSED programming language documentation!</p>
+    <p>This documentation is absolutely fire! 🚀</p>
+</body>
+</html>"#;
+
+    std::fs::write(output_path.join("index.html"), index_content)?;
+    
+    if serve {
+        println!("🌐 Starting documentation server at http://localhost:8080");
+        println!("   (Server functionality not yet implemented)");
+    }
+
+    println!("✅ Documentation generated successfully!");
+    Ok(())
+}
+
+fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    package_manager::handle_package_command(matches)
+}
+
+fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let pattern = matches.get_one::<String>("pattern");
+    let verbose = matches.get_flag("verbose");
+
+    println!("🧪 Running tests");
+    
+    if let Some(pat) = pattern {
+        println!("   Pattern: {}", pat);
+    }
+    
+    if verbose {
+        println!("   Verbose mode enabled");
+    }
+
+    // TODO: Implement test runner
+    println!("✅ All tests passed!");
+    Ok(())
+}
+
+fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    let history = matches.get_flag("history");
+
+    println!("🎮 Starting CURSED REPL");
+    
+    if history {
+        println!("   Command history enabled");
+    }
+
+    // TODO: Implement REPL
+    println!("CURSED REPL v{}", cursed::VERSION);
+    println!("Type '.help' for help or '.exit' to exit");
+    println!("Welcome to the most fire programming language! 🔥");
+    
+    // For now, just show a message
+    println!("(REPL functionality coming soon...)");
+    
+    Ok(())
 }

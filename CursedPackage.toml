@@ -1,0 +1,10 @@
+name = "test-project"
+version = "0.1.0"
+description = "A CURSED package"
+authors = ["Your Name <your.email@example.com>"]
+keywords = []
+categories = []
+
+[dependencies]
+
+[dev_dependencies]

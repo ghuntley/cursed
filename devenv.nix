@@ -24,6 +24,11 @@
     pkgs.zlib.dev
     pkgs.ncurses
     pkgs.ncurses.dev
+    # Package manager additional dependencies
+    pkgs.curl
+    pkgs.openssl
+    pkgs.pkg-config
+    pkgs.cacert
   ];
 
   # https://devenv.sh/languages/
