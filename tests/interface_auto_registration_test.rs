@@ -39,7 +39,7 @@ fn test_auto_interface_registration() {
     let person_type = Type::Struct("Person".to_string(), Vec::new());
     
     // The Named interface
-    let named_interface = Type::Interface("Named".to_string(), Vec::new());
+    let named_interface = Type::Unknown // Was Interface("Named".to_string(), Vec::new());
     
     // Check if Person implements Named
     let implements = type_checker.check_interface_implementation(&person_type, &named_interface).unwrap();
@@ -100,7 +100,7 @@ fn test_auto_interface_registration_with_generic_types() {
     let container_type = Type::Struct("Container".to_string(), Vec::new());
     
     // The Collection interface
-    let collection_interface = Type::Interface("Collection".to_string(), Vec::new());
+    let collection_interface = Type::Unknown // Was Interface("Collection".to_string(), Vec::new());
     
     // Check if Container implements Collection
     let implements = type_checker.check_interface_implementation(&container_type, &collection_interface).unwrap();

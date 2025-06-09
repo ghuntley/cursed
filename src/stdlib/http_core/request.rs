@@ -82,7 +82,6 @@ impl std::fmt::Display for Method {
 }
 
 /// HTTP request body types
-#[derive(Debug, Clone)]
 pub enum RequestBody {
     Empty,
     Text(String),
@@ -90,6 +89,32 @@ pub enum RequestBody {
     Json(serde_json::Value),
     Form(FormData),
     Stream(Box<dyn Read + Send + Sync>),
+}
+
+impl std::fmt::Debug for RequestBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RequestBody::Empty => write!(f, "Empty"),
+            RequestBody::Text(s) => f.debug_tuple("Text").field(s).finish(),
+            RequestBody::Binary(v) => f.debug_tuple("Binary").field(&format!("{} bytes", v.len())).finish(),
+            RequestBody::Json(j) => f.debug_tuple("Json").field(j).finish(),
+            RequestBody::Form(form) => f.debug_tuple("Form").field(form).finish(),
+            RequestBody::Stream(_) => f.debug_tuple("Stream").field(&"<stream>").finish(),
+        }
+    }
+}
+
+impl Clone for RequestBody {
+    fn clone(&self) -> Self {
+        match self {
+            RequestBody::Empty => RequestBody::Empty,
+            RequestBody::Text(s) => RequestBody::Text(s.clone()),
+            RequestBody::Binary(v) => RequestBody::Binary(v.clone()),
+            RequestBody::Json(j) => RequestBody::Json(j.clone()),
+            RequestBody::Form(form) => RequestBody::Form(form.clone()),
+            RequestBody::Stream(_) => panic!("Cannot clone stream body"),
+        }
+    }
 }
 
 impl RequestBody {

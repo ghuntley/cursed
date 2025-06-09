@@ -189,7 +189,7 @@ mod nil_type_representation_tests {
         let (context, module, builder) = setup_test_environment();
         let codegen = create_test_codegen(&context, module, builder);
         
-        let interface_type = Type::Interface("TestInterface".to_string(), vec![]);
+        let interface_type = Type::Unknown // Was Interface("TestInterface".to_string(), vec![]);
         let result = codegen.create_nil_value_for_type(&interface_type);
         
         assert!(result.is_ok(), "Nil interface creation should succeed");
@@ -232,7 +232,7 @@ mod nil_comparison_tests {
         assert!(codegen.type_can_be_nil(&Type::Map(Box::new(Type::Tea), Box::new(Type::Normie))));
         assert!(codegen.type_can_be_nil(&Type::Channel(Box::new(Type::Normie))));
         assert!(codegen.type_can_be_nil(&Type::Function(vec![Type::Normie], Box::new(Type::Normie))));
-        assert!(codegen.type_can_be_nil(&Type::Interface("Test".to_string(), vec![])));
+        assert!(codegen.type_can_be_nil(&Type::Unknown // Was Interface("Test".to_string(), vec![])));
         
         // Non-nullable types
         assert!(!codegen.type_can_be_nil(&Type::Normie));
@@ -252,7 +252,7 @@ mod nil_comparison_tests {
         assert_eq!(codegen.get_nil_representation_size(&Type::Map(Box::new(Type::Tea), Box::new(Type::Normie))), 8);
         assert_eq!(codegen.get_nil_representation_size(&Type::Channel(Box::new(Type::Normie))), 8);
         assert_eq!(codegen.get_nil_representation_size(&Type::Function(vec![Type::Normie], Box::new(Type::Normie))), 8);
-        assert_eq!(codegen.get_nil_representation_size(&Type::Interface("Test".to_string(), vec![])), 16);
+        assert_eq!(codegen.get_nil_representation_size(&Type::Unknown // Was Interface("Test".to_string(), vec![])), 16);
         
         // Non-nullable types return 0
         assert_eq!(codegen.get_nil_representation_size(&Type::Normie), 0);
@@ -348,7 +348,7 @@ mod nil_zero_value_integration_tests {
             Type::Map(Box::new(Type::Tea), Box::new(Type::Normie)),
             Type::Channel(Box::new(Type::Normie)),
             Type::Function(vec![Type::Normie], Box::new(Type::Normie)),
-            Type::Interface("Test".to_string(), vec![]),
+            Type::Unknown // Was Interface("Test".to_string(), vec![]),
         ];
         
         for ty in nullable_types {
@@ -403,7 +403,7 @@ mod nil_memory_safety_tests {
         let (context, module, builder) = setup_test_environment();
         let codegen = create_test_codegen(&context, module, builder);
         
-        let interface_type = Type::Interface("TestInterface".to_string(), vec![]);
+        let interface_type = Type::Unknown // Was Interface("TestInterface".to_string(), vec![]);
         let nil_interface = codegen.create_nil_value_for_type(&interface_type).unwrap();
         
         // Nil interface should have null data and type pointers

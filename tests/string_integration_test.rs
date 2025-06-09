@@ -18,7 +18,7 @@ fn test_string_helpers_integration() {
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test.csd");
     
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Initialize string helpers (should not panic)
     generator.init_string_helpers();
@@ -80,7 +80,7 @@ fn test_string_literal_creation() {
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test.csd");
     
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Create a function to hold our test code
     let i32_type = context.i32_type();
@@ -160,7 +160,7 @@ fn test_empty_string_handling() {
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test.csd");
     
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Create a function to hold our test code
     let i32_type = context.i32_type();
@@ -235,7 +235,7 @@ fn test_string_helpers_idempotent() {
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test.csd");
     
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Initialize string helpers multiple times
     generator.init_string_helpers();

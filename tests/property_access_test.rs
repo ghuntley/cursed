@@ -14,7 +14,7 @@ mod property_access_tests {
         use std::path::PathBuf;
         
         let mut lexer = Lexer::new(code);
-        let mut parser = Parser::new(&mut lexer)?;
+        let mut parser = Parser::new(lexer)?;
         let program = parser.parse_program()?;
         
         if !parser.errors().is_empty() {
@@ -29,7 +29,7 @@ mod property_access_tests {
         
         // Create LLVM context and code generator
         let context = inkwell::context::Context::create();
-        let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+        let mut code_gen = LlvmCodeGenerator::new());
         
         // Compile the program
         code_gen.compile(&program)?;

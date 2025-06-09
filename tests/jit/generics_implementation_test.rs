@@ -7,7 +7,7 @@ use cursed::ast::{Statement, Expression};
 fn test_parse_generic_type_definition() {
     let input = "be_like Box[T] squad { value T }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
@@ -29,7 +29,7 @@ fn test_parse_generic_type_definition() {
 fn test_parse_multiple_generic_type_parameters() {
     let input = "be_like Pair[K, V] squad { key K value V }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");

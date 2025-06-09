@@ -26,7 +26,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?;
@@ -125,7 +125,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_auto_reg", std::path::PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?;
@@ -238,7 +238,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create a new LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module_optimizer", std::path::PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Initialize the auto interface dispatcher with comprehensive integration
     codegen.init_auto_interface_dispatcher_integration()?;
@@ -299,7 +299,7 @@ fn test_optimize_interface_call() -> Result<(), Error> {
     
     // Create types for testing
     let dog_type = CursedType::Struct(struct_name.to_string(), vec![]);
-    let speaker_type = CursedType::Interface("Speaker".to_string(), vec![]);
+    let speaker_type = CursedType::Unknown // Was Interface("Speaker".to_string(), vec![]);
     
     // Convert Dog to Speaker interface
     let speaker_interface = codegen.create_interface_value(

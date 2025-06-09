@@ -273,24 +273,22 @@ impl WebError {
     }
 
     /// fr fr Get error message - human-readable description
-    pub fn message(&self) -> &str {
+    pub fn message(&self) -> String {
         match self {
-            WebError::Http { message, .. } => message,
-            WebError::Network { message, .. } => message,
-            WebError::RequestParsing { message, .. } => message,
-            WebError::ResponseBuilding { message, .. } => message,
-            WebError::Routing { message, .. } => message,
-            WebError::Middleware { message, .. } => message,
-            WebError::Configuration { message, .. } => message,
-            WebError::Auth { message, .. } => message,
-            WebError::Json { message, .. } => message,
-            WebError::Io { message, .. } => message,
+            WebError::Http { message, .. } => message.clone(),
+            WebError::Network { message, .. } => message.clone(),
+            WebError::RequestParsing { message, .. } => message.clone(),
+            WebError::ResponseBuilding { message, .. } => message.clone(),
+            WebError::Routing { message, .. } => message.clone(),
+            WebError::Middleware { message, .. } => message.clone(),
+            WebError::Configuration { message, .. } => message.clone(),
+            WebError::Auth { message, .. } => message.clone(),
+            WebError::Json { message, .. } => message.clone(),
+            WebError::Io { message, .. } => message.clone(),
             WebError::Timeout { operation, duration_ms } => {
-                // Note: This returns a reference to a temporary string
-                // In real implementation, you'd want to store this in the struct
-                &format!("Operation '{}' timed out after {}ms", operation, duration_ms)
+                format!("Operation '{}' timed out after {}ms", operation, duration_ms)
             }
-            WebError::Custom { message, .. } => message,
+            WebError::Custom { message, .. } => message.clone(),
         }
     }
 

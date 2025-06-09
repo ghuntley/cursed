@@ -1,33 +1,33 @@
 .PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help
 
 build:
-	devenv shell cargo build
+	./fix_linking.sh devenv shell cargo build
 
 test:
-	devenv shell cargo test
+	./fix_linking.sh devenv shell cargo test
 
 # Run a specific test by name
 test-name:
-	devenv shell cargo test $(TEST_NAME)
+	./fix_linking.sh devenv shell cargo test $(TEST_NAME)
 
 # Run a specific test file
 test-file:
-	devenv shell cargo test --test $(TEST_FILE)
+	./fix_linking.sh devenv shell cargo test --test $(TEST_FILE)
 
 # Run with warnings silenced
 test-quiet:
-	devenv shell cargo test --quiet
+	./fix_linking.sh devenv shell cargo test --quiet
 
 # Run all tests without warnings
 test-no-warn:
-	DENY_WARNINGS=0 devenv shell cargo test
+	DENY_WARNINGS=0 ./fix_linking.sh devenv shell cargo test
 
 # Build with warnings silenced
 build-quiet:
-	devenv shell cargo build --quiet
+	./fix_linking.sh devenv shell cargo build --quiet
 
 lint:
-	devenv shell cargo clippy -- -D warnings
+	./fix_linking.sh devenv shell cargo clippy -- -D warnings
 
 # Run clippy with warnings suppressed
 lint-allow:

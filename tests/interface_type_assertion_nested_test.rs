@@ -30,7 +30,7 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
     // Create a lexer
     let mut lexer = Lexer::new(input);
     // Create a parser with a mutable reference to the lexer
-    let mut parser = Parser::new(&mut lexer).map_err(|e| e.to_string())?;
+    let mut parser = Parser::new(lexer).map_err(|e| e.to_string())?;
     // Parse the program
     let program = parser.parse_program().map_err(|e| e.to_string())?;
     
@@ -43,7 +43,7 @@ fn run_jit_test(input: &str) -> Result<i32, String> {
     // Create LLVM context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_program.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", file_path.clone());
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Compile the program
     code_gen.compile(&program).map_err(|e| e.to_string())?;

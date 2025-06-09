@@ -20,7 +20,7 @@ fn test_monomorphization_jit_execution() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_generics.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_generics_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a generic identity function: function identity<T>(x: T) -> T { return x; }
     let identity_function = create_generic_identity_function();
@@ -77,7 +77,7 @@ fn test_complex_generic_function() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_complex_generics.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_complex_generics_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a generic swap function that takes two parameters
     // function swap<T>(a: T, b: T) -> T { return a; }

@@ -25,7 +25,7 @@ pub fn setup_tracing() {
 pub fn run_jit_test(input: &str) -> Result<Object, Error> {
     // Parse the input
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // For now, return a placeholder object since full JIT isn't implemented

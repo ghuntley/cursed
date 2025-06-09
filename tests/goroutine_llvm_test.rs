@@ -20,7 +20,7 @@ fn test_llvm_goroutine_function_creation() {
     let gc = GarbageCollector::new();
     
     // Create an LLVM code generator
-    let mut codegen = LlvmCodeGenerator::new(&context, &module, &builder, gc);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Test that we can get or create the spawn function
     let spawn_fn = codegen.get_or_create_spawn_goroutine_fn();
@@ -43,7 +43,7 @@ fn test_llvm_stan_expression_compilation() {
     let gc = GarbageCollector::new();
     
     // Create an LLVM code generator
-    let mut codegen = LlvmCodeGenerator::new(&context, &module, &builder, gc);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Create a simple stan expression
     let string_expr = StringLiteral {
@@ -52,7 +52,7 @@ fn test_llvm_stan_expression_compilation() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(string_expr),
     };
     
@@ -76,7 +76,7 @@ fn test_llvm_goroutine_wrapper_creation() {
     let gc = GarbageCollector::new();
     
     // Create an LLVM code generator
-    let mut codegen = LlvmCodeGenerator::new(&context, &module, &builder, gc);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Create a simple expression
     let string_expr = StringLiteral {
@@ -106,7 +106,7 @@ fn test_unique_id_generation() {
     let gc = GarbageCollector::new();
     
     // Create an LLVM code generator
-    let codegen = LlvmCodeGenerator::new(&context, &module, &builder, gc);
+    let codegen = LlvmCodeGenerator::new();
     
     // Generate multiple unique IDs
     let id1 = codegen.generate_unique_id();
@@ -133,7 +133,7 @@ fn test_runtime_function_declarations() {
     let gc = GarbageCollector::new();
     
     // Create an LLVM code generator
-    let codegen = LlvmCodeGenerator::new(&context, &module, &builder, gc);
+    let codegen = LlvmCodeGenerator::new();
     
     // Create all runtime functions
     let spawn_fn = codegen.get_or_create_spawn_goroutine_fn().unwrap();
@@ -165,7 +165,7 @@ fn test_legacy_goroutine_generation() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(string_expr),
     };
     
@@ -184,7 +184,7 @@ fn test_module_llvm_ir_generation() {
     let gc = GarbageCollector::new();
     
     // Create an LLVM code generator
-    let mut codegen = LlvmCodeGenerator::new(&context, &module, &builder, gc);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Create a simple stan expression with function call
     let func_ident = Identifier {

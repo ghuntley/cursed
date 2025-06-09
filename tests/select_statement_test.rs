@@ -93,7 +93,7 @@ fn test_select_statement_parsing() {
     "#;
     
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     // Try to parse the select statement
     match parser.parse_select_statement() {

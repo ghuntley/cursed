@@ -35,13 +35,13 @@ fn test_switch_statement_compilation() {
     
     // Parse and generate code
     let mut lexer = Lexer::new(test_code);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     // Create the code generator
     let context = inkwell::context::Context::create();
     let module_name = "switch_test";
-    let mut code_gen = LlvmCodeGenerator::new(&context, module_name, PathBuf::from("switch_test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Compile program
     let result = code_gen.compile_program(&program);
@@ -72,7 +72,7 @@ fn test_string_switch_statement_parsing() {
     "#;
     
     let mut lexer = Lexer::new(test_code);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     // Parse the program
     let program = parser.parse_program().unwrap();

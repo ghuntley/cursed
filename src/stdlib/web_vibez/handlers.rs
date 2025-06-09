@@ -22,10 +22,10 @@ use std::pin::Pin;
 /// Trait for handling HTTP requests
 pub trait RequestHandler: Send + Sync {
     /// Handle an HTTP request
-    fn handle(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>>;
 
     /// Get handler name for debugging
@@ -152,10 +152,10 @@ impl StaticHandler {
 }
 
 impl RequestHandler for StaticHandler {
-    fn handle(
-        &self,
-        _context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        _context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         let status = self.status;
         let content_type = self.content_type.clone();
@@ -233,10 +233,10 @@ impl JsonApiHandler {
 }
 
 impl RequestHandler for JsonApiHandler {
-    fn handle(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
         let method_str = context.method.to_string();
@@ -340,10 +340,10 @@ impl TemplateHandler {
 }
 
 impl RequestHandler for TemplateHandler {
-    fn handle(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
         let mut data = HashMap::new();
@@ -445,10 +445,10 @@ impl FileHandler {
 }
 
 impl RequestHandler for FileHandler {
-    fn handle(
-        &self,
-        _context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        _context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
         let content = std::fs::read(&self.file_path)
@@ -510,10 +510,10 @@ impl RedirectHandler {
 }
 
 impl RequestHandler for RedirectHandler {
-    fn handle(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
         let mut target_url = self.target_url.clone();
@@ -572,10 +572,10 @@ impl ProxyHandler {
 }
 
 impl RequestHandler for ProxyHandler {
-    fn handle(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
         // This is a simplified proxy implementation
@@ -663,10 +663,10 @@ impl CompositeHandler {
 }
 
 impl RequestHandler for CompositeHandler {
-    fn handle(
-        &self,
-        context: &RequestContext,
-        response: &mut ResponseContext,
+    fn handle<'a>(
+        &'a self,
+        context: &'a RequestContext,
+        response: &'a mut ResponseContext,
     ) -> Pin<Box<dyn Future<Output = Result<(), HandlerError>> + Send + '_>> {
         Box::pin(async move {
         // Check conditional handlers first

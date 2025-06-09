@@ -10,7 +10,7 @@ fn test_simplified_interface() {
     // Create a new LLVM context and code generator
     let context = Context::create();
     let module_path = PathBuf::from("simplified_interface_test.bc");
-    let mut codegen = LlvmCodeGenerator::new(&context, "simplified_interface_test", module_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Define a simple struct type
     let struct_type = context.struct_type(

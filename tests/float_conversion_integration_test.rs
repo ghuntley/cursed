@@ -22,7 +22,7 @@ fn test_float_conversion_full_pipeline() {
 
     let context = Context::create();
     let module = context.create_module("float_integration_test");
-    let mut generator = LlvmCodeGenerator::new(&context, "float_integration_test", std::path::PathBuf::from("test.cursed"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Test CURSED code snippets that use float conversions
     let test_programs = vec![
@@ -78,7 +78,7 @@ fn test_ieee754_compliance() {
 
     let context = Context::create();
     let module = context.create_module("ieee754_test");
-    let generator = LlvmCodeGenerator::new(&context, "ieee754_test", std::path::PathBuf::from("test.cursed"));
+    let generator = LlvmCodeGenerator::new());
 
     // Test special value handling
     let test_cases = vec![
@@ -128,7 +128,7 @@ fn test_conversion_bounds_checking() {
 
     let context = Context::create();
     let module = context.create_module("bounds_test");
-    let generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.cursed"));
+    let generator = LlvmCodeGenerator::new());
 
     // Create test function
     let fn_type = context.void_type().fn_type(&[], false);
@@ -202,7 +202,7 @@ fn test_precision_handling() {
 
     let context = Context::create();
     let module = context.create_module("precision_test");
-    let generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.cursed"));
+    let generator = LlvmCodeGenerator::new());
 
     // Create test function
     let fn_type = context.void_type().fn_type(&[], false);
@@ -264,7 +264,7 @@ fn test_conversion_error_handling() {
 
     let context = Context::create();
     let module = context.create_module("error_test");
-    let generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.cursed"));
+    let generator = LlvmCodeGenerator::new());
 
     // Create test function
     let fn_type = context.void_type().fn_type(&[], false);
@@ -313,7 +313,7 @@ fn test_conversion_performance() {
 
     let context = Context::create();
     let module = context.create_module("performance_test");
-    let generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.cursed"));
+    let generator = LlvmCodeGenerator::new());
 
     // Create test function
     let fn_type = context.void_type().fn_type(&[], false);
@@ -365,7 +365,7 @@ fn test_cursed_type_integration() {
 
     let context = Context::create();
     let module = context.create_module("type_integration_test");
-    let generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.cursed"));
+    let generator = LlvmCodeGenerator::new());
 
     // Test that our float conversion system integrates with CURSED types
     let cursed_float_types = vec![
@@ -374,8 +374,8 @@ fn test_cursed_type_integration() {
     ];
 
     let cursed_int_types = vec![
-        ("smol", Type::Smol),    // i8
-        ("mid", Type::Mid),      // i16
+        ("smol", Type::Normie // Was Smol),    // i8
+        ("mid", Type::Normie // Was Mid),      // i16
         ("normie", Type::Normie), // i32
         ("thicc", Type::Thicc),  // i64
     ];

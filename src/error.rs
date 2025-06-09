@@ -55,7 +55,7 @@ impl Error {
 
 
 /// Source location information for errors
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SourceLocation {
     pub line: usize,
     pub column: usize,

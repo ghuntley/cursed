@@ -122,7 +122,7 @@ impl HandlerChain {
 impl Handler for HandlerChain {
     fn handle(&self, mut request: HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<HttpResponse>> + Send + '_>> {
         Box::pin(async move {
-            for handler in &self.handlers {
+            for (i, handler) in self.handlers.iter().enumerate() {
                 // Each handler processes the request and potentially modifies it
                 // The last handler should return the final response
                 match handler.handle(request.clone()).await {
@@ -133,7 +133,7 @@ impl Handler for HandlerChain {
                     }
                     Err(e) => {
                         // Continue to next handler on error, or return error if it's the last one
-                        if handler as *const _ == self.handlers.last().unwrap().as_ref() as *const _ {
+                        if i == self.handlers.len() - 1 {
                             return Err(e);
                         }
                         // For middleware, we might want to log the error and continue

@@ -222,14 +222,14 @@ slay (u User) DisplayName() string {
             debug!(file = ?path, "Compiling file");
             
             let mut lexer = Lexer::new(content);
-            let mut parser = Parser::new(&mut lexer)?;
+            let mut parser = Parser::new(lexer)?;
             let program = parser.parse_program()?;
             
             let module_name = path.file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("unknown");
             
-            let generator = LlvmCodeGenerator::new(&context, module_name, path.clone());
+            let generator = LlvmCodeGenerator::new());
             
             // In a real implementation, we would compile the entire program here
             // For now, we just verify the generator can be created
@@ -261,7 +261,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(main_content);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -269,7 +269,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "main";
     let file_path = PathBuf::from("main.csd");
-    let generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let generator = LlvmCodeGenerator::new();
     
     // Verify the module can be created and verified
     let module = generator.module();
@@ -396,14 +396,14 @@ slay main() normie {
         debug!(file = ?path, "Compiling dependency chain file");
         
         let mut lexer = Lexer::new(content);
-        let mut parser = Parser::new(&mut lexer).unwrap();
+        let mut parser = Parser::new(lexer).unwrap();
         let program = parser.parse_program().unwrap();
         
         let module_name = path.file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown");
         
-        let generator = LlvmCodeGenerator::new(&context, module_name, path.clone());
+        let generator = LlvmCodeGenerator::new());
         assert!(generator.module().verify().is_ok(), "Module should verify for {}", module_name);
     }
     
@@ -446,7 +446,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(main_content);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -454,7 +454,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "main";
     let file_path = PathBuf::from("main.csd");
-    let generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let generator = LlvmCodeGenerator::new();
     
     // Verify the module can be created and verified
     let module = generator.module();
@@ -539,14 +539,14 @@ slay main() normie {
         debug!(file = ?path, "Compiling generic import file");
         
         let mut lexer = Lexer::new(content);
-        let mut parser = Parser::new(&mut lexer).unwrap();
+        let mut parser = Parser::new(lexer).unwrap();
         let program = parser.parse_program().unwrap();
         
         let module_name = path.file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown");
         
-        let generator = LlvmCodeGenerator::new(&context, module_name, path.clone());
+        let generator = LlvmCodeGenerator::new());
         assert!(generator.module().verify().is_ok(), "Module should verify for {}", module_name);
     }
     
@@ -601,7 +601,7 @@ slay FunctionC() normie {
         debug!(file = ?path, "Parsing potentially circular file");
         
         let mut lexer = Lexer::new(content);
-        let mut parser = Parser::new(&mut lexer).unwrap();
+        let mut parser = Parser::new(lexer).unwrap();
         let program = parser.parse_program().unwrap();
         
         // The individual files should parse correctly
@@ -712,14 +712,14 @@ slay (h UserHandler) HandleGetUser(id normie) user.User {
         debug!(file = ?path, "Compiling real-world project file");
         
         let mut lexer = Lexer::new(content);
-        let mut parser = Parser::new(&mut lexer).unwrap();
+        let mut parser = Parser::new(lexer).unwrap();
         let program = parser.parse_program().unwrap();
         
         let module_name = path.file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown");
         
-        let generator = LlvmCodeGenerator::new(&context, module_name, path.clone());
+        let generator = LlvmCodeGenerator::new());
         assert!(generator.module().verify().is_ok(), "Module should verify for {}", module_name);
     }
     

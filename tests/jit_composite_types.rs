@@ -22,7 +22,7 @@ fn test_jit_array_slice() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -35,7 +35,7 @@ fn test_jit_array_slice() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_array_slice_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Register puts function which might be used in debugging
     let i32_type = context.i32_type();
@@ -152,7 +152,7 @@ fn test_jit_map() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -165,7 +165,7 @@ fn test_jit_map() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_map_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Register puts function which might be used in debugging
     let i32_type = context.i32_type();
@@ -273,7 +273,7 @@ fn test_jit_struct() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -286,7 +286,7 @@ fn test_jit_struct() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_struct_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Register puts function which might be used in debugging
     let i32_type = context.i32_type();

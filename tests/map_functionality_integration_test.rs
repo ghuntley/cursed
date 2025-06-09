@@ -41,7 +41,7 @@ impl<'ctx> MapFunctionalTester<'ctx> {
     /// Parse and validate a CURSED program
     fn parse_and_validate(&self, source: &str) -> Result<Program, Error> {
         let mut lexer = Lexer::new(source);
-        let mut parser = Parser::new(&mut lexer)?;
+        let mut parser = Parser::new(lexer)?;
         let program = parser.parse_program()?;
 
         if !parser.errors().is_empty() {

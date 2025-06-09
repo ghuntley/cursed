@@ -71,7 +71,7 @@ fn test_end_to_end_compile_and_run() {
     info!("Starting end-to-end compilation test");
     // Test the compilation of a simple program
     let mut lexer = Lexer::new(TEST_SOURCE);
-    let parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Verify there are no parser errors
@@ -108,7 +108,7 @@ fn test_end_to_end_compile_and_run() {
 fn test_string_switch_compilation() {
     // Test compilation of a program with string switch
     let mut lexer = Lexer::new(STRING_SWITCH_SOURCE);
-    let parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Verify there are no parser errors
@@ -154,7 +154,7 @@ fn dummy_integration_test() {
 fn test_dot_expression_compilation() {
     // Test compilation of a program with dot expressions
     let mut lexer = Lexer::new(DOT_EXPRESSION_SOURCE);
-    let parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Verify there are no parser errors

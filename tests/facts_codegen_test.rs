@@ -32,14 +32,14 @@ fn test_facts_codegen() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
 
     let program = parser.parse_program().unwrap();
 
     // Create an LLVM context and code generator
     let context = Context::create();
     let file_path = Path::new("facts_test.ll").to_path_buf();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "facts_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // This should not panic if code generation for facts statements is properly implemented
     let result = code_gen.compile(&program);

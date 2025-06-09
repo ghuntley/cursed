@@ -29,7 +29,7 @@ fn init_test_tracing() {
 /// Parse a map literal from source code
 fn parse_map_literal(source: &str) -> Result<HashLiteral, Error> {
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     
     // Parse as expression
     let expr = parser.parse_expression()?;
@@ -45,7 +45,7 @@ fn parse_map_literal(source: &str) -> Result<HashLiteral, Error> {
 /// Parse a complete CURSED program
 fn parse_program(source: &str) -> Result<bool, Error> {
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     if !parser.errors().is_empty() {

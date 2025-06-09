@@ -565,7 +565,7 @@ fn test_diamond_inheritance_type_assertions() {
     
     // Parse the code
     let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(&mut lexer) {
+    let mut parser = match Parser::new(lexer) {
         Ok(parser) => parser,
         Err(e) => panic!("Failed to create parser: {}", e),
     };

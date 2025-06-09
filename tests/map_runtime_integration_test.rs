@@ -44,7 +44,7 @@ impl<'ctx> MapRuntimeTester<'ctx> {
     fn compile_and_execute(&self, source: &str) -> Result<i32, Error> {
         // Parse the program
         let mut lexer = Lexer::new(source);
-        let mut parser = Parser::new(&mut lexer)?;
+        let mut parser = Parser::new(lexer)?;
         let program = parser.parse_program()?;
 
         if !parser.errors().is_empty() {

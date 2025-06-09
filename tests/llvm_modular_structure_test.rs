@@ -14,7 +14,7 @@ fn test_modular_structure_basic() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create an empty program
     let program = Program {

@@ -146,7 +146,7 @@ fn test_llvm_function_declaration_generation() {
 #[test]
 fn test_code_generator_stdlib_integration() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
     
     // Initialize integrations manually for testing
     generator.initialize_integrations();
@@ -177,7 +177,7 @@ fn test_code_generator_stdlib_integration() {
 #[test]
 fn test_direct_function_call_compilation() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
     
     // Initialize integrations for testing
     generator.initialize_integrations();
@@ -209,7 +209,7 @@ fn test_direct_function_call_compilation() {
 #[test]
 fn test_qualified_function_call_compilation() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
     
     // Initialize integrations for testing
     generator.initialize_integrations();
@@ -280,7 +280,7 @@ fn test_type_mapping_coverage() {
 #[test]
 fn test_gc_integration_with_stdlib() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
     
     // Initialize integrations for testing
     generator.initialize_integrations();
@@ -316,7 +316,7 @@ fn test_gc_integration_with_stdlib() {
 #[test]
 fn test_runtime_function_declarations() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
     
     // Initialize integrations for testing
     generator.initialize_integrations();

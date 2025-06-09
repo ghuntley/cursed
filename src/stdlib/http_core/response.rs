@@ -211,7 +211,6 @@ impl std::fmt::Display for StatusCode {
 }
 
 /// HTTP response body types
-#[derive(Debug, Clone)]
 pub enum ResponseBody {
     Empty,
     Text(String),
@@ -219,6 +218,32 @@ pub enum ResponseBody {
     Json(serde_json::Value),
     Html(String),
     Stream(Box<dyn std::io::Read + Send + Sync>),
+}
+
+impl std::fmt::Debug for ResponseBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResponseBody::Empty => write!(f, "Empty"),
+            ResponseBody::Text(s) => f.debug_tuple("Text").field(s).finish(),
+            ResponseBody::Binary(v) => f.debug_tuple("Binary").field(&format!("{} bytes", v.len())).finish(),
+            ResponseBody::Json(j) => f.debug_tuple("Json").field(j).finish(),
+            ResponseBody::Html(h) => f.debug_tuple("Html").field(h).finish(),
+            ResponseBody::Stream(_) => f.debug_tuple("Stream").field(&"<stream>").finish(),
+        }
+    }
+}
+
+impl Clone for ResponseBody {
+    fn clone(&self) -> Self {
+        match self {
+            ResponseBody::Empty => ResponseBody::Empty,
+            ResponseBody::Text(s) => ResponseBody::Text(s.clone()),
+            ResponseBody::Binary(v) => ResponseBody::Binary(v.clone()),
+            ResponseBody::Json(j) => ResponseBody::Json(j.clone()),
+            ResponseBody::Html(h) => ResponseBody::Html(h.clone()),
+            ResponseBody::Stream(_) => panic!("Cannot clone stream body"),
+        }
+    }
 }
 
 impl ResponseBody {
@@ -547,7 +572,7 @@ impl Response {
     }
 
     /// Get a header value
-    pub fn header(&self, name: &str) -> Option<&String> {
+    pub fn get_header(&self, name: &str) -> Option<&String> {
         self.headers.get(name)
     }
 
@@ -558,7 +583,7 @@ impl Response {
 
     /// Get content length
     pub fn content_length(&self) -> usize {
-        if let Some(length_str) = self.header("Content-Length") {
+        if let Some(length_str) = self.get_header("Content-Length") {
             length_str.parse().unwrap_or_else(|_| self.body.content_length())
         } else {
             self.body.content_length()
@@ -567,7 +592,7 @@ impl Response {
 
     /// Get content type
     pub fn content_type(&self) -> String {
-        self.header("Content-Type")
+        self.get_header("Content-Type")
             .cloned()
             .unwrap_or_else(|| self.body.content_type().to_string())
     }
@@ -678,7 +703,7 @@ mod tests {
             .header("X-Custom", "value");
 
         assert_eq!(response.status, StatusCode::Ok);
-        assert_eq!(response.header("X-Custom"), Some(&"value".to_string()));
+        assert_eq!(response.get_header("X-Custom"), Some(&"value".to_string()));
         assert!(response.has_body());
     }
 
@@ -690,7 +715,7 @@ mod tests {
             .build();
 
         assert_eq!(response.status, StatusCode::Ok);
-        assert_eq!(response.header("Content-Type"), Some(&"application/json".to_string()));
+        assert_eq!(response.get_header("Content-Type"), Some(&"application/json".to_string()));
     }
 
     #[test]
@@ -698,7 +723,7 @@ mod tests {
         let response = Response::redirect("https://example.com", true);
         
         assert_eq!(response.status, StatusCode::MovedPermanently);
-        assert_eq!(response.header("Location"), Some(&"https://example.com".to_string()));
+        assert_eq!(response.get_header("Location"), Some(&"https://example.com".to_string()));
     }
 
     #[test]

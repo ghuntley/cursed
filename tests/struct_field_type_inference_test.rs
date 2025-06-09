@@ -20,7 +20,7 @@ mod token_helper;
 #[test]
 fn test_struct_field_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_inference", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -42,7 +42,7 @@ fn test_struct_field_type_inference() {
     
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         struct_name: struct_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -107,7 +107,7 @@ fn test_struct_field_type_inference() {
 #[test]
 fn test_nested_struct_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_struct_inference", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -136,7 +136,7 @@ fn test_nested_struct_type_inference() {
     
     // Create a nested struct literal 
     let top_left = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         struct_name: point_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -163,7 +163,7 @@ fn test_nested_struct_type_inference() {
     };
     
     let bottom_right = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         struct_name: point_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -190,7 +190,7 @@ fn test_nested_struct_type_inference() {
     };
     
     let rect_literal = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         struct_name: rect_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -230,7 +230,7 @@ fn test_nested_struct_type_inference() {
 #[test]
 fn test_struct_field_incompatible_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -251,7 +251,7 @@ fn test_struct_field_incompatible_types() {
     
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         struct_name: person_name.to_string(),
         fields: vec![
             KeyValuePair {

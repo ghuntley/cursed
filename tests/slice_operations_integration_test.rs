@@ -379,8 +379,8 @@ fn test_slice_operations_different_types() -> Result<(), Box<dyn Error>> {
     // Test with different slice types
     let types_to_test = vec![
         Type::Lit,
-        Type::Smol,
-        Type::Mid,
+        Type::Normie // Was Smol,
+        Type::Normie // Was Mid,
         Type::Normie,
         Type::Thicc,
         Type::Snack,

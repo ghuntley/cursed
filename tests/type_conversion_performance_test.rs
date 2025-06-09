@@ -215,7 +215,7 @@ fn benchmark_compatibility_checking() {
     let (context, generator) = create_test_generator();
 
     let types = vec![
-        Type::Smol, Type::Mid, Type::Normie, Type::Thicc,
+        Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thicc,
         Type::Snack, Type::Meal, Type::Lit, Type::Sip, Type::Rune, Type::Tea,
     ];
 
@@ -260,7 +260,7 @@ fn benchmark_cost_calculation() {
     let (context, generator) = create_test_generator();
 
     let types = vec![
-        Type::Smol, Type::Mid, Type::Normie, Type::Thicc,
+        Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thicc,
         Type::Snack, Type::Meal, Type::Lit,
     ];
 
@@ -316,7 +316,7 @@ fn benchmark_conversion_chains() {
         
         // Create a conversion chain
         let mut conversion_chain = Vec::new();
-        let types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc];
+        let types = vec![Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thicc];
         
         for i in 0..chain_length {
             let from_idx = i % types.len();

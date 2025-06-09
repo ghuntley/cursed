@@ -239,7 +239,7 @@ fn test_malformed_documentation_handling() {
     
     let input = "/// Incomplete code example\n/// ```cursed\n/// sus x = 42\n// Missing closing backticks";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     // Should handle unterminated code blocks gracefully
     let doc_result = parser.parse_documentation();
@@ -267,7 +267,7 @@ slay add(x: int, y: int) -> int {
 }"#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     // Test documentation detection
     assert!(parser.is_documentation_comment());
@@ -325,7 +325,7 @@ fn test_package_documentation() {
 vibe http_server"#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let doc_result = parser.parse_documentation();
     assert!(doc_result.is_ok());

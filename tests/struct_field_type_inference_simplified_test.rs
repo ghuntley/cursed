@@ -16,7 +16,7 @@ use std::path::PathBuf;
 #[test]
 fn test_struct_field_incompatible_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -37,7 +37,7 @@ fn test_struct_field_incompatible_types() {
     
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
-        token: new_token(TokenType::LBrace, "{"),
+        token: new_token(TokenType::LeftBrace, "{"),
         struct_name: person_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -102,8 +102,8 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
             }
         },
         TokenType::String => Token::String(literal.to_string()),
-        TokenType::LBrace => Token::LBrace,
-        TokenType::RBrace => Token::RBrace,
+        TokenType::LeftBrace => Token::LBrace,
+        TokenType::RightBrace => Token::RBrace,
         TokenType::Sus => Token::Sus,
         _ => Token::Illegal(format!("Unsupported token type: {:?}", token_type)),
     }
@@ -112,7 +112,7 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
 #[test]
 fn test_simple_struct_field_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_simple_struct", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -134,7 +134,7 @@ fn test_simple_struct_field_type_inference() {
     
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
-        token: new_token(TokenType::LBrace, "{"),
+        token: new_token(TokenType::LeftBrace, "{"),
         struct_name: struct_name.to_string(),
         fields: vec![
             KeyValuePair {

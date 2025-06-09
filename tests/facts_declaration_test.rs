@@ -14,7 +14,7 @@ fn test_facts_declaration_parsing() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
 
     let program = parser.parse_program().unwrap();
 

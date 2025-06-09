@@ -15,7 +15,7 @@ fn test_type_assertion_debug_configuration() {
     
     // Create a code generator with debug context
     let context = inkwell::context::Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Configure debug settings
     let config = TypeAssertionDebugConfig {
@@ -40,7 +40,7 @@ fn test_register_runtime_type() {
     
     // Create a code generator with debug context
     let context = inkwell::context::Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Enable debugging
     let config = TypeAssertionDebugConfig {

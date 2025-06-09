@@ -10,7 +10,7 @@ fn test_map_type_parsing() {
     tracing_setup::init_test_tracing();
     let input = "tea[tea]thicc";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Parser should initialize");
+    let mut parser = Parser::new(lexer).expect("Parser should initialize");
     
     let map_type = parser.parse_type().expect("Should parse map type");
     println!("Parsed map type: {:?}", map_type);
@@ -29,7 +29,7 @@ fn test_map_literal_parsing() {
     tracing_setup::init_test_tracing();
     let input = "tea[tea]thicc{\"key1\": 1, \"key2\": 2}";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Parser should initialize");
+    let mut parser = Parser::new(lexer).expect("Parser should initialize");
     
     // Parse as a program to get the full expression
     let program = parser.parse_program().expect("Should parse map literal program");
@@ -46,7 +46,7 @@ fn test_map_indexing_parsing() {
     tracing_setup::init_test_tracing();
     let input = "myMap[\"key\"]";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Parser should initialize");
+    let mut parser = Parser::new(lexer).expect("Parser should initialize");
     
     // Parse as a program to get the full expression
     let program = parser.parse_program().expect("Should parse map indexing program");
@@ -63,7 +63,7 @@ fn test_empty_map_literal() {
     tracing_setup::init_test_tracing();
     let input = "tea[tea]thicc{}";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Parser should initialize");
+    let mut parser = Parser::new(lexer).expect("Parser should initialize");
     
     // Parse as a program to get the full expression
     let program = parser.parse_program().expect("Should parse empty map literal program");

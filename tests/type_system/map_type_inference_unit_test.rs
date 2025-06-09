@@ -48,7 +48,7 @@ fn test_map_type_inference_unit() {
     
     // Create the hash literal
     let hash_literal = HashLiteral {
-        token: Token::new(TokenType::LBrace, "{".to_string(),
+        token: Token::new(TokenType::LeftBrace, "{".to_string(),
         pairs,
     };
     

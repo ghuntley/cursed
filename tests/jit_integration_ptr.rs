@@ -33,7 +33,7 @@ fn test_jit_pointer_basic() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -44,7 +44,7 @@ fn test_jit_pointer_basic() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_pointer_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Compile the program
     code_gen.compile_program(&program)?;
@@ -94,13 +94,13 @@ fn test_jit_pointer_modify() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_pointer_modify.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Compile the program
     code_gen.compile_program(&program)?;
@@ -159,13 +159,13 @@ fn test_jit_pointer_struct() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_pointer_struct.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "main", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Compile the program
     code_gen.compile_program(&program)?;

@@ -1,7 +1,7 @@
 /// Code formatter for CURSED
 use crate::error::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BraceStyle {
     SameLine,
     NextLine,

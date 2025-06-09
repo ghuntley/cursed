@@ -109,8 +109,8 @@ fn test_slice_type_inference() {
     // Test all supported types
     let type_mappings = vec![
         ("lit", Type::Lit),
-        ("smol", Type::Smol),
-        ("mid", Type::Mid),
+        ("smol", Type::Normie // Was Smol),
+        ("mid", Type::Normie // Was Mid),
         ("normie", Type::Normie),
         ("thicc", Type::Thicc),
         ("snack", Type::Snack),

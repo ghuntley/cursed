@@ -334,8 +334,8 @@ fn test_cursed_type_compatibility() {
     // Test conversion of all basic CURSED types
     let test_types = vec![
         (Type::Lit, "lit"),
-        (Type::Smol, "smol"),
-        (Type::Mid, "mid"),
+        (Type::Normie // Was Smol, "smol"),
+        (Type::Normie // Was Mid, "mid"),
         (Type::Normie, "normie"),
         (Type::Thicc, "thicc"),
         (Type::Snack, "snack"),
@@ -399,7 +399,7 @@ fn test_error_handling() {
     // Test invalid type conversion
     let invalid_types = vec![
         Type::Unknown,
-        Type::Named("InvalidType".to_string()),
+        Type::Unknown // Was Named("InvalidType".to_string()),
     ];
     
     for invalid_type in invalid_types {

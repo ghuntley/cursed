@@ -26,7 +26,7 @@ fn test_memory_layout() {
     let module_name = "memory_layout_test";
     let file_path = PathBuf::from("memory_layout_test.csd");
     debug!(module = %module_name, file = %file_path.display(), "Creating LlvmCodeGenerator");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     debug!("LlvmCodeGenerator created successfully");
 
     // Create struct types for testing

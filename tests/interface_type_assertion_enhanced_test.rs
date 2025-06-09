@@ -73,7 +73,7 @@ mod tests {
         
         // Create LLVM context and code generator
         let context = Context::create();
-        let mut llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+        let mut llvm_gen = LlvmCodeGenerator::new());
         
         // Create a type assertion with location information
         let type_assertion = create_test_type_assertion();
@@ -111,7 +111,7 @@ mod tests {
         
         // Create LLVM context and code generator
         let context = Context::create();
-        let mut llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+        let mut llvm_gen = LlvmCodeGenerator::new());
         
         // Track a simple inheritance hierarchy
         llvm_gen.track_inheritance_hierarchy("Rectangle", "Shape").unwrap();
@@ -141,7 +141,7 @@ mod tests {
         
         // Create LLVM context and code generator
         let context = Context::create();
-        let llvm_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+        let llvm_gen = LlvmCodeGenerator::new());
         
         // Test with various token formats
         let (line, column, file) = llvm_gen.extract_location_from_token("file.go:123:45");

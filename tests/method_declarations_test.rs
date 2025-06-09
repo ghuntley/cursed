@@ -28,7 +28,7 @@ fn test_basic_method_parsing() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
@@ -55,7 +55,7 @@ fn test_pointer_receiver_method_parsing() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
@@ -83,7 +83,7 @@ fn test_method_with_return_type() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
@@ -113,7 +113,7 @@ fn test_interface_method_signatures() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
@@ -149,14 +149,14 @@ fn test_method_compilation() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
     
     // Set up LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Find the method declaration
     let method_stmt = program.statements.iter()
@@ -181,7 +181,7 @@ fn test_method_resolution() {
     
     // Set up LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create method info
     let method_info = cursed::codegen::llvm::method_resolution::MethodInfo {
@@ -216,14 +216,14 @@ fn test_interface_satisfaction_check() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
     
     // Set up LLVM context and code generator
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Find the interface declaration
     let interface = program.statements.iter()
@@ -276,7 +276,7 @@ fn test_multiple_methods_on_same_type() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     assert_eq!(parser.errors().len(), 0, "Parser errors: {:?}", parser.errors());
@@ -318,7 +318,7 @@ fn test_generic_method_parsing() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     
@@ -346,7 +346,7 @@ fn test_method_call_parsing() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     let program = parser.parse_program().expect("Failed to parse program");
     

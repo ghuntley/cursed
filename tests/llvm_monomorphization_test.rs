@@ -51,7 +51,7 @@ fn test_monomorphization_function_specialization() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_mono.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_mono_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a MonomorphizationManager directly to avoid the borrow issues
     let mut mono_manager = MonomorphizationManager::new();
@@ -165,7 +165,7 @@ fn test_monomorphization_manager_in_llvm_generator() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_mono_integration.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_mono_integration", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a MonomorphizationManager directly
     let mut mono_manager = MonomorphizationManager::new();

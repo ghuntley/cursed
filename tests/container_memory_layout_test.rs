@@ -21,7 +21,7 @@ fn test_specialized_container_layout() {
     // Create a code generator with a module
     let module_name = "container_layout_test";
     let file_path = PathBuf::from("container_layout_test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
 
     // Create regular generic container type (like Vec<T>)
     let element_type = context.i32_type();

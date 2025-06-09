@@ -22,7 +22,7 @@ use std::path::PathBuf;
 #[test]
 fn test_function_return_type_inference_int() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_int", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
@@ -41,7 +41,7 @@ fn test_function_return_type_inference_int() {
     
     // Create function body
     let body = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         statements: vec![Box::new(return_stmt)],
     };
     
@@ -109,7 +109,7 @@ fn test_function_return_type_inference_int() {
 #[test]
 fn test_function_return_type_inference_float() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_float", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
@@ -128,7 +128,7 @@ fn test_function_return_type_inference_float() {
     
     // Create function body
     let body = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         statements: vec![Box::new(return_stmt)],
     };
     
@@ -196,7 +196,7 @@ fn test_function_return_type_inference_float() {
 #[test]
 fn test_function_return_type_inference_mixed() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_function_return_mixed", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function with no explicit return type annotation
     let fn_name = Identifier {
@@ -237,14 +237,14 @@ fn test_function_return_type_inference_mixed() {
             statements: vec![Box::new(return_int)],
         }),
         alternative: Some(Box::new(BlockStatement {
-            token: Token::new(TokenType::LBrace, "{"), 
+            token: Token::new(TokenType::LeftBrace, "{"), 
             statements: vec![Box::new(return_float)],
         })),
     };
     
     // Create function body with the if statement
     let body = BlockStatement {
-        token: Token::new(TokenType::LBrace, "{"),
+        token: Token::new(TokenType::LeftBrace, "{"),
         statements: vec![Box::new(if_stmt)],
     };
     

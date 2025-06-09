@@ -28,7 +28,7 @@ fn test_stan_token_recognition() {
     let mut lexer = Lexer::new(input);
     
     let token = lexer.next_token().expect("Failed to get token");
-    assert_eq!(token, Token::Stan);
+    assert_eq!(token, Token::new(TokenType::Stan, "stan"));
     
     debug!("Stan token recognition test passed");
 }
@@ -46,7 +46,7 @@ fn test_stan_expression_creation() {
     
     // Create the stan expression
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -66,7 +66,7 @@ fn test_stan_parsing_simple() {
     let mut lexer = Lexer::new(input);
     
     // Test that we can at least create a parser and it recognizes stan token
-    match Parser::new(&mut lexer) {
+    match Parser::new(lexer) {
         Ok(mut parser) => {
             // Parse as a full program instead of individual expression
             let program_result = parser.parse_program();
@@ -97,7 +97,7 @@ fn test_multiple_stan_tokens() {
     
     // First stan
     let token1 = lexer.next_token().expect("Failed to get first token");
-    assert_eq!(token1, Token::Stan);
+    assert_eq!(token1, Token::new(TokenType::Stan, "stan"));
     
     // foo identifier  
     let token2 = lexer.next_token().expect("Failed to get second token");
@@ -105,7 +105,7 @@ fn test_multiple_stan_tokens() {
     
     // Second stan
     let token3 = lexer.next_token().expect("Failed to get third token");
-    assert_eq!(token3, Token::Stan);
+    assert_eq!(token3, Token::new(TokenType::Stan, "stan"));
     
     // bar identifier
     let token4 = lexer.next_token().expect("Failed to get fourth token");
@@ -122,7 +122,7 @@ fn test_stan_with_function_call() {
     let input = "stan func();";
     let mut lexer = Lexer::new(input);
     
-    match Parser::new(&mut lexer) {
+    match Parser::new(lexer) {
         Ok(mut parser) => {
             let program_result = parser.parse_program();
             debug!("Function call stan parsing result: {:?}", program_result.is_ok());
@@ -147,7 +147,7 @@ fn test_stan_expression_string_representation() {
     };
     
     let stan_simple = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(simple_ident),
     };
     

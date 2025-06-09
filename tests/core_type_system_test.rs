@@ -30,7 +30,7 @@ mod core_type_system_tests {
         fn check_generic_type_args(&self, generic_type: &Type, type_args: &[Type]) -> Result<(), Error> {
             // Simple implementation for tests
             match generic_type {
-                Type::Struct(_, type_params) | Type::Interface(_, type_params) => {
+                Type::Struct(_, type_params) | Type::Unknown // Was Interface(_, type_params) => {
                     if type_params.len() != type_args.len() {
                         Err(Error::from_str(&format!(
                             "Type argument count mismatch: expected {}, got {}",

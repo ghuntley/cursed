@@ -77,7 +77,7 @@ fn test_optimized_dynamic_dispatch() -> Result<(), Error> {
     // Create LLVM context and code generator
     let context = Context::create();
     let module_path = PathBuf::from("optimized_dispatch_test.bc");
-    let mut codegen = LlvmCodeGenerator::new(&context, "optimized_dispatch_test", module_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Initialize the optimized dispatch system
     codegen.init_optimized_dynamic_dispatch()?;
@@ -337,7 +337,7 @@ fn test_speculative_dispatch() -> Result<(), Error> {
     // Create LLVM context and code generator
     let context = Context::create();
     let module_path = PathBuf::from("speculative_dispatch_test.bc");
-    let mut codegen = LlvmCodeGenerator::new(&context, "speculative_dispatch_test", module_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Initialize the optimized dispatch system
     codegen.init_optimized_dynamic_dispatch()?;

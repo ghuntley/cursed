@@ -26,7 +26,7 @@ mod tests {
         let context = Context::create();
         let module_name = "test_module";
         let path = std::path::PathBuf::from("test.csd");
-        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        let mut gen = LlvmCodeGenerator::new();
         
         // Register some types
         let _ = gen.register_type_with_runtime_info(1001, "Person");
@@ -58,7 +58,7 @@ mod tests {
         let context = Context::create();
         let module_name = "test_module";
         let path = std::path::PathBuf::from("test.csd");
-        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        let mut gen = LlvmCodeGenerator::new();
         
         // Create a function to test in
         let void_type = context.void_type();
@@ -89,7 +89,7 @@ mod tests {
         let context = Context::create();
         let module_name = "test_module";
         let path = std::path::PathBuf::from("test.csd");
-        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        let mut gen = LlvmCodeGenerator::new();
         
         // Create a function to test in
         let i64_type = context.i64_type();
@@ -144,7 +144,7 @@ mod tests {
         let context = Context::create();
         let module_name = "test_module";
         let path = std::path::PathBuf::from("test.csd");
-        let mut gen = LlvmCodeGenerator::new(&context, module_name, path);
+        let mut gen = LlvmCodeGenerator::new();
         
         // Create a function to test in
         let void_type = context.void_type();

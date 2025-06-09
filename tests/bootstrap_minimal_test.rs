@@ -48,7 +48,7 @@ fn test_advanced_features_excluded() {
     assert!(!subset.is_token_allowed(&Token::Squad));     // struct
     assert!(!subset.is_token_allowed(&Token::Collab));    // interface
     assert!(!subset.is_token_allowed(&Token::Dm));        // chan
-    assert!(!subset.is_token_allowed(&Token::Stan));      // go
+    assert!(!subset.is_token_allowed(&Token::new(TokenType::Stan, "stan")));      // go
     assert!(!subset.is_token_allowed(&Token::VibeCheck)); // switch
     assert!(!subset.is_token_allowed(&Token::Choose));    // select
 }

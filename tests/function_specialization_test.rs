@@ -20,7 +20,7 @@ fn test_identity_function_specialization() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("identity_function_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "identity_function_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Create a generic identity function: slay identity[T](x T) T { yolo x }
     let identity_function = create_generic_identity_function();

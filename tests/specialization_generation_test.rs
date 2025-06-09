@@ -23,7 +23,7 @@ fn test_function_specialization() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_specialization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_specialization_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a simple generic function: func add<T>(a: T, b: T) -> T { return a + b; }
     let add_function = create_generic_add_function();
@@ -79,7 +79,7 @@ fn test_struct_specialization() {
     let context = Context::create();
     let file_path = PathBuf::from("test_struct_specialization.csd");
     let mut code_gen =
-        LlvmCodeGenerator::new(&context, "test_struct_specialization_module", file_path);
+        LlvmCodeGenerator::new();
 
     // Create a generic pair struct
     let pair_struct = create_generic_pair_struct();

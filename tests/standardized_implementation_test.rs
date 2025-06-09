@@ -35,7 +35,7 @@ fn test_standardized_address_of() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -46,7 +46,7 @@ fn test_standardized_address_of() -> Result<(), Error> {
     // Set up LLVM JIT execution with the standardized implementation
     let context = Context::create();
     let dummy_path = PathBuf::from("./standardized_implementation_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Print debug information about the LlvmCodeGenerator implementation
     println!("Using standardized LlvmCodeGenerator implementation");
@@ -116,13 +116,13 @@ fn test_standardized_pointer_modification() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./standardized_pointer_mod_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile the program
     code_gen.compile_program(&program)?;
@@ -196,13 +196,13 @@ fn test_standardized_struct_pointer() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./standardized_struct_ptr_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile the program
     code_gen.compile_program(&program)?;

@@ -36,7 +36,7 @@ fn test_comprehensive_error_propagation_initialization() {
     
     // Create LLVM context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Initialize comprehensive error filesystem integration
     code_generator.init_comprehensive_error_filesystem_integration();
@@ -61,7 +61,7 @@ fn test_comprehensive_error_message_creation() {
     
     // Create LLVM context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Initialize comprehensive error filesystem integration
     code_generator.init_comprehensive_error_filesystem_integration();
@@ -106,7 +106,7 @@ fn test_visual_error_formatting() {
     
     // Create LLVM context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Initialize comprehensive error filesystem integration
     code_generator.init_comprehensive_error_filesystem_integration();

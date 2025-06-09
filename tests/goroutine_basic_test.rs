@@ -113,7 +113,7 @@ fn test_stan_expression_creation() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(string_expr),
     };
     
@@ -136,7 +136,7 @@ fn test_stan_expression_with_function_call() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(call_expr),
     };
     
@@ -147,7 +147,7 @@ fn test_stan_expression_with_function_call() {
 fn test_parser_stan_expression() {
     let input = "stan myFunction()";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     // Parse the expression
     let result = parser.parse_expression(cursed::parser::Precedence::Lowest);

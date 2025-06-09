@@ -34,6 +34,7 @@ inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
 hex = "0.4"     # Hex encoding/decoding
 rand = "0.8"    # Random number generation
 sha2 = "0.10"   # SHA-2 hashing for build cache
+base64 = "0.21" # Base64 encoding/decoding for database binary data
 
 # Regex support
 regex = "1.10"  # Regular expression support
@@ -88,7 +89,7 @@ url = "2.4"             # URL parsing and manipulation
 tokio = { version = "1.0", features = ["full"] }
 
 # Missing dependencies for web_vibez
-uuid = { version = "1.0", features = ["v4"] }      # For request IDs
+uuid = { version = "1.0", features = ["v4", "serde"] }      # For request IDs
 urlencoding = "2.1"                                # For URL encoding/decoding
 httpdate = "1.0"                                   # For HTTP date formatting  
 async-trait = "0.1"                                # For async traits

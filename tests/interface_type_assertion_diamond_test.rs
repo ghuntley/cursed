@@ -20,7 +20,7 @@ mod tests {
         // Create a code generator with context
         let context = Context::create();
         
-        let code_gen = LlvmCodeGenerator::new(&context, "diamond_test", std::path::PathBuf::from("test.csd"));
+        let code_gen = LlvmCodeGenerator::new());
         
         // Test that the diamond detection method exists and returns an appropriate error
         // when no registry is set up (which is expected)
@@ -47,7 +47,7 @@ mod tests {
         // Create a code generator with context
         let context = Context::create();
         
-        let code_gen = LlvmCodeGenerator::new(&context, "diamond_paths_test", std::path::PathBuf::from("test.csd"));
+        let code_gen = LlvmCodeGenerator::new());
         
         // Test that the visualization method exists (it should fail due to no registry)
         // But this validates the API is present
@@ -74,7 +74,7 @@ mod tests {
         // Create a code generator with context
         let context = Context::create();
         
-        let code_gen = LlvmCodeGenerator::new(&context, "basic_test", std::path::PathBuf::from("test.csd"));
+        let code_gen = LlvmCodeGenerator::new());
         
         // Test that both main trait methods exist and can be called
         // (They should fail gracefully when no registry is available)

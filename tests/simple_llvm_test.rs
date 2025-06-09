@@ -10,7 +10,7 @@ fn test_simple_module_creation() {
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
 
-    let generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let generator = LlvmCodeGenerator::new();
 
     // Verify the module exists and has the correct name
     let module = generator.module();

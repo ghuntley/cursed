@@ -43,7 +43,7 @@ slay main() {
     
     // Parse the program
     let mut lexer = Lexer::new(code);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Set up custom library linking
@@ -120,7 +120,7 @@ slay main() {
     
     // Parse the program
     let mut lexer = Lexer::new(code);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     // Compile with platform-specific optimizations

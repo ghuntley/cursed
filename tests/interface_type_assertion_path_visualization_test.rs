@@ -77,7 +77,7 @@ fn test_interface_path_finding() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // The path finding would test paths like:
     // - Dog -> Mammal (direct path)

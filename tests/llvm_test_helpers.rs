@@ -22,7 +22,7 @@ pub fn setup_code_generator<'ctx>(context: &'ctx Context, module_name: &str) -> 
 /// Parse CURSED code into an AST program
 pub fn parse_code(input: &str) -> Result<Program, Error> {
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // Check for parser errors

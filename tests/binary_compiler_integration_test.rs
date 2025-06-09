@@ -14,7 +14,7 @@ use cursed::codegen::llvm::binary_compiler::DebugInfoLevel;
 // Helper function to parse a CURSED program
 fn parse_program(code: &str) -> Program {
     let mut lexer = Lexer::new(code);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     parser.parse_program().expect("Failed to parse program")
 }
 

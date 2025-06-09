@@ -89,7 +89,7 @@ impl HttpContext {
     where
         T: serde::Serialize,
     {
-        self.ok().json(data)
+        self.ok().json(data).map(|builder| builder.build())
     }
 
     /// Create HTML response
@@ -530,7 +530,7 @@ mod tests {
 
     #[test]
     fn test_http_context_creation() {
-        let request = Request::new(Method::GET, crate::stdlib::web_vibez::Url::new("/test"));
+        let request = Request::new(Method::GET, crate::stdlib::http_core::Url::new("/test"));
         let context = HttpContext::new(request);
         
         assert_eq!(context.request.method, Method::GET);

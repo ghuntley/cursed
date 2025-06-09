@@ -16,7 +16,7 @@ use std::path::PathBuf;
 fn test_if_statement_compilation() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function to add the if statement to
     let i32_type = context.i32_type();
@@ -64,7 +64,7 @@ fn test_if_statement_compilation() {
 fn test_while_statement_compilation() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_while", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function to add the while statement to
     let i32_type = context.i32_type();
@@ -111,7 +111,7 @@ fn test_while_statement_compilation() {
 fn test_container_layout() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_container", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function where we'll create a container
     let i32_type = context.i32_type();

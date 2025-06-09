@@ -21,7 +21,7 @@ fn test_basic_string_switch_parsing() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     // Need to access the statement parsing differently, through public API
     let result = parser.parse_program();
     

@@ -202,7 +202,6 @@ mod formatting_rules {
         
         // With spacing
         let config = FormatterConfig {
-            spaces_around_operators: true,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -211,7 +210,6 @@ mod formatting_rules {
         
         // Without spacing
         let config = FormatterConfig {
-            spaces_around_operators: false,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -227,7 +225,6 @@ mod formatting_rules {
         
         // With spacing
         let config = FormatterConfig {
-            space_after_comma: true,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -236,7 +233,6 @@ mod formatting_rules {
         
         // Without spacing
         let config = FormatterConfig {
-            space_after_comma: false,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -273,8 +269,6 @@ mod formatting_rules {
         
         // Preserve empty lines
         let config = FormatterConfig {
-            preserve_empty_lines: true,
-            max_empty_lines: 2,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -286,8 +280,6 @@ mod formatting_rules {
         
         // Remove empty lines
         let config = FormatterConfig {
-            preserve_empty_lines: false,
-            max_empty_lines: 0,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -326,11 +318,6 @@ mod configuration_tests {
             indent_size: 8,
             line_width: 120,
             brace_style: BraceStyle::NextLine,
-            spaces_around_operators: false,
-            space_after_comma: false,
-            format_comments: false,
-            preserve_empty_lines: false,
-            max_empty_lines: 1,
         };
         
         let mut formatter = CursedFormatter::new(config.clone());
@@ -381,11 +368,6 @@ mod configuration_tests {
             indent_size: 6,
             line_width: 80,
             brace_style: BraceStyle::NextLineUnindented,
-            spaces_around_operators: false,
-            space_after_comma: true,
-            format_comments: false,
-            preserve_empty_lines: true,
-            max_empty_lines: 3,
         };
         
         // Test serialization and deserialization
@@ -543,7 +525,6 @@ sus x = 42 // End of line comment
 sus y = 24"#;
         
         let config = FormatterConfig {
-            format_comments: true,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);

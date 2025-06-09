@@ -19,7 +19,7 @@ use std::time::Instant;
 fn test_field_accessors_integration() {
     // setup(); // Disabled due to common module conflict
     let context = Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Create a simple generic struct for testing
     let generic_struct = create_test_generic_struct();

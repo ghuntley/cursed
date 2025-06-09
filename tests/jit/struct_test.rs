@@ -15,7 +15,7 @@ fn test_parse_squad() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let program = parser.parse_program().unwrap();
     
@@ -66,7 +66,7 @@ fn test_struct_initialization() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let program_result = parser.parse_program();
     

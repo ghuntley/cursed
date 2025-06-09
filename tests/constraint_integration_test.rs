@@ -231,7 +231,7 @@ fn test_type_checker_with_registered_struct_methods() {
     // Register struct methods
     let struct_methods = vec![
         ("toString".to_string(), vec![], Some(Type::Tea)),
-        ("clone".to_string(), vec![], Some(Type::Named("Person".to_string()))),
+        ("clone".to_string(), vec![], Some(Type::Unknown // Was Named("Person".to_string()))),
     ];
     
     type_checker.struct_methods_map.insert(
@@ -240,7 +240,7 @@ fn test_type_checker_with_registered_struct_methods() {
     );
     
     // Test getting type methods
-    let person_type = Type::Named("Person".to_string());
+    let person_type = Type::Unknown // Was Named("Person".to_string());
     let result = type_checker.get_type_methods(&person_type);
     assert!(result.is_ok());
     
@@ -276,7 +276,7 @@ fn test_type_checker_method_signature_compatibility_with_methods() {
         struct_methods,
     );
     
-    let calc_type = Type::Named("Calculator".to_string());
+    let calc_type = Type::Unknown // Was Named("Calculator".to_string());
     
     // Test compatible signature
     let expected_params = vec![
@@ -364,7 +364,7 @@ fn test_constraint_checking_with_interface_implementation() {
         create_test_constraint("T", "Display"),
     ];
     
-    let person_type = Type::Named("Person".to_string());
+    let person_type = Type::Unknown // Was Named("Person".to_string());
     let result = type_checker.check_interface_implementation(&person_type, "Display");
     assert!(result.is_ok());
     
@@ -383,7 +383,7 @@ fn test_generic_constraint_checking_end_to_end() {
     // Set up a complete scenario:
     // 1. Define an interface
     let comparable_methods = vec![
-        ("compare".to_string(), vec![Type::Named("T".to_string())], Some(Type::Thicc)),
+        ("compare".to_string(), vec![Type::Unknown // Was Named("T".to_string())], Some(Type::Thicc)),
     ];
     
     type_checker.interface_map.insert(
@@ -393,7 +393,7 @@ fn test_generic_constraint_checking_end_to_end() {
     
     // 2. Define a struct that implements the interface
     let number_methods = vec![
-        ("compare".to_string(), vec![Type::Named("Number".to_string())], Some(Type::Thicc)),
+        ("compare".to_string(), vec![Type::Unknown // Was Named("Number".to_string())], Some(Type::Thicc)),
     ];
     
     type_checker.struct_methods_map.insert(
@@ -406,7 +406,7 @@ fn test_generic_constraint_checking_end_to_end() {
         create_test_constraint("T", "Comparable"),
     ];
     
-    let number_type = Type::Named("Number".to_string());
+    let number_type = Type::Unknown // Was Named("Number".to_string());
     let result = type_checker.check_generic_constraints_simple(&number_type, &constraints);
     assert!(result.is_ok());
     

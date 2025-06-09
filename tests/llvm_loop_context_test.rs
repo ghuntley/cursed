@@ -10,7 +10,7 @@ use std::path::PathBuf;
 #[ignore = "Needs trait impl for control_flow"]
 fn test_loop_context_management() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let void_type = context.void_type();

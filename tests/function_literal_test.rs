@@ -110,7 +110,7 @@ fn test_closure_capture_metadata() {
 fn test_parse_simple_function_literal() {
     let input = "slay() {}";
     let mut lexer = Lexer::new(input).unwrap();
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let expression = parser.parse_expression(cursed::parser::precedence::Precedence::Lowest);
     
@@ -133,7 +133,7 @@ fn test_parse_simple_function_literal() {
 fn test_parse_function_literal_with_parameters() {
     let input = "slay(x normie, y snack) normie {}";
     let mut lexer = Lexer::new(input).unwrap();
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let expression = parser.parse_expression(cursed::parser::precedence::Precedence::Lowest);
     
@@ -198,7 +198,7 @@ mod llvm_tests {
         use cursed::codegen::llvm::function_literal_simple::SimpleFunctionLiteralCompiler;
         
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+        let mut codegen = LlvmCodeGenerator::new());
         
         let func_literal = FunctionLiteral::new(
             "slay".to_string(),
@@ -220,7 +220,7 @@ mod llvm_tests {
     #[test]
     fn test_closure_environment_creation() {
         let context = Context::create();
-        let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+        let mut codegen = LlvmCodeGenerator::new());
         
         let captures = HashSet::from(["x".to_string(), "y".to_string()]);
         let result = codegen.create_closure_environment(&captures);
@@ -232,7 +232,7 @@ mod llvm_tests {
     #[test]
     fn test_function_type_creation() {
         let context = Context::create();
-        let codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+        let codegen = LlvmCodeGenerator::new());
         
         let i32_type = context.i32_type().into();
         let params = vec![i32_type, i32_type];

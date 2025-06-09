@@ -28,7 +28,7 @@ fn test_multi_parameter_generic_function_monomorphization() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_multi_generic.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_multi_param_generic", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a generic function with multiple type parameters:
     // function select<T, U>(condition: lit, first: T, second: U) -> T|U { if condition { return first; } else { return second; } }
@@ -112,7 +112,7 @@ fn test_cross_module_generic_function_usage() {
     // Create a context and code generator for module A
     let context = Context::create();
     let file_path_a = PathBuf::from("module_a.csd");
-    let mut code_gen_a = LlvmCodeGenerator::new(&context, "module_a", file_path_a);
+    let mut code_gen_a = LlvmCodeGenerator::new();
 
     // Create a generic function in module A
     let map_function = create_generic_map_function();
@@ -157,7 +157,7 @@ fn test_cross_module_generic_function_usage() {
 
     // Create module B that will use module A's specialized function
     let file_path_b = PathBuf::from("module_b.csd");
-    let mut code_gen_b = LlvmCodeGenerator::new(&context, "module_b", file_path_b);
+    let mut code_gen_b = LlvmCodeGenerator::new();
 
     // Register the same generic function in module B
     code_gen_b

@@ -18,7 +18,7 @@ use std::path::PathBuf;
 #[test]
 fn test_simple_if_expression() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function context for testing
     let i32_type = context.i32_type();

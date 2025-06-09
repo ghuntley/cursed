@@ -7,7 +7,7 @@ use cursed::parser::Parser;
 fn test_parse_generic_type() {
     let input = "be_like Box[T] squad { value T }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
@@ -29,7 +29,7 @@ fn test_parse_generic_type() {
 fn test_parse_multiple_generic_type_parameters() {
     let input = "be_like Pair[A, B] squad { first A second B }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
@@ -54,7 +54,7 @@ fn test_parse_multiple_generic_type_parameters() {
 fn test_parse_generic_function() {
     let input = "slay identity[T](x T) T { yolo x }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
@@ -86,7 +86,7 @@ fn test_parse_generic_function() {
 fn test_parse_generic_function_with_multiple_parameters() {
     let input = "slay map[T, U](input T, fn stan(T) U) U { yolo fn(input) }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");
@@ -120,7 +120,7 @@ fn test_parse_generic_function_with_multiple_parameters() {
 fn test_parse_generic_type_instantiation() {
     let input = "sus box = Box[normie]{value: 42}";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     assert_eq!(program.statements.len(), 1, "Program should have 1 statement");

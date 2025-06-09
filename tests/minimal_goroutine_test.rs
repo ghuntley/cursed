@@ -16,7 +16,7 @@ fn test_basic_stan_expression_creation() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     
@@ -40,7 +40,7 @@ fn test_stan_expression_with_function_call() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: call_expr,
     };
     
@@ -59,7 +59,7 @@ fn test_stan_expression_cloning() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     
@@ -81,13 +81,13 @@ fn test_stan_token_verification() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     
     // Verify the token field
     match stan_expr.token {
-        Token::Stan => {
+        Token::new(TokenType::Stan, "stan") => {
             println!("✓ Stan token correctly stored");
         },
         _ => panic!("Expected Stan token, got something else"),
@@ -112,7 +112,7 @@ fn test_complex_stan_expression() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: func_call,
     };
     
@@ -133,7 +133,7 @@ fn test_stan_expression_as_expression_trait() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     

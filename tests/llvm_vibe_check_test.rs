@@ -37,7 +37,7 @@ fn test_simple_vibe_check_codegen() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
@@ -63,7 +63,7 @@ fn test_simple_vibe_check_codegen() {
     let context = inkwell::context::Context::create();
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
 
     // Generate LLVM IR code
     debug!("Generating LLVM IR code");
@@ -124,7 +124,7 @@ fn test_multiple_case_values() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
@@ -142,7 +142,7 @@ fn test_multiple_case_values() {
     let context = inkwell::context::Context::create();
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
 
     // Generate LLVM IR code
     debug!("Generating LLVM IR code");
@@ -207,7 +207,7 @@ fn test_fallthrough_behavior() {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     // No errors should be reported during parsing
@@ -225,7 +225,7 @@ fn test_fallthrough_behavior() {
     let context = inkwell::context::Context::create();
     let module_name = "test_module";
     let file_path = std::path::PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
 
     // Generate LLVM IR code
     debug!("Generating LLVM IR code");

@@ -58,7 +58,7 @@ fn test_string_comparison() {
     let context = inkwell::context::Context::create();
     let module_name = "string_comparison_test";
     let file_path = PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
 
     // Create a function to test string comparison
     let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
@@ -140,7 +140,7 @@ fn test_string_literal_evaluation() {
     let context = inkwell::context::Context::create();
     let module_name = "string_eval_test";
     let file_path = PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
 
     // Create a function to test string evaluation
     let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
@@ -280,7 +280,7 @@ fn test_string_switch_compilation() {
     let context = inkwell::context::Context::create();
     let module_name = "test_string_switch";
     let file_path = PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
     
     // Create a function to hold our switch statement
     let fn_type = context.void_type().fn_type(&[], false);

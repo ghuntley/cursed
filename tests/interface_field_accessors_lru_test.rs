@@ -71,12 +71,12 @@ fn test_interface_field_accessors_lru() {
     
     // Parse the program
     let mut lexer = Lexer::new(TEST_CODE);
-    let mut parser = Parser::new(&mut lexer).expect("Parser creation failed");
+    let mut parser = Parser::new(lexer).expect("Parser creation failed");
     let program = parser.parse_program().expect("Parsing failed");
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Ensure LRU cache is initialized
     codegen.ensure_lru_field_accessor_cache();
