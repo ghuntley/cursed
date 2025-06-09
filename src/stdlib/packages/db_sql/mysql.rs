@@ -1,11 +1,16 @@
 /// fr fr MySQL driver implementation - the popular choice periodt
 
 use crate::stdlib::packages::{
-    db_core::{ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect},
-    db_sql::{SqlDriver, SqlDialectTrait}
+    db_core::{
+        ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
+        Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
+        ExecuteResult, TransactionIsolation
+    },
+    db_sql::{SqlDriver, SqlDialectTrait, SqlValue, SqlResultSet, SqlExecuteResult}
 };
 use crate::stdlib::packages::db_sql::drivers::{
-    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations
+    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
+    SqlTransactionIsolation, SqlConnectionInfo, SqlBatch, SqlTransaction
 };
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use async_trait::async_trait;
@@ -124,6 +129,104 @@ impl SqlDriver for MySqlDriver {
             max_rows: None,
             unsupported_features: Vec::from([]),
         }
+    }
+}
+
+#[async_trait]
+impl DatabaseConnection for MySqlConnection {
+    async fn query(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<Box<dyn ResultSet>> {
+        // Placeholder implementation
+        todo!("MySQL query implementation")
+    }
+
+    async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<ExecuteResult> {
+        // Placeholder implementation
+        todo!("MySQL execute implementation")
+    }
+
+    async fn prepare(&mut self, sql: &str) -> DbResult<Box<dyn PreparedStatement>> {
+        // Placeholder implementation
+        todo!("MySQL prepare implementation")
+    }
+
+    async fn begin_transaction(&mut self, options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
+        // Placeholder implementation
+        todo!("MySQL begin_transaction implementation")
+    }
+
+    async fn ping(&mut self) -> DbResult<()> {
+        // Placeholder implementation
+        Ok(())
+    }
+
+    async fn close(self: Box<Self>) -> DbResult<()> {
+        // Placeholder implementation
+        Ok(())
+    }
+
+    fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
+        crate::stdlib::packages::db_core::traits::ConnectionInfo {
+            database_name: "mysql_db".to_string(),
+            server_version: "8.0.35".to_string(),
+            protocol_version: "10".to_string(),
+            connection_id: self.connection_id.clone(),
+            is_read_only: false,
+            transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::RepeatableRead,
+        }
+    }
+}
+
+#[async_trait]
+impl SqlConnection for MySqlConnection {
+    async fn sql_query(&mut self, sql: &str, params: &[SqlValue]) -> DbResult<SqlResultSet> {
+        // Placeholder implementation
+        todo!("MySQL sql_query implementation")
+    }
+
+    async fn sql_execute(&mut self, sql: &str, params: &[SqlValue]) -> DbResult<SqlExecuteResult> {
+        // Placeholder implementation
+        todo!("MySQL sql_execute implementation")
+    }
+
+    async fn sql_prepare(&mut self, sql: &str) -> DbResult<Box<dyn PreparedStatement>> {
+        // Placeholder implementation
+        todo!("MySQL sql_prepare implementation")
+    }
+
+    async fn sql_begin_transaction(&mut self, isolation: Option<SqlTransactionIsolation>) -> DbResult<Box<dyn SqlTransaction>> {
+        // Placeholder implementation
+        todo!("MySQL sql_begin_transaction implementation")
+    }
+
+    async fn sql_batch(&mut self, statements: &[SqlBatch]) -> DbResult<Vec<SqlExecuteResult>> {
+        // Placeholder implementation
+        todo!("MySQL sql_batch implementation")
+    }
+
+    fn sql_connection_info(&self) -> SqlConnectionInfo {
+        SqlConnectionInfo {
+            server_version: "8.0.35".to_string(),
+            protocol_version: "10".to_string(),
+            database_name: "mysql".to_string(),
+            schema_name: None,
+            character_set: "utf8mb4".to_string(),
+            collation: "utf8mb4_unicode_ci".to_string(),
+            time_zone: "SYSTEM".to_string(),
+            auto_commit: true,
+            read_only: false,
+            isolation_level: SqlTransactionIsolation::RepeatableRead,
+            capabilities: vec!["transactions".to_string(), "json".to_string(), "fulltext".to_string()],
+        }
+    }
+
+    async fn set_sql_variable(&mut self, name: &str, value: &SqlValue) -> DbResult<()> {
+        // Placeholder implementation
+        todo!("MySQL set_sql_variable implementation")
+    }
+
+    async fn get_sql_variable(&mut self, name: &str) -> DbResult<SqlValue> {
+        // Placeholder implementation
+        todo!("MySQL get_sql_variable implementation")
     }
 }
 

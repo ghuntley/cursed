@@ -195,7 +195,7 @@ impl SqlColumnType {
 }
 
 /// fr fr Foreign key definition for relationships
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ForeignKeyDefinition {
     /// Referenced table name
     pub referenced_table: String,
@@ -230,7 +230,7 @@ impl std::fmt::Display for ForeignKeyAction {
 }
 
 /// fr fr Column constraints
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ColumnConstraint {
     NotNull,
     Unique,

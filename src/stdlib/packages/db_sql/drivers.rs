@@ -18,7 +18,7 @@ use std::collections::HashMap;
 
 /// fr fr Core SQL driver trait - what every SQL driver needs to implement
 #[async_trait]
-pub trait SqlDriver: DatabaseDriver + Send + Sync {
+pub trait SqlDriver: DatabaseDriver + std::fmt::Debug + Send + Sync {
     /// slay Create a SQL-specific connection
     async fn sql_connect(&self, config: ConnectionConfig) -> DbResult<Box<dyn SqlConnection>>;
     
@@ -46,7 +46,7 @@ pub trait SqlDriver: DatabaseDriver + Send + Sync {
 
 /// fr fr SQL-specific connection interface
 #[async_trait]
-pub trait SqlConnection: DatabaseConnection + Send + Sync {
+pub trait SqlConnection: DatabaseConnection + std::fmt::Debug + Send + Sync {
     /// slay Execute SQL query with SQL-specific result
     async fn sql_query(&mut self, sql: &str, params: &[SqlValue]) -> DbResult<SqlResultSet>;
     
@@ -74,7 +74,7 @@ pub trait SqlConnection: DatabaseConnection + Send + Sync {
 
 /// fr fr SQL transaction interface
 #[async_trait]
-pub trait SqlTransaction: Send + Sync {
+pub trait SqlTransaction: std::fmt::Debug + Send + Sync {
     /// slay Execute query within transaction
     async fn sql_query(&mut self, sql: &str, params: &[SqlValue]) -> DbResult<SqlResultSet>;
     

@@ -72,6 +72,20 @@ pub enum MigrationOperation {
     },
 }
 
+impl MigrationOperation {
+    /// Get operation name
+    pub fn name(&self) -> &str {
+        match self {
+            MigrationOperation::CreateTable { .. } => "create_table",
+            MigrationOperation::DropTable { .. } => "drop_table",
+            MigrationOperation::AddColumn { .. } => "add_column",
+            MigrationOperation::DropColumn { .. } => "drop_column",
+            MigrationOperation::AddIndex { .. } => "add_index",
+            MigrationOperation::DropIndex { .. } => "drop_index",
+        }
+    }
+}
+
 /// fr fr Type aliases for migration operations
 pub type CreateTable = MigrationOperation;
 pub type DropTable = MigrationOperation;
@@ -261,17 +275,25 @@ impl MigrationManager {
         let migration_name = format!("{}_{}", operation.name(), T::table_name());
         
         match operation {
-            MigrationOperation::CreateTable => {
+            MigrationOperation::CreateTable { .. } => {
                 Ok(Box::new(CreateTableMigration::<T>::new(version, migration_name)))
             }
-            MigrationOperation::DropTable => {
+            MigrationOperation::DropTable { .. } => {
                 Ok(Box::new(DropTableMigration::<T>::new(version, migration_name)))
             }
-            MigrationOperation::AddColumn { column } => {
+            MigrationOperation::AddColumn { column, .. } => {
                 Ok(Box::new(AddColumnMigration::<T>::new(version, migration_name, column)))
             }
-            MigrationOperation::DropColumn { column_name } => {
-                Ok(Box::new(DropColumnMigration::<T>::new(version, migration_name, column_name)))
+            MigrationOperation::DropColumn { column, .. } => {
+                Ok(Box::new(DropColumnMigration::<T>::new(version, migration_name, column)))
+            }
+            MigrationOperation::AddIndex { .. } => {
+                // TODO: Implement AddIndexMigration
+                Err(DatabaseError::validation_error("AddIndex migration not yet implemented"))
+            }
+            MigrationOperation::DropIndex { .. } => {
+                // TODO: Implement DropIndexMigration  
+                Err(DatabaseError::validation_error("DropIndex migration not yet implemented"))
             }
         }
     }
@@ -788,7 +810,13 @@ mod tests {
         let db = create_mock_db();
         let manager = MigrationManager::new(db);
         
-        let migration = manager.generate_migration::<TestUser>(MigrationOperation::CreateTable)
+        let operation = MigrationOperation::CreateTable {
+            name: "users".to_string(),
+            columns: Vec::new(),
+            indexes: Vec::new(),
+        };
+        
+        let migration = manager.generate_migration::<TestUser>(operation)
             .expect("Should generate migration");
         
         assert_eq!(migration.name(), "create_table_users");
