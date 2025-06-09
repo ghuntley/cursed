@@ -39,7 +39,7 @@ impl DiagnosticsProvider {
                 diagnostics.push(self.create_diagnostic(
                     Range {
                         start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: content.len() as u32 },
+                        end: Position { line: 0, character: content.chars().count() as u32 },
                     },
                     DiagnosticSeverity::ERROR,
                     "Lexer analysis failed".to_string(),
@@ -56,7 +56,7 @@ impl DiagnosticsProvider {
                 diagnostics.push(self.create_diagnostic(
                     Range {
                         start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: content.len() as u32 },
+                        end: Position { line: 0, character: content.chars().count() as u32 },
                     },
                     DiagnosticSeverity::ERROR,
                     "Parser analysis failed".to_string(),
@@ -565,6 +565,74 @@ impl DiagnosticsProvider {
             }
         }
         false
+    }
+
+    /// Create a diagnostic with the given parameters
+    pub fn create_diagnostic(
+        &self,
+        range: tower_lsp::lsp_types::Range,
+        severity: tower_lsp::lsp_types::DiagnosticSeverity,
+        message: String,
+    ) -> tower_lsp::lsp_types::Diagnostic {
+        tower_lsp::lsp_types::Diagnostic {
+            range,
+            severity: Some(severity),
+            code: None,
+            code_description: None,
+            source: Some("cursed".to_string()),
+            message,
+            related_information: None,
+            tags: None,
+            data: None,
+        }
+    }
+
+    /// Check type errors in content
+    pub fn check_type_errors(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement type error checking
+        vec![]
+    }
+
+    /// Check variable usage
+    pub fn check_variable_usage(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement variable usage checking
+        vec![]
+    }
+
+    /// Check function calls
+    pub fn check_function_calls(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement function call checking
+        vec![]
+    }
+
+    /// Check imports
+    pub fn check_imports(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement import checking
+        vec![]
+    }
+
+    /// Check style issues
+    pub fn check_style_issues(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement style checking
+        vec![]
+    }
+
+    /// Check best practices
+    pub fn check_best_practices(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement best practice checking
+        vec![]
+    }
+
+    /// Check performance issues
+    pub fn check_performance_issues(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement performance checking
+        vec![]
+    }
+
+    /// Check security issues
+    pub fn check_security_issues(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
+        // TODO: Implement security checking
+        vec![]
     }
 }
 
