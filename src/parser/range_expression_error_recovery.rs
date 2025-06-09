@@ -305,6 +305,7 @@ impl<'a> EnhancedRangeExpressionParsing<'a> for Parser<'a> {
 ///
 /// This struct wraps the standard RangeExpression with additional information
 /// about any errors encountered during parsing, and fallback values used.
+#[derive(Debug)]
 pub struct RecoverableRangeExpression {
     /// The underlying range expression
     pub range: RangeExpression,

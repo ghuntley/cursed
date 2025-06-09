@@ -26,6 +26,7 @@ use std::any::Any;
 /// The AST would have a `DotExpression` with:
 /// - object: the expression before the dot (e.g., `user`, `math`, `myString`)
 /// - property: the identifier after the dot (e.g., `name`, `sqrt`, `length`)
+#[derive(Debug)]
 pub struct DotExpression {
     pub token: String,
     pub object: Box<dyn Expression>,

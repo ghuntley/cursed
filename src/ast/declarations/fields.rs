@@ -16,6 +16,7 @@ pub struct Field {
 /// Represents a parameter in a function declaration
 ///
 /// Parameters have a name and a type, and are used in function signatures.
+#[derive(Debug)]
 pub struct Parameter {
     pub token: String, // Usually the parameter name token
     pub name: Identifier,

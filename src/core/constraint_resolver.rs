@@ -12,6 +12,7 @@ use crate::core::type_checker::{Type, TypeChecker};
 use crate::core::interface_registry::InterfaceRegistry;
 use crate::core::constraint_error::{create_constraint_error, create_nested_constraint_error};
 use crate::error::Error;
+use crate::ast::traits::Node;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, instrument, warn};
@@ -45,6 +46,7 @@ pub struct ConstraintViolation {
 }
 
 /// Core constraint resolver for the enhanced generic system
+#[derive(Debug)]
 pub struct ConstraintResolver {
     /// Reference to the type checker for interface implementation checks
     type_checker: Arc<RwLock<TypeChecker>>,
@@ -306,12 +308,13 @@ impl ConstraintResolver {
 
         // Use the type checker to verify interface implementation
         let type_checker = self.type_checker.read()
-            .map_err(|e| Error::new(&format!("Failed to acquire type checker lock: {}", e)))?;
+            .map_err(|e| Error::new("lock_error", &format!("Failed to acquire type checker lock: {}", e), None))?;
 
         // Check if the concrete type implements the required interface
+        let interface_type = Type::Named(constraint.interface_name.clone());
         let implements = type_checker.check_interface_implementation(
             concrete_type,
-            &constraint.interface_name,
+            &interface_type,
         )?;
 
         debug!(
@@ -343,7 +346,7 @@ impl ConstraintResolver {
         // For interface constraints, we need to ensure the implementing type
         // can provide all required methods with compatible signatures
         let type_checker = self.type_checker.read()
-            .map_err(|e| Error::new(&format!("Failed to acquire type checker lock: {}", e)))?;
+            .map_err(|e| Error::new("lock_error", &format!("Failed to acquire type checker lock: {}", e), None))?;
 
         // Check if implementing type has all required methods
         for method in &interface_stmt.methods {
@@ -358,11 +361,17 @@ impl ConstraintResolver {
             }
 
             // Check method signature compatibility
+            let return_type = if let Some(ref rt) = method.return_type {
+                Type::Named(rt.string())
+            } else {
+                Type::Unknown
+            };
+            
             let signature_compatible = type_checker.check_method_signature_compatibility(
                 implementing_type,
                 &method.name.string(),
                 &method.parameters,
-                &method.return_type,
+                &return_type,
             )?;
 
             if !signature_compatible {
@@ -386,11 +395,15 @@ impl ConstraintResolver {
         type_arguments: &[Type],
     ) -> Result<HashMap<String, Type>, Error> {
         if type_parameters.len() != type_arguments.len() {
-            return Err(Error::new(&format!(
-                "Type parameter count mismatch: expected {}, got {}",
-                type_parameters.len(),
-                type_arguments.len()
-            )));
+            return Err(Error::new(
+                "type_mismatch",
+                &format!(
+                    "Type parameter count mismatch: expected {}, got {}",
+                    type_parameters.len(),
+                    type_arguments.len()
+                ),
+                None
+            ));
         }
 
         let mapping = type_parameters
@@ -436,7 +449,7 @@ impl ConstraintResolver {
         interface_name: &str,
     ) -> Result<Vec<String>, Error> {
         let type_checker = self.type_checker.read()
-            .map_err(|e| Error::new(&format!("Failed to acquire type checker lock: {}", e)))?;
+            .map_err(|e| Error::new("lock_error", &format!("Failed to acquire type checker lock: {}", e), None))?;
 
         // Get required methods from interface
         let required_methods = type_checker.get_interface_methods(interface_name)?;
@@ -518,7 +531,7 @@ impl ConstraintResolver {
     #[instrument(skip(self), level = "debug")]
     fn interface_extends(&self, interface: &str, base_interface: &str) -> Result<bool, Error> {
         let registry = self.interface_registry.read()
-            .map_err(|e| Error::new(&format!("Failed to acquire interface registry lock: {}", e)))?;
+            .map_err(|e| Error::new("lock_error", &format!("Failed to acquire interface registry lock: {}", e), None))?;
 
         // Check if interface extends base_interface (simplified check)
         // In a full implementation, this would check the interface hierarchy
@@ -547,14 +560,14 @@ impl ConstraintResolver {
 
         // Try to find a type that implements the required interface
         let registry = self.interface_registry.read()
-            .map_err(|e| Error::new(&format!("Failed to acquire interface registry lock: {}", e)))?;
+            .map_err(|e| Error::new("lock_error", &format!("Failed to acquire interface registry lock: {}", e), None))?;
 
         // Get implementations of the required interface
-        if let Some(implementations) = registry.get_interface_implementations(&constraint.interface_name) {
+        if let Some(implementations) = registry.implementations().get(&constraint.interface_name) {
             // Return the first implementation that works in this context
             for implementation in implementations {
                 // In a full implementation, we'd check context compatibility
-                return Ok(Some(implementation.implementing_type.clone()));
+                return Ok(Some(implementation.clone()));
             }
         }
 
@@ -578,7 +591,7 @@ impl ConstraintResolver {
         for violation in &result.violations {
             // Get available and required methods for better error messages
             let type_checker = self.type_checker.read()
-                .map_err(|e| Error::new(&format!("Failed to acquire type checker lock: {}", e)))?;
+                .map_err(|e| Error::new("TypeChecker", &format!("Failed to acquire type checker lock: {}", e), None))?;
 
             let available_methods = type_checker.get_type_methods(&violation.concrete_type)
                 .unwrap_or_else(|_| Vec::new());
@@ -765,7 +778,8 @@ impl ConstraintDependencyGraph {
             }
         }
 
-        result.reverse();
+        // Don't reverse - post-order traversal gives us the correct dependency order
+        // Dependencies are added before the constraints that depend on them
         Ok(result)
     }
 
@@ -777,7 +791,7 @@ impl ConstraintDependencyGraph {
         result: &mut Vec<String>,
     ) -> Result<(), Error> {
         if visiting.contains(constraint_id) {
-            return Err(Error::new(&format!("Circular dependency detected: {}", constraint_id)));
+            return Err(Error::new("ConstraintResolver", &format!("Circular dependency detected: {}", constraint_id), None));
         }
 
         if visited.contains(constraint_id) {
@@ -851,7 +865,8 @@ impl ConstraintDependencyGraph {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::token::{Token, TokenType};
+    use crate::lexer::token::Token;
+    use crate::lexer::TokenType;
 
     #[test]
     fn test_constraint_resolution_result() {
@@ -888,6 +903,7 @@ mod tests {
         let mut deps = HashSet::new();
         deps.insert("B:Display".to_string());
         
+        // A:Comparable depends on B:Display (A depends on B)
         graph.add_constraint("A:Comparable".to_string(), deps);
         graph.add_constraint("B:Display".to_string(), HashSet::new());
 

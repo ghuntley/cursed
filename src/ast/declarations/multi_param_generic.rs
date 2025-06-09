@@ -37,7 +37,6 @@ impl Variance {
 }
 
 /// Enhanced type parameter with constraints, defaults, and variance
-#[derive(Debug)]
 pub struct EnhancedTypeParameter {
     pub token: Token,                          // The parameter token
     pub name: String,                          // Parameter name (T, U, etc.)
@@ -45,6 +44,33 @@ pub struct EnhancedTypeParameter {
     pub constraints: Vec<EnhancedConstraint>,  // Type constraints
     pub default_type: Option<Box<dyn Expression>>, // Default type if not specified
     pub lifetime_bound: Option<String>,        // Lifetime bound (if any)
+}
+
+impl std::fmt::Debug for EnhancedTypeParameter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EnhancedTypeParameter")
+            .field("token", &self.token)
+            .field("name", &self.name)
+            .field("variance", &self.variance)
+            .field("constraints", &self.constraints)
+            .field("default_type", &"<expr>")
+            .field("lifetime_bound", &self.lifetime_bound)
+            .finish()
+    }
+}
+
+impl Clone for EnhancedTypeParameter {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+            name: self.name.clone(),
+            variance: self.variance.clone(),
+            constraints: self.constraints.clone(),
+            // Cannot clone Box<dyn Expression>, using None as fallback
+            default_type: None,
+            lifetime_bound: self.lifetime_bound.clone(),
+        }
+    }
 }
 
 impl EnhancedTypeParameter {

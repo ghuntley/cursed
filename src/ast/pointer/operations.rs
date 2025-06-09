@@ -26,6 +26,7 @@ use std::any::Any;
 /// ```
 ///
 /// The AST would have a `PointerDereference` with the pointer expression (p, funcPtr)
+#[derive(Debug)]
 pub struct PointerDereference {
     pub token: String,
     pub pointer: Box<dyn Expression>,

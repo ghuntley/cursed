@@ -11,6 +11,7 @@ use std::any::Any;
 /// Range expressions specify the bounds for iteration in `for` loops,
 /// including numeric ranges and container iteration.
 
+#[derive(Debug)]
 pub enum RangeExpression {
     /// Basic range with just an end value (e.g., `range 10`)
     /// Implies start=0, step=1, iterating from 0 to end-1

@@ -35,6 +35,7 @@ use std::any::Any;
 /// The AST would have a `PrefixExpression` with:
 /// - operator: "-", "!", or "*"
 /// - right: the operand expression
+#[derive(Debug)]
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
@@ -118,6 +119,7 @@ impl Expression for PrefixExpression {
 /// - left: the left operand expression
 /// - operator: "+", ">=", or "&&"
 /// - right: the right operand expression
+#[derive(Debug)]
 pub struct InfixExpression {
     pub token: Token,
     pub left: Box<dyn Expression>,

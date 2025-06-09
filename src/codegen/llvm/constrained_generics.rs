@@ -10,12 +10,13 @@
 use crate::ast::declarations::{FunctionStatement, SquadStatement, GenericConstraint};
 use crate::ast::expressions::CallExpression;
 use crate::ast::Expression;
+use crate::ast::traits::Node;
 use crate::core::generic_instantiation::GenericInstantiator;
 use crate::core::interface_registry::InterfaceRegistry;
 use crate::core::type_checker::Type;
 use crate::error::Error;
 use crate::codegen::llvm::LlvmCodeGenerator;
-use inkwell::types::{BasicType, BasicTypeEnum, FunctionType};
+use inkwell::types::{BasicType, BasicTypeEnum, BasicMetadataTypeEnum, FunctionType};
 use inkwell::values::{BasicValueEnum, FunctionValue, PointerValue};
 use inkwell::module::Linkage;
 use inkwell::AddressSpace;
@@ -135,7 +136,7 @@ impl<'ctx> ConstrainedGenericsCodegen<'ctx> for LlvmCodeGenerator<'ctx> {
         let function_name = self.extract_function_name(call)?;
         
         // Look up the generic function definition
-        let function_def = self.lookup_generic_function(&function_name)?;
+        let function_def = self.lookup_constrained_generic_function(&function_name)?;
         
         // Validate constraints before generating code
         self.validate_generic_constraints(
@@ -199,7 +200,7 @@ impl<'ctx> ConstrainedGenericsCodegen<'ctx> for LlvmCodeGenerator<'ctx> {
         let mut param_types = Vec::new();
         for param in &function.parameters {
             // Extract parameter type and apply substitution
-            let param_type_name = param.type_name.string();
+            let param_type_name = param.param_type.string();
             let generic_type = Type::Named(param_type_name);
             let concrete_type = instantiator.instantiate_type(&generic_type)?;
             let llvm_type = self.type_to_llvm_basic(&concrete_type)?;
@@ -216,11 +217,17 @@ impl<'ctx> ConstrainedGenericsCodegen<'ctx> for LlvmCodeGenerator<'ctx> {
             None
         };
 
+        // Convert BasicTypeEnum to BasicMetadataTypeEnum for function signature
+        let param_metadata_types: Vec<BasicMetadataTypeEnum> = param_types
+            .iter()
+            .map(|t| (*t).into())
+            .collect();
+
         // Create LLVM function type
         let fn_type = if let Some(ret_type) = return_type {
-            ret_type.fn_type(&param_types, false)
+            ret_type.fn_type(&param_metadata_types, false)
         } else {
-            self.context().void_type().fn_type(&param_types, false)
+            self.context().void_type().fn_type(&param_metadata_types, false)
         };
 
         // Create the LLVM function
@@ -321,8 +328,10 @@ impl<'ctx> ConstrainedGenericsCodegen<'ctx> for LlvmCodeGenerator<'ctx> {
                 let cache_key = (format!("{:?}", concrete_type), interface_name.clone());
                 if let Some(cached_result) = self.get_cached_constraint_validation(&cache_key) {
                     if !cached_result {
-                        return Err(Error::constraint_violation(
-                            &format!("Type {:?} does not implement interface {}", concrete_type, interface_name)
+                        return Err(Error::new(
+                            "constraint_violation",
+                            &format!("Type {:?} does not implement interface {}", concrete_type, interface_name),
+                            None
                         ));
                     }
                     continue;
@@ -366,7 +375,7 @@ impl<'ctx> ConstrainedGenericsCodegen<'ctx> for LlvmCodeGenerator<'ctx> {
 
         // Extract method name and receiver
         let method_name = self.extract_method_name(method_call)?;
-        let receiver = self.compile_expression(&method_call.arguments[0])?;
+        let receiver = self.compile_expression(method_call.arguments[0].as_ref())?;
 
         // For constraint-bound types, we can often use direct dispatch
         // instead of virtual table lookups
@@ -417,7 +426,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
 
     /// Look up generic function definition by name
-    fn lookup_generic_function(&self, name: &str) -> Result<FunctionStatement, Error> {
+    fn lookup_constrained_generic_function(&self, name: &str) -> Result<FunctionStatement, Error> {
         // This would interface with the symbol table/AST storage
         // For now, return a mock function
         Err(Error::codegen(format!("Generic function not found: {}", name)))
@@ -576,7 +585,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Compile arguments
         let mut arg_values = Vec::new();
         for arg in args {
-            let arg_value = self.compile_expression(arg)?;
+            let arg_value = self.compile_expression(arg.as_ref())?;
             arg_values.push(arg_value.into());
         }
 

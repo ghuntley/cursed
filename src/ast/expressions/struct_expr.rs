@@ -7,6 +7,7 @@ use crate::ast::traits::{Expression, Node};
 use crate::lexer::token::Token;
 
 /// Represents a key-value pair in a struct literal
+#[derive(Debug)]
 pub struct KeyValuePair {
     /// The field name token
     pub key: super::identifiers::Identifier,
@@ -31,6 +32,7 @@ impl Display for KeyValuePair {
 
 /// Represents a struct literal expression
 /// Example: `Point{x: 10, y: 20.5}`
+#[derive(Debug)]
 pub struct StructLiteral {
     /// The opening brace token
     pub token: Token,
@@ -105,6 +107,7 @@ impl Display for StructLiteral {
 
 /// Represents a struct field access
 /// Example: `point.x`
+#[derive(Debug)]
 pub struct StructFieldAccess {
     /// The dot token
     pub token: Token,

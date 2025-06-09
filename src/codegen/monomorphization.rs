@@ -264,7 +264,7 @@ impl MonomorphizationManager {
             
             // Get required methods for the interface (if possible)
             let required_methods = type_checker.read().unwrap().get_interface_methods(interface_name)
-                .map(|methods| methods.iter().map(|(name, _, _)| name.clone()).collect::<Vec<_>>());
+                .unwrap_or_default();
             
             match type_checker.write().unwrap().check_interface_implementation(concrete_type, &interface_type) {
                 Ok(true) => {
@@ -286,7 +286,7 @@ impl MonomorphizationManager {
                         interface_name,
                         None, // No type parameter in direct check
                         available_methods,
-                        required_methods
+                        Some(required_methods)
                     );
                     
                     return Err(Error::TypeAssertion(error));
@@ -300,7 +300,7 @@ impl MonomorphizationManager {
                         interface_name,
                         None,
                         available_methods,
-                        required_methods
+                        Some(required_methods)
                     ).with_cause(e);
                     
                     return Err(Error::TypeAssertion(error));

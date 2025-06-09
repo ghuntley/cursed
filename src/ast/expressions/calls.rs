@@ -26,6 +26,7 @@ use std::any::Any;
 /// The AST would have a `CallExpression` with:
 /// - function: identifier "foo"
 /// - arguments: [IntegerLiteral(1), StringLiteral("hello"), BooleanLiteral(true)]
+#[derive(Debug)]
 pub struct CallExpression {
     pub token: String,
     pub function: Box<dyn Expression>,
@@ -95,6 +96,7 @@ impl Expression for CallExpression {
 /// - function: identifier "create"
 /// - type_arguments: [TypeLiteral(int), TypeLiteral(string)]
 /// - arguments: [IntegerLiteral(5), StringLiteral("value")]
+#[derive(Debug)]
 pub struct GenericCallExpression {
     pub token: String,
     pub function: Box<dyn Expression>,

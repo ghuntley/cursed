@@ -29,6 +29,7 @@ use crate::lexer::token::Token;
 /// The AST would have a `TypeConversionExpression` with:
 /// - expression: the value to be converted
 /// - type_name: the target type name
+#[derive(Debug)]
 pub struct TypeConversionExpression {
     pub token: Token,
     pub expression: Box<dyn Expression>,

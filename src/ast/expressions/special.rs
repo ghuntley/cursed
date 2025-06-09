@@ -33,6 +33,7 @@ use std::any::Any;
 /// The AST would have an `AssignmentExpression` with:
 /// - name: the target identifier (`x`, `name`, `isValid`)
 /// - value: the value expression (`5`, `"zoomer"`, `checkCondition()`)
+#[derive(Debug)]
 pub struct AssignmentExpression {
     pub token: String, // Token::Assign
     pub name: Identifier,
@@ -96,6 +97,7 @@ impl Expression for AssignmentExpression {
 /// - struct_name: the name of the struct type ("Person", "Pair")
 /// - type_arguments: any generic type parameters (empty for regular structs, [int, string] for generic)
 /// - fields: the field names and values as key-value pairs
+#[derive(Debug)]
 pub struct BeLikeExpression {
     pub token: String,
     pub struct_name: Identifier,
@@ -171,6 +173,7 @@ impl Expression for BeLikeExpression {
 ///
 /// The AST would have a `DefaultCase` expression within the switch statement
 /// representing the "basic" clause.
+#[derive(Debug)]
 pub struct DefaultCase {
     pub token: String,
 }

@@ -38,6 +38,20 @@ pub struct FunctionStatement {
     pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
 }
 
+impl std::fmt::Debug for FunctionStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FunctionStatement")
+            .field("token", &self.token)
+            .field("name", &self.name)
+            .field("parameters", &self.parameters)
+            .field("body", &self.body)
+            .field("return_type", &self.return_type.as_ref().map(|rt| rt.string()))
+            .field("type_parameters", &self.type_parameters)
+            .field("generic_constraints", &self.generic_constraints)
+            .finish()
+    }
+}
+
 impl Node for FunctionStatement {
     fn token_literal(&self) -> String {
         self.token.clone()
