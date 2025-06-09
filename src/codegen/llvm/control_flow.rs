@@ -15,6 +15,7 @@ use super::statement::StatementCompilation;
 use super::variables::VariableHandling;
 use super::variables::VariableScope;
 use super::string_utils::StringUtilsExtension;
+use super::bool_conversions::BoolConversions;
 
 /// Control flow implementation
 impl<'ctx> LlvmCodeGenerator<'ctx> {
@@ -31,19 +32,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // First, compile the condition expression
         let condition_value = self.compile_expression(condition)?;
         
-        // Make sure the condition is a boolean (i1 in LLVM)
-        let condition_bool = if condition_value.is_int_value() {
-            // Compare with zero to convert to boolean
-            let zero = self.context().bool_type().const_int(0, false);
-            self.builder().build_int_compare(
-                IntPredicate::NE,
-                condition_value.into_int_value(),
-                zero,
-                "if_cond"
-            ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
-        } else {
-            return Err(Error::from_str("If condition must be a boolean value"));
-        };
+        // Convert condition to boolean using the bool conversion system
+        let condition_bool = self.convert_value_to_bool(condition_value)?
+            .into_int_value();
         
         // Create the basic blocks for the then/else branches
         let function = self.current_function().ok_or_else(|| Error::from_str("If statement outside function"))?;
@@ -140,19 +131,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // First, compile the condition expression
         let condition_value = self.compile_expression(condition)?;
         
-        // Make sure the condition is a boolean (i1 in LLVM)
-        let condition_bool = if condition_value.is_int_value() {
-            // Compare with zero to convert to boolean
-            let zero = self.context().bool_type().const_int(0, false);
-            self.builder().build_int_compare(
-                IntPredicate::NE,
-                condition_value.into_int_value(),
-                zero,
-                "if_cond"
-            ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
-        } else {
-            return Err(Error::from_str("If condition must be a boolean value"));
-        };
+        // Convert condition to boolean using the bool conversion system
+        let condition_bool = self.convert_value_to_bool(condition_value)?
+            .into_int_value();
         
         // Create the basic blocks for the then/else branches
         let function = self.current_function().ok_or_else(|| Error::from_str("If statement outside function"))?;
@@ -247,19 +228,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let condition = while_stmt.condition.as_ref();
         let condition_value = self.compile_expression(condition)?;
         
-        // Convert the condition to a boolean
-        let condition_bool = if condition_value.is_int_value() {
-            // Compare with zero to convert to boolean
-            let zero = self.context().bool_type().const_int(0, false);
-            self.builder().build_int_compare(
-                IntPredicate::NE,
-                condition_value.into_int_value(),
-                zero,
-                "while_cond"
-            ).map_err(|e| Error::from_str(&format!("Failed to build condition: {}", e)))?
-        } else {
-            return Err(Error::from_str("While condition must be a boolean value"));
-        };
+        // Convert condition to boolean using the bool conversion system
+        let condition_bool = self.convert_value_to_bool(condition_value)?
+            .into_int_value();
         
         // Create the conditional branch
         self.builder().build_conditional_branch(condition_bool, body_block, end_block)

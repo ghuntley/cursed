@@ -5,7 +5,7 @@
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::traits::Expression;
-use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion, TypeAssertionQuestion, HashLiteral, IndexExpression};
+use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion, TypeAssertionQuestion, HashLiteral, IndexExpression, TypeConversionExpression};
 use crate::ast::traits::Node;
 use crate::ast::pointer::types::PointerType;
 use crate::ast::pointer::operations::PointerDereference;
@@ -24,6 +24,7 @@ use super::type_assertion_implementation::IntegratedTypeAssertion;
 use super::interface_type_assertion_debugging::{RuntimeTypeAssertionDebugging, TypeAssertionDebugLevel};
 use super::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
 use super::stan::StanCompilation;
+use super::type_conversion_system::{TypeConversionSystem, ConversionConfig};
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -99,6 +100,18 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             let result = InterfaceTypeAssertion::compile_type_assertion_question(self, type_assertion)?;
             
             tracing::debug!("Successfully compiled type assertion with ? operator for {}", type_assertion.type_name);
+            return Ok(result);
+        }
+
+        // Handle type conversion expressions (value as Type)
+        if let Some(type_conv) = any.downcast_ref::<TypeConversionExpression>() {
+            tracing::debug!("Found type conversion expression: {} as {}", 
+                     type_conv.expression.string(), type_conv.type_name);
+            
+            let config = ConversionConfig::default();
+            let result = self.compile_explicit_conversion(type_conv, &config)?;
+            
+            tracing::debug!("Successfully compiled type conversion to {}", type_conv.type_name);
             return Ok(result);
         }
         

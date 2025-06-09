@@ -8,7 +8,7 @@ use inkwell::IntPredicate;
 use inkwell::FloatPredicate;
 
 use crate::ast::traits::{Expression, Node};
-use crate::ast::expressions::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral};
+use crate::ast::expressions::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral, StringLiteral, NilLiteral};
 use crate::ast::expressions::{InfixExpression, PrefixExpression, AssignmentExpression};
 use crate::ast::expressions::identifiers::Identifier;
 use crate::error::Error;
@@ -18,6 +18,8 @@ use super::expression::ExpressionCompilation;
 use super::assignment::AssignmentCompilation;
 use super::variables::VariableHandling;
 use super::string_type::CursedStringType;
+use super::bool_conversions::BoolConversions;
+use super::nil_operations::{NilOperations, NilOperationsExtension};
 
 /// Trait for handling basic expression operations
 pub trait BasicExpressionOperations<'ctx> {
@@ -35,6 +37,9 @@ pub trait BasicExpressionOperations<'ctx> {
     
     /// Compile a string literal
     fn compile_string_literal(&mut self, lit: &StringLiteral) -> Result<BasicValueEnum<'ctx>, Error>;
+    
+    /// Compile a nil literal expression
+    fn compile_nil_literal_expression(&mut self, lit: &NilLiteral) -> Result<BasicValueEnum<'ctx>, Error>;
     
     /// Compile an infix expression (a + b, a * b, etc.)
     fn compile_infix_expression(&mut self, expr: &InfixExpression) -> Result<BasicValueEnum<'ctx>, Error>;
@@ -62,6 +67,10 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         
         if let Some(lit) = any.downcast_ref::<StringLiteral>() {
             return self.compile_string_literal(lit);
+        }
+        
+        if let Some(lit) = any.downcast_ref::<NilLiteral>() {
+            return self.compile_nil_literal_expression(lit);
         }
         
         // Handle operations
@@ -98,8 +107,8 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
     }
     
     fn compile_boolean_literal(&mut self, lit: &BooleanLiteral) -> Result<BasicValueEnum<'ctx>, Error> {
-        let bool_type = self.context().bool_type();
-        Ok(bool_type.const_int(if lit.value { 1 } else { 0 }, false).into())
+        // Use the bool conversion trait for consistent bool handling
+        Ok(self.create_bool_literal(lit.value))
     }
     
     fn compile_string_literal(&mut self, lit: &StringLiteral) -> Result<BasicValueEnum<'ctx>, Error> {
@@ -120,8 +129,29 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
         Ok(string_value.into())
     }
     
+    fn compile_nil_literal_expression(&mut self, lit: &NilLiteral) -> Result<BasicValueEnum<'ctx>, Error> {
+        // For nil literals, we need type context to determine the appropriate representation
+        // Since we don't have explicit type context here, we'll use a generic null pointer
+        // The type system should ensure this gets properly typed during assignment/comparison
+        <Self as NilOperations<'ctx>>::compile_nil_literal(self, lit, None)
+    }
+    
     fn compile_infix_expression(&mut self, expr: &InfixExpression) -> Result<BasicValueEnum<'ctx>, Error> {
         println!("DEBUG: Infix operation: {} {} {}", expr.left.string(), expr.operator, expr.right.string());
+        
+        // Check for nil comparisons first
+        let left_is_nil = expr.left.as_any().downcast_ref::<NilLiteral>().is_some();
+        let right_is_nil = expr.right.as_any().downcast_ref::<NilLiteral>().is_some();
+        
+        if (left_is_nil || right_is_nil) && (expr.operator == "==" || expr.operator == "!=") {
+            // Handle nil comparisons with special logic
+            let left = self.compile_expression(&*expr.left)?;
+            let right = self.compile_expression(&*expr.right)?;
+            
+            // TODO: We need type information to properly handle nil comparisons
+            // For now, this is a placeholder that will be enhanced with type system integration
+            return Err(Error::from_str("Nil comparisons require type system integration"));
+        }
         
         // Compile the left and right expressions
         let left = self.compile_expression(&*expr.left)?;
@@ -380,6 +410,18 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
                         Err(e) => Err(Error::from_str(&format!("Failed to build int ge: {}", e)))
                     }
                 },
+                "&&" => {
+                    // Convert both operands to bool and perform logical AND
+                    let left_bool = self.convert_value_to_bool(left.into())?;
+                    let right_bool = self.convert_value_to_bool(right.into())?;
+                    self.bool_logical_and(left_bool, right_bool)
+                },
+                "||" => {
+                    // Convert both operands to bool and perform logical OR
+                    let left_bool = self.convert_value_to_bool(left.into())?;
+                    let right_bool = self.convert_value_to_bool(right.into())?;
+                    self.bool_logical_or(left_bool, right_bool)
+                },
                 _ => Err(Error::from_str(&format!("Unsupported integer operator: {}", expr.operator)))
             }
         }
@@ -489,6 +531,18 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
                         Err(e) => Err(Error::from_str(&format!("Failed to build float ge: {}", e)))
                     }
                 },
+                "&&" => {
+                    // Convert both operands to bool and perform logical AND
+                    let left_bool = self.convert_value_to_bool(left.into())?;
+                    let right_bool = self.convert_value_to_bool(right.into())?;
+                    self.bool_logical_and(left_bool, right_bool)
+                },
+                "||" => {
+                    // Convert both operands to bool and perform logical OR
+                    let left_bool = self.convert_value_to_bool(left.into())?;
+                    let right_bool = self.convert_value_to_bool(right.into())?;
+                    self.bool_logical_or(left_bool, right_bool)
+                },
                 _ => Err(Error::from_str(&format!("Unsupported float operator: {}", expr.operator)))
             }
         }
@@ -527,16 +581,8 @@ impl<'ctx> BasicExpressionOperations<'ctx> for LlvmCodeGenerator<'ctx> {
                 }
             },
             "!" => {
-                if right.is_int_value() {
-                    let right_int = right.into_int_value();
-                    let result = self.builder().build_not(right_int, "not");
-                    match result {
-                        Ok(value) => Ok(value.into()),
-                        Err(e) => Err(Error::from_str(&format!("Failed to build logical not: {}", e)))
-                    }
-                } else {
-                    Err(Error::from_str("Cannot apply logical not to non-integer value"))
-                }
+                // Use bool conversion for logical NOT operation
+                self.bool_logical_not(right)
             },
             _ => Err(Error::from_str(&format!("Unsupported prefix operator: {}", expr.operator)))
         }

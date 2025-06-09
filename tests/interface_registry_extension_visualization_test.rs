@@ -35,9 +35,7 @@ fn test_interface_hierarchy_visualization() {
     registry.register_type(1005, "Writer".to_string());
     
     // Create the ThreadSafeInterfaceExtensionRegistry
-    let extension_registry = std::sync::Arc::new(
-        cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
-    );
+    let extension_registry = cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
     
     // Update the registry to use the extension registry
     let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
@@ -75,9 +73,7 @@ fn test_inheritance_path_visualization() {
     init_tracing!();
     
     // Create the ThreadSafeInterfaceExtensionRegistry
-    let extension_registry = std::sync::Arc::new(
-        cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
-    );
+    let extension_registry = cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
     
     // Create a test registry with the extension registry
     let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
@@ -137,9 +133,7 @@ fn test_dot_graph_generation() {
     init_tracing!();
     
     // Create the ThreadSafeInterfaceExtensionRegistry
-    let extension_registry = std::sync::Arc::new(
-        cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
-    );
+    let extension_registry = cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
     
     // Create a test registry with the extension registry
     let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());
@@ -179,9 +173,7 @@ fn test_inheritance_cycle_detection() {
     init_tracing!();
     
     // Create the ThreadSafeInterfaceExtensionRegistry
-    let extension_registry = std::sync::Arc::new(
-        cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new()
-    );
+    let extension_registry = cursed::core::interface_registry_extensions::ThreadSafeInterfaceExtensionRegistry::new();
     
     // Create a test registry with the extension registry
     let mut registry = InterfaceTypeRegistry::with_extension_registry(extension_registry.clone());

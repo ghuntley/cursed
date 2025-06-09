@@ -16,7 +16,7 @@ use cursed::{
     codegen::llvm::LlvmCodeGenerator,
     codegen::llvm::type_assertion::InterfaceTypeAssertion,
     codegen::llvm::interface_type_assertion_benchmarking::{TypeAssertionBenchmarking, HierarchyPattern, BenchmarkStats, TypeAssertionBenchmark},
-    core::interface_registry_lru_cache::LruCachedRegistry,
+    core::interface_registry_lru_extension::LruCachedRegistry,
 };
 
 // Import common test utilities
@@ -72,14 +72,14 @@ fn create_code_generator<'ctx>(
     builder.position_at_end(basic_block);
     
     // Create a registry with LRU cache
-    let base_registry = InterfaceRegistry::new();
+    let base_registry = cursed::core::interface_registry::InterfaceRegistry::new();
     let registry = Box::new(LruCachedRegistry::new(base_registry));
     
     // Create the code generator
     LlvmCodeGenerator::new(
         context,
         "test_module",
-        PathBuf::from("test_module"),
+        std::path::PathBuf::from("test_module"),
     )
 }
 
@@ -109,7 +109,7 @@ fn test_basic_benchmarking() {
     });
     
     // Check that we recorded a duration
-    assert!(!benchmark.compute_stats().durations.is_empty());
+    assert!(!benchmark.compute_stats().iterations.is_empty());
     
     // Report the results
     benchmark.report();
@@ -135,7 +135,7 @@ fn test_type_assertion_benchmarking() {
     let result = code_gen.compile_type_assertion_with_benchmarking(&type_assertion);
     
     // Check that we got a result and benchmark stats
-    assert!(result.is_ok())
+    assert!(result.is_ok());
     let (_value, stats) = result.unwrap();
     
     // Report the stats

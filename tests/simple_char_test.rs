@@ -30,8 +30,6 @@ fn test_char_object_basic() {
         other => panic!("Expected 'a', got {:?}", other),
     }
     
-    match char_obj.to_string() {
-        Ok(Object::String(s)) if s == "A" => {},
-        other => panic!("Expected \"A\", got {:?}", other),
-    }
+    let string_result = char_obj.to_string();
+    assert_eq!(string_result, "A");
 }
