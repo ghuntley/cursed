@@ -15,6 +15,7 @@ use crate::ast::control_flow::type_switch::TypeSwitchStatement;
 use crate::codegen::llvm::type_switch::TypeSwitchCompilation;
 use crate::ast::control_flow::range::RangeForStatement;
 use crate::ast::control_flow::range::RangeClause;
+use crate::ast::control_flow::channel_range::ChannelRangeForStatement;
 use crate::ast::expressions::RangeExpression;
 use crate::ast::traits::Node; // Add Node trait for string() method
 use crate::codegen::llvm::range_clause_fixed::RangeClauseCompilationEnhanced;
@@ -27,6 +28,7 @@ use super::variables::VariableHandling;
 use super::expression::ExpressionCompilation;
 use super::dot_expressions::QualifiedNameCompilation;
 use super::type_assertion_implementation::IntegratedTypeAssertion;
+use super::channel_range::ChannelRangeCompilation;
 
 /// Trait for statement compilation functionality
 pub trait StatementCompilation<'ctx> {
@@ -296,6 +298,12 @@ impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             return Ok(());
         }
         
+        // Select (choose) statement
+        if let Some(select_stmt) = any.downcast_ref::<crate::ast::control_flow::SelectStatement>() {
+            self.compile_select_statement(select_stmt)?;
+            return Ok(());
+        }
+        
         // Type switch statement
         if let Some(type_switch_stmt) = any.downcast_ref::<TypeSwitchStatement>() {
             // Use fixed type switch compilation
@@ -319,6 +327,12 @@ impl<'ctx> StatementCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
         // Range-based for loop
         if let Some(range_for) = any.downcast_ref::<RangeForStatement>() {
             self.compile_range_for_statement(range_for)?;
+            return Ok(());
+        }
+        
+        // Channel range-based for loop
+        if let Some(channel_range_for) = any.downcast_ref::<ChannelRangeForStatement>() {
+            self.compile_channel_range_for_statement(channel_range_for)?;
             return Ok(());
         }
         

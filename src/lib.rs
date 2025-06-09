@@ -82,6 +82,9 @@ pub mod parser;
 pub mod prelude;
 pub mod repl;
 pub mod runtime;
+
+// Re-export buffered channel functionality
+pub use runtime::buffered_channel::{BufferedChannel, ThreadSafeBufferedChannel, ChannelStats};
 pub mod stdlib;
 pub mod benchmark;
 pub mod slice_integration;

@@ -41,10 +41,11 @@ The Nix environment has linking issues with mold and missing libraries that affe
    - Fixed Token API usage (String vs Token enum patterns)
    - Corrected module imports and function signatures
    - Proper test infrastructure setup
+   - Fixed IrOutputConfig missing fields (optimization_level, show_optimization_stats)
 
 3. **Test linking COMPLETELY FIXED** with environment variables:
    ```bash
-   LIBRARY_PATH="/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib" RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd" cargo test
+   LIBRARY_PATH="/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib:/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib:/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib:/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib" RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd" cargo test
    ```
 
 4. **Working Tests Successfully Running**:

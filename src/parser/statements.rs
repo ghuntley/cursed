@@ -38,6 +38,7 @@ impl<'a> Parser<'a> {
                     self.parse_switch_statement()
                 }
             }, // vibe_check
+            Token::Choose => self.parse_select_statement(), // choose
             Token::BeLike => {
                 // Handle struct declaration with the special be_like syntax
                 // Push a marker to indicate we're at the beginning of a be_like statement
@@ -487,9 +488,17 @@ impl<'a> Parser<'a> {
                 
                 // Check for 'flex' token
                 if self.current_token_is(Token::Flex) {
-                    // Reset position and call the range for parser
-                    self.lexer.set_position(start_position);
-                    return self.parse_range_for_statement().map(|stmt| Box::new(stmt) as Box<dyn Statement>);
+                    // Check if this is a channel range by looking for '<-' after 'flex'
+                    self.next_token()?; // Advance past 'flex'
+                    if self.current_token_is(Token::Arrow) {
+                        // This is a channel range for statement
+                        self.lexer.set_position(start_position);
+                        return self.parse_channel_range_for_statement().map(|stmt| Box::new(stmt) as Box<dyn Statement>);
+                    } else {
+                        // This is a regular range for statement
+                        self.lexer.set_position(start_position);
+                        return self.parse_range_for_statement().map(|stmt| Box::new(stmt) as Box<dyn Statement>);
+                    }
                 }
             }
             

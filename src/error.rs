@@ -13,7 +13,10 @@ use std::fmt;
 use std::io;
 
 pub mod type_assertion_error;
+pub mod channel_error;
+
 pub use type_assertion_error::TypeAssertionError;
+pub use channel_error::{ChannelError, ChannelResult};
 
 /// Represents a location in the source code for error reporting
 ///

@@ -383,8 +383,10 @@ mod tests {
             output_dir: temp_dir.path().to_path_buf(),
             preserve_structure: false,
             optimize: false,
+            optimization_level: "O0".to_string(),
             base_name: Some("test".to_string()),
             include_debug_comments: true,
+            show_optimization_stats: false,
         };
 
         let context = Context::create();

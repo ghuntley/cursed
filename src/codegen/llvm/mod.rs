@@ -132,6 +132,7 @@ pub use self::improved_field_accessors::ImprovedFieldAccessors;
 pub use self::lru_field_accessors::LruCachedFieldAccessors;
 pub use self::property_access::PropertyAccessCompilation;
 pub use self::assignment::AssignmentCompilation;
+pub use self::channel_range::ChannelRangeCompilation;
 pub use self::break_statement::BreakStatementCompilation;
 pub use self::continue_statement::ContinueStatementCompilation;
 pub use self::import_statement::ImportStatementCompilation;
@@ -281,6 +282,7 @@ mod range_clause_fixed_extension; // Extension trait for range clause fixed meth
 mod map_iteration_improvements; // Improved type determination for map iterations
 mod loop_context;    // Loop context for break/continue management
 mod concurrency;     // Goroutine and channel operations
+mod channel_range;   // Channel range operations for iterating over channels
 mod stan;           // Stan (goroutine) expression compilation
 mod property_access; // Property access expressions (obj.field)
 mod assignment;      // Assignment expressions (a = b)
@@ -294,6 +296,7 @@ mod type_switch;     // Type switch statement implementation
 mod if_expression;   // If expression implementation
 pub mod struct_field_inference; // Struct field type inference
 pub mod recursive_types; // Recursive type support
+mod select;             // Select statement compilation
 // Dynamic dispatch for interfaces
 pub mod dynamic_dispatch;
 mod interface_implementation; // Interface implementation for code generator
