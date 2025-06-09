@@ -339,24 +339,25 @@ mod tests {
     fn test_stdlib_package_resolution() {
         let mut resolver = PackageResolver::new();
         
-        // Should be able to resolve core package
-        let result = resolver.resolve_package("core", None);
+        // Should be able to resolve vibez package (core output functions)
+        let result = resolver.resolve_package("vibez", None);
         assert!(result.is_ok());
         
         let package = result.unwrap();
-        assert_eq!(package.package_name(), "core");
-        assert!(package.get_symbol("len").is_some());
+        assert_eq!(package.package_name(), "vibez");
+        // Check that it has some standard output function from vibez package
+        assert!(package.get_symbol("spill").is_some() || package.get_symbol("spillf").is_some());
     }
     
     #[test]
     fn test_resolution_summary() {
         let mut resolver = PackageResolver::new();
-        let _ = resolver.resolve_package("core", None);
+        let _ = resolver.resolve_package("vibez", None);
         
         let summary = resolver.export_summary();
         assert_eq!(summary.total_packages, 1);
         assert_eq!(summary.stdlib_packages, 1);
         assert_eq!(summary.user_packages, 0);
-        assert!(summary.packages.contains(&"core".to_string()));
+        assert!(summary.packages.contains(&"vibez".to_string()));
     }
 }

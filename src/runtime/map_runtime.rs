@@ -1538,8 +1538,10 @@ mod tests {
         assert_eq!(header.load_factor(), 0.0);
         assert!(!header.needs_resize());
 
+        // Create a valid non-null buckets pointer for testing
+        let buckets = std::ptr::NonNull::dangling().as_ptr();
         let mut header = MapHeader::with_params(
-            std::ptr::null_mut(),
+            buckets,
             5,
             10,
             75,

@@ -62,6 +62,29 @@ fn main() {
                     eprintln!("Error: The --debug-tokens option requires a file path");
                     process::exit(1);
                 }
+                "--opt-help" | "--optimization-help" => {
+                    cursed::cli::print_optimization_help();
+                    Ok(())
+                }
+                "--list-passes" => {
+                    let args = vec!["--list-passes".to_string()];
+                    match cursed::cli::parse_optimization_args(&args) {
+                        Ok(Some(opt_args)) => {
+                            if let Err(e) = cursed::cli::execute_optimization_command(&opt_args) {
+                                eprintln!("Error: {}", e);
+                                process::exit(1);
+                            }
+                        }
+                        Ok(None) => {
+                            cursed::cli::print_optimization_help();
+                        }
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            process::exit(1);
+                        }
+                    }
+                    Ok(())
+                }
                 "-e" | "--eval" => {
                     eprintln!("Error: The --eval option requires a code string");
                     print_usage(&program_name);
@@ -87,6 +110,36 @@ fn main() {
 
         // Two or more arguments - check for options
         _ => {
+            // Check for optimization-related commands first
+            match cursed::cli::parse_optimization_args(&args[1..]) {
+                Ok(Some(opt_args)) => {
+                    if let Err(e) = cursed::cli::execute_optimization_command(&opt_args) {
+                        error!(error = %e, "Optimization command failed");
+                        eprintln!("Error: {}", e);
+                        process::exit(1);
+                    }
+                    return;
+                }
+                Ok(None) => {
+                    // Not an optimization command, continue processing
+                }
+                Err(e) => {
+                    error!(error = %e, "Failed to parse optimization arguments");
+                    eprintln!("Error: {}", e);
+                    process::exit(1);
+                }
+            }
+
+            // Check for IR-related commands
+            if let Some(result) = cursed::cli::handle_ir_arguments(&args[1..]) {
+                if let Err(e) = result {
+                    error!(error = ?e, "IR command failed");
+                    eprintln!("Error: {}", e);
+                    process::exit(1);
+                }
+                return;
+            }
+
             match args[1].as_str() {
                 "--debug-tokens" => {
                     // Debug token stream for the specified file
@@ -153,6 +206,17 @@ fn print_usage(program_name: &str) {
     println!("  -e, --eval CODE    Execute CODE");
     println!("  -                  Read from standard input");
     println!("  --debug-tokens FILE Debug token stream for FILE");
+    println!("  --emit-ir FILE     Generate LLVM IR (.ll) file");
+    println!("  --emit-bc FILE     Generate LLVM bitcode (.bc) file");
+    println!("  --emit-both FILE   Generate both IR and bitcode");
+    println!("  --ir-help          Show detailed IR generation help");
+    println!("");
+    println!("Optimization Options:");
+    println!("  -O0, -O1, -O2, -O3 Set optimization level");
+    println!("  -Os, -Oz           Optimize for size");
+    println!("  --opt-help         Show detailed optimization help");
+    println!("  --list-passes      List available optimization passes");
+    println!("  --benchmark-opt    Benchmark optimization levels");
     println!("");
     println!("If no arguments are provided, the REPL will start in interactive mode.");
     println!("If a file path is provided, the file will be executed.");

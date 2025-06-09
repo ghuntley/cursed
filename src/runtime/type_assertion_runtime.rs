@@ -273,6 +273,23 @@ impl TypeAssertionRuntime {
             }
         }
         
+        // Check if we should panic
+        if self.panic_config.panic_on_failure {
+            self.increment_panic_count();
+            let interface_name = interface_info
+                .as_ref()
+                .map(|info| info.type_name.as_str())
+                .unwrap_or("unknown");
+            let panic_message = self.create_panic_message(
+                interface_name,
+                target_type_name,
+                source_location.as_ref(),
+                "Incomplete type information for assertion"
+            );
+            error!("Panicking on assertion failure (incomplete type info): {}", panic_message);
+            panic!("{}", panic_message);
+        }
+        
         self.increment_failed_assertions();
         
         let interface_name = interface_info

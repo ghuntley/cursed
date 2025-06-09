@@ -14,6 +14,7 @@
 pub mod jit;
 pub mod llvm;
 pub mod monomorphization;
+pub mod separate_compilation_integration;
 
 pub use monomorphization::MonomorphizationManager;
 

@@ -807,11 +807,16 @@ mod tests {
         // Wait for the thread to be ready to park
         let thread_id = rx.recv().unwrap();
         
-        // Give it a moment to actually park
-        thread::sleep(Duration::from_millis(10));
+        // Wait until the thread is actually parked by checking the parker count
+        let parker_global = get_global_parker();
+        let initial_count = parker_global.parked_count();
+        let mut attempts = 0;
+        while parker_global.parked_count() == initial_count && attempts < 100 {
+            thread::sleep(Duration::from_millis(1));
+            attempts += 1;
+        }
         
         // Unpark the thread
-        let parker_global = get_global_parker();
         let unparked = parker_global.unpark(thread_id).unwrap();
         assert!(unparked);
         

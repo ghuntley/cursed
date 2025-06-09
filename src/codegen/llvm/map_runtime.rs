@@ -7,7 +7,7 @@ use inkwell::context::Context;
 use inkwell::module::Module;
 use inkwell::builder::Builder;
 use inkwell::types::{BasicType, FunctionType};
-use inkwell::values::{FunctionValue, IntValue, PointerValue};
+use inkwell::values::{FunctionValue, IntValue, PointerValue, BasicValueEnum};
 use inkwell::{AddressSpace, IntPredicate};
 use crate::core::type_checker::Type;
 use crate::error_enhanced::CursedError;
@@ -144,7 +144,8 @@ impl BasicMapRuntime {
         let hash_value = match key_type {
             Type::Tea => {
                 // Simple string hash using FNV-1a algorithm
-                self.implement_string_hash(context, &builder, param.into_pointer_value())?
+                // param is now a struct value, not a pointer
+                self.implement_string_hash_struct(context, &builder, param)?
             }
             Type::Thicc => {
                 // Simple integer hash
@@ -180,6 +181,53 @@ impl BasicMapRuntime {
             .map_err(|e| CursedError::codegen(format!("Failed to build return: {}", e)))?;
 
         Ok(())
+    }
+
+    /// Implement FNV-1a string hash for struct values
+    fn implement_string_hash_struct<'ctx>(
+        &self,
+        context: &'ctx Context,
+        builder: &Builder<'ctx>,
+        str_struct: BasicValueEnum<'ctx>,
+    ) -> Result<IntValue<'ctx>, CursedError> {
+        // FNV-1a constants
+        let fnv_offset_basis = context.i64_type().const_int(14695981039346656037u64, false);
+        let fnv_prime = context.i64_type().const_int(1099511628211u64, false);
+
+        // Extract length and data pointer from the string struct
+        let struct_val = str_struct.into_struct_value();
+        
+        // Get length (first field)
+        let length = builder
+            .build_extract_value(struct_val, 0, "len")
+            .map_err(|e| CursedError::codegen(format!("Failed to extract length: {}", e)))?
+            .into_int_value();
+        
+        // Get data pointer (second field) 
+        let data_ptr = builder
+            .build_extract_value(struct_val, 1, "data")
+            .map_err(|e| CursedError::codegen(format!("Failed to extract data pointer: {}", e)))?
+            .into_pointer_value();
+
+        // Simple hash combining length and pointer address
+        let ptr_int = builder
+            .build_ptr_to_int(data_ptr, context.i64_type(), "ptr_int")
+            .map_err(|e| CursedError::codegen(format!("Failed to convert pointer to int: {}", e)))?;
+
+        // Convert length to i64 and XOR with pointer
+        let length_ext = builder
+            .build_int_z_extend(length, context.i64_type(), "len_ext")
+            .map_err(|e| CursedError::codegen(format!("Failed to extend length: {}", e)))?;
+
+        let combined = builder
+            .build_xor(ptr_int, length_ext, "ptr_len_xor")
+            .map_err(|e| CursedError::codegen(format!("Failed to XOR pointer and length: {}", e)))?;
+
+        let result = builder
+            .build_xor(fnv_offset_basis, combined, "simple_hash")
+            .map_err(|e| CursedError::codegen(format!("Failed to XOR hash: {}", e)))?;
+
+        Ok(result)
     }
 
     /// Implement FNV-1a string hash

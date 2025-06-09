@@ -53,14 +53,14 @@ impl RecursiveType {
             Type::Named(name) => {
                 deps.insert(name.clone());
             }
-            Type::Struct(name, type_args) => {
-                deps.insert(name.clone());
+            Type::Struct(_name, type_args) => {
+                // Don't add the struct's own name as a dependency
                 for arg in type_args {
                     deps.extend(Self::extract_dependencies(arg));
                 }
             }
-            Type::Interface(name, type_args) => {
-                deps.insert(name.clone());
+            Type::Interface(_name, type_args) => {
+                // Don't add the interface's own name as a dependency
                 for arg in type_args {
                     deps.extend(Self::extract_dependencies(arg));
                 }
@@ -87,8 +87,8 @@ impl RecursiveType {
             Type::Channel(inner) => {
                 deps.extend(Self::extract_dependencies(inner));
             }
-            Type::Generic(name, type_args) => {
-                deps.insert(name.clone());
+            Type::Generic(_name, type_args) => {
+                // Don't add the generic's own name as a dependency
                 for arg in type_args {
                     deps.extend(Self::extract_dependencies(arg));
                 }
