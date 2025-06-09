@@ -20,6 +20,8 @@ impl Parser {
     pub fn parse_program(&mut self) -> Result<Program, Error> {
         Ok(Program {
             statements: Vec::new(),
+            package_name: None,
+            imports: Vec::new(),
         })
     }
     
