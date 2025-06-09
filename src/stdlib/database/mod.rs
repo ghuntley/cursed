@@ -114,6 +114,41 @@ pub enum SqlValue {
     Json(serde_json::Value),
 }
 
+impl Eq for SqlValue {}
+
+impl std::hash::Hash for SqlValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::mem::discriminant(self).hash(state);
+        match self {
+            SqlValue::Null => {},
+            SqlValue::Boolean(b) => b.hash(state),
+            SqlValue::Integer(i) => i.hash(state),
+            SqlValue::Float(f) => {
+                // Handle NaN and infinity cases for hashing
+                if f.is_nan() {
+                    0u64.hash(state);
+                } else if f.is_infinite() {
+                    if f.is_sign_positive() {
+                        1u64.hash(state);
+                    } else {
+                        2u64.hash(state);
+                    }
+                } else {
+                    // Use integer representation for finite numbers
+                    f.to_bits().hash(state);
+                }
+            },
+            SqlValue::String(s) => s.hash(state),
+            SqlValue::Bytes(b) => b.hash(state),
+            SqlValue::Timestamp(t) => t.hash(state),
+            SqlValue::Json(j) => {
+                // Hash JSON as string representation
+                format!("{}", j).hash(state);
+            },
+        }
+    }
+}
+
 impl std::fmt::Display for SqlValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

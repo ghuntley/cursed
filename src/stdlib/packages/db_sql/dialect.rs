@@ -27,7 +27,7 @@ pub enum SqlDialect {
 }
 
 /// fr fr SQL dialect trait
-pub trait SqlDialectTrait: Send + Sync {
+pub trait SqlDialectTrait: std::fmt::Debug + Send + Sync {
     /// slay Get dialect name
     fn name(&self) -> &str;
     

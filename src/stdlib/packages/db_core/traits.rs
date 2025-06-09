@@ -15,7 +15,7 @@ use async_trait::async_trait;
 
 /// fr fr Core database driver trait - the big boss interface periodt
 #[async_trait]
-pub trait DatabaseDriver: Send + Sync {
+pub trait DatabaseDriver: std::fmt::Debug + Send + Sync {
     /// slay Create a new database connection
     async fn connect(&self, config: ConnectionConfig) -> DbResult<Box<dyn DatabaseConnection>>;
     
@@ -34,7 +34,7 @@ pub trait DatabaseDriver: Send + Sync {
 
 /// fr fr Database connection trait - handles actual database interactions
 #[async_trait]
-pub trait DatabaseConnection: Send + Sync {
+pub trait DatabaseConnection: std::fmt::Debug + Send + Sync {
     /// slay Execute a query and return results
     async fn query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>>;
     
@@ -59,7 +59,7 @@ pub trait DatabaseConnection: Send + Sync {
 
 /// fr fr Transaction management trait
 #[async_trait]
-pub trait DatabaseTransaction: Send + Sync {
+pub trait DatabaseTransaction: std::fmt::Debug + Send + Sync {
     /// slay Commit the transaction
     async fn commit(self: Box<Self>) -> DbResult<()>;
     
@@ -84,7 +84,7 @@ pub trait DatabaseTransaction: Send + Sync {
 
 /// fr fr Query executor trait for advanced query handling
 #[async_trait]
-pub trait QueryExecutor: Send + Sync {
+pub trait QueryExecutor: std::fmt::Debug + Send + Sync {
     /// slay Execute a query plan
     async fn execute_plan(&mut self, plan: QueryPlan) -> DbResult<Box<dyn ResultSet>>;
     
@@ -99,7 +99,7 @@ pub trait QueryExecutor: Send + Sync {
 }
 
 /// fr fr Result set trait for handling query results
-pub trait ResultSet: Send + Sync {
+pub trait ResultSet: std::fmt::Debug + Send + Sync {
     /// slay Get the next row
     fn next(&mut self) -> DbResult<Option<Row>>;
     
@@ -121,7 +121,7 @@ pub trait ResultSet: Send + Sync {
 
 /// fr fr Prepared statement trait for efficient repeated execution
 #[async_trait]
-pub trait PreparedStatement: Send + Sync {
+pub trait PreparedStatement: std::fmt::Debug + Send + Sync {
     /// slay Execute with parameters
     async fn execute(&mut self, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult>;
     
@@ -140,7 +140,7 @@ pub trait PreparedStatement: Send + Sync {
 
 /// fr fr Connection manager trait for pooling
 #[async_trait]
-pub trait ConnectionManager: Send + Sync {
+pub trait ConnectionManager: std::fmt::Debug + Send + Sync {
     /// slay Get a connection from the pool
     async fn get_connection(&self) -> DbResult<Box<dyn DatabaseConnection>>;
     
@@ -156,7 +156,7 @@ pub trait ConnectionManager: Send + Sync {
 
 /// fr fr Query stream trait for streaming large results
 #[async_trait]
-pub trait QueryStream: Send + Sync {
+pub trait QueryStream: std::fmt::Debug + Send + Sync {
     /// slay Get the next row asynchronously
     async fn next_row(&mut self) -> DbResult<Option<Row>>;
     

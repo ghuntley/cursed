@@ -1,11 +1,16 @@
 /// fr fr PostgreSQL driver implementation - the elephant in the room periodt
 
 use crate::stdlib::packages::{
-    db_core::{ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect},
-    db_sql::{SqlDriver, SqlDialectTrait}
+    db_core::{
+        ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
+        Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
+        ExecuteResult, TransactionIsolation
+    },
+    db_sql::{SqlDriver, SqlDialectTrait, SqlValue, SqlResultSet, SqlExecuteResult}
 };
 use crate::stdlib::packages::db_sql::drivers::{
-    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations
+    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
+    SqlTransactionIsolation, SqlConnectionInfo, SqlBatch, SqlTransaction
 };
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use async_trait::async_trait;
@@ -126,6 +131,104 @@ impl SqlDriver for PostgreSqlDriver {
             max_rows: None,
             unsupported_features: Vec::from([]),
         }
+    }
+}
+
+#[async_trait]
+impl DatabaseConnection for PostgreSqlConnection {
+    async fn query(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<Box<dyn ResultSet>> {
+        // Placeholder implementation
+        todo!("PostgreSQL query implementation")
+    }
+
+    async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<ExecuteResult> {
+        // Placeholder implementation
+        todo!("PostgreSQL execute implementation")
+    }
+
+    async fn prepare(&mut self, sql: &str) -> DbResult<Box<dyn PreparedStatement>> {
+        // Placeholder implementation
+        todo!("PostgreSQL prepare implementation")
+    }
+
+    async fn begin_transaction(&mut self, options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
+        // Placeholder implementation
+        todo!("PostgreSQL begin_transaction implementation")
+    }
+
+    async fn ping(&mut self) -> DbResult<()> {
+        // Placeholder implementation
+        Ok(())
+    }
+
+    async fn close(self: Box<Self>) -> DbResult<()> {
+        // Placeholder implementation
+        Ok(())
+    }
+
+    fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
+        crate::stdlib::packages::db_core::traits::ConnectionInfo {
+            database_name: "postgres_db".to_string(),
+            server_version: "15.0".to_string(),
+            protocol_version: "3.0".to_string(),
+            connection_id: self.connection_id.clone(),
+            is_read_only: false,
+            transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::ReadCommitted,
+        }
+    }
+}
+
+#[async_trait]
+impl SqlConnection for PostgreSqlConnection {
+    async fn sql_query(&mut self, sql: &str, params: &[SqlValue]) -> DbResult<SqlResultSet> {
+        // Placeholder implementation
+        todo!("PostgreSQL sql_query implementation")
+    }
+
+    async fn sql_execute(&mut self, sql: &str, params: &[SqlValue]) -> DbResult<SqlExecuteResult> {
+        // Placeholder implementation
+        todo!("PostgreSQL sql_execute implementation")
+    }
+
+    async fn sql_prepare(&mut self, sql: &str) -> DbResult<Box<dyn PreparedStatement>> {
+        // Placeholder implementation
+        todo!("PostgreSQL sql_prepare implementation")
+    }
+
+    async fn sql_begin_transaction(&mut self, isolation: Option<SqlTransactionIsolation>) -> DbResult<Box<dyn SqlTransaction>> {
+        // Placeholder implementation
+        todo!("PostgreSQL sql_begin_transaction implementation")
+    }
+
+    async fn sql_batch(&mut self, statements: &[SqlBatch]) -> DbResult<Vec<SqlExecuteResult>> {
+        // Placeholder implementation
+        todo!("PostgreSQL sql_batch implementation")
+    }
+
+    fn sql_connection_info(&self) -> SqlConnectionInfo {
+        SqlConnectionInfo {
+            server_version: "15.0".to_string(),
+            protocol_version: "3.0".to_string(),
+            database_name: "postgres".to_string(),
+            schema_name: Some("public".to_string()),
+            character_set: "UTF8".to_string(),
+            collation: "en_US.UTF-8".to_string(),
+            time_zone: "UTC".to_string(),
+            auto_commit: true,
+            read_only: false,
+            isolation_level: SqlTransactionIsolation::ReadCommitted,
+            capabilities: vec!["transactions".to_string(), "json".to_string()],
+        }
+    }
+
+    async fn set_sql_variable(&mut self, name: &str, value: &SqlValue) -> DbResult<()> {
+        // Placeholder implementation
+        todo!("PostgreSQL set_sql_variable implementation")
+    }
+
+    async fn get_sql_variable(&mut self, name: &str) -> DbResult<SqlValue> {
+        // Placeholder implementation
+        todo!("PostgreSQL get_sql_variable implementation")
     }
 }
 
