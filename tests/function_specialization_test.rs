@@ -42,10 +42,10 @@ fn test_identity_function_specialization() {
     
     // Compile the generic function calls
     let result1 = code_gen.compile_generic_call_expression(&int_call);
-    assert!(result1.is_ok(), "Failed to compile integer identity function: {:?}", result1.err();
+    assert!(result1.is_ok(), "Failed to compile integer identity function: {:?}", result1.err());
     
     let result2 = code_gen.compile_generic_call_expression(&string_call);
-    assert!(result2.is_ok(), "Failed to compile string identity function: {:?}", result2.err();
+    assert!(result2.is_ok(), "Failed to compile string identity function: {:?}", result2.err());
     
     // Verify the module has the specialized functions
     let module = code_gen.module();
@@ -91,7 +91,7 @@ fn create_generic_identity_function() -> FunctionStatement {
     let return_type = Some(Box::new(Identifier {
         token: "token".to_string(),
         value: "T".to_string(),
-    });
+    }));
     
     // Create body: { return x; }
     let return_statement = ReturnStatement {

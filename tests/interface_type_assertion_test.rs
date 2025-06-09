@@ -31,7 +31,7 @@ fn run_jit_test(input: &str) -> Result<ObjectRef, String> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg);
+        return Err(format!("Parser errors:\n{}", error_msg));
     }
     
     // Run the program with default JIT options
@@ -88,7 +88,7 @@ fn test_interface_type_assertion_basic() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Alice".to_string());
+            assert_eq!(result.as_string(), Some("Alice".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -152,7 +152,7 @@ fn test_interface_type_assertion_failed() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Assertion failed as expected".to_string());
+            assert_eq!(result.as_string(), Some("Assertion failed as expected".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -221,7 +221,7 @@ fn test_interface_type_assertion_multiple() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Both assertions succeeded".to_string());
+            assert_eq!(result.as_string(), Some("Both assertions succeeded".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -295,7 +295,7 @@ fn test_interface_type_assertion_error_handling() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("String: hello | 50".to_string());
+            assert_eq!(result.as_string(), Some("String: hello | 50".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }

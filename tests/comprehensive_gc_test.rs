@@ -117,9 +117,9 @@ fn test_circular_reference_collection() {
     // For this test, we'll just register the dependencies
     
     // Register dependencies so the GC knows about the circular references
-    cursed::memory::register_dependency(node1.id(), node2.id();
-    cursed::memory::register_dependency(node2.id(), node3.id();
-    cursed::memory::register_dependency(node3.id(), node1.id();
+    cursed::memory::register_dependency(node1.id(), node2.id());
+    cursed::memory::register_dependency(node2.id(), node3.id());
+    cursed::memory::register_dependency(node3.id(), node1.id());
     debug!("Registered circular dependencies: 1 -> 2 -> 3 -> 1");
     
     // Get the initial object count
@@ -137,7 +137,7 @@ fn test_circular_reference_collection() {
     gc.collect_garbage();
     
     // Get stats after collection - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10);
+    std::thread::sleep(std::time::Duration::from_millis(10));
     let after_stats = gc.stats();
     debug!(object_count = after_stats.object_count, freed_objects = after_stats.freed_objects, "Memory stats after collection");
     
@@ -176,9 +176,9 @@ fn test_thread_safe_circular_reference_collection() {
     // Just register dependencies directly
     
     // Register dependencies so the GC knows about the circular references
-    cursed::memory::register_dependency(node1.id(), node2.id();
-    cursed::memory::register_dependency(node2.id(), node3.id();
-    cursed::memory::register_dependency(node3.id(), node1.id();
+    cursed::memory::register_dependency(node1.id(), node2.id());
+    cursed::memory::register_dependency(node2.id(), node3.id());
+    cursed::memory::register_dependency(node3.id(), node1.id());
     debug!("Registered circular dependencies: 1 -> 2 -> 3 -> 1");
     
     // Get the initial object count
@@ -200,7 +200,7 @@ fn test_thread_safe_circular_reference_collection() {
     gc.collect_garbage();
     
     // Get stats after collection - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10);
+    std::thread::sleep(std::time::Duration::from_millis(10));
     let after_stats = gc.stats();
     debug!(object_count = after_stats.object_count, freed_objects = after_stats.freed_objects, "Memory stats after collection");
     
@@ -245,8 +245,8 @@ fn test_weak_reference_cycle_breaking() {
     // Using simplified setup for test purposes
     
     // Register dependencies for the strong links
-    cursed::memory::register_dependency(node1.id(), node2.id();
-    cursed::memory::register_dependency(node2.id(), node3.id();
+    cursed::memory::register_dependency(node1.id(), node2.id());
+    cursed::memory::register_dependency(node2.id(), node3.id());
     debug!("Created strong links: 1 -> 2 -> 3");
     
     // Create a weak reference from node3 to node1 (not using set_next to avoid a strong reference)
@@ -271,7 +271,7 @@ fn test_weak_reference_cycle_breaking() {
     gc.collect_garbage();
     
     // Get stats after collection - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10);
+    std::thread::sleep(std::time::Duration::from_millis(10));
     let after_stats = gc.stats();
     debug!(object_count = after_stats.object_count, freed_objects = after_stats.freed_objects, "Memory stats after collection");
     
@@ -300,7 +300,7 @@ fn test_weak_reference_cycle_breaking() {
     gc.collect_garbage();
     
     // No objects should remain - allow time for stats to refresh
-    std::thread::sleep(std::time::Duration::from_millis(10);
+    std::thread::sleep(std::time::Duration::from_millis(10));
     let final_stats = gc.stats();
     debug!(object_count = final_stats.object_count, freed_objects = final_stats.freed_objects, "Final memory stats");
     
@@ -344,7 +344,7 @@ fn test_multithreaded_gc_stress() {
             let mut objects = Vec::new();
             for i in 0..objects_per_thread {
                 let obj_id = thread_id * 1000 + i;
-                let obj = thread_gc.allocate_thread_safe(ThreadSafeCircularNode::new(obj_id);
+                let obj = thread_gc.allocate_thread_safe(ThreadSafeCircularNode::new(obj_id)));
                 objects.push(obj);
             }
             debug!(thread_id = thread_id, count = objects.len(), "Thread created objects");
@@ -352,7 +352,7 @@ fn test_multithreaded_gc_stress() {
             // Create references between the objects
             for i in 0..objects_per_thread-1 {
                 // Register dependency between objects instead of setting next directly
-                cursed::memory::register_dependency(objects[i].id(), objects[i+1].id();
+                cursed::memory::register_dependency(objects[i].id(), objects[i+1].id());
             }
             debug!(thread_id = thread_id, "Created linear object chain");
             
@@ -362,7 +362,7 @@ fn test_multithreaded_gc_stress() {
                 for i in 0..objects_per_thread-2 {
                     if i % 3 == 0 {
                         // Create a reference back two steps
-                        cursed::memory::register_dependency(objects[i+2].id(), objects[i].id();
+                        cursed::memory::register_dependency(objects[i+2].id(), objects[i].id());
                         circular_refs += 1;
                     }
                 }
@@ -391,7 +391,7 @@ fn test_multithreaded_gc_stress() {
         let thread_gc = gc.clone();
         thread::spawn(move || {
             for i in 0..5 {
-                thread::sleep(Duration::from_millis(50);
+                thread::sleep(Duration::from_millis(50)));
                 debug!(iteration = i+1, "Background GC running collection");
                 thread_gc.collect_garbage();
             }

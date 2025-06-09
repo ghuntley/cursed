@@ -29,7 +29,7 @@ fn test_enhanced_visualization() {
     let visualization = code_generator.visualize_diamond_inheritance(&diamond);
     assert!(visualization.contains("Diamond Inheritance Pattern");
     assert!(visualization.contains("Type#101");
-    assert!(visualization.contains("Type#102");
+    assert!(visualization.contains("Type#102"));
     
     // Test enhanced error visualization
     let source_location = SourceLocation {

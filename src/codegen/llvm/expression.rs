@@ -23,6 +23,7 @@ use super::type_assertion_integration::TypeAssertionIntegration;
 use super::type_assertion_implementation::IntegratedTypeAssertion;
 use super::interface_type_assertion_debugging::{RuntimeTypeAssertionDebugging, TypeAssertionDebugLevel};
 use super::improved_type_assertion_integration::ImprovedTypeAssertionIntegration;
+use super::stan::StanCompilation;
 
 /// Trait for compiling expressions
 pub trait ExpressionCompilation<'ctx> {
@@ -132,6 +133,13 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             // For now, try to handle it as a general index expression
             return self.compile_index_expression_dispatch(index_expr)
                 .map_err(|e| Error::from_str(&format!("Index expression compilation failed: {}", e)));
+        }
+        
+        // Handle stan (goroutine) expressions
+        if let Some(stan_expr) = any.downcast_ref::<crate::ast::expressions::concurrency::StanExpression>() {
+            tracing::debug!("Found stan expression: {}", stan_expr.string());
+            return self.compile_stan_expression(stan_expr)
+                .map_err(|e| Error::from_str(&format!("Stan expression compilation failed: {}", e)));
         }
         
         // Fall back to basic expressions (literals, arithmetic operations)

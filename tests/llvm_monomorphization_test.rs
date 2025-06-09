@@ -29,7 +29,7 @@ fn test_monomorphization_manager_creation() {
     let manager = MonomorphizationManager::new();
 
     // Verify it's initially empty - now using public methods
-    assert!(!manager.is_function_instantiated("test", &[Type::Normie]);
+    assert!(!manager.is_function_instantiated("test", &[Type::Normie]));
 }
 
 #[test]

@@ -30,6 +30,7 @@ pub mod test_environment;
 pub mod deadlock_detector;
 pub mod mark_sweep;
 pub mod concurrent_gc;
+pub mod goroutine_gc;
 pub mod allocation_profiler;
 pub mod cycle_detector;
 
@@ -54,6 +55,7 @@ pub use thread_safe_weak::ThreadSafeWeak;
 pub use weak::Weak;
 pub use weak_registry::{GlobalWeakRegistry, global_registry};
 pub use concurrent_gc::ConcurrentGarbageCollector;
+pub use goroutine_gc::{GoroutineGarbageCollector, GoroutineGcConfig, SafePointType, get_global_goroutine_gc};
 
 // For testing (re-exported)
 pub use test_environment::{reset_test_environment, get_test_gc};

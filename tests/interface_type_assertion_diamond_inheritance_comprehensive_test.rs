@@ -581,7 +581,7 @@ fn test_diamond_inheritance_type_assertions() {
     info!("Diamond inheritance type assertion test program parsed successfully");
     
     // Verify some key elements exist in the parsed program
-    let statement_count = program.statements.len());
+    let statement_count = program.statements.len();
     assert!(statement_count > 10, "Expected many statements in complex diamond inheritance test, got {}", statement_count);
     
     info!("Diamond inheritance type assertion test completed successfully with {} statements", statement_count);

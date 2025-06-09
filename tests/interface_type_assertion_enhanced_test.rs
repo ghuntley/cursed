@@ -121,8 +121,8 @@ mod tests {
         // Verify the inheritance paths
         let rectangle_path = llvm_gen.current_inheritance_path("Rectangle").unwrap();
         assert_eq!(rectangle_path.len(), 2);
-        assert!(rectangle_path.contains(&"Shape".to_string())
-        assert!(rectangle_path.contains(&"Drawable".to_string())
+        assert!(rectangle_path.contains(&"Shape".to_string()));
+        assert!(rectangle_path.contains(&"Drawable".to_string()));
         
         let circle_path = llvm_gen.current_inheritance_path("Circle").unwrap();
         assert_eq!(circle_path.len(), 1);
@@ -147,7 +147,7 @@ mod tests {
         let (line, column, file) = llvm_gen.extract_location_from_token("file.go:123:45");
         assert_eq!(line, 123);
         assert_eq!(column, 45);
-        assert_eq!(file, Some("file.go".to_string());
+        assert_eq!(file, Some("file.go".to_string()));
         
         let (line, column, file) = llvm_gen.extract_location_from_token("path/to/file.go:123:45");
         assert_eq!(line, 123);

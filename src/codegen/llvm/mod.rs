@@ -121,6 +121,7 @@ pub use self::later_statement::LaterStatementCompilation;
 pub use self::switch_statement::SwitchStatementCompilation;
 pub use self::type_switch::TypeSwitchCompilation;
 pub use self::if_expression::IfExpressionCompilation;
+pub use self::stan::StanCompilation;
 pub use self::struct_field_inference::StructFieldInference;
 // Interface type assertion trait (already exported above)
 // Improved interface type assertions with additional runtime information
@@ -252,6 +253,7 @@ mod range_clause_fixed_extension; // Extension trait for range clause fixed meth
 mod map_iteration_improvements; // Improved type determination for map iterations
 mod loop_context;    // Loop context for break/continue management
 mod concurrency;     // Goroutine and channel operations
+mod stan;           // Stan (goroutine) expression compilation
 mod property_access; // Property access expressions (obj.field)
 mod assignment;      // Assignment expressions (a = b)
 mod break_statement; // Break statement implementation

@@ -1,16 +1,27 @@
-//! Common test utilities for the CURSED language test suite
+//! Common test utilities for goroutine scheduler tests
 
-pub mod tracing;
-pub mod timing;
-pub mod test_utils;
+use tracing_subscriber::{fmt, EnvFilter};
+use std::sync::Once;
 
-// Re-export tracing for test macros  
-pub use ::tracing as tracing_crate;
+static INIT: Once = Once::new();
 
 /// Initialize tracing for tests
+pub fn init_tracing() {
+    INIT.call_once(|| {
+        let filter = EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new("debug"));
+
+        fmt()
+            .with_env_filter(filter)
+            .with_test_writer()
+            .init();
+    });
+}
+
+/// Macro to initialize tracing in tests
 #[macro_export]
 macro_rules! init_tracing {
     () => {
-        crate::common::tracing::setup();
+        common::init_tracing();
     };
 }
