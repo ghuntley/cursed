@@ -8,7 +8,8 @@ use std::sync::{Arc, Mutex, RwLock, Condvar, atomic::{AtomicU64, AtomicUsize, At
 use std::collections::{HashMap, VecDeque, HashSet};
 use std::time::{Duration, Instant};
 use std::thread;
-use crate::runtime::goroutine::{GoroutineScheduler, GoroutineId};
+use crate::runtime::goroutine::GoroutineId;
+use crate::runtime::goroutine_scheduler::GoroutineScheduler;
 use crate::runtime::goroutine_scheduler::GoroutineState;
 use crate::object::{Object, Channel};
 use crate::object_thread_safe::ThreadSafeObject;
@@ -789,7 +790,7 @@ impl Drop for ChannelScheduler {
 /// Global channel scheduler instance
 static GLOBAL_CHANNEL_SCHEDULER: once_cell::sync::Lazy<Arc<ChannelScheduler>> = 
     once_cell::sync::Lazy::new(|| {
-        let goroutine_scheduler = crate::runtime::goroutine::get_global_scheduler();
+        let goroutine_scheduler = crate::runtime::goroutine_scheduler::get_global_scheduler();
         let gc = Arc::new(GarbageCollector::new());
         Arc::new(ChannelScheduler::new(goroutine_scheduler, gc))
     });
