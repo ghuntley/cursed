@@ -919,6 +919,37 @@ impl GarbageCollector {
         CollectionResult::Success(stats)
     }
 
+    /// Check if goroutine-aware collection should be used
+    pub fn should_use_goroutine_aware_collection(&self) -> bool {
+        // Check if any goroutines are currently registered
+        let goroutine_gc = crate::memory::goroutine_gc::get_global_goroutine_gc();
+        goroutine_gc.get_active_goroutine_count() > 0
+    }
+
+    /// Perform goroutine-aware collection if goroutines are active
+    pub fn collect_garbage_with_goroutine_awareness(&self) {
+        if self.should_use_goroutine_aware_collection() {
+            info!("Using goroutine-aware garbage collection");
+            let goroutine_gc = crate::memory::goroutine_gc::get_global_goroutine_gc();
+            match goroutine_gc.collect_garbage_goroutine_aware() {
+                Ok(stats) => {
+                    info!(
+                        goroutines = stats.total_goroutines,
+                        stack_roots = stats.stack_roots_found,
+                        "Goroutine-aware collection completed successfully"
+                    );
+                },
+                Err(e) => {
+                    error!(error = %e, "Goroutine-aware collection failed, falling back to standard collection");
+                    self.collect_garbage();
+                }
+            }
+        } else {
+            debug!("No active goroutines, using standard collection");
+            self.collect_garbage();
+        }
+    }
+
     /// Get current memory statistics
     #[instrument(skip(self), fields(object_count = ?self.inner.read().map(|s| s.objects.len())))]  
     pub fn stats(&self) -> MemoryStats {

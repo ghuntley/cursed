@@ -9,12 +9,12 @@ use std::thread::{self, JoinHandle};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::ffi::c_void;
-use crate::memory::{GarbageCollector, ThreadSafeGc};
+use crate::memory::{GarbageCollector, ThreadSafeGc, SafePointType, get_global_goroutine_gc};
 use crate::object_thread_safe::ThreadSafeObject;
-use tracing::{instrument, debug, error};
+use tracing::{instrument, debug, error, trace};
 
 /// Unique identifier for goroutines
-type GoroutineId = u64;
+pub type GoroutineId = u64;
 
 /// A function pointer type for goroutine functions
 type GoroutineFunction = unsafe extern "C" fn(*mut c_void) -> *mut c_void;
@@ -64,11 +64,24 @@ impl GoroutineScheduler {
         let handle = thread::spawn(move || {
             debug!(goroutine_id = id, "Goroutine started");
             
+            // Register with GC system
+            let stack_base = get_stack_base();
+            let stack_size = get_stack_size();
+            let goroutine_gc = get_global_goroutine_gc();
+            goroutine_gc.register_goroutine(id, stack_base, stack_size);
+            
+            // Safe point: function entry
+            goroutine_gc.goroutine_safe_point(id, SafePointType::FunctionEntry);
+            
             // Convert back to pointer
             let data_ptr = data_addr as *mut c_void;
             
             // Execute the goroutine function
             let result = unsafe { func(data_ptr) };
+            
+            // Safe point: function exit
+            let goroutine_gc = get_global_goroutine_gc();
+            goroutine_gc.goroutine_safe_point(id, SafePointType::FunctionExit);
             
             // Clean up the result if needed
             if !result.is_null() {
@@ -76,6 +89,9 @@ impl GoroutineScheduler {
                 // In a real implementation, this would need proper type information
                 debug!(goroutine_id = id, "Goroutine returned result");
             }
+            
+            // Unregister from GC system
+            goroutine_gc.unregister_goroutine(id);
             
             // Notify completion
             if let Err(_) = completion_sender.send(id) {
@@ -271,6 +287,54 @@ pub extern "C" fn cursed_cleanup_goroutines() {
 pub extern "C" fn cursed_active_goroutine_count() -> u64 {
     let scheduler = get_global_scheduler();
     scheduler.active_count() as u64
+}
+
+/// Get the current stack base (platform-specific)
+fn get_stack_base() -> usize {
+    // This is a simplified implementation
+    // In practice, this would be platform-specific
+    let stack_var = 0u8;
+    &stack_var as *const u8 as usize
+}
+
+/// Get the current stack size (platform-specific)
+fn get_stack_size() -> usize {
+    // Default stack size for threads (platform-specific)
+    // This would typically be retrieved from thread attributes
+    2 * 1024 * 1024 // 2MB default
+}
+
+/// Yield execution and potentially hit a GC safe point
+pub fn goroutine_yield() {
+    let current_thread_id = thread::current().id();
+    
+    // Try to find the goroutine ID for this thread
+    let scheduler = get_global_scheduler();
+    
+    // In a real implementation, we'd maintain a thread-to-goroutine mapping
+    // For now, we'll use a simplified approach
+    let goroutine_gc = get_global_goroutine_gc();
+    
+    // This would need to be properly implemented with thread-to-goroutine mapping
+    trace!("Goroutine yielding at safe point");
+    
+    thread::yield_now();
+}
+
+/// Add a GC root for the current goroutine
+pub fn add_goroutine_local_root(ptr: *mut c_void) {
+    // This would need proper goroutine ID tracking
+    // For now, we'll add it as a global root
+    let gc = crate::memory::get_global_gc();
+    gc.add_root(ptr as usize);
+}
+
+/// Remove a GC root for the current goroutine
+pub fn remove_goroutine_local_root(ptr: *mut c_void) {
+    // This would need proper goroutine ID tracking
+    // For now, we'll remove it as a global root
+    let gc = crate::memory::get_global_gc();
+    gc.remove_root(ptr as usize);
 }
 
 #[cfg(test)]

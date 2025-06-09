@@ -71,9 +71,9 @@ fn test_realistic_interface_hierarchy_with_error_propagation() {
     
     // Create a type assertion AST node for Dog as Animal (should succeed)
     let valid_assertion = TypeAssertion {
-        token: Token::new(TokenType::Assert, ".".to_string(), 1, 1),
+        token: "token".to_string(),
         expression: Box::new(Identifier {
-            token: "token".to_string(), 1, 1),
+            token: "token".to_string(),
             value: "pet".to_string(),
         }),
         type_name: "Animal".to_string(),

@@ -324,6 +324,7 @@ impl<'a> Parser<'a> {
                     value,
                 }))
             },
+            Token::Stan => self.parse_stan_expression(),
             _ => Err(self.error(&format!(
                 "No prefix parse function for {:?}",
                 self.current_token
@@ -1317,6 +1318,22 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::StringLiteral {
             token: token.token_literal(),
             value: "case-expression".to_string(),
+        }))
+    }
+
+    /// Parse a stan (goroutine) expression
+    fn parse_stan_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        use crate::ast::expressions::concurrency::StanExpression;
+        
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past 'stan'
+
+        // Parse the expression that will run in the goroutine
+        let expression = self.parse_expression(Precedence::Lowest)?;
+
+        Ok(Box::new(StanExpression {
+            token,
+            expression,
         }))
     }
 }

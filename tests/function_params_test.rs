@@ -59,7 +59,7 @@ slay identity[T](x T) T {
     let mut parser = Parser::new(&mut lexer).unwrap();
     let program = parser.parse_program();
     
-    assert!(program.is_ok(), "Failed to parse generic function: {}", program.err().unwrap();
+    assert!(program.is_ok(), "Failed to parse generic function: {}", program.err().unwrap());
     
     // Test function with multiple generic type parameters
     let input = r#"vibe test
