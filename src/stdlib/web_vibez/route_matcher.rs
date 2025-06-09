@@ -470,7 +470,7 @@ mod tests {
     fn test_parameter_route_compilation() {
         let pattern = RoutePattern::compile("/users/:id/posts/:post_id").unwrap();
         assert_eq!(pattern.segments.len(), 4);
-        assert_eq!(pattern.param_names, vec!["id", "post_id"]);
+        assert_eq!(pattern.param_names, Vec::from(["id", "post_id"]));
         assert_eq!(pattern.priority, 2);
     }
 

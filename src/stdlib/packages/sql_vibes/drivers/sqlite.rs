@@ -66,7 +66,7 @@ impl DatabaseDriver for SqliteDriver {
         DriverInfo {
             name: self.name.clone(),
             version: self.version.clone(),
-            supported_versions: vec!["3.35+".to_string()],
+            supported_versions: Vec::from(["3.35+".to_string()]),
             features: vec![
                 DriverFeature::PreparedStatements,
                 DriverFeature::Transactions,
@@ -499,7 +499,7 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
     
     if sql_upper.starts_with("SELECT") {
         // Mock SELECT result
-        let columns = vec!["id".to_string(), "name".to_string(), "created_at".to_string()];
+        let columns = Vec::from(["id".to_string(), "name".to_string(), "created_at".to_string()]);
         let rows = vec![
             Row::new(vec![
                 SqlValue::Integer(1),
@@ -516,7 +516,7 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
         ResultSet::new(columns, rows)
     } else {
         // Empty result set for non-SELECT statements
-        ResultSet::new(vec![], vec![])
+        ResultSet::new(Vec::from([]), Vec::from([]))
     }
 }
 

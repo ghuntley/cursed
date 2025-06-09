@@ -477,7 +477,7 @@ mod tests {
     fn test_memory_benchmark() {
         let benchmark = BenchmarkMemory::new("memory_test", |b| {
             for _ in 0..b.iterations() {
-                let _vec = vec![1, 2, 3, 4, 5];
+                let _vec = Vec::from([1, 2, 3, 4, 5]);
             }
         });
 

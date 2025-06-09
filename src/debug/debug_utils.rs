@@ -449,7 +449,7 @@ mod tests {
     fn test_debug_session_config_serialization() {
         let config = DebugSessionConfig {
             executable: PathBuf::from("/tmp/test"),
-            source_directories: vec![PathBuf::from("/tmp/src")],
+            source_directories: Vec::from([PathBuf::from("/tmp/src")]),
             breakpoints: vec![Breakpoint {
                 function_name: Some("main".to_string()),
                 file: Some(PathBuf::from("main.c")),
@@ -457,9 +457,9 @@ mod tests {
                 column: Some(1),
                 condition: None,
             }],
-            watch_expressions: vec!["x".to_string()],
+            watch_expressions: Vec::from(["x".to_string()]),
             environment_variables: HashMap::new(),
-            arguments: vec!["arg1".to_string()],
+            arguments: Vec::from(["arg1".to_string()]),
         };
         
         let json = serde_json::to_string(&config).unwrap();

@@ -822,7 +822,7 @@ mod tests {
         let result = profiler.track_goroutine_spawn(
             1,
             None,
-            vec!["main".to_string()],
+            Vec::from(["main".to_string()]),
         );
         assert!(result.is_ok());
         
@@ -855,7 +855,7 @@ mod tests {
             goroutine_id: 1,
             parent_id: None,
             timestamp: Instant::now(),
-            stack_trace: vec!["main".to_string()],
+            stack_trace: Vec::from(["main".to_string()]),
             metadata: HashMap::new(),
         };
         

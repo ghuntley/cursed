@@ -4,8 +4,9 @@
 /// and transaction coordination for database operations. ACID compliance bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, DatabaseError, ErrorKind, TransactionError
+    DatabaseError, ErrorKind, TransactionError
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 

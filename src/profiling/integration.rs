@@ -358,7 +358,7 @@ impl Default for BuildConfig {
     fn default() -> Self {
         Self {
             build_command: "cargo".to_string(),
-            build_args: vec!["build".to_string(), "--release".to_string()],
+            build_args: Vec::from(["build".to_string(), "--release".to_string()]),
             output_directory: PathBuf::from("target/cursed"),
             enable_profiling: true,
             default_profiling_modes: vec![

@@ -8,7 +8,7 @@ pub use crate::stdlib::packages::db_core::query::*;
 pub use crate::stdlib::packages::db_sql::builder::*;
 
 /// slay Initialize the db_query package
-pub fn init_db_query() -> crate::stdlib::packages::db_core::DatabaseResult<()> {
+pub fn init_db_query() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🔍 db_query package initialized - query building ready bestie!");
     Ok(())
 }

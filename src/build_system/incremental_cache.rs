@@ -440,7 +440,7 @@ mod tests {
         let mut cache = IncrementalCache::new(cache_path)?;
         
         // Test insertion
-        let outputs = vec![PathBuf::from("output.exe")];
+        let outputs = Vec::from([PathBuf::from("output.exe")]);
         let artifacts = HashMap::new();
         cache.insert("test-target", outputs, artifacts, 1)?;
         
@@ -476,7 +476,7 @@ mod tests {
         assert!(needs_rebuild);
         
         // Add cache entry
-        cache.insert("test", vec![], HashMap::new(), 1)?;
+        cache.insert("test", Vec::from([]), HashMap::new(), 1)?;
         
         // Should not need rebuild now
         let needs_rebuild = cache.needs_rebuild("test", &[source_file.clone()])?;
@@ -502,7 +502,7 @@ mod tests {
         let mut cache = IncrementalCache::new(cache_path)?;
         
         // Add an entry
-        cache.insert("test", vec![], HashMap::new(), 1)?;
+        cache.insert("test", Vec::from([]), HashMap::new(), 1)?;
         
         // Cleanup with very short max age
         let removed = cache.cleanup(std::time::Duration::from_nanos(1))?;
@@ -522,10 +522,10 @@ mod tests {
         
         // Get cache for two different projects
         let cache1 = manager.get_cache("project1")?;
-        cache1.insert("target1", vec![], HashMap::new(), 1)?;
+        cache1.insert("target1", Vec::from([]), HashMap::new(), 1)?;
         
         let cache2 = manager.get_cache("project2")?;
-        cache2.insert("target2", vec![], HashMap::new(), 1)?;
+        cache2.insert("target2", Vec::from([]), HashMap::new(), 1)?;
         
         // Check global statistics
         let stats = manager.get_global_statistics();

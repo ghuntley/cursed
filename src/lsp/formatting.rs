@@ -69,7 +69,7 @@ impl FormattingProvider {
                     }])
                 } else {
                     // No changes needed
-                    Some(vec![])
+                    Some(Vec::from([]))
                 }
             }
             Err(err) => {
@@ -92,7 +92,7 @@ impl FormattingProvider {
         // Extract the range content
         let range_content = self.extract_range_content(content, range);
         if range_content.is_empty() {
-            return Some(vec![]);
+            return Some(Vec::from([]));
         }
 
         // Convert LSP formatting options to CURSED formatter config
@@ -106,7 +106,7 @@ impl FormattingProvider {
                         new_text: formatted_content,
                     }])
                 } else {
-                    Some(vec![])
+                    Some(Vec::from([]))
                 }
             }
             Err(err) => {
@@ -168,7 +168,7 @@ impl FormattingProvider {
                     start: insert_position,
                     end: insert_position,
                 },
-                new_text: format!("\n{}", " ".to_string().repeat(next_line_indent)),
+                new_text: format!("\n{}", " ".repeat(next_line_indent)),
             }]);
         }
 
@@ -203,7 +203,7 @@ impl FormattingProvider {
                     start: Position { line: position.line, character: 0 },
                     end: Position { line: position.line, character: current_indent as u32 },
                 },
-                new_text: " ".to_string().repeat(proper_indent),
+                new_text: " ".repeat(proper_indent),
             }]);
         }
 

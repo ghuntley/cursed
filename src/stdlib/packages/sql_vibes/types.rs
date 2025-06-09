@@ -586,7 +586,7 @@ mod tests {
 
     #[test]
     fn test_row_creation() {
-        let values = vec![SqlValue::Integer(1), SqlValue::String("John".to_string())];
+        let values = Vec::from([SqlValue::Integer(1), SqlValue::String("John".to_string())]);
         let row = Row::new(values);
         
         assert_eq!(row.len(), 2);
@@ -598,7 +598,7 @@ mod tests {
 
     #[test]
     fn test_row_iteration() {
-        let values = vec![SqlValue::Integer(1), SqlValue::String("John".to_string())];
+        let values = Vec::from([SqlValue::Integer(1), SqlValue::String("John".to_string())]);
         let row = Row::new(values);
         
         let mut iter = row.iter();
@@ -613,10 +613,10 @@ mod tests {
         assert!(empty_result_set.is_empty());
         assert_eq!(empty_result_set.row_count(), 0);
         
-        let columns = vec!["id".to_string(), "name".to_string()];
-        let values = vec![SqlValue::Integer(1), SqlValue::String("John".to_string())];
+        let columns = Vec::from(["id".to_string(), "name".to_string()]);
+        let values = Vec::from([SqlValue::Integer(1), SqlValue::String("John".to_string())]);
         let row = Row::new(values);
-        let rows = vec![row];
+        let rows = Vec::from([row]);
         
         let result_set = ResultSet::new(columns, rows);
         assert!(!result_set.is_empty());

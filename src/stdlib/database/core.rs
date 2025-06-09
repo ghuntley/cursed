@@ -213,7 +213,7 @@ impl DB {
     where 
         T: serde::de::DeserializeOwned,
     {
-        let maps = self.map_query(query, vec![])?;
+        let maps = self.map_query(query, Vec::from([]))?;
         
         for map in maps {
             // Convert HashMap<String, SqlValue> to JSON and then deserialize
@@ -239,7 +239,7 @@ impl DB {
         let mut results = Vec::new();
         
         for query in queries {
-            let result = self.slay_exec(query, vec![])?;
+            let result = self.slay_exec(query, Vec::from([]))?;
             results.push(result);
         }
         
@@ -732,7 +732,7 @@ impl Rows {
     /// slay Get current row data
     pub fn current_row(&self) -> Vec<SqlValue> {
         if self.current_index == 0 || self.current_index > self.result.rows.len() {
-            return vec![];
+            return Vec::from([]);
         }
         self.result.rows[self.current_index - 1].clone()
     }

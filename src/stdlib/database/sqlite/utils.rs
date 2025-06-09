@@ -679,11 +679,11 @@ mod tests {
     #[test]
     fn test_create_table_generation() {
         let columns = vec![
-            ("id".to_string(), "INTEGER".to_string(), vec!["PRIMARY KEY".to_string()]),
-            ("name".to_string(), "TEXT".to_string(), vec!["NOT NULL".to_string()]),
-            ("email".to_string(), "TEXT".to_string(), vec!["UNIQUE".to_string()]),
+            ("id".to_string(), "INTEGER".to_string(), Vec::from(["PRIMARY KEY".to_string()])),
+            ("name".to_string(), "TEXT".to_string(), Vec::from(["NOT NULL".to_string()])),
+            ("email".to_string(), "TEXT".to_string(), Vec::from(["UNIQUE".to_string()])),
         ];
-        let constraints = vec!["CHECK (LENGTH(name) > 0)".to_string()];
+        let constraints = Vec::from(["CHECK (LENGTH(name) > 0)".to_string()]);
         
         let sql = SqliteUtils::generate_create_table("users", &columns, &constraints, true);
         
@@ -697,7 +697,7 @@ mod tests {
 
     #[test]
     fn test_create_index_generation() {
-        let columns = vec!["name".to_string(), "email".to_string()];
+        let columns = Vec::from(["name".to_string(), "email".to_string()]);
         
         let sql = SqliteUtils::generate_create_index(
             "idx_users_name_email",

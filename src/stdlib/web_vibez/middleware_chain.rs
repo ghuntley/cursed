@@ -621,7 +621,7 @@ impl ChainPatterns {
         ChainBuilder::new()
             .add(Arc::new(LoggingMiddleware::new()))
             .add(Arc::new(RateLimitMiddleware::new(1000))) // 1000 req/min
-            .add(Arc::new(AuthMiddleware::new(vec![AuthScheme::Bearer])))
+            .add(Arc::new(AuthMiddleware::new(Vec::from([AuthScheme::Bearer]))))
             .add(Arc::new(CorsMiddleware::new()))
             .with_ordering(MiddlewareOrdering::Priority)
             .with_execution(ChainExecution::FailFast)
@@ -632,7 +632,7 @@ impl ChainPatterns {
         use crate::stdlib::web_vibez::middleware::{LoggingMiddleware, StaticFileMiddleware};
 
         ChainBuilder::new()
-            .add(Arc::new(LoggingMiddleware::new().with_skip_paths(vec!["/health".to_string()])))
+            .add(Arc::new(LoggingMiddleware::new().with_skip_paths(Vec::from(["/health".to_string()]))))
             .add(Arc::new(StaticFileMiddleware::new(root_dir, "/static")))
             .with_ordering(MiddlewareOrdering::Priority)
             .with_execution(ChainExecution::Sequential)
@@ -644,7 +644,7 @@ impl ChainPatterns {
 
         ChainBuilder::new()
             .add(Arc::new(LoggingMiddleware::new().with_body_logging(true, true)))
-            .add(Arc::new(CorsMiddleware::new().with_origins(vec!["*".to_string()])))
+            .add(Arc::new(CorsMiddleware::new().with_origins(Vec::from(["*".to_string()]))))
             .with_ordering(MiddlewareOrdering::Priority)
             .with_execution(ChainExecution::ContinueOnError)
             .with_metrics(true)
@@ -715,8 +715,8 @@ mod tests {
             .add(Arc::new(CorsMiddleware::new()))
             .add_dependency(MiddlewareDependency {
                 middleware_name: "CORS".to_string(),
-                depends_on: vec!["Logging".to_string()],
-                runs_before: vec![],
+                depends_on: Vec::from(["Logging".to_string()]),
+                runs_before: Vec::from([]),
             })
             .with_ordering(MiddlewareOrdering::Dependency);
 

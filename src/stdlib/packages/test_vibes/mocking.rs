@@ -422,7 +422,7 @@ mod tests {
         let expectation = mock.expect("some_method");
         
         // Record a call
-        mock.record_call("some_method", vec![]);
+        mock.record_call("some_method", Vec::from([]));
         
         let mut test = VibeTest::new("mock_test".to_string());
         mock.verify(&mut test);
@@ -486,21 +486,21 @@ mod tests {
     #[test]
     fn test_spy_recording() {
         let spy = SpyVibe::new("test_spy");
-        spy.record_call("method1", vec!["arg1", "arg2"]);
-        spy.record_call("method2", vec!["arg3"]);
+        spy.record_call("method1", Vec::from(["arg1", "arg2"]));
+        spy.record_call("method2", Vec::from(["arg3"]));
         
         let calls = spy.get_calls();
         assert_eq!(calls.len(), 2);
         assert_eq!(calls[0].method_name, "method1");
-        assert_eq!(calls[0].args, vec!["arg1", "arg2"]);
+        assert_eq!(calls[0].args, Vec::from(["arg1", "arg2"]));
         assert_eq!(calls[1].method_name, "method2");
-        assert_eq!(calls[1].args, vec!["arg3"]);
+        assert_eq!(calls[1].args, Vec::from(["arg3"]));
     }
 
     #[test]
     fn test_spy_verification() {
         let spy = SpyVibe::new("test_spy");
-        spy.record_call("test_method", vec!["test_arg"]);
+        spy.record_call("test_method", Vec::from(["test_arg"]));
         
         let mut test = VibeTest::new("spy_test".to_string());
         spy.verify_called(&mut test, "test_method");
@@ -522,7 +522,7 @@ mod tests {
     #[test]
     fn test_mock_builder() {
         let expectation = Expectation::new("test_method").times(2);
-        let stub = Stub::new("other_method", vec![]);
+        let stub = Stub::new("other_method", Vec::from([]));
         
         let mock = MockBuilder::new("built_mock")
             .expect("test_method", expectation)

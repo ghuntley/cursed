@@ -233,16 +233,16 @@ mod tests {
             .arg(Arg::new("debug").long("debug").action(ArgAction::SetTrue));
 
         // Test default values
-        let matches = cmd.clone().try_get_matches_from(vec!["cursed-lsp"]).unwrap();
+        let matches = cmd.clone().try_get_matches_from(Vec::from(["cursed-lsp"])).unwrap();
         assert_eq!(matches.get_one::<String>("mode").map(|s| s.as_str()), Some("stdio"));
 
         // Test TCP mode with port
-        let matches = cmd.clone().try_get_matches_from(vec!["cursed-lsp", "--mode", "tcp", "--port", "8080"]).unwrap();
+        let matches = cmd.clone().try_get_matches_from(Vec::from(["cursed-lsp", "--mode", "tcp", "--port", "8080"])).unwrap();
         assert_eq!(matches.get_one::<String>("mode").map(|s| s.as_str()), Some("tcp"));
         assert_eq!(matches.get_one::<u16>("port"), Some(&8080));
 
         // Test debug flag
-        let matches = cmd.clone().try_get_matches_from(vec!["cursed-lsp", "--debug"]).unwrap();
+        let matches = cmd.clone().try_get_matches_from(Vec::from(["cursed-lsp", "--debug"])).unwrap();
         assert!(matches.get_flag("debug"));
     }
 

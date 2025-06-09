@@ -666,16 +666,16 @@ mod tests {
             Ok(Self { id: None, name: "Test".to_string() })
         }
         fn to_fields(&self) -> HashMap<String, super::super::super::SqlValue> { HashMap::new() }
-        fn field_names() -> Vec<&'static str> { vec!["id", "name"] }
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { vec![] }
+        fn field_names() -> Vec<&'static str> { Vec::from(["id", "name"]) }
+        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { Vec::from([]) }
         fn metadata() -> super::super::entity::EntityMetadata {
             super::super::entity::EntityMetadata {
                 table_name: "users".to_string(),
                 primary_key: "id".to_string(),
-                fields: vec!["id".to_string(), "name".to_string()],
-                relationships: vec![],
-                validation_rules: vec![],
-                indexes: vec![],
+                fields: Vec::from(["id".to_string(), "name".to_string()]),
+                relationships: Vec::from([]),
+                validation_rules: Vec::from([]),
+                indexes: Vec::from([]),
                 version: 1,
             }
         }

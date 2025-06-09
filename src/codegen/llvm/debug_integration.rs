@@ -395,7 +395,7 @@ mod tests {
             "Test".to_string(),
         ).unwrap();
         
-        let functions = vec![("main".to_string(), location)];
+        let functions = Vec::from([("main".to_string(), location)]);
         let module = generator.generate_module_with_debug("test_module".to_string(), functions).unwrap();
         
         assert!(module.contains("ModuleID"));

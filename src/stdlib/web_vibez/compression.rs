@@ -569,15 +569,15 @@ mod tests {
         let compressor = ResponseCompressor::new();
         
         // Should compress large HTML
-        let large_html = vec![b'a'; 2048];
+        let large_html = Vec::from([b'a'; 2048]);
         assert!(compressor.should_compress(&large_html, "text/html"));
         
         // Should not compress small content
-        let small_html = vec![b'a'; 100];
+        let small_html = Vec::from([b'a'; 100]);
         assert!(!compressor.should_compress(&small_html, "text/html"));
         
         // Should not compress non-compressible content
-        let large_binary = vec![b'a'; 2048];
+        let large_binary = Vec::from([b'a'; 2048]);
         assert!(!compressor.should_compress(&large_binary, "image/png"));
     }
 
@@ -595,7 +595,7 @@ mod tests {
     #[test]
     fn test_compression_result() {
         let result = CompressionResult {
-            content: vec![1, 2, 3],
+            content: Vec::from([1, 2, 3]),
             compression_type: CompressionType::Gzip,
             original_size: 100,
             compressed_size: 80,
@@ -629,7 +629,7 @@ mod tests {
         headers.insert("Content-Type".to_string(), "text/html".to_string());
         headers.insert("Accept-Encoding".to_string(), "gzip".to_string());
 
-        let content = vec![b'a'; 2048]; // Large content
+        let content = Vec::from([b'a'; 2048]); // Large content
         let processed = middleware.process_response(&content, &mut headers);
 
         // Should be compressed if it's effective

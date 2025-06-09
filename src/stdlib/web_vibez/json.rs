@@ -640,7 +640,7 @@ mod tests {
         assert_eq!(handler.stringify(&JsonValue::String("hello".to_string())).unwrap(), "\"hello\"");
 
         // Test array
-        let arr = JsonValue::Array(vec![JsonValue::Number(1.0), JsonValue::Number(2.0)]);
+        let arr = JsonValue::Array(Vec::from([JsonValue::Number(1.0), JsonValue::Number(2.0)]));
         assert_eq!(handler.stringify(&arr).unwrap(), "[1,2]");
 
         // Test object

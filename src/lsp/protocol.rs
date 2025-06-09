@@ -351,7 +351,7 @@ pub struct FoldingMarker {
 impl Default for CursedLanguageConfig {
     fn default() -> Self {
         Self {
-            file_extensions: vec!["csd".to_string()],
+            file_extensions: Vec::from(["csd".to_string()]),
             comment_patterns: CommentPatterns {
                 line_comment: "//".to_string(),
                 block_comment_start: "/*".to_string(),

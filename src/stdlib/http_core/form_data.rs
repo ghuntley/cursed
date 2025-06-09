@@ -214,7 +214,7 @@ impl FormData {
     where
         K: Into<String>,
     {
-        self.fields.insert(key.into(), vec![value]);
+        self.fields.insert(key.into(), Vec::from([value]));
     }
 
     /// Add text field

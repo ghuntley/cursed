@@ -17,7 +17,7 @@ pub mod config;
 pub use traits::{
     DatabaseDriver, DatabaseConnection, DatabaseTransaction, 
     QueryExecutor, ResultSet, PreparedStatement, ConnectionManager,
-    DriverInfo, ParameterMetadata, PoolStats, QueryStream
+    DriverInfo, ParameterMetadata, PoolStats, QueryStream, DriverFeature, SqlDialect
 };
 pub use connection::{
     ConnectionConfig, ConnectionInfo, ConnectionState, 
@@ -58,7 +58,7 @@ static DRIVER_REGISTRY: std::sync::LazyLock<Arc<RwLock<DriverRegistry>>> =
 /// fr fr Driver registry for managing database drivers
 #[derive(Debug, Default)]
 pub struct DriverRegistry {
-    drivers: HashMap<String, Box<dyn DatabaseDriver + Send + Sync>>,
+    drivers: HashMap<String, Arc<dyn DatabaseDriver + Send + Sync>>,
 }
 
 impl DriverRegistry {
@@ -74,12 +74,12 @@ impl DriverRegistry {
     where
         T: DatabaseDriver + Send + Sync + 'static,
     {
-        self.drivers.insert(name, Box::new(driver));
+        self.drivers.insert(name, Arc::new(driver));
     }
 
     /// slay Get a driver by name
-    pub fn get_driver(&self, name: &str) -> Option<&(dyn DatabaseDriver + Send + Sync)> {
-        self.drivers.get(name).map(|d| d.as_ref())
+    pub fn get_driver(&self, name: &str) -> Option<Arc<dyn DatabaseDriver + Send + Sync>> {
+        self.drivers.get(name).map(|d| Arc::clone(d))
     }
 
     /// slay List all available drivers
@@ -106,14 +106,6 @@ pub fn get_driver(name: &str) -> DbResult<Arc<dyn DatabaseDriver + Send + Sync>>
         .map_err(|_| DatabaseError::driver("Failed to acquire driver registry lock"))?;
     
     registry.get_driver(name)
-        .map(|driver| {
-            // This is a bit hacky but works for our purposes
-            // In a real implementation, we'd have better sharing mechanisms
-            unsafe {
-                let ptr = driver as *const (dyn DatabaseDriver + Send + Sync);
-                Arc::from_raw(ptr)
-            }
-        })
         .ok_or_else(|| DatabaseError::driver(&format!("Driver '{}' not found", name)))
 }
 

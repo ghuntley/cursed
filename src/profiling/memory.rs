@@ -566,7 +566,7 @@ mod tests {
             event_type: AllocationEventType::Allocate,
             size: 1024,
             address: 0x1000,
-            stack_trace: vec!["malloc".to_string()],
+            stack_trace: Vec::from(["malloc".to_string()]),
             timestamp: Instant::now(),
             thread_id: 1,
         };
@@ -587,7 +587,7 @@ mod tests {
             event_type: AllocationEventType::Allocate,
             size: 1024,
             address: 0x1000,
-            stack_trace: vec!["malloc".to_string()],
+            stack_trace: Vec::from(["malloc".to_string()]),
             timestamp: Instant::now() - Duration::from_secs(20),
             thread_id: 1,
         };
@@ -609,7 +609,7 @@ mod tests {
                 event_type: AllocationEventType::Allocate,
                 size: 1024 * (i + 1),
                 address: 0x1000 + i as u64,
-                stack_trace: vec![format!("function_{}", i % 2)],
+                stack_trace: Vec::from([format!("function_{}", i % 2)]),
                 timestamp: Instant::now(),
                 thread_id: 1,
             };

@@ -342,8 +342,8 @@ impl PostgreSQLValue {
     /// slay Convert to PostgreSQL parameter format
     pub fn to_pg_param(&self) -> Result<Vec<u8>, PostgreSQLError> {
         match &self.value {
-            SqlValue::Null => Ok(vec![]),
-            SqlValue::Boolean(b) => Ok(vec![if *b { 1 } else { 0 }]),
+            SqlValue::Null => Ok(Vec::from([])),
+            SqlValue::Boolean(b) => Ok(Vec::from([if *b { 1 } else { 0 }])),
             SqlValue::Integer(i) => {
                 match self.pg_type {
                     PostgreSQLType::SmallInt => Ok((*i as i16).to_be_bytes().to_vec()),
@@ -393,8 +393,8 @@ impl ArrayType {
     pub fn new(element_type: PostgreSQLType) -> Self {
         Self {
             element_type,
-            dimensions: vec![],
-            values: vec![],
+            dimensions: Vec::from([]),
+            values: Vec::from([]),
         }
     }
     

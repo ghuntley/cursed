@@ -189,14 +189,14 @@ mod tests {
     
     #[test]
     fn test_secure_memory() {
-        let data = vec![1, 2, 3, 4, 5];
+        let data = Vec::from([1, 2, 3, 4, 5]);
         let secure = SecureMemory::new(data.clone()).unwrap();
         assert_eq!(&*secure, &data);
     }
     
     #[test]
     fn test_zero_on_drop() {
-        let mut data = vec![1, 2, 3, 4, 5];
+        let mut data = Vec::from([1, 2, 3, 4, 5]);
         {
             let _zero_on_drop = ZeroOnDrop::new(&mut data);
         }
@@ -206,7 +206,7 @@ mod tests {
     
     #[test]
     fn test_protected_bytes() {
-        let data = vec![1, 2, 3, 4, 5];
+        let data = Vec::from([1, 2, 3, 4, 5]);
         let protected = ProtectedBytes::new(data.clone()).unwrap();
         
         assert_eq!(protected.len(), 5);
@@ -216,14 +216,14 @@ mod tests {
     
     #[test]
     fn test_clear_sensitive_data() {
-        let mut data = vec![1, 2, 3, 4, 5];
+        let mut data = Vec::from([1, 2, 3, 4, 5]);
         clear_sensitive_data(&mut data);
-        assert_eq!(data, vec![0, 0, 0, 0, 0]);
+        assert_eq!(data, Vec::from([0, 0, 0, 0, 0]));
     }
     
     #[test]
     fn test_memory_protection() {
-        let data = vec![1, 2, 3, 4, 5];
+        let data = Vec::from([1, 2, 3, 4, 5]);
         assert!(memory_lock(&data).is_ok());
         assert!(memory_unlock(&data).is_ok());
     }

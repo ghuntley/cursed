@@ -202,7 +202,7 @@ impl DatabaseLLVMIntegrationImpl {
             DatabaseFunction {
                 name: "sql_slay_open".to_string(),
                 signature: FunctionSignature {
-                    parameters: vec![ParameterType::String, ParameterType::String],
+                    parameters: Vec::from([ParameterType::String, ParameterType::String]),
                     return_type: ReturnType::Connection,
                     can_fail: true,
                 },
@@ -216,7 +216,7 @@ impl DatabaseLLVMIntegrationImpl {
             DatabaseFunction {
                 name: "sql_slay_query".to_string(),
                 signature: FunctionSignature {
-                    parameters: vec![ParameterType::Connection, ParameterType::String],
+                    parameters: Vec::from([ParameterType::Connection, ParameterType::String]),
                     return_type: ReturnType::QueryResult,
                     can_fail: true,
                 },
@@ -230,7 +230,7 @@ impl DatabaseLLVMIntegrationImpl {
             DatabaseFunction {
                 name: "sql_slay_exec".to_string(),
                 signature: FunctionSignature {
-                    parameters: vec![ParameterType::Connection, ParameterType::String],
+                    parameters: Vec::from([ParameterType::Connection, ParameterType::String]),
                     return_type: ReturnType::ExecuteResult,
                     can_fail: true,
                 },
@@ -244,7 +244,7 @@ impl DatabaseLLVMIntegrationImpl {
             DatabaseFunction {
                 name: "sql_slay_begin".to_string(),
                 signature: FunctionSignature {
-                    parameters: vec![ParameterType::Connection],
+                    parameters: Vec::from([ParameterType::Connection]),
                     return_type: ReturnType::Transaction,
                     can_fail: true,
                 },
@@ -257,7 +257,7 @@ impl DatabaseLLVMIntegrationImpl {
             DatabaseFunction {
                 name: "sql_slay_commit".to_string(),
                 signature: FunctionSignature {
-                    parameters: vec![ParameterType::Transaction],
+                    parameters: Vec::from([ParameterType::Transaction]),
                     return_type: ReturnType::Void,
                     can_fail: true,
                 },
@@ -270,7 +270,7 @@ impl DatabaseLLVMIntegrationImpl {
             DatabaseFunction {
                 name: "sql_slay_rollback".to_string(),
                 signature: FunctionSignature {
-                    parameters: vec![ParameterType::Transaction],
+                    parameters: Vec::from([ParameterType::Transaction]),
                     return_type: ReturnType::Void,
                     can_fail: true,
                 },

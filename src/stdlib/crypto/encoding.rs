@@ -408,7 +408,7 @@ impl Asn1Parser {
     /// Create ASN.1 DER encoding for integer
     #[instrument(skip(value))]
     pub fn encode_integer(value: &[u8]) -> Vec<u8> {
-        let mut result = vec![0x02]; // INTEGER tag
+        let mut result = Vec::from([0x02]); // INTEGER tag
         
         // Remove leading zeros but keep at least one byte
         let mut trimmed = value;
@@ -531,7 +531,7 @@ mod tests {
 
     #[test]
     fn test_hex_encoding() {
-        let data = vec![0x00, 0x01, 0x02, 0xfe, 0xff];
+        let data = Vec::from([0x00, 0x01, 0x02, 0xfe, 0xff]);
         
         let encoded = HexEncoder::encode_lower(&data);
         assert_eq!(encoded, "000102feff");
@@ -561,12 +561,12 @@ mod tests {
     #[test]
     fn test_asn1_parsing() {
         // Simple INTEGER: 0x02 0x01 0x05 (integer value 5)
-        let int_data = vec![0x02, 0x01, 0x05];
+        let int_data = Vec::from([0x02, 0x01, 0x05]);
         let parsed_int = Asn1Parser::parse_integer(&int_data).unwrap();
-        assert_eq!(parsed_int, vec![0x05]);
+        assert_eq!(parsed_int, Vec::from([0x05]));
         
         // Simple OCTET STRING: 0x04 0x05 "hello"
-        let octet_data = vec![0x04, 0x05, b'h', b'e', b'l', b'l', b'o'];
+        let octet_data = Vec::from([0x04, 0x05, b'h', b'e', b'l', b'l', b'o']);
         let parsed_octet = Asn1Parser::parse_octet_string(&octet_data).unwrap();
         assert_eq!(parsed_octet, b"hello");
     }
@@ -588,11 +588,11 @@ mod tests {
     #[test]
     fn test_encoding_round_trips() {
         let test_data = vec![
-            vec![],
-            vec![0],
-            vec![255],
+            Vec::from([]),
+            Vec::from([0]),
+            Vec::from([255]),
             b"Simple ASCII text".to_vec(),
-            vec![0x00, 0x01, 0x02, 0x7f, 0x80, 0xfe, 0xff],
+            Vec::from([0x00, 0x01, 0x02, 0x7f, 0x80, 0xfe, 0xff]),
             (0..=255).collect::<Vec<u8>>(),
         ];
         

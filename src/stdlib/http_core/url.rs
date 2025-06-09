@@ -67,7 +67,7 @@ impl QueryParams {
         K: Into<String>,
         V: Into<String>,
     {
-        self.params.insert(key.into(), vec![value.into()]);
+        self.params.insert(key.into(), Vec::from([value.into()]));
     }
 
     /// Add parameter value (appends to existing)

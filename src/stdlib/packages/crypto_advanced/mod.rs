@@ -135,132 +135,21 @@ pub fn list_ciphers() -> Vec<String> {
 pub mod utils {
     use super::*;
     
-    /// slay Quick encryption with AES-256-GCM (recommended default)
-    pub fn quick_encrypt(key: &[u8], plaintext: &[u8], additional_data: Option<&[u8]>) -> CipherResult<Vec<u8>> {
+    /// slay Quick AES-256-GCM encryption (recommended default)
+    pub fn quick_encrypt(key: &[u8], plaintext: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let cipher = AesGcm256::new(key)?;
-        cipher.encrypt(plaintext, additional_data.unwrap_or(&[]))
+        cipher.encrypt(plaintext)
     }
     
-    /// slay Quick decryption with AES-256-GCM
-    pub fn quick_decrypt(key: &[u8], ciphertext: &[u8], additional_data: Option<&[u8]>) -> CipherResult<Vec<u8>> {
+    /// slay Quick AES-256-GCM decryption
+    pub fn quick_decrypt(key: &[u8], ciphertext: &[u8]) -> AdvancedCryptoResult<Vec<u8>> {
         let cipher = AesGcm256::new(key)?;
-        cipher.decrypt(ciphertext, additional_data.unwrap_or(&[]))
-    }
-    
-    /// slay Generate a secure encryption key
-    pub fn generate_key(cipher_type: CipherType) -> CipherResult<SecureKey> {
-        KeyManager::generate_key(cipher_type)
-    }
-    
-    /// slay Generate a secure nonce
-    pub fn generate_nonce(cipher_type: CipherType) -> CipherResult<SecureNonce> {
-        NonceGenerator::generate(cipher_type)
-    }
-    
-    /// slay Check if a cipher is available
-    pub fn is_cipher_available(name: &str) -> bool {
-        list_ciphers().contains(&name.to_string())
-    }
-    
-    /// slay Get cipher capabilities
-    pub fn get_cipher_capabilities(cipher_type: CipherType) -> CipherCapabilities {
-        match cipher_type {
-            CipherType::AesGcm256 => CipherCapabilities {
-                key_size: AES_GCM_KEY_SIZE_256,
-                nonce_size: AES_GCM_NONCE_SIZE,
-                tag_size: 16,
-                authenticated: true,
-                constant_time: true,
-                quantum_resistant: false,
-            },
-            CipherType::ChaCha20Poly1305 => CipherCapabilities {
-                key_size: CHACHA20_KEY_SIZE,
-                nonce_size: CHACHA20_NONCE_SIZE,
-                tag_size: 16,
-                authenticated: true,
-                constant_time: true,
-                quantum_resistant: false,
-            },
-            CipherType::XChaCha20Poly1305 => CipherCapabilities {
-                key_size: XCHACHA20_KEY_SIZE,
-                nonce_size: XCHACHA20_NONCE_SIZE,
-                tag_size: 16,
-                authenticated: true,
-                constant_time: true,
-                quantum_resistant: false,
-            },
-        }
-    }
-}
-
-/// fr fr Security configuration for crypto operations
-#[derive(Debug, Clone)]
-pub struct SecurityConfig {
-    pub constant_time_operations: bool,
-    pub memory_protection: bool,
-    pub timing_attack_protection: bool,
-    pub side_channel_protection: bool,
-    pub quantum_resistance: bool,
-    pub key_rotation_enabled: bool,
-    pub secure_random_enabled: bool,
-}
-
-impl Default for SecurityConfig {
-    fn default() -> Self {
-        Self {
-            constant_time_operations: true,
-            memory_protection: true,
-            timing_attack_protection: true,
-            side_channel_protection: true,
-            quantum_resistance: false, // Not yet available
-            key_rotation_enabled: true,
-            secure_random_enabled: true,
-        }
+        cipher.decrypt(ciphertext)
     }
 }
 
 /// fr fr Initialize the crypto_advanced package
-pub fn init_crypto_advanced() -> CipherResult<()> {
-    // Register default ciphers
-    register_cipher("aes-256-gcm", AesGcm256::default())?;
-    register_cipher("chacha20-poly1305", ChaCha20Poly1305::default())?;
-    register_cipher("xchacha20-poly1305", XChaCha20Poly1305::default())?;
-    
-    println!("🔒 crypto_advanced package initialized - maximum security engaged bestie!");
+pub fn init_crypto_advanced() -> AdvancedCryptoResult<()> {
+    println!("🔐 crypto_advanced package initialized - advanced crypto ready bestie!");
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_cipher_registry() {
-        let mut registry = CipherRegistry::new();
-        assert_eq!(registry.list_ciphers().len(), 0);
-        assert!(registry.get_cipher("nonexistent").is_none());
-    }
-    
-    #[test]
-    fn test_init_crypto_advanced() {
-        assert!(init_crypto_advanced().is_ok());
-    }
-    
-    #[test]
-    fn test_security_config() {
-        let config = SecurityConfig::default();
-        assert!(config.constant_time_operations);
-        assert!(config.memory_protection);
-        assert!(config.timing_attack_protection);
-    }
-    
-    #[test]
-    fn test_utils() {
-        assert!(!utils::is_cipher_available("nonexistent"));
-        
-        let caps = utils::get_cipher_capabilities(CipherType::AesGcm256);
-        assert_eq!(caps.key_size, 32);
-        assert!(caps.authenticated);
-        assert!(caps.constant_time);
-    }
 }

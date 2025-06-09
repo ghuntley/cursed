@@ -13,7 +13,7 @@ pub use mapper::{TableMapper, ColumnMapper};
 pub use relations::{Relationship, OneToMany, ManyToOne};
 
 /// slay Initialize the db_orm package
-pub fn init_db_orm() -> crate::stdlib::packages::db_core::DatabaseResult<()> {
+pub fn init_db_orm() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🗂️ db_orm package initialized - object mapping ready bestie!");
     Ok(())
 }

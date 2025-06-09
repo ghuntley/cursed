@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn test_session_variable_completion() {
         let mut completer = TabCompletion::new();
-        completer.update_variables(vec!["my_var".to_string(), "my_other_var".to_string()]);
+        completer.update_variables(Vec::from(["my_var".to_string(), "my_other_var".to_string()]));
         
         let completions = completer.complete_identifier("my");
         assert!(completions.contains(&"my_var".to_string()));
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn test_session_function_completion() {
         let mut completer = TabCompletion::new();
-        completer.update_functions(vec!["my_func".to_string(), "helper_func".to_string()]);
+        completer.update_functions(Vec::from(["my_func".to_string(), "helper_func".to_string()]));
         
         let completions = completer.complete_identifier("my");
         assert!(completions.contains(&"my_func(".to_string()));

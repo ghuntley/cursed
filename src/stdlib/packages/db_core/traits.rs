@@ -4,11 +4,11 @@
 /// and components must implement. Think of them as the rules of the game bestie!
 
 use crate::stdlib::packages::db_core::{
-    ConnectionConfig, Query, Transaction, DatabaseResult as DbResult,
+    ConnectionConfig, Query, Transaction, 
     Row, Column, ColumnType, ExecuteResult, TransactionOptions,
-    DatabaseError, QueryStats, ResultMetadata, SavePoint as CoreSavePoint,
-    QueryPlan, ExecutionStep
+    DatabaseError, QueryStats, ResultMetadata, SavePoint as CoreSavePoint
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 use std::sync::Arc;
 use async_trait::async_trait;

@@ -167,7 +167,7 @@ impl SqliteColumnInfo {
 }
 
 /// fr fr SQLite statistics and performance metrics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SqliteStats {
     /// fr fr Total connections created
     pub connections_created: u64,
@@ -199,6 +199,28 @@ pub struct SqliteStats {
     pub wal_size: u64,
     /// fr fr Last update time
     pub last_updated: SystemTime,
+}
+
+impl Default for SqliteStats {
+    fn default() -> Self {
+        Self {
+            connections_created: 0,
+            active_connections: 0,
+            statements_prepared: 0,
+            active_statements: 0,
+            transactions_started: 0,
+            active_transactions: 0,
+            queries_executed: 0,
+            total_query_time: Duration::from_secs(0),
+            cache_hit_ratio: 0.0,
+            memory_usage: 0,
+            database_size: 0,
+            page_count: 0,
+            page_size: 4096,
+            wal_size: 0,
+            last_updated: SystemTime::UNIX_EPOCH,
+        }
+    }
 }
 
 impl SqliteStats {
@@ -275,7 +297,7 @@ pub fn get_global_config() -> Result<SqliteConfig> {
     let global_config = GLOBAL_CONFIG.read()
         .map_err(|_| SqliteError::internal("Failed to acquire config lock"))?;
     
-    global_config.clone().unwrap_or_default()
+    Ok(global_config.clone().unwrap_or_default())
 }
 
 /// fr fr SQLite utility functions
@@ -473,7 +495,7 @@ mod tests {
         assert_eq!(sql_value_to_sqlite_type(&SqlValue::Integer(42)), SqliteType::Integer);
         assert_eq!(sql_value_to_sqlite_type(&SqlValue::Float(3.14)), SqliteType::Real);
         assert_eq!(sql_value_to_sqlite_type(&SqlValue::String("test".to_string())), SqliteType::Text);
-        assert_eq!(sql_value_to_sqlite_type(&SqlValue::Bytes(vec![1, 2, 3])), SqliteType::Blob);
+        assert_eq!(sql_value_to_sqlite_type(&SqlValue::Bytes(Vec::from([1, 2, 3]))), SqliteType::Blob);
         assert_eq!(sql_value_to_sqlite_type(&SqlValue::Timestamp(SystemTime::now())), SqliteType::Text);
         assert_eq!(sql_value_to_sqlite_type(&SqlValue::Json(serde_json::Value::Null)), SqliteType::Text);
     }

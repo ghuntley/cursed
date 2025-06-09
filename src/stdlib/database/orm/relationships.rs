@@ -248,7 +248,7 @@ impl RelationshipManager {
                 row.insert(foreign_key.clone(), local_value);
                 row.insert("name".to_string(), SqlValue::String("Related Record".to_string()));
                 
-                Ok(vec![row])
+                Ok(Vec::from([row]))
             }
             RelationshipType::BelongsTo { foreign_key, owner_key } => {
                 let foreign_value = entity.to_fields().get(foreign_key).cloned()
@@ -267,7 +267,7 @@ impl RelationshipManager {
                 row.insert("id".to_string(), foreign_value);
                 row.insert("name".to_string(), SqlValue::String("Parent Record".to_string()));
                 
-                Ok(vec![row])
+                Ok(Vec::from([row]))
             }
             RelationshipType::BelongsToMany { 
                 pivot_table, 
@@ -295,7 +295,7 @@ impl RelationshipManager {
                 row.insert("id".to_string(), SqlValue::Integer(1));
                 row.insert("name".to_string(), SqlValue::String("Many-to-Many Record".to_string()));
                 
-                Ok(vec![row])
+                Ok(Vec::from([row]))
             }
             _ => {
                 warn!("Relationship type not yet implemented: {:?}", relationship.relationship_type);
@@ -391,7 +391,7 @@ impl LazyLoader {
                 row.insert(foreign_key.clone(), local_value);
                 row.insert("name".to_string(), SqlValue::String("Lazy Loaded".to_string()));
                 
-                Ok(vec![row])
+                Ok(Vec::from([row]))
             }
             _ => Ok(Vec::new())
         }
@@ -517,7 +517,7 @@ impl EagerLoader {
                 row.insert(foreign_key.clone(), local_value);
                 row.insert("name".to_string(), SqlValue::String("Eager Loaded".to_string()));
                 
-                Ok(vec![row])
+                Ok(Vec::from([row]))
             }
             _ => Ok(Vec::new())
         }
@@ -680,16 +680,16 @@ mod tests {
             Ok(Self { id: None, name: "Test".to_string() })
         }
         fn to_fields(&self) -> HashMap<String, SqlValue> { HashMap::new() }
-        fn field_names() -> Vec<&'static str> { vec!["id", "name"] }
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { vec![] }
+        fn field_names() -> Vec<&'static str> { Vec::from(["id", "name"]) }
+        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { Vec::from([]) }
         fn metadata() -> super::super::entity::EntityMetadata {
             super::super::entity::EntityMetadata {
                 table_name: "users".to_string(),
                 primary_key: "id".to_string(),
-                fields: vec!["id".to_string(), "name".to_string()],
-                relationships: vec![],
-                validation_rules: vec![],
-                indexes: vec![],
+                fields: Vec::from(["id".to_string(), "name".to_string()]),
+                relationships: Vec::from([]),
+                validation_rules: Vec::from([]),
+                indexes: Vec::from([]),
                 version: 1,
             }
         }
@@ -709,16 +709,16 @@ mod tests {
             fields.insert("user_id".to_string(), SqlValue::Integer(self.user_id));
             fields
         }
-        fn field_names() -> Vec<&'static str> { vec!["id", "user_id", "title"] }
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { vec![] }
+        fn field_names() -> Vec<&'static str> { Vec::from(["id", "user_id", "title"]) }
+        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { Vec::from([]) }
         fn metadata() -> super::super::entity::EntityMetadata {
             super::super::entity::EntityMetadata {
                 table_name: "posts".to_string(),
                 primary_key: "id".to_string(),
-                fields: vec!["id".to_string(), "user_id".to_string(), "title".to_string()],
-                relationships: vec![],
-                validation_rules: vec![],
-                indexes: vec![],
+                fields: Vec::from(["id".to_string(), "user_id".to_string(), "title".to_string()]),
+                relationships: Vec::from([]),
+                validation_rules: Vec::from([]),
+                indexes: Vec::from([]),
                 version: 1,
             }
         }

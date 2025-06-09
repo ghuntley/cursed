@@ -459,7 +459,7 @@ async fn build_project(
         orchestrator.quick_build(profile).await?
     } else if targets.is_empty() {
         // Use pipeline for comprehensive build
-        let pipeline_result = orchestrator.build_with_pipeline(profile, vec![], force, parallel).await?;
+        let pipeline_result = orchestrator.build_with_pipeline(profile, Vec::from([]), force, parallel).await?;
         convert_pipeline_to_build_result(pipeline_result)
     } else {
         // Build specific targets with pipeline
@@ -493,7 +493,7 @@ async fn run_project(
     info!("Running project with profile: {}", profile);
     
     // Build first
-    build_project(profile, vec![], false, false, vec![], false, true, false).await?;
+    build_project(profile, Vec::from([]), false, false, Vec::from([]), false, true, false).await?;
     
     // Find executable
     let work_dir = std::env::current_dir()?;

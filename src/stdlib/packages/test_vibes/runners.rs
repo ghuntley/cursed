@@ -553,7 +553,7 @@ mod tests {
                 failed: true,
                 skipped: false,
                 duration: Duration::from_millis(20),
-                errors: vec!["Test failed".to_string()],
+                errors: Vec::from(["Test failed".to_string()]),
                 logs: Vec::new(),
             },
         ];

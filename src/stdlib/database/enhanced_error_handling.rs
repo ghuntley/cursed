@@ -932,9 +932,9 @@ mod tests {
             user_id: None,
             session_id: None,
             query: None,
-            parameters: vec![],
+            parameters: Vec::from([]),
             connection_info: None,
-            stack_trace: vec![],
+            stack_trace: Vec::from([]),
             additional_data: HashMap::new(),
         };
         
@@ -998,9 +998,9 @@ mod tests {
             user_id: None,
             session_id: None,
             query: None,
-            parameters: vec![],
+            parameters: Vec::from([]),
             connection_info: None,
-            stack_trace: vec![],
+            stack_trace: Vec::from([]),
             additional_data: HashMap::new(),
         };
         
@@ -1031,9 +1031,9 @@ mod tests {
             user_id: None,
             session_id: None,
             query: Some("SELECT * FROM users".to_string()),
-            parameters: vec![],
+            parameters: Vec::from([]),
             connection_info: None,
-            stack_trace: vec![],
+            stack_trace: Vec::from([]),
             additional_data: HashMap::new(),
         };
         

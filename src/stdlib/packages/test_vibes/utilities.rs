@@ -556,10 +556,10 @@ mod tests {
     #[test]
     fn test_test_data_builder() {
         let integers = TestDataBuilder::integers(5);
-        assert_eq!(integers, vec![0, 1, 2, 3, 4]);
+        assert_eq!(integers, Vec::from([0, 1, 2, 3, 4]));
         
         let strings = TestDataBuilder::strings(3);
-        assert_eq!(strings, vec!["test_string_0", "test_string_1", "test_string_2"]);
+        assert_eq!(strings, Vec::from(["test_string_0", "test_string_1", "test_string_2"]));
         
         let map = TestDataBuilder::string_map(2);
         assert_eq!(map.len(), 2);

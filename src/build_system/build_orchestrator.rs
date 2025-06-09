@@ -141,11 +141,11 @@ impl BuildOrchestrator {
         let mut result = BuildResult {
             success: true,
             duration: Duration::default(),
-            targets_built: vec![],
-            targets_skipped: vec![],
-            outputs: vec![],
+            targets_built: Vec::from([]),
+            targets_skipped: Vec::from([]),
+            outputs: Vec::from([]),
             artifacts: HashMap::new(),
-            warnings: vec![],
+            warnings: Vec::from([]),
             statistics: BuildStatistics {
                 files_compiled: 0,
                 files_cached: 0,
@@ -232,7 +232,7 @@ impl BuildOrchestrator {
         
         let context = PipelineContext {
             profile: profile.to_string(),
-            targets: vec![],
+            targets: Vec::from([]),
             work_dir: self.work_dir.clone(),
             force_rebuild: false,
             parallel: true,
@@ -246,7 +246,7 @@ impl BuildOrchestrator {
             success: pipeline_result.success,
             duration: pipeline_result.duration,
             targets_built: pipeline_result.stages.keys().cloned().collect(),
-            targets_skipped: vec![],
+            targets_skipped: Vec::from([]),
             outputs: pipeline_result.artifacts.values().cloned().collect(),
             artifacts: pipeline_result.artifacts,
             warnings: pipeline_result.warnings,
@@ -353,11 +353,11 @@ impl BuildOrchestrator {
                 return Ok(Some(BuildResult {
                     success: true,
                     duration: Duration::from_millis(0),
-                    targets_built: vec![],
-                    targets_skipped: vec![target.name.clone()],
+                    targets_built: Vec::from([]),
+                    targets_skipped: Vec::from([target.name.clone()]),
                     outputs: entry.outputs.clone(),
                     artifacts: entry.artifacts.clone(),
-                    warnings: vec![],
+                    warnings: Vec::from([]),
                     statistics: BuildStatistics {
                         files_compiled: 0,
                         files_cached: entry.files_count,
@@ -466,9 +466,9 @@ impl BuildOrchestrator {
         Ok(BuildResult {
             success: true,
             duration,
-            targets_built: vec![target.name.clone()],
-            targets_skipped: vec![],
-            outputs: vec![output_path],
+            targets_built: Vec::from([target.name.clone()]),
+            targets_skipped: Vec::from([]),
+            outputs: Vec::from([output_path]),
             artifacts,
             warnings,
             statistics: BuildStatistics {
@@ -599,11 +599,11 @@ impl BuildOrchestrator {
         Ok(BuildResult {
             success: true,
             duration: Duration::from_millis(0),
-            targets_built: vec!["tests".to_string()],
-            targets_skipped: vec![],
-            outputs: vec![],
+            targets_built: Vec::from(["tests".to_string()]),
+            targets_skipped: Vec::from([]),
+            outputs: Vec::from([]),
             artifacts: HashMap::new(),
-            warnings: vec![],
+            warnings: Vec::from([]),
             statistics: BuildStatistics {
                 files_compiled: 0,
                 files_cached: 0,

@@ -4,14 +4,14 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::error::CursedError;
-use crate::object::CursedObject;
+use crate::error::Error as CursedError;
+use crate::object::Object as CursedObject;
 use super::template_syntax::{TemplateAst, TemplateLexer, TemplateParser};
 use super::template_cache::TemplateCache;
 use super::template_filters::FilterRegistry;
 
 /// Main template engine that coordinates all templating operations
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TemplateEngine {
     /// Template cache for performance optimization
     cache: Arc<TemplateCache>,
@@ -23,6 +23,15 @@ pub struct TemplateEngine {
     config: TemplateConfig,
     /// Context variables available to all templates
     global_context: Arc<RwLock<HashMap<String, CursedObject>>>,
+}
+
+impl std::fmt::Debug for TemplateEngine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TemplateEngine")
+            .field("config", &self.config)
+            .field("cache", &self.cache)
+            .finish()
+    }
 }
 
 /// Configuration for the template engine
@@ -58,7 +67,7 @@ impl Default for TemplateConfig {
             auto_escape: true,
             enable_cache: true,
             cache_size: 1000,
-            template_extensions: vec!["html".to_string(), "txt".to_string(), "md".to_string()],
+            template_extensions: Vec::from(["html".to_string(), "txt".to_string(), "md".to_string()]),
             strict_mode: false,
             max_nesting_depth: 20,
             delimiters: TemplateDelimiters {
@@ -95,7 +104,7 @@ impl FileSystemLoader {
     pub fn new<P: AsRef<Path>>(base_dir: P) -> Self {
         Self {
             base_dir: base_dir.as_ref().to_path_buf(),
-            extensions: vec!["html".to_string(), "txt".to_string(), "md".to_string()],
+            extensions: Vec::from(["html".to_string(), "txt".to_string(), "md".to_string()]),
         }
     }
     
@@ -218,8 +227,8 @@ impl TemplateEngine {
     }
     
     /// Set a global context variable available to all templates
-    #[instrument(skip(self, value))]
-    pub fn set_global<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), CursedError> {
+    #[instrument(skip(self, key, value))]
+    pub fn set_global<K: Into<String> + std::fmt::Debug>(&self, key: K, value: CursedObject) -> Result<(), CursedError> {
         let mut context = self.global_context.write()
             .map_err(|_| CursedError::TemplateError {
                 message: "Failed to acquire global context lock".to_string(),
@@ -297,10 +306,10 @@ impl TemplateEngine {
     pub fn parse_template(&self, source: &str) -> Result<TemplateAst, CursedError> {
         debug!(source_length = source.len(), "Parsing template");
         
-        let lexer = TemplateLexer::new(source, &self.config.delimiters);
+        let mut lexer = TemplateLexer::new(source, &self.config.delimiters);
         let tokens = lexer.tokenize()?;
         
-        let parser = TemplateParser::new(tokens);
+        let mut parser = TemplateParser::new(tokens);
         let ast = parser.parse()?;
         
         debug!(nodes = ast.nodes.len(), "Template parsing completed");
@@ -386,13 +395,13 @@ mod tests {
     fn test_filesystem_loader_creation() {
         let loader = FileSystemLoader::new("templates");
         assert_eq!(loader.base_dir, PathBuf::from("templates"));
-        assert_eq!(loader.extensions, vec!["html", "txt", "md"]);
+        assert_eq!(loader.extensions, Vec::from(["html", "txt", "md"]));
         
         let loader_with_exts = FileSystemLoader::with_extensions(
             "custom_templates", 
-            vec!["csd".to_string(), "tmpl".to_string()]
+            Vec::from(["csd".to_string(), "tmpl".to_string()])
         );
         assert_eq!(loader_with_exts.base_dir, PathBuf::from("custom_templates"));
-        assert_eq!(loader_with_exts.extensions, vec!["csd", "tmpl"]);
+        assert_eq!(loader_with_exts.extensions, Vec::from(["csd", "tmpl"]));
     }
 }

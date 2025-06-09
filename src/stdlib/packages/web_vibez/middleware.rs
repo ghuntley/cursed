@@ -135,9 +135,9 @@ impl CorsMiddleware {
     /// fr fr Create new CORS middleware - basic setup
     pub fn new() -> Self {
         Self {
-            allowed_origins: vec!["*".to_string()],
-            allowed_methods: vec!["GET".to_string(), "POST".to_string(), "PUT".to_string(), "DELETE".to_string()],
-            allowed_headers: vec!["Content-Type".to_string(), "Authorization".to_string()],
+            allowed_origins: Vec::from(["*".to_string()]),
+            allowed_methods: Vec::from(["GET".to_string(), "POST".to_string(), "PUT".to_string(), "DELETE".to_string()]),
+            allowed_headers: Vec::from(["Content-Type".to_string(), "Authorization".to_string()]),
             exposed_headers: Vec::new(),
             max_age: Some(Duration::from_secs(86400)), // 24 hours
             allow_credentials: false,
@@ -183,7 +183,7 @@ impl CorsMiddleware {
     /// fr fr Create permissive CORS - allow everything (dev mode)
     pub fn permissive() -> Self {
         Self::new()
-            .allowed_origins(vec!["*".to_string()])
+            .allowed_origins(Vec::from(["*".to_string()]))
             .allow_credentials(false)
     }
 
@@ -600,7 +600,7 @@ mod tests {
     #[tokio::test]
     async fn test_cors_middleware() {
         let cors = CorsMiddleware::new()
-            .allowed_origins(vec!["https://example.com".to_string()]);
+            .allowed_origins(Vec::from(["https://example.com".to_string()]));
 
         let mut request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
         request.headers.insert("origin".to_string(), "https://example.com".to_string());

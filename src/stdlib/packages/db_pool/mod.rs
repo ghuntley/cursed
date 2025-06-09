@@ -13,7 +13,7 @@ pub use pool::{ConnectionPool, PoolConfig};
 pub use manager::{PoolManager, PoolStats};
 
 /// slay Initialize the db_pool package
-pub fn init_db_pool() -> crate::stdlib::packages::db_core::DatabaseResult<()> {
+pub fn init_db_pool() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🏊 db_pool package initialized - connection pooling ready bestie!");
     Ok(())
 }

@@ -614,15 +614,15 @@ impl BuildConfig {
                     ProjectType::Binary => "binary",
                     ProjectType::Library => "library",
                 })),
-                authors: vec!["Your Name <your.email@example.com>".to_string()],
+                authors: Vec::from(["Your Name <your.email@example.com>".to_string()]),
                 license: Some("MIT OR Apache-2.0".to_string()),
                 repository: None,
                 documentation: None,
-                keywords: vec![],
-                categories: vec![],
+                keywords: Vec::from([]),
+                categories: Vec::from([]),
                 edition: "2024".to_string(),
             },
-            targets: vec![],
+            targets: Vec::from([]),
             profiles: HashMap::new(),
             dependencies: HashMap::new(),
             dev_dependencies: HashMap::new(),
@@ -641,7 +641,7 @@ impl BuildConfig {
             lto: false,
             panic: PanicStrategy::Unwind,
             codegen_units: None,
-            llvm_args: vec![],
+            llvm_args: Vec::from([]),
             env: HashMap::new(),
         });
         
@@ -653,7 +653,7 @@ impl BuildConfig {
             lto: true,
             panic: PanicStrategy::Abort,
             codegen_units: Some(1),
-            llvm_args: vec![],
+            llvm_args: Vec::from([]),
             env: HashMap::new(),
         });
         
@@ -664,7 +664,7 @@ impl BuildConfig {
                     name: name.to_string(),
                     target_type: TargetType::Bin,
                     path: PathBuf::from("src/main.csd"),
-                    required_features: vec![],
+                    required_features: Vec::from([]),
                     config: HashMap::new(),
                 });
             }
@@ -673,7 +673,7 @@ impl BuildConfig {
                     name: name.to_string(),
                     target_type: TargetType::Lib,
                     path: PathBuf::from("src/lib.csd"),
-                    required_features: vec![],
+                    required_features: Vec::from([]),
                     config: HashMap::new(),
                 });
             }
@@ -763,7 +763,7 @@ mod tests {
             lto: true,
             panic: PanicStrategy::Abort,
             codegen_units: Some(1),
-            llvm_args: vec!["-march=native".to_string()],
+            llvm_args: Vec::from(["-march=native".to_string()]),
             env: HashMap::new(),
         });
         

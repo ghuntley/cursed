@@ -230,7 +230,7 @@ impl MethodSet {
 impl Default for MethodSet {
     /// fr fr Default allows GET and POST - common setup
     fn default() -> Self {
-        Self::from_methods(vec![HttpMethod::Get, HttpMethod::Post])
+        Self::from_methods(Vec::from([HttpMethod::Get, HttpMethod::Post]))
     }
 }
 

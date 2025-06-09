@@ -11,7 +11,8 @@ use crate::stdlib::value::Value;
 use crate::error::CursedError;
 
 // Re-export from packages for convenience
-pub use crate::stdlib::packages::crypto_asymmetric::*;
+// TODO: Re-enable when crypto_asymmetric package is fully implemented
+// pub use crate::stdlib::packages::crypto_asymmetric::*;
 
 /// fr fr RSA key sizes in bits
 pub const RSA_2048_BITS: usize = 2048;
@@ -377,7 +378,7 @@ impl AsymmetricCrypto {
         let modulus = self.multiply_big_integers(&p, &q)?;
         
         // Choose public exponent e (typically 65537)
-        let public_exponent = vec![1, 0, 1]; // 65537 in big-endian
+        let public_exponent = Vec::from([1, 0, 1]); // 65537 in big-endian
         
         // Calculate private exponent d
         let private_exponent = self.calculate_rsa_private_exponent(&p, &q, &public_exponent)?;
@@ -687,7 +688,7 @@ impl AsymmetricCrypto {
     
     fn calculate_rsa_private_exponent(&self, _p: &[u8], _q: &[u8], _e: &[u8]) -> AsymmetricResult<Vec<u8>> {
         // Placeholder: real implementation would calculate d = e^-1 mod ((p-1)(q-1))
-        Ok(vec![0x42; 256]) // Dummy value
+        Ok(Vec::from([0x42; 256])) // Dummy value
     }
     
     fn subtract_one(&self, n: &[u8]) -> AsymmetricResult<Vec<u8>> {
@@ -778,7 +779,7 @@ impl AsymmetricCrypto {
     fn hash_sha256(&self, data: &[u8]) -> AsymmetricResult<Vec<u8>> {
         // Placeholder: SHA-256 hash
         // Real implementation would use proper SHA-256
-        let mut hash = vec![0u8; 32];
+        let mut hash = Vec::from([0u8; 32]);
         for (i, &byte) in data.iter().enumerate() {
             hash[i % 32] ^= byte;
         }
@@ -825,7 +826,7 @@ impl AsymmetricCrypto {
     
     fn ecdsa_calculate_s(&self, _k: &EcScalar, _hash: &[u8], _r: &[u8], _private_key: &EcScalar, _curve: EcCurve) -> AsymmetricResult<Vec<u8>> {
         // Placeholder: calculate ECDSA s value
-        Ok(vec![0x44; 32])
+        Ok(Vec::from([0x44; 32]))
     }
     
     fn mod_multiply(&self, a: &[u8], b: &[u8], _m: &[u8]) -> AsymmetricResult<Vec<u8>> {
@@ -953,7 +954,7 @@ pub fn rsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
     }
     
     // Placeholder implementation
-    Ok(Value::Boolean(true))
+    Ok(Value::bool(true))
 }
 
 /// slay ECDSA key generation
@@ -995,7 +996,7 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<Value, CursedError> {
     }
     
     // Placeholder implementation
-    Ok(Value::Boolean(true))
+    Ok(Value::bool(true))
 }
 
 /// slay ECDH key exchange
@@ -1015,8 +1016,8 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError> 
     match crypto.x25519_generate_keypair() {
         Ok(keypair) => {
             let mut result = HashMap::new();
-            result.insert("public_key".to_string(), Value::String(hex::encode(keypair.public_key.bytes)));
-            result.insert("private_key".to_string(), Value::String(hex::encode(keypair.private_key.bytes)));
+            result.insert("public_key".to_string(), Value::String(hex::encode(&keypair.public_key.bytes)));
+            result.insert("private_key".to_string(), Value::String(hex::encode(&keypair.private_key.bytes)));
             Ok(Value::Object(result))
         }
         Err(e) => Err(CursedError::Runtime(format!("X25519 key generation failed: {}", e)))
@@ -1040,8 +1041,8 @@ pub fn ed25519_generate_keypair(_args: Vec<Value>) -> Result<Value, CursedError>
     match crypto.ed25519_generate_keypair() {
         Ok(keypair) => {
             let mut result = HashMap::new();
-            result.insert("public_key".to_string(), Value::String(hex::encode(keypair.public_key.bytes)));
-            result.insert("private_key".to_string(), Value::String(hex::encode(keypair.private_key.bytes)));
+            result.insert("public_key".to_string(), Value::String(hex::encode(&keypair.public_key.bytes)));
+            result.insert("private_key".to_string(), Value::String(hex::encode(&keypair.private_key.bytes)));
             Ok(Value::Object(result))
         }
         Err(e) => Err(CursedError::Runtime(format!("Ed25519 key generation failed: {}", e)))
@@ -1065,7 +1066,7 @@ pub fn ed25519_verify(args: Vec<Value>) -> Result<Value, CursedError> {
     }
     
     // Placeholder implementation
-    Ok(Value::Boolean(true))
+    Ok(Value::bool(true))
 }
 
 // Hex encoding utility
@@ -1107,16 +1108,16 @@ mod tests {
 
     #[test]
     fn test_key_generation_api() {
-        let result = rsa_generate_keypair(vec![]);
+        let result = rsa_generate_keypair(Vec::from([]));
         assert!(result.is_ok());
         
-        let result = ecdsa_generate_keypair(vec![]);
+        let result = ecdsa_generate_keypair(Vec::from([]));
         assert!(result.is_ok());
         
-        let result = x25519_generate_keypair(vec![]);
+        let result = x25519_generate_keypair(Vec::from([]));
         assert!(result.is_ok());
         
-        let result = ed25519_generate_keypair(vec![]);
+        let result = ed25519_generate_keypair(Vec::from([]));
         assert!(result.is_ok());
     }
 

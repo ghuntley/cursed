@@ -315,7 +315,7 @@ impl Session {
                     .map_err(|_| SessionError::InvalidData("boolean".to_string()))?;
                 Ok(SessionValue::Bool(b))
             }
-            "a" => Ok(SessionValue::Array(vec![])), // Simplified
+            "a" => Ok(SessionValue::Array(Vec::from([]))), // Simplified
             "o" => Ok(SessionValue::Object(HashMap::new())), // Simplified
             _ => Err(SessionError::InvalidData("type".to_string())),
         }

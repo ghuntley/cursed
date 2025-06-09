@@ -357,7 +357,7 @@ mod tests {
     #[test]
     fn test_assert_len_success() {
         let mut test = VibeTest::new("test".to_string());
-        let collection = vec![1, 2, 3];
+        let collection = Vec::from([1, 2, 3]);
         assert_len(&mut test, &collection, 3, "should have length 3");
         assert!(!test.failed());
     }
@@ -365,7 +365,7 @@ mod tests {
     #[test]
     fn test_assert_contains_success() {
         let mut test = VibeTest::new("test".to_string());
-        let collection = vec![1, 2, 3];
+        let collection = Vec::from([1, 2, 3]);
         assert_contains(&mut test, &collection, &2, "should contain 2");
         assert!(!test.failed());
     }

@@ -47,6 +47,30 @@ pub enum DatabaseErrorKind {
     MigrationError,
     /// Unknown or unclassified errors
     Unknown,
+    /// Feature not implemented
+    NotImplemented,
+    /// Request timeout
+    Timeout,
+    /// Constraint violation (specific to constraints)
+    ConstraintViolation,
+    /// Authentication or authorization errors
+    AuthenticationError,
+    /// Resource errors (memory, disk space, etc.)
+    ResourceError,
+    /// Internal database system errors
+    InternalError,
+    /// SQL syntax errors
+    SyntaxError,
+    /// Data integrity errors
+    DataIntegrityError,
+    /// Resource exhausted errors
+    ResourceExhausted,
+    /// Type mismatch errors
+    TypeMismatch,
+    /// Schema-related errors
+    SchemaError,
+    /// General SQL errors
+    SqlError,
 }
 
 impl Display for DatabaseErrorKind {
@@ -67,6 +91,18 @@ impl Display for DatabaseErrorKind {
             DatabaseErrorKind::ConfigurationError => write!(f, "ConfigurationError"),
             DatabaseErrorKind::MigrationError => write!(f, "MigrationError"),
             DatabaseErrorKind::Unknown => write!(f, "Unknown"),
+            DatabaseErrorKind::NotImplemented => write!(f, "NotImplemented"),
+            DatabaseErrorKind::Timeout => write!(f, "Timeout"),
+            DatabaseErrorKind::ConstraintViolation => write!(f, "ConstraintViolation"),
+            DatabaseErrorKind::AuthenticationError => write!(f, "AuthenticationError"),
+            DatabaseErrorKind::ResourceError => write!(f, "ResourceError"),
+            DatabaseErrorKind::InternalError => write!(f, "InternalError"),
+            DatabaseErrorKind::SyntaxError => write!(f, "SyntaxError"),
+            DatabaseErrorKind::DataIntegrityError => write!(f, "DataIntegrityError"),
+            DatabaseErrorKind::ResourceExhausted => write!(f, "ResourceExhausted"),
+            DatabaseErrorKind::TypeMismatch => write!(f, "TypeMismatch"),
+            DatabaseErrorKind::SchemaError => write!(f, "SchemaError"),
+            DatabaseErrorKind::SqlError => write!(f, "SqlError"),
         }
     }
 }
@@ -296,7 +332,10 @@ impl DatabaseError {
         match self.kind {
             DatabaseErrorKind::ConnectionError => true,
             DatabaseErrorKind::TimeoutError => true,
+            DatabaseErrorKind::Timeout => true,
             DatabaseErrorKind::ResourceExhaustion => true,
+            DatabaseErrorKind::ResourceExhausted => true,
+            DatabaseErrorKind::ResourceError => true,
             DatabaseErrorKind::TransactionError => {
                 // Check if it's a deadlock or similar retryable transaction error
                 if let Some(ref sql_state) = self.sql_state {
@@ -321,6 +360,7 @@ impl DatabaseError {
     /// slay Check if this error is a constraint violation
     pub fn is_constraint_violation(&self) -> bool {
         matches!(self.kind, DatabaseErrorKind::ConstraintError) ||
+        matches!(self.kind, DatabaseErrorKind::ConstraintViolation) ||
         matches!(self.sql_state, Some(SqlStateCode::IntegrityConstraintViolation(_)))
     }
 
@@ -389,6 +429,18 @@ impl From<DatabaseError> for CursedError {
             DatabaseErrorKind::ConfigurationError => "DB_CONFIGURATION_ERROR",
             DatabaseErrorKind::MigrationError => "DB_MIGRATION_ERROR",
             DatabaseErrorKind::Unknown => "DB_UNKNOWN_ERROR",
+            DatabaseErrorKind::NotImplemented => "DB_NOT_IMPLEMENTED",
+            DatabaseErrorKind::Timeout => "DB_TIMEOUT",
+            DatabaseErrorKind::ConstraintViolation => "DB_CONSTRAINT_VIOLATION",
+            DatabaseErrorKind::AuthenticationError => "DB_AUTHENTICATION_ERROR",
+            DatabaseErrorKind::ResourceError => "DB_RESOURCE_ERROR",
+            DatabaseErrorKind::InternalError => "DB_INTERNAL_ERROR",
+            DatabaseErrorKind::SyntaxError => "DB_SYNTAX_ERROR",
+            DatabaseErrorKind::DataIntegrityError => "DB_DATA_INTEGRITY_ERROR",
+            DatabaseErrorKind::ResourceExhausted => "DB_RESOURCE_EXHAUSTED",
+            DatabaseErrorKind::TypeMismatch => "DB_TYPE_MISMATCH",
+            DatabaseErrorKind::SchemaError => "DB_SCHEMA_ERROR",
+            DatabaseErrorKind::SqlError => "DB_SQL_ERROR",
         };
 
         CursedError::Repl(format!("{}: {}", error_code, err.message))
@@ -459,6 +511,46 @@ impl DatabaseError {
     /// slay Create a serialization error
     pub fn serialization_error(message: &str) -> Self {
         Self::new(DatabaseErrorKind::SerializationError, message)
+    }
+
+    /// slay Create a validation error
+    pub fn validation_error(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::ConstraintError, message)
+    }
+
+    /// slay Create an internal error
+    pub fn internal_error(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::InternalError, message)
+    }
+
+    /// slay Create a not found error
+    pub fn not_found(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::NoRows, message)
+    }
+
+    /// slay Create a not implemented error
+    pub fn not_implemented(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::NotImplemented, message)
+    }
+
+    /// slay Create a constraint violation error
+    pub fn constraint_violation(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::ConstraintViolation, message)
+    }
+
+    /// slay Create an authentication error
+    pub fn authentication_error(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::AuthenticationError, message)
+    }
+
+    /// slay Create a syntax error
+    pub fn syntax_error(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::SyntaxError, message)
+    }
+
+    /// slay Create a resource error
+    pub fn resource_error(message: &str) -> Self {
+        Self::new(DatabaseErrorKind::ResourceError, message)
     }
 }
 

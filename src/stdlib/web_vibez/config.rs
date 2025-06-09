@@ -172,7 +172,7 @@ impl Default for SecurityConfig {
             session_secret: "changeme".to_string(),
             enable_xss_protection: true,
             enable_csrf_protection: true,
-            allowed_origins: vec!["*".to_string()],
+            allowed_origins: Vec::from(["*".to_string()]),
             content_security_policy: Some("default-src 'self'".to_string()),
             hsts_max_age: Some(31536000), // 1 year
             enable_secure_headers: true,

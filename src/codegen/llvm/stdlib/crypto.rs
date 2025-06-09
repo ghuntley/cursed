@@ -643,7 +643,7 @@ mod tests {
     fn test_secure_key_storage() {
         let mut storage = SecureKeyStorage::new();
         
-        let key_data = vec![0x42; 32];
+        let key_data = Vec::from([0x42; 32]);
         assert!(storage.store_key("test_key", key_data.clone()).is_ok());
         
         let retrieved = storage.retrieve_key("test_key").unwrap();
@@ -657,9 +657,9 @@ mod tests {
     fn test_key_storage_listing() {
         let mut storage = SecureKeyStorage::new();
         
-        storage.store_key("key1", vec![0x01; 16]).unwrap();
-        storage.store_key("key2", vec![0x02; 24]).unwrap();
-        storage.store_key("key3", vec![0x03; 32]).unwrap();
+        storage.store_key("key1", Vec::from([0x01; 16])).unwrap();
+        storage.store_key("key2", Vec::from([0x02; 24])).unwrap();
+        storage.store_key("key3", Vec::from([0x03; 32])).unwrap();
         
         let keys = storage.list_keys();
         assert_eq!(keys.len(), 3);

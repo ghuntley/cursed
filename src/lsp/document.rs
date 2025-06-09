@@ -333,7 +333,7 @@ mod tests {
             text: "100".to_string(),
         };
 
-        let updated_content = manager.update_document(uri.clone(), vec![change], 2).await;
+        let updated_content = manager.update_document(uri.clone(), Vec::from([change]), 2).await;
         assert!(updated_content.is_some());
         assert!(updated_content.unwrap().contains("x = 100"));
     }

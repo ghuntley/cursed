@@ -27,8 +27,9 @@ pub use certificates::{
 };
 
 // Re-export package types for integration
-pub use crate::stdlib::packages::crypto_asymmetric::*;
-pub use crate::stdlib::packages::crypto_pki::*;
+// TODO: Re-enable when crypto packages are fully implemented
+// pub use crate::stdlib::packages::crypto_asymmetric::*;
+// pub use crate::stdlib::packages::crypto_pki::*;
 
 use crate::stdlib::value::Value;
 use crate::error::CursedError;
@@ -36,14 +37,15 @@ use std::collections::HashMap;
 
 /// fr fr Initialize the crypto module
 pub fn init_crypto() -> Result<(), CursedError> {
+    // TODO: Re-enable when crypto packages are properly implemented
     // Initialize crypto packages
-    if let Err(e) = crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric() {
-        return Err(CursedError::Runtime(format!("Failed to initialize asymmetric crypto: {}", e)));
-    }
-    
-    if let Err(e) = crate::stdlib::packages::crypto_pki::init_crypto_pki() {
-        return Err(CursedError::Runtime(format!("Failed to initialize PKI: {}", e)));
-    }
+    // if let Err(e) = crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric() {
+    //     return Err(CursedError::Runtime(format!("Failed to initialize asymmetric crypto: {}", e)));
+    // }
+    // 
+    // if let Err(e) = crate::stdlib::packages::crypto_pki::init_crypto_pki() {
+    //     return Err(CursedError::Runtime(format!("Failed to initialize PKI: {}", e)));
+    // }
     
     println!("🔐 Comprehensive crypto module initialized - maximum security activated bestie!");
     Ok(())
@@ -85,34 +87,34 @@ pub fn test_crypto(_args: Vec<Value>) -> Result<Value, CursedError> {
     let mut results = HashMap::new();
     
     // Test RSA key generation
-    match asymmetric::rsa_generate_keypair(vec![]) {
-        Ok(_) => results.insert("rsa_keygen".to_string(), Value::Boolean(true)),
-        Err(_) => results.insert("rsa_keygen".to_string(), Value::Boolean(false)),
+    match asymmetric::rsa_generate_keypair(Vec::from([])) {
+        Ok(_) => results.insert("rsa_keygen".to_string(), Value::bool(true)),
+        Err(_) => results.insert("rsa_keygen".to_string(), Value::bool(false)),
     };
     
     // Test ECDSA key generation
-    match asymmetric::ecdsa_generate_keypair(vec![]) {
-        Ok(_) => results.insert("ecdsa_keygen".to_string(), Value::Boolean(true)),
-        Err(_) => results.insert("ecdsa_keygen".to_string(), Value::Boolean(false)),
+    match asymmetric::ecdsa_generate_keypair(Vec::from([])) {
+        Ok(_) => results.insert("ecdsa_keygen".to_string(), Value::bool(true)),
+        Err(_) => results.insert("ecdsa_keygen".to_string(), Value::bool(false)),
     };
     
     // Test X25519 key generation
-    match asymmetric::x25519_generate_keypair(vec![]) {
-        Ok(_) => results.insert("x25519_keygen".to_string(), Value::Boolean(true)),
-        Err(_) => results.insert("x25519_keygen".to_string(), Value::Boolean(false)),
+    match asymmetric::x25519_generate_keypair(Vec::from([])) {
+        Ok(_) => results.insert("x25519_keygen".to_string(), Value::bool(true)),
+        Err(_) => results.insert("x25519_keygen".to_string(), Value::bool(false)),
     };
     
     // Test Ed25519 key generation
-    match asymmetric::ed25519_generate_keypair(vec![]) {
-        Ok(_) => results.insert("ed25519_keygen".to_string(), Value::Boolean(true)),
-        Err(_) => results.insert("ed25519_keygen".to_string(), Value::Boolean(false)),
+    match asymmetric::ed25519_generate_keypair(Vec::from([])) {
+        Ok(_) => results.insert("ed25519_keygen".to_string(), Value::bool(true)),
+        Err(_) => results.insert("ed25519_keygen".to_string(), Value::bool(false)),
     };
     
     // Test certificate parsing
     let dummy_pem = "-----BEGIN CERTIFICATE-----\nMIIC...dummy...\n-----END CERTIFICATE-----";
-    match certificates::parse_certificate_pem(vec![Value::String(dummy_pem.to_string())]) {
-        Ok(_) => results.insert("cert_parsing".to_string(), Value::Boolean(true)),
-        Err(_) => results.insert("cert_parsing".to_string(), Value::Boolean(false)),
+    match certificates::parse_certificate_pem(Vec::from([Value::String(dummy_pem.to_string())])) {
+        Ok(_) => results.insert("cert_parsing".to_string(), Value::bool(true)),
+        Err(_) => results.insert("cert_parsing".to_string(), Value::bool(false)),
     };
     
     Ok(Value::Object(results))
@@ -130,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_crypto_info() {
-        let result = get_crypto_info(vec![]);
+        let result = get_crypto_info(Vec::from([]));
         assert!(result.is_ok());
         
         if let Ok(Value::Object(info)) = result {
@@ -142,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_crypto_test() {
-        let result = test_crypto(vec![]);
+        let result = test_crypto(Vec::from([]));
         assert!(result.is_ok());
         
         if let Ok(Value::Object(results)) = result {

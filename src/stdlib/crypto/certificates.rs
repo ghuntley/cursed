@@ -238,7 +238,7 @@ impl CertificateProcessor {
         // Simplified DER parsing (real implementation would use proper ASN.1 parser)
         let cert = X509Certificate {
             version: 3, // X.509 v3
-            serial_number: vec![0x01, 0x02, 0x03, 0x04],
+            serial_number: Vec::from([0x01, 0x02, 0x03, 0x04]),
             signature_algorithm: SignatureAlgorithm::Sha256WithRsaEncryption,
             issuer: DistinguishedName {
                 common_name: Some("Example CA".to_string()),
@@ -264,22 +264,22 @@ impl CertificateProcessor {
             },
             public_key: PublicKeyInfo {
                 algorithm: PublicKeyAlgorithm::RsaEncryption,
-                key_data: vec![0x30; 256], // Placeholder RSA key
+                key_data: Vec::from([0x30; 256]), // Placeholder RSA key
                 parameters: None,
             },
             extensions: vec![
                 Extension {
-                    oid: ObjectIdentifier { components: vec![2, 5, 29, 15] }, // Key Usage
+                    oid: ObjectIdentifier { components: Vec::from([2, 5, 29, 15]) }, // Key Usage
                     critical: true,
-                    value: vec![0x03, 0x02, 0x05, 0xa0], // digitalSignature, keyEncipherment
+                    value: Vec::from([0x03, 0x02, 0x05, 0xa0]), // digitalSignature, keyEncipherment
                 },
                 Extension {
-                    oid: ObjectIdentifier { components: vec![2, 5, 29, 37] }, // Extended Key Usage
+                    oid: ObjectIdentifier { components: Vec::from([2, 5, 29, 37]) }, // Extended Key Usage
                     critical: false,
-                    value: vec![0x30, 0x14], // serverAuth, clientAuth
+                    value: Vec::from([0x30, 0x14]), // serverAuth, clientAuth
                 },
             ],
-            signature: vec![0x42; 256], // Placeholder signature
+            signature: Vec::from([0x42; 256]), // Placeholder signature
             raw_der: der_data.to_vec(),
         };
         
@@ -424,12 +424,12 @@ impl CertificateProcessor {
             },
             public_key: PublicKeyInfo {
                 algorithm: PublicKeyAlgorithm::RsaEncryption,
-                key_data: vec![0x30; 256],
+                key_data: Vec::from([0x30; 256]),
                 parameters: None,
             },
-            attributes: vec![],
+            attributes: Vec::from([]),
             signature_algorithm: SignatureAlgorithm::Sha256WithRsaEncryption,
-            signature: vec![0x42; 256],
+            signature: Vec::from([0x42; 256]),
             raw_der: der_data.to_vec(),
         };
         
@@ -478,7 +478,7 @@ impl CertificateProcessor {
     /// slay Get certificate fingerprint (SHA-256)
     pub fn get_fingerprint(&self, cert: &X509Certificate) -> CertificateResult<Vec<u8>> {
         // Simplified SHA-256 hash of certificate
-        let mut hash = vec![0u8; 32];
+        let mut hash = Vec::from([0u8; 32]);
         for (i, &byte) in cert.raw_der.iter().enumerate() {
             hash[i % 32] ^= byte;
         }
@@ -512,7 +512,7 @@ impl CertificateProcessor {
         
         // Check Subject Alternative Names (simplified)
         for ext in &cert.extensions {
-            if ext.oid.components == vec![2, 5, 29, 17] { // subjectAltName
+            if ext.oid.components == Vec::from([2, 5, 29, 17]) { // subjectAltName
                 // Simplified SAN parsing
                 if ext.value.len() > 2 && ext.value[0] == 0x30 {
                     // Would parse ASN.1 sequence of names
@@ -726,7 +726,7 @@ pub fn parse_certificate_der(args: Vec<Value>) -> Result<Value, CursedError> {
     
     // Placeholder: extract DER bytes from Value
     let processor = CertificateProcessor::new();
-    let dummy_der = vec![0x30, 0x82]; // ASN.1 SEQUENCE tag
+    let dummy_der = Vec::from([0x30, 0x82]); // ASN.1 SEQUENCE tag
     
     match processor.parse_der(&dummy_der) {
         Ok(cert) => {
@@ -747,15 +747,15 @@ pub fn validate_certificate(args: Vec<Value>) -> Result<Value, CursedError> {
     
     // Placeholder implementation
     let processor = CertificateProcessor::new();
-    let dummy_der = vec![0x30, 0x82];
+    let dummy_der = Vec::from([0x30, 0x82]);
     
     match processor.parse_der(&dummy_der) {
         Ok(cert) => {
             match processor.validate_certificate(&cert, None) {
-                Ok(()) => Ok(Value::Boolean(true)),
+                Ok(()) => Ok(Value::bool(true)),
                 Err(e) => {
                     let mut result = HashMap::new();
-                    result.insert("valid".to_string(), Value::Boolean(false));
+                    result.insert("valid".to_string(), Value::bool(false));
                     result.insert("error".to_string(), Value::String(e.to_string()));
                     Ok(Value::Object(result))
                 }
@@ -772,7 +772,7 @@ pub fn validate_certificate_chain(args: Vec<Value>) -> Result<Value, CursedError
     }
     
     // Placeholder implementation
-    Ok(Value::Boolean(true))
+    Ok(Value::bool(true))
 }
 
 /// slay Get certificate fingerprint
@@ -821,7 +821,7 @@ pub fn pem_to_der(args: Vec<Value>) -> Result<Value, CursedError> {
     
     let processor = CertificateProcessor::new();
     match processor.pem_to_der(pem_data) {
-        Ok(der_data) => Ok(Value::String(hex::encode(der_data))),
+        Ok(der_data) => Ok(Value::String(hex::encode(&der_data))),
         Err(e) => Err(CursedError::Runtime(format!("PEM to DER conversion failed: {}", e)))
     }
 }
@@ -834,7 +834,7 @@ pub fn der_to_pem(args: Vec<Value>) -> Result<Value, CursedError> {
     
     // Placeholder: extract DER bytes from Value
     let processor = CertificateProcessor::new();
-    let dummy_der = vec![0x30, 0x82];
+    let dummy_der = Vec::from([0x30, 0x82]);
     
     match processor.der_to_pem(&dummy_der) {
         Ok(pem_data) => Ok(Value::String(pem_data)),
@@ -873,7 +873,7 @@ mod tests {
     #[test]
     fn test_object_identifier() {
         let oid = ObjectIdentifier::from_string("2.5.29.15").unwrap();
-        assert_eq!(oid.components, vec![2, 5, 29, 15]);
+        assert_eq!(oid.components, Vec::from([2, 5, 29, 15]));
         assert_eq!(oid.to_string(), "2.5.29.15");
         
         let invalid_oid = ObjectIdentifier::from_string("invalid.oid");
@@ -934,10 +934,10 @@ mod tests {
     #[test]
     fn test_api_functions() {
         let pem_data = "-----BEGIN CERTIFICATE-----\nMIIC...dummy...\n-----END CERTIFICATE-----";
-        let result = parse_certificate_pem(vec![Value::String(pem_data.to_string())]);
+        let result = parse_certificate_pem(Vec::from([Value::String(pem_data.to_string())]));
         assert!(result.is_ok());
         
-        let result = validate_certificate(vec![Value::String("dummy".to_string())]);
+        let result = validate_certificate(Vec::from([Value::String("dummy".to_string())]));
         assert!(result.is_ok());
     }
 }

@@ -128,7 +128,7 @@ impl SessionManager {
         let code = self.get_session_code();
         // This would use the CURSED linter
         // For now, return placeholder
-        Ok(vec!["No linting issues found".to_string()])
+        Ok(Vec::from(["No linting issues found".to_string()]))
     }
 
     /// List all variables in the session

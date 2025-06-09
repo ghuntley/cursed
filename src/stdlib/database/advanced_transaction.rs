@@ -750,7 +750,7 @@ mod tests {
     async fn test_distributed_transaction_config() {
         let dist_config = DistributedTransactionConfig {
             coordinator_id: "coord1".to_string(),
-            participant_nodes: vec!["node1".to_string(), "node2".to_string()],
+            participant_nodes: Vec::from(["node1".to_string(), "node2".to_string()]),
             prepare_timeout: Duration::from_secs(5),
             commit_timeout: Duration::from_secs(10),
             recovery_log_path: "/tmp/recovery.log".to_string(),

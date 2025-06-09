@@ -137,7 +137,7 @@ impl DebugSymbolTable {
     pub fn new() -> Self {
         Self {
             symbols: HashMap::new(),
-            scopes: vec![Vec::new()], // Global scope
+            scopes: Vec::from([Vec::new()]), // Global scope
             current_scope_id: 0,
         }
     }
@@ -239,7 +239,7 @@ impl DebugSymbolTable {
     /// Clear all symbols
     pub fn clear(&mut self) {
         self.symbols.clear();
-        self.scopes = vec![Vec::new()];
+        self.scopes = Vec::from([Vec::new()]);
         self.current_scope_id = 0;
     }
 

@@ -142,7 +142,7 @@ impl TableSchema {
         for col_def in column_definitions {
             let column = ColumnSchema {
                 name: col_def.name.clone(),
-                sql_type: col_def.sql_type,
+                sql_type: col_def.sql_type.clone(),
                 nullable: col_def.nullable,
                 default_value: col_def.default,
                 auto_increment: col_def.primary_key && matches!(col_def.sql_type, SqlColumnType::Integer | SqlColumnType::BigInteger),
@@ -772,7 +772,7 @@ mod tests {
         
         let users_table = schema.get_table("users").unwrap();
         assert_eq!(users_table.columns.len(), 3);
-        assert_eq!(users_table.primary_keys, vec!["id"]);
+        assert_eq!(users_table.primary_keys, Vec::from(["id"]));
         assert_eq!(users_table.indexes.len(), 1);
     }
 

@@ -67,6 +67,7 @@ use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
+use cache::CacheConfig;
 
 /// fr fr Main ORM context that coordinates all ORM operations
 #[derive(Debug)]
@@ -194,7 +195,7 @@ impl<T: Entity> Repository<T> {
         
         // Query database
         let query = self.query()
-            .where_clause(&format!("{} = ?", T::primary_key_name()), vec![id.clone()])
+            .where_clause(&format!("{} = ?", T::primary_key_name()), Vec::from([id.clone()]))
             .limit(1);
         
         let results = query.execute().await?;
@@ -217,7 +218,7 @@ impl<T: Entity> Repository<T> {
         
         let mut query = self.query();
         for (field, value) in conditions {
-            query = query.where_clause(&format!("{} = ?", field), vec![value.clone()]);
+            query = query.where_clause(&format!("{} = ?", field), Vec::from([value.clone()]));
         }
         
         query.execute().await
@@ -233,9 +234,10 @@ impl<T: Entity> Repository<T> {
         
         // Update timestamps if applicable
         let mut entity = entity.clone();
+        let needs_created_at = entity.primary_key_value().is_none();
         if let Some(timestamped) = entity.as_timestamped_mut() {
             timestamped.touch_updated_at();
-            if entity.primary_key_value().is_none() {
+            if needs_created_at {
                 timestamped.touch_created_at();
             }
         }
@@ -296,8 +298,9 @@ impl<T: Entity> Repository<T> {
             entity.validate()?;
         }
         
-        // Use transaction for bulk operation
-        let tx = self.db.begin_transaction().await?;
+        // Use transaction for bulk operation  
+        let ctx = super::VibeContext::default();
+        let tx = self.db.begin_tx(ctx, None)?;
         
         let mut results = Vec::new();
         for entity in entities {
@@ -305,7 +308,7 @@ impl<T: Entity> Repository<T> {
             results.push(result);
         }
         
-        tx.commit().await?;
+        tx.commit()?;
         
         // Clear relevant caches
         if let Ok(mut cache) = self.query_cache.lock() {
@@ -331,7 +334,7 @@ impl<T: Entity> Repository<T> {
             .ok_or_else(|| DatabaseError::validation_error(&format!("Relationship '{}' not found", relationship)))?;
         
         match rel_def.relationship_type() {
-            RelationshipType::HasMany { foreign_key } => {
+            RelationshipType::HasMany { foreign_key, local_key: _ } => {
                 let pk_value = entity.primary_key_value()
                     .ok_or_else(|| DatabaseError::validation_error("Entity must have primary key for relationship loading"))?;
                 
@@ -405,29 +408,7 @@ impl Default for OrmConfig {
     }
 }
 
-/// fr fr Cache configuration for ORM operations
-#[derive(Debug, Clone)]
-pub struct CacheConfig {
-    /// Maximum cache size
-    pub max_size: usize,
-    /// Default time-to-live for cached entries
-    pub default_ttl: std::time::Duration,
-    /// Enable query result caching
-    pub enable_query_cache: bool,
-    /// Enable entity caching
-    pub enable_entity_cache: bool,
-}
 
-impl Default for CacheConfig {
-    fn default() -> Self {
-        Self {
-            max_size: 10000,
-            default_ttl: std::time::Duration::from_secs(3600), // 1 hour
-            enable_query_cache: true,
-            enable_entity_cache: true,
-        }
-    }
-}
 
 /// fr fr Pool configuration placeholder
 #[derive(Debug, Clone, Default)]

@@ -313,7 +313,7 @@ impl From<url::ParseError> for DatabaseError {
 impl DatabaseError {
     /// slay Get full error chain as a string
     pub fn error_chain(&self) -> String {
-        let mut chain = vec![self.message.clone()];
+        let mut chain = Vec::from([self.message.clone()]);
         
         if let Some(source) = &self.source {
             chain.push(format!("caused by: {}", source));

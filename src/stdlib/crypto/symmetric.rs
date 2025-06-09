@@ -722,7 +722,7 @@ mod tests {
     
     #[test]
     fn test_encryption_key() {
-        let key_data = vec![1, 2, 3, 4];
+        let key_data = Vec::from([1, 2, 3, 4]);
         let key = EncryptionKey::new(key_data.clone(), "Test".to_string());
         assert!(key.is_ok());
         

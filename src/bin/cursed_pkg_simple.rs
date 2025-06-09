@@ -123,7 +123,7 @@ async fn handle_search(query: &str) -> Result<(), Box<dyn std::error::Error>> {
     ];
     
     for (name, version, desc) in mock_results {
-        if name.contains(query) || desc.to_lowercase().contains(&query.to_lowercase()) {
+        if name.contains(query) || desc.to_lowercase().contains(&query.to_ascii_lowercase()) {
             println!("  {} {} - {}", name, version, desc);
         }
     }

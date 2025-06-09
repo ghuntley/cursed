@@ -47,7 +47,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
         Self {
             table: table.to_string(),
             db,
-            select_fields: vec!["*".to_string()],
+            select_fields: Vec::from(["*".to_string()]),
             where_conditions: Vec::new(),
             joins: Vec::new(),
             order_by: Vec::new(),
@@ -130,7 +130,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
         self.where_conditions.push(WhereClause {
             condition,
             operator: WhereOperator::And,
-            parameters: vec![SqlValue::String(pattern.to_string())],
+            parameters: Vec::from([SqlValue::String(pattern.to_string())]),
         });
         
         self.parameters.push(SqlValue::String(pattern.to_string()));
@@ -284,7 +284,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
         debug!(table = %self.table, "Counting records");
         
         // Modify query for counting
-        self.select_fields = vec!["COUNT(*)".to_string()];
+        self.select_fields = Vec::from(["COUNT(*)".to_string()]);
         self.order_by.clear();
         self.limit_value = None;
         self.offset_value = None;
@@ -390,7 +390,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
         let mut row = HashMap::new();
         row.insert("id".to_string(), SqlValue::Integer(1));
         row.insert("name".to_string(), SqlValue::String("Test".to_string()));
-        Ok(vec![row])
+        Ok(Vec::from([row]))
     }
 }
 
@@ -523,7 +523,7 @@ impl QueryExecutor {
         // Execute query (placeholder)
         let mut row = HashMap::new();
         row.insert("result".to_string(), SqlValue::String("success".to_string()));
-        let results = vec![row];
+        let results = Vec::from([row]);
         
         // Cache result
         if let Ok(mut cache) = self.cache.lock() {
@@ -615,21 +615,21 @@ mod tests {
         }
 
         fn field_names() -> Vec<&'static str> {
-            vec!["id", "name", "email"]
+            Vec::from(["id", "name", "email"])
         }
 
         fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> {
-            vec![]
+            Vec::from([])
         }
 
         fn metadata() -> super::super::entity::EntityMetadata {
             super::super::entity::EntityMetadata {
                 table_name: "users".to_string(),
                 primary_key: "id".to_string(),
-                fields: vec!["id".to_string(), "name".to_string(), "email".to_string()],
-                relationships: vec![],
-                validation_rules: vec![],
-                indexes: vec![],
+                fields: Vec::from(["id".to_string(), "name".to_string(), "email".to_string()]),
+                relationships: Vec::from([]),
+                validation_rules: Vec::from([]),
+                indexes: Vec::from([]),
                 version: 1,
             }
         }
@@ -652,7 +652,7 @@ mod tests {
     fn test_where_clause_building() {
         let db = create_mock_db();
         let builder = FluentQueryBuilder::<TestUser>::new("users", db)
-            .where_clause("name = ?", vec![SqlValue::String("John".to_string())]);
+            .where_clause("name = ?", Vec::from([SqlValue::String("John".to_string())]));
         
         assert_eq!(builder.where_conditions.len(), 1);
         assert_eq!(builder.where_conditions[0].condition, "name = ?");
@@ -690,7 +690,7 @@ mod tests {
         let db = create_mock_db();
         let builder = FluentQueryBuilder::<TestUser>::new("users", db)
             .select_these_vibes(&["id", "name", "email"])
-            .where_clause("active = ?", vec![SqlValue::Boolean(true)])
+            .where_clause("active = ?", Vec::from([SqlValue::Boolean(true)]))
             .order_by_vibe("name", OrderDirection::Ascending)
             .limit(10);
         
