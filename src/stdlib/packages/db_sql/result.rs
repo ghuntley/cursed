@@ -1,8 +1,9 @@
 /// fr fr SQL result implementation stubs
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, Row, ExecuteResult, ResultSet
+    Row, ExecuteResult, ResultSet
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 #[derive(Debug)]
 pub struct SqlResultSet {

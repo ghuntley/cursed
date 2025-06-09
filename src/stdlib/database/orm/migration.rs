@@ -43,6 +43,42 @@ pub trait Migration: Send + Sync {
     }
 }
 
+/// fr fr Migration operation types
+#[derive(Debug, Clone, PartialEq)]
+pub enum MigrationOperation {
+    CreateTable { 
+        name: String,
+        columns: Vec<ColumnDefinition>,
+        indexes: Vec<IndexDefinition>,
+    },
+    DropTable { 
+        name: String 
+    },
+    AddColumn { 
+        table: String,
+        column: ColumnDefinition 
+    },
+    DropColumn { 
+        table: String,
+        column: String 
+    },
+    AddIndex { 
+        table: String,
+        index: IndexDefinition 
+    },
+    DropIndex { 
+        table: String,
+        index: String 
+    },
+}
+
+/// fr fr Type aliases for migration operations
+pub type CreateTable = MigrationOperation;
+pub type DropTable = MigrationOperation;
+pub type AddColumn = MigrationOperation;
+pub type DropColumn = MigrationOperation;
+pub type AddIndex = MigrationOperation;
+
 /// fr fr Migration status tracking
 #[derive(Debug, Clone, PartialEq)]
 pub enum MigrationStatus {
@@ -271,14 +307,20 @@ impl MigrationManager {
         let start_time = std::time::Instant::now();
         
         // Get migration and apply it
-        let migration = if let Ok(migrations) = self.migrations.lock() {
-            migrations.get(version).cloned()
+        let migration_exists = if let Ok(migrations) = self.migrations.lock() {
+            migrations.contains_key(version)
         } else {
             return Err(DatabaseError::internal_error("Failed to access migrations"));
         };
         
-        if let Some(migration) = migration {
-            match self.execute_migration_up(&*migration).await {
+        if migration_exists {
+            // Execute migration with reference
+            let migrations = self.migrations.lock().map_err(|_| 
+                DatabaseError::internal_error("Failed to access migrations"))?;
+            let migration = migrations.get(version).ok_or_else(|| 
+                DatabaseError::not_found(&format!("Migration {} not found", version)))?;
+            
+            match self.execute_migration_up(migration.as_ref()).await {
                 Ok(_) => {
                     let duration = start_time.elapsed().as_millis() as u64;
                     let status = MigrationStatus::Applied {
@@ -315,14 +357,19 @@ impl MigrationManager {
     async fn rollback_migration(&self, version: &str) -> Result<MigrationStatus, DatabaseError> {
         info!(version = version, "Rolling back migration");
         
-        let migration = if let Ok(migrations) = self.migrations.lock() {
-            migrations.get(version).cloned()
+        let migration_exists = if let Ok(migrations) = self.migrations.lock() {
+            migrations.contains_key(version)
         } else {
             return Err(DatabaseError::internal_error("Failed to access migrations"));
         };
         
-        if let Some(migration) = migration {
-            self.execute_migration_down(&*migration).await?;
+        if migration_exists {
+            // Execute migration rollback with reference
+            let migrations = self.migrations.lock().map_err(|_| 
+                DatabaseError::internal_error("Failed to access migrations"))?;
+            let migration = migrations.get(version).ok_or_else(|| 
+                DatabaseError::not_found(&format!("Migration {} not found", version)))?;
+            self.execute_migration_down(migration.as_ref()).await?;
             
             let status = MigrationStatus::RolledBack {
                 rolled_back_at: std::time::SystemTime::now(),
@@ -418,25 +465,7 @@ impl MigrationManager {
     }
 }
 
-/// fr fr Migration operation types
-#[derive(Debug, Clone)]
-pub enum MigrationOperation {
-    CreateTable,
-    DropTable,
-    AddColumn { column: ColumnDefinition },
-    DropColumn { column_name: String },
-}
 
-impl MigrationOperation {
-    fn name(&self) -> &'static str {
-        match self {
-            MigrationOperation::CreateTable => "create_table",
-            MigrationOperation::DropTable => "drop_table",
-            MigrationOperation::AddColumn { .. } => "add_column",
-            MigrationOperation::DropColumn { .. } => "drop_column",
-        }
-    }
-}
 
 /// fr fr Migration configuration
 #[derive(Debug, Clone)]
@@ -494,13 +523,13 @@ impl<T: Entity> Migration for CreateTableMigration<T> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
     
     fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
 }
 
@@ -533,14 +562,14 @@ impl<T: Entity> Migration for DropTableMigration<T> {
     fn up(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
     
     fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
 }
 
@@ -585,7 +614,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
             table.add_column(self.column.clone());
         }
         
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
     
     fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
@@ -599,7 +628,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
             table.remove_column(&self.column.name);
         }
         
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
 }
 
@@ -642,7 +671,7 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
             table.remove_column(&self.column_name);
         }
         
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
     
     fn down(&self, schema: &mut DatabaseSchema) -> Result<Vec<String>, DatabaseError> {
@@ -656,7 +685,7 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
             self.column_name
         );
         
-        Ok(vec![sql])
+        Ok(Vec::from([sql]))
     }
 }
 
@@ -701,21 +730,21 @@ mod tests {
         }
 
         fn field_names() -> Vec<&'static str> {
-            vec!["id", "name", "email"]
+            Vec::from(["id", "name", "email"])
         }
 
         fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> {
-            vec![]
+            Vec::from([])
         }
 
         fn metadata() -> super::super::entity::EntityMetadata {
             super::super::entity::EntityMetadata {
                 table_name: "users".to_string(),
                 primary_key: "id".to_string(),
-                fields: vec!["id".to_string(), "name".to_string(), "email".to_string()],
-                relationships: vec![],
-                validation_rules: vec![],
-                indexes: vec![],
+                fields: Vec::from(["id".to_string(), "name".to_string(), "email".to_string()]),
+                relationships: Vec::from([]),
+                validation_rules: Vec::from([]),
+                indexes: Vec::from([]),
                 version: 1,
             }
         }

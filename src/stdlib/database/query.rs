@@ -75,9 +75,9 @@ impl QueryResult {
     /// slay Create an error result
     pub fn with_error(query: String, error: DatabaseError) -> Self {
         Self {
-            column_names: vec![],
-            column_types: vec![],
-            rows: vec![],
+            column_names: Vec::from([]),
+            column_types: Vec::from([]),
+            rows: Vec::from([]),
             execution_duration: None,
             query,
             rows_affected: None,

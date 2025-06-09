@@ -449,7 +449,7 @@ impl DatabaseDriver for MockDatabaseDriver {
         DriverInfo {
             name: self.name.clone(),
             version: self.version.clone(),
-            supported_versions: vec!["any".to_string()],
+            supported_versions: Vec::from(["any".to_string()]),
             features: vec![
                 DriverFeature::PreparedStatements,
                 DriverFeature::Transactions,

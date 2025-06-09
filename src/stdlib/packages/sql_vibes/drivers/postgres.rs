@@ -58,7 +58,7 @@ impl DatabaseDriver for PostgresDriver {
         DriverInfo {
             name: self.name.clone(),
             version: self.version.clone(),
-            supported_versions: vec!["12+".to_string(), "13+".to_string(), "14+".to_string(), "15+".to_string()],
+            supported_versions: Vec::from(["12+".to_string(), "13+".to_string(), "14+".to_string(), "15+".to_string()]),
             features: vec![
                 DriverFeature::PreparedStatements,
                 DriverFeature::Transactions,
@@ -606,7 +606,7 @@ fn create_postgres_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSe
     
     if sql_upper.starts_with("SELECT") {
         // Mock SELECT result with PostgreSQL-style data
-        let columns = vec!["id".to_string(), "name".to_string(), "email".to_string(), "created_at".to_string()];
+        let columns = Vec::from(["id".to_string(), "name".to_string(), "email".to_string(), "created_at".to_string()]);
         let rows = vec![
             Row::new(vec![
                 SqlValue::Integer(1),
@@ -625,7 +625,7 @@ fn create_postgres_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSe
         ResultSet::new(columns, rows)
     } else {
         // Empty result set for non-SELECT statements
-        ResultSet::new(vec![], vec![])
+        ResultSet::new(Vec::from([]), Vec::from([]))
     }
 }
 

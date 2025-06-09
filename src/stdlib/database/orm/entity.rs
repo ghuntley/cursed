@@ -120,7 +120,7 @@ pub struct EntityMetadata {
 }
 
 /// fr fr Column definition for schema generation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ColumnDefinition {
     /// Column name
     pub name: String,
@@ -239,7 +239,7 @@ pub enum ColumnConstraint {
 }
 
 /// fr fr Index definition for performance optimization
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IndexDefinition {
     /// Index name
     pub name: String,
@@ -494,7 +494,7 @@ mod tests {
         }
 
         fn field_names() -> Vec<&'static str> {
-            vec!["id", "name", "email", "created_at", "updated_at"]
+            Vec::from(["id", "name", "email", "created_at", "updated_at"])
         }
 
         fn column_definitions() -> Vec<ColumnDefinition> {
@@ -506,7 +506,7 @@ mod tests {
                     default: None,
                     primary_key: true,
                     foreign_key: None,
-                    constraints: vec![ColumnConstraint::NotNull],
+                    constraints: Vec::from([ColumnConstraint::NotNull]),
                 },
                 ColumnDefinition {
                     name: "name".to_string(),
@@ -515,7 +515,7 @@ mod tests {
                     default: None,
                     primary_key: false,
                     foreign_key: None,
-                    constraints: vec![ColumnConstraint::NotNull],
+                    constraints: Vec::from([ColumnConstraint::NotNull]),
                 },
                 ColumnDefinition {
                     name: "email".to_string(),
@@ -524,7 +524,7 @@ mod tests {
                     default: None,
                     primary_key: false,
                     foreign_key: None,
-                    constraints: vec![ColumnConstraint::Unique],
+                    constraints: Vec::from([ColumnConstraint::Unique]),
                 },
             ]
         }
@@ -533,10 +533,10 @@ mod tests {
             EntityMetadata {
                 table_name: "users".to_string(),
                 primary_key: "id".to_string(),
-                fields: vec!["id".to_string(), "name".to_string(), "email".to_string()],
-                relationships: vec![],
-                validation_rules: vec!["name_required".to_string()],
-                indexes: vec![],
+                fields: Vec::from(["id".to_string(), "name".to_string(), "email".to_string()]),
+                relationships: Vec::from([]),
+                validation_rules: Vec::from(["name_required".to_string()]),
+                indexes: Vec::from([]),
                 version: 1,
             }
         }

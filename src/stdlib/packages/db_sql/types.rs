@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 /// fr fr SQL value types - all the data types we support
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SqlValue {
     /// NULL value
     Null,
@@ -122,6 +122,12 @@ pub enum SqlType {
     Custom(String), // type_name
 }
 
+/// fr fr Type aliases for convenience
+pub type SqlDateTime = chrono::DateTime<chrono::Utc>;
+pub type SqlDecimal = String; // Decimal stored as string with precision
+pub type SqlArray = Vec<SqlValue>;
+pub type SqlJson = serde_json::Value;
+
 /// fr fr SQL parameter for prepared statements
 #[derive(Debug, Clone)]
 pub struct SqlParameter {
@@ -190,9 +196,10 @@ pub struct SqlNull;
 pub mod datetime {
     use super::*;
     use chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, Utc};
+    use crate::stdlib::packages::db_core::error::DatabaseResult;
 
     /// slay Create a SQL Date value
-    pub fn sql_date(year: i32, month: u32, day: u32) -> crate::stdlib::packages::db_core::DatabaseResult<SqlValue> {
+    pub fn sql_date(year: i32, month: u32, day: u32) -> DatabaseResult<SqlValue> {
         let date = NaiveDate::from_ymd_opt(year, month, day)
             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
@@ -202,7 +209,7 @@ pub mod datetime {
     }
 
     /// slay Create a SQL Time value
-    pub fn sql_time(hour: u32, minute: u32, second: u32) -> crate::stdlib::packages::db_core::DatabaseResult<SqlValue> {
+    pub fn sql_time(hour: u32, minute: u32, second: u32) -> DatabaseResult<SqlValue> {
         let time = NaiveTime::from_hms_opt(hour, minute, second)
             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
@@ -212,7 +219,7 @@ pub mod datetime {
     }
 
     /// slay Create a SQL Timestamp value
-    pub fn sql_timestamp(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> crate::stdlib::packages::db_core::DatabaseResult<SqlValue> {
+    pub fn sql_timestamp(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> DatabaseResult<SqlValue> {
         let date = NaiveDate::from_ymd_opt(year, month, day)
             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
@@ -235,9 +242,10 @@ pub mod datetime {
 /// fr fr SQL Decimal helpers
 pub mod decimal {
     use super::*;
+    use crate::stdlib::packages::db_core::error::DatabaseResult;
 
     /// slay Create a SQL Decimal value
-    pub fn sql_decimal(value: &str, precision: u32, scale: u32) -> crate::stdlib::packages::db_core::DatabaseResult<SqlValue> {
+    pub fn sql_decimal(value: &str, precision: u32, scale: u32) -> DatabaseResult<SqlValue> {
         // Validate decimal format
         if !is_valid_decimal(value) {
             return Err(crate::stdlib::packages::db_core::DatabaseError::new(
@@ -273,9 +281,10 @@ pub mod array {
 pub mod json {
     use super::*;
     use serde_json::Value;
+    use crate::stdlib::packages::db_core::error::DatabaseResult;
 
     /// slay Create a SQL JSON value from string
-    pub fn sql_json_from_str(json_str: &str) -> crate::stdlib::packages::db_core::DatabaseResult<SqlValue> {
+    pub fn sql_json_from_str(json_str: &str) -> DatabaseResult<SqlValue> {
         let value: Value = serde_json::from_str(json_str)
             .map_err(|e| crate::stdlib::packages::db_core::DatabaseError::new(
                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,

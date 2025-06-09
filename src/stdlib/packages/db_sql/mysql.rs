@@ -1,9 +1,13 @@
 /// fr fr MySQL driver implementation - the popular choice periodt
 
 use crate::stdlib::packages::{
-    db_core::{DatabaseResult as DbResult, ConnectionConfig, DatabaseConnection, DriverFeature},
-    db_sql::{SqlDriver, SqlConnection, SqlDialect, SqlDialectTrait}
+    db_core::{ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect},
+    db_sql::{SqlDriver, SqlDialectTrait}
 };
+use crate::stdlib::packages::db_sql::drivers::{
+    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations
+};
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use async_trait::async_trait;
 
 /// fr fr MySQL driver
@@ -55,8 +59,8 @@ impl crate::stdlib::packages::db_core::DatabaseDriver for MySqlDriver {
         true
     }
 
-    fn sql_dialect(&self) -> crate::stdlib::packages::db_sql::SqlDialect {
-        crate::stdlib::packages::db_sql::SqlDialect::MySQL
+    fn sql_dialect(&self) -> SqlDialect {
+        SqlDialect::MySQL
     }
 
     fn validate_connection_string(&self, _connection_string: &str) -> DbResult<()> {
@@ -89,16 +93,16 @@ impl SqlDriver for MySqlDriver {
         true
     }
 
-    fn configuration_options(&self) -> Vec<crate::stdlib::packages::db_sql::ConfigurationOption> {
-        vec![]
+    fn configuration_options(&self) -> Vec<ConfigurationOption> {
+        Vec::from([])
     }
 
     fn validate_sql(&self, _sql: &str) -> DbResult<()> {
         Ok(())
     }
 
-    fn performance_info(&self) -> crate::stdlib::packages::db_sql::DriverPerformanceInfo {
-        crate::stdlib::packages::db_sql::DriverPerformanceInfo {
+    fn performance_info(&self) -> DriverPerformanceInfo {
+        DriverPerformanceInfo {
             connection_time: std::time::Duration::from_millis(80),
             query_overhead: std::time::Duration::from_micros(30),
             max_connections: Some(2000),
@@ -109,8 +113,8 @@ impl SqlDriver for MySqlDriver {
         }
     }
 
-    fn limitations(&self) -> crate::stdlib::packages::db_sql::DriverLimitations {
-        crate::stdlib::packages::db_sql::DriverLimitations {
+    fn limitations(&self) -> DriverLimitations {
+        DriverLimitations {
             max_statement_length: Some(1024 * 1024),
             max_parameters: Some(65535),
             max_identifier_length: Some(64),
@@ -118,7 +122,7 @@ impl SqlDriver for MySqlDriver {
             max_numeric_precision: Some(65),
             max_columns: Some(4096),
             max_rows: None,
-            unsupported_features: vec![],
+            unsupported_features: Vec::from([]),
         }
     }
 }

@@ -71,7 +71,7 @@ impl SelectBuilder {
     pub fn new(table: String) -> Self {
         Self {
             table,
-            columns: vec!["*".to_string()],
+            columns: Vec::from(["*".to_string()]),
             where_conditions: Vec::new(),
             where_params: Vec::new(),
             joins: Vec::new(),
@@ -206,7 +206,7 @@ impl SelectBuilder {
     /// slay Execute query and return count
     pub fn count(&self, db: &DB) -> Result<i64, DatabaseError> {
         let mut builder = self.clone();
-        builder.columns = vec!["COUNT(*)".to_string()];
+        builder.columns = Vec::from(["COUNT(*)".to_string()]);
         let (query, params) = builder.build();
         
         let row = db.query_row(query, params);

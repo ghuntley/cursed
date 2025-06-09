@@ -35,7 +35,7 @@ impl SimpleConnection {
         
         // Create mock result for demonstration
         if sql.trim().to_uppercase().starts_with("SELECT") {
-            let columns = vec!["id".to_string(), "name".to_string(), "value".to_string()];
+            let columns = Vec::from(["id".to_string(), "name".to_string(), "value".to_string()]);
             let rows = vec![
                 Row::new(vec![
                     SqlValue::Integer(1),
@@ -139,7 +139,7 @@ mod tests {
     fn test_simple_statement_execution() {
         let mut conn = SimpleConnection::new("sqlite://test.db".to_string()).unwrap();
         
-        let params = vec![Parameter::positional(0, SqlValue::String("test".to_string()))];
+        let params = Vec::from([Parameter::positional(0, SqlValue::String("test".to_string()))]);
         let result = conn.execute_statement("INSERT INTO users (name) VALUES (?)", &params);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 1);

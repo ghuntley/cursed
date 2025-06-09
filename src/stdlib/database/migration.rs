@@ -139,7 +139,7 @@ impl Migrator {
     fn apply_migration(&self, migration: &Migration) -> Result<(), DatabaseError> {
         let mut tx = self.db.begin()?;
         
-        match tx.exec(migration.up.clone(), vec![]) {
+        match tx.exec(migration.up.clone(), Vec::from([])) {
             Ok(_) => {
                 // Record migration in migrations table
                 self.record_migration(migration.version, &migration.description)?;
@@ -157,7 +157,7 @@ impl Migrator {
     fn rollback_migration(&self, migration: &Migration) -> Result<(), DatabaseError> {
         let mut tx = self.db.begin()?;
         
-        match tx.exec(migration.down.clone(), vec![]) {
+        match tx.exec(migration.down.clone(), Vec::from([])) {
             Ok(_) => {
                 // Remove migration record
                 self.remove_migration_record(migration.version)?;

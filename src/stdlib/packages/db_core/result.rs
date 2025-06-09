@@ -4,8 +4,9 @@
 /// and execution statistics for database operations. Results need love too bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, DatabaseError, ErrorKind, QueryError
+    DatabaseError, ErrorKind, QueryError
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -813,7 +814,7 @@ mod tests {
     fn test_execute_result() {
         let mut result = ExecuteResult::new(ExecuteOperation::Insert, 5)
             .with_last_insert_id(123)
-            .with_generated_keys(vec![123, 124, 125, 126, 127]);
+            .with_generated_keys(Vec::from([123, 124, 125, 126, 127]));
 
         assert_eq!(result.rows_affected, 5);
         assert_eq!(result.last_insert_id, Some(123));
@@ -833,9 +834,9 @@ mod tests {
             ColumnValue::with_data("2".as_bytes().to_vec(), ColumnType::Integer),
         ];
         
-        let rows = vec![Row::new(values1), Row::new(values2)];
+        let rows = Vec::from([Row::new(values1), Row::new(values2)]);
         let metadata = ResultMetadata {
-            columns: vec![Column::new("id", ColumnType::Integer, 0)],
+            columns: Vec::from([Column::new("id", ColumnType::Integer, 0)]),
             total_rows: Some(2),
             has_more_rows: false,
             name: None,

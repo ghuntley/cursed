@@ -98,6 +98,9 @@ async-trait = "0.1"                                # For async traits
 # Language Server Protocol dependencies
 tower-lsp = "0.20"         # LSP server framework
 tower = "0.4"             # Service trait and utilities
+
+# Template system dependencies
+md5 = "0.7"                # For CSRF token generation and simple hashing
 dashmap = "5.5"           # Concurrent HashMap for document storage
 ropey = "1.6"             # Rope data structure for efficient text editing
 tree-sitter = "0.20"      # Tree-sitter parsing for incremental updates

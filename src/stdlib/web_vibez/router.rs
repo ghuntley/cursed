@@ -323,7 +323,7 @@ impl Router {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
     ) -> Result<(), RouterError> {
-        self.add_route(HttpMethod::GET, pattern, handler, vec![])
+        self.add_route(HttpMethod::GET, pattern, handler, Vec::from([]))
     }
 
     /// Convenience method for POST routes
@@ -332,7 +332,7 @@ impl Router {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
     ) -> Result<(), RouterError> {
-        self.add_route(HttpMethod::POST, pattern, handler, vec![])
+        self.add_route(HttpMethod::POST, pattern, handler, Vec::from([]))
     }
 
     /// Convenience method for PUT routes
@@ -341,7 +341,7 @@ impl Router {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
     ) -> Result<(), RouterError> {
-        self.add_route(HttpMethod::PUT, pattern, handler, vec![])
+        self.add_route(HttpMethod::PUT, pattern, handler, Vec::from([]))
     }
 
     /// Convenience method for DELETE routes
@@ -350,7 +350,7 @@ impl Router {
         pattern: &str,
         handler: Arc<dyn RequestHandler>,
     ) -> Result<(), RouterError> {
-        self.add_route(HttpMethod::DELETE, pattern, handler, vec![])
+        self.add_route(HttpMethod::DELETE, pattern, handler, Vec::from([]))
     }
 
     /// Add a route group
@@ -574,7 +574,7 @@ mod tests {
         let mut group = RouteGroup::new("/api/v1");
         let handler = Arc::new(StaticHandler::new("API Response"));
         
-        let route = Route::new(HttpMethod::GET, "/users", handler, vec![]).unwrap();
+        let route = Route::new(HttpMethod::GET, "/users", handler, Vec::from([])).unwrap();
         group.add_route(route);
         
         let routes = group.all_routes();

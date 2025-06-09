@@ -645,10 +645,10 @@ mod tests {
     fn test_has_length_matcher() {
         let mut test = VibeTest::new("length_test".to_string());
         
-        expect(&mut test, vec![1, 2, 3], has_length(3));
+        expect(&mut test, Vec::from([1, 2, 3]), has_length(3));
         assert!(!test.failed());
         
-        expect(&mut test, vec![1, 2], has_length(3));
+        expect(&mut test, Vec::from([1, 2]), has_length(3));
         assert!(test.failed());
     }
 
@@ -656,10 +656,10 @@ mod tests {
     fn test_contains_element_matcher() {
         let mut test = VibeTest::new("contains_element_test".to_string());
         
-        expect(&mut test, vec![1, 2, 3], contains_element(2));
+        expect(&mut test, Vec::from([1, 2, 3]), contains_element(2));
         assert!(!test.failed());
         
-        expect(&mut test, vec![1, 2, 3], contains_element(4));
+        expect(&mut test, Vec::from([1, 2, 3]), contains_element(4));
         assert!(test.failed());
     }
 
@@ -729,7 +729,7 @@ mod tests {
         expect(&mut test, Vec::<i32>::new(), is_empty());
         assert!(!test.failed());
         
-        expect(&mut test, vec![1, 2, 3], is_empty());
+        expect(&mut test, Vec::from([1, 2, 3]), is_empty());
         assert!(test.failed());
     }
 }

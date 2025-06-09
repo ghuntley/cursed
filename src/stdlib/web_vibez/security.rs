@@ -21,8 +21,8 @@ impl Default for SanitizerConfig {
     fn default() -> Self {
         Self {
             allow_html: false,
-            allowed_tags: vec![],
-            allowed_attributes: vec![],
+            allowed_tags: Vec::from([]),
+            allowed_attributes: Vec::from([]),
             max_length: Some(1000),
             strip_whitespace: true,
             escape_quotes: true,

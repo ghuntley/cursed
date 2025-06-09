@@ -4,8 +4,9 @@
 /// and execution planning for database operations. Query optimization bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, DatabaseError, ErrorKind, QueryError
+    DatabaseError, ErrorKind, QueryError
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, SystemTime};
@@ -304,7 +305,7 @@ impl Query {
         
         Self {
             id,
-            query_type,
+            query_type: query_type.clone(),
             statement: statement.to_string(),
             parameters: ParameterSet::new(),
             metadata: QueryMetadata::new(query_type == QueryType::Select),

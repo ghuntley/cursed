@@ -236,7 +236,7 @@ impl LoggingMiddleware {
             log_request_body: false,
             log_response_body: false,
             max_body_log_size: 1024,
-            skip_paths: vec!["/health".to_string(), "/metrics".to_string()],
+            skip_paths: Vec::from(["/health".to_string(), "/metrics".to_string()]),
         }
     }
 
@@ -415,7 +415,7 @@ pub struct CorsMiddleware {
 impl CorsMiddleware {
     pub fn new() -> Self {
         Self {
-            allowed_origins: vec!["*".to_string()],
+            allowed_origins: Vec::from(["*".to_string()]),
             allowed_methods: vec![
                 HttpMethod::GET,
                 HttpMethod::POST,
@@ -562,7 +562,7 @@ impl RateLimitMiddleware {
             key_extractor: |context| {
                 context.client_ip.clone().unwrap_or_else(|| "unknown".to_string())
             },
-            skip_paths: vec!["/health".to_string()],
+            skip_paths: Vec::from(["/health".to_string()]),
         }
     }
 
@@ -690,7 +690,7 @@ impl StaticFileMiddleware {
             root_dir,
             url_prefix: url_prefix.to_string(),
             cache_duration: Some(Duration::from_secs(3600)), // 1 hour
-            index_files: vec!["index.html".to_string(), "index.htm".to_string()],
+            index_files: Vec::from(["index.html".to_string(), "index.htm".to_string()]),
             mime_types,
         }
     }
@@ -874,7 +874,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_auth_middleware() {
-        let middleware = AuthMiddleware::new(vec![AuthScheme::Bearer]);
+        let middleware = AuthMiddleware::new(Vec::from([AuthScheme::Bearer]));
         let mut context = RequestContext::new("GET".to_string(), "/protected".to_string());
         let mut response = ResponseContext::new();
 

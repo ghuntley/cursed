@@ -143,7 +143,7 @@ impl Default for WebVibezConfig {
             max_request_body_size: 10 * 1024 * 1024, // 10MB
             enable_logging: true,
             rate_limit_requests_per_minute: Some(1000),
-            cors_allowed_origins: vec!["*".to_string()],
+            cors_allowed_origins: Vec::from(["*".to_string()]),
             static_file_root: Some("./static".to_string()),
         }
     }

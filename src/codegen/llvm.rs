@@ -146,7 +146,7 @@ impl LlvmCodeGenerator {
         
         // Generate a sample module with debug info
         let main_location = SourceLocation::new(source_file.clone(), 1, 1);
-        let functions = vec![("main".to_string(), main_location)];
+        let functions = Vec::from([("main".to_string(), main_location)]);
         
         let module_name = source_file.file_stem()
             .and_then(|s| s.to_str())

@@ -130,7 +130,7 @@ impl DatabaseDriver for MockDriver {
         DriverInfo {
             name: self.name.clone(),
             version: self.version.clone(),
-            supported_versions: vec!["any".to_string()],
+            supported_versions: Vec::from(["any".to_string()]),
             features: vec![
                 DriverFeature::PreparedStatements,
                 DriverFeature::Transactions,
@@ -615,7 +615,7 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
     
     if sql_upper.starts_with("SELECT") {
         // Mock SELECT result
-        let columns = vec!["id".to_string(), "name".to_string(), "value".to_string(), "timestamp".to_string()];
+        let columns = Vec::from(["id".to_string(), "name".to_string(), "value".to_string(), "timestamp".to_string()]);
         let rows = vec![
             Row::new(vec![
                 SqlValue::Integer(1),
@@ -640,7 +640,7 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
         ResultSet::new(columns, rows)
     } else {
         // Empty result set for non-SELECT statements
-        ResultSet::new(vec![], vec![])
+        ResultSet::new(Vec::from([]), Vec::from([]))
     }
 }
 
@@ -673,8 +673,8 @@ mod tests {
     #[test]
     fn test_mock_data_configuration() {
         let driver = MockDriver::new();
-        let columns = vec!["test_col".to_string()];
-        let rows = vec![Row::new(vec![SqlValue::Text("test_value".to_string())])];
+        let columns = Vec::from(["test_col".to_string()]);
+        let rows = Vec::from([Row::new(vec![SqlValue::Text("test_value".to_string())]))];
         let result_set = ResultSet::new(columns, rows);
         
         driver.add_mock_data("SELECT * FROM test".to_string(), result_set);

@@ -766,7 +766,7 @@ impl Migration for CreatePostsTableMigration {
     }
     
     fn dependencies(&self) -> Vec<String> {
-        vec!["20240101000001_create_users_table".to_string()]
+        Vec::from(["20240101000001_create_users_table".to_string()])
     }
 }
 

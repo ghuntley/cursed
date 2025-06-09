@@ -41,7 +41,7 @@ impl PackageCache {
 
     pub fn list_packages(&self) -> Result<Vec<PackageMetadata>, PackageManagerError> {
         // TODO: Implement package listing
-        Ok(vec![])
+        Ok(Vec::from([]))
     }
 
     pub fn clean(&mut self) -> Result<(), PackageManagerError> {

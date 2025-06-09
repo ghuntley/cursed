@@ -212,7 +212,7 @@ impl QueryPlanCache {
                                 index_name: None,
                                 cost: 50.0,
                                 rows: 500,
-                                children: vec![],
+                                children: Vec::from([]),
                             },
                             PlanNode {
                                 node_type: NodeType::IndexScan,
@@ -220,7 +220,7 @@ impl QueryPlanCache {
                                 index_name: Some("idx_table2_fk".to_string()),
                                 cost: 25.0,
                                 rows: 500,
-                                children: vec![],
+                                children: Vec::from([]),
                             },
                         ],
                     },
@@ -245,7 +245,7 @@ impl QueryPlanCache {
                                 index_name: None,
                                 cost: 100.0,
                                 rows: 1000,
-                                children: vec![],
+                                children: Vec::from([]),
                             },
                         ],
                     },
@@ -263,7 +263,7 @@ impl QueryPlanCache {
                         index_name: Some("idx_table1_pk".to_string()),
                         cost: 25.0,
                         rows: 100,
-                        children: vec![],
+                        children: Vec::from([]),
                     },
                 ],
                 total_cost: 25.0,
@@ -1019,7 +1019,7 @@ mod tests {
         let cache = QueryPlanCache::new(100);
         
         let sql = "SELECT * FROM users WHERE id = ?";
-        let params = vec![SqlValue::Integer(1)];
+        let params = Vec::from([SqlValue::Integer(1)]);
         
         // First call should be a cache miss
         let plan1 = cache.get_or_create_plan(sql, &params).await

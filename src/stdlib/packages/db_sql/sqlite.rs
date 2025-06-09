@@ -1,9 +1,13 @@
 /// fr fr SQLite driver implementation - the lightweight champion periodt
 
 use crate::stdlib::packages::{
-    db_core::{DatabaseResult as DbResult, ConnectionConfig, DatabaseConnection, DriverFeature},
-    db_sql::{SqlDriver, SqlConnection, SqlDialect, SqlDialectTrait, SqlFeature}
+    db_core::{ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect},
+    db_sql::{SqlDriver, SqlDialectTrait, SqlFeature}
 };
+use crate::stdlib::packages::db_sql::drivers::{
+    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations
+};
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use async_trait::async_trait;
 
 /// fr fr SQLite driver
@@ -55,8 +59,8 @@ impl crate::stdlib::packages::db_core::DatabaseDriver for SqliteDriver {
         true
     }
 
-    fn sql_dialect(&self) -> crate::stdlib::packages::db_sql::SqlDialect {
-        crate::stdlib::packages::db_sql::SqlDialect::SQLite
+    fn sql_dialect(&self) -> SqlDialect {
+        SqlDialect::SQLite
     }
 
     fn validate_connection_string(&self, _connection_string: &str) -> DbResult<()> {
@@ -99,16 +103,16 @@ impl SqlDriver for SqliteDriver {
         }
     }
 
-    fn configuration_options(&self) -> Vec<crate::stdlib::packages::db_sql::ConfigurationOption> {
-        vec![]
+    fn configuration_options(&self) -> Vec<ConfigurationOption> {
+        Vec::from([])
     }
 
     fn validate_sql(&self, _sql: &str) -> DbResult<()> {
         Ok(())
     }
 
-    fn performance_info(&self) -> crate::stdlib::packages::db_sql::DriverPerformanceInfo {
-        crate::stdlib::packages::db_sql::DriverPerformanceInfo {
+    fn performance_info(&self) -> DriverPerformanceInfo {
+        DriverPerformanceInfo {
             connection_time: std::time::Duration::from_millis(10),
             query_overhead: std::time::Duration::from_micros(10),
             max_connections: Some(1), // SQLite is single-threaded
@@ -119,8 +123,8 @@ impl SqlDriver for SqliteDriver {
         }
     }
 
-    fn limitations(&self) -> crate::stdlib::packages::db_sql::DriverLimitations {
-        crate::stdlib::packages::db_sql::DriverLimitations {
+    fn limitations(&self) -> DriverLimitations {
+        DriverLimitations {
             max_statement_length: Some(1000000),
             max_parameters: Some(999),
             max_identifier_length: Some(255),

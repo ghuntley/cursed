@@ -163,7 +163,7 @@ impl HeaderMap {
         // Preserve original case
         self.original_names.insert(header_name.clone(), name_str);
 
-        self.headers.insert(header_name, vec![header_value])
+        self.headers.insert(header_name, Vec::from([header_value]))
     }
 
     /// Append a header value (adds to existing)
@@ -324,7 +324,7 @@ impl HeaderMap {
                 })
                 .collect()
         } else {
-            vec![("*/*".to_string(), 1.0)]
+            Vec::from([("*/*".to_string(), 1.0)])
         }
     }
 

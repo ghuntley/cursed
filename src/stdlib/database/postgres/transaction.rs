@@ -467,7 +467,7 @@ impl DriverTx for PostgreSQLTransaction {
             options: self.options.clone(),
             config: self.config.clone(),
             state: TransactionState::Error("Cannot clone transaction".to_string()),
-            savepoints: vec![],
+            savepoints: Vec::from([]),
             metadata: TransactionMetadata::default(),
         })
     }

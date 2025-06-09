@@ -3,7 +3,8 @@
 /// This module provides a fluent API for building SQL queries in CURSED.
 /// No more string concatenation hell bestie! Build queries the right way.
 
-use crate::stdlib::packages::db_core::{DatabaseResult as DbResult, DatabaseError, QueryError};
+use crate::stdlib::packages::db_core::{DatabaseError, QueryError};
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use crate::stdlib::packages::db_sql::{SqlValue, SqlType, SqlDialectTrait};
 use std::collections::HashMap;
 

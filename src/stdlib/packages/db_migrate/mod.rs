@@ -14,7 +14,7 @@ pub use runner::{MigrationRunner, MigrationStatus};
 pub use version::{SchemaVersion, VersionManager};
 
 /// slay Initialize the db_migrate package
-pub fn init_db_migrate() -> crate::stdlib::packages::db_core::DatabaseResult<()> {
+pub fn init_db_migrate() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("🔄 db_migrate package initialized - schema migrations ready bestie!");
     Ok(())
 }

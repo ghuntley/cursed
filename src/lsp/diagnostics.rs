@@ -39,7 +39,7 @@ impl DiagnosticsProvider {
                 diagnostics.push(self.create_diagnostic(
                     Range {
                         start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: content.chars().count() as u32 },
+                        end: Position { line: 0, character: content.len() as u32 },
                     },
                     DiagnosticSeverity::ERROR,
                     "Lexer analysis failed".to_string(),
@@ -56,7 +56,7 @@ impl DiagnosticsProvider {
                 diagnostics.push(self.create_diagnostic(
                     Range {
                         start: Position { line: 0, character: 0 },
-                        end: Position { line: 0, character: content.chars().count() as u32 },
+                        end: Position { line: 0, character: content.len() as u32 },
                     },
                     DiagnosticSeverity::ERROR,
                     "Parser analysis failed".to_string(),
@@ -590,49 +590,49 @@ impl DiagnosticsProvider {
     /// Check type errors in content
     pub fn check_type_errors(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement type error checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check variable usage
     pub fn check_variable_usage(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement variable usage checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check function calls
     pub fn check_function_calls(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement function call checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check imports
     pub fn check_imports(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement import checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check style issues
     pub fn check_style_issues(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement style checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check best practices
     pub fn check_best_practices(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement best practice checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check performance issues
     pub fn check_performance_issues(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement performance checking
-        vec![]
+        Vec::from([])
     }
 
     /// Check security issues
     pub fn check_security_issues(&self, _content: &str) -> Vec<tower_lsp::lsp_types::Diagnostic> {
         // TODO: Implement security checking
-        vec![]
+        Vec::from([])
     }
 }
 

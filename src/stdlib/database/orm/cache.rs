@@ -35,7 +35,7 @@ impl QueryCache {
 
     /// facts Get cached value
     #[instrument(skip(self))]
-    pub fn get<T: Clone>(&self, key: &str) -> Option<T> {
+    pub fn get<T: Clone + 'static>(&self, key: &str) -> Option<T> {
         debug!(key = key, "Getting value from cache");
         
         if let Ok(entries) = self.entries.read() {
@@ -263,17 +263,28 @@ impl CacheEntry {
 }
 
 /// fr fr Trait for values that can be cached
-trait CacheValue: Send + Sync {
+trait CacheValue: Send + Sync + 'static {
     fn as_any(&self) -> &dyn std::any::Any;
+    fn clone_box(&self) -> Box<dyn CacheValue>;
 }
 
 impl<T: Clone + Send + Sync + 'static> CacheValue for T {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
+    
+    fn clone_box(&self) -> Box<dyn CacheValue> {
+        Box::new(self.clone())
+    }
 }
 
-impl dyn CacheValue {
+impl Clone for Box<dyn CacheValue> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}
+
+impl dyn CacheValue + 'static {
     fn downcast_ref<T: 'static>(&self) -> Option<&T> {
         self.as_any().downcast_ref::<T>()
     }

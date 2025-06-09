@@ -409,7 +409,7 @@ impl PerformanceAnalyzer {
     }
     
     fn generate_cpu_recommendations(&self, _hot_functions: &[(&String, &crate::profiling::cpu::FunctionStats)], _call_graph: &crate::profiling::cpu::CallGraph) -> Vec<String> {
-        vec!["Optimize hot functions".to_string()]
+        Vec::from(["Optimize hot functions".to_string()])
     }
     
     fn analyze_gc_performance(&self, _memory_data: &MemoryProfileData) -> GcAnalysis {
@@ -429,7 +429,7 @@ impl PerformanceAnalyzer {
     }
     
     fn generate_memory_recommendations(&self, _analysis: &crate::profiling::memory::AllocationAnalysis, _leaks: &[crate::profiling::memory::MemoryLeak]) -> Vec<String> {
-        vec!["Review allocation patterns".to_string()]
+        Vec::from(["Review allocation patterns".to_string()])
     }
     
     fn analyze_channel_efficiency(&self, _analysis: &crate::profiling::concurrency::ChannelAnalysis) -> f64 {
@@ -453,7 +453,7 @@ impl PerformanceAnalyzer {
     }
     
     fn generate_concurrency_recommendations(&self, _timeline: &[crate::profiling::concurrency::GoroutineTimeline], _analysis: &crate::profiling::concurrency::ChannelAnalysis, _deadlocks: &[crate::profiling::concurrency::DeadlockDetection]) -> Vec<String> {
-        vec!["Optimize goroutine usage".to_string()]
+        Vec::from(["Optimize goroutine usage".to_string()])
     }
     
     fn calculate_complexity_distribution(&self, _functions: &[(&String, &crate::profiling::cpu::FunctionStats)]) -> ComplexityDistribution {

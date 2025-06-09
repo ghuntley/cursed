@@ -574,13 +574,12 @@ mod tests {
     
     #[test]
     fn test_secure_operations() {
-        let mut data1 = vec![1, 2, 3, 4];
-        let data2 = vec![1, 2, 3, 4];
+        let mut data1 = vec![1, 2, 3, 4]); let data2 = Vec::from([1, 2, 3, 4];
         
         assert!(SecureOps::secure_compare(&data1, &data2));
         
         SecureOps::secure_clear(&mut data1);
-        assert_eq!(data1, vec![0, 0, 0, 0]);
+        assert_eq!(data1, Vec::from([0, 0, 0, 0]));
     }
     
     #[test]
@@ -595,7 +594,7 @@ mod tests {
     
     #[test]
     fn test_crypto_utils() {
-        let bytes = vec![0xde, 0xad, 0xbe, 0xef];
+        let bytes = Vec::from([0xde, 0xad, 0xbe, 0xef]);
         let hex = CryptoUtils::bytes_to_hex(&bytes);
         assert_eq!(hex, "deadbeef");
         

@@ -4,12 +4,14 @@
 /// Think of it as the rules that make SQL drivers work together bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseDriver, DatabaseConnection, DatabaseResult as DbResult,
-    ConnectionConfig, DriverInfo, DriverFeature, DatabaseError
+    DatabaseDriver, DatabaseConnection,
+    ConnectionConfig, DriverInfo, DriverFeature, DatabaseError,
+    PreparedStatement
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use crate::stdlib::packages::db_sql::{
-    SqlDialect, SqlValue, SqlType, PreparedStatement, SqlResultSet,
-    SqlExecuteResult, SqlConnection, SqlTransaction
+    SqlDialect, SqlDialectTrait, SqlValue, SqlType, SqlResultSet,
+    SqlExecuteResult
 };
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -21,7 +23,7 @@ pub trait SqlDriver: DatabaseDriver + Send + Sync {
     async fn sql_connect(&self, config: ConnectionConfig) -> DbResult<Box<dyn SqlConnection>>;
     
     /// slay Get the SQL dialect this driver uses
-    fn sql_dialect(&self) -> Box<dyn SqlDialect>;
+    fn sql_dialect(&self) -> Box<dyn SqlDialectTrait>;
     
     /// slay Get supported SQL types
     fn supported_types(&self) -> Vec<SqlType>;
@@ -449,7 +451,7 @@ mod tests {
     #[test]
     fn test_sql_batch() {
         let batch = SqlBatch::new("INSERT INTO users (name) VALUES (?)")
-            .with_parameters(vec![SqlValue::Text("Alice".to_string())])
+            .with_parameters(Vec::from([SqlValue::Text("Alice".to_string())]))
             .continue_on_error(true);
 
         assert_eq!(batch.sql, "INSERT INTO users (name) VALUES (?)");

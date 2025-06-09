@@ -89,7 +89,7 @@ impl CursedLanguageServer {
             }),
             hover_provider: Some(HoverProviderCapability::Simple(true)),
             signature_help_provider: Some(SignatureHelpOptions {
-                trigger_characters: Some(vec!["(".to_string(), ",".to_string()]),
+                trigger_characters: Some(Vec::from(["(".to_string(), ",".to_string()])),
                 retrigger_characters: None,
                 work_done_progress_options: WorkDoneProgressOptions::default(),
             }),
@@ -107,7 +107,7 @@ impl CursedLanguageServer {
             document_range_formatting_provider: Some(OneOf::Left(true)),
             document_on_type_formatting_provider: Some(DocumentOnTypeFormattingOptions {
                 first_trigger_character: "{".to_string(),
-                more_trigger_character: Some(vec!["}".to_string(), ";".to_string()]),
+                more_trigger_character: Some(Vec::from(["}".to_string(), ";".to_string()])),
             }),
             rename_provider: Some(OneOf::Right(RenameOptions {
                 prepare_provider: Some(true),
@@ -203,7 +203,7 @@ impl CursedLanguageServer {
     /// Publish diagnostics for a document
     #[instrument(skip(self))]
     async fn publish_diagnostics(&self, uri: Url, diagnostics: Vec<Diagnostic>) {
-        if let Some(client) = self.client().await {
+        if let Some(client) = self.client.read().await.clone() {
             client
                 .publish_diagnostics(uri, diagnostics, None)
                 .await;
@@ -339,7 +339,7 @@ impl LanguageServer for CursedLanguageServer {
             };
 
             client
-                .register_capability(vec![registration])
+                .register_capability(Vec::from([registration]))
                 .await
                 .unwrap_or_else(|err| {
                     warn!("Failed to register file watcher: {}", err);
@@ -399,7 +399,7 @@ impl LanguageServer for CursedLanguageServer {
             .close_document(params.text_document.uri.clone())
             .await;
         
-        self.publish_diagnostics(params.text_document.uri, vec![])
+        self.publish_diagnostics(params.text_document.uri, Vec::from([]))
             .await;
     }
 

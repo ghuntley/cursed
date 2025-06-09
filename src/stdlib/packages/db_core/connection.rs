@@ -4,9 +4,10 @@
 /// and connection lifecycle. Because proper connection management is crucial bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, DatabaseError, ErrorKind, ConnectionError,
+    DatabaseError, ErrorKind, ConnectionError,
     TransactionIsolation
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 use url::Url;

@@ -7,6 +7,7 @@ use crate::build_system::{
     BuildConfig, BuildTarget, BuildProfile, BuildResult, BuildError, 
     BuildStatistics, IncrementalCache
 };
+// use nix::NixPath; // Removed - nix crate not available
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -179,7 +180,7 @@ impl BuildPipeline {
             description: "Resolve and fetch dependencies".to_string(),
             enabled: true,
             parallel: false,
-            dependencies: vec![],
+            dependencies: Vec::from([]),
             timeout: Some(Duration::from_secs(300)),
             retry_count: 2,
         });
@@ -191,7 +192,7 @@ impl BuildPipeline {
                 description: "Format source code".to_string(),
                 enabled: true,
                 parallel: true,
-                dependencies: vec!["dependency_resolution".to_string()],
+                dependencies: Vec::from(["dependency_resolution".to_string()]),
                 timeout: Some(Duration::from_secs(60)),
                 retry_count: 1,
             });
@@ -205,9 +206,9 @@ impl BuildPipeline {
                 enabled: true,
                 parallel: true,
                 dependencies: if self.config.tools.formatter.format_on_build {
-                    vec!["format".to_string()]
+                    Vec::from(["format".to_string()])
                 } else {
-                    vec!["dependency_resolution".to_string()]
+                    Vec::from(["dependency_resolution".to_string()])
                 },
                 timeout: Some(Duration::from_secs(120)),
                 retry_count: 1,
@@ -216,11 +217,11 @@ impl BuildPipeline {
         
         // 4. Compilation Stage
         let lint_deps = if self.config.tools.linter.lint_on_build {
-            vec!["lint".to_string()]
+            Vec::from(["lint".to_string()])
         } else if self.config.tools.formatter.format_on_build {
-            vec!["format".to_string()]
+            Vec::from(["format".to_string()])
         } else {
-            vec!["dependency_resolution".to_string()]
+            Vec::from(["dependency_resolution".to_string()])
         };
         
         stages.push(PipelineStage {
@@ -239,7 +240,7 @@ impl BuildPipeline {
             description: "Run tests".to_string(),
             enabled: true,
             parallel: true,
-            dependencies: vec!["compile".to_string()],
+            dependencies: Vec::from(["compile".to_string()]),
             timeout: Some(Duration::from_secs(300)),
             retry_count: 1,
         });
@@ -251,7 +252,7 @@ impl BuildPipeline {
                 description: "Generate documentation".to_string(),
                 enabled: true,
                 parallel: false,
-                dependencies: vec!["compile".to_string()],
+                dependencies: Vec::from(["compile".to_string()]),
                 timeout: Some(Duration::from_secs(180)),
                 retry_count: 1,
             });
@@ -265,9 +266,9 @@ impl BuildPipeline {
                 enabled: true,
                 parallel: false,
                 dependencies: if self.config.tools.docs.generate_on_build {
-                    vec!["test".to_string(), "docs".to_string()]
+                    Vec::from(["test".to_string(), "docs".to_string()])
                 } else {
-                    vec!["test".to_string()]
+                    Vec::from(["test".to_string()])
                 },
                 timeout: Some(Duration::from_secs(120)),
                 retry_count: 1,
@@ -374,10 +375,10 @@ impl BuildPipeline {
                 name: stage.name.clone(),
                 success: true,
                 duration: Duration::from_millis(0),
-                output: vec!["Cache hit".to_string()],
-                warnings: vec![],
-                errors: vec![],
-                artifacts: vec![],
+                output: Vec::from(["Cache hit".to_string()]),
+                warnings: Vec::from([]),
+                errors: Vec::from([]),
+                artifacts: Vec::from([]),
                 cache_hit: true,
             });
         }
@@ -404,7 +405,7 @@ impl BuildPipeline {
                     .enumerate()
                     .map(|(i, path)| (format!("artifact_{}", i), path.clone()))
                     .collect();
-                let _ = cache.insert(&cache_key, vec![], artifacts_map, 1);
+                let _ = cache.insert(&cache_key, Vec::from([]), artifacts_map, 1);
             }
         }
         
@@ -438,7 +439,7 @@ impl BuildPipeline {
                     let stderr = String::from_utf8_lossy(&output_result.stderr);
                     
                     output.push(stdout.to_string());
-                    if !stderr.as_ref().is_empty() {
+                    if !stderr.is_empty() {
                         warnings.push(stderr.to_string());
                     }
                     
@@ -461,7 +462,7 @@ impl BuildPipeline {
             output,
             warnings,
             errors,
-            artifacts: vec![],
+            artifacts: Vec::from([]),
             cache_hit: false,
         })
     }
@@ -487,7 +488,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.as_ref().is_empty() {
+                if !stderr.is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -507,7 +508,7 @@ impl BuildPipeline {
             output,
             warnings,
             errors,
-            artifacts: vec![],
+            artifacts: Vec::from([]),
             cache_hit: false,
         })
     }
@@ -536,7 +537,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.as_ref().is_empty() {
+                if !stderr.is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -557,7 +558,7 @@ impl BuildPipeline {
             output,
             warnings,
             errors,
-            artifacts: vec![],
+            artifacts: Vec::from([]),
             cache_hit: false,
         })
     }
@@ -573,13 +574,13 @@ impl BuildPipeline {
         
         // Build specific targets or all targets
         let targets_to_build = if context.targets.is_empty() {
-            (&self.config.targets).iter().map(|t| t.name.clone()).collect()
+            self.config.targets.iter().map(|t| t.name.clone()).collect()
         } else {
             context.targets.clone()
         };
         
         for target_name in targets_to_build {
-            let target = (&self.config.targets).iter()
+            let target = self.config.targets.iter()
                 .find(|t| t.name == target_name)
                 .ok_or_else(|| BuildError::TargetNotFound(target_name.clone()))?;
             
@@ -612,7 +613,7 @@ impl BuildPipeline {
                     let stderr = String::from_utf8_lossy(&output_result.stderr);
                     
                     output.push(stdout.to_string());
-                    if !stderr.as_ref().is_empty() {
+                    if !stderr.is_empty() {
                         warnings.push(stderr.to_string());
                     }
                     
@@ -665,7 +666,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.as_ref().is_empty() {
+                if !stderr.is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -685,7 +686,7 @@ impl BuildPipeline {
             output,
             warnings,
             errors,
-            artifacts: vec![],
+            artifacts: Vec::from([]),
             cache_hit: false,
         })
     }
@@ -715,7 +716,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.as_ref().is_empty() {
+                if !stderr.is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 

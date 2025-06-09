@@ -4,8 +4,9 @@
 /// and information about tables, columns, indexes, and constraints. Knowledge is power bestie!
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, DatabaseError, ErrorKind
+    DatabaseError, ErrorKind
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::collections::HashMap;
 use std::time::SystemTime;
 
@@ -137,6 +138,19 @@ pub struct CheckConstraintInfo {
     pub constraint_name: String,
     /// Check expression
     pub check_clause: String,
+}
+
+/// fr fr General constraint information
+#[derive(Debug, Clone)]
+pub enum ConstraintInfo {
+    /// Primary key constraint
+    PrimaryKey(PrimaryKeyInfo),
+    /// Foreign key constraint
+    ForeignKey(ForeignKeyInfo),
+    /// Unique constraint
+    Unique(UniqueConstraintInfo),
+    /// Check constraint
+    Check(CheckConstraintInfo),
 }
 
 /// fr fr Index information
@@ -613,7 +627,7 @@ mod tests {
         assert!(db_meta.find_table_in_schema("public", "nonexistent").is_none());
 
         let table_names = db_meta.get_all_table_names();
-        assert_eq!(table_names, vec!["public.users"]);
+        assert_eq!(table_names, Vec::from(["public.users"]));
     }
 
     #[test]

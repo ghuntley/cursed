@@ -325,11 +325,11 @@ mod tests {
         assert_eq!(base.capabilities.key_size, 32);
         
         // Test validation
-        let key = vec![0u8; 32];
-        let nonce = vec![0u8; 12];
+        let key = Vec::from([0u8; 32]);
+        let nonce = Vec::from([0u8; 12]);
         assert!(base.validate_encrypt_params(&key, Some(&nonce)).is_ok());
         
-        let wrong_key = vec![0u8; 16];
+        let wrong_key = Vec::from([0u8; 16]);
         assert!(base.validate_encrypt_params(&wrong_key, Some(&nonce)).is_err());
     }
     
@@ -346,9 +346,9 @@ mod tests {
         
         let base = CipherBase::new(CipherType::AesGcm256, caps);
         
-        let nonce = vec![1u8; 12];
-        let data = vec![2u8; 32];
-        let tag = vec![3u8; 16];
+        let nonce = Vec::from([1u8; 12]);
+        let data = Vec::from([2u8; 32]);
+        let tag = Vec::from([3u8; 16]);
         
         let combined = base.combine_ciphertext(&nonce, &data, Some(&tag));
         assert_eq!(combined.len(), 12 + 32 + 16);

@@ -340,7 +340,7 @@ impl TemplateManager {
         }
         
         if let Some(author) = context.variables.get("author") {
-            config.project.authors = vec![author.clone()];
+            config.project.authors = Vec::from([author.clone()]);
         }
         
         if let Some(license) = context.variables.get("license") {
@@ -427,10 +427,10 @@ fn create_cli_template() -> ProjectTemplate {
                 condition: None,
             },
         ],
-        directories: vec!["src".to_string(), "tests".to_string()],
+        directories: Vec::from(["src".to_string(), "tests".to_string()]),
         variables: create_common_variables(),
         build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: vec![],
+        post_scripts: Vec::from([]),
     }
 }
 
@@ -460,10 +460,10 @@ fn create_library_template() -> ProjectTemplate {
                 condition: None,
             },
         ],
-        directories: vec!["src".to_string(), "tests".to_string(), "examples".to_string()],
+        directories: Vec::from(["src".to_string(), "tests".to_string(), "examples".to_string()]),
         variables: create_common_variables(),
         build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Library),
-        post_scripts: vec![],
+        post_scripts: Vec::from([]),
     }
 }
 
@@ -505,10 +505,10 @@ fn create_web_template() -> ProjectTemplate {
                 condition: None,
             },
         ],
-        directories: vec!["src".to_string(), "static".to_string(), "templates".to_string()],
+        directories: Vec::from(["src".to_string(), "static".to_string(), "templates".to_string()]),
         variables: create_web_variables(),
         build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: vec![],
+        post_scripts: Vec::from([]),
     }
 }
 
@@ -550,10 +550,10 @@ fn create_api_template() -> ProjectTemplate {
                 condition: None,
             },
         ],
-        directories: vec!["src".to_string(), "tests".to_string()],
+        directories: Vec::from(["src".to_string(), "tests".to_string()]),
         variables: create_api_variables(),
         build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: vec![],
+        post_scripts: Vec::from([]),
     }
 }
 
@@ -589,10 +589,10 @@ fn create_game_template() -> ProjectTemplate {
                 condition: None,
             },
         ],
-        directories: vec!["src".to_string(), "assets".to_string(), "tests".to_string()],
+        directories: Vec::from(["src".to_string(), "assets".to_string(), "tests".to_string()]),
         variables: create_game_variables(),
         build_config: BuildConfig::default_for_project("{{project_name}}", ProjectType::Binary),
-        post_scripts: vec![],
+        post_scripts: Vec::from([]),
     }
 }
 

@@ -371,7 +371,7 @@ impl DatabaseFixture {
         if !self.connected {
             Err("Not connected to database")
         } else {
-            Ok(vec!["result1".to_string(), "result2".to_string()])
+            Ok(Vec::from(["result1".to_string(), "result2".to_string()]))
         }
     }
 }
@@ -452,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_parameterized_test() {
-        let params = vec![1, 2, 3, 4, 5];
+        let params = Vec::from([1, 2, 3, 4, 5]);
         let param_test = ParameterizedTest::new(
             "squares",
             params,

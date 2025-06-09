@@ -159,8 +159,8 @@ impl Default for SqliteDriverCapabilities {
                 max_columns: 2000,
                 max_sql_length: 1_000_000,
                 max_page_size: 65536,
-                supported_journal_modes: vec!["DELETE".to_string()],
-                supported_synchronous_modes: vec!["FULL".to_string()],
+                supported_journal_modes: Vec::from(["DELETE".to_string()]),
+                supported_synchronous_modes: Vec::from(["FULL".to_string()]),
                 supports_extensions: false,
                 supports_virtual_tables: false,
                 supports_fts: false,
@@ -363,7 +363,7 @@ impl SqliteDriver {
             Ok(conn) => {
                 let ping_result = conn.ping();
                 let _ = conn.close(); // Always try to close
-                ping_result.map(|_| true)
+                ping_result.map(|_| true).map_err(|e| SqliteError::from(e))
             }
             Err(_) => Ok(false),
         }

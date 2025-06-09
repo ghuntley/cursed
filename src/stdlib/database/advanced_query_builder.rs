@@ -572,7 +572,7 @@ impl CaseExpressionBuilder {
     }
 
     fn build_case_sql(&self) -> String {
-        let mut case_parts = vec!["CASE".to_string()];
+        let mut case_parts = Vec::from(["CASE".to_string()]);
         
         for when_clause in &self.when_clauses {
             case_parts.push(format!("WHEN {} THEN {}", when_clause.condition, when_clause.result));

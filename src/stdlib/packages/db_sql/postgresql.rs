@@ -1,9 +1,13 @@
 /// fr fr PostgreSQL driver implementation - the elephant in the room periodt
 
 use crate::stdlib::packages::{
-    db_core::{DatabaseResult as DbResult, ConnectionConfig, DatabaseConnection, DriverFeature},
-    db_sql::{SqlDriver, SqlConnection, SqlDialect, SqlDialectTrait}
+    db_core::{ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect},
+    db_sql::{SqlDriver, SqlDialectTrait}
 };
+use crate::stdlib::packages::db_sql::drivers::{
+    SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations
+};
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use async_trait::async_trait;
 
 /// fr fr PostgreSQL driver
@@ -56,8 +60,8 @@ impl crate::stdlib::packages::db_core::DatabaseDriver for PostgreSqlDriver {
         true // Placeholder
     }
 
-    fn sql_dialect(&self) -> crate::stdlib::packages::db_sql::SqlDialect {
-        crate::stdlib::packages::db_sql::SqlDialect::PostgreSQL
+    fn sql_dialect(&self) -> SqlDialect {
+        SqlDialect::PostgreSQL
     }
 
     fn validate_connection_string(&self, _connection_string: &str) -> DbResult<()> {
@@ -91,16 +95,16 @@ impl SqlDriver for PostgreSqlDriver {
         true // PostgreSQL supports most features
     }
 
-    fn configuration_options(&self) -> Vec<crate::stdlib::packages::db_sql::ConfigurationOption> {
-        vec![] // Placeholder
+    fn configuration_options(&self) -> Vec<ConfigurationOption> {
+        Vec::from([]) // Placeholder
     }
 
     fn validate_sql(&self, _sql: &str) -> DbResult<()> {
         Ok(()) // Placeholder
     }
 
-    fn performance_info(&self) -> crate::stdlib::packages::db_sql::DriverPerformanceInfo {
-        crate::stdlib::packages::db_sql::DriverPerformanceInfo {
+    fn performance_info(&self) -> DriverPerformanceInfo {
+        DriverPerformanceInfo {
             connection_time: std::time::Duration::from_millis(100),
             query_overhead: std::time::Duration::from_micros(50),
             max_connections: Some(1000),
@@ -111,8 +115,8 @@ impl SqlDriver for PostgreSqlDriver {
         }
     }
 
-    fn limitations(&self) -> crate::stdlib::packages::db_sql::DriverLimitations {
-        crate::stdlib::packages::db_sql::DriverLimitations {
+    fn limitations(&self) -> DriverLimitations {
+        DriverLimitations {
             max_statement_length: Some(1024 * 1024), // 1MB
             max_parameters: Some(65535),
             max_identifier_length: Some(63),
@@ -120,7 +124,7 @@ impl SqlDriver for PostgreSqlDriver {
             max_numeric_precision: Some(1000),
             max_columns: Some(1600),
             max_rows: None,
-            unsupported_features: vec![],
+            unsupported_features: Vec::from([]),
         }
     }
 }

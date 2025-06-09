@@ -811,7 +811,7 @@ mod tests {
     #[test]
     fn test_in_validator() {
         let validator = In {
-            values: vec!["red".to_string(), "green".to_string(), "blue".to_string()],
+            values: Vec::from(["red".to_string(), "green".to_string(), "blue".to_string()]),
         };
         let context = ValidationContext::new("test", HashMap::new());
 

@@ -193,7 +193,7 @@ mod tests {
     
     #[test]
     fn test_secure_nonce() {
-        let data = vec![1, 2, 3, 4];
+        let data = Vec::from([1, 2, 3, 4]);
         let nonce = SecureNonce::new(data.clone());
         
         assert_eq!(nonce.as_bytes(), &data);

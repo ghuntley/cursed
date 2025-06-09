@@ -25,13 +25,13 @@ impl DependencyResolver {
             name: package.name.clone(),
             version: package.version.clone(),
             description: package.description.clone(),
-            authors: vec![],
+            authors: Vec::from([]),
             dependencies: std::collections::HashMap::new(),
             dev_dependencies: std::collections::HashMap::new(),
             repository: None,
             license: None,
-            keywords: vec![],
-            categories: vec![],
+            keywords: Vec::from([]),
+            categories: Vec::from([]),
         }])
     }
 }

@@ -42,7 +42,7 @@ impl PackageRegistry {
 
     pub async fn search_packages(&self, query: &str, limit: Option<usize>) -> Result<Vec<PackageMetadata>, PackageManagerError> {
         // TODO: Implement actual registry search
-        Ok(vec![])
+        Ok(Vec::from([]))
     }
 
     pub async fn download_package(&self, name: &str, version: &str) -> Result<PackageData, PackageManagerError> {

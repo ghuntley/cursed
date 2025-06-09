@@ -20,8 +20,7 @@ pub mod sqlite;
 
 // Re-export the important stuff for easy access
 pub use drivers::{
-    SqlDriver, SqlDriverManager, create_sql_driver, SqlFeature, 
-    SqlConnection, SqlTransaction
+    SqlDriver, SqlDriverManager, create_sql_driver, SqlFeature
 };
 pub use builder::{
     SqlQueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, 
@@ -49,9 +48,10 @@ pub use mysql::{MySqlDriver, MySqlConnection, MySqlError};
 pub use sqlite::{SqliteDriver, SqliteConnection, SqliteError};
 
 use crate::stdlib::packages::db_core::{
-    DatabaseResult as DbResult, DatabaseError, DriverRegistry, 
+    DatabaseError, DriverRegistry, 
     ConnectionConfig, DatabaseDriver
 };
+use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 use std::sync::Arc;
 
 /// fr fr SQL driver registry for managing SQL-specific drivers

@@ -34,7 +34,7 @@ pub struct ProfilerConfig {
 impl Default for ProfilerConfig {
     fn default() -> Self {
         Self {
-            modes: vec![ProfilerMode::Cpu, ProfilerMode::Memory],
+            modes: Vec::from([ProfilerMode::Cpu, ProfilerMode::Memory]),
             cpu_sampling_frequency: 100,
             memory_tracking_threshold: 1024,
             max_stack_depth: 64,
@@ -423,7 +423,7 @@ mod tests {
     #[test]
     fn test_profiler_builder() {
         let profiler = ProfilerBuilder::new()
-            .with_modes(vec![ProfilerMode::Cpu, ProfilerMode::Memory])
+            .with_modes(Vec::from([ProfilerMode::Cpu, ProfilerMode::Memory]))
             .with_cpu_sampling(200)
             .with_output_dir("test_output".to_string())
             .build();

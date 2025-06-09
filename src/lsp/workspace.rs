@@ -82,7 +82,7 @@ impl WorkspaceManager {
             uri,
             name: "Root".to_string(),
         };
-        self.set_workspace_folders(vec![workspace_folder]).await;
+        self.set_workspace_folders(Vec::from([workspace_folder])).await;
     }
 
     /// Get all workspace folders
@@ -356,7 +356,7 @@ impl WorkspaceManager {
             return symbols.clone();
         }
         
-        let query_lower = query.to_lowercase();
+        let query_lower = query.to_ascii_lowercase();
         symbols
             .iter()
             .filter(|symbol| {
@@ -581,7 +581,7 @@ impl WorkspaceManager {
     /// Get workspace folders
     pub async fn get_workspace_folders(&self) -> Vec<WorkspaceFolder> {
         // TODO: Implement workspace folder getting
-        vec![]
+        Vec::from([])
     }
 
     /// Scan directory for files
@@ -609,19 +609,19 @@ impl WorkspaceManager {
     /// Extract symbols from content
     pub fn extract_symbols_from_content(&self, _content: &str, _uri: &Url) -> Vec<SymbolInformation> {
         // TODO: Implement symbol extraction
-        vec![]
+        Vec::from([])
     }
 
     /// Get files by type
     pub async fn get_files_by_type(&self, _file_type: ProjectFileType) -> Vec<ProjectFile> {
         // TODO: Implement files by type
-        vec![]
+        Vec::from([])
     }
 
     /// Get config files
     pub async fn get_config_files(&self) -> Vec<ProjectFile> {
         // TODO: Implement config files
-        vec![]
+        Vec::from([])
     }
 }
 
@@ -663,7 +663,7 @@ mod tests {
             name: "Test Workspace".to_string(),
         };
         
-        manager.set_workspace_folders(vec![workspace_folder]).await;
+        manager.set_workspace_folders(Vec::from([workspace_folder])).await;
         
         // Check that files were found
         let cursed_files = manager.get_cursed_files().await;

@@ -799,7 +799,7 @@ mod tests {
             operation_type: OperationType::Query,
             connection_id: "conn_1".to_string(),
             sql: Some("SELECT * FROM users WHERE password = 'secret123'".to_string()),
-            parameters: vec![],
+            parameters: Vec::from([]),
             started_at: Instant::now(),
             metadata: HashMap::new(),
         };
@@ -820,7 +820,7 @@ mod tests {
             operation_type: OperationType::Query,
             connection_id: "conn_1".to_string(),
             sql: Some("SELECT * FROM users".to_string()),
-            parameters: vec![],
+            parameters: Vec::from([]),
             started_at: Instant::now(),
             metadata: HashMap::new(),
         };

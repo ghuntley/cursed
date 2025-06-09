@@ -370,7 +370,7 @@ impl Default for CliConfig {
     fn default() -> Self {
         Self {
             default_output_dir: PathBuf::from("profiling_output"),
-            default_modes: vec![ProfilerMode::Cpu, ProfilerMode::Memory],
+            default_modes: Vec::from([ProfilerMode::Cpu, ProfilerMode::Memory]),
             default_format: OutputFormat::Json,
             default_cpu_frequency: 100,
             default_memory_threshold: 1024,

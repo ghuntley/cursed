@@ -19,6 +19,11 @@ pub enum Error {
     Package(String),
     /// REPL errors
     Repl(String),
+    /// Template system errors
+    TemplateError { 
+        message: String,
+        source_location: Option<SourceLocation>,
+    },
 }
 
 /// Alias for CursedError to match expected naming
@@ -33,6 +38,13 @@ impl fmt::Display for Error {
             Error::Runtime(msg) => write!(f, "Runtime error: {}", msg),
             Error::Package(msg) => write!(f, "Package error: {}", msg),
             Error::Repl(msg) => write!(f, "REPL error: {}", msg),
+            Error::TemplateError { message, source_location } => {
+                if let Some(loc) = source_location {
+                    write!(f, "Template error at {}: {}", loc, message)
+                } else {
+                    write!(f, "Template error: {}", message)
+                }
+            }
         }
     }
 }

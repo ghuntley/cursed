@@ -14,7 +14,7 @@ pub use drivers::{NoSqlDriver, NoSqlConnection};
 pub use document::{Document, Collection};
 
 /// slay Initialize the db_nosql package
-pub fn init_db_nosql() -> crate::stdlib::packages::db_core::DatabaseResult<()> {
+pub fn init_db_nosql() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
     println!("📄 db_nosql package initialized - NoSQL drivers ready bestie!");
     Ok(())
 }

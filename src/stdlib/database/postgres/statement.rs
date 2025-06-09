@@ -134,7 +134,7 @@ impl PostgreSQLStatement {
         let mut types = vec![PostgreSQLType::Text; param_count]; // Default to text
         
         // Simple type inference based on SQL context
-        let query_lower = query.to_lowercase();
+        let query_lower = query.to_ascii_lowercase();
         
         // Look for numeric contexts
         if query_lower.contains("where id = $") || query_lower.contains("limit $") {
@@ -408,7 +408,7 @@ impl DriverStmt for PostgreSQLStatement {
                     conn: self.conn.clone(),
                     stmt_name: "broken".to_string(),
                     query: self.query.clone(),
-                    param_types: vec![],
+                    param_types: Vec::from([]),
                     param_count: 0,
                     config: self.config.clone(),
                     metadata: StatementMetadata::default(),

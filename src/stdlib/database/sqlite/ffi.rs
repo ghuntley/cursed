@@ -437,7 +437,7 @@ impl SqliteFFI {
                 index,
                 c_value.as_ptr(),
                 value.len() as c_int,
-                SQLITE_TRANSIENT,
+                std::mem::transmute(SQLITE_TRANSIENT_DESTRUCTOR),
             )
         };
         
@@ -457,7 +457,7 @@ impl SqliteFFI {
                 index,
                 value.as_ptr() as *const c_void,
                 value.len() as c_int,
-                SQLITE_TRANSIENT,
+                std::mem::transmute(SQLITE_TRANSIENT_DESTRUCTOR),
             )
         };
         
@@ -687,7 +687,13 @@ impl SqliteFFI {
 }
 
 // SQLite constants
-const SQLITE_TRANSIENT: unsafe extern "C" fn(*mut c_void) = std::mem::transmute(-1isize);
+const SQLITE_TRANSIENT: unsafe extern "C" fn(*mut c_void) = {
+    unsafe extern "C" fn transient(_: *mut c_void) {}
+    transient
+};
+
+// Alternative destructor that indicates SQLite should make its own copy
+const SQLITE_TRANSIENT_DESTRUCTOR: *const c_void = -1isize as *const c_void;
 
 // SQLite C API function declarations
 extern "C" {

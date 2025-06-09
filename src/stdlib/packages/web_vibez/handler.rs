@@ -163,7 +163,7 @@ impl StaticFileHandler {
     pub fn new(root_dir: String) -> Self {
         Self {
             root_dir,
-            index_files: vec!["index.html".to_string(), "index.htm".to_string()],
+            index_files: Vec::from(["index.html".to_string(), "index.htm".to_string()]),
         }
     }
 

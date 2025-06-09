@@ -193,7 +193,7 @@ impl Router {
     ) -> WebResult<Self> {
         self.route(
             pattern,
-            MethodSet::from_methods(vec![HttpMethod::Get]),
+            MethodSet::from_methods(Vec::from([HttpMethod::Get])),
             handler,
             name,
         )
@@ -208,7 +208,7 @@ impl Router {
     ) -> WebResult<Self> {
         self.route(
             pattern,
-            MethodSet::from_methods(vec![HttpMethod::Post]),
+            MethodSet::from_methods(Vec::from([HttpMethod::Post])),
             handler,
             name,
         )
@@ -223,7 +223,7 @@ impl Router {
     ) -> WebResult<Self> {
         self.route(
             pattern,
-            MethodSet::from_methods(vec![HttpMethod::Put]),
+            MethodSet::from_methods(Vec::from([HttpMethod::Put])),
             handler,
             name,
         )
@@ -238,7 +238,7 @@ impl Router {
     ) -> WebResult<Self> {
         self.route(
             pattern,
-            MethodSet::from_methods(vec![HttpMethod::Delete]),
+            MethodSet::from_methods(Vec::from([HttpMethod::Delete])),
             handler,
             name,
         )
@@ -253,7 +253,7 @@ impl Router {
     ) -> WebResult<Self> {
         self.route(
             pattern,
-            MethodSet::from_methods(vec![HttpMethod::Patch]),
+            MethodSet::from_methods(Vec::from([HttpMethod::Patch])),
             handler,
             name,
         )
@@ -446,7 +446,7 @@ mod tests {
     #[test]
     fn test_route_pattern_compilation() {
         let (regex, params) = RouteEntry::compile_pattern("/users/:id/posts/:post_id").unwrap();
-        assert_eq!(params, vec!["id", "post_id"]);
+        assert_eq!(params, Vec::from(["id", "post_id"]));
         
         let captures = regex.captures("/users/123/posts/456").unwrap();
         assert_eq!(captures.get(1).unwrap().as_str(), "123");
@@ -461,7 +461,7 @@ mod tests {
         
         let route = RouteEntry::new(
             "/users/:id".to_string(),
-            MethodSet::from_methods(vec![HttpMethod::Get]),
+            MethodSet::from_methods(Vec::from([HttpMethod::Get])),
             Arc::new(handler),
             "user_detail".to_string(),
         ).unwrap();
@@ -526,7 +526,7 @@ mod tests {
     #[test]
     fn test_wildcard_pattern() {
         let (regex, params) = RouteEntry::compile_pattern("/static/*").unwrap();
-        assert_eq!(params, vec!["*"]);
+        assert_eq!(params, Vec::from(["*"]));
         
         let captures = regex.captures("/static/css/main.css").unwrap();
         assert_eq!(captures.get(1).unwrap().as_str(), "css/main.css");

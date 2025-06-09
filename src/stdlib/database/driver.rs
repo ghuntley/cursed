@@ -42,9 +42,9 @@ impl QueryResult {
     /// slay Create a new error result
     pub fn with_error(error: DatabaseError) -> Self {
         Self {
-            column_names: vec![],
-            column_types: vec![],
-            rows: vec![],
+            column_names: Vec::from([]),
+            column_types: Vec::from([]),
+            rows: Vec::from([]),
             error: Some(error),
         }
     }
@@ -440,9 +440,9 @@ impl DriverConn for MockDriverConn {
     fn query(&self, query: &str, args: &[SqlValue]) -> Result<QueryResult, DatabaseError> {
         // Mock implementation returns empty result
         Ok(QueryResult::new(
-            vec!["column1".to_string(), "column2".to_string()],
-            vec!["TEXT".to_string(), "INTEGER".to_string()],
-            vec![],
+            Vec::from(["column1".to_string(), "column2".to_string()]),
+            Vec::from(["TEXT".to_string(), "INTEGER".to_string()]),
+            Vec::from([]),
         ))
     }
 
@@ -554,9 +554,9 @@ impl DriverTx for MockDriverTx {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
         Ok(QueryResult::new(
-            vec!["column1".to_string()],
-            vec!["TEXT".to_string()],
-            vec![],
+            Vec::from(["column1".to_string()]),
+            Vec::from(["TEXT".to_string()]),
+            Vec::from([]),
         ))
     }
 

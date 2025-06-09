@@ -205,13 +205,13 @@ pub fn init_package(
         name: name.to_string(),
         version: version.unwrap_or("0.1.0").to_string(),
         description: description.unwrap_or("A CURSED package").to_string(),
-        authors: vec!["Your Name <your.email@example.com>".to_string()],
+        authors: Vec::from(["Your Name <your.email@example.com>".to_string()]),
         dependencies: HashMap::new(),
         dev_dependencies: HashMap::new(),
         repository: None,
         license: None,
-        keywords: vec![],
-        categories: vec![],
+        keywords: Vec::from([]),
+        categories: Vec::from([]),
     };
     
     let content = toml::to_string(&metadata)?;

@@ -385,7 +385,8 @@ impl SqliteConfig {
         }
 
         // Validate page size (must be power of 2, 512-65536)
-        if !self.page_size.is_power_of_two() || self.page_size < 512 || self.page_size > 65536 {
+        let is_power_of_two = self.page_size > 0 && (self.page_size & (self.page_size - 1)) == 0;
+        if !is_power_of_two || self.page_size < 512 || self.page_size > 65536 {
             return Err(SqliteError::invalid_parameter(
                 "Page size must be power of 2 between 512 and 65536"
             ));

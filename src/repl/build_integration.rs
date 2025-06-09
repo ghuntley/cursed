@@ -325,7 +325,7 @@ impl BuildIntegration {
             version,
             description,
             root_directory: file_path.parent().unwrap().to_path_buf(),
-            source_directories: vec![],
+            source_directories: Vec::from([]),
             build_file: Some(file_path.to_path_buf()),
             config_file: None,
         });
@@ -346,7 +346,7 @@ impl BuildIntegration {
             version: "unknown".to_string(),
             description: Some("Makefile-based project".to_string()),
             root_directory: file_path.parent().unwrap().to_path_buf(),
-            source_directories: vec![],
+            source_directories: Vec::from([]),
             build_file: Some(file_path.to_path_buf()),
             config_file: None,
         });
@@ -361,7 +361,7 @@ impl BuildIntegration {
             version: "unknown".to_string(),
             description: None,
             root_directory: dir.to_path_buf(),
-            source_directories: vec![],
+            source_directories: Vec::from([]),
             build_file: None,
             config_file: None,
         });
@@ -380,8 +380,8 @@ impl BuildIntegration {
                     let target = BuildTarget {
                         name: name.clone(),
                         target_type: "executable".to_string(),
-                        source_files: vec![path],
-                        dependencies: vec![],
+                        source_files: Vec::from([path]),
+                        dependencies: Vec::from([]),
                     };
                     self.build_targets.insert(name, target);
                 }
@@ -403,7 +403,7 @@ impl BuildIntegration {
                     let test_info = TestInfo {
                         name: path.file_stem().unwrap().to_string_lossy().to_string(),
                         file_path: path,
-                        test_functions: vec![], // Would be populated by parsing the file
+                        test_functions: Vec::from([]), // Would be populated by parsing the file
                     };
                     self.test_files.push(test_info);
                 }

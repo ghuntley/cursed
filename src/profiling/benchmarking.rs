@@ -669,7 +669,7 @@ mod tests {
     fn test_performance_change_calculation() {
         let baseline = BenchmarkResult {
             name: "test".to_string(),
-            measurements: vec![],
+            measurements: Vec::from([]),
             statistics: BenchmarkStatistics {
                 mean: Duration::from_millis(100),
                 ..Default::default()
@@ -679,7 +679,7 @@ mod tests {
         
         let current = BenchmarkResult {
             name: "test".to_string(),
-            measurements: vec![],
+            measurements: Vec::from([]),
             statistics: BenchmarkStatistics {
                 mean: Duration::from_millis(120),
                 ..Default::default()

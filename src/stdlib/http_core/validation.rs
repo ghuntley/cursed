@@ -782,7 +782,7 @@ mod tests {
             .field(FieldRules::new("username").required().min_length(3).max_length(50))
             .field(FieldRules::new("email").required().email())
             .max_request_size(1024 * 1024)
-            .allowed_methods(vec!["GET".to_string(), "POST".to_string()]);
+            .allowed_methods(Vec::from(["GET".to_string(), "POST".to_string()]));
 
         assert!(rules.get_field_rules("username").is_some());
         assert!(rules.get_field_rules("email").is_some());
