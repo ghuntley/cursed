@@ -50,6 +50,12 @@ impl fmt::Display for RouterError {
 
 impl Error for RouterError {}
 
+impl From<String> for RouterError {
+    fn from(error: String) -> Self {
+        RouterError::InvalidConfiguration(error)
+    }
+}
+
 /// Middleware-specific errors
 #[derive(Debug, Clone)]
 pub enum MiddlewareError {

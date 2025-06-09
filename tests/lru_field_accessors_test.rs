@@ -20,7 +20,7 @@ fn test_lru_field_accessor_compilation() {
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Ensure LRU cache is initialized
     codegen.ensure_lru_field_accessor_cache();
@@ -57,7 +57,7 @@ fn test_lru_cache_eviction() {
     
     // Create JIT compiler
     let context = inkwell::context::Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Ensure LRU cache is initialized
     codegen.ensure_lru_field_accessor_cache();
@@ -94,8 +94,8 @@ fn test_multi_instance_cache_independence() {
     // Create two JIT compilers
     let context1 = inkwell::context::Context::create();
     let context2 = inkwell::context::Context::create();
-    let mut codegen1 = LlvmCodeGenerator::new(&context1, "module1", PathBuf::from("test1.csd"));
-    let mut codegen2 = LlvmCodeGenerator::new(&context2, "module2", PathBuf::from("test2.csd"));
+    let mut codegen1 = LlvmCodeGenerator::new());
+    let mut codegen2 = LlvmCodeGenerator::new());
     
     // Initialize caches
     codegen1.ensure_lru_field_accessor_cache();

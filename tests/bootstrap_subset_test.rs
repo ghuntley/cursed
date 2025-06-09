@@ -74,7 +74,7 @@ fn test_disallowed_tokens() {
     assert!(!subset.is_token_allowed(&Token::Squad));     // struct
     assert!(!subset.is_token_allowed(&Token::Collab));    // interface
     assert!(!subset.is_token_allowed(&Token::Dm));        // chan
-    assert!(!subset.is_token_allowed(&Token::Stan));      // go
+    assert!(!subset.is_token_allowed(&Token::new(TokenType::Stan, "stan")));      // go
     assert!(!subset.is_token_allowed(&Token::VibeCheck)); // switch
     assert!(!subset.is_token_allowed(&Token::Choose));    // select
     assert!(!subset.is_token_allowed(&Token::Tea));       // map
@@ -232,7 +232,7 @@ slay main() {
 
     // Parse the program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     if !parser.errors().is_empty() {
@@ -277,7 +277,7 @@ slay main() {
 
     // Parse the program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     if !parser.errors().is_empty() {
@@ -383,7 +383,7 @@ fn test_validation_performance() {
     
     // Parse the program
     let mut lexer = Lexer::new(&source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
     
     if !parser.errors().is_empty() {

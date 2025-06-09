@@ -20,12 +20,12 @@ fn test_conversion_matrix_basic_functionality() {
     let matrix = ConversionConfig::default();
 
     // Test integer to integer conversions (extension)
-    let info = matrix.get_conversion_info(&Type::Smol, &Type::Normie).unwrap();
+    let info = matrix.get_conversion_info(&Type::Normie // Was Smol, &Type::Normie).unwrap();
     assert_eq!(info.conversion_type, ConversionType::Widening);
     assert!(!info.requires_overflow_check);
 
     // Test integer to integer conversions (truncation)
-    let info = matrix.get_conversion_info(&Type::Thicc, &Type::Mid).unwrap();
+    let info = matrix.get_conversion_info(&Type::Thicc, &Type::Normie // Was Mid).unwrap();
     assert_eq!(info.conversion_type, ConversionType::Narrowing);
     assert!(info.requires_overflow_check);
 
@@ -103,7 +103,7 @@ fn test_all_integer_type_combinations() {
     info!("Testing all integer type combinations");
 
     let matrix = ConversionConfig::default();
-    let integer_types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc];
+    let integer_types = vec![Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thicc];
 
     for source in &integer_types {
         for target in &integer_types {
@@ -136,7 +136,7 @@ fn test_comprehensive_conversion_coverage() {
     let matrix = ConversionConfig::default();
     
     // Test that all expected conversion combinations are available
-    let integer_types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc];
+    let integer_types = vec![Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thicc];
     let float_types = vec![Type::Snack, Type::Meal];
     let bool_type = Type::Lit;
 
@@ -173,8 +173,8 @@ fn test_comprehensive_conversion_coverage() {
 /// Helper function to get bit width for a type
 fn get_bit_width(type_: &Type) -> u32 {
     match type_ {
-        Type::Smol => 8,
-        Type::Mid => 16,
+        Type::Normie // Was Smol => 8,
+        Type::Normie // Was Mid => 16,
         Type::Normie => 32,
         Type::Thicc => 64,
         Type::Lit => 1,

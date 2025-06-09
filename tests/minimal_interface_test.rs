@@ -18,7 +18,7 @@ fn test_minimal_interface() {
     // Create a new LLVM context and code generator
     let context = Context::create();
     let module_path = PathBuf::from("minimal_interface_test.bc");
-    let mut codegen = LlvmCodeGenerator::new(&context, "minimal_interface_test", module_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Test registering an interface
     let result = codegen.register_interface(

@@ -25,7 +25,7 @@ fn test_compile_generic_call_expression() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_generic_call.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_generic_call_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Create a generic identity function: function identity<T>(x: T) -> T { return x; }
     let identity_function = create_generic_identity_function();

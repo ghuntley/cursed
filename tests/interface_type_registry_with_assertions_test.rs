@@ -105,13 +105,13 @@ fn test_type_assertion_with_enhanced_error_reporting() {
 fn compile_and_run(source: &str) -> Result<(), Error> {
     // Parse the source code
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // Set up the LLVM code generator
     let context = Context::create();
     let dummy_path = PathBuf::from("test.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_generator = LlvmCodeGenerator::new();
     
     // Generate LLVM IR code
     code_generator.compile_program(&program)?;

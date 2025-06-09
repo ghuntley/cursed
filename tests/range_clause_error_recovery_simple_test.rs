@@ -10,7 +10,7 @@ use std::sync::Arc;
 fn test_range_error_recovery_simple() {
     // Test a simple range clause with error recovery
     let mut lexer = Lexer::new("flex 10");
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     // Implement the RangeClauseErrorRecoverySimple trait for Parser
     let range_clause = parser.parse_range_clause_with_recovery_simple();
@@ -20,7 +20,7 @@ fn test_range_error_recovery_simple() {
     
     // Test with invalid syntax
     let mut lexer = Lexer::new("flex "); // Missing value after flex
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     // Should recover and return a fallback range clause
     let range_clause = parser.parse_range_clause_with_recovery_simple();

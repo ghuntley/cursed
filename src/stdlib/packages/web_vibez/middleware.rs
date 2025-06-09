@@ -15,10 +15,10 @@ use crate::stdlib::packages::web_vibez::{
 /// fr fr Middleware trait for request/response processing - pipeline component
 pub trait Middleware: Send + Sync {
     /// fr fr Process request before handler - preprocessing
-    fn before_request(&self, request: &mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>>;
+    fn before_request<'a>(&'a self, request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>>;
     
     /// fr fr Process response after handler - postprocessing
-    fn after_response(&self, request: &HttpRequest, response: &mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>>;
+    fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>>;
     
     /// fr fr Get middleware name for debugging - identification
     fn name(&self) -> &'static str {
@@ -194,11 +194,11 @@ impl CorsMiddleware {
 }
 
 impl Middleware for CorsMiddleware {
-    fn before_request(&self, _request: &mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn before_request<'a>(&'a self, _request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         Box::pin(async { Ok(()) })
     }
 
-    fn after_response(&self, request: &HttpRequest, response: &mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let allowed_origins = self.allowed_origins.clone();
         let allowed_methods = self.allowed_methods.clone();
         let allowed_headers = self.allowed_headers.clone();
@@ -319,7 +319,7 @@ impl LoggingMiddleware {
 }
 
 impl Middleware for LoggingMiddleware {
-    fn before_request(&self, request: &mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn before_request<'a>(&'a self, request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let log_requests = self.log_requests;
         let log_headers = self.log_headers;
         let log_body = self.log_body;
@@ -357,7 +357,7 @@ impl Middleware for LoggingMiddleware {
         })
     }
 
-    fn after_response(&self, request: &HttpRequest, response: &mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn after_response<'a>(&'a self, request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let log_responses = self.log_responses;
         let log_headers = self.log_headers;
         let log_body = self.log_body;
@@ -455,11 +455,11 @@ impl SecurityHeadersMiddleware {
 }
 
 impl Middleware for SecurityHeadersMiddleware {
-    fn before_request(&self, _request: &mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn before_request<'a>(&'a self, _request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         Box::pin(async { Ok(()) })
     }
 
-    fn after_response(&self, _request: &HttpRequest, response: &mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn after_response<'a>(&'a self, _request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let csp = self.content_security_policy.clone();
         let x_frame = self.x_frame_options.clone();
         let x_content_type = self.x_content_type_options;
@@ -537,7 +537,7 @@ impl RateLimitMiddleware {
 }
 
 impl Middleware for RateLimitMiddleware {
-    fn before_request(&self, request: &mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn before_request<'a>(&'a self, request: &'a mut HttpRequest) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let max_requests = self.max_requests;
         let window_duration = self.window_duration;
         
@@ -560,7 +560,7 @@ impl Middleware for RateLimitMiddleware {
         })
     }
 
-    fn after_response(&self, _request: &HttpRequest, response: &mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
+    fn after_response<'a>(&'a self, _request: &'a HttpRequest, response: &'a mut HttpResponse) -> Pin<Box<dyn Future<Output = WebResult<()>> + Send + '_>> {
         let max_requests = self.max_requests;
         let window_duration = self.window_duration;
         

@@ -32,7 +32,7 @@ fn test_simple_jit() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -46,7 +46,7 @@ fn test_simple_jit() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./simple_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Manually create and register the 'puts' function
     let i32_type = context.i32_type();

@@ -49,7 +49,7 @@ fn test_nil_interface_assertion() {
     info!("Testing type assertion on nil interface value");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create a nil interface value (null pointer with zero type ID)
     let nil_interface = create_mock_interface_value(&mut codegen, 0, None).unwrap();
@@ -81,7 +81,7 @@ fn test_invalid_type_assertion() {
     info!("Testing type assertion with invalid/unknown type");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create interface with known type ID
     let person_type_id = codegen.hash_type_name("Person");
@@ -114,7 +114,7 @@ fn test_complex_nested_type_assertion() {
     info!("Testing complex nested type assertion expressions");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create nested type assertion AST
     let inner_assertion = TypeAssertion {
@@ -211,7 +211,7 @@ fn test_performance_edge_cases() {
     info!("Testing performance edge cases for type assertions");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Test hash collision resistance
     let type_names = vec![
@@ -245,7 +245,7 @@ fn test_interface_data_extraction_edge_cases() {
     info!("Testing interface data extraction edge cases");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create function context
     let i32_type = context.i32_type();
@@ -279,7 +279,7 @@ fn test_type_assertion_with_source_location() {
     info!("Testing type assertion compilation with source location preservation");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("location_test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create function context
     let i32_type = context.i32_type();
@@ -316,7 +316,7 @@ fn test_registry_fallback_behavior() {
     info!("Testing registry fallback behavior for unknown types");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Test type ID lookup with and without registry
     let type_name = "UnknownRegistryType";
@@ -341,7 +341,7 @@ fn test_memory_safety_assertions() {
     info!("Testing memory safety in type assertion operations");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
     
     // Create function context
     let i32_type = context.i32_type();

@@ -49,7 +49,7 @@ slay main() {
 
     // Parse the program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {
@@ -106,7 +106,7 @@ slay main() {
 
     // Parse the program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {
@@ -169,7 +169,7 @@ slay main() {
 
     // Parse the program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {
@@ -229,7 +229,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {
@@ -280,7 +280,7 @@ slay test_function() {
 "#;
 
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {
@@ -359,7 +359,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {
@@ -413,7 +413,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse");
     
     if !parser.errors().is_empty() {

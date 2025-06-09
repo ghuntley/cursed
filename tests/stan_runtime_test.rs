@@ -35,7 +35,7 @@ fn test_goroutine_runtime_functions() {
     let module = context.create_module("test_runtime_funcs");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -69,7 +69,7 @@ fn test_closure_data_structures() {
     let module = context.create_module("test_closures");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Test closure type creation
@@ -91,7 +91,7 @@ fn test_memory_allocation() {
     let module = context.create_module("test_memory");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Test malloc declaration
@@ -114,7 +114,7 @@ fn test_expression_wrapper_creation() {
     let module = context.create_module("test_wrapper");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Create a simple value to wrap
@@ -140,7 +140,7 @@ fn test_llvm_module_verification() {
     let module = context.create_module("test_module_verify");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -154,7 +154,7 @@ fn test_llvm_module_verification() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -183,7 +183,7 @@ fn test_goroutine_ir_generation() {
     let module = context.create_module("test_ir_gen");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -207,7 +207,7 @@ fn test_goroutine_ir_generation() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -230,7 +230,7 @@ fn test_concurrent_goroutine_creation() {
     let module = context.create_module("test_concurrent");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime once
@@ -248,7 +248,7 @@ fn test_concurrent_goroutine_creation() {
         };
         
         let stan_expr = StanExpression {
-            token: Token::Stan,
+            token: Token::new(TokenType::Stan, "stan"),
             expression: Box::new(func_ident),
         };
         
@@ -272,7 +272,7 @@ fn test_error_recovery() {
     let module = context.create_module("test_error_recovery");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Test compilation without runtime initialization
@@ -282,7 +282,7 @@ fn test_error_recovery() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -309,7 +309,7 @@ fn test_resource_cleanup() {
     let module = context.create_module("test_cleanup");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -325,7 +325,7 @@ fn test_resource_cleanup() {
         };
         
         let stan_expr = StanExpression {
-            token: Token::Stan,
+            token: Token::new(TokenType::Stan, "stan"),
             expression: Box::new(func_ident),
         };
         
@@ -351,7 +351,7 @@ fn test_performance_characteristics() {
     let module = context.create_module("test_performance");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -369,7 +369,7 @@ fn test_performance_characteristics() {
         };
         
         let stan_expr = StanExpression {
-            token: Token::Stan,
+            token: Token::new(TokenType::Stan, "stan"),
             expression: Box::new(func_ident),
         };
         

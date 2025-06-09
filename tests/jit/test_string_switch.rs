@@ -69,7 +69,7 @@ fn main() {
     let context = Context::create();
     let module_name = "string_switch_test";
     let file_path = PathBuf::from("test_module.csd");
-    let mut code_generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut code_generator = LlvmCodeGenerator::new();
     
     // Create a function to test the switch statement
     let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());

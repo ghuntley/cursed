@@ -233,17 +233,18 @@ impl HttpServer {
         stream.set_read_timeout(Some(config.read_timeout)).ok();
         stream.set_write_timeout(Some(config.write_timeout)).ok();
 
-        let mut buf_reader = BufReader::new(&stream);
-        
         loop {
             // Parse HTTP request
-            let request = match Self::parse_request(&mut buf_reader, client_addr, &config) {
-                Ok(req) => req,
-                Err(e) => {
-                    // Send error response and close connection
-                    let error_response = HttpResponse::from_error(&e);
-                    let _ = Self::send_response(&mut stream, error_response, &config);
-                    break;
+            let request = {
+                let mut buf_reader = BufReader::new(&stream);
+                match Self::parse_request(&mut buf_reader, client_addr, &config) {
+                    Ok(req) => req,
+                    Err(e) => {
+                        // Send error response and close connection
+                        let error_response = HttpResponse::from_error(&e);
+                        let _ = Self::send_response(&mut stream, error_response, &config);
+                        break;
+                    }
                 }
             };
 

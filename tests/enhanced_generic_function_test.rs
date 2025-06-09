@@ -81,7 +81,7 @@ fn test_specialization_with_primitive_types() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_generic_function.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_generic_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Create a MonomorphizationManager
     let mut mono_manager = MonomorphizationManager::new();
@@ -122,7 +122,7 @@ fn test_multiple_type_parameter_specialization() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_multiple_generics.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_multiple_generics_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Create a MonomorphizationManager
     let mut mono_manager = MonomorphizationManager::new();
@@ -168,7 +168,7 @@ fn test_specialization_caching() {
     // Create a context and code generator
     let context = Context::create();
     let file_path = PathBuf::from("test_caching.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_caching_module", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Create a MonomorphizationManager
     let mut mono_manager = MonomorphizationManager::new();

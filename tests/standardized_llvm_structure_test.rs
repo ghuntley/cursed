@@ -32,7 +32,7 @@ fn test_standardized_structure() -> Result<(), Error> {
     let dummy_path = PathBuf::from("./dummy_standardized_test.csd");
     
     // Create a code generator instance
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Create a basic module structure
     let module = code_gen.module();
@@ -169,7 +169,7 @@ slay test_pointer_ops() normie {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -180,7 +180,7 @@ slay test_pointer_ops() normie {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_jit_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "pointer_test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Compile the program
     code_gen.compile_program(&program)?;

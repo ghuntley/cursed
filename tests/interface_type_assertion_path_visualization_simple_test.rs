@@ -42,7 +42,7 @@ fn test_visualize_interface_path() {
     // Create the code generator and test environment
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Set up the test registry
     setup_test_registry(&mut code_gen).expect("Failed to set up test registry");
@@ -59,7 +59,7 @@ fn test_generate_interface_hierarchy_dot_graph() {
     // Create the code generator and test environment
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Set up the test registry
     setup_test_registry(&mut code_gen).expect("Failed to set up test registry");
@@ -76,7 +76,7 @@ fn test_find_alternative_paths() {
     // Create the code generator and test environment
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Set up the test registry
     setup_test_registry(&mut code_gen).expect("Failed to set up test registry");
@@ -97,7 +97,7 @@ fn test_generate_error_message() {
     // Create the code generator and test environment
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Set up the test registry
     setup_test_registry(&mut code_gen).expect("Failed to set up test registry");

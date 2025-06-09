@@ -29,7 +29,7 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
     let context = inkwell::context::Context::create();
     
     // Create an LlvmCodeGenerator with enhanced filesystem integration
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Initialize filesystem integration with the tests directory as root
     let _ = code_gen.init_filesystem_integration();
@@ -104,7 +104,7 @@ fn test_interface_filesystem_error_propagation_integration() {
     let context = inkwell::context::Context::create();
     
     // Create an LlvmCodeGenerator with enhanced filesystem integration
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Initialize filesystem integration
     let _ = code_gen.init_filesystem_integration();

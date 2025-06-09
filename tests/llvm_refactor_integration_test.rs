@@ -13,7 +13,7 @@ fn test_simple_llvm_ir_generation() {
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
 
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
 
     // Create a main function directly with LLVM API
     let i32_type = context.i32_type();
@@ -83,7 +83,7 @@ fn test_create_function() {
     let module_name = "test_module_2";
     let file_path = PathBuf::from("test.csd");
 
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
 
     // Create parameter types
     let i32_type = context.i32_type();

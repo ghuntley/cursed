@@ -43,7 +43,7 @@ fn test_basic_defer_parsing() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -75,7 +75,7 @@ fn test_multiple_defer_parsing() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -116,7 +116,7 @@ fn test_defer_in_nested_context() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -145,7 +145,7 @@ fn test_defer_with_simple_statement() {
     "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {

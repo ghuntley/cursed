@@ -18,7 +18,7 @@ fn test_basic_goroutine_ast_creation() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     
@@ -40,7 +40,7 @@ fn test_goroutine_ast_structure() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: call_expr,
     };
     
@@ -49,7 +49,7 @@ fn test_goroutine_ast_structure() {
     
     // Test that the token is correctly set
     match stan_expr.token {
-        Token::Stan => (),
+        Token::new(TokenType::Stan, "stan") => (),
         _ => panic!("Expected Stan token"),
     }
     
@@ -65,7 +65,7 @@ fn test_goroutine_expression_cloning() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     
@@ -101,7 +101,7 @@ fn test_complex_goroutine_expressions() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: func_call,
     };
     
@@ -136,7 +136,7 @@ fn test_nested_goroutine_expressions() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: outer_call,
     };
     
@@ -154,7 +154,7 @@ fn test_goroutine_with_different_expression_types() {
     
     // 1. Simple identifier
     let id_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(Identifier {
             token: "simpleTask".to_string(),
             value: "simpleTask".to_string(),
@@ -164,7 +164,7 @@ fn test_goroutine_with_different_expression_types() {
     
     // 2. Function call
     let call_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(CallExpression {
             token: Token::LParen,
             function: Box::new(Identifier {
@@ -205,7 +205,7 @@ fn test_performance_characteristics() {
         }) as Box<dyn Expression>;
         
         let stan_expr = StanExpression {
-            token: Token::Stan,
+            token: Token::new(TokenType::Stan, "stan"),
             expression: identifier,
         };
         
@@ -239,7 +239,7 @@ fn test_memory_usage_patterns() {
             }) as Box<dyn Expression>;
             
             let stan_expr = StanExpression {
-                token: Token::Stan,
+                token: Token::new(TokenType::Stan, "stan"),
                 expression: identifier,
             };
             
@@ -269,7 +269,7 @@ fn test_error_handling_in_ast() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: empty_id,
     };
     
@@ -283,7 +283,7 @@ fn test_error_handling_in_ast() {
     }) as Box<dyn Expression>;
     
     let long_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: long_id,
     };
     

@@ -31,7 +31,7 @@ fn test_basic_type_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_zero_values");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_zero_values", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test boolean (lit) - should be false
     let lit_zero = codegen.create_zero_value(&Type::Lit).unwrap();
@@ -78,7 +78,7 @@ fn test_composite_type_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_composite_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_composite_zero", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test slice (should be nil - struct with null ptr, 0 len, 0 cap)
     let slice_type = Type::Slice(Box::new(Type::Normie));
@@ -120,7 +120,7 @@ fn test_string_zero_value() {
     let context = Context::create();
     let module = context.create_module("test_string_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test tea (string) - should be empty string struct
     let tea_zero = codegen.create_zero_value(&Type::Tea).unwrap();
@@ -156,7 +156,7 @@ fn test_complex_zero_value() {
     let context = Context::create();
     let module = context.create_module("test_complex_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test extra (complex) - should be 0+0i
     let extra_zero = codegen.create_zero_value(&Type::Extra).unwrap();
@@ -187,10 +187,10 @@ fn test_interface_zero_value() {
     let context = Context::create();
     let module = context.create_module("test_interface_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test interface - should be nil interface (null data ptr, null type info)
-    let interface_type = Type::Interface("TestInterface".to_string(), vec![]);
+    let interface_type = Type::Unknown // Was Interface("TestInterface".to_string(), vec![]);
     let interface_zero = codegen.create_zero_value(&interface_type).unwrap();
     assert!(interface_zero.is_struct_value());
     debug!("interface zero value: {:?}", interface_zero);
@@ -233,7 +233,7 @@ fn test_zero_value_descriptions() {
     let pointer_type = Type::Pointer(Box::new(Type::Normie));
     assert_eq!(pointer_type.zero_value_description(), "nil");
     
-    let interface_type = Type::Interface("TestInterface".to_string(), vec![]);
+    let interface_type = Type::Unknown // Was Interface("TestInterface".to_string(), vec![]);
     assert_eq!(interface_type.zero_value_description(), "nil");
     
     // Test array description
@@ -256,7 +256,7 @@ fn test_has_zero_value() {
     assert!(Type::Slice(Box::new(Type::Normie)).has_zero_value());
     assert!(Type::Map(Box::new(Type::Tea), Box::new(Type::Normie)).has_zero_value());
     assert!(Type::Pointer(Box::new(Type::Normie)).has_zero_value());
-    assert!(Type::Interface("TestInterface".to_string(), vec![]).has_zero_value());
+    assert!(Type::Unknown // Was Interface("TestInterface".to_string(), vec![]).has_zero_value());
     assert!(Type::Struct("TestStruct".to_string(), vec![]).has_zero_value());
     
     // Types that don't have zero values
@@ -274,7 +274,7 @@ fn test_zero_value_memory_operations() {
     let context = Context::create();
     let module = context.create_module("test_memory_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Create a function to test memory operations
     let fn_type = context.void_type().fn_type(&[], false);
@@ -305,7 +305,7 @@ fn test_llvm_type_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_llvm_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test basic LLVM types
     let i32_zero = codegen.create_zero_value_for_llvm_type(context.i32_type().into());
@@ -350,7 +350,7 @@ fn test_zero_value_errors() {
     let context = Context::create();
     let module = context.create_module("test_errors");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Test unknown type
     let unknown_result = codegen.create_zero_value(&Type::Unknown);
@@ -369,7 +369,7 @@ fn test_zero_value_variable_integration() {
     let context = Context::create();
     let module = context.create_module("test_integration");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
     
     // Create a function for testing
     let fn_type = context.void_type().fn_type(&[], false);

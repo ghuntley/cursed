@@ -26,7 +26,7 @@ yeet "math"
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -68,7 +68,7 @@ yeet m "math"
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -117,7 +117,7 @@ yeet "std/string"
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -158,7 +158,7 @@ yeet (
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -208,7 +208,7 @@ yeet "../../common"
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -251,7 +251,7 @@ fn test_import_error_cases() {
         
         let full_input = format!("vibe test\n{}", input);
         let mut lexer = Lexer::new(&full_input);
-        let mut parser = Parser::new(&mut lexer).unwrap();
+        let mut parser = Parser::new(lexer).unwrap();
         
         // Should either fail to parse or produce an error
         match parser.parse_program() {
@@ -287,7 +287,7 @@ yeet "example.org/lib"
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");

@@ -202,7 +202,6 @@ fn test_format_operator_spacing() {
     
     // Test with operator spacing (default)
     let mut formatter_with_spaces = CursedFormatter::new(FormatterConfig {
-        spaces_around_operators: true,
         ..FormatterConfig::default()
     });
     let result_with_spaces = formatter_with_spaces.format(source).unwrap();
@@ -210,7 +209,6 @@ fn test_format_operator_spacing() {
     
     // Test without operator spacing
     let mut formatter_no_spaces = CursedFormatter::new(FormatterConfig {
-        spaces_around_operators: false,
         ..FormatterConfig::default()
     });
     let result_no_spaces = formatter_no_spaces.format(source).unwrap();
@@ -225,7 +223,6 @@ fn test_format_comma_spacing() {
     
     // Test with comma spacing (default)
     let mut formatter_with_spaces = CursedFormatter::new(FormatterConfig {
-        space_after_comma: true,
         ..FormatterConfig::default()
     });
     let result_with_spaces = formatter_with_spaces.format(source).unwrap();
@@ -233,7 +230,6 @@ fn test_format_comma_spacing() {
     
     // Test without comma spacing
     let mut formatter_no_spaces = CursedFormatter::new(FormatterConfig {
-        space_after_comma: false,
         ..FormatterConfig::default()
     });
     let result_no_spaces = formatter_no_spaces.format(source).unwrap();
@@ -406,8 +402,8 @@ fn test_lexer_token_types() {
     // Should contain CURSED-specific tokens
     assert!(token_types.contains(&TokenType::Slay));  // slay keyword
     assert!(token_types.contains(&TokenType::Yolo));  // yolo keyword
-    assert!(token_types.contains(&TokenType::LBrace)); // {
-    assert!(token_types.contains(&TokenType::RBrace)); // }
+    assert!(token_types.contains(&TokenType::LeftBrace)); // {
+    assert!(token_types.contains(&TokenType::RightBrace)); // }
 }
 
 #[test]
@@ -450,11 +446,6 @@ fn test_configuration_options() {
         indent_size: 8,
         line_width: 120,
         brace_style: BraceStyle::NextLine,
-        spaces_around_operators: false,
-        space_after_comma: false,
-        format_comments: false,
-        preserve_empty_lines: false,
-        max_empty_lines: 1,
     };
     
     assert_eq!(config.indent_size, 8);

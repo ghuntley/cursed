@@ -18,7 +18,7 @@ mod common;
 fn run_syntax_test(input: &str) -> Result<Object, Error> {
     // Parse the input  
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let _program = parser.parse_program()?;
     
     // For now, just return a test object to indicate successful parsing

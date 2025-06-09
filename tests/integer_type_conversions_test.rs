@@ -14,12 +14,12 @@ fn test_conversion_matrix_basic() {
     let matrix = ConversionMatrix::new();
 
     // Test integer to integer conversions
-    let info = matrix.get_conversion_info(&Type::Smol, &Type::Normie).unwrap();
+    let info = matrix.get_conversion_info(&Type::Normie // Was Smol, &Type::Normie).unwrap();
     assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Extension);
     assert!(!info.requires_overflow_check);
     debug!("Successfully tested smol to normie conversion info");
 
-    let info = matrix.get_conversion_info(&Type::Thicc, &Type::Mid).unwrap();
+    let info = matrix.get_conversion_info(&Type::Thicc, &Type::Normie // Was Mid).unwrap();
     assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Truncation);
     assert!(info.requires_overflow_check);
     debug!("Successfully tested thicc to mid conversion info");
@@ -137,12 +137,12 @@ fn test_overflow_checking() {
     info!("Testing overflow checking requirements");
 
     // Test that truncating conversion requires overflow check
-    assert!(setup.generator.requires_overflow_check(&Type::Thicc, &Type::Smol));
-    assert!(setup.generator.requires_overflow_check(&Type::Normie, &Type::Mid));
+    assert!(setup.generator.requires_overflow_check(&Type::Thicc, &Type::Normie // Was Smol));
+    assert!(setup.generator.requires_overflow_check(&Type::Normie, &Type::Normie // Was Mid));
     
     // Test that extending conversion doesn't require overflow check
-    assert!(!setup.generator.requires_overflow_check(&Type::Smol, &Type::Thicc));
-    assert!(!setup.generator.requires_overflow_check(&Type::Mid, &Type::Normie));
+    assert!(!setup.generator.requires_overflow_check(&Type::Normie // Was Smol, &Type::Thicc));
+    assert!(!setup.generator.requires_overflow_check(&Type::Normie // Was Mid, &Type::Normie));
     
     // Test same type doesn't require overflow check
     assert!(!setup.generator.requires_overflow_check(&Type::Normie, &Type::Normie));
@@ -157,8 +157,8 @@ fn test_bit_width_detection() {
 
     info!("Testing bit width detection");
 
-    assert_eq!(setup.generator.get_integer_bit_width(&Type::Smol), Some(8));
-    assert_eq!(setup.generator.get_integer_bit_width(&Type::Mid), Some(16));
+    assert_eq!(setup.generator.get_integer_bit_width(&Type::Normie // Was Smol), Some(8));
+    assert_eq!(setup.generator.get_integer_bit_width(&Type::Normie // Was Mid), Some(16));
     assert_eq!(setup.generator.get_integer_bit_width(&Type::Normie), Some(32));
     assert_eq!(setup.generator.get_integer_bit_width(&Type::Thicc), Some(64));
     assert_eq!(setup.generator.get_integer_bit_width(&Type::Lit), Some(1));
@@ -174,8 +174,8 @@ fn test_signed_type_detection() {
 
     info!("Testing signed type detection");
 
-    assert!(setup.generator.is_signed_type(&Type::Smol));
-    assert!(setup.generator.is_signed_type(&Type::Mid));
+    assert!(setup.generator.is_signed_type(&Type::Normie // Was Smol));
+    assert!(setup.generator.is_signed_type(&Type::Normie // Was Mid));
     assert!(setup.generator.is_signed_type(&Type::Normie));
     assert!(setup.generator.is_signed_type(&Type::Thicc));
     assert!(!setup.generator.is_signed_type(&Type::Lit)); // Boolean is unsigned
@@ -192,7 +192,7 @@ fn test_llvm_type_retrieval() {
     info!("Testing LLVM type retrieval");
 
     // Test integer types
-    let smol_type = setup.generator.get_llvm_int_type(&Type::Smol).expect("Should get i8 type");
+    let smol_type = setup.generator.get_llvm_int_type(&Type::Normie // Was Smol).expect("Should get i8 type");
     assert_eq!(smol_type.get_bit_width(), 8);
 
     let normie_type = setup.generator.get_llvm_int_type(&Type::Normie).expect("Should get i32 type");
@@ -227,7 +227,7 @@ fn test_conversion_matrix() {
     assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Truncation);
     assert!(info.requires_overflow_check);
 
-    let info = matrix.get_conversion_info(&Type::Smol, &Type::Thicc)
+    let info = matrix.get_conversion_info(&Type::Normie // Was Smol, &Type::Thicc)
         .expect("Should have conversion info");
     assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Extension);
     assert!(!info.requires_overflow_check);
@@ -267,7 +267,7 @@ fn test_edge_cases() {
     let max_i8 = setup.create_int_value(i8::MAX as i64, 8);
     let result = setup.generator.convert_integer_to_integer(
         max_i8,
-        &Type::Smol,
+        &Type::Normie // Was Smol,
         &Type::Normie,
     ).expect("Should convert max i8 to i32");
     assert_eq!(result.get_type().get_bit_width(), 32);
@@ -276,7 +276,7 @@ fn test_edge_cases() {
     let min_i8 = setup.create_int_value(i8::MIN as i64, 8);
     let result = setup.generator.convert_integer_to_integer(
         min_i8,
-        &Type::Smol,
+        &Type::Normie // Was Smol,
         &Type::Thicc,
     ).expect("Should convert min i8 to i64");
     assert_eq!(result.get_type().get_bit_width(), 64);
@@ -302,7 +302,7 @@ fn test_conversion_with_overflow_potential() {
     let result = setup.generator.convert_integer_to_integer(
         large_value,
         &Type::Normie,
-        &Type::Smol,
+        &Type::Normie // Was Smol,
     ).expect("Should convert despite potential overflow");
     
     assert_eq!(result.get_type().get_bit_width(), 8);
@@ -374,7 +374,7 @@ fn test_comprehensive_conversion_scenarios() {
     // smol -> normie
     let normie_result = setup.generator.convert_integer_to_integer(
         start_value,
-        &Type::Smol,
+        &Type::Normie // Was Smol,
         &Type::Normie,
     ).expect("Should convert smol to normie");
     

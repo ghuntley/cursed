@@ -38,7 +38,7 @@ mod tests {
         let module = Module::create("test", &ctx);
         let builder = ctx.create_builder();
         
-        let mut code_gen = LlvmCodeGenerator::new(&ctx, module, builder);
+        let mut code_gen = LlvmCodeGenerator::new();
         
         // Set up a source directory
         code_gen.set_source_directory("examples".to_string());
@@ -67,7 +67,7 @@ mod tests {
         let module = Module::create("test", &ctx);
         let builder = ctx.create_builder();
         
-        let code_gen = LlvmCodeGenerator::new(&ctx, module, builder);
+        let code_gen = LlvmCodeGenerator::new();
         
         // Test middle of file
         let (start, end) = code_gen.get_context_line_range(50, 100);
@@ -93,7 +93,7 @@ mod tests {
         let module = Module::create("test", &ctx);
         let builder = ctx.create_builder();
         
-        let mut code_gen = LlvmCodeGenerator::new(&ctx, module, builder);
+        let mut code_gen = LlvmCodeGenerator::new();
         
         // Set up a source directory
         code_gen.set_source_directory("examples".to_string());
@@ -125,7 +125,7 @@ mod tests {
         let module = Module::create("test", &ctx);
         let builder = ctx.create_builder();
         
-        let mut code_gen = LlvmCodeGenerator::new(&ctx, module, builder);
+        let mut code_gen = LlvmCodeGenerator::new();
         
         // Set up a source directory
         code_gen.set_source_directory("examples".to_string());

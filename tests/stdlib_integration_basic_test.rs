@@ -57,7 +57,7 @@ fn test_code_generator_creation_and_initialization() {
     let context = Context::create();
     
     // Test that the generator can be created successfully
-    let generator = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let generator = LlvmCodeGenerator::new());
     
     // Test that the generator was created successfully
     // We can't test private fields or call initialization due to lifetime issues in tests

@@ -105,7 +105,7 @@ fn test_interface_path_finding_integration() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let code_gen = LlvmCodeGenerator::new();
     
     // Get test type assertions
     let (valid_assertion, invalid_assertion) = setup_simple_test_types();
@@ -141,7 +141,7 @@ fn test_dot_graph_generation_integration() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Test generating the DOT graph - it should work even with empty registry
     match code_gen.generate_interface_hierarchy_dot_graph() {
@@ -166,7 +166,7 @@ fn test_path_visualization_integration() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let code_gen = LlvmCodeGenerator::new();
     
     // Test visualizing a path - should handle gracefully even if empty
     match code_gen.visualize_interface_path("Dog", "Animal") {
@@ -189,7 +189,7 @@ fn test_alternative_path_finding_integration() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let code_gen = LlvmCodeGenerator::new();
     
     // Test finding alternative paths - should handle gracefully
     match code_gen.find_alternative_paths("Dog", "Plant", 3) {
@@ -211,7 +211,7 @@ fn test_error_message_enhancement_integration() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let code_gen = LlvmCodeGenerator::new();
     
     // Get test type assertions
     let (valid_assertion, invalid_assertion) = setup_simple_test_types();
@@ -242,7 +242,7 @@ fn test_full_type_assertion_compilation() {
     // Create a test context
     let context = Context::create();
     let file_path = PathBuf::from("test_path_visualization.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Get test type assertions
     let (valid_assertion, invalid_assertion) = setup_simple_test_types();

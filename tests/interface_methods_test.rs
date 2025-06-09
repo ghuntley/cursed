@@ -44,7 +44,7 @@ fn test_basic_interface_methods() -> Result<(), Error> {
     
     // Parse program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // Type check the program
@@ -54,7 +54,7 @@ fn test_basic_interface_methods() -> Result<(), Error> {
     // Generate code
     let context = Context::create();
     let file_path = PathBuf::from("interface_methods_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "interface_methods_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile the program
     let compile_result = code_gen.compile_program(&program);
@@ -125,7 +125,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // Parse program
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // Type check the program
@@ -135,7 +135,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     // Generate code
     let context = Context::create();
     let file_path = PathBuf::from("interface_assertion_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "interface_assertion_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile the program
     let compile_result = code_gen.compile_program(&program);

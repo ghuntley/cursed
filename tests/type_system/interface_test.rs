@@ -10,7 +10,7 @@ fn test_interface_implementation() -> Result<(), Error> {
     let mut checker = TypeChecker::new();
     
     // Define a basic Collection interface
-    let collection_interface = Type::Interface(
+    let collection_interface = Type::Unknown // Was Interface(
         "Collection".to_string(),
         vec![Box::new(Type::TypeParam("T".to_string())]
     );
@@ -28,13 +28,13 @@ fn test_interface_implementation() -> Result<(), Error> {
     );
     
     // Define a concrete Collection type with tea
-    let string_collection = Type::Interface(
+    let string_collection = Type::Unknown // Was Interface(
         "Collection".to_string(),
         vec![Box::new(Type::Tea)]
     );
     
     // Define a concrete Collection type with normie
-    let int_collection = Type::Interface(
+    let int_collection = Type::Unknown // Was Interface(
         "Collection".to_string(),
         vec![Box::new(Type::Normie)]
     );

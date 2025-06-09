@@ -23,7 +23,7 @@ be_like Box[T] squad {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     // Log each statement for debugging
@@ -134,7 +134,7 @@ slay foo[T](x normie) T {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
 
     let program = parser.parse_program().unwrap();
     
@@ -296,7 +296,7 @@ sus box_int = Box[normie]{value: 42}
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     // Log each statement for debugging
@@ -440,7 +440,7 @@ sus result = identity[normie](42)
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     // Should have a package declaration and a let statement

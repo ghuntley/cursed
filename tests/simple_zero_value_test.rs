@@ -26,7 +26,7 @@ fn test_simple_basic_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_simple_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new();
     
     // Test basic types
     assert!(codegen.create_simple_zero_value(&Type::Lit).is_ok());
@@ -70,7 +70,7 @@ fn test_llvm_type_simple_zero_values() {
     let context = Context::create();
     let module = context.create_module("test_llvm_simple_zero");
     let builder = context.create_builder();
-    let codegen = LlvmCodeGenerator::new(&context, module, builder);
+    let codegen = LlvmCodeGenerator::new();
     
     // Test basic LLVM types
     let i32_zero = codegen.create_simple_zero_value_for_llvm_type(context.i32_type().into());

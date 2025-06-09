@@ -87,7 +87,7 @@ fn test_type_mangling_helpers() {
         Type::Thicc,
         Type::Tea,
         Type::Lit,
-        Type::Named("CustomType".to_string()),
+        Type::Unknown // Was Named("CustomType".to_string()),
     ];
 
     debug!("Testing with {} types", test_types.len());

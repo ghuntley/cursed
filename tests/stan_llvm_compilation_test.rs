@@ -31,7 +31,7 @@ fn test_llvm_code_generator_creation() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_stan.rs");
     
-    let codegen = LlvmCodeGenerator::new(&context, "test_stan_llvm", temp_path);
+    let codegen = LlvmCodeGenerator::new();
     // Since new() returns the struct directly, just verify it was created
     assert!(!codegen.module().get_name().to_str().unwrap().is_empty());
     
@@ -46,7 +46,7 @@ fn test_goroutine_runtime_functions() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_runtime.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_runtime", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Test runtime initialization
     let result = codegen.ensure_goroutine_runtime();
@@ -73,7 +73,7 @@ fn test_stan_expression_compilation() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_stan_compilation.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_stan_compilation", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Create a simple function to call in the goroutine
     let test_func_ident = Identifier {
@@ -82,7 +82,7 @@ fn test_stan_expression_compilation() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(test_func_ident),
     };
     
@@ -104,7 +104,7 @@ fn test_multiple_stan_expressions() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_multiple_stan.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_multiple_stan", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Initialize runtime once
     codegen.ensure_goroutine_runtime()
@@ -119,7 +119,7 @@ fn test_multiple_stan_expressions() {
         };
         
         let stan_expr = StanExpression {
-            token: Token::Stan,
+            token: Token::new(TokenType::Stan, "stan"),
             expression: Box::new(func_ident),
         };
         
@@ -138,7 +138,7 @@ fn test_llvm_module_verification() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_verification.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_verification", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Initialize runtime
     codegen.ensure_goroutine_runtime()
@@ -151,7 +151,7 @@ fn test_llvm_module_verification() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -174,7 +174,7 @@ fn test_generated_llvm_ir() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_ir_quality.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_ir_quality", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Initialize runtime
     codegen.ensure_goroutine_runtime()
@@ -197,7 +197,7 @@ fn test_generated_llvm_ir() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -225,7 +225,7 @@ fn test_error_handling() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_errors.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_errors", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Test compilation without runtime initialization
     let func_ident = Identifier {
@@ -234,7 +234,7 @@ fn test_error_handling() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -260,7 +260,7 @@ fn test_function_pointer_detection() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_detection.rs");
     
-    let codegen = LlvmCodeGenerator::new(&context, "test_detection", temp_path);
+    let codegen = LlvmCodeGenerator::new();
     
     // Create a function
     let void_type = context.void_type();
@@ -283,7 +283,7 @@ fn test_closure_type_creation() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_closure_types.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_closure_types", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Test closure type creation
     // Note: get_or_create_closure_type is a private method, so we skip detailed testing
@@ -300,7 +300,7 @@ fn test_memory_allocation_functions() {
     let context = Context::create();
     let temp_path = std::env::temp_dir().join("test_malloc.rs");
     
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_malloc", temp_path);
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Test malloc declaration
     // Note: get_or_declare_malloc is a private method, but we can test the runtime initialization

@@ -42,7 +42,7 @@ fn test_type_assertion_basic_functionality() {
     tracing::info!("Starting basic type assertion functionality test");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
 
     // Test basic type assertion creation
     let type_assertion = create_test_type_assertion();
@@ -61,7 +61,7 @@ fn test_type_assertion_question_basic_functionality() {
     tracing::info!("Starting type assertion with question mark functionality test");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
 
     // Test type assertion with error propagation
     let type_assertion = create_test_type_assertion_question();
@@ -80,7 +80,7 @@ fn test_type_assertion_hash_function() {
     tracing::info!("Starting type assertion hash function test");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
 
     // Test the hash function for type names
     let hash1 = codegen.hash_type_name("Person");
@@ -99,7 +99,7 @@ fn test_type_assertion_tuple_building() {
     tracing::info!("Starting tuple building test");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
 
     // Create a simple function to get a valid insertion context
     let i32_type = context.i32_type();
@@ -125,7 +125,7 @@ fn test_type_id_generation() {
     tracing::info!("Starting type ID generation test");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
 
     // Test type ID generation
     let type_id_result = codegen.get_type_id("Person");
@@ -143,7 +143,7 @@ fn test_pointer_type_helper() {
     tracing::info!("Starting pointer type helper test");
 
     let context = Context::create();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
 
     // Test pointer type helper
     let ptr_type = codegen.pointer_type();
@@ -160,7 +160,7 @@ fn test_registry_initialization() {
     tracing::info!("Starting registry initialization test");
 
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut codegen = LlvmCodeGenerator::new());
 
     // Test registry initialization
     let result = codegen.ensure_registry_visualization_initialized();
@@ -175,7 +175,7 @@ fn test_interface_path_visualization() {
     tracing::info!("Starting interface path visualization test");
 
     let context = Context::create();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
 
     // Test interface path visualization
     let result = codegen.visualize_interface_path("Stringer", "Person");

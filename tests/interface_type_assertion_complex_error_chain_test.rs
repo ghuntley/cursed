@@ -286,7 +286,7 @@ fn test_complex_error_chaining() {
     
     // Parse the code
     let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(&mut lexer) {
+    let mut parser = match Parser::new(lexer) {
         Ok(p) => p,
         Err(e) => panic!("Failed to create parser: {}", e),
     };
@@ -311,7 +311,7 @@ fn test_complex_error_chaining() {
     
     // Create LLVM code generator and compile the program
     use cursed::codegen::llvm::LlvmCodeGenerator;
-    let mut code_gen = LlvmCodeGenerator::new(&context, "complex_error_chaining_test", PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Generate code for the program
     match code_gen.compile_program(&program) {
@@ -536,7 +536,7 @@ fn test_error_context_preservation() {
     
     // Parse the code
     let mut lexer = Lexer::new(code);
-    let mut parser = match Parser::new(&mut lexer) {
+    let mut parser = match Parser::new(lexer) {
         Ok(p) => p,
         Err(e) => panic!("Failed to create parser: {}", e),
     };
@@ -561,7 +561,7 @@ fn test_error_context_preservation() {
     
     // Create LLVM code generator and compile the program
     use cursed::codegen::llvm::LlvmCodeGenerator;
-    let mut code_gen = LlvmCodeGenerator::new(&context, "error_context_preservation_test", PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Generate code for the program
     match code_gen.compile_program(&program) {

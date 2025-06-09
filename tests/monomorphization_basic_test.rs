@@ -16,7 +16,7 @@ use std::path::PathBuf;
 fn test_function_monomorphization_basic() {
     // Create a context and code generator
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_monomorphization", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a generic function AST
     let type_param = TypeParameter::new(Token::Identifier("T".to_string()), "T".to_string());

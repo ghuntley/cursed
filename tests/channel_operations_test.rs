@@ -8,7 +8,7 @@ use cursed::ast::traits::Expression;
 fn test_channel_send_parsing() {
     let input = "ch <- 42";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let expr = parser.parse_expression(cursed::parser::precedence::Precedence::Lowest);
     assert!(expr.is_ok(), "Failed to parse send expression: {:?}", expr.err());
@@ -22,7 +22,7 @@ fn test_channel_send_parsing() {
 fn test_channel_receive_parsing() {
     let input = "<-ch";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let expr = parser.parse_expression(cursed::parser::precedence::Precedence::Lowest);
     assert!(expr.is_ok(), "Failed to parse receive expression: {:?}", expr.err());
@@ -36,7 +36,7 @@ fn test_channel_receive_parsing() {
 fn test_channel_creation_parsing() {
     let input = "dm[int]";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     
     let expr = parser.parse_expression(cursed::parser::precedence::Precedence::Lowest);
     assert!(expr.is_ok(), "Failed to parse channel creation: {:?}", expr.err());

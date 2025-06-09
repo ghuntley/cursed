@@ -56,7 +56,7 @@ fn test_basic_goroutine_parsing() {
     }) as Box<dyn Expression>;
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: identifier,
     };
     

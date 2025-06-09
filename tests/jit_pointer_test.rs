@@ -28,7 +28,7 @@ fn test_pointer_parsing() -> Result<(), Error> {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Verify there are no parser errors
@@ -69,7 +69,7 @@ fn test_pointer_dereference() -> Result<(), Error> {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Verify there are no parser errors
@@ -115,7 +115,7 @@ fn test_pointer_struct() -> Result<(), Error> {
     "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Verify there are no parser errors

@@ -60,7 +60,7 @@ fn test_defer_statement_parsing() {
     "#;
     
     let mut lexer = cursed::lexer::Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -96,7 +96,7 @@ fn test_defer_lifo_order() {
     "#;
     
     let mut lexer = cursed::lexer::Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -140,7 +140,7 @@ fn test_defer_with_variables() {
     "#;
     
     let mut lexer = cursed::lexer::Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -180,7 +180,7 @@ fn test_defer_in_nested_blocks() {
     "#;
     
     let mut lexer = cursed::lexer::Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -222,7 +222,7 @@ fn test_defer_with_early_return() {
     "#;
     
     let mut lexer = cursed::lexer::Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {
@@ -250,7 +250,7 @@ fn test_defer_llvm_compilation() {
     use inkwell::context::Context;
     
     let context = Context::create();
-    let mut codegen = LlvmCodeGenerator::new(&context, "test_defer");
+    let mut codegen = LlvmCodeGenerator::new();
     
     // Create a simple defer statement for testing
     let expr = StringLiteral {
@@ -296,7 +296,7 @@ fn test_multiple_defer_compilation() {
     "#;
     
     let mut lexer = cursed::lexer::Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer);
+    let mut parser = Parser::new(lexer);
     
     match parser.parse_program() {
         Ok(program) => {

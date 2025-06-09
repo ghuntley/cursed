@@ -397,6 +397,22 @@ impl IntoIterator for HeaderMap {
     }
 }
 
+impl<'a> IntoIterator for &'a HeaderMap {
+    type Item = (String, String);
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut items = Vec::new();
+        for (name, values) in &self.headers {
+            let original_name = self.original_names.get(name).unwrap();
+            for value in values {
+                items.push((original_name.clone(), value.0.clone()));
+            }
+        }
+        items.into_iter()
+    }
+}
+
 /// Trait for types that can provide headers
 pub trait Headers {
     fn headers(&self) -> &HeaderMap;

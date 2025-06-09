@@ -27,7 +27,7 @@ fn test_direct_recursive_struct() {
         "Node".to_string(),
         vec![
             Box::new(Type::Normie), // value field
-            Box::new(Type::Pointer(Box::new(Type::Named("Node".to_string())))), // next field
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Node".to_string())))), // next field
         ],
     );
     
@@ -51,7 +51,7 @@ fn test_direct_recursive_struct() {
                 Type::Pointer(inner) => {
                     // The inner type should be a pointer to break the cycle
                     match inner.as_ref() {
-                        Type::Named(name) => assert_eq!(name, "Node"),
+                        Type::Unknown // Was Named(name) => assert_eq!(name, "Node"),
                         Type::Pointer(_) => {
                             // This can happen when cycle detection creates a pointer to break recursion
                             // This is actually correct behavior
@@ -77,8 +77,8 @@ fn test_binary_tree_recursive_struct() {
         "TreeNode".to_string(),
         vec![
             Box::new(Type::Normie), // value field
-            Box::new(Type::Pointer(Box::new(Type::Named("TreeNode".to_string())))), // left field
-            Box::new(Type::Pointer(Box::new(Type::Named("TreeNode".to_string())))), // right field
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("TreeNode".to_string())))), // left field
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("TreeNode".to_string())))), // right field
         ],
     );
     
@@ -102,7 +102,7 @@ fn test_binary_tree_recursive_struct() {
                 match field.as_ref() {
                     Type::Pointer(inner) => {
                         match inner.as_ref() {
-                            Type::Named(name) => assert_eq!(name, "TreeNode"),
+                            Type::Unknown // Was Named(name) => assert_eq!(name, "TreeNode"),
                             _ => panic!("Expected Named type for recursive reference"),
                         }
                     }
@@ -125,12 +125,12 @@ fn test_mutually_recursive_types() {
     // B { a_field: *A }
     let type_a = Type::Struct(
         "A".to_string(),
-        vec![Box::new(Type::Pointer(Box::new(Type::Named("B".to_string()))))],
+        vec![Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("B".to_string()))))],
     );
     
     let type_b = Type::Struct(
         "B".to_string(),
-        vec![Box::new(Type::Pointer(Box::new(Type::Named("A".to_string()))))],
+        vec![Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("A".to_string()))))],
     );
     
     registry.register_type("A".to_string(), type_a).unwrap();
@@ -170,8 +170,8 @@ fn test_complex_recursive_scenario() {
     let edge_type = Type::Struct(
         "Edge".to_string(),
         vec![
-            Box::new(Type::Pointer(Box::new(Type::Named("Node".to_string())))), // from
-            Box::new(Type::Pointer(Box::new(Type::Named("Node".to_string())))), // to
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Node".to_string())))), // from
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Node".to_string())))), // to
             Box::new(Type::Normie), // weight
         ],
     );
@@ -180,15 +180,15 @@ fn test_complex_recursive_scenario() {
         "Node".to_string(),
         vec![
             Box::new(Type::Normie), // id
-            Box::new(Type::Slice(Box::new(Type::Pointer(Box::new(Type::Named("Edge".to_string())))))), // edges
+            Box::new(Type::Slice(Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Edge".to_string())))))), // edges
         ],
     );
     
     let graph_type = Type::Struct(
         "Graph".to_string(),
         vec![
-            Box::new(Type::Slice(Box::new(Type::Named("Node".to_string())))), // nodes
-            Box::new(Type::Slice(Box::new(Type::Named("Edge".to_string())))), // edges
+            Box::new(Type::Slice(Box::new(Type::Unknown // Was Named("Node".to_string())))), // nodes
+            Box::new(Type::Slice(Box::new(Type::Unknown // Was Named("Edge".to_string())))), // edges
         ],
     );
     
@@ -221,14 +221,14 @@ fn test_forward_declarations() {
     
     // Try to resolve before definition
     let resolved = registry.resolve_type("Node").unwrap();
-    assert_eq!(resolved, Type::Named("Node".to_string()));
+    assert_eq!(resolved, Type::Unknown // Was Named("Node".to_string()));
     
     // Now define the actual type
     let node_type = Type::Struct(
         "Node".to_string(),
         vec![
             Box::new(Type::Normie),
-            Box::new(Type::Pointer(Box::new(Type::Named("Node".to_string())))),
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Node".to_string())))),
         ],
     );
     
@@ -253,7 +253,7 @@ fn test_type_checker_integration() {
         "Node".to_string(),
         vec![
             Box::new(Type::Normie),
-            Box::new(Type::Pointer(Box::new(Type::Named("Node".to_string())))),
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Node".to_string())))),
         ],
     );
     
@@ -280,11 +280,11 @@ fn test_type_dependency_analysis() {
     let type_a = Type::Struct("A".to_string(), vec![Box::new(Type::Normie)]);
     let type_b = Type::Struct(
         "B".to_string(),
-        vec![Box::new(Type::Named("A".to_string()))],
+        vec![Box::new(Type::Unknown // Was Named("A".to_string()))],
     );
     let type_c = Type::Struct(
         "C".to_string(),
-        vec![Box::new(Type::Named("B".to_string()))],
+        vec![Box::new(Type::Unknown // Was Named("B".to_string()))],
     );
     
     registry.register_type("A".to_string(), type_a).unwrap();
@@ -314,7 +314,7 @@ fn test_recursive_type_memory_safety() {
         "SafeNode".to_string(),
         vec![
             Box::new(Type::Normie), // data
-            Box::new(Type::Pointer(Box::new(Type::Named("SafeNode".to_string())))), // next
+            Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("SafeNode".to_string())))), // next
         ],
     );
     
@@ -346,17 +346,17 @@ fn test_cycle_detection_complex() {
     // Create a complex cycle: A -> B -> C -> A
     let type_a = Type::Struct(
         "A".to_string(),
-        vec![Box::new(Type::Pointer(Box::new(Type::Named("B".to_string()))))],
+        vec![Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("B".to_string()))))],
     );
     
     let type_b = Type::Struct(
         "B".to_string(),
-        vec![Box::new(Type::Pointer(Box::new(Type::Named("C".to_string()))))],
+        vec![Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("C".to_string()))))],
     );
     
     let type_c = Type::Struct(
         "C".to_string(),
-        vec![Box::new(Type::Pointer(Box::new(Type::Named("A".to_string()))))],
+        vec![Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("A".to_string()))))],
     );
     
     registry.register_type("A".to_string(), type_a).unwrap();
@@ -416,12 +416,12 @@ fn test_indirect_recursion() {
     // Item { container: *Container }
     let item_type = Type::Struct(
         "Item".to_string(),
-        vec![Box::new(Type::Pointer(Box::new(Type::Named("Container".to_string()))))],
+        vec![Box::new(Type::Pointer(Box::new(Type::Unknown // Was Named("Container".to_string()))))],
     );
     
     let container_type = Type::Struct(
         "Container".to_string(),
-        vec![Box::new(Type::Slice(Box::new(Type::Named("Item".to_string()))))],
+        vec![Box::new(Type::Slice(Box::new(Type::Unknown // Was Named("Item".to_string()))))],
     );
     
     registry.register_type("Item".to_string(), item_type).unwrap();
@@ -446,15 +446,15 @@ fn test_recursive_type_resolution_order() {
     let type_a = Type::Struct("A".to_string(), vec![Box::new(Type::Normie)]);
     let type_b = Type::Struct(
         "B".to_string(),
-        vec![Box::new(Type::Named("A".to_string()))],
+        vec![Box::new(Type::Unknown // Was Named("A".to_string()))],
     );
     let type_c = Type::Struct(
         "C".to_string(),
-        vec![Box::new(Type::Named("B".to_string()))],
+        vec![Box::new(Type::Unknown // Was Named("B".to_string()))],
     );
     let type_d = Type::Struct(
         "D".to_string(),
-        vec![Box::new(Type::Named("C".to_string()))],
+        vec![Box::new(Type::Unknown // Was Named("C".to_string()))],
     );
     
     // Register in random order

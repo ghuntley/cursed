@@ -29,7 +29,7 @@ where
     
     // Create LLVM context and code generator
     let context = Context::create();
-    let mut compiler = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let mut compiler = LlvmCodeGenerator::new());
     
     // Call the test function with the compiler
     test_fn(&mut compiler)

@@ -393,7 +393,7 @@ fn test_type_mangling() {
     assert_eq!(generator.type_to_mangled_name(&Type::Normie), "i32");
     assert_eq!(generator.type_to_mangled_name(&Type::Thicc), "i64");
     assert_eq!(generator.type_to_mangled_name(&Type::Tea), "str");
-    assert_eq!(generator.type_to_mangled_name(&Type::Named("CustomType".to_string())), "CustomType");
+    assert_eq!(generator.type_to_mangled_name(&Type::Unknown // Was Named("CustomType".to_string())), "CustomType");
     
     let array_type = Type::Array(Box::new(Type::Normie), 5);
     assert_eq!(generator.type_to_mangled_name(&array_type), "arr_i32_5");

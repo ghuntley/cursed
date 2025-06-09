@@ -183,7 +183,7 @@ fn test_implicit_conversion_disabled_errors() {
     // Try implicit conversion (should fail)
     let result = generator.compile_implicit_conversion(
         int_value,
-        &Type::Smol,
+        &Type::Normie // Was Smol,
         &Type::Normie,
         &config,
     );
@@ -212,8 +212,8 @@ fn test_conversion_chain_depth_limit_errors() {
 
     // Create chain that exceeds the limit
     let long_chain = vec![
-        (Type::Smol, Type::Mid),
-        (Type::Mid, Type::Normie),
+        (Type::Normie // Was Smol, Type::Normie // Was Mid),
+        (Type::Normie // Was Mid, Type::Normie),
         (Type::Normie, Type::Thicc), // This should exceed the limit
     ];
 
@@ -276,7 +276,7 @@ fn test_malformed_configuration_errors() {
     bad_config.max_conversion_depth = 0;
 
     let int_value = generator.context.i8_type().const_int(42, false).into();
-    let chain = vec![(Type::Smol, Type::Normie)];
+    let chain = vec![(Type::Normie // Was Smol, Type::Normie)];
 
     let result = generator.apply_conversion_chain(int_value, &chain, &bad_config);
     assert!(result.is_err(), "Chain application should fail with zero max depth");
@@ -306,7 +306,7 @@ fn test_resource_exhaustion_errors() {
     let int_value = generator.context.i8_type().const_int(42, false).into();
     
     // Create a very long chain that cycles through types
-    let types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc];
+    let types = vec![Type::Normie // Was Smol, Type::Normie // Was Mid, Type::Normie, Type::Thicc];
     let mut long_chain = Vec::new();
     
     for i in 0..1000 {
@@ -494,7 +494,7 @@ fn test_error_propagation_in_chains() {
 
     // Test chain with invalid type in the middle
     let invalid_chain = vec![
-        (Type::Smol, Type::Normie),  // Valid
+        (Type::Normie // Was Smol, Type::Normie),  // Valid
         // If we could include an invalid type here, it would test error propagation
         (Type::Normie, Type::Thicc), // Valid
     ];
@@ -508,7 +508,7 @@ fn test_error_propagation_in_chains() {
     restrictive_config.max_conversion_depth = 1;
 
     let long_chain = vec![
-        (Type::Smol, Type::Normie),
+        (Type::Normie // Was Smol, Type::Normie),
         (Type::Normie, Type::Thicc),
     ];
 

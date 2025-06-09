@@ -40,7 +40,7 @@ fn test_jit_print_support() -> Result<(), Error> {
 
     // Parse the program
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Verify there are no parser errors
@@ -62,7 +62,7 @@ fn test_jit_print_support() -> Result<(), Error> {
     );
     
     // Generate code
-    let code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let code_gen = cursed::codegen::llvm::LlvmCodeGenerator::new());
     *(jit.code_generator_mut()) = Some(code_gen);
     
     if let Some(ref mut code_gen) = *(jit.code_generator_mut()) {

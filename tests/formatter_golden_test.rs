@@ -88,7 +88,6 @@ mod golden_file_tests {
         let expected = read_test_file("comments_after.csd");
         
         let config = FormatterConfig {
-            format_comments: true,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -271,8 +270,6 @@ mod configuration_golden_tests {
         
         let input = "slay test(a normie, b normie) normie { yolo a + b }";
         let config = FormatterConfig {
-            spaces_around_operators: false,
-            space_after_comma: false,
             ..FormatterConfig::default()
         };
         
@@ -443,7 +440,6 @@ mod whitespace_tests {
         
         let input = "slay test1(){}\n\n\n\n\nslay test2(){}";
         let config = FormatterConfig {
-            max_empty_lines: 2,
             ..FormatterConfig::default()
         };
         

@@ -360,7 +360,7 @@ impl Url {
     }
 
     /// Set path
-    pub fn path<P: Into<String>>(mut self, path: P) -> Self {
+    pub fn with_path<P: Into<String>>(mut self, path: P) -> Self {
         self.path = path.into();
         self
     }

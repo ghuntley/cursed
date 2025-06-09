@@ -59,7 +59,7 @@ fn test_diamond_inheritance_handler_detection() {
     
     // Create a code generator with our test registry
     let context = Context::create();
-    let _code_gen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let _code_gen = LlvmCodeGenerator::new());
     
     // Test basic registry functionality for diamond inheritance pattern
     let registry = setup_test_registry();

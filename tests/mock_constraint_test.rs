@@ -53,7 +53,7 @@ impl TypeChecker {
     ) -> Result<bool, String> {
         // Extract the interface name and type parameters
         let (interface_name, _) = match interface {
-            Type::Interface(name, type_args) => (name, type_args),
+            Type::Unknown // Was Interface(name, type_args) => (name, type_args),
             _ => return Err("Expected an interface type".to_string())
         };
         
@@ -128,7 +128,7 @@ impl MonomorphizationManager {
     
     fn check_constraint(&self, concrete_type: &Type, interface_name: &str) -> Result<bool, String> {
         // Create an interface type from the name
-        let interface_type = Type::Interface(interface_name.to_string(), Vec::new());
+        let interface_type = Type::Unknown // Was Interface(interface_name.to_string(), Vec::new());
         
         // First, try to use the type checker for interface implementation checks if available
         if let Some(type_checker) = &self.type_checker {

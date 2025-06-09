@@ -23,7 +23,7 @@ use std::path::PathBuf;
 #[test]
 fn test_assignment_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_inference", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing with float return type
     let f64_type = context.f64_type();
@@ -92,7 +92,7 @@ fn test_assignment_type_inference() {
 #[test]
 fn test_assignment_type_coercion() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_assignment_coercion", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing with float return type
     let f64_type = context.f64_type();
@@ -181,7 +181,7 @@ fn test_assignment_type_coercion() {
 #[test]
 fn test_if_expression_with_assignment_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_assignment_inference", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let f64_type = context.f64_type();
@@ -266,7 +266,7 @@ fn test_if_expression_with_assignment_type_inference() {
 #[test]
 fn test_if_expression_with_mixed_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_mixed_types", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing - use double return type since we expect float result
     let double_type = context.f64_type();
@@ -351,7 +351,7 @@ fn test_if_expression_with_mixed_types() {
 #[test]
 fn test_if_expression_with_string_and_int() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_string_int", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();

@@ -42,7 +42,7 @@ mod tests {
         let builder = context.create_builder();
         
         // Create a new LlvmCodeGenerator with the context
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new();
         
         // Create a test function to contain our code
         let void_type = context.void_type();
@@ -91,7 +91,7 @@ mod tests {
         let builder = context.create_builder();
         
         // Create a new LlvmCodeGenerator with the context
-        let mut codegen = LlvmCodeGenerator::new(&context, module, builder);
+        let mut codegen = LlvmCodeGenerator::new();
         
         // Create a test function to contain our code
         let i8_type = context.i8_type();

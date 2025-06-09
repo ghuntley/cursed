@@ -95,7 +95,7 @@ fn test_end_to_end_type_checking_and_codegen() {
 
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
 
     // Create type checker and run type checking
@@ -106,7 +106,7 @@ fn test_end_to_end_type_checking_and_codegen() {
     // Create code generator and compile the program
     let context = inkwell::context::Context::create();
     let file_path = PathBuf::from("end_to_end_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "end_to_end_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Compile and check for errors
     let compile_result = code_gen.compile_program(&program);
@@ -160,7 +160,7 @@ fn test_type_inference_and_coercion() {
     
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
 
     // Create type checker and run type checking
@@ -179,7 +179,7 @@ fn test_type_inference_and_coercion() {
     // Create code generator and compile the program
     let context = inkwell::context::Context::create();
     let file_path = PathBuf::from("type_inference_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "type_inference_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile and check for errors
     let compile_result = code_gen.compile_program(&program);
@@ -259,7 +259,7 @@ fn test_interface_implementation_end_to_end() {
     
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     let program = parser.parse_program().expect("Failed to parse program");
 
     // Create type checker and run type checking
@@ -270,7 +270,7 @@ fn test_interface_implementation_end_to_end() {
     // Create code generator and compile the program
     let context = inkwell::context::Context::create();
     let file_path = PathBuf::from("interface_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "interface_test", file_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile and check for errors
     let compile_result = code_gen.compile_program(&program);

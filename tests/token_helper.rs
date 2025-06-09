@@ -22,8 +22,8 @@ pub fn new_token(token_type: TokenType, literal: &str) -> Token {
         },
         TokenType::String => Token::String(literal.to_string()),
         // Boolean tokens omitted
-        TokenType::LBrace => Token::LBrace,
-        TokenType::RBrace => Token::RBrace,
+        TokenType::LeftBrace => Token::LBrace,
+        TokenType::RightBrace => Token::RBrace,
         TokenType::Sus => Token::Sus,
         TokenType::LParen => Token::LParen,
         TokenType::RParen => Token::RParen,

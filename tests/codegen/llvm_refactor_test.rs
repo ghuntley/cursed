@@ -16,7 +16,7 @@ fn test_llvm_refactor_basic_functionality() {
     let file_path = PathBuf::from("test.csd");
     
     // Create the LLVM code generator
-    let generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let generator = LlvmCodeGenerator::new();
     
     // Verify that the generator was created successfully
     assert!(generator.get_module().get_name().to_str().unwrap() == module_name);

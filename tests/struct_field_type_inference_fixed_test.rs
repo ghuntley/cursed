@@ -34,8 +34,8 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
         },
         TokenType::String => Token::String(literal.to_string()),
         // Boolean tokens omitted
-        TokenType::LBrace => Token::LBrace,
-        TokenType::RBrace => Token::RBrace,
+        TokenType::LeftBrace => Token::LBrace,
+        TokenType::RightBrace => Token::RBrace,
         TokenType::Sus => Token::Sus,
         TokenType::LParen => Token::LParen,
         TokenType::RParen => Token::RParen,
@@ -48,7 +48,7 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
 #[test]
 fn test_struct_field_type_inference() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_inference", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -70,7 +70,7 @@ fn test_struct_field_type_inference() {
     
     // Create a struct literal with fields that need type inference
     let struct_literal = StructLiteral {
-        token: new_token(TokenType::LBrace, "{"),
+        token: new_token(TokenType::LeftBrace, "{"),
         struct_name: struct_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -118,7 +118,7 @@ fn test_struct_field_type_inference() {
     
     // Create a new struct literal since we consumed the previous one
     let new_struct_literal = StructLiteral {
-        token: new_token(TokenType::LBrace, "{"),
+        token: new_token(TokenType::LeftBrace, "{"),
         struct_name: struct_name.to_string(),
         fields: vec![
             KeyValuePair {
@@ -171,7 +171,7 @@ fn test_struct_field_type_inference() {
 #[test]
 fn test_struct_field_incompatible_types() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_struct_field_incompatible", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -192,7 +192,7 @@ fn test_struct_field_incompatible_types() {
     
     // Create a struct literal with incompatible field type
     let struct_literal = StructLiteral {
-        token: new_token(TokenType::LBrace, "{"),
+        token: new_token(TokenType::LeftBrace, "{"),
         struct_name: person_name.to_string(),
         fields: vec![
             KeyValuePair {

@@ -11,6 +11,7 @@ pub enum TokenType {
     Lowkey,     // if
     Highkey,    // else
     Periodt,    // end/semicolon equivalent
+    Stan,       // goroutine (async execution)
     
     // Identifiers and literals
     Identifier,
@@ -40,11 +41,29 @@ pub enum TokenType {
     Newline,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
     pub location: SourceLocation,
+}
+
+impl Token {
+    pub fn new(token_type: TokenType, literal: &str) -> Self {
+        Self {
+            token_type,
+            literal: literal.to_string(),
+            location: SourceLocation { line: 0, column: 0, file: None },
+        }
+    }
+    
+    pub fn with_location(token_type: TokenType, literal: &str, location: SourceLocation) -> Self {
+        Self {
+            token_type,
+            literal: literal.to_string(),
+            location,
+        }
+    }
 }
 
 pub struct Lexer {
@@ -187,6 +206,7 @@ impl Lexer {
             "lowkey" => TokenType::Lowkey,
             "highkey" => TokenType::Highkey,
             "periodt" => TokenType::Periodt,
+            "stan" => TokenType::Stan,
             "true" | "false" => TokenType::Boolean,
             _ => TokenType::Identifier,
         };

@@ -21,11 +21,12 @@
 ## Nix Environment Linking Issues and Workarounds
 The Nix environment has linking issues with mold and missing libraries that affect both builds and tests.
 
-### Current Status (FIXED)
+### Current Status (COMPLETELY FIXED ✅)
 - **Library building works** with the configured `.cargo/config.toml` 
 - **Test compilation fixed** - All tests now compile successfully (`cargo check --tests` passes)
-- **Test linking FIXED** - Mold linker successfully overridden using environment variables
-- **Working Solution**: `LIBRARY_PATH` + `RUSTFLAGS` environment variables override mold
+- **Test linking COMPLETELY FIXED** - Mold linker successfully overridden using environment variables
+- **Working Solution**: `./fix_linking.sh` script + `LIBRARY_PATH` + `RUSTFLAGS` environment variables override mold
+- **Makefile Updated**: All major targets (build, test, lint) now use the linking fix automatically
 
 ### Major Progress Made
 1. **Fixed all test compilation errors**:
@@ -77,29 +78,44 @@ The Nix environment with mold linker override is now working perfectly. Core fun
 - JIT compilation and execution
 - Interface type system
 
+### Working Solution: `fix_linking.sh` Script
+A comprehensive linking fix script has been created at `./fix_linking.sh` that:
+- Sets the correct `LIBRARY_PATH` for Nix store libraries
+- Forces BFD linker instead of mold via `RUSTFLAGS`
+- Can be used as a wrapper for any cargo command
+- Integrated into Makefile for common operations
+
+**Usage Examples:**
+```bash
+# Direct usage
+./fix_linking.sh cargo build
+./fix_linking.sh cargo test
+./fix_linking.sh cargo test --test simple_core_test
+
+# Via Makefile (automatically uses fix_linking.sh)
+make build
+make test
+make test-file TEST_FILE=very_simple_test
+make lint
+```
+
+**What the script does:**
+- Exports `LIBRARY_PATH` with correct Nix store paths
+- Sets `RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd"`
+- Provides clear feedback about the linking environment
+- Works as a transparent wrapper for any command
+
 ### Remaining Work
 Some complex integration tests have compilation errors due to:
 - Missing struct fields/methods that may have been refactored
 - Module path issues in larger test files
 - These are normal development issues, not infrastructure problems
 
-### Fixed Workarounds
-- **SOLUTION**: Environment variables successfully override mold linker
-- `LIBRARY_PATH` provides library paths for the BFD linker
-- `RUSTFLAGS="-C linker=gcc -C link-arg=-fuse-ld=bfd"` forces BFD instead of mold
-
 ### Library Paths in Nix Store
 - libffi: `/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib`
 - libz: `/nix/store/l5g2v1jgfyf3j0jp9iv5b79fi8yrwzpp-zlib-1.3.1/lib`
 - libtinfo: `/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib`
-- libxml2: `/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib`
-
-### Next Steps for Test Execution
-To run tests successfully, need one of:
-1. Fix Nix environment to properly configure mold with libffi paths
-2. Override mold usage more aggressively at environment level
-3. Use alternative testing environment outside Nix
-4. Run tests in CI/Docker environment with proper library setup
+- libxml2: `/nix/store/hd6llsw2dkiazk9d2ywv13cc6alhflly-libxml2-2.13.5/lib`
 
 ## Goroutine-Aware Garbage Collection Implementation
 

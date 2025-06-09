@@ -7,7 +7,7 @@ use cursed::parser::Parser;
 // Helper function to create a parser from input string
 fn parse_type_from_string(input: &str) -> Result<Type, Error> {
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     parser.parse_type()
 }
 

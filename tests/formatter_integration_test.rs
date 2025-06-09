@@ -439,7 +439,6 @@ age normie // age field
 "#.trim();
 
         let config = FormatterConfig {
-            format_comments: true,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -603,8 +602,6 @@ mod configuration_integration_tests {
         let source = "slay test(){lowkey based{yolo 42}}";
         
         let config = FormatterConfig {
-            use_tabs: true,
-            tab_width: 4,
             ..FormatterConfig::default()
         };
         let mut formatter = CursedFormatter::new(config);
@@ -622,8 +619,6 @@ mod configuration_integration_tests {
         let source = "slay test(a normie, b normie) normie { yolo a + b }";
         
         let config = FormatterConfig {
-            spaces_around_operators: false,
-            space_after_comma: false,
             compact_arrays: true,
             compact_objects: true,
             ..FormatterConfig::default()

@@ -23,7 +23,7 @@ macro_rules! init_tracing {
 // Helper function to parse and validate CURSED code
 fn parse_test(input: &str) -> Result<cursed::ast::base::Program, String> {
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).map_err(|e| format!("Parser creation error: {}", e))?;
+    let mut parser = Parser::new(lexer).map_err(|e| format!("Parser creation error: {}", e))?;
     let program = parser.parse_program().map_err(|e| format!("Parse error: {}", e))?;
     
     // Check for parser errors

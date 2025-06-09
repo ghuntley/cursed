@@ -143,7 +143,7 @@ fn test_type_id_hashing() {
     tracing::info!("Starting type ID hashing test");
 
     let context = Context::create();
-    let codegen = LlvmCodeGenerator::new(&context, "test_module", PathBuf::from("test.csd"));
+    let codegen = LlvmCodeGenerator::new());
 
     // Test consistent hashing
     let hash1 = codegen.hash_type_name("Person");

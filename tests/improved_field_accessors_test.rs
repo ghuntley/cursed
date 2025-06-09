@@ -22,7 +22,7 @@ fn test_improved_field_accessors() {
     
     // Create a context
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Create a simple struct with a couple of fields
     let struct_name = Identifier { value: "Point".to_string() };

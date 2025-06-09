@@ -14,7 +14,7 @@ be_like Box[T] squad {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program();
 
     match program {
@@ -49,7 +49,7 @@ slay add(x, y) {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program();
 
     match program {

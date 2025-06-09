@@ -436,7 +436,6 @@ impl Router {
                 let response_context = ResponseContext::new();
                 matched_route.middleware_chain
                     .execute(context, response_context, matched_route.route.handler)
-                    .await
             }
             None => {
                 self.stats.failed_matches += 1;

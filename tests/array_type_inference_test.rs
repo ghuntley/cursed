@@ -22,7 +22,7 @@ fn test_array_type_inference(input: &str) -> Result<Type, Error> {
     
     // Parse the code
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // The test input should have a single expression statement with an array literal

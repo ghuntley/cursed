@@ -15,7 +15,7 @@ fn test_enhanced_visualization() {
     
     // Create a simple test context
     let context = inkwell::context::Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd");
+    let mut code_generator = LlvmCodeGenerator::new();
     
     // Create a mock diamond inheritance pattern
     let diamond = DiamondInheritancePattern {

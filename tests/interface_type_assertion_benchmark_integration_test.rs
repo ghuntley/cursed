@@ -60,7 +60,7 @@ fn test_simple_interface_type_assertion_benchmark() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Create a minimal dummy registry for testing
     let mock_registry = create_mock_registry();
@@ -106,7 +106,7 @@ fn test_comprehensive_interface_type_assertion_benchmark() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_generator = LlvmCodeGenerator::new());
     
     // Create a comprehensive mock registry for testing
     let mock_registry = create_comprehensive_mock_registry();

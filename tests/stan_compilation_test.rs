@@ -39,7 +39,7 @@ fn test_stan_expression_ast_creation() {
     
     // Create the stan expression
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -57,7 +57,7 @@ fn test_stan_expression_parsing() {
     
     let input = "stan foo()";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     // Parse the expression
     let expr = parser.parse_expression(cursed::parser::Precedence::Lowest)
@@ -83,7 +83,7 @@ fn test_stan_compilation_basic() {
     let module = context.create_module("test_stan");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Create a simple function expression
@@ -94,7 +94,7 @@ fn test_stan_compilation_basic() {
     
     // Create the stan expression
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -117,7 +117,7 @@ fn test_goroutine_runtime_initialization() {
     let module = context.create_module("test_runtime");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Test runtime initialization
@@ -147,7 +147,7 @@ fn test_closure_capture_compilation() {
     let module = context.create_module("test_closure");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Create a dummy function for closure creation
@@ -173,7 +173,7 @@ fn test_stan_with_function_literal() {
     
     let input = "stan fn() { yolo 42 }";
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).expect("Failed to create parser");
+    let mut parser = Parser::new(lexer).expect("Failed to create parser");
     
     // This test verifies that we can parse a stan expression with a function literal
     // The actual compilation might fail due to missing context, but parsing should work
@@ -194,7 +194,7 @@ fn test_multiple_goroutines() {
     let module = context.create_module("test_multiple");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime once
@@ -210,7 +210,7 @@ fn test_multiple_goroutines() {
         };
         
         let stan_expr = StanExpression {
-            token: Token::Stan,
+            token: Token::new(TokenType::Stan, "stan"),
             expression: Box::new(func_ident),
         };
         
@@ -230,7 +230,7 @@ fn test_llvm_ir_verification() {
     let module = context.create_module("test_verification");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -258,7 +258,7 @@ fn test_error_handling() {
     let module = context.create_module("test_errors");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Test with invalid expression (null expression)
@@ -271,7 +271,7 @@ fn test_error_handling() {
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: Token::new(TokenType::Stan, "stan"),
         expression: Box::new(func_ident),
     };
     
@@ -291,7 +291,7 @@ fn test_goroutine_scheduling() {
     let module = context.create_module("test_scheduling");
     let builder = context.create_builder();
     
-    let mut codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let mut codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Initialize runtime
@@ -323,7 +323,7 @@ fn test_function_pointer_detection() {
     let module = context.create_module("test_detection");
     let builder = context.create_builder();
     
-    let codegen = LlvmCodeGenerator::new(&context, module, builder)
+    let codegen = LlvmCodeGenerator::new()
         .expect("Failed to create code generator");
     
     // Create a function

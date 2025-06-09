@@ -15,7 +15,7 @@ slay add[T](x T, y T) T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     // Print all statements for debugging
@@ -81,7 +81,7 @@ slay pair[A, B](first A, second B) {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     // Find the function statement by searching through all statements
@@ -124,7 +124,7 @@ slay sort[T: Comparable](items []T) []T {
 "#;
     
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
     
     // Find the function statement by searching through all statements

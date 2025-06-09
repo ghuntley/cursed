@@ -24,7 +24,7 @@ fn test_jit_debug() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_debug_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Manually create the main function
     let i32_type = context.i32_type();
@@ -87,7 +87,7 @@ fn test_jit_through_compilation() -> Result<(), Error> {
     // Parse the code into an AST
     debug!("Parsing input code");
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -103,7 +103,7 @@ fn test_jit_through_compilation() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_debug_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Compile the program - manual implementation
     info!("Starting manual compilation process");

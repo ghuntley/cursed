@@ -16,7 +16,7 @@ use cursed::codegen::llvm::ExpressionCompilation; // Updated import
 #[test]
 fn test_expression_compilation() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function context with a basic block for the builder
     let i32_type = context.i32_type();

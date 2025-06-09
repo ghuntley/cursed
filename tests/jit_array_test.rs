@@ -33,7 +33,7 @@ fn test_jit_array_basic() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -47,7 +47,7 @@ fn test_jit_array_basic() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_array_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Manually create and register the 'vibez.spill' function for string printing
     let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
@@ -159,7 +159,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -172,7 +172,7 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_array_mutation.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Manually create and register the 'vibez.spill' function for string printing
     let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
@@ -284,7 +284,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -297,7 +297,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./dummy_array_mixed.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
 
     // Manually create and register the 'vibez.spill' function for string printing
     let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());

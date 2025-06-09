@@ -58,7 +58,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Ensure no parser errors
@@ -69,7 +69,7 @@ fn test_pointer_module_full() -> Result<(), Error> {
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./pointer_module_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile the program
     match code_gen.compile_program(&program) {
@@ -195,13 +195,13 @@ fn test_null_pointer_handling() -> Result<(), Error> {
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer)?;
+    let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
 
     // Set up LLVM JIT execution
     let context = Context::create();
     let dummy_path = PathBuf::from("./null_pointer_test.csd");
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test", dummy_path);
+    let mut code_gen = LlvmCodeGenerator::new();
     
     // Compile the program
     code_gen.compile_program(&program)?;

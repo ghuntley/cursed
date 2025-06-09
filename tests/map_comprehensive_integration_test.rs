@@ -56,7 +56,7 @@ impl<'ctx> MapIntegration<'ctx> {
     /// Parse a map literal from source code
     fn parse_map_literal(&self, source: &str) -> Result<HashLiteral, Error> {
         let mut lexer = Lexer::new(source);
-        let mut parser = Parser::new(&mut lexer)?;
+        let mut parser = Parser::new(lexer)?;
         
         // Parse as expression
         let expr = parser.parse_expression()?;
@@ -72,7 +72,7 @@ impl<'ctx> MapIntegration<'ctx> {
     /// Parse a complete CURSED program with map operations
     fn parse_program(&self, source: &str) -> Result<Program, Error> {
         let mut lexer = Lexer::new(source);
-        let mut parser = Parser::new(&mut lexer)?;
+        let mut parser = Parser::new(lexer)?;
         parser.parse_program()
     }
 

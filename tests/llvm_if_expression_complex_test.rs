@@ -26,7 +26,7 @@ use std::path::PathBuf;
 #[ignore = "This test needs more work to handle mixed integer types properly"]
 fn test_if_expression_with_variable() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_if_var", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();
@@ -143,7 +143,7 @@ fn test_if_expression_with_variable() {
 #[test]
 fn test_nested_if_expressions() {
     let context = Context::create();
-    let mut generator = LlvmCodeGenerator::new(&context, "test_nested_if", PathBuf::from("test.csd"));
+    let mut generator = LlvmCodeGenerator::new());
 
     // Create a function for testing
     let i32_type = context.i32_type();

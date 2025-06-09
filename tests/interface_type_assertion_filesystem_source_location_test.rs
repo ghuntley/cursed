@@ -34,7 +34,7 @@ fn test_filesystem_integration_initialization() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Initialize filesystem integration
     let _ = code_gen.init_filesystem_integration();
@@ -77,7 +77,7 @@ fn test_source_line_retrieval() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Initialize filesystem integration with the temp directory
     let _ = code_gen.init_filesystem_integration();
@@ -126,7 +126,7 @@ fn test_formatting_error_with_source_context() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Initialize filesystem integration with the temp directory
     let _ = code_gen.init_filesystem_integration();
@@ -199,7 +199,7 @@ fn test_source_location_with_node() {
     
     // Create a new LLVM context and code generator
     let context = inkwell::context::Context::create();
-    let mut code_gen = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
+    let mut code_gen = LlvmCodeGenerator::new());
     
     // Initialize filesystem integration with the temp directory
     let _ = code_gen.init_filesystem_integration();

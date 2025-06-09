@@ -26,7 +26,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     let mut type_checker = TypeChecker::new();
@@ -74,7 +74,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     let mut type_checker = TypeChecker::new();
@@ -110,7 +110,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     let mut type_checker = TypeChecker::new();
@@ -167,7 +167,7 @@ slay main() {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     let mut type_checker = TypeChecker::new();

@@ -28,7 +28,7 @@ fn test_import_statement_compilation() {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Create a mock import statement
     let import_stmt = ast::statements::declarations::ImportStatement {
@@ -59,7 +59,7 @@ fn test_import_with_alias_compilation() {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Create a mock import statement with alias
     let import_stmt = ast::statements::declarations::ImportStatement {
@@ -93,7 +93,7 @@ fn test_multiple_imports_compilation() {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     let imports = vec![
         ("std/math", None),
@@ -146,7 +146,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -154,7 +154,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // For now, we'll just verify the module can be created and verified
     // In a full implementation, we would compile the entire program
@@ -181,7 +181,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -189,7 +189,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Verify the module can be created and verified
     let module = generator.module();
@@ -216,7 +216,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -224,7 +224,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Verify the module can be created and verified
     let module = generator.module();
@@ -250,7 +250,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -258,7 +258,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // In a full implementation, this would fail during compilation
     // For now, we just verify the module can be created
@@ -287,7 +287,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -295,7 +295,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // In a full implementation, this would fail during compilation
     // For now, we just verify the module can be created
@@ -317,7 +317,7 @@ fn test_circular_import_detection() {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Create imports that would form a cycle (A -> B -> A)
     let import_a = ast::statements::declarations::ImportStatement {
@@ -357,7 +357,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -365,7 +365,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Verify the module can be created and verified
     let module = generator.module();
@@ -384,7 +384,7 @@ fn test_nested_package_imports() {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     let nested_imports = vec![
         "std/collections/list",
@@ -434,7 +434,7 @@ slay main() normie {
 "#;
 
     let mut lexer = Lexer::new(input);
-    let mut parser = Parser::new(&mut lexer).unwrap();
+    let mut parser = Parser::new(lexer).unwrap();
     let program = parser.parse_program().unwrap();
 
     debug!(statement_count = program.statements.len(), "Parsed statements");
@@ -442,7 +442,7 @@ slay main() normie {
     let context = Context::create();
     let module_name = "test_module";
     let file_path = PathBuf::from("test.csd");
-    let mut generator = LlvmCodeGenerator::new(&context, module_name, file_path);
+    let mut generator = LlvmCodeGenerator::new();
     
     // Verify the module can be created and verified
     let module = generator.module();
