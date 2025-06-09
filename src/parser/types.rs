@@ -353,8 +353,7 @@ impl<'a> Parser<'a> {
 
     /// Parse a map type
     fn parse_map_type(&mut self) -> Result<Type, Error> {
-        // We've already seen the 'tea'
-        let _ = self.next_token()?; // Skip 'tea'
+        // We've already seen the 'tea' and consumed it
 
         // Expect '['
         if self.current_token != Token::LBracket {

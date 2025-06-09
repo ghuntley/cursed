@@ -101,6 +101,12 @@ pub struct LlvmCodeGenerator<'ctx> {
     // Runtime system for type assertions with panic support
     pub(crate) type_assertion_runtime: Option<std::sync::Arc<crate::runtime::type_assertion_runtime::TypeAssertionRuntime>>,
     
+    // Standard library LLVM integration
+    pub(crate) stdlib_integration: Option<super::stdlib_integration::StdlibLlvmIntegration<'ctx>>,
+    
+    // Garbage collection LLVM integration
+    pub(crate) gc_integration: Option<super::gc_integration::LlvmGcIntegration<'ctx>>,
+    
     // Test-only fields for interface hierarchy mocking in unit tests
     #[cfg(test)]
     pub test_interface_hierarchy: Option<HashMap<String, HashSet<String>>>,
@@ -225,6 +231,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             // Initialize type assertion runtime with default configuration
             type_assertion_runtime: Some(std::sync::Arc::new(crate::runtime::type_assertion_runtime::TypeAssertionRuntime::new())),
             
+            // Initialize stdlib integration to None - will be created after module is available
+            stdlib_integration: None,
+            
+            // Initialize GC integration to None - will be created after module is available
+            gc_integration: None,
+            
             // Test-only fields for interface hierarchy mocking in unit tests
             #[cfg(test)]
             test_interface_hierarchy: None,
@@ -255,6 +267,91 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // generator.set_extension(package_resolver);
         
         generator
+    }
+
+    /// Initializes stdlib and GC integrations after the generator is created
+    #[instrument(skip(self))]
+    pub fn initialize_integrations(&'ctx mut self) {
+        // Initialize stdlib integration
+        let mut stdlib_integration = super::stdlib_integration::StdlibLlvmIntegration::new(self.context, &self.module);
+        if let Err(e) = stdlib_integration.generate_function_declarations() {
+            tracing::warn!("Failed to generate stdlib function declarations: {}", e);
+        }
+        self.stdlib_integration = Some(stdlib_integration);
+        
+        // Register LLVM intrinsics and runtime functions
+        if let Err(e) = super::intrinsics::register_intrinsics(self.context, &self.module) {
+            tracing::warn!("Failed to register LLVM intrinsics: {}", e);
+        }
+        if let Err(e) = super::intrinsics::register_stdlib_functions(self.context, &self.module) {
+            tracing::warn!("Failed to register stdlib runtime functions: {}", e);
+        }
+        
+        // Initialize GC integration (simplified for now)
+        let mut gc_integration = super::gc_integration::LlvmGcIntegration::new(self.context, &self.module);
+        self.register_builtin_gc_metadata(&mut gc_integration);
+        self.gc_integration = Some(gc_integration);
+    }
+
+    /// Initializes stdlib integration for the code generator
+    #[instrument(skip(generator, context))]
+    fn initialize_stdlib_integration(generator: &'ctx mut LlvmCodeGenerator<'ctx>, context: &'ctx Context) {
+        let mut stdlib_integration = super::stdlib_integration::StdlibLlvmIntegration::new(context, &generator.module);
+        if let Err(e) = stdlib_integration.generate_function_declarations() {
+            tracing::warn!("Failed to generate stdlib function declarations: {}", e);
+        }
+        generator.stdlib_integration = Some(stdlib_integration);
+    }
+
+    /// Initializes GC integration for the code generator
+    #[instrument(skip(generator, context))]
+    fn initialize_gc_integration(generator: &'ctx mut LlvmCodeGenerator<'ctx>, context: &'ctx Context) {
+        let mut gc_integration = super::gc_integration::LlvmGcIntegration::new(context, &generator.module);
+        // Register built-in type metadata for core types
+        generator.register_builtin_gc_metadata(&mut gc_integration);
+        if let Err(e) = gc_integration.generate_gc_descriptor_table() {
+            tracing::warn!("Failed to generate GC descriptor table: {}", e);
+        }
+        generator.gc_integration = Some(gc_integration);
+    }
+
+    /// Registers built-in GC metadata for core CURSED types
+    #[instrument(skip(self, gc_integration))]
+    fn register_builtin_gc_metadata(&self, gc_integration: &mut super::gc_integration::LlvmGcIntegration<'ctx>) {
+        use super::gc_integration::GcTypeMetadata;
+        
+        // String type: {i64 length, i8* data} - data pointer needs GC tracking
+        let mut string_metadata = GcTypeMetadata::new("string", 16); // 8 bytes for i64 + 8 bytes for pointer
+        string_metadata.add_pointer_field(1, "data");
+        gc_integration.register_type_metadata(string_metadata);
+        
+        // Slice type: {i64 length, i64 capacity, i8* data} - data pointer needs GC tracking
+        let mut slice_metadata = GcTypeMetadata::new("slice", 24); // 8 + 8 + 8 bytes
+        slice_metadata.add_pointer_field(2, "data");
+        gc_integration.register_type_metadata(slice_metadata);
+        
+        // Map type: opaque pointer - entire thing needs GC tracking
+        let mut map_metadata = GcTypeMetadata::new("map", 8); // pointer size
+        map_metadata.add_pointer_field(0, "map_ptr");
+        gc_integration.register_type_metadata(map_metadata);
+        
+        // Channel type: opaque pointer - entire thing needs GC tracking
+        let mut channel_metadata = GcTypeMetadata::new("channel", 8); // pointer size
+        channel_metadata.add_pointer_field(0, "channel_ptr");
+        channel_metadata.set_needs_finalization(true); // Channels need cleanup
+        gc_integration.register_type_metadata(channel_metadata);
+        
+        // Interface type: {type_id, data_ptr} - data pointer needs GC tracking
+        let mut interface_metadata = GcTypeMetadata::new("interface", 16); // 8 bytes type_id + 8 bytes pointer
+        interface_metadata.add_pointer_field(1, "data");
+        gc_integration.register_type_metadata(interface_metadata);
+        
+        // Function type: function pointer - needs GC tracking for closures
+        let mut function_metadata = GcTypeMetadata::new("function", 8); // pointer size
+        function_metadata.add_pointer_field(0, "func_ptr");
+        gc_integration.register_type_metadata(function_metadata);
+        
+        tracing::debug!("Registered built-in GC metadata for core types");
     }
     
     /// Mangles a symbol name with its package name according to `_<package>_<symbol>`.

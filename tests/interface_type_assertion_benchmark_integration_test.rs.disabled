@@ -3,6 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::collections::HashSet;
 use cursed::benchmark::interface_type_assertion_benchmark::{InterfaceTypeAssertionBenchmark, InterfaceTypeAssertionBenchmarkConfig};
 use cursed::codegen::llvm::EnhancedInterfacePathFinder;
 use cursed::codegen::llvm::interface_registry::InterfaceTypeRegistry;
@@ -59,16 +60,13 @@ fn test_simple_interface_type_assertion_benchmark() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context);
+    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a minimal dummy registry for testing
     let mock_registry = create_mock_registry();
     
     // Add mock registry to the code generator
-    code_generator.internal_fields.insert(
-        "interface_registry".to_string(),
-        Box::new(mock_registry) as Box<dyn std::any::Any>
-    );
+    code_generator.set_extension(mock_registry);
     
     // Create a minimal benchmark configuration
     let config = InterfaceTypeAssertionBenchmarkConfig {
@@ -108,16 +106,13 @@ fn test_comprehensive_interface_type_assertion_benchmark() {
     
     // Create a context and code generator
     let context = Context::create();
-    let mut code_generator = LlvmCodeGenerator::new(&context);
+    let mut code_generator = LlvmCodeGenerator::new(&context, "test_module", std::path::PathBuf::from("test.csd"));
     
     // Create a comprehensive mock registry for testing
     let mock_registry = create_comprehensive_mock_registry();
     
     // Add mock registry to the code generator
-    code_generator.internal_fields.insert(
-        "interface_registry".to_string(),
-        Box::new(mock_registry) as Box<dyn std::any::Any>
-    );
+    code_generator.set_extension(mock_registry);
     
     // Create a comprehensive benchmark configuration with small iteration counts
     let config = InterfaceTypeAssertionBenchmarkConfig {
@@ -175,15 +170,17 @@ fn test_interface_type_assertion_benchmark_csd_file() {
 // Helper to create a simple mock registry for testing
 fn create_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
     // This is just a stub implementation for testing
+    #[derive(Debug)]
     struct MockRegistry;
     
     impl InterfaceTypeRegistry for MockRegistry {
-        fn register_interface(&mut self, _id: u32, _name: String) -> Result<(), Error> { Ok(()) }
-        fn register_concrete_type(&mut self, _id: u32, _name: String) -> Result<(), Error> { Ok(()) }
-        fn register_implementation(&mut self, _concrete_id: u32, _interface_id: u32) -> Result<(), Error> { Ok(()) }
-        fn type_implements_interface(&self, _concrete_id: u32, _interface_id: u32) -> bool { true }
-        fn get_implemented_interfaces(&self, _concrete_id: u32) -> Result<Vec<u32>, Error> { Ok(vec![100, 200]) }
-        fn get_type_name(&self, _id: u32) -> Result<String, Error> { Ok("MockType".to_string()) }
+        fn register_interface(&mut self, _name: &str) -> Result<(), Error> { Ok(()) }
+        fn register_extension(&mut self, _source: &str, _target: &str) -> Result<(), Error> { Ok(()) }
+        fn extends(&self, _source: &str, _target: &str) -> Result<bool, Error> { Ok(true) }
+        fn find_path(&self, _source: &str, _target: &str) -> Result<Option<Vec<String>>, Error> { Ok(None) }
+        fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> { Ok(HashSet::new()) }
+        fn interface_exists(&self, _name: &str) -> Result<bool, Error> { Ok(true) }
+        fn get_type_name(&self, _id: u64) -> Result<String, Error> { Ok("MockType".to_string()) }
     }
     
     Box::new(MockRegistry)
@@ -191,28 +188,42 @@ fn create_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
 
 // Helper to create a comprehensive mock registry
 fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
+    #[derive(Debug)]
     struct ComprehensiveMockRegistry {
-        interfaces: std::collections::HashMap<u32, String>,
-        concrete_types: std::collections::HashMap<u32, String>,
-        implementations: std::collections::HashMap<u32, Vec<u32>>, // concrete_id -> [interface_ids]
+        interfaces: std::collections::HashMap<String, u32>,
+        extensions: std::collections::HashMap<String, Vec<String>>,
     }
     
     impl InterfaceTypeRegistry for ComprehensiveMockRegistry {
-        fn register_interface(&mut self, id: u32, name: String) -> Result<(), Error> {
-            self.interfaces.insert(id, name);
+        fn register_interface(&mut self, name: &str) -> Result<(), Error> {
+            let id = self.interfaces.len() as u32;
+            self.interfaces.insert(name.to_string(), id);
             Ok(())
         }
         
-        fn register_concrete_type(&mut self, id: u32, name: String) -> Result<(), Error> {
-            self.concrete_types.insert(id, name);
-            Ok(())
-        }
-        
-        fn register_implementation(&mut self, concrete_id: u32, interface_id: u32) -> Result<(), Error> {
-            self.implementations.entry(concrete_id)
+        fn register_extension(&mut self, source: &str, target: &str) -> Result<(), Error> {
+            self.extensions.entry(source.to_string())
                 .or_insert_with(Vec::new)
-                .push(interface_id);
+                .push(target.to_string());
             Ok(())
+        }
+        
+        fn extends(&self, source: &str, target: &str) -> Result<bool, Error> {
+            Ok(self.extensions.get(source)
+                .map(|targets| targets.contains(&target.to_string()))
+                .unwrap_or(false))
+        }
+        
+        fn find_path(&self, _source: &str, _target: &str) -> Result<Option<Vec<String>>, Error> {
+            Ok(None) // Simplified implementation
+        }
+        
+        fn get_all_interfaces(&self) -> Result<HashSet<String>, Error> {
+            Ok(self.interfaces.keys().cloned().collect())
+        }
+        
+        fn interface_exists(&self, name: &str) -> Result<bool, Error> {
+            Ok(self.interfaces.contains_key(name))
         }
         
         fn type_implements_interface(&self, concrete_id: u32, interface_id: u32) -> bool {
@@ -227,24 +238,15 @@ fn create_comprehensive_mock_registry() -> Box<dyn InterfaceTypeRegistry> {
                 .unwrap_or_else(Vec::new))
         }
         
-        fn get_type_name(&self, id: u32) -> Result<String, Error> {
-            if let Some(name) = self.interfaces.get(&id) {
-                return Ok(name.clone());
-            }
-            
-            if let Some(name) = self.concrete_types.get(&id) {
-                return Ok(name.clone());
-            }
-            
-            Ok(format!("Type{}", id))
+        fn get_type_name(&self, id: u64) -> Result<String, Error> {
+            Ok(format!("MockType{}", id))
         }
     }
     
     // Create registry with comprehensive test data
     let mut registry = ComprehensiveMockRegistry {
         interfaces: std::collections::HashMap::new(),
-        concrete_types: std::collections::HashMap::new(),
-        implementations: std::collections::HashMap::new(),
+        extensions: std::collections::HashMap::new(),
     };
     
     // Add interfaces
