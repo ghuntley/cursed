@@ -187,7 +187,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Prepare the working directory for verification
-    fn prepare_work_dir(&self) -> Result<()> {
+    pub fn prepare_work_dir(&self) -> Result<()> {
         if self.config.work_dir.exists() && !self.config.keep_intermediates {
             std::fs::remove_dir_all(&self.config.work_dir)
             .map_err(|e| Error::from_str(&format!("Failed to clean work dir: {}", e)))?;
@@ -317,7 +317,7 @@ impl SelfCompilationVerifier {
     }
 
     /// Compare two compilation stages
-    fn compare_stages(&self, stage1: &CompilationResult, stage2: &CompilationResult) -> Result<ComparisonResult> {
+    pub fn compare_stages(&self, stage1: &CompilationResult, stage2: &CompilationResult) -> Result<ComparisonResult> {
         let binary_size_diff = stage2.binary_size as i64 - stage1.binary_size as i64;
         
         let performance_diff = if stage1.compilation_time.as_millis() > 0 {
@@ -582,7 +582,7 @@ func main() {
     }
 
     /// Check if performance is stable across compilation stages
-    fn check_performance_stability(&self, stages: &[CompilationResult]) -> Result<bool> {
+    pub fn check_performance_stability(&self, stages: &[CompilationResult]) -> Result<bool> {
         if stages.len() < 2 {
             return Ok(true);
         }
@@ -656,7 +656,7 @@ func main() {
     }
 
     /// Generate CURSED source code for the compiler
-    fn generate_cursed_compiler_source(&self) -> Result<String> {
+    pub fn generate_cursed_compiler_source(&self) -> Result<String> {
         // This is a simplified CURSED compiler implementation
         // In a real scenario, you would have the full CURSED compiler written in CURSED
         Ok(r#"
@@ -685,7 +685,7 @@ func main() {
     }
 
     /// Calculate SHA-256 checksum of a file
-    fn calculate_checksum(&self, file_path: &Path) -> Result<String> {
+    pub fn calculate_checksum(&self, file_path: &Path) -> Result<String> {
         use sha2::{Sha256, Digest};
         
         let contents = std::fs::read(file_path)

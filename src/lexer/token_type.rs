@@ -121,6 +121,7 @@ pub enum TokenType {
     Break,     // break (ghosted) - added for compatibility with tests
     Continue,  // continue (simp) - added for compatibility with tests
     For,       // for (bestie) - added for compatibility with tests
+    Where,     // where (constraint clause)
 
     // Type tokens
     Smol,   // int8 (smol)
