@@ -99,12 +99,20 @@ pub fn convert_type<'ctx>(context: &'ctx Context, ty: &Type) -> Result<BasicType
             Ok(slice_struct.into())
         }
         
-        // Map types (represented as pointer to runtime map structure)
+        // Map types (represented as {size, capacity, buckets_ptr} struct)
         Type::Map(key_type, value_type) => {
-            debug!("Converting map type to runtime map pointer");
-            // Maps are implemented as opaque pointers to runtime structures
-            let i8_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
-            Ok(i8_ptr_type.into())
+            debug!("Converting map type to {{size, capacity, buckets_ptr}} struct");
+            let size_type = context.i64_type();
+            let capacity_type = context.i64_type();
+            let buckets_ptr_type = context.i8_type().ptr_type(inkwell::AddressSpace::default());
+            
+            let map_struct = context.opaque_struct_type("cursed_map");
+            map_struct.set_body(&[
+                size_type.into(),
+                capacity_type.into(),
+                buckets_ptr_type.into(),
+            ], false);
+            Ok(map_struct.into())
         }
         
         // Channel types (represented as pointer to runtime channel structure)

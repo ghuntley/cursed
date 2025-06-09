@@ -123,29 +123,33 @@ impl<'ctx> SliceIntegration<'ctx> {
     pub fn parse_slice_literal(&self, source: &str) -> Result<Box<SliceLiteral>, Error> {
         debug!("Parsing slice literal from source: {}", source);
         
-        // For now, create a simple manual slice literal for testing
-        // In a full implementation, this would use the full parser
-        if source.starts_with("[]") {
-            // Extract type name and create a basic slice literal
-            if let Some(type_end) = source.find('{') {
-                let type_part = &source[2..type_end]; // Skip "[]"
-                info!("Creating slice literal for type: {}", type_part);
-                
-                // Create a mock slice literal
-                let slice_literal = SliceLiteral {
-                    token: Token::LBracket,
-                    element_type: Box::new(crate::ast::expressions::Identifier {
-                        token: type_part.to_string(),
-                        value: type_part.to_string(),
-                    }),
-                    elements: Vec::new(), // Simplified for testing
-                };
-                
-                return Ok(Box::new(slice_literal));
-            }
-        }
+        // Use the actual parser to parse the slice literal
+        let mut lexer = Lexer::new(source);
+        let mut parser = Parser::new(&mut lexer)
+            .map_err(|e| Error::from_str(&format!("Failed to create parser: {}", e)))?;
         
-        Err(Error::from_str("Invalid slice literal syntax"))
+        // Parse the slice literal using the real parser
+        let expression = parser.parse_slice_literal()
+            .map_err(|e| Error::from_str(&format!("Failed to parse slice literal: {}", e)))?;
+        
+        // Downcast to SliceLiteral
+        if let Some(slice_literal) = expression.as_any().downcast_ref::<SliceLiteral>() {
+            info!("Successfully parsed slice literal with {} elements", slice_literal.elements.len());
+            
+            // Validate the element type early to provide better error messages
+            self.infer_element_type(slice_literal)?;
+            
+            // Create a new SliceLiteral instance since we can't clone the trait object directly
+            let new_slice_literal = SliceLiteral::new(
+                slice_literal.token.clone(),
+                slice_literal.element_type.clone_box(),
+                slice_literal.elements.iter().map(|e| e.clone_box()).collect(),
+            );
+            
+            Ok(Box::new(new_slice_literal))
+        } else {
+            Err(Error::from_str("Expression is not a slice literal"))
+        }
     }
 
     /// Compile a slice literal to LLVM IR
@@ -348,8 +352,8 @@ impl<'ctx> SliceIntegration<'ctx> {
             "byte" => Type::Byte,         // byte (uint8)
             "extra" => Type::Extra,       // interface{}
             _ => {
-                warn!("Unknown type in slice literal: {}", type_expr_string);
-                return Err(Error::from_str(&format!("Unknown element type: {}", type_expr_string)));
+                error!("Unknown type in slice literal: {}", type_expr_string);
+                return Err(Error::from_str(&format!("Unknown element type: '{}'. Supported types are: lit, smol, mid, normie, thicc, snack, meal, tea, sip, rune, byte, extra", type_expr_string)));
             }
         };
         

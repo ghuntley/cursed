@@ -83,8 +83,7 @@ impl<'a> Parser<'a> {
         elements.push(self.parse_expression(Precedence::Lowest)?);
         
         // Parse additional elements separated by commas
-        while self.peek_token_is(Token::Comma) {
-            self.next_token()?; // Move to comma
+        while self.current_token_is(Token::Comma) {
             self.next_token()?; // Skip past comma
             
             // Allow trailing comma before closing brace
@@ -96,15 +95,14 @@ impl<'a> Parser<'a> {
             elements.push(self.parse_expression(Precedence::Lowest)?);
         }
         
-        // Expect closing brace '}'
-        if !self.peek_token_is(Token::RBrace) {
+        // Expect closing brace '}' - check current token
+        if !self.current_token_is(Token::RBrace) {
             return Err(self.error(&format!(
                 "Expected '}}' after slice elements, got {:?}",
-                self.peek_token
+                self.current_token
             )));
         }
         
-        self.next_token()?; // Move to '}'
         self.next_token()?; // Skip past '}'
         
         Ok(Box::new(SliceLiteral::new(

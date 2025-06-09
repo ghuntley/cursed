@@ -5,7 +5,8 @@
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::traits::Expression;
-use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion, TypeAssertionQuestion};
+use crate::ast::expressions::{Identifier, CallExpression, DotExpression, TypeAssertion, TypeAssertionQuestion, HashLiteral, IndexExpression};
+use crate::ast::traits::Node;
 use crate::ast::pointer::types::PointerType;
 use crate::ast::pointer::operations::PointerDereference;
 use crate::error::Error;
@@ -110,6 +111,27 @@ impl<'ctx> ExpressionCompilation<'ctx> for LlvmCodeGenerator<'ctx> {
             let result = self.compile_assignment_expr(assign_expr)?
                 .ok_or_else(|| Error::from_str("Assignment failed"))?;
             return Ok(result);
+        }
+
+        // Handle hash/map literals
+        if let Some(hash_lit) = any.downcast_ref::<HashLiteral>() {
+            tracing::debug!("Found hash literal expression with {} pairs", hash_lit.pairs.len());
+            // The compile_hash_literal method is implemented in hash.rs
+            // and returns a Result<BasicValueEnum, String>, so we need to convert the error
+            return match self.compile_hash_literal(hash_lit) {
+                Ok(val) => Ok(val),
+                Err(e) => Err(Error::from_str(&format!("Hash literal compilation failed: {}", e))),
+            };
+        }
+
+        // Handle index expressions (for arrays, slices, and maps)
+        if let Some(index_expr) = any.downcast_ref::<IndexExpression>() {
+            tracing::debug!("Found index expression: {}", index_expr.string());
+            
+            // TODO: Determine if this is a map, array, or slice index
+            // For now, try to handle it as a general index expression
+            return self.compile_index_expression_dispatch(index_expr)
+                .map_err(|e| Error::from_str(&format!("Index expression compilation failed: {}", e)));
         }
         
         // Fall back to basic expressions (literals, arithmetic operations)
@@ -394,6 +416,90 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         match self.compile_expression(expr) {
             Ok(val) => Ok(val),
             Err(e) => Err(e.to_string())
+        }
+    }
+
+    /// Compile an index expression (arr[i], slice[i], map[key]) - dispatcher
+    pub fn compile_index_expression_dispatch(&mut self, index_expr: &IndexExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        tracing::info!("Compiling index expression");
+
+        // TODO: This needs proper type inference to determine if we're indexing
+        // an array, slice, or map. For now, we'll try different approaches.
+
+        // First, check if this looks like an array index expression
+        // (This is a simplified approach - proper implementation needs type checking)
+        
+        // Try array indexing first (existing implementation from array.rs)
+        if let Ok(result) = self.compile_index_expression_as_array(index_expr) {
+            return Ok(result);
+        }
+
+        // TODO: Try slice indexing
+        // if let Ok(result) = self.compile_index_expression_as_slice(index_expr) {
+        //     return Ok(result);
+        // }
+
+        // TODO: Try map indexing with proper type detection
+        // For now, assume it's a map if array indexing failed
+        tracing::warn!("Assuming index expression is for a map - needs proper type inference");
+        
+        // Create a dummy map type for now (this needs proper type inference)
+        let map_type = crate::core::type_checker::Type::Map(
+            Box::new(crate::core::type_checker::Type::Tea),  // Tea is the string type
+            Box::new(crate::core::type_checker::Type::Thicc), // Thicc is the 64-bit int type
+        );
+
+        // The compile_map_index method is implemented in hash.rs
+        match self.compile_map_index(index_expr, &map_type) {
+            Ok(val) => Ok(val),
+            Err(e) => Err(format!("Map index compilation failed: {}", e)),
+        }
+    }
+
+    /// Compile an index expression as an array access
+    pub fn compile_index_expression_as_array(&mut self, index_expr: &IndexExpression) -> Result<BasicValueEnum<'ctx>, String> {
+        // Delegate to the existing array implementation in array.rs
+        // This directly calls the array module's compile_index_expression method
+        // which is implemented in the array.rs file
+        
+        // First compile the left (array) expression
+        let array_val = self.compile_expression(index_expr.left.as_ref())
+            .map_err(|e| format!("Failed to compile array expression: {}", e))?;
+        
+        // And the index expression
+        let index_val = self.compile_expression(index_expr.index.as_ref())
+            .map_err(|e| format!("Failed to compile index expression: {}", e))?;
+        
+        // Check that the array operand is a pointer value
+        if !array_val.is_pointer_value() {
+            return Err("Cannot index a non-pointer value".to_string());
+        }
+        
+        // Check that the index operand is an integer value
+        if !index_val.is_int_value() {
+            return Err("Array index must be an integer".to_string());
+        }
+        
+        let array_ptr = array_val.into_pointer_value();
+        let index_int = index_val.into_int_value();
+        
+        // Build GEP instruction for array indexing
+        unsafe {
+            let element_ptr = self.builder().build_gep(
+                self.context().i8_type(), // Default element type
+                array_ptr,
+                &[index_int],
+                "array_element_ptr",
+            ).map_err(|e| format!("Failed to build GEP: {}", e))?;
+            
+            // Load the element value
+            let element_val = self.builder().build_load(
+                self.context().i8_type(),
+                element_ptr,
+                "array_element",
+            ).map_err(|e| format!("Failed to load array element: {}", e))?;
+            
+            Ok(element_val)
         }
     }
 }

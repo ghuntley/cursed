@@ -249,7 +249,7 @@ impl<'a> Parser<'a> {
             Token::Crew => self.parse_simple_expression("array"),
             Token::LBracket => self.parse_array_index_or_literal(),
             Token::Normie => self.parse_type_expression("normie"),
-            Token::Tea => self.parse_type_expression("tea"),
+            Token::Tea => self.parse_tea_expression(),
             Token::Thicc => self.parse_type_expression("thicc"),
             Token::Smol => self.parse_type_expression("smol"),
             Token::Mid => self.parse_type_expression("mid"),
@@ -1060,6 +1060,115 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::Identifier {
             token: token.token_literal(),
             value: name.to_string(),
+        }))
+    }
+
+    /// Parse a tea expression that could be a type name or a map literal
+    /// 
+    /// This method handles:
+    /// - `tea` -> simple identifier for tea type
+    /// - `tea[K]V{}` -> typed map literal
+    fn parse_tea_expression(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        self.next_token()?; // Skip past 'tea'
+        
+        // Check if this is a map literal: tea[K]V{}
+        if self.current_token_is(Token::LBracket) {
+            // Parse map literal: tea[K]V{}
+            self.next_token()?; // Skip past '['
+            
+            // Parse key type
+            let key_type = self.parse_expression(Precedence::Lowest)?;
+            
+            // Expect ']'
+            if !self.current_token_is(Token::RBracket) {
+                return Err(self.error(&format!(
+                    "Expected ']' after map key type, got {:?}",
+                    self.current_token
+                )));
+            }
+            self.next_token()?; // Skip past ']'
+            
+            // Parse value type
+            let value_type = self.parse_expression(Precedence::Lowest)?;
+            
+            // Expect '{'
+            if !self.current_token_is(Token::LBrace) {
+                return Err(self.error(&format!(
+                    "Expected '{{' after map value type, got {:?}",
+                    self.current_token
+                )));
+            }
+            self.next_token()?; // Skip past '{'
+            
+            // Parse key-value pairs
+            let mut pairs = Vec::new();
+            
+            // Handle empty map literal
+            if self.current_token_is(Token::RBrace) {
+                self.next_token()?; // Skip past '}'
+                return Ok(Box::new(ast::MapLiteral {
+                    token,
+                    key_type,
+                    value_type,
+                    pairs,
+                }));
+            }
+            
+            // Parse first key-value pair
+            loop {
+                // Parse key
+                let key = self.parse_expression(Precedence::Lowest)?;
+                
+                // Expect ':'
+                if !self.current_token_is(Token::Colon) {
+                    return Err(self.error(&format!(
+                        "Expected ':' after map key, got {:?}",
+                        self.current_token
+                    )));
+                }
+                self.next_token()?; // Skip past ':'
+                
+                // Parse value
+                let value = self.parse_expression(Precedence::Lowest)?;
+                
+                pairs.push((key, value));
+                
+                // Check for comma and continue or end
+                if self.peek_token_is(Token::Comma) {
+                    self.next_token()?; // Move to ','
+                    self.next_token()?; // Skip past ','
+                    
+                    // Allow trailing comma
+                    if self.current_token_is(Token::RBrace) {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            
+            // Expect '}'
+            if !self.current_token_is(Token::RBrace) {
+                return Err(self.error(&format!(
+                    "Expected '}}' after map pairs, got {:?}",
+                    self.current_token
+                )));
+            }
+            self.next_token()?; // Skip past '}'
+            
+            return Ok(Box::new(ast::MapLiteral {
+                token,
+                key_type,
+                value_type,
+                pairs,
+            }));
+        }
+        
+        // Otherwise, it's just a simple tea type identifier
+        Ok(Box::new(ast::Identifier {
+            token: token.token_literal(),
+            value: "tea".to_string(),
         }))
     }
 

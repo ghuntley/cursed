@@ -15,7 +15,13 @@
 
 use inkwell::values::BasicValueEnum;
 use crate::ast::HashLiteral;
+use crate::ast::expressions::IndexExpression;
+use crate::core::type_checker::Type;
+use crate::error_enhanced::CursedError;
 use super::context::LlvmCodeGenerator;
+use super::map_operations::{MapOperations, create_map_operations};
+use super::expression::ExpressionCompilation;
+use tracing::{debug, info, warn};
 
 impl<'ctx> LlvmCodeGenerator<'ctx> {
     /// Compiles a hash map literal expression to LLVM IR.
@@ -40,70 +46,123 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ///
     /// * `Result<BasicValueEnum, String>` - A pointer to the created hash map, or an error message
     pub fn compile_hash_literal(&mut self, hash_lit: &HashLiteral) -> Result<BasicValueEnum<'ctx>, String> {
-        // First, we need to initialize the hash map runtime
-        self.init_hash_functions();
-        
-        // Get the create_hashmap function
-        let create_fn = self.module.get_function("create_hashmap").ok_or_else(|| 
-            "create_hashmap function not found".to_string()
-        )?;
-        
-        // Call the function to create an empty hashmap
-        let hashmap = self.builder.build_call(
-            create_fn,
-            &[],
-            "new_hashmap"
-        ).unwrap();
-        
-        let hashmap_ptr = hashmap.try_as_basic_value().left().unwrap();
-        
-        // For each pair, add it to the hashmap
-        for (key, value) in &hash_lit.pairs {
-            // Compile the key and value
-            let key_val = self.compile_expression(key.as_ref())?;
-            let value_val = self.compile_expression(value.as_ref())?;
-            
-            // Get the insert function
-            let insert_fn = self.module.get_function("hashmap_insert").ok_or_else(|| 
-                "hashmap_insert function not found".to_string()
-            )?;
-            
-            // Convert key and value to void pointers if necessary
-            let key_ptr = if key_val.is_pointer_value() {
-                key_val.into_pointer_value()
-            } else {
-                // Store the key in a temporary alloca
-                let key_type = key_val.get_type();
-                let key_alloca = self.builder.build_alloca(key_type, "key_temp").unwrap();
-                self.builder.build_store(key_alloca, key_val).unwrap();
-                key_alloca
-            };
-            
-            let value_ptr = if value_val.is_pointer_value() {
-                value_val.into_pointer_value()
-            } else {
-                // Store the value in a temporary alloca
-                let value_type = value_val.get_type();
-                let value_alloca = self.builder.build_alloca(value_type, "value_temp").unwrap();
-                self.builder.build_store(value_alloca, value_val).unwrap();
-                value_alloca
-            };
-            
-            // Cast to void pointers
-            let void_ptr_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
-            let key_void_ptr = self.builder.build_bitcast(key_ptr, void_ptr_type, "key_void_ptr").unwrap();
-            let value_void_ptr = self.builder.build_bitcast(value_ptr, void_ptr_type, "value_void_ptr").unwrap();
-            
-            // Call the insert function
-            self.builder.build_call(
-                insert_fn,
-                &[hashmap_ptr.into(), key_void_ptr.into(), value_void_ptr.into()],
-                "insert_result"
-            ).unwrap();
+        info!("Compiling hash literal with {} pairs", hash_lit.pairs.len());
+
+        // TODO: Infer key and value types from the literal pairs
+        // For now, use generic types - this needs proper type inference
+        let key_type = Type::Tea; // Default assumption
+        let value_type = Type::Thicc;  // Default assumption
+
+        let map_ops = create_map_operations();
+
+        // Compile key-value pairs
+        let mut compiled_pairs = Vec::new();
+        for (key_expr, value_expr) in &hash_lit.pairs {
+            let key_val = self.compile_expression(key_expr.as_ref())
+                .map_err(|e| format!("Failed to compile key expression: {}", e))?;
+            let value_val = self.compile_expression(value_expr.as_ref())
+                .map_err(|e| format!("Failed to compile value expression: {}", e))?;
+            compiled_pairs.push((key_val, value_val));
         }
-        
-        // Return the hashmap pointer
-        Ok(hashmap_ptr)
+
+        // Create map literal using new map operations
+        let map_struct = map_ops
+            .create_map_literal(
+                &self.context,
+                &self.module,
+                &self.builder,
+                &compiled_pairs,
+                &key_type,
+                &value_type,
+            )
+            .map_err(|e| format!("Failed to create map literal: {}", e))?;
+
+        debug!("Hash literal compilation completed successfully");
+        Ok(map_struct.into())
+    }
+
+    /// Compiles a map indexing expression (map[key])
+    pub fn compile_map_index(&mut self, index_expr: &IndexExpression, map_type: &Type) -> Result<BasicValueEnum<'ctx>, String> {
+        info!("Compiling map index expression");
+
+        // Extract key and value types from map type
+        let (key_type, value_type) = match map_type {
+            Type::Map(key, value) => (key.as_ref(), value.as_ref()),
+            _ => return Err("Index expression not on a map type".to_string()),
+        };
+
+        // Compile the map expression
+        let map_val = self.compile_expression(&*index_expr.left)
+            .map_err(|e| format!("Failed to compile map expression: {}", e))?;
+        let map_struct = map_val.into_struct_value();
+
+        // Compile the key expression
+        let key_val = self.compile_expression(&*index_expr.index)
+            .map_err(|e| format!("Failed to compile key expression: {}", e))?;
+
+        let map_ops = create_map_operations();
+
+        // Get value from map
+        let result = map_ops
+            .map_get(
+                &self.context,
+                &self.module,
+                &self.builder,
+                map_struct,
+                key_val,
+                key_type,
+                value_type,
+            )
+            .map_err(|e| format!("Failed to get value from map: {}", e))?;
+
+        debug!("Map index compilation completed successfully");
+        Ok(result)
+    }
+
+    /// Compiles a map assignment expression (map[key] = value)
+    pub fn compile_map_assignment(
+        &mut self,
+        index_expr: &IndexExpression,
+        value_expr: &dyn crate::ast::Expression,
+        map_type: &Type,
+    ) -> Result<BasicValueEnum<'ctx>, String> {
+        info!("Compiling map assignment expression");
+
+        // Extract key and value types from map type
+        let (key_type, value_type) = match map_type {
+            Type::Map(key, value) => (key.as_ref(), value.as_ref()),
+            _ => return Err("Assignment not on a map type".to_string()),
+        };
+
+        // Compile the map expression
+        let map_val = self.compile_expression(&*index_expr.left)
+            .map_err(|e| format!("Failed to compile map expression: {}", e))?;
+        let map_struct = map_val.into_struct_value();
+
+        // Compile the key and value expressions
+        let key_val = self.compile_expression(&*index_expr.index)
+            .map_err(|e| format!("Failed to compile key expression: {}", e))?;
+        let value_val = self.compile_expression(value_expr)
+            .map_err(|e| format!("Failed to compile value expression: {}", e))?;
+
+        let map_ops = create_map_operations();
+
+        // Set value in map
+        let updated_map = map_ops
+            .map_set(
+                &self.context,
+                &self.module,
+                &self.builder,
+                map_struct,
+                key_val,
+                value_val,
+                key_type,
+                value_type,
+            )
+            .map_err(|e| format!("Failed to set value in map: {}", e))?;
+
+        debug!("Map assignment compilation completed successfully");
+        Ok(updated_map.into())
     }
     
     /// Initializes the runtime functions needed for hash map operations.
