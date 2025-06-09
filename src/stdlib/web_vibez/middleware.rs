@@ -857,11 +857,11 @@ mod tests {
 
     #[test]
     fn test_middleware_chain() {
-        let logging = Arc::new(LoggingMiddleware::new());
-        let cors = Arc::new(CorsMiddleware::new());
+        let logging: Arc<dyn Middleware> = Arc::new(LoggingMiddleware::new());
+        let cors: Arc<dyn Middleware> = Arc::new(CorsMiddleware::new());
         let handler = Arc::new(StaticHandler::new("Test response"));
 
-        let mut chain = MiddlewareChain::new(Vec::from([logging, cors]));
+        let chain = MiddlewareChain::new(Vec::from([logging, cors]));
         
         let context = RequestContext::new("GET".to_string(), "/test".to_string());
         let response = ResponseContext::new();

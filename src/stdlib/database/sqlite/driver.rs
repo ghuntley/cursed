@@ -363,7 +363,7 @@ impl SqliteDriver {
             Ok(conn) => {
                 let ping_result = conn.ping();
                 let _ = conn.close(); // Always try to close
-                ping_result.map(|_| true).map_err(|e| SqliteError::from(e))
+                ping_result.map(|_| true).map_err(|e| SqliteError::internal(&e.to_string()))
             }
             Err(_) => Ok(false),
         }

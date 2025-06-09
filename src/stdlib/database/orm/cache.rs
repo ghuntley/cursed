@@ -63,7 +63,7 @@ impl QueryCache {
 
     /// periodt Set cached value with TTL
     #[instrument(skip(self, value))]
-    pub fn set<T: Clone + Send + Sync + 'static>(&mut self, key: String, value: T, ttl: Duration) {
+    pub fn set<T: Clone + Send + Sync + std::fmt::Debug + 'static>(&mut self, key: String, value: T, ttl: Duration) {
         debug!(key = %key, ttl = ?ttl, "Setting value in cache");
         
         let entry = CacheEntry {
@@ -263,12 +263,12 @@ impl CacheEntry {
 }
 
 /// fr fr Trait for values that can be cached
-trait CacheValue: Send + Sync + 'static {
+trait CacheValue: Send + Sync + std::fmt::Debug + 'static {
     fn as_any(&self) -> &dyn std::any::Any;
     fn clone_box(&self) -> Box<dyn CacheValue>;
 }
 
-impl<T: Clone + Send + Sync + 'static> CacheValue for T {
+impl<T: Clone + Send + Sync + std::fmt::Debug + 'static> CacheValue for T {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -378,7 +378,7 @@ impl EntityCache {
 
     /// facts Cache entity by primary key
     #[instrument(skip(self, entity))]
-    pub fn cache_entity<T: super::entity::Entity + Clone + Send + Sync + 'static>(
+    pub fn cache_entity<T: super::entity::Entity + Clone + Send + Sync + std::fmt::Debug + 'static>(
         &mut self,
         entity: T,
         ttl: Duration,

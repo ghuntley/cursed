@@ -621,7 +621,6 @@ impl TemplateRenderer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::object::CursedObject;
     use std::collections::HashMap;
 
     #[test]

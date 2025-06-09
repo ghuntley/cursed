@@ -682,7 +682,7 @@ mod tests {
         let db_error = sqlite_error.to_database_error();
         
         // Check that it maps to the correct database error kind
-        assert!(matches!(db_error.kind(), DatabaseErrorKind::ConstraintViolation));
+        assert!(matches!(db_error.kind, DatabaseErrorKind::ConstraintViolation));
     }
 
     #[test]

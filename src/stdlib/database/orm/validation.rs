@@ -4,7 +4,7 @@
 /// and validation context management for entity constraints.
 
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use tracing::{instrument, debug, info, warn, error};
 
@@ -122,7 +122,7 @@ impl Default for ValidationOptions {
 }
 
 /// fr fr Main validator trait
-pub trait Validator: Send + Sync {
+pub trait Validator: Send + Sync + Debug {
     /// Validation rule name
     fn rule_name(&self) -> &str;
     

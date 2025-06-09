@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 /// fr fr SQL value types - all the data types we support
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SqlValue {
     /// NULL value
     Null,
@@ -55,6 +55,116 @@ pub enum SqlValue {
     Array(Vec<SqlValue>),
     /// Custom type value
     Custom(String, Box<SqlValue>), // type_name, value
+}
+
+impl Eq for SqlValue {}
+
+impl std::hash::Hash for SqlValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            SqlValue::Null => 0u8.hash(state),
+            SqlValue::Boolean(b) => {
+                1u8.hash(state);
+                b.hash(state);
+            }
+            SqlValue::TinyInt(i) => {
+                2u8.hash(state);
+                i.hash(state);
+            }
+            SqlValue::SmallInt(i) => {
+                3u8.hash(state);
+                i.hash(state);
+            }
+            SqlValue::Int(i) => {
+                4u8.hash(state);
+                i.hash(state);
+            }
+            SqlValue::Integer(i) => {
+                5u8.hash(state);
+                i.hash(state);
+            }
+            SqlValue::BigInt(i) => {
+                6u8.hash(state);
+                i.hash(state);
+            }
+            SqlValue::Float(f) | SqlValue::Double(f) => {
+                // Handle NaN and infinity cases for f64
+                if f.is_nan() {
+                    7u8.hash(state);
+                    "NaN".hash(state);
+                } else if f.is_infinite() {
+                    8u8.hash(state);
+                    f.is_sign_positive().hash(state);
+                    "Infinity".hash(state);
+                } else {
+                    9u8.hash(state);
+                    f.to_bits().hash(state);
+                }
+            }
+            SqlValue::Decimal(s, p, scale) => {
+                10u8.hash(state);
+                s.hash(state);
+                p.hash(state);
+                scale.hash(state);
+            }
+            SqlValue::Text(s) => {
+                11u8.hash(state);
+                s.hash(state);
+            }
+            SqlValue::Char(s, len) => {
+                12u8.hash(state);
+                s.hash(state);
+                len.hash(state);
+            }
+            SqlValue::Binary(b) => {
+                13u8.hash(state);
+                b.hash(state);
+            }
+            SqlValue::VarBinary(b, len) => {
+                14u8.hash(state);
+                b.hash(state);
+                len.hash(state);
+            }
+            SqlValue::Date(d) => {
+                15u8.hash(state);
+                d.hash(state);
+            }
+            SqlValue::Timestamp(ts) => {
+                16u8.hash(state);
+                ts.hash(state);
+            }
+            SqlValue::TimestampTz(ts) => {
+                17u8.hash(state);
+                ts.hash(state);
+            }
+            SqlValue::Time(t) => {
+                18u8.hash(state);
+                t.hash(state);
+            }
+            SqlValue::Json(j) => {
+                19u8.hash(state);
+                // Hash the JSON as string representation
+                j.to_string().hash(state);
+            }
+            SqlValue::Xml(s) => {
+                20u8.hash(state);
+                s.hash(state);
+            }
+            SqlValue::Uuid(u) => {
+                21u8.hash(state);
+                u.hash(state);
+            }
+            SqlValue::Array(arr) => {
+                22u8.hash(state);
+                arr.hash(state);
+            }
+            SqlValue::Custom(name, val) => {
+                23u8.hash(state);
+                name.hash(state);
+                val.hash(state);
+            }
+        }
+    }
 }
 
 /// fr fr SQL data types for schema definition
@@ -693,9 +803,8 @@ impl From<serde_json::Value> for SqlValue {
 /// fr fr Conversion to db_core Parameter type
 impl From<SqlValue> for crate::stdlib::packages::db_core::Parameter {
     fn from(sql_value: SqlValue) -> Self {
-        // This is a placeholder implementation
-        // In a real implementation, we'd need to define the Parameter type in db_core
-        crate::stdlib::packages::db_core::Parameter::Text(sql_value.to_sql())
+        // Convert SqlValue to input parameter with SQL string representation
+        crate::stdlib::packages::db_core::Parameter::input(&sql_value.to_sql())
     }
 }
 

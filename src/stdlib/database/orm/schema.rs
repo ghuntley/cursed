@@ -4,6 +4,7 @@
 /// with database-agnostic DDL creation for multiple databases.
 
 use std::collections::HashMap;
+use std::fmt::Debug;
 use tracing::{instrument, debug, info, warn, error};
 
 use super::super::{DatabaseError, DatabaseErrorKind};
@@ -133,7 +134,7 @@ impl TableSchema {
 
     /// facts Create table schema from entity
     #[instrument]
-    pub fn from_entity<T: Entity>() -> Result<Self, DatabaseError> {
+    pub fn from_entity<T: Entity + Debug>() -> Result<Self, DatabaseError> {
         info!(entity = T::table_name(), "Creating table schema from entity");
         
         let mut table = Self::new(T::table_name());
@@ -355,7 +356,7 @@ impl SchemaBuilder {
     }
 
     /// facts Add table to schema
-    #[instrument(skip(self))]
+    #[instrument(skip(self, builder_fn))]
     pub fn table<F>(mut self, name: &str, builder_fn: F) -> Self
     where
         F: FnOnce(TableBuilder) -> TableBuilder,
