@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-fix clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help
 
 build:
 	devenv shell cargo build
@@ -33,11 +33,28 @@ lint:
 lint-allow:
 	devenv shell cargo clippy -- -A warnings
 
+# Format all CURSED source files
 fmt:
-	devenv shell cargo fmt -- --check
+	devenv shell "cargo build --bin cursed-fmt"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' | xargs ./target/debug/cursed-fmt -w"
 
+# Check if CURSED files are properly formatted (for CI)
+fmt-check:
+	devenv shell "cargo build --bin cursed-fmt"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' | xargs ./target/debug/cursed-fmt --check"
+
+# Show formatting differences without applying changes
+fmt-diff:
+	devenv shell "cargo build --bin cursed-fmt"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' | xargs ./target/debug/cursed-fmt --diff"
+
+# Format Rust source files (existing functionality)
 fmt-fix:
 	devenv shell cargo fmt
+
+# Check Rust source files formatting (existing functionality)
+rust-fmt-check:
+	devenv shell cargo fmt -- --check
 
 clean:
 	devenv shell cargo clean
@@ -154,3 +171,21 @@ bootstrap-test-help:
 	@echo "  make bootstrap-test-quick"
 	@echo "  make bootstrap-test-category CATEGORY=minimal_subset"
 	@echo "  make bootstrap-test-category CATEGORY=performance"
+
+# Formatting help
+fmt-help:
+	@echo "Formatting Targets:"
+	@echo "  fmt                      - Format all CURSED (.csd) files"
+	@echo "  fmt-check                - Check CURSED file formatting (for CI)"
+	@echo "  fmt-diff                 - Show formatting differences without applying"
+	@echo "  fmt-fix                  - Format Rust (.rs) files"
+	@echo "  rust-fmt-check           - Check Rust file formatting"
+	@echo ""
+	@echo "Development Workflow:"
+	@echo "  ./scripts/install-git-hooks.sh  - Install pre-commit formatting hooks"
+	@echo "  make fmt-diff            - Preview formatting changes"
+	@echo "  make fmt                 - Apply CURSED formatting"
+	@echo "  make fmt-fix             - Apply Rust formatting"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  Edit .cursed_fmt.toml to customize formatting rules"

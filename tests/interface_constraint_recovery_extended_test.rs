@@ -73,13 +73,13 @@ fn test_fix_suggestions() {
     let suggestions = registry.suggest_constraint_fixes(&custom_type, "Numeric");
     
     // Should have at least one suggestion
-    assert!(!suggestions.is_empty().is_empty())
+    assert!(!suggestions.is_empty());
     
     // Should include suggestion to implement directly
-    assert!(suggestions.iter().any(|s| s.contains("Implement interface 'Numeric' directly"))
+    assert!(suggestions.iter().any(|s| s.contains("Implement interface 'Numeric' directly")));
     
     // Should include suggestion to use alternative type
-    assert!(suggestions.iter().any(|s| s.contains("Use an alternative type"))
+    assert!(suggestions.iter().any(|s| s.contains("Use an alternative type")))
 }
 
 #[test]
@@ -108,8 +108,8 @@ fn test_implementation_guide_generation() {
     assert!(guide.contains("Examples from Other Types");
     
     // Guide should be formatted as markdown
-    assert!(guide.contains("# Implementation Guide");
-    assert!(guide.contains("## Required Methods");
+    assert!(guide.contains("# Implementation Guide"));
+    assert!(guide.contains("## Required Methods"));
 }
 
 #[test]
@@ -133,7 +133,7 @@ fn test_extended_error_creation() {
     assert!(message.contains("Suggested fixes");
     
     // Error should reference implementation guide
-    assert!(message.contains("See implementation guide");
+    assert!(message.contains("See implementation guide"));
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn test_similar_type_finding() {
     assert!(similar.contains(&vector_type);
     
     // Normie should also be similar (both are numeric)
-    assert!(similar.contains(&Type::Normie);
+    assert!(similar.contains(&Type::Normie));
 }
 
 #[test]
@@ -177,7 +177,7 @@ fn test_is_close_to_implementing() {
     
     // A type with no implementations should not be close
     let empty_type = Type::Struct("EmptyType".to_string(), vec![]);
-    assert!(!registry.is_close_to_implementing(&empty_type, "List");
+    assert!(!registry.is_close_to_implementing(&empty_type, "List"));
 }
 
 #[test]

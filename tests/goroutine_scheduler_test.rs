@@ -31,7 +31,7 @@ use std::thread;
 use std::collections::HashSet;
 
 use cursed::runtime::goroutine_scheduler_simple::{
-    SimpleSimpleGoroutineScheduler, ThreadPoolConfig, GoroutineState, GoroutineResult,
+    SimpleGoroutineScheduler, ThreadPoolConfig, GoroutineState, GoroutineResult,
     GoroutineFunction, get_global_simple_scheduler
 };
 use cursed::memory::GarbageCollector;
@@ -90,7 +90,7 @@ unsafe extern "C" fn blocking_io_function(data: *mut c_void) -> *mut c_void {
 
 #[test]
 fn test_scheduler_creation_and_basic_operation() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing scheduler creation and basic operation");
     
     let gc = GarbageCollector::new();
@@ -116,7 +116,7 @@ fn test_scheduler_creation_and_basic_operation() {
 
 #[test]
 fn test_single_goroutine_execution() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing single goroutine execution");
     
     let gc = GarbageCollector::new();
@@ -149,7 +149,7 @@ fn test_single_goroutine_execution() {
 
 #[test]
 fn test_multiple_concurrent_goroutines() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing multiple concurrent goroutines");
     
     let gc = GarbageCollector::new();
@@ -200,7 +200,7 @@ fn test_multiple_concurrent_goroutines() {
 
 #[test]
 fn test_goroutine_panic_handling() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing goroutine panic handling");
     
     let gc = GarbageCollector::new();
@@ -225,7 +225,7 @@ fn test_goroutine_panic_handling() {
 
 #[test]
 fn test_mixed_success_and_panic_goroutines() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing mixed success and panic goroutines");
     
     let gc = GarbageCollector::new();
@@ -274,7 +274,7 @@ fn test_mixed_success_and_panic_goroutines() {
 
 #[test]
 fn test_thread_pool_scaling() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing thread pool scaling");
     
     let config = ThreadPoolConfig {
@@ -326,7 +326,7 @@ fn test_thread_pool_scaling() {
 
 #[test]
 fn test_memory_intensive_goroutines() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing memory intensive goroutines");
     
     let gc = GarbageCollector::new();
@@ -367,7 +367,7 @@ fn test_memory_intensive_goroutines() {
 
 #[test]
 fn test_gc_integration() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing garbage collector integration");
     
     let gc = GarbageCollector::new();
@@ -399,7 +399,7 @@ fn test_gc_integration() {
 
 #[test]
 fn test_scheduler_statistics_accuracy() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing scheduler statistics accuracy");
     
     let gc = GarbageCollector::new();
@@ -439,7 +439,7 @@ fn test_scheduler_statistics_accuracy() {
 
 #[test]
 fn test_cleanup_completed_goroutines() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing cleanup of completed goroutines");
     
     let gc = GarbageCollector::new();
@@ -469,7 +469,7 @@ fn test_cleanup_completed_goroutines() {
 
 #[test]
 fn test_concurrent_scheduler_operations() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing concurrent scheduler operations");
     
     let gc = GarbageCollector::new();
@@ -545,7 +545,7 @@ fn test_concurrent_scheduler_operations() {
 
 #[test]
 fn test_scheduler_performance_under_load() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing scheduler performance under load");
     
     let config = ThreadPoolConfig {
@@ -610,7 +610,7 @@ fn test_scheduler_performance_under_load() {
 
 #[test]
 fn test_global_scheduler_instance() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing global scheduler instance");
     
     let scheduler1 = get_global_simple_scheduler();
@@ -635,7 +635,7 @@ fn test_global_scheduler_instance() {
 
 #[test]
 fn test_scheduler_shutdown() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing scheduler shutdown");
     
     let gc = GarbageCollector::new();
@@ -670,7 +670,7 @@ fn test_scheduler_shutdown() {
 
 #[test]
 fn test_goroutine_state_transitions() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing goroutine state transitions");
     
     let gc = GarbageCollector::new();
@@ -701,7 +701,7 @@ fn test_goroutine_state_transitions() {
 
 #[test]
 fn test_error_recovery_and_resilience() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Testing error recovery and resilience");
     
     let gc = GarbageCollector::new();
@@ -768,7 +768,7 @@ fn test_error_recovery_and_resilience() {
 /// Performance benchmark for goroutine throughput
 #[test]
 fn test_goroutine_throughput_benchmark() {
-    common::init_tracing!();
+    common::init_tracing();
     info!("Running goroutine throughput benchmark");
     
     let config = ThreadPoolConfig {

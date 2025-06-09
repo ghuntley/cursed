@@ -16,7 +16,7 @@ mod common;
 /// Set up a fixture for tests with a populated interface hierarchy
 fn setup_interface_hierarchy() -> Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
     // Initialize tracing for this test
-    common::tracing::setup();
+    common::init_tracing();
     
     let mut registry = ThreadSafeInterfaceExtensionRegistry::new();
     

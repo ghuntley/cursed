@@ -1,0 +1,36 @@
+# Sample CURSED formatter configuration file
+# This demonstrates all available configuration options
+
+# Indentation settings
+indent_size = 4              # Number of spaces per indentation level
+use_tabs = false             # Use tabs instead of spaces for indentation
+tab_width = 4                # Width of tab characters (when use_tabs = true)
+
+# Line formatting
+line_width = 100             # Maximum line width before wrapping
+brace_style = "same-line"    # Brace placement style: "same-line", "next-line", "next-line-unindented"
+
+# Spacing settings
+spaces_around_operators = true    # Add spaces around operators (+ - * / etc.)
+space_after_comma = true         # Add space after commas in parameter lists, arrays, etc.
+
+# Comment formatting
+format_comments = true           # Format and align comments
+
+# Empty line handling
+preserve_empty_lines = true      # Keep empty lines in the source
+max_empty_lines = 2             # Maximum consecutive empty lines to preserve
+
+# Array and object formatting
+compact_arrays = false          # Keep arrays on single line when possible
+compact_objects = false         # Keep objects on single line when possible
+
+# Alignment settings
+align_assignments = false       # Align assignment operators in consecutive statements
+align_comments = false          # Align trailing comments
+
+# Advanced options
+sort_imports = false           # Sort import statements alphabetically
+group_imports = false          # Group imports by source (std, external, local)
+remove_trailing_whitespace = true  # Remove trailing whitespace from lines
+insert_final_newline = true        # Ensure file ends with newline

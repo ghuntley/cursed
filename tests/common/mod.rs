@@ -1,22 +1,12 @@
-//! Common test utilities for goroutine scheduler tests
+//! Common test utilities for all tests
 
-use tracing_subscriber::{fmt, EnvFilter};
-use std::sync::Once;
+pub mod tracing;
+pub mod timing;
+pub mod test_utils;
 
-static INIT: Once = Once::new();
-
-/// Initialize tracing for tests
-pub fn init_tracing() {
-    INIT.call_once(|| {
-        let filter = EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new("debug"));
-
-        fmt()
-            .with_env_filter(filter)
-            .with_test_writer()
-            .init();
-    });
-}
+// Re-export commonly used items
+pub use tracing::setup as init_tracing;
+pub use timing::Timer;
 
 /// Macro to initialize tracing in tests
 #[macro_export]

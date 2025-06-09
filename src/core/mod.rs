@@ -50,6 +50,7 @@ pub mod interface_registry_extension_debug;
 pub mod interface_registry_extension_visualization;
 pub mod interface_registry_visualization_integration;
 pub mod interface_registry_conflict_resolution;
+pub mod error_interface;
 
 /// Runtime representation of a compiled CURSED function
 ///

@@ -1,7 +1,6 @@
 //! LLVM code generation tests for goroutines
 
-use cursed::codegen::llvm::context::LlvmCodeGenerator;
-use cursed::codegen::llvm::goroutines::*;
+use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::ast::expressions::concurrency::StanExpression;
 use cursed::ast::expressions::{StringLiteral, CallExpression, Identifier};
 use cursed::ast::traits::Expression;
@@ -194,13 +193,14 @@ fn test_module_llvm_ir_generation() {
     };
     
     let call_expr = CallExpression {
-        token: Token::LParen,
+        token: "(".to_string(),
         function: Box::new(func_ident),
         arguments: vec![],
+        type_arguments: vec![],
     };
     
     let stan_expr = StanExpression {
-        token: Token::Stan,
+        token: "stan".to_string(),
         expression: Box::new(call_expr),
     };
     

@@ -277,7 +277,7 @@ mod tests {
         assert!(!success.is_err());
         assert_eq!(success.unwrap(), 42);
         
-        let error = ErrorResult::err(new_error_object("test error".to_string()));
+        let error: ErrorResult<i32> = ErrorResult::err(new_error_object("test error".to_string()));
         assert!(error.is_err());
         assert!(!error.is_ok());
     }

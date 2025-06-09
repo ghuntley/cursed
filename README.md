@@ -68,6 +68,45 @@ make test
 make run ARGS="path/to/your/file.csd"
 ```
 
+### Formatting Your Code (keep it aesthetic!) ✨
+
+CURSED comes with a built-in formatter that makes your code look absolutely iconic:
+
+```bash
+# Format a single file
+cursed-fmt -w main.csd
+
+# Format entire project
+cursed-fmt -w src/
+
+# Check if formatting is needed (perfect for CI)
+cursed-fmt --check src/
+```
+
+The formatter supports customizable styling through `.cursed-fmt.toml` config files. It's giving consistency! 💅
+
+## Developer Tools (the full toolkit, bestie!) 🧰
+
+### Code Formatter (`cursed-fmt`)
+- **Auto-formatting**: Makes your code look clean and consistent
+- **Editor integration**: Works with VSCode, Vim, and more
+- **CI/CD support**: Perfect for automated checks
+- **Customizable**: Configure to match your team's style
+
+Quick start:
+```bash
+# Install the formatter
+make build-formatter
+
+# Format your code
+cursed-fmt -w .
+
+# Set up pre-commit hooks
+cp examples/formatter/integration/pre-commit .git/hooks/
+```
+
+📖 **[Complete Formatter Guide](docs/formatter.md)** | 🔧 **[Developer API](docs/formatter-dev.md)**
+
 ## Language Documentation (real ones read the docs) 📚
 
 The complete language specifications are available in the `/specs` directory (we ate with these specs):
