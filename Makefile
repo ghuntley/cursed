@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help
 
 build:
 	devenv shell cargo build
@@ -189,3 +189,59 @@ fmt-help:
 	@echo ""
 	@echo "Configuration:"
 	@echo "  Edit .cursed_fmt.toml to customize formatting rules"
+
+# CURSED Linter Commands
+cursed-lint:
+	devenv shell "cargo build --bin cursed_lint_new"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' -print0 | xargs -0 ./target/debug/cursed_lint_new"
+
+# Lint with strict checking (exit on any issues)
+cursed-lint-check:
+	devenv shell "cargo build --bin cursed_lint_new"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' -print0 | xargs -0 ./target/debug/cursed_lint_new --check --fail-on warning"
+
+# Lint with auto-fix
+cursed-lint-fix:
+	devenv shell "cargo build --bin cursed_lint_new"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' -print0 | xargs -0 ./target/debug/cursed_lint_new --fix"
+
+# Lint with detailed statistics
+cursed-lint-stats:
+	devenv shell "cargo build --bin cursed_lint_new"
+	devenv shell "find . -name '*.csd' -not -path './target/*' -not -path './.git/*' -print0 | xargs -0 ./target/debug/cursed_lint_new --stats --verbose"
+
+# Lint specific directory recursively
+cursed-lint-dir:
+	devenv shell "cargo build --bin cursed_lint_new"
+	devenv shell "./target/debug/cursed_lint_new --recursive $(DIR)"
+
+# Generate linter configuration
+cursed-lint-init:
+	devenv shell "cargo build --bin cursed_lint_new"
+	devenv shell "./target/debug/cursed_lint_new --generate-config .cursed-lint.toml"
+
+# Show linter help
+cursed-lint-help:
+	@echo "CURSED Linter Commands:"
+	@echo "  make cursed-lint        - Lint all .csd files with default settings"
+	@echo "  make cursed-lint-check  - Lint with strict checking (CI mode)"
+	@echo "  make cursed-lint-fix    - Lint with auto-fix enabled"
+	@echo "  make cursed-lint-stats  - Lint with detailed statistics"
+	@echo "  make cursed-lint-init   - Generate default configuration file"
+	@echo "  make cursed-lint-dir DIR=path - Lint specific directory"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  Create .cursed-lint.toml for project-specific settings"
+	@echo "  Use --disable rule1,rule2 to disable specific rules"
+	@echo "  Use --severity warning to set minimum severity level"
+	@echo ""
+	@echo "Output Formats:"
+	@echo "  --format human      - Human-readable output (default)"
+	@echo "  --format json       - JSON output for tools"
+	@echo "  --format checkstyle - Checkstyle XML for CI"
+	@echo "  --format sarif      - SARIF format for security tools"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make cursed-lint-check                    # CI linting"
+	@echo "  make cursed-lint-fix                      # Auto-fix issues"
+	@echo "  make cursed-lint-dir DIR=examples         # Lint examples/"

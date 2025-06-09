@@ -89,6 +89,7 @@ pub use runtime::buffered_channel::{BufferedChannel, ThreadSafeBufferedChannel, 
 pub mod stdlib;
 pub mod benchmark;
 pub mod tools;
+pub mod linter;
 pub mod slice_integration;
 pub mod stdlib_test;
 pub mod symbol;

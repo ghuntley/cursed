@@ -38,9 +38,4 @@ pub mod timing {
     }
 }
 
-#[macro_export]
-macro_rules! init_tracing {
-    () => {
-        crate::common::tracing::setup();
-    };
-}
+// Tracing initialization macro moved to tests/common/mod.rs
