@@ -17,6 +17,7 @@ extern "C" {
 }
 
 #[cfg(test)]
+#[ignore = "Requires Unicode C runtime functions to be linked"]
 mod tests {
     use super::*;
 

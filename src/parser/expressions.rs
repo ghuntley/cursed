@@ -1063,15 +1063,65 @@ impl<'a> Parser<'a> {
         }))
     }
 
-    /// Parse an array index or array literal expression
+    /// Parse an array index, array literal, or slice literal expression
+    /// 
+    /// This method determines what kind of bracket expression we're parsing:
+    /// - `[]Type{...}` -> slice literal
+    /// - `[expr1, expr2, ...]` -> array literal
+    /// - When used as infix, it's array indexing (handled elsewhere)
     fn parse_array_index_or_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
-        let token = self.current_token.clone();
+        let start_token = self.current_token.clone();
+        
+        // Look ahead to see if this is a slice literal pattern: `[]Type{...}`
+        if self.peek_token_is(Token::RBracket) {
+            // This looks like a slice literal: `[]...`
+            return self.parse_slice_literal();
+        }
+        
+        // Otherwise, this is an array literal: `[expr, expr, ...]`
         self.next_token()?; // Skip past '['
-
-        // Return a simple placeholder expression
-        Ok(Box::new(ast::Identifier {
-            token: token.token_literal(),
-            value: "array".to_string(),
+        
+        let mut elements = Vec::new();
+        
+        // Handle empty array literal
+        if self.current_token_is(Token::RBracket) {
+            self.next_token()?; // Skip past ']'
+            return Ok(Box::new(ast::ArrayLiteral {
+                token: start_token,
+                elements,
+            }));
+        }
+        
+        // Parse first element
+        elements.push(self.parse_expression(Precedence::Lowest)?);
+        
+        // Parse additional elements
+        while self.peek_token_is(Token::Comma) {
+            self.next_token()?; // Move to comma
+            self.next_token()?; // Skip past comma
+            
+            // Allow trailing comma
+            if self.current_token_is(Token::RBracket) {
+                break;
+            }
+            
+            elements.push(self.parse_expression(Precedence::Lowest)?);
+        }
+        
+        // Expect closing bracket
+        if !self.peek_token_is(Token::RBracket) {
+            return Err(self.error(&format!(
+                "Expected ']' after array elements, got {:?}",
+                self.peek_token
+            )));
+        }
+        
+        self.next_token()?; // Move to ']'
+        self.next_token()?; // Skip past ']'
+        
+        Ok(Box::new(ast::ArrayLiteral {
+            token: start_token,
+            elements,
         }))
     }
 

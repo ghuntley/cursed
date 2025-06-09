@@ -32,6 +32,7 @@ mod range_expression_error_recovery_simple;
 mod range_clause_error_recovery;
 mod range_clause_error_recovery_simple;
 mod reference;
+mod slice_literal;
 mod statements;
 mod struct_field_inference;
 mod switch;

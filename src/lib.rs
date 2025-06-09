@@ -16,6 +16,8 @@
 //! * Garbage collected memory management
 //! * Concurrency support via goroutines and channels
 //! * LLVM-based code generation with JIT compilation
+//! * Comprehensive slice support with dynamic arrays
+//! * Runtime bounds checking and memory safety
 //!
 //! ## Language Components
 //!
@@ -25,13 +27,36 @@
 //! * **Code Generator**: Produces LLVM IR
 //! * **JIT Compiler**: Executes code via LLVM JIT
 //!
-//! ## Example
+//! ## Examples
 //!
+//! ### Basic Program
 //! ```cursed
 //! vibe main
 //!
 //! slay main() {
 //!     vibez.spill("Hello, World!")  fr fr Equivalent to fmt.Println
+//! }
+//! ```
+//!
+//! ### Slice Operations
+//! ```cursed
+//! vibe main
+//!
+//! slay main() {
+//!     fr fr Create slices with literal syntax
+//!     sus numbers = []normie{1, 2, 3, 4, 5}
+//!     sus names = []tea{"alice", "bob", "charlie"}
+//!     sus empty = []thicc{}
+//!     
+//!     fr fr Access elements with bounds checking
+//!     sus first = numbers[0]
+//!     sus length = len(numbers)
+//!     
+//!     fr fr Create subslices
+//!     sus subset = numbers[1:3]
+//!     
+//!     vibez.spill("Length:", length)
+//!     vibez.spill("First element:", first)
 //! }
 //! ```
 
@@ -58,6 +83,7 @@ pub mod repl;
 pub mod runtime;
 pub mod stdlib;
 pub mod benchmark;
+pub mod slice_integration;
 pub mod stdlib_test;
 pub mod symbol;
 pub mod resolver;
@@ -123,6 +149,11 @@ pub use crate::codegen::llvm::interface_type_assertion_with_registry::InterfaceT
 // pub use crate::codegen::llvm::interface_type_assertion_error_handling::EnhancedTypeAssertionErrorHandling; // Commented out due to conflicts
 pub use crate::codegen::llvm::interface_registry::InterfaceTypeRegistry;
 pub use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfacePathFinder;
+
+// Export slice operations and integration
+pub use crate::codegen::llvm::slice_literal::{SliceLiteralCompiler, create_slice_literal_compiler};
+pub use crate::codegen::llvm::slice_operations::{SliceOperations, create_slice_operations};
+pub use crate::slice_integration::{SliceIntegration, convenience as slice_convenience};
 
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol as CoreSymbol;

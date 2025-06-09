@@ -8,6 +8,8 @@ pub mod channel;
 pub mod channel_gc;
 pub mod container;
 pub mod jit_runtime;
+pub mod slice_runtime;
+pub mod slice_utils;
 pub mod type_assertion_runtime;
 pub mod unicode_char;
 
@@ -16,5 +18,7 @@ pub use channel::*;
 pub use channel_gc::*;
 pub use container::*;
 pub use jit_runtime::*;
+pub use slice_runtime::*;
+pub use slice_utils::*;
 pub use type_assertion_runtime::*;
 pub use unicode_char::*;

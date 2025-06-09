@@ -30,6 +30,7 @@ pub mod literals;
 pub mod operators;
 pub mod range_expression;
 pub mod special;
+pub mod slice_literal;
 pub mod struct_expr;
 pub mod types;
 pub mod type_assertion;
@@ -38,6 +39,7 @@ pub mod empty;
 
 pub use calls::{CallExpression, GenericCallExpression};
 pub use collections::{ArrayLiteral, HashLiteral, IndexExpression};
+pub use slice_literal::SliceLiteral;
 pub use identifiers::Identifier;
 pub use literals::*;
 pub use operators::*;
