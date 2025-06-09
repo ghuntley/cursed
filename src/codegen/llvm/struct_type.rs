@@ -460,12 +460,12 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // In a real implementation, this would convert AST type representations to Type enum values
         // For simplicity, we'll just convert some basic types
         match ast_type.name.value.as_str() {
-            "normie" => Ok(Type::Int),
-            "thicc" => Ok(Type::Int64),
-            "snack" => Ok(Type::Float),
-            "meal" => Ok(Type::Float64),
-            "tea" => Ok(Type::String),
-            "lit" => Ok(Type::Bool),
+            "normie" => Ok(Type::Normie),
+            "thicc" => Ok(Type::Thicc),
+            "snack" => Ok(Type::Snack),
+            "meal" => Ok(Type::Meal),
+            "tea" => Ok(Type::Tea),
+            "lit" => Ok(Type::Lit),
             _ => Err(format!("Unknown type: {}", ast_type.name.value))
         }
     }

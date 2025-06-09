@@ -69,6 +69,13 @@ pub use self::interface_type_assertion_common::{get_result_type, get_source_loca
 pub use self::slice_literal::{SliceLiteralCompiler, create_slice_literal_compiler};
 pub use self::slice_operations::{SliceOperations, create_slice_operations};
 
+// Re-export map operations
+pub use self::map_operations::{MapOperations, MapOperationsImpl, HashStrategy, create_map_operations, 
+    create_map_operations_linear_probing, create_map_operations_quadratic_probing};
+
+// Re-export map runtime
+pub use self::map_runtime::{MapRuntimeProvider, create_map_runtime};
+
 // Re-export binary compiler
 pub use self::binary_compiler::BinaryCompiler;
 
@@ -312,6 +319,9 @@ pub mod interface_type_assertion_diamond_inheritance_handler; // Enhanced handle
 pub mod interface_type_assertion_benchmarking; // Performance benchmarking for interface type assertions
 pub mod slice_literal; // Slice literal compilation
 pub mod slice_operations; // Slice operations and manipulation
+pub mod map_operations; // Map (hash table) operations and manipulation
+pub mod map_runtime; // Map runtime function implementations
+mod hash; // Hash map literal and indexing compilation
 // Module already declared above
 
 /// Represents a loop context for tracking break/continue blocks in nested loops

@@ -38,7 +38,7 @@ pub mod type_assertion_question;
 pub mod empty;
 
 pub use calls::{CallExpression, GenericCallExpression};
-pub use collections::{ArrayLiteral, HashLiteral, IndexExpression};
+pub use collections::{ArrayLiteral, HashLiteral, MapLiteral, IndexExpression};
 pub use slice_literal::SliceLiteral;
 pub use identifiers::Identifier;
 pub use literals::*;
@@ -59,5 +59,5 @@ pub use qualified_identifier::QualifiedIdentifier;
 pub use generics::TypeReference;
 pub use if_expression::IfExpression;
 pub use struct_expr::{StructLiteral, StructFieldAccess, KeyValuePair};
-pub use types::TypeConversionExpression;
+pub use types::{TypeConversionExpression, MapTypeExpression};
 pub use empty::Empty;

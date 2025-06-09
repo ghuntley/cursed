@@ -117,6 +117,109 @@ impl Expression for HashLiteral {
     }
 }
 
+/// Represents a typed map literal expression in the AST.
+///
+/// A map literal creates a map/dictionary value directly in code by specifying
+/// the key and value types followed by key-value pairs inside curly braces.
+/// This is different from a generic hash literal as it includes explicit type information.
+///
+/// # Examples
+///
+/// In CURSED code like:
+/// ```
+/// tea[tea]thicc{"name": 42, "age": 21}
+/// tea[normie]tea{1: "one", 2: "two"}
+/// ```
+///
+/// The AST would have a `MapLiteral` with the key type, value type, and pairs
+/// corresponding to each key-value pair inside the braces.
+pub struct MapLiteral {
+    pub token: Token,
+    pub key_type: Box<dyn Expression>,
+    pub value_type: Box<dyn Expression>,
+    pub pairs: Vec<(Box<dyn Expression>, Box<dyn Expression>)>,
+}
+
+impl MapLiteral {
+    /// Creates a new MapLiteral with the given components.
+    pub fn new(
+        token: Token,
+        key_type: Box<dyn Expression>,
+        value_type: Box<dyn Expression>,
+        pairs: Vec<(Box<dyn Expression>, Box<dyn Expression>)>,
+    ) -> Self {
+        MapLiteral {
+            token,
+            key_type,
+            value_type,
+            pairs,
+        }
+    }
+
+    /// Returns the number of key-value pairs in this map literal.
+    pub fn len(&self) -> usize {
+        self.pairs.len()
+    }
+
+    /// Returns true if this map literal has no key-value pairs.
+    pub fn is_empty(&self) -> bool {
+        self.pairs.is_empty()
+    }
+
+    /// Returns a reference to the key type expression.
+    pub fn get_key_type(&self) -> &dyn Expression {
+        self.key_type.as_ref()
+    }
+
+    /// Returns a reference to the value type expression.
+    pub fn get_value_type(&self) -> &dyn Expression {
+        self.value_type.as_ref()
+    }
+
+    /// Returns an iterator over the key-value pairs.
+    pub fn pairs_iter(&self) -> impl Iterator<Item = (&dyn Expression, &dyn Expression)> {
+        self.pairs.iter().map(|(k, v)| (k.as_ref(), v.as_ref()))
+    }
+}
+
+impl Node for MapLiteral {
+    fn token_literal(&self) -> String {
+        self.token.token_literal()
+    }
+
+    fn string(&self) -> String {
+        let pairs = self
+            .pairs
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k.string(), v.string()))
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        format!("tea[{}]{}{{{}}}", 
+               self.key_type.string(), 
+               self.value_type.string(), 
+               pairs)
+    }
+}
+
+impl Expression for MapLiteral {
+    fn expression_node(&self) {}
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(MapLiteral {
+            token: self.token.clone(),
+            key_type: self.key_type.clone_box(),
+            value_type: self.value_type.clone_box(),
+            pairs: self.pairs.iter()
+                .map(|(k, v)| (k.clone_box(), v.clone_box()))
+                .collect(),
+        })
+    }
+}
+
 /// Represents an index access expression in the AST.
 ///
 /// An index expression accesses an element of a collection (array or hash/map)
