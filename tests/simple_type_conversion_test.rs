@@ -1,6 +1,6 @@
 //! Simple tests for the integer type conversion matrix
 
-use cursed::codegen::llvm::ConversionMatrix;
+use cursed::codegen::llvm::{ConversionConfig, ConversionType};
 use cursed::core::type_checker::Type;
 use tracing::info;
 
@@ -17,21 +17,21 @@ fn test_conversion_matrix_basic_functionality() {
     init_tracing();
     info!("Testing conversion matrix basic functionality");
 
-    let matrix = ConversionMatrix::new();
+    let matrix = ConversionConfig::default();
 
     // Test integer to integer conversions (extension)
     let info = matrix.get_conversion_info(&Type::Smol, &Type::Normie).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Extension);
+    assert_eq!(info.conversion_type, ConversionType::Widening);
     assert!(!info.requires_overflow_check);
 
     // Test integer to integer conversions (truncation)
     let info = matrix.get_conversion_info(&Type::Thicc, &Type::Mid).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Truncation);
+    assert_eq!(info.conversion_type, ConversionType::Narrowing);
     assert!(info.requires_overflow_check);
 
     // Test same type conversion
     let info = matrix.get_conversion_info(&Type::Normie, &Type::Normie).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::NoConversion);
+    assert_eq!(info.conversion_type, ConversionType::Identity);
     assert!(!info.requires_overflow_check);
 
     info!("Basic conversion matrix functionality test passed");
@@ -42,16 +42,16 @@ fn test_integer_to_float_conversion_matrix() {
     init_tracing();
     info!("Testing integer to float conversion matrix");
 
-    let matrix = ConversionMatrix::new();
+    let matrix = ConversionConfig::default();
 
     // Test integer to f32
     let info = matrix.get_conversion_info(&Type::Normie, &Type::Snack).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::IntToFloat);
+    assert_eq!(info.conversion_type, ConversionType::Widening);
     assert!(!info.requires_overflow_check);
 
     // Test integer to f64
     let info = matrix.get_conversion_info(&Type::Thicc, &Type::Meal).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::IntToFloat);
+    assert_eq!(info.conversion_type, ConversionType::Widening);
     assert!(!info.requires_overflow_check);
 
     info!("Integer to float conversion matrix test passed");
@@ -62,16 +62,16 @@ fn test_float_to_integer_conversion_matrix() {
     init_tracing();
     info!("Testing float to integer conversion matrix");
 
-    let matrix = ConversionMatrix::new();
+    let matrix = ConversionConfig::default();
 
     // Test f32 to integer
     let info = matrix.get_conversion_info(&Type::Snack, &Type::Normie).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::FloatToInt);
+    assert_eq!(info.conversion_type, ConversionType::Narrowing);
     assert!(info.requires_overflow_check); // Float to int should check overflow
 
     // Test f64 to integer
     let info = matrix.get_conversion_info(&Type::Meal, &Type::Thicc).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::FloatToInt);
+    assert_eq!(info.conversion_type, ConversionType::Narrowing);
     assert!(info.requires_overflow_check);
 
     info!("Float to integer conversion matrix test passed");
@@ -82,16 +82,16 @@ fn test_boolean_conversion_matrix() {
     init_tracing();
     info!("Testing boolean conversion matrix");
 
-    let matrix = ConversionMatrix::new();
+    let matrix = ConversionConfig::default();
 
     // Test integer to boolean
     let info = matrix.get_conversion_info(&Type::Normie, &Type::Lit).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::IntToBool);
+    assert_eq!(info.conversion_type, ConversionType::Transmutation);
     assert!(!info.requires_overflow_check);
 
     // Test boolean to integer
     let info = matrix.get_conversion_info(&Type::Lit, &Type::Normie).unwrap();
-    assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::BoolToInt);
+    assert_eq!(info.conversion_type, ConversionType::Transmutation);
     assert!(!info.requires_overflow_check);
 
     info!("Boolean conversion matrix test passed");
@@ -102,7 +102,7 @@ fn test_all_integer_type_combinations() {
     init_tracing();
     info!("Testing all integer type combinations");
 
-    let matrix = ConversionMatrix::new();
+    let matrix = ConversionConfig::default();
     let integer_types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc];
 
     for source in &integer_types {
@@ -113,13 +113,13 @@ fn test_all_integer_type_combinations() {
             let target_bits = get_bit_width(target);
 
             if source_bits == target_bits {
-                assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::NoConversion);
+                assert_eq!(info.conversion_type, ConversionType::Identity);
                 assert!(!info.requires_overflow_check);
             } else if source_bits < target_bits {
-                assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Extension);
+                assert_eq!(info.conversion_type, ConversionType::Widening);
                 assert!(!info.requires_overflow_check);
             } else {
-                assert_eq!(info.conversion_type, cursed::codegen::llvm::type_conversions::ConversionType::Truncation);
+                assert_eq!(info.conversion_type, ConversionType::Narrowing);
                 assert!(info.requires_overflow_check);
             }
         }
@@ -133,7 +133,7 @@ fn test_comprehensive_conversion_coverage() {
     init_tracing();
     info!("Testing comprehensive conversion coverage");
 
-    let matrix = ConversionMatrix::new();
+    let matrix = ConversionConfig::default();
     
     // Test that all expected conversion combinations are available
     let integer_types = vec![Type::Smol, Type::Mid, Type::Normie, Type::Thicc];

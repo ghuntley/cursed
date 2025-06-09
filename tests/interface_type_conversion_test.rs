@@ -10,13 +10,7 @@ use crate::common;
 #[path = "common/mod.rs"]
 mod common;
 
-// Simple macro to init tracing in tests
-#[macro_export]
-macro_rules! init_test_tracing {
-    () => {
-        common::tracing::setup();
-    };
-}
+// Use init_tracing from common module
 
 #[test]
 fn test_basic_interface_type_assertion() {

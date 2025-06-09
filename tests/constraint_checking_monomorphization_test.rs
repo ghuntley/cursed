@@ -79,18 +79,18 @@ fn test_with_registry() {
     
     // Check constraint: Normie implements Comparable
     let normie_result = registry.check_implementation(&Type::Normie, "Comparable");
-    assert!(normie_result.is_ok())
-    assert!(normie_result.unwrap();
+    assert!(normie_result.is_ok());
+    assert!(normie_result.unwrap());
     
     // Check constraint: Normie implements Numeric
     let numeric_result = registry.check_implementation(&Type::Normie, "Numeric");
-    assert!(numeric_result.is_ok())
-    assert!(numeric_result.unwrap();
+    assert!(numeric_result.is_ok());
+    assert!(numeric_result.unwrap());
     
     // Check constraint: Lit doesn't implement Numeric
     let lit_result = registry.check_implementation(&Type::Lit, "Numeric");
-    assert!(lit_result.is_ok())
-    assert!(!lit_result.unwrap();
+    assert!(lit_result.is_ok());
+    assert!(!lit_result.unwrap());
     
     // Check constraint: Custom struct implements an interface
     let point_result = registry.check_implementation(

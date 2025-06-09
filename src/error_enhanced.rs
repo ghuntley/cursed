@@ -55,6 +55,7 @@ pub enum ErrorKind {
     IO,
     Unknown,
     NotImplemented,
+    Configuration,
     CodeGen,
     Syntax,
     TypeAssertion,
@@ -87,6 +88,7 @@ impl ErrorKind {
             ErrorKind::IO => "IO",
             ErrorKind::Unknown => "Unknown",
             ErrorKind::NotImplemented => "NotImplemented",
+            ErrorKind::Configuration => "Configuration",
             ErrorKind::CodeGen => "CodeGen",
             ErrorKind::Syntax => "Syntax",
             ErrorKind::TypeAssertion => "TypeAssertion",
@@ -454,6 +456,7 @@ impl From<crate::error::Error> for CursedError {
             crate::error::Error::SymbolNotFound(symbol, package) => Self::new(ErrorKind::NotFound, format!("Symbol '{}' not found in package '{}'", symbol, package)),
             crate::error::Error::SymbolNotExported(symbol, package) => Self::new(ErrorKind::NotFound, format!("Symbol '{}' not exported from package '{}'", symbol, package)),
             crate::error::Error::CircularDependency(deps) => Self::new(ErrorKind::Semantic, format!("Circular dependency: {}", deps.join(" -> "))),
+            crate::error::Error::Configuration(msg) => Self::new(ErrorKind::Configuration, msg),
         }
     }
 }

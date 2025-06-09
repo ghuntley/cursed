@@ -92,8 +92,8 @@ mod tests {
         
         // Test getting the list of packages
         let packages = registry.packages();
-        assert!(packages.contains(&"vibez".to_string(), "vibez package should be listed");
-        assert!(packages.contains(&"timez".to_string(), "timez package should be listed");
+        assert!(packages.contains(&"vibez".to_string()), "vibez package should be listed");
+        assert!(packages.contains(&"timez".to_string()), "timez package should be listed");
         
         // Test getting functions for a package
         let vibez_functions = registry.functions("vibez");

@@ -1,0 +1,99 @@
+# CURSED Language Linter Configuration
+# This file configures the linting rules and behavior for CURSED source files
+
+# Enable auto-fixing of issues where possible
+auto_fix = false
+
+# Minimum severity level to report (info, warning, error)
+min_severity = "info"
+
+# List of rules to disable (uncomment and modify as needed)
+# disabled_rules = ["trailing-whitespace", "line-length"]
+
+[general]
+# Maximum line length
+max_line_length = 100
+
+# Indentation style: "spaces" or "tabs"
+indent_style = "spaces"
+
+# Number of spaces per indent level (when using spaces)
+indent_size = 4
+
+# Enforce Gen Z naming conventions
+enforce_genz_naming = true
+
+# File extensions to process
+file_extensions = ["csd"]
+
+# Patterns to ignore (glob patterns)
+ignore_patterns = [
+    "target/*",
+    "*.generated.csd",
+    "test_fixtures/*"
+]
+
+[rules]
+# Style rules configuration
+[rules.style]
+enabled = true
+default_severity = "warning"
+
+# Correctness rules configuration  
+[rules.correctness]
+enabled = true
+default_severity = "warning"
+
+# Performance rules configuration
+[rules.performance]
+enabled = true
+default_severity = "info"
+
+# Complexity rules configuration
+[rules.complexity]
+enabled = true
+default_severity = "warning"
+
+# CURSED-specific rules configuration
+[rules.cursed_specific]
+enabled = true
+default_severity = "info"
+
+[output]
+# Output format: "human", "json", "checkstyle", "sarif"
+format = "human"
+
+# Whether to show rule names in output
+show_rule_names = true
+
+# Whether to show severity levels
+show_severity = true
+
+# Whether to show fix suggestions
+show_suggestions = true
+
+# Whether to use colors in output
+use_colors = true
+
+# Maximum number of issues to display per file (null for unlimited)
+# max_issues_per_file = 50
+
+# Rule-specific parameters
+[rule_params]
+# Line length rule parameters
+line-length.max_length = 100
+
+# Empty lines rule parameters
+empty-lines.max_consecutive = 2
+
+# Cyclomatic complexity rule parameters  
+cyclomatic-complexity.max_complexity = 10
+
+# Nesting depth rule parameters
+nesting-depth.max_depth = 4
+
+# Parameter count rule parameters
+parameter-count.max_params = 5
+
+# Function length rule parameters
+function-length.max_lines = 50

@@ -156,6 +156,9 @@ pub enum Error {
     /// Not implemented errors
     NotImplemented { message: String },
 
+    /// Configuration errors
+    Configuration(String),
+
     /// Code generation errors
     CodeGenError(String),
     
@@ -390,6 +393,7 @@ impl Clone for Error {
             Error::SymbolNotFound(sym, pkg) => Error::SymbolNotFound(sym.clone(), pkg.clone()),
             Error::SymbolNotExported(sym, pkg) => Error::SymbolNotExported(sym.clone(), pkg.clone()),
             Error::CircularDependency(chain) => Error::CircularDependency(chain.clone()),
+            Error::Configuration(msg) => Error::Configuration(msg.clone()),
         }
     }
 }
@@ -577,6 +581,7 @@ impl Error {
             Error::SymbolNotFound(sym, pkg) => format!("Symbol '{}' not found in package '{}'", sym, pkg),
             Error::SymbolNotExported(sym, pkg) => format!("Symbol '{}' is not exported from package '{}'", sym, pkg),
             Error::CircularDependency(chain) => format!("Circular dependency detected: {}", chain.join(" -> ")),
+            Error::Configuration(msg) => format!("Configuration error: {}", msg),
         }
     }
 
