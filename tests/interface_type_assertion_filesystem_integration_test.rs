@@ -131,7 +131,7 @@ mod tests {
         code_gen.set_source_directory("examples".to_string());
         
         // Test resolving a file path
-        let path = code_gen.resolve_source_path(Some("interface_type_assertion_filesystem_source_location.csd");
+        let path = code_gen.resolve_source_path(Some("interface_type_assertion_filesystem_source_location.csd"));
         
         assert!(path.is_some(), "Path should be resolved");
         let path = path.unwrap();

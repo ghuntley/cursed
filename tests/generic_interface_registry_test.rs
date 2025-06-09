@@ -12,7 +12,7 @@ mod common;
 #[test]
 fn test_generic_interface_registry_basic() {
     // Initialize tracing for better debugging
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a registry with default implementations
     let registry = InterfaceRegistry::new_with_defaults();
@@ -29,7 +29,7 @@ fn test_generic_interface_registry_basic() {
 #[test]
 fn test_constraint_checking_with_multiple_type_params() {
     // Initialize tracing for better debugging
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a registry with default implementations
     let registry = InterfaceRegistry::new_with_defaults();
@@ -62,7 +62,7 @@ fn test_constraint_checking_with_multiple_type_params() {
 #[test]
 fn test_manually_registering_generic_interfaces() {
     // Initialize tracing for better debugging
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a registry, but don't populate with defaults
     let mut registry = InterfaceRegistry::new();
@@ -99,7 +99,7 @@ fn test_manually_registering_generic_interfaces() {
 #[test]
 fn test_constraints_on_multiple_type_params() {
     // Initialize tracing for better debugging
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a registry, but don't populate with defaults
     let mut registry = InterfaceRegistry::new();

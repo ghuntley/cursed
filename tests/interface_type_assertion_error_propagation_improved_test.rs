@@ -203,8 +203,8 @@ fn test_generate_type_assertion_error() {
     
     // Test string representation
     let error_string = error.to_string();
-    assert!(error_string.contains("Type assertion error");
-    assert!(error_string.contains("SourceType is not a TargetType");
+    assert!(error_string.contains("Type assertion error"));
+    assert!(error_string.contains("SourceType is not a TargetType"));
     assert!(error_string.contains("Recovery hint"));
 }
 

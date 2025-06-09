@@ -22,7 +22,7 @@ mod common;
 
 #[test]
 fn test_auto_interface_implementation() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a new LLVM context and code generator
     let context = Context::create();
@@ -121,7 +121,7 @@ fn test_auto_interface_implementation() -> Result<(), Error> {
 
 #[test]
 fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a new LLVM context and code generator
     let context = Context::create();
@@ -234,7 +234,7 @@ fn test_auto_registration_of_struct_methods() -> Result<(), Error> {
 
 #[test]
 fn test_optimize_interface_call() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     
     // Create a new LLVM context and code generator
     let context = Context::create();

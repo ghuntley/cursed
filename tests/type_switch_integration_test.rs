@@ -15,7 +15,7 @@ mod common;
 /// Test runtime type checking for basic types
 #[test]
 fn test_runtime_type_checking() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing runtime type checking for basic types");
     
     // Test various type checking scenarios
@@ -46,7 +46,7 @@ fn test_runtime_type_checking() -> Result<(), Error> {
 /// Test type switch control flow
 #[test]
 fn test_type_switch_control_flow() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing type switch control flow");
     
     // Test that control flows to the correct case
@@ -69,7 +69,7 @@ fn test_type_switch_control_flow() -> Result<(), Error> {
 /// Test type variable binding
 #[test]
 fn test_type_variable_binding() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing type variable binding");
     
     // Test that variables are correctly bound in each case
@@ -93,7 +93,7 @@ fn test_type_variable_binding() -> Result<(), Error> {
 /// Test multiple types in single case
 #[test]
 fn test_multiple_types_single_case() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing multiple types in single case");
     
     // Test cases with multiple types
@@ -119,7 +119,7 @@ fn test_multiple_types_single_case() -> Result<(), Error> {
 /// Test interface type switches
 #[test]
 fn test_interface_type_switches() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing interface type switches");
     
     // Test switching on interface types
@@ -143,7 +143,7 @@ fn test_interface_type_switches() -> Result<(), Error> {
 /// Test nested type switches
 #[test]
 fn test_nested_type_switches() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing nested type switches");
     
     // Test type switches within type switches
@@ -165,10 +165,10 @@ fn test_nested_type_switches() -> Result<(), Error> {
 /// Test type switch performance characteristics
 #[test]
 fn test_type_switch_performance() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing type switch performance characteristics");
     
-    let _timer = common::timing::Timer::new("type_switch_performance");
+    let _timer = common::Timer::new("type_switch_performance");
     
     // Test performance with various numbers of cases
     let case_counts = vec![5, 10, 20, 50, 100];
@@ -192,7 +192,7 @@ fn test_type_switch_performance() -> Result<(), Error> {
 /// Test type switch with complex inheritance hierarchies
 #[test]
 fn test_complex_inheritance_type_switches() -> Result<(), Error> {
-    common::tracing::setup();
+    common::init_tracing();
     info!("Testing type switches with complex inheritance hierarchies");
     
     // Test type switches involving inheritance chains

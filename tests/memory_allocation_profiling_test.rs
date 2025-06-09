@@ -150,7 +150,7 @@ fn test_memory_profiling_patterns() {
     // Helper functions to create different allocation patterns
     let create_string_pattern = || {
         for _ in 0..20 {
-            let s = GcString("x".repeat(100);
+            let s = GcString("x".repeat(100));
             let _ = gc.allocate(s);
         }
     };
@@ -164,9 +164,9 @@ fn test_memory_profiling_patterns() {
     
     // Create distinct patterns
     create_string_pattern();
-    thread::sleep(Duration::from_millis(10); // Small pause between patterns
+    thread::sleep(Duration::from_millis(10)); // Small pause between patterns
     create_vector_pattern();
-    thread::sleep(Duration::from_millis(10);
+    thread::sleep(Duration::from_millis(10));
     create_string_pattern();
     
     // The profiler should have detected these patterns
@@ -248,10 +248,10 @@ fn test_optimize_allocation_pattern() {
         
         for i in 0..30 {
             // This allocates a new string for each iteration
-            let s = GcString(format!("Item {}", i);
+            let s = GcString(format!("Item {}", i));
             let gc_s = gc.allocate(s);
             if let Some(inner) = gc_s.inner() {
-                result.push(inner.0.clone();
+                result.push(inner.0.clone());
             }
         }
         
@@ -271,9 +271,9 @@ fn test_optimize_allocation_pattern() {
             buffer.push_str(&i.to_string());
             
             // Clone only when we need to store it
-            let gc_s = gc.allocate(GcString(buffer.clone();
+            let gc_s = gc.allocate(GcString(buffer.clone()));
             if let Some(inner) = gc_s.inner() {
-                result.push(inner.0.clone();
+                result.push(inner.0.clone());
             }
         }
         
