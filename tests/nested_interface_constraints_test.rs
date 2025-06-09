@@ -163,7 +163,7 @@ fn test_integration_with_code_generation() {
     // For now, just test that the parser can handle the syntax
     // Full integration testing will be enabled when JIT compilation is ready
     
-    let input = r#"
+    let input = r#""
         collab Comparable {
             compare(other Comparable) normie;
         }
@@ -197,7 +197,7 @@ fn test_integration_with_code_generation() {
         slay main() normie {
             return 0
         }
-    "#;
+    "#";
     
     // Lex and parse the program
     let mut lexer = Lexer::new(input);

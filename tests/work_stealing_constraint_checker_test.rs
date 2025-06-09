@@ -14,6 +14,7 @@ mod common;
 
 #[test]
 fn test_work_stealing_vs_standard_performance() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -23,20 +24,20 @@ fn test_work_stealing_vs_standard_performance() {
     for i in 0..20 {
         let struct_name = format!("TestStruct{}", i);
         registry.register_implementation(
-            Type::Struct(struct_name.clone(), vec![]),
+            Type::Custom("Struct".to_string()), vec![]),
             "Testable".to_string()
         );
         
         if i % 2 == 0 {
             registry.register_implementation(
-                Type::Struct(struct_name.clone(), vec![]),
+                Type::Custom("Struct".to_string()), vec![]),
                 "Container".to_string()
             );
         }
         
         if i % 3 == 0 {
             registry.register_implementation(
-                Type::Struct(struct_name.clone(), vec![]),
+                Type::Custom("Struct".to_string()), vec![]),
                 "Comparable".to_string()
             );
         }
@@ -48,16 +49,16 @@ fn test_work_stealing_vs_standard_performance() {
     // Add many constraints to ensure parallelism is needed
     for i in 0..20 {
         let struct_name = format!("TestStruct{}", i);
-        constraints.push((Type::Struct(struct_name.clone(), vec![]), "Testable".to_string()));
+        constraints.push((Type::Custom("Struct".to_string()), vec![]), "Testable".to_string()));
         constraints.push((Type::Normie, "Numeric".to_string()));
         constraints.push((Type::Tea, "Comparable".to_string()));
         
         if i % 2 == 0 {
-            constraints.push((Type::Struct(struct_name.clone(), vec![]), "Container".to_string()));
+            constraints.push((Type::Custom("Struct".to_string()), vec![]), "Container".to_string()));
         }
         
         if i % 3 == 0 {
-            constraints.push((Type::Struct(struct_name.clone(), vec![]), "Comparable".to_string()));
+            constraints.push((Type::Custom("Struct".to_string()), vec![]), "Comparable".to_string()));
         }
     }
     
@@ -117,6 +118,7 @@ fn test_work_stealing_vs_standard_performance() {
 
 #[test]
 fn test_work_stealing_unbalanced_workload() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -149,7 +151,7 @@ fn test_work_stealing_unbalanced_workload() {
     for i in 0..5 {
         let struct_name = format!("SlowStruct{}", i);
         registry.register_implementation(
-            Type::Struct(struct_name.clone(), vec![]),
+            Type::Custom("Struct".to_string()), vec![]),
             "SlowInterface".to_string()
         );
     }
@@ -167,7 +169,7 @@ fn test_work_stealing_unbalanced_workload() {
     // Add a few slow checks
     for i in 0..5 {
         let struct_name = format!("SlowStruct{}", i);
-        constraints.push((Type::Struct(struct_name.clone(), vec![]), "SlowInterface".to_string()));
+        constraints.push((Type::Custom("Struct".to_string()), vec![]), "SlowInterface".to_string()));
     }
     
     // Randomize the order of constraints
@@ -206,6 +208,7 @@ fn test_work_stealing_unbalanced_workload() {
 
 #[test]
 fn test_generic_constraint_checking_with_work_stealing() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -294,7 +297,7 @@ fn test_generic_constraint_checking_with_work_stealing() {
     // Test with ComplexStructure<String, Map<String, Int>, Int, String>
     let complex_type_args = vec![
         Type::Tea, // A: String implements Comparable
-        Type::Struct("Map".to_string(), vec![Type::Tea, Type::Normie]), // B: Map<String, Int> implements Container
+        Type::Custom("Struct".to_string()), vec![Type::Tea, Type::Normie]), // B: Map<String, Int> implements Container
         Type::Normie, // C: Int implements Numeric
         Type::Tea, // D: String implements Serializable
     ];
@@ -323,7 +326,7 @@ fn test_generic_constraint_checking_with_work_stealing() {
     // Test with invalid type arguments
     let invalid_type_args = vec![
         Type::Normie, // Int does not implement Comparable
-        Type::Struct("Map".to_string(), vec![Type::Tea, Type::Normie]),
+        Type::Custom("Struct".to_string()), vec![Type::Tea, Type::Normie]),
         Type::Normie,
         Type::Tea,
     ];

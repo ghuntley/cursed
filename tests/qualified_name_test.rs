@@ -3,7 +3,7 @@
 //! This test suite validates the enhanced dot expression system that supports
 //! accessing all symbol types from imported packages.
 
-use cursed::ast::expressions::{QualifiedName, QualifiedSymbolKind};
+use cursed::ast::{QualifiedName, QualifiedSymbolKind};
 use cursed::resolver::symbol_table::{GlobalSymbolTable, PackageSymbolTable, SymbolKind};
 use cursed::error::Error;
 

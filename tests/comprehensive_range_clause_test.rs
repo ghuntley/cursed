@@ -74,9 +74,9 @@ fn run_test(code: &str, expected_value: i64) -> Result<(), String> {
     let test_file = format!("tests/temp/range_test_{}.csd", generate_id());
     
     // Add a print statement to output the result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -103,9 +103,9 @@ fn run_string_test(code: &str, expected_value: &str) -> Result<(), String> {
     let test_file = format!("tests/temp/range_test_{}.csd", generate_id());
     
     // Add a print statement to output the string result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -123,8 +123,9 @@ printn(yolo)\n", code);
 
 #[test]
 fn test_nested_range_loops() -> Result<(), String> {
+    // init_tracing!();
     // Test nested range loops
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -138,7 +139,7 @@ fn test_nested_range_loops() -> Result<(), String> {
             
             yolo sum  fr Should be 30 (0*0 + 0*1 + 0*2 + 1*0 + 1*1 + 1*2 + ... + 4*2)
         }
-    "#;
+    "#";
     
     // Sum of products: (0*0 + 0*1 + 0*2) + (1*0 + 1*1 + 1*2) + ... + (4*0 + 4*1 + 4*2) = 30
     run_test(code, 30)
@@ -146,8 +147,9 @@ fn test_nested_range_loops() -> Result<(), String> {
 
 #[test]
 fn test_range_with_variables() -> Result<(), String> {
+    // init_tracing!();
     // Test range with variables for start, end, and step
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus start lit = 2
             sus end lit = 10
@@ -161,7 +163,7 @@ fn test_range_with_variables() -> Result<(), String> {
             
             yolo sum  fr Should be 2+5+8 = 15
         }
-    "#;
+    "#";
     
     // Sum of 2+5+8 = 15
     run_test(code, 15)
@@ -169,8 +171,9 @@ fn test_range_with_variables() -> Result<(), String> {
 
 #[test]
 fn test_range_with_expressions() -> Result<(), String> {
+    // init_tracing!();
     // Test range with expressions for start, end, and step
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus base lit = 5
             sus sum lit = 0
@@ -182,7 +185,7 @@ fn test_range_with_expressions() -> Result<(), String> {
             
             yolo sum  fr Should be 2+4+6+8 = 20
         }
-    "#;
+    "#";
     
     // Sum of 2+4+6+8 = 20
     run_test(code, 20)
@@ -190,8 +193,9 @@ fn test_range_with_expressions() -> Result<(), String> {
 
 #[test]
 fn test_empty_range() -> Result<(), String> {
+    // init_tracing!();
     // Test that empty ranges don't iterate
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -202,7 +206,7 @@ fn test_empty_range() -> Result<(), String> {
             
             yolo sum  fr Should be 0 since range is empty
         }
-    "#;
+    "#";
     
     // Sum should be 0 (loop not executed)
     run_test(code, 0)
@@ -210,8 +214,9 @@ fn test_empty_range() -> Result<(), String> {
 
 #[test]
 fn test_negative_range_values() -> Result<(), String> {
+    // init_tracing!();
     // Test range with negative values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -222,7 +227,7 @@ fn test_negative_range_values() -> Result<(), String> {
             
             yolo sum  fr Should be -5 + -4 + -3 + -2 + -1 = -15
         }
-    "#;
+    "#";
     
     // Sum of -5 + -4 + -3 + -2 + -1 = -15
     run_test(code, -15)
@@ -230,8 +235,9 @@ fn test_negative_range_values() -> Result<(), String> {
 
 #[test]
 fn test_negative_step() -> Result<(), String> {
+    // init_tracing!();
     // Test range with negative step (decreasing)
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -242,7 +248,7 @@ fn test_negative_step() -> Result<(), String> {
             
             yolo sum  fr Should be 10 + 8 + 6 + 4 + 2 = 30
         }
-    "#;
+    "#";
     
     // Sum of 10 + 8 + 6 + 4 + 2 = 30
     run_test(code, 30)
@@ -250,8 +256,9 @@ fn test_negative_step() -> Result<(), String> {
 
 #[test]
 fn test_string_array_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over string array
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus words = ["hello", "cursed", "world"]
             sus result string = ""
@@ -263,7 +270,7 @@ fn test_string_array_iteration() -> Result<(), String> {
             
             yolo result.length() fr Should be length of combined strings
         }
-    "#;
+    "#";
     
     // Combined length of "hello" + "cursed" + "world" = 5 + 6 + 5 = 16
     run_test(code, 16)
@@ -271,8 +278,9 @@ fn test_string_array_iteration() -> Result<(), String> {
 
 #[test]
 fn test_range_string_construction() -> Result<(), String> {
+    // init_tracing!();
     // Test constructing a string with range
-    let code = r#"
+    let code = r#""
         slay main() string {
             sus result string = ""
             
@@ -283,15 +291,16 @@ fn test_range_string_construction() -> Result<(), String> {
             
             yolo result fr Should be "12345"
         }
-    "#;
+    "#";
     
     run_string_test(code, "12345")
 }
 
 #[test]
 fn test_mixed_container_types() -> Result<(), String> {
+    // init_tracing!();
     // Test having arrays and maps in the same test
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 20, 30]
             sus mapping = {
@@ -313,15 +322,16 @@ fn test_mixed_container_types() -> Result<(), String> {
             
             yolo total fr Should be 10+20+30+1+2+3 = 66
         }
-    "#;
+    "#";
     
     run_test(code, 66)
 }
 
 #[test]
 fn test_range_with_early_return() -> Result<(), String> {
+    // init_tracing!();
     // Test early return from function inside range
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus target lit = 42
             
@@ -334,15 +344,16 @@ fn test_range_with_early_return() -> Result<(), String> {
             
             yolo -1 fr Should not reach here if target is found
         }
-    "#;
+    "#";
     
     run_test(code, 42)
 }
 
 #[test]
 fn test_nested_container_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iterating nested containers (array of maps)
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus users = [
                 {"name": "Alice", "score": 90},
@@ -358,15 +369,16 @@ fn test_nested_container_iteration() -> Result<(), String> {
             
             yolo totalScore fr Should be 90+85+95 = 270
         }
-    "#;
+    "#";
     
     run_test(code, 270)
 }
 
 #[test]
 fn test_range_with_function_calls() -> Result<(), String> {
+    // init_tracing!();
     // Test range with function calls for parameters
-    let code = r#"
+    let code = r#""
         slay getStart() lit { yolo 5 }
         slay getEnd() lit { yolo 10 }
         slay getStep() lit { yolo 2 }
@@ -381,15 +393,16 @@ fn test_range_with_function_calls() -> Result<(), String> {
             
             yolo sum fr Should be 5+7+9 = 21
         }
-    "#;
+    "#";
     
     run_test(code, 21)
 }
 
 #[test]
 fn test_range_complex_container_manipulation() -> Result<(), String> {
+    // init_tracing!();
     // Test complex manipulation of containers in range
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus items = [1, 2, 3, 4, 5]
             sus results = []
@@ -409,7 +422,7 @@ fn test_range_complex_container_manipulation() -> Result<(), String> {
             
             yolo sum fr Should be 20+40 = 60
         }
-    "#;
+    "#";
     
     run_test(code, 60)
 }

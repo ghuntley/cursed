@@ -4,7 +4,7 @@
 //! for map literals, ensuring the parser correctly handles various map syntaxes
 //! and creates proper AST structures.
 
-use cursed::ast::expressions::collections::HashLiteral;
+use cursed::ast::collections::HashLiteral;
 use cursed::ast::Expression;
 use cursed::ast::traits::Node;
 use cursed::error::Error;
@@ -58,6 +58,7 @@ fn parse_program(source: &str) -> Result<bool, Error> {
 /// Test basic map literal parsing
 #[test]
 fn test_basic_map_literal_parsing() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing basic map literal parsing");
     
@@ -89,6 +90,7 @@ fn test_basic_map_literal_parsing() {
 /// Test map AST structure and properties
 #[test] 
 fn test_map_ast_structure() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map AST structure");
     
@@ -116,6 +118,7 @@ fn test_map_ast_structure() {
 /// Test empty map handling
 #[test]
 fn test_empty_map() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing empty map parsing");
     
@@ -131,6 +134,7 @@ fn test_empty_map() {
 /// Test single element map
 #[test]
 fn test_single_element_map() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing single element map");
     
@@ -147,6 +151,7 @@ fn test_single_element_map() {
 /// Test maps with different key types
 #[test]
 fn test_different_key_types() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing maps with different key types");
     
@@ -174,6 +179,7 @@ fn test_different_key_types() {
 /// Test maps with different value types
 #[test]
 fn test_different_value_types() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing maps with different value types");
     
@@ -202,6 +208,7 @@ fn test_different_value_types() {
 /// Test larger maps for performance
 #[test]
 fn test_large_map_parsing() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing large map parsing");
     
@@ -225,6 +232,7 @@ fn test_large_map_parsing() {
 /// Test error cases for invalid syntax
 #[test]
 fn test_invalid_map_syntax() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing invalid map syntax handling");
     
@@ -248,18 +256,19 @@ fn test_invalid_map_syntax() {
 /// Test map integration with programs
 #[test]
 fn test_map_in_program_context() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map integration in program context");
     
     // Test map in variable declaration
-    let program_source = r#"
+    let program_source = r#""
         vibe test_map_program
 
         slay main() normie {
             sus scores = {"alice": 95, "bob": 87}
             yolo 0
         }
-    "#;
+    "#";
     
     let is_valid = parse_program(program_source);
     assert!(is_valid.is_ok(), "Failed to parse program with map");
@@ -271,10 +280,11 @@ fn test_map_in_program_context() {
 /// Test map with function calls as values
 #[test]
 fn test_map_with_function_calls() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map with function calls");
     
-    let program_source = r#"
+    let program_source = r#""
         vibe test_map_functions
 
         slay get_score() normie {
@@ -285,7 +295,7 @@ fn test_map_with_function_calls() {
             sus scores = {"alice": get_score(), "bob": 87}
             yolo 0
         }
-    "#;
+    "#";
     
     let is_valid = parse_program(program_source);
     assert!(is_valid.is_ok(), "Failed to parse program with map and function calls");
@@ -297,6 +307,7 @@ fn test_map_with_function_calls() {
 /// Test map literals with complex expressions
 #[test]
 fn test_map_with_complex_expressions() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing map with complex expressions");
     
@@ -314,6 +325,7 @@ fn test_map_with_complex_expressions() {
 /// Test nested structure parsing (if supported)
 #[test]
 fn test_basic_nested_structures() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing basic nested structure parsing");
     
@@ -333,16 +345,17 @@ fn test_basic_nested_structures() {
 /// Test whitespace and formatting handling
 #[test]
 fn test_whitespace_handling() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing whitespace and formatting handling");
     
     let test_cases = vec![
         (r#"{"key":"value"}"#, "no spaces"),
         (r#"{ "key" : "value" }"#, "extra spaces"),
-        (r#"{
+        (r#"{"
             "key1": "value1",
             "key2": "value2"
-        }"#, "multiline"),
+        }"#, "multiline"),"
         (r#"{"key1":"value1","key2":"value2"}"#, "compact"),
     ];
     
@@ -364,6 +377,7 @@ fn test_whitespace_handling() {
 /// Performance test with repeated parsing
 #[test]
 fn test_parsing_performance() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing parsing performance");
     
@@ -390,6 +404,7 @@ fn test_parsing_performance() {
 /// Summary test that validates all basic functionality
 #[test]
 fn test_map_parsing_integration_summary() {
+    // init_tracing!();
     init_test_tracing();
     info!("Running map parsing integration summary");
     
@@ -403,13 +418,13 @@ fn test_map_parsing_integration_summary() {
     test_results.insert("different_types", parse_map_literal(r#"{"str": "text", "num": 42, "bool": true}"#).is_ok());
     
     // Test program integration
-    test_results.insert("in_program", parse_program(r#"
+    test_results.insert("in_program", parse_program(r#""
         vibe test
         slay main() normie {
             sus map = {"key": "value"}
             yolo 0
         }
-    "#).is_ok());
+    "#).is_ok())";
     
     // Report results
     let successful_tests = test_results.values().filter(|&&v| v).count();

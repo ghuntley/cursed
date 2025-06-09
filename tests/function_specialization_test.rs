@@ -1,11 +1,11 @@
-use cursed::ast::declarations::FunctionStatement;
-use cursed::ast::expressions::{CallExpression, Identifier, IntegerLiteral, StringLiteral};
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::ReturnStatement;
-use cursed::ast::declarations::ParameterStatement;
+use cursed::ast::FunctionStatement;
+use cursed::ast::{CallExpression, Identifier, IntegerLiteral, StringLiteral};
+use cursed::ast::block::BlockStatement;
+use cursed::ast::ReturnStatement;
+use cursed::ast::ParameterStatement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::FunctionMonomorphization;
-use cursed::codegen::MonomorphizationManager;
+
 use cursed::core::type_checker::Type;
 use cursed::lexer::Token;
 use inkwell::context::Context;

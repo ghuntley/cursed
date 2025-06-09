@@ -18,6 +18,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_is_uppercase() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods::is_uppercase");
 
@@ -42,6 +43,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_is_lowercase() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods::is_lowercase");
 
@@ -65,6 +67,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_is_alphabetic() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods::is_alphabetic");
 
@@ -87,6 +90,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_is_numeric() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods::is_numeric");
 
@@ -108,6 +112,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_is_whitespace() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods::is_whitespace");
 
@@ -130,6 +135,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_conversions() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods conversion functions");
 
@@ -155,6 +161,7 @@ mod char_methods_tests {
 
     #[test]
     fn test_char_methods_from_int() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharMethods::from_int");
 
@@ -182,6 +189,7 @@ mod char_object_tests {
 
     #[test]
     fn test_char_object_methods() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing CharObject trait methods");
 
@@ -261,6 +269,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_is_uppercase() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing cursed_unicode_is_uppercase runtime function");
 
@@ -275,6 +284,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_is_lowercase() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing cursed_unicode_is_lowercase runtime function");
 
@@ -289,6 +299,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_is_alphabetic() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing cursed_unicode_is_alphabetic runtime function");
 
@@ -303,6 +314,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_is_numeric() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing cursed_unicode_is_numeric runtime function");
 
@@ -317,6 +329,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_is_whitespace() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing cursed_unicode_is_whitespace runtime function");
 
@@ -331,6 +344,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_conversions() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing Unicode runtime conversion functions");
 
@@ -351,6 +365,7 @@ mod unicode_runtime_tests {
 
     #[test]
     fn test_unicode_runtime_to_string() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing cursed_unicode_to_string runtime function");
 
@@ -396,6 +411,7 @@ mod integration_tests {
 
     #[test]
     fn test_char_type_integration() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing complete character type integration");
 
@@ -456,6 +472,7 @@ mod integration_tests {
 
     #[test]
     fn test_error_handling_integration() {
+    // init_tracing!();
         common::tracing::setup();
         info!("Testing error handling for character operations");
 

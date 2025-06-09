@@ -9,11 +9,11 @@ use cursed::ast::{
     Program, FunctionStatement, SquadStatement, CollabStatement,
     Parameter, TypeParameter, Field
 };
-use cursed::ast::expressions::identifiers::Identifier;
-use cursed::ast::expressions::literals::NormieExpression;
-use cursed::ast::expressions::types::NormieType;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::declarations::method::MethodSignature;
+use cursed::ast::identifiers::Identifier;
+use cursed::ast::literals::NormieExpression;
+use cursed::ast::types::NormieType;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::method::MethodSignature;
 use cursed::error::SourceLocation;
 use std::boxed::Box;
 
@@ -390,12 +390,12 @@ fn test_extract_param_tags() {
     init_tracing();
     
     let analyzer = DocumentationAnalyzer::new();
-    let documentation = r#"
+    let documentation = r#""
     This is a function description.
     @param name The name parameter
     @param age The age parameter  
     @return The result value
-    "#;
+    "#";
     
     let params = analyzer.extract_param_tags(documentation);
     assert_eq!(params.len(), 2);
@@ -408,7 +408,7 @@ fn test_extract_code_examples() {
     init_tracing();
     
     let analyzer = DocumentationAnalyzer::new();
-    let documentation = r#"
+    let documentation = r#""
     This function does something.
     
     Example usage:
@@ -423,7 +423,7 @@ fn test_extract_code_examples() {
         vibez.spill("positive")
     }
     ```
-    "#;
+    "#";
     
     let examples = analyzer.extract_code_examples(documentation);
     assert_eq!(examples.len(), 2);

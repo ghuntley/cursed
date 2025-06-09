@@ -148,7 +148,7 @@ fn test_config_file_loading_toml() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test.toml");
     
-    let config_content = r#"
+    let config_content = r#""
 [package]
 name = "Test Package"
 version = "1.2.3"
@@ -163,7 +163,7 @@ enable_search = false
 [server]
 host = "0.0.0.0"
 port = 9000
-"#;
+"#";
     
     fs::write(&config_path, config_content).unwrap();
     
@@ -186,7 +186,7 @@ fn test_config_file_loading_json() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test.json");
     
-    let config_content = r#"
+    let config_content = r#""
 {
   "package": {
     "name": "JSON Package",
@@ -216,7 +216,7 @@ fn test_config_file_loading_json() {
     "case_sensitive": true
   }
 }
-"#;
+"#";
     
     fs::write(&config_path, config_content).unwrap();
     
@@ -239,7 +239,7 @@ fn test_config_file_loading_yaml() {
     let temp_dir = TempDir::new().unwrap();
     let config_path = temp_dir.path().join("test.yaml");
     
-    let config_content = r#"
+    let config_content = r#""
 package:
   name: "YAML Package"
   version: "3.0.0"
@@ -262,7 +262,7 @@ server:
   host: "localhost"
   port: 3000
   auto_open: true
-"#;
+"#";
     
     fs::write(&config_path, config_content).unwrap();
     
@@ -419,10 +419,10 @@ fn test_invalid_config_handling() {
     let config_path = temp_dir.path().join("invalid.toml");
     
     // Invalid TOML content
-    let invalid_content = r#"
+    let invalid_content = r#""
 [package
 name = "Invalid"
-"#;
+"#";
     
     fs::write(&config_path, invalid_content).unwrap();
     

@@ -10,6 +10,7 @@ mod common;
 
 #[test]
 fn test_auto_interface_registration() {
+    // init_tracing!();
     // Set up tracing for better debugging
     common::tracing::setup();
     
@@ -54,6 +55,7 @@ fn test_auto_interface_registration() {
 
 #[test]
 fn test_auto_interface_registration_with_generic_types() {
+    // init_tracing!();
     // Set up tracing for better debugging
     common::tracing::setup();
     
@@ -128,6 +130,7 @@ fn test_auto_interface_registration_with_generic_types() {
 
 #[test]
 fn test_auto_registration_during_program_type_checking() {
+    // init_tracing!();
     // This would be a more complete test that verifies registration during
     // program type checking. For now, this is a placeholder.
     // In a full implementation, this would parse and type check a program

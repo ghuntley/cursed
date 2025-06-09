@@ -136,14 +136,14 @@ fn test_qualified_function_call_codegen() {
     common::tracing::setup();
     info!("Testing qualified function call code generation");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "std/math"
 
 slay main() normie {
     sus result = math.Abs(-42)
     yolo result
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -171,14 +171,14 @@ fn test_imported_type_usage_codegen() {
     common::tracing::setup();
     info!("Testing imported type usage code generation");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "std/collections"
 
 slay main() normie {
     sus list = collections.List[normie]{1, 2, 3}
     yolo list.length()
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -205,7 +205,7 @@ fn test_imported_constant_usage_codegen() {
     common::tracing::setup();
     info!("Testing imported constant usage code generation");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "std/math"
 
 slay main() normie {
@@ -213,7 +213,7 @@ slay main() normie {
     sus area = math.PI * radius * radius
     yolo area
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -240,14 +240,14 @@ fn test_undefined_symbol_error() {
     common::tracing::setup();
     info!("Testing undefined symbol error handling");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "std/math"
 
 slay main() normie {
     sus result = math.UndefinedFunction(42)
     yolo result
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -278,13 +278,13 @@ fn test_unimported_package_error() {
     common::tracing::setup();
     info!("Testing unimported package error handling");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay main() normie {
     sus result = math.Abs(42)  // math not imported
     yolo result
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -345,7 +345,7 @@ fn test_import_aliasing_in_codegen() {
     common::tracing::setup();
     info!("Testing import aliasing in code generation");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet m "std/math"
 yeet io_utils "std/io"
 
@@ -354,7 +354,7 @@ slay main() normie {
     io_utils.Print("Result: ")
     yolo value
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -423,7 +423,7 @@ fn test_import_with_generics_codegen() {
     common::tracing::setup();
     info!("Testing import with generics code generation");
     
-    let input = r#"vibe test
+    let input = r#"vibe test"
 yeet "std/collections"
 
 slay main() normie {
@@ -431,7 +431,7 @@ slay main() normie {
     sus str_list = collections.List[string]{"a", "b", "c"}
     yolo int_list.length() + str_list.length()
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

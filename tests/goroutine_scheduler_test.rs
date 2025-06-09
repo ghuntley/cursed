@@ -90,6 +90,7 @@ unsafe extern "C" fn blocking_io_function(data: *mut c_void) -> *mut c_void {
 
 #[test]
 fn test_scheduler_creation_and_basic_operation() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing scheduler creation and basic operation");
     
@@ -116,6 +117,7 @@ fn test_scheduler_creation_and_basic_operation() {
 
 #[test]
 fn test_single_goroutine_execution() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing single goroutine execution");
     
@@ -149,6 +151,7 @@ fn test_single_goroutine_execution() {
 
 #[test]
 fn test_multiple_concurrent_goroutines() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing multiple concurrent goroutines");
     
@@ -200,6 +203,7 @@ fn test_multiple_concurrent_goroutines() {
 
 #[test]
 fn test_goroutine_panic_handling() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing goroutine panic handling");
     
@@ -225,6 +229,7 @@ fn test_goroutine_panic_handling() {
 
 #[test]
 fn test_mixed_success_and_panic_goroutines() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing mixed success and panic goroutines");
     
@@ -274,6 +279,7 @@ fn test_mixed_success_and_panic_goroutines() {
 
 #[test]
 fn test_thread_pool_scaling() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing thread pool scaling");
     
@@ -326,6 +332,7 @@ fn test_thread_pool_scaling() {
 
 #[test]
 fn test_memory_intensive_goroutines() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing memory intensive goroutines");
     
@@ -367,6 +374,7 @@ fn test_memory_intensive_goroutines() {
 
 #[test]
 fn test_gc_integration() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing garbage collector integration");
     
@@ -399,6 +407,7 @@ fn test_gc_integration() {
 
 #[test]
 fn test_scheduler_statistics_accuracy() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing scheduler statistics accuracy");
     
@@ -439,6 +448,7 @@ fn test_scheduler_statistics_accuracy() {
 
 #[test]
 fn test_cleanup_completed_goroutines() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing cleanup of completed goroutines");
     
@@ -469,6 +479,7 @@ fn test_cleanup_completed_goroutines() {
 
 #[test]
 fn test_concurrent_scheduler_operations() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing concurrent scheduler operations");
     
@@ -545,6 +556,7 @@ fn test_concurrent_scheduler_operations() {
 
 #[test]
 fn test_scheduler_performance_under_load() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing scheduler performance under load");
     
@@ -610,6 +622,7 @@ fn test_scheduler_performance_under_load() {
 
 #[test]
 fn test_global_scheduler_instance() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing global scheduler instance");
     
@@ -635,6 +648,7 @@ fn test_global_scheduler_instance() {
 
 #[test]
 fn test_scheduler_shutdown() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing scheduler shutdown");
     
@@ -670,6 +684,7 @@ fn test_scheduler_shutdown() {
 
 #[test]
 fn test_goroutine_state_transitions() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing goroutine state transitions");
     
@@ -701,6 +716,7 @@ fn test_goroutine_state_transitions() {
 
 #[test]
 fn test_error_recovery_and_resilience() {
+    // init_tracing!();
     common::init_tracing();
     info!("Testing error recovery and resilience");
     
@@ -768,6 +784,7 @@ fn test_error_recovery_and_resilience() {
 /// Performance benchmark for goroutine throughput
 #[test]
 fn test_goroutine_throughput_benchmark() {
+    // init_tracing!();
     common::init_tracing();
     info!("Running goroutine throughput benchmark");
     

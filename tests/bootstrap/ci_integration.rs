@@ -14,6 +14,7 @@ use tracing::{info, instrument, warn};
 #[instrument]
 #[test]
 fn test_clean_environment_bootstrap() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Simulate clean environment bootstrap
@@ -42,6 +43,7 @@ fn test_clean_environment_bootstrap() {
 #[instrument]
 #[test]
 fn test_container_compatibility() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test compatibility with containerized environments
@@ -72,6 +74,7 @@ fn test_container_compatibility() {
 #[instrument]
 #[test]
 fn test_dependency_isolation() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that bootstrap doesn't depend on external tools
@@ -103,6 +106,7 @@ fn test_dependency_isolation() {
 #[instrument]
 #[test]
 fn test_cross_platform_compatibility() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test platform-specific behavior
@@ -128,6 +132,7 @@ fn test_cross_platform_compatibility() {
 #[instrument]
 #[test]
 fn test_resource_constrained_environment() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test bootstrap in resource-constrained environments
@@ -156,6 +161,7 @@ fn test_resource_constrained_environment() {
 #[instrument]
 #[test]
 fn test_parallel_bootstrap_builds() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that multiple bootstrap processes can run in parallel
@@ -197,6 +203,7 @@ fn test_parallel_bootstrap_builds() {
 #[instrument]
 #[test]
 fn test_fresh_installation_bootstrap() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test bootstrap process from fresh installation
@@ -226,6 +233,7 @@ fn test_fresh_installation_bootstrap() {
 #[instrument]
 #[test]
 fn test_network_isolated_bootstrap() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test bootstrap without network access
@@ -372,12 +380,12 @@ fn test_linux_specific_bootstrap(config: &BootstrapTestConfig) {
     info!("Running Linux-specific bootstrap tests");
     
     // Test with Linux-specific features
-    let linux_source = r#"
+    let linux_source = r#""
 func main() {
     // Basic Linux-compatible program
     return 0
 }
-"#;
+"#";
     
     match run_platform_bootstrap_test(config, "linux_test", linux_source) {
         Ok(_) => {
@@ -393,12 +401,12 @@ func main() {
 fn test_macos_specific_bootstrap(config: &BootstrapTestConfig) {
     info!("Running macOS-specific bootstrap tests");
     
-    let macos_source = r#"
+    let macos_source = r#""
 func main() {
     // Basic macOS-compatible program
     return 0
 }
-"#;
+"#";
     
     match run_platform_bootstrap_test(config, "macos_test", macos_source) {
         Ok(_) => {
@@ -414,12 +422,12 @@ func main() {
 fn test_windows_specific_bootstrap(config: &BootstrapTestConfig) {
     info!("Running Windows-specific bootstrap tests");
     
-    let windows_source = r#"
+    let windows_source = r#""
 func main() {
     // Basic Windows-compatible program
     return 0
 }
-"#;
+"#";
     
     match run_platform_bootstrap_test(config, "windows_test", windows_source) {
         Ok(_) => {

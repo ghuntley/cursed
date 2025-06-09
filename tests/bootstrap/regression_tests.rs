@@ -11,14 +11,14 @@ use tracing::{info, instrument, warn};
 
 /// Known good test cases for regression testing
 const REGRESSION_TEST_CASES: &[(&str, &str)] = &[
-    ("basic_arithmetic", r#"
+    ("basic_arithmetic", r#""
 func main() {
     let x = 10
     let y = 20
     return x + y  // Should be 30
 }
-"#),
-    ("simple_function", r#"
+"#),"
+    ("simple_function", r#""
 func add(a: int, b: int) int {
     return a + b
 }
@@ -26,8 +26,8 @@ func add(a: int, b: int) int {
 func main() {
     return add(5, 7)  // Should be 12
 }
-"#),
-    ("struct_access", r#"
+"#),"
+    ("struct_access", r#""
 struct Point {
     x: int
     y: int
@@ -37,8 +37,8 @@ func main() {
     let p = Point{x: 3, y: 4}
     return p.x + p.y  // Should be 7
 }
-"#),
-    ("array_iteration", r#"
+"#),"
+    ("array_iteration", r#""
 func main() {
     let arr = [1, 2, 3, 4, 5]
     let sum = 0
@@ -47,8 +47,8 @@ func main() {
     }
     return sum  // Should be 15
 }
-"#),
-    ("control_flow", r#"
+"#),"
+    ("control_flow", r#""
 func main() {
     let result = 0
     
@@ -68,12 +68,13 @@ func main() {
     
     return result  // Should be 6
 }
-"#),
+"#),"
 ];
 
 #[instrument]
 #[test]
 fn test_regression_suite() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     let mut results = HashMap::new();
@@ -105,10 +106,11 @@ fn test_regression_suite() {
 #[instrument]
 #[test]
 fn test_compiler_version_consistency() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that the same source produces consistent results
-    let test_source = r#"
+    let test_source = r#""
 func factorial(n: int) int {
     if n <= 1 {
         return 1
@@ -119,7 +121,7 @@ func factorial(n: int) int {
 func main() {
     return factorial(5)  // Should be 120
 }
-"#;
+"#";
     
     // Compile multiple times and check consistency
     let mut binary_sizes = Vec::new();
@@ -147,6 +149,7 @@ func main() {
 #[instrument]
 #[test]
 fn test_bootstrap_backwards_compatibility() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that programs from previous versions still compile
@@ -175,6 +178,7 @@ fn test_bootstrap_backwards_compatibility() {
 #[instrument]
 #[test]
 fn test_error_message_consistency() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that error messages are consistent
@@ -215,6 +219,7 @@ fn test_error_message_consistency() {
 #[instrument]
 #[test]
 fn test_feature_flag_regression() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that feature flags work consistently
@@ -242,10 +247,11 @@ fn test_feature_flag_regression() {
 #[instrument]
 #[test]
 fn test_optimization_regression() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test that optimization behavior is consistent
-    let optimization_source = r#"
+    let optimization_source = r#""
 func compute_sum() int {
     let sum = 0
     for i := 1; i <= 100; i++ {
@@ -257,7 +263,7 @@ func compute_sum() int {
 func main() {
     return compute_sum()  // Should be 5050
 }
-"#;
+"#";
     
     // Test with different optimization settings (when available)
     let test_name = "optimization_regression";
@@ -282,10 +288,11 @@ func main() {
 #[instrument]
 #[test]
 fn test_memory_leak_regression() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     
     // Test for memory leaks in compilation process
-    let memory_intensive_source = r#"
+    let memory_intensive_source = r#""
 struct Node {
     value: int
     next: *Node
@@ -323,7 +330,7 @@ func main() {
     let list = create_list(100)
     return sum_list(list)
 }
-"#;
+"#";
     
     // Compile multiple times to check for memory leaks
     for run in 0..5 {
@@ -472,16 +479,16 @@ fn create_legacy_test_programs() -> Vec<(String, String, String)> {
         (
             "v0.1".to_string(),
             "basic_legacy".to_string(),
-            r#"
+            r#""
 func main() {
     return 42
 }
-"#.to_string(),
+"#.to_string(),"
         ),
         (
             "v0.2".to_string(),
             "function_legacy".to_string(),
-            r#"
+            r#""
 func add(x: int, y: int) int {
     return x + y
 }
@@ -489,12 +496,12 @@ func add(x: int, y: int) int {
 func main() {
     return add(10, 20)
 }
-"#.to_string(),
+"#.to_string(),"
         ),
         (
             "v0.3".to_string(),
             "struct_legacy".to_string(),
-            r#"
+            r#""
 struct Point {
     x: int
     y: int
@@ -504,7 +511,7 @@ func main() {
     let p = Point{x: 1, y: 2}
     return p.x + p.y
 }
-"#.to_string(),
+"#.to_string(),"
         ),
     ]
 }
@@ -514,30 +521,30 @@ fn create_error_test_cases() -> Vec<(String, String, String)> {
     vec![
         (
             "syntax_error".to_string(),
-            r#"
+            r#""
 func main( {  // Missing closing parenthesis
     return 42
 }
-"#.to_string(),
+"#.to_string(),"
             "syntax".to_string(),
         ),
         (
             "type_error".to_string(),
-            r#"
+            r#""
 func main() {
     let x: int = "string"  // Type mismatch
     return x
 }
-"#.to_string(),
+"#.to_string(),"
             "type".to_string(),
         ),
         (
             "undefined_variable".to_string(),
-            r#"
+            r#""
 func main() {
     return undefined_var  // Undefined variable
 }
-"#.to_string(),
+"#.to_string(),"
             "undefined".to_string(),
         ),
     ]
@@ -548,7 +555,7 @@ fn create_feature_flag_tests() -> Vec<(String, String)> {
     vec![
         (
             "generics".to_string(),
-            r#"
+            r#""
 func identity<T>(x: T) T {
     return x
 }
@@ -556,11 +563,11 @@ func identity<T>(x: T) T {
 func main() {
     return identity<int>(42)
 }
-"#.to_string(),
+"#.to_string(),"
         ),
         (
             "interfaces".to_string(),
-            r#"
+            r#""
 interface Drawable {
     draw() string
 }
@@ -576,18 +583,18 @@ func main() {
     let result = d.draw()
     return 0
 }
-"#.to_string(),
+"#.to_string(),"
         ),
         (
             "channels".to_string(),
-            r#"
+            r#""
 func main() {
     let ch = make(chan int, 1)
     ch <- 42
     let value = <-ch
     return value
 }
-"#.to_string(),
+"#.to_string(),"
         ),
     ]
 }

@@ -17,7 +17,7 @@ fn test_compile_single_package() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a simple package
-    let package_content = r#"
+    let package_content = r#""
 vibe testpkg;
 
 slay greet(name tea) tea {
@@ -28,7 +28,7 @@ slay main() {
     sus msg = greet("World")
     vibez.spill(msg)
 }
-"#;
+"#";
 
     let package_path = temp_dir.path().join("test.csd");
     fs::write(&package_path, package_content).unwrap();
@@ -52,7 +52,7 @@ fn test_compile_multiple_packages() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create package A (depends on B)
-    let package_a_content = r#"
+    let package_a_content = r#""
 vibe pkga;
 
 yeet "pkgb"
@@ -60,16 +60,16 @@ yeet "pkgb"
 slay main() {
     vibez.spill("Package A main")
 }
-"#;
+"#";
 
     // Create package B (no dependencies)
-    let package_b_content = r#"
+    let package_b_content = r#""
 vibe pkgb;
 
 slay helper() tea {
     cap "Helper from B"
 }
-"#;
+"#";
 
     let package_a_path = temp_dir.path().join("a.csd");
     let package_b_path = temp_dir.path().join("b.csd");
@@ -104,28 +104,28 @@ fn test_separate_compiler_dependency_resolution() {
     let mut compiler = SeparateCompiler::new(&context);
 
     // Create packages with dependency chain: A -> B -> C
-    let package_a_content = r#"
+    let package_a_content = r#""
 vibe pkga;
 yeet "pkgb"
 slay main() {
     vibez.spill("main")
 }
-"#;
+"#";
 
-    let package_b_content = r#"
+    let package_b_content = r#""
 vibe pkgb;
 yeet "pkgc"
 slay func_b() {
     vibez.spill("func_b")
 }
-"#;
+"#";
 
-    let package_c_content = r#"
+    let package_c_content = r#""
 vibe pkgc;
 slay func_c() {
     vibez.spill("func_c")
 }
-"#;
+"#";
 
     let path_a = temp_dir.path().join("a.csd");
     let path_b = temp_dir.path().join("b.csd");
@@ -162,12 +162,12 @@ fn test_separate_compilation_detection() {
     let temp_dir = TempDir::new().unwrap();
 
     // Single main package - should not use separate compilation
-    let main_content = r#"
+    let main_content = r#""
 vibe main;
 slay main() {
     vibez.spill("Hello")
 }
-"#;
+"#";
 
     let main_path = temp_dir.path().join("main.csd");
     fs::write(&main_path, main_content).unwrap();
@@ -175,10 +175,10 @@ slay main() {
     assert!(!should_use_separate_compilation(&[main_path.clone()]));
 
     // Non-main package - should use separate compilation
-    let pkg_content = r#"
+    let pkg_content = r#""
 vibe mypackage;
 slay func() {}
-"#;
+"#";
 
     let pkg_path = temp_dir.path().join("pkg.csd");
     fs::write(&pkg_path, pkg_content).unwrap();
@@ -186,11 +186,11 @@ slay func() {}
     assert!(should_use_separate_compilation(&[pkg_path.clone()]));
 
     // Package with imports - should use separate compilation
-    let import_content = r#"
+    let import_content = r#""
 vibe main;
 yeet "fmt"
 slay main() {}
-"#;
+"#";
 
     let import_path = temp_dir.path().join("import.csd");
     fs::write(&import_path, import_content).unwrap();
@@ -207,17 +207,17 @@ fn test_package_structure_analysis() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create test packages
-    let package_a_content = r#"
+    let package_a_content = r#""
 vibe pkga;
 yeet "pkgb"
 yeet "fmt"
 slay main() {}
-"#;
+"#";
 
-    let package_b_content = r#"
+    let package_b_content = r#""
 vibe pkgb;
 slay helper() {}
-"#;
+"#";
 
     let path_a = temp_dir.path().join("a.csd");
     let path_b = temp_dir.path().join("b.csd");
@@ -251,13 +251,13 @@ fn test_auto_compile_mode_detection() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create a simple package that should trigger separate compilation
-    let package_content = r#"
+    let package_content = r#""
 vibe testpkg;
 
 slay main() {
     vibez.spill("Auto compilation test")
 }
-"#;
+"#";
 
     let package_path = temp_dir.path().join("test.csd");
     fs::write(&package_path, package_content).unwrap();
@@ -302,17 +302,17 @@ fn test_circular_dependency_detection() {
     let mut compiler = SeparateCompiler::new(&context);
 
     // Create packages with circular dependency: A -> B -> A
-    let package_a_content = r#"
+    let package_a_content = r#""
 vibe pkga;
 yeet "pkgb"
 slay func_a() {}
-"#;
+"#";
 
-    let package_b_content = r#"
+    let package_b_content = r#""
 vibe pkgb;
 yeet "pkga"
 slay func_b() {}
-"#;
+"#";
 
     let path_a = temp_dir.path().join("a.csd");
     let path_b = temp_dir.path().join("b.csd");
@@ -340,7 +340,7 @@ fn test_package_metadata_extraction() {
     let temp_dir = TempDir::new().unwrap();
     let mut compiler = SeparateCompiler::new(&context);
 
-    let package_content = r#"
+    let package_content = r#""
 vibe mypackage;
 
 yeet "fmt"
@@ -356,7 +356,7 @@ slay helper(x normie) normie {
 slay processor(data tea) tea {
     cap "processed"
 }
-"#;
+"#";
 
     let package_path = temp_dir.path().join("test.csd");
     fs::write(&package_path, package_content).unwrap();

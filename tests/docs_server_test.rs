@@ -49,7 +49,7 @@ fn test_server_file_serving_setup() {
     let temp_dir = TempDir::new().unwrap();
     
     // Create test files
-    let index_content = r#"
+    let index_content = r#""
 <!DOCTYPE html>
 <html>
 <head><title>Test Documentation</title></head>
@@ -58,9 +58,9 @@ fn test_server_file_serving_setup() {
     <p>This is a test documentation page.</p>
 </body>
 </html>
-"#;
+"#";
     
-    let css_content = r#"
+    let css_content = r#""
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -70,16 +70,16 @@ body {
 h1 {
     color: #333;
 }
-"#;
+"#";
     
-    let js_content = r#"
+    let js_content = r#""
 console.log('Documentation loaded');
 
 // Simple search functionality
 function search(query) {
     console.log('Searching for:', query);
 }
-"#;
+"#";
     
     fs::write(temp_dir.path().join("index.html"), index_content).unwrap();
     fs::write(temp_dir.path().join("styles.css"), css_content).unwrap();
@@ -189,7 +189,7 @@ fn test_server_directory_structure() {
     }
     
     // Create main index
-    let main_index = r#"
+    let main_index = r#""
 <!DOCTYPE html>
 <html>
 <head><title>Main Documentation</title></head>
@@ -203,7 +203,7 @@ fn test_server_directory_structure() {
     </ul>
 </body>
 </html>
-"#;
+"#";
     fs::write(temp_dir.path().join("index.html"), main_index).unwrap();
     
     let server = DocServer::new(
@@ -255,7 +255,7 @@ fn test_live_reload_injection() {
     let temp_dir = TempDir::new().unwrap();
     
     // Create HTML file that should get live reload script injected
-    let html_content = r#"
+    let html_content = r#""
 <!DOCTYPE html>
 <html>
 <head>
@@ -266,7 +266,7 @@ fn test_live_reload_injection() {
     <p>This page should get live reload functionality.</p>
 </body>
 </html>
-"#;
+"#";
     
     fs::write(temp_dir.path().join("test.html"), html_content).unwrap();
     

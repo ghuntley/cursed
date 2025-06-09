@@ -1,5 +1,5 @@
-use cursed::ast::expressions::TypeAssertion;
-use cursed::ast::expressions::identifiers::Identifier;
+use cursed::ast::TypeAssertion;
+use cursed::ast::identifiers::Identifier;
 use cursed::ast::traits::{Expression, Node};
 use cursed::error::SourceLocation;
 use common::tracing::setup as init_tracing;
@@ -18,6 +18,7 @@ mod common;
 
 #[test]
 fn test_basic_type_assertion_structure() {
+    // init_tracing!();
     // Initialize tracing for this test
     init_tracing();
     
@@ -27,6 +28,7 @@ fn test_basic_type_assertion_structure() {
 
 #[test]
 fn test_source_location_creation() {
+    // init_tracing!();
     // Initialize tracing for this test
     init_tracing();
     
@@ -47,6 +49,7 @@ fn test_source_location_creation() {
 
 #[test]
 fn test_type_assertion_error_info_creation() {
+    // init_tracing!();
     // Initialize tracing for this test
     init_tracing();
     
@@ -61,6 +64,7 @@ fn test_type_assertion_error_info_creation() {
 
 #[test]
 fn test_type_assertion_compilation() {
+    // init_tracing!();
     // Initialize tracing for this test
     init_tracing();
     

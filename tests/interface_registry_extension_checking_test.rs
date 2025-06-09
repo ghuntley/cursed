@@ -18,6 +18,7 @@ mod common;
 
 #[test]
 fn test_interface_registry_extension_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator
@@ -55,6 +56,7 @@ fn test_interface_registry_extension_checking() {
 /// Test that path finding works even with partial relationships in the registry
 #[test]
 fn test_partial_extension_relationships() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator
@@ -85,6 +87,7 @@ fn test_partial_extension_relationships() {
 /// Test multi-level inheritance hierarchies using enhanced extension checking
 #[test]
 fn test_multi_level_inheritance_hierarchies() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator

@@ -18,7 +18,7 @@ macro_rules! init_tracing {
 }
 
 use cursed::codegen::llvm::{LlvmCodeGenerator, TypeConversionSystem, ConversionConfig, ConversionType};
-use cursed::ast::expressions::{TypeConversionExpression, TypeAssertion, Literal, LiteralValue, Identifier};
+use cursed::ast::{TypeConversionExpression, TypeAssertion, Literal, LiteralValue, Identifier};
 use cursed::ast::traits::{Expression, Node};
 use cursed::lexer::token::{Token, TokenType};
 use cursed::core::type_checker::Type;

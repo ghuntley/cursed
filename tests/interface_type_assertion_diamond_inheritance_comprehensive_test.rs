@@ -32,13 +32,14 @@ mod common;
 /// Test interface type assertions with diamond inheritance patterns
 #[test]
 fn test_diamond_inheritance_type_assertions() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting diamond inheritance type assertion test");
     let _timer = Timer::new("diamond_inheritance_type_assertion_test");
     
     // Create test code with diamond inheritance pattern
-    let code = r#"
+    let code = r#""
     vibe diamond_inheritance;
     
     // Error interface
@@ -561,7 +562,7 @@ fn test_diamond_inheritance_type_assertions() {
         
         vibez.spill("\nAll diamond inheritance type assertion tests completed");
     }
-    "#;
+    "#";
     
     // Parse the code
     let mut lexer = Lexer::new(code);

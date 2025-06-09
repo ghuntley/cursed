@@ -1,5 +1,5 @@
-use cursed::ast::control_flow::{CaseStatement, SwitchCase};
-use cursed::ast::statements::block::BlockStatement;
+use cursed::ast::{CaseStatement, SwitchCase};
+use cursed::ast::block::BlockStatement;
 use cursed::ast::{Expression, Statement};
 use cursed::lexer::Token;
 

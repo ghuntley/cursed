@@ -14,6 +14,7 @@ mod common;
 
 #[test]
 fn test_diamond_inheritance_detection() {
+    // init_tracing!();
     // Initialize test tracing
     common::tracing::setup();
     
@@ -37,6 +38,7 @@ fn test_diamond_inheritance_detection() {
 
 #[test]
 fn test_diamond_inheritance_handler() {
+    // init_tracing!();
     // Initialize test tracing
     common::tracing::setup();
     
@@ -52,6 +54,7 @@ fn test_diamond_inheritance_handler() {
 
 #[test]
 fn test_enhanced_path_finder_multi_path() {
+    // init_tracing!();
     // Initialize test tracing
     common::tracing::setup();
     

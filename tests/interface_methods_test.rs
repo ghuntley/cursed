@@ -13,7 +13,7 @@ use inkwell::context::Context;
 #[test]
 fn test_basic_interface_methods() -> Result<(), Error> {
     // Define a simple program with an interface and implementation
-    let source = r#"
+    let source = r#""
     fr fr Interface method test
     
     collab Greeter {
@@ -40,7 +40,7 @@ fn test_basic_interface_methods() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
     
     // Parse program
     let mut lexer = Lexer::new(source);
@@ -71,7 +71,7 @@ fn test_basic_interface_methods() -> Result<(), Error> {
 #[test]
 fn test_interface_type_assertion() -> Result<(), Error> {
     // Test program with interface type assertions
-    let source = r#"
+    let source = r#""
     fr fr Interface type assertion test
     
     collab Shape {
@@ -121,7 +121,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
     
     // Parse program
     let mut lexer = Lexer::new(source);

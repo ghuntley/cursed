@@ -15,6 +15,7 @@ mod common;
 /// Test interface extension relationship checking with improved string comparison
 #[test]
 fn test_improved_interface_extension_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a test registry and register some types
@@ -34,6 +35,7 @@ fn test_improved_interface_extension_checking() {
 /// Test error handling in the implementors lookup with non-existent interfaces
 #[test]
 fn test_implementors_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a test registry with minimal types
@@ -48,6 +50,7 @@ fn test_implementors_error_handling() {
 /// Test sample relationships from the enhanced get_extension_relationships method
 #[test]
 fn test_extension_relationships_sample_data() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a test registry with interface hierarchy
@@ -67,6 +70,7 @@ fn test_extension_relationships_sample_data() {
 /// Test integration with the real interface extension registry
 #[test]
 fn test_real_registry_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create the ThreadSafeInterfaceExtensionRegistry

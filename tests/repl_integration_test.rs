@@ -152,18 +152,18 @@ fn test_build_integration() {
     
     // Create a test project structure
     let cursed_build = temp_dir.path().join("CursedBuild.toml");
-    fs::write(&cursed_build, r#"
+    fs::write(&cursed_build, r#""
 name = "test_project"
 version = "1.0.0"
 description = "Test CURSED project"
-"#).unwrap();
+"#).unwrap()";
     
     let main_file = temp_dir.path().join("main.csd");
-    fs::write(&main_file, r#"
+    fs::write(&main_file, r#""
 slay main_character() {
     println("Hello, CURSED world!");
 }
-"#).unwrap();
+"#).unwrap()";
     
     // Test project scanning
     assert!(integration.scan_project(temp_dir.path()).is_ok());
@@ -274,12 +274,12 @@ fn test_syntax_highlighting_with_strings_and_comments() {
     assert!(highlighted.contains('\x1b')); // Should have color codes
     
     // Test mixed content
-    let code = r#"
+    let code = r#""
     slay main_character() { // Main function
         facts greeting = "Hello, world!"; // String variable
         println(greeting); // Print it
     }
-    "#;
+    "#";
     let highlighted = highlighter.highlight(code);
     assert!(highlighted.contains('\x1b')); // Should have color codes
 }
@@ -335,7 +335,7 @@ fn test_build_integration_with_makefile() {
     
     // Create a Makefile
     let makefile = temp_dir.path().join("Makefile");
-    fs::write(&makefile, r#"
+    fs::write(&makefile, r#""
 all:
 	@echo "Building project"
 
@@ -344,7 +344,7 @@ test:
 
 clean:
 	@echo "Cleaning project"
-"#).unwrap();
+"#).unwrap()";
     
     // Test project scanning
     assert!(integration.scan_project(temp_dir.path()).is_ok());

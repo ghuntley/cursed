@@ -3,7 +3,7 @@
 //! This test suite validates the goroutine AST components that should work
 //! without relying on runtime or LLVM code generation.
 
-use cursed::ast::expressions::concurrency::StanExpression;
+use cursed::ast::concurrency::StanExpression;
 use cursed::ast::*;
 use cursed::lexer::Token;
 

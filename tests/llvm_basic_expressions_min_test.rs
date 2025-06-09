@@ -1,4 +1,4 @@
-use cursed::ast::expressions::literals::{IntegerLiteral};
+use cursed::ast::literals::{IntegerLiteral};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ExpressionCompilation;

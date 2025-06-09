@@ -9,6 +9,7 @@ use tracing::{info, debug};
 
 #[test]
 fn test_float_type_converter_creation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing FloatTypeConverter creation");
 
@@ -23,6 +24,7 @@ fn test_float_type_converter_creation() {
 
 #[test]
 fn test_float_value_creation_and_conversion() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing basic float value creation and type conversions");
 
@@ -54,6 +56,7 @@ fn test_float_value_creation_and_conversion() {
 
 #[test]
 fn test_float_to_integer_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing float to integer conversions");
 
@@ -88,6 +91,7 @@ fn test_float_to_integer_conversions() {
 
 #[test]
 fn test_integer_to_float_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing integer to float conversions");
 
@@ -115,6 +119,7 @@ fn test_integer_to_float_conversions() {
 
 #[test]
 fn test_float_to_boolean_conversion() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing float to boolean conversions");
 
@@ -147,6 +152,7 @@ fn test_float_to_boolean_conversion() {
 
 #[test]
 fn test_bounds_checking() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing bounds checking for float-to-int conversions");
 
@@ -164,6 +170,7 @@ fn test_bounds_checking() {
 
 #[test]
 fn test_cursed_type_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing CURSED-specific type conversions");
 
@@ -198,6 +205,7 @@ fn test_cursed_type_conversions() {
 
 #[test]
 fn test_special_values_compilation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing that special value handling compiles correctly");
 
@@ -231,6 +239,7 @@ fn test_special_values_compilation() {
 
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing error handling in float conversions");
 

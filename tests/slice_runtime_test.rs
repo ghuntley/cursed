@@ -11,6 +11,7 @@ mod common;
 
 #[test]
 fn test_slice_header_basic_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test empty header
@@ -38,6 +39,7 @@ fn test_slice_header_basic_operations() {
 
 #[test]
 fn test_slice_runtime_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -51,6 +53,7 @@ fn test_slice_runtime_creation() {
 
 #[test]
 fn test_slice_runtime_with_custom_config() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = SliceConfiguration {
@@ -73,6 +76,7 @@ fn test_slice_runtime_with_custom_config() {
 
 #[test]
 fn test_slice_creation_and_deallocation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -107,6 +111,7 @@ fn test_slice_creation_and_deallocation() {
 
 #[test]
 fn test_slice_growth() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -133,6 +138,7 @@ fn test_slice_growth() {
 
 #[test]
 fn test_slice_shrinking() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = SliceConfiguration {
@@ -156,6 +162,7 @@ fn test_slice_shrinking() {
 
 #[test]
 fn test_slice_bounds_checking() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -176,6 +183,7 @@ fn test_slice_bounds_checking() {
 
 #[test]
 fn test_slice_copy_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -211,6 +219,7 @@ fn test_slice_copy_operations() {
 
 #[test]
 fn test_slice_fill_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -239,6 +248,7 @@ fn test_slice_fill_operations() {
 
 #[test]
 fn test_slice_zero_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -266,6 +276,7 @@ fn test_slice_zero_operations() {
 
 #[test]
 fn test_slice_comparison_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -314,6 +325,7 @@ fn test_slice_comparison_operations() {
 
 #[test]
 fn test_slice_find_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -346,6 +358,7 @@ fn test_slice_find_operations() {
 
 #[test]
 fn test_slice_element_access() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -374,6 +387,7 @@ fn test_slice_element_access() {
 
 #[test]
 fn test_slice_length_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -398,6 +412,7 @@ fn test_slice_length_operations() {
 
 #[test]
 fn test_slice_move_within() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -424,6 +439,7 @@ fn test_slice_move_within() {
 
 #[test]
 fn test_slice_statistics() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime = SliceRuntime::new();
@@ -447,6 +463,7 @@ fn test_slice_statistics() {
 
 #[test]
 fn test_slice_error_conditions() {
+    // init_tracing!();
     common::tracing::setup();
     
     let config = SliceConfiguration {
@@ -467,6 +484,7 @@ fn test_slice_error_conditions() {
 
 #[test]
 fn test_thread_safe_slice_runtime() {
+    // init_tracing!();
     common::tracing::setup();
     
     use cursed::runtime::slice_runtime::{create_thread_safe_runtime, create_thread_safe_runtime_with_config};

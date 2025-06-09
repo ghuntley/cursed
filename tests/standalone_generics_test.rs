@@ -9,21 +9,22 @@ mod common;
 
 #[test]
 fn test_generic_parsing() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Testing generic syntax parsing");
-    let generic_struct = r#"be_like Box[T] squad {
+    let generic_struct = r#"be_like Box[T] squad {"
     value T
 }
-"#;
+"#";
 
     debug!(generic_struct = generic_struct, "Generic struct definition parsed successfully");
     assert!(true, "Generic parsing verified manually");
 
-    let generic_function = r#"slay identity[T](x T) T {
+    let generic_function = r#"slay identity[T](x T) T {"
     yolo x
 }
-"#;
+"#";
 
     debug!(generic_function = generic_function, "Generic function definition parsed successfully");
     assert!(true, "Generic function parsing verified manually");
@@ -33,6 +34,7 @@ fn test_generic_parsing() {
 
 #[test]
 fn test_generic_types() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Testing generic type system");

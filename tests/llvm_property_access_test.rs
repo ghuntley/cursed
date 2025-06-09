@@ -1,5 +1,5 @@
-use cursed::ast::expressions::dot_expression::DotExpression;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::dot_expression::DotExpression;
+use cursed::ast::Identifier;
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ExpressionCompilation;

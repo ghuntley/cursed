@@ -52,7 +52,7 @@ fn test_interface_type_registry_basic() {
     init_tracing!();
     
     // Define a simple program with multiple interface type assertions
-    let input = r#"
+    let input = r#""
         // Define an interface
         collab Shape {
             area() normie;
@@ -133,7 +133,7 @@ fn test_interface_type_registry_basic() {
                    ", Circle=" + vibe.toString(circle_count) + 
                    ", Triangle=" + vibe.toString(triangle_count)
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {
@@ -149,7 +149,7 @@ fn test_interface_type_registry_nested() {
     init_tracing!();
     
     // Test with a nested hierarchy of interfaces
-    let input = r#"
+    let input = r#""
         // Define a nested interface hierarchy
         collab Object {
             id() lit;
@@ -204,7 +204,7 @@ fn test_interface_type_registry_nested() {
             
             return "Some assertions failed"
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {
@@ -220,7 +220,7 @@ fn test_interface_type_registry_invalid() {
     init_tracing!();
     
     // Test with invalid type assertions
-    let input = r#"
+    let input = r#""
         // Define two unrelated interfaces
         collab Shape {
             area() normie;
@@ -271,7 +271,7 @@ fn test_interface_type_registry_invalid() {
             
             return "Invalid assertions unexpectedly succeeded"
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {

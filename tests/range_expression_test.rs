@@ -1,5 +1,5 @@
-use cursed::ast::expressions::range_expression::RangeExpression;
-use cursed::ast::expressions::IntegerLiteral;
+use cursed::ast::range_expression::RangeExpression;
+use cursed::ast::IntegerLiteral;
 use cursed::ast::{Expression, Node};
 
 // Tests for RangeExpression Node implementation

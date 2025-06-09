@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::info;
-use cursed::benchmark::BenchmarkReporter;
+::BenchmarkReporter;
 
 // Integration test for the benchmark suite
 
@@ -17,6 +17,7 @@ mod tracing_setup {
 
 #[test]
 fn test_benchmark_harness() {
+    // init_tracing!();
     // Initialize tracing
     tracing_setup::init_test_tracing();
     

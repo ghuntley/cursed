@@ -38,7 +38,7 @@ fn create_comprehensive_test_package() -> PackageDocumentation {
     });
 
     // Add documentation comment with examples
-    let doc_content = r#"Entry point for the CURSED application.
+    let doc_content = r#"Entry point for the CURSED application."
 
 This function initializes the application and processes command line arguments.
 It's giving main character energy fr fr.
@@ -51,21 +51,21 @@ slay main(args tea Vec<String>) {
     vibez.spillf("Hey %s! What's the vibe?", name)
 }
 @deprecated Use new_main() instead, this is kinda sus
-"#;
+"#";
 
     let doc_comment = CommentParser::new().parse_comment(doc_content).unwrap();
     main_function = main_function.with_doc_comment(doc_comment);
 
     // Add some examples
     main_function.examples = vec![
-        r#"slay main(args tea Vec<String>) {
+        r#"slay main(args tea Vec<String>) {"
     vibez.spill("Hello, World!")
-}"#.to_string(),
-        r#"slay main(args tea Vec<String>) {
+}"#.to_string(),"
+        r#"slay main(args tea Vec<String>) {"
     lowkey args.len() > 0 {
         vibez.spillf("Hello, %s!", args[0])
     }
-}"#.to_string(),
+}"#.to_string(),"
     ];
 
     core_module.exports.push(main_function);
@@ -97,7 +97,7 @@ slay main(args tea Vec<String>) {
 
     person_struct = person_struct.add_method(greet_method);
 
-    let person_doc = r#"Represents a person in the CURSED system.
+    let person_doc = r#"Represents a person in the CURSED system."
 
 This struct is absolutely iconic and represents individuals with all their
 main character energy. It's serving personality!
@@ -107,7 +107,7 @@ sus person tea = Person {
     name: "Taylor",
     age: 25,
 }
-"#;
+"#";
 
     let person_comment = CommentParser::new().parse_comment(person_doc).unwrap();
     person_struct = person_struct.with_doc_comment(person_comment);
@@ -125,7 +125,7 @@ sus person tea = Person {
 
     drawable_interface = drawable_interface.add_method(draw_method);
 
-    let drawable_doc = r#"Interface for drawable objects.
+    let drawable_doc = r#"Interface for drawable objects."
 
 Objects implementing this interface can be rendered to the screen.
 It's giving artistic vibes!
@@ -134,7 +134,7 @@ It's giving artistic vibes!
 collab Drawable {
     slay draw(self tea &Self)
 }
-"#;
+"#";
 
     let drawable_comment = CommentParser::new().parse_comment(drawable_doc).unwrap();
     drawable_interface = drawable_interface.with_doc_comment(drawable_comment);

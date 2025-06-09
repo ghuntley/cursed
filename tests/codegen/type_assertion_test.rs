@@ -1,5 +1,5 @@
-use cursed::ast::expressions::TypeAssertion;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::TypeAssertion;
+use cursed::ast::Identifier;
 use cursed::ast::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::type_assertion::InterfaceTypeAssertion;

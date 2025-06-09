@@ -3,9 +3,9 @@
 //! This test suite verifies the comprehensive channel select statement system
 //! including AST creation, parsing, and LLVM code generation.
 
-use cursed::ast::control_flow::select::*;
-use cursed::ast::expressions::channel::{SendExpression, ReceiveExpression};
-use cursed::ast::expressions::Identifier;
+use cursed::ast::select::*;
+use cursed::ast::channel::{SendExpression, ReceiveExpression};
+use cursed::ast::Identifier;
 use cursed::ast::traits::{Expression, Statement};
 use cursed::lexer::{Lexer, Token};
 use cursed::parser::Parser;
@@ -16,6 +16,7 @@ mod common;
 /// Test basic select statement AST creation
 #[test]
 fn test_select_statement_ast_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a simple receive expression for testing
@@ -56,6 +57,7 @@ fn test_select_statement_ast_creation() {
 /// Test select statement with default case
 #[test]
 fn test_select_statement_with_default() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a select statement with default case
@@ -81,16 +83,17 @@ fn test_select_statement_with_default() {
 /// Test select statement parsing from source code
 #[test]
 fn test_select_statement_parsing() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"
+    let source = r#""
         choose {
             mood <-ch:
                 x = 42
             basic:
                 y = 0
         }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer);
@@ -118,6 +121,7 @@ fn test_select_statement_parsing() {
 /// Test select statement with multiple cases
 #[test]
 fn test_select_statement_multiple_cases() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create multiple cases for the select statement
@@ -185,6 +189,7 @@ fn test_select_statement_multiple_cases() {
 /// Test timeout case functionality
 #[test]
 fn test_timeout_case() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a timeout expression (duration)
@@ -210,6 +215,7 @@ fn test_timeout_case() {
 /// Test helper functions for creating select statement components
 #[test]
 fn test_select_statement_helpers() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test new_select_case helper
@@ -256,6 +262,7 @@ fn test_select_statement_helpers() {
 /// Test select statement compilation readiness
 #[test]
 fn test_select_statement_compilation_readiness() {
+    // init_tracing!();
     common::tracing::setup();
     
     // This test verifies that our select statement structures are ready
@@ -300,6 +307,7 @@ fn test_select_statement_compilation_readiness() {
 /// Integration test for complete select statement functionality
 #[test]
 fn test_select_statement_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test the complete pipeline: AST creation -> string representation -> traits

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::path::PathBuf;
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::Node;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::SourceLocation;
@@ -22,6 +22,7 @@ mod common;
 
 #[test]
 fn test_interface_type_assertion_filesystem_error_propagation() {
+    // init_tracing!();
     // Set up tracing for this test
     common::tracing::setup();
     
@@ -94,6 +95,7 @@ impl cursed::ast::traits::Expression for MockExpression {
 
 #[test]
 fn test_interface_filesystem_error_propagation_integration() {
+    // init_tracing!();
     // Set up tracing for this test
     common::tracing::setup();
     

@@ -10,6 +10,7 @@ use tracing::{error, info, warn};
 
 #[test]
 fn test_comprehensive_bootstrap_pipeline() {
+    // init_tracing!();
     let config = init_bootstrap_tests();
     let start_time = Instant::now();
     

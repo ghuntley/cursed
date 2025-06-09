@@ -16,6 +16,7 @@ mod common;
 
 #[test]
 fn test_interface_path_finder_enhanced() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator
@@ -114,6 +115,7 @@ fn setup_test_inheritance_relationships(codegen: &mut LlvmCodeGenerator) {
 /// Test that the error messages are formatted correctly and contain useful information
 #[test]
 fn test_interface_path_finder_enhanced_error_messages() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator
@@ -154,6 +156,7 @@ fn test_interface_path_finder_enhanced_error_messages() {
 /// Test the path visualization functionality
 #[test]
 fn test_interface_inheritance_path_visualization() {
+    // init_tracing!();
     // Test the InterfaceInheritancePath struct directly
     let path = InterfaceInheritancePath::new(
         vec!["Child".to_string(), "Parent".to_string(), "GrandParent".to_string()],
@@ -185,6 +188,7 @@ fn test_interface_inheritance_path_visualization() {
 /// Test the DOT graph generation
 #[test]
 fn test_interface_hierarchy_dot_graph() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator

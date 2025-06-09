@@ -16,6 +16,7 @@ mod common;
 
 #[test]
 fn test_register_methods_for_struct() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -46,6 +47,7 @@ fn test_register_methods_for_struct() {
 
 #[test]
 fn test_constraint_checking_with_type_checker() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -82,6 +84,7 @@ fn test_constraint_checking_with_type_checker() {
 
 #[test]
 fn test_constraint_checking_missing_interface() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -117,6 +120,7 @@ fn test_constraint_checking_missing_interface() {
 
 #[test]
 fn test_enhanced_monomorphization_specialized_name() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     

@@ -1,4 +1,4 @@
-use cursed::ast::statements::declarations::FactsStatement;
+use cursed::ast::FactsStatement;
 use cursed::ast::{Node, Statement};
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
@@ -7,11 +7,11 @@ use std::path::Path;
 
 #[test]
 fn test_facts_declaration_parsing() {
-    let input = r#"
+    let input = r#""
     facts PI = 3.14159;
     facts E = 2.71828;
     facts ANSWER = 42;
-    "#;
+    "#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

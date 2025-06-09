@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use common::tracing;
 use tracing::{debug, error, info, trace, warn};
 use cursed::ast::types::{InterfaceType, StructType, Type};
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use cursed::parser::Parser;
 use cursed::codegen::llvm::{LlvmCodeGenerator, InterfaceImplementation, EnhancedDynamicDispatch, IntegratedInterfaceOperations};
 use cursed::core::interface_registry_extensions::InterfaceRegistryExtension;
@@ -37,7 +37,7 @@ fn test_basic_type_assertion_success() {
     // Create a timer to measure test execution time
     let _timer = common::timing::Timer::new("basic_type_assertion_success");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Drawable {
@@ -71,7 +71,7 @@ fn test_basic_type_assertion_success() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {
@@ -92,7 +92,7 @@ fn test_type_assertion_with_error_handling() {
     
     let _timer = common::timing::Timer::new("type_assertion_with_error_handling");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Drawable {
@@ -138,7 +138,7 @@ fn test_type_assertion_with_error_handling() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {
@@ -159,7 +159,7 @@ fn test_nested_interface_hierarchies() {
     
     let _timer = common::timing::Timer::new("nested_interface_hierarchies");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Object {
@@ -219,7 +219,7 @@ fn test_nested_interface_hierarchies() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {
@@ -240,7 +240,7 @@ fn test_diamond_inheritance_pattern() {
     
     let _timer = common::timing::Timer::new("diamond_inheritance_pattern");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Base {
@@ -314,7 +314,7 @@ fn test_diamond_inheritance_pattern() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {
@@ -339,7 +339,7 @@ fn test_debug_verbosity_levels() {
     for debug_level in &["none", "basic", "standard", "verbose"] {
         env::set_var("CURSED_TYPE_DEBUG", debug_level);
         
-        let source = r#"
+        let source = r#""
             vibe main;
             
             tea Animal {
@@ -381,7 +381,7 @@ fn test_debug_verbosity_levels() {
                           debug_level, e.message);
                 }
             }
-        "#;
+        "#";
         
         info!(debug_level = debug_level, "Testing with debug level");
         
@@ -408,7 +408,7 @@ fn test_error_message_quality() {
     // Set to verbose for best error messages
     env::set_var("CURSED_TYPE_DEBUG", "verbose");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Vehicle {
@@ -493,7 +493,7 @@ fn test_error_message_quality() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {
@@ -514,7 +514,7 @@ fn test_type_assertion_with_generics() {
     
     let _timer = common::timing::Timer::new("type_assertion_with_generics");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Stringer {
@@ -569,7 +569,7 @@ fn test_type_assertion_with_generics() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {
@@ -590,7 +590,7 @@ fn test_assertion_performance() {
     
     let _timer = common::timing::Timer::new("assertion_performance");
     
-    let source = r#"
+    let source = r#""
         vibe main;
         
         tea Countable {
@@ -635,7 +635,7 @@ fn test_assertion_performance() {
                 poppin();
             }
         }
-    "#;
+    "#";
     
     match compile_and_run(source) {
         Ok(_) => {

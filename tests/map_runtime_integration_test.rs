@@ -193,14 +193,14 @@ fn test_runtime_basic_map_operations() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_basic_map
 
         slay main() normie {
             sus scores = {"alice": 95, "bob": 87}
             yolo 1  // Success if we get here
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 1, "Basic map operations failed");
@@ -220,27 +220,27 @@ fn test_runtime_map_different_types() -> Result<(), Error> {
     let tester = MapRuntimeTester::new(&context);
     
     // Test string keys with integer values
-    let string_int_source = r#"
+    let string_int_source = r#""
         vibe test_string_int_map
 
         slay main() normie {
             sus ages = {"alice": 30, "bob": 25, "charlie": 35}
             yolo 2  // Success
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(string_int_source)?;
     assert_eq!(result, 2, "String-int map test failed");
     
     // Test integer keys with string values  
-    let int_string_source = r#"
+    let int_string_source = r#""
         vibe test_int_string_map
 
         slay main() normie {
             sus names = {1: "alice", 2: "bob", 3: "charlie"}
             yolo 3  // Success
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(int_string_source)?;
     assert_eq!(result, 3, "Int-string map test failed");
@@ -259,14 +259,14 @@ fn test_runtime_empty_map() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_empty_map
 
         slay main() normie {
             sus empty_map = {}
             yolo 4  // Success if empty map is handled
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 4, "Empty map test failed");
@@ -286,7 +286,7 @@ fn test_runtime_map_iteration() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_iteration
 
         slay main() normie {
@@ -303,7 +303,7 @@ fn test_runtime_map_iteration() -> Result<(), Error> {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 5, "Map iteration test failed");
@@ -323,7 +323,7 @@ fn test_runtime_map_access() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_access
 
         slay main() normie {
@@ -336,7 +336,7 @@ fn test_runtime_map_access() -> Result<(), Error> {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 6, "Map access test failed");
@@ -356,7 +356,7 @@ fn test_runtime_map_modification() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_modification
 
         slay main() normie {
@@ -371,7 +371,7 @@ fn test_runtime_map_modification() -> Result<(), Error> {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 7, "Map modification test failed");
@@ -391,7 +391,7 @@ fn test_runtime_nested_maps() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_nested_maps
 
         slay main() normie {
@@ -407,7 +407,7 @@ fn test_runtime_nested_maps() -> Result<(), Error> {
                 yolo 0  // Failure
             }
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 8, "Nested maps test failed");
@@ -427,7 +427,7 @@ fn test_runtime_map_error_handling() -> Result<(), Error> {
     let tester = MapRuntimeTester::new(&context);
     
     // Test accessing non-existent key (should not crash)
-    let source = r#"
+    let source = r#""
         vibe test_map_error_handling
 
         slay main() normie {
@@ -435,7 +435,7 @@ fn test_runtime_map_error_handling() -> Result<(), Error> {
             // This should handle gracefully, not crash
             yolo 9  // Success if we reach here
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 9, "Map error handling test failed");
@@ -454,7 +454,7 @@ fn test_runtime_map_memory_stress() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_memory_stress
 
         slay main() normie {
@@ -465,7 +465,7 @@ fn test_runtime_map_memory_stress() -> Result<(), Error> {
             
             yolo 10  // Success
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 10, "Map memory stress test failed");
@@ -484,14 +484,14 @@ fn test_runtime_map_performance() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_performance
 
         slay main() normie {
             sus map = {"key1": 1, "key2": 2, "key3": 3}
             yolo 11
         }
-    "#;
+    "#";
     
     let iterations = 10;
     let duration = tester.benchmark_map_operations(source, iterations)?;
@@ -516,7 +516,7 @@ fn test_runtime_map_with_gc() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_gc
 
         slay create_temporary_map() {
@@ -535,7 +535,7 @@ fn test_runtime_map_with_gc() -> Result<(), Error> {
             
             yolo result  // Should be 5
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     // Note: GC behavior testing would require more sophisticated runtime
@@ -556,7 +556,7 @@ fn test_runtime_map_collection_integration() -> Result<(), Error> {
     let context = Context::create();
     let tester = MapRuntimeTester::new(&context);
     
-    let source = r#"
+    let source = r#""
         vibe test_map_collection_integration
 
         slay main() normie {
@@ -572,7 +572,7 @@ fn test_runtime_map_collection_integration() -> Result<(), Error> {
             
             yolo 12  // Success
         }
-    "#;
+    "#";
     
     let result = tester.compile_and_execute(source)?;
     assert_eq!(result, 12, "Map collection integration test failed");

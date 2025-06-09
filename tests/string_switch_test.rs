@@ -51,6 +51,7 @@ impl Node for TestStringLiteral {
 
 #[test]
 fn test_string_comparison() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Testing string comparison in LLVM codegen");
@@ -68,12 +69,12 @@ fn test_string_comparison() {
         .module()
         .add_function("test_function", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
-    code_generator.builder().position_at_end(entry_block);
+    code_generator.as_ref().unwrap().get_builder().position_at_end(entry_block);
 
     // Create string constants
-    let hello_str = code_generator.create_string_constant("hello").unwrap();
-    let world_str = code_generator.create_string_constant("world").unwrap();
-    let hello2_str = code_generator.create_string_constant("hello").unwrap();
+    let hello_str = // TODO: code_generator.create_string_constant("hello").unwrap();
+    let world_str = // TODO: code_generator.create_string_constant("world").unwrap();
+    let hello2_str = // TODO: code_generator.create_string_constant("hello").unwrap();
 
     // Generate string comparisons
     let cmp1 = code_generator
@@ -95,7 +96,7 @@ fn test_string_comparison() {
         .unwrap();
 
     // Verify module - this ensures our LLVM IR is well-formed
-    let verify_result = code_generator.module().verify();
+    let verify_result = code_generator.as_ref().unwrap().get_module().verify();
     if let Err(err) = &verify_result {
         error!(error = ?err, "LLVM module verification failed");
     }
@@ -103,7 +104,7 @@ fn test_string_comparison() {
     debug!("LLVM module verified successfully");
 
     // Get the generated IR code and make sure it contains the expected function calls
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string();
     
     let contains_strcmp = ir_code.contains("@strcmp");
     if !contains_strcmp {
@@ -133,6 +134,7 @@ fn test_string_comparison() {
 
 #[test]
 fn test_string_literal_evaluation() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Testing string literal evaluation in LLVM codegen");
@@ -149,7 +151,7 @@ fn test_string_literal_evaluation() {
         .module()
         .add_function("test_function", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
-    code_generator.builder().position_at_end(entry_block);
+    code_generator.as_ref().unwrap().get_builder().position_at_end(entry_block);
 
     // Create a string literal expression
     let string_literal = TestStringLiteral {
@@ -162,10 +164,10 @@ fn test_string_literal_evaluation() {
         .unwrap();
 
     // Build a return value
-    code_generator.builder().build_return(Some(&str_ptr)).unwrap();
+    code_generator.as_ref().unwrap().get_builder().build_return(Some(&str_ptr)).unwrap();
 
     // Verify module - this ensures our LLVM IR is well-formed
-    let verify_result = code_generator.module().verify();
+    let verify_result = code_generator.as_ref().unwrap().get_module().verify();
     if let Err(err) = &verify_result {
         error!(error = ?err, "LLVM module verification failed");
     }
@@ -173,7 +175,7 @@ fn test_string_literal_evaluation() {
     debug!("LLVM module verified successfully");
 
     // Get the generated IR code and make sure it contains the expected string content
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string();
     
     let contains_str = ir_code.contains("hello world");
     if !contains_str {
@@ -284,12 +286,12 @@ fn test_string_switch_compilation() {
     
     // Create a function to hold our switch statement
     let fn_type = context.void_type().fn_type(&[], false);
-    let function = code_generator.module().add_function("test_switch", fn_type, None);
+    let function = code_generator.as_ref().unwrap().get_module().add_function("test_switch", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
-    code_generator.builder().position_at_end(entry_block);
+    code_generator.as_ref().unwrap().get_builder().position_at_end(entry_block);
     
     // Create a string parameter to switch on
-    let day_str = code_generator.create_string_constant("Monday").unwrap();
+    let day_str = // TODO: code_generator.create_string_constant("Monday").unwrap();
     
     // Create dummy case statements
     let monday_lit = TestStringLiteral { value: "Monday".to_string() };
@@ -335,10 +337,10 @@ fn test_string_switch_compilation() {
     */
     
     // Generate a proper return to satisfy the function
-    code_generator.builder().build_return(None).unwrap();
+    code_generator.as_ref().unwrap().get_builder().build_return(None).unwrap();
     
     // Verify the module to ensure the IR is valid
-    let verify_result = code_generator.module().verify();
+    let verify_result = code_generator.as_ref().unwrap().get_module().verify();
     if let Err(err) = &verify_result {
         error!(error = ?err, "LLVM module verification failed");
     }
@@ -346,7 +348,7 @@ fn test_string_switch_compilation() {
     debug!("LLVM module verified successfully");
     
     // Get the generated IR code
-    let ir_code = code_generator.module().print_to_string().to_string();
+    let ir_code = code_generator.as_ref().unwrap().get_module().print_to_string().to_string();
     
     // Verify that strcmp is used in the IR
     let has_strcmp = ir_code.contains("@strcmp");

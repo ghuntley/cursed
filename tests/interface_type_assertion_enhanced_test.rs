@@ -66,6 +66,7 @@ mod tests {
     
     #[test]
     fn test_enhanced_type_assertion_source_location() {
+    // init_tracing!();
         // Initialize tracing for the test
         tracing_setup::init_test_tracing();
         
@@ -104,6 +105,7 @@ mod tests {
     
     #[test]
     fn test_inheritance_hierarchy_tracking() {
+    // init_tracing!();
         // Initialize tracing for the test
         tracing_setup::init_test_tracing();
         
@@ -134,6 +136,7 @@ mod tests {
     
     #[test]
     fn test_extract_location_from_token() {
+    // init_tracing!();
         // Initialize tracing for the test
         tracing_setup::init_test_tracing();
         

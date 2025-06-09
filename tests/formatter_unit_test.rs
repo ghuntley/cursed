@@ -518,11 +518,11 @@ mod edge_case_tests {
     fn test_comment_preservation() {
         init_tracing!();
         
-        let source = r#"// This is a comment
+        let source = r#"// This is a comment"
 sus x = 42 // End of line comment
 /* Multi-line
    comment */
-sus y = 24"#;
+sus y = 24"#";
         
         let config = FormatterConfig {
             ..FormatterConfig::default()

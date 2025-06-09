@@ -1,5 +1,5 @@
-use cursed::ast::expressions::literals::{IntegerLiteral, BooleanLiteral};
-use cursed::ast::expressions::operators::{InfixExpression, PrefixExpression};
+use cursed::ast::literals::{IntegerLiteral, BooleanLiteral};
+use cursed::ast::operators::{InfixExpression, PrefixExpression};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;

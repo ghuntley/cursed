@@ -1,5 +1,5 @@
-use cursed::ast::control_flow::{BreakStatement, ContinueStatement, WhileStatement};
-use cursed::ast::expressions::literals::BooleanLiteral;
+use cursed::ast::{BreakStatement, ContinueStatement, WhileStatement};
+use cursed::ast::literals::BooleanLiteral;
 use cursed::ast::traits::{Statement, Expression};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::token::Token;
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 // Tests for basic control flow compilation in the LLVM code generator
 
-use cursed::ast::statements::block::BlockStatement; // Updated import path
+use cursed::ast::block::BlockStatement; // Updated import path
 use cursed::codegen::llvm::StatementCompilation; // Updated import
 
 #[test]

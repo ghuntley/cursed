@@ -42,6 +42,7 @@ fn setup_test_registry() -> Arc<RwLock<ThreadSafeInterfaceExtensionRegistry>> {
 
 #[test]
 fn test_get_extension_hierarchy() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     
@@ -63,6 +64,7 @@ fn test_get_extension_hierarchy() {
 
 #[test]
 fn test_does_extend() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     
@@ -83,6 +85,7 @@ fn test_does_extend() {
 
 #[test]
 fn test_find_interface_paths() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     
@@ -110,6 +113,7 @@ fn test_find_interface_paths() {
 
 #[test]
 fn test_visualize_hierarchy_ascii() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     
@@ -200,6 +204,7 @@ fn test_visualize_hierarchy_ascii() {
 
 #[test]
 fn test_generate_interface_hierarchy_dot() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     
@@ -214,6 +219,7 @@ fn test_generate_interface_hierarchy_dot() {
 
 #[test]
 fn test_get_direct_implementors() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     
@@ -238,6 +244,7 @@ fn test_get_direct_implementors() {
 
 #[test]
 fn test_get_all_interfaces() {
+    // init_tracing!();
     common::tracing::setup();
     let registry = setup_test_registry();
     

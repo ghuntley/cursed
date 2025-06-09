@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::cell::RefCell;
-use cursed::ast::expressions::TypeAssertion;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::TypeAssertion;
+use cursed::ast::Identifier;
 use cursed::ast::traits::{Expression, Node};
 // Note: These modules are not public, so we'll define our own test traits
 // use cursed::codegen::llvm::interface_type_assertion_result::*;
@@ -91,6 +91,7 @@ fn create_test_module<'ctx>(context: &'ctx Context, name: &str) -> Module<'ctx> 
 /// Test that ensures the basic Result type structure is correctly implemented
 #[test]
 fn test_result_type_structure() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting test_result_type_structure");
@@ -122,6 +123,7 @@ fn test_result_type_structure() {
 /// Test for creating a Result with an error value
 #[test]
 fn test_create_error_result() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting test_create_error_result");
@@ -381,6 +383,7 @@ fn test_create_error_result() {
 /// Test for propagating an error with the ? operator
 #[test]
 fn test_question_mark_operator_propagation() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting test_question_mark_operator_propagation");
@@ -605,6 +608,7 @@ fn test_question_mark_operator_propagation() {
 /// Test for the full integration between interface type assertions, Results, and the ? operator
 #[test]
 fn test_full_question_mark_integration() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting test_full_question_mark_integration");

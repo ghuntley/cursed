@@ -1,4 +1,4 @@
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::InterfaceTypeRegistryAccess;
@@ -54,6 +54,7 @@ impl Expression for TestExpression {
 
 #[test]
 fn test_interface_type_assertion_with_registry() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator
@@ -90,6 +91,7 @@ fn test_interface_type_assertion_with_registry() {
 
 #[test]
 fn test_interface_type_assertion_path_registry() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Create a context and code generator

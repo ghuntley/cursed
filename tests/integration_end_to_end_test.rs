@@ -21,16 +21,16 @@ mod tests {
 pub mod tracing_setup;
 
 // Simple test string to verify end-to-end compilation
-const TEST_SOURCE: &str = r#"
+const TEST_SOURCE: &str = r#""
 func main() -> thicc {
     thicc x = 40;
     thicc y = 2;
     return x + y;
 }
-"#;
+"#";
 
 // String switch test to verify more complex compilation
-const STRING_SWITCH_SOURCE: &str = r#"
+const STRING_SWITCH_SOURCE: &str = r#""
 func test_switch(string day) -> string {
     switch(day) {
         case "Monday": return "Start of week";
@@ -48,10 +48,10 @@ func main() -> thicc {
     vibez.spill(test_switch("Tuesday"));
     return 0;
 }
-"#;
+"#";
 
 // Dot expression test case
-const DOT_EXPRESSION_SOURCE: &str = r#"
+const DOT_EXPRESSION_SOURCE: &str = r#""
 func main() -> thicc {
     string message = "Hello, world!";
     vibez.spill(message);
@@ -61,7 +61,7 @@ func main() -> thicc {
     vibez.spill(escaped);
     return 0;
 }
-"#;
+"#";
 
 #[test]
 #[ignore = "End-to-end test - run with --ignored flag to execute"]
@@ -145,6 +145,7 @@ fn test_string_switch_compilation() {
 // Create a dummy test to keep cargo happy
 #[test]
 fn dummy_integration_test() {
+    // init_tracing!();
     assert!(true);
 }
 

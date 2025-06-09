@@ -5,7 +5,7 @@
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
 
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion, Identifier};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion, Identifier};
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::{LlvmCodeGenerator, InterfaceTypeAssertion};
 use cursed::error::type_assertion_error::{TypeAssertionError, helpers};
@@ -45,6 +45,7 @@ fn create_mock_interface_value<'ctx>(
 
 #[test]
 fn test_nil_interface_assertion() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing type assertion on nil interface value");
 
@@ -77,6 +78,7 @@ fn test_nil_interface_assertion() {
 
 #[test]
 fn test_invalid_type_assertion() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing type assertion with invalid/unknown type");
 
@@ -110,6 +112,7 @@ fn test_invalid_type_assertion() {
 
 #[test]
 fn test_complex_nested_type_assertion() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing complex nested type assertion expressions");
 
@@ -141,6 +144,7 @@ fn test_complex_nested_type_assertion() {
 
 #[test]
 fn test_type_assertion_error_creation() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing type assertion error creation and handling");
 
@@ -176,6 +180,7 @@ fn test_type_assertion_error_creation() {
 
 #[test]
 fn test_type_assertion_error_conversion() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing conversion from TypeAssertionError to CursedError");
 
@@ -207,6 +212,7 @@ fn test_type_assertion_error_conversion() {
 
 #[test]
 fn test_performance_edge_cases() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing performance edge cases for type assertions");
 
@@ -241,6 +247,7 @@ fn test_performance_edge_cases() {
 
 #[test]
 fn test_interface_data_extraction_edge_cases() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing interface data extraction edge cases");
 
@@ -275,6 +282,7 @@ fn test_interface_data_extraction_edge_cases() {
 
 #[test]
 fn test_type_assertion_with_source_location() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing type assertion compilation with source location preservation");
 
@@ -312,6 +320,7 @@ fn test_type_assertion_with_source_location() {
 
 #[test]
 fn test_registry_fallback_behavior() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing registry fallback behavior for unknown types");
 
@@ -337,6 +346,7 @@ fn test_registry_fallback_behavior() {
 
 #[test]
 fn test_memory_safety_assertions() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing memory safety in type assertion operations");
 
@@ -369,6 +379,7 @@ fn test_memory_safety_assertions() {
 
 #[test]
 fn test_error_message_quality() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing quality and informativeness of error messages");
 
@@ -399,6 +410,7 @@ fn test_error_message_quality() {
 
 #[test]  
 fn test_type_assertion_question_error_propagation() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing error propagation for TypeAssertionQuestion");
 

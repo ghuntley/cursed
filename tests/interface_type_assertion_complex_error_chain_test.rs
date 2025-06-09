@@ -31,13 +31,14 @@ mod common;
 /// Test complex error chaining scenarios with interface type assertions and ? operator
 #[test]
 fn test_complex_error_chaining() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting complex error chaining test");
     let _timer = Timer::new("complex_error_chaining_test");
     
     // Create test code with complex error chaining scenarios
-    let code = r#"
+    let code = r#""
     vibe error_chaining;
     
     // Error interface
@@ -282,7 +283,7 @@ fn test_complex_error_chaining() {
             vibez.spill("Recovery failed: " + recoveryResult.err.error();
         }
     }
-    "#;
+    "#";
     
     // Parse the code
     let mut lexer = Lexer::new(code);
@@ -338,13 +339,14 @@ fn test_complex_error_chaining() {
 /// Test error context preservation through deep call stacks
 #[test]
 fn test_error_context_preservation() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     info!("Starting error context preservation test");
     let _timer = Timer::new("error_context_preservation_test");
     
     // Create test code that verifies error context is preserved through deep call stacks
-    let code = r#"
+    let code = r#""
     vibe context_preservation;
     
     // Error interface
@@ -532,7 +534,7 @@ fn test_error_context_preservation() {
             // We should see an error about db not implementing FileSystem
         }
     }
-    "#;
+    "#";
     
     // Parse the code
     let mut lexer = Lexer::new(code);

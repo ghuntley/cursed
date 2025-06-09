@@ -564,6 +564,7 @@ async fn test_cli_execution_workflow() {
 
 #[test]
 fn test_cli_help_text_generation() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test that help can be generated without panicking

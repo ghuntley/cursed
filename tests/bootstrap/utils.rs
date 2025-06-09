@@ -167,19 +167,19 @@ pub fn create_test_source(
 
 /// Create the minimal subset test program
 pub fn create_minimal_subset_test() -> &'static str {
-    r#"
+    r#""
 // Minimal subset test program
 func main() {
     let x = 42
     let y = x + 8
     return y
 }
-"#
+"#"
 }
 
 /// Create a more complex test program
 pub fn create_complex_test_program() -> &'static str {
-    r#"
+    r#""
 import "std/io"
 
 struct Person {
@@ -207,12 +207,12 @@ func main() {
     
     io.println("Sum: " + sum)
 }
-"#
+"#"
 }
 
 /// Create stage 2 compiler test program
 pub fn create_stage2_compiler_test() -> &'static str {
-    r#"
+    r#""
 // Simple stage 2 compiler test
 func main() {
     let source = "func test() { return 42 }"
@@ -258,7 +258,7 @@ func (c Compiler) compile(source: string) CompileResult {
         output: "empty source",
     }
 }
-"#
+"#"
 }
 
 /// Cleanup test outputs

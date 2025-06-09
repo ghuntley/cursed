@@ -74,9 +74,9 @@ fn run_test(code: &str, expected_value: i64) -> Result<(), String> {
     let test_file = format!("tests/temp/container_test_{}.csd", generate_id());
     
     // Add a print statement to output the result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -103,9 +103,9 @@ fn run_string_test(code: &str, expected_value: &str) -> Result<(), String> {
     let test_file = format!("tests/temp/container_test_{}.csd", generate_id());
     
     // Add a print statement to output the string result
-    let code_with_print = format!("{}
+    let code_with_print = format!("{}"
 fr Print the result for testing
-printn(yolo)\n", code);
+printn(yolo)\n", code)";
     
     fs::write(&test_file, code_with_print)
         .map_err(|e| format!("Failed to write test file: {}", e))?;
@@ -123,8 +123,9 @@ printn(yolo)\n", code);
 
 #[test]
 fn test_array_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over array elements
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 20, 30, 40, 50]
             sus sum lit = 0
@@ -136,7 +137,7 @@ fn test_array_iteration() -> Result<(), String> {
             
             yolo sum  fr Should be 10+20+30+40+50 = 150
         }
-    "#;
+    "#";
     
     // Sum of 10+20+30+40+50 = 150
     run_test(code, 150)
@@ -144,8 +145,9 @@ fn test_array_iteration() -> Result<(), String> {
 
 #[test]
 fn test_slice_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over slice
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus fullArray = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
             sus slice = fullArray[2:7]  fr Elements 30, 40, 50, 60, 70
@@ -158,7 +160,7 @@ fn test_slice_iteration() -> Result<(), String> {
             
             yolo sum  fr Should be 30+40+50+60+70 = 250
         }
-    "#;
+    "#";
     
     // Sum of 30+40+50+60+70 = 250
     run_test(code, 250)
@@ -166,8 +168,9 @@ fn test_slice_iteration() -> Result<(), String> {
 
 #[test]
 fn test_string_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test iteration over characters in a string
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus text = "CURSED"
             sus count lit = 0
@@ -179,7 +182,7 @@ fn test_string_iteration() -> Result<(), String> {
             
             yolo count  fr Should be 6 (length of "CURSED")
         }
-    "#;
+    "#";
     
     // Count of characters in "CURSED" = 6
     run_test(code, 6)
@@ -187,8 +190,9 @@ fn test_string_iteration() -> Result<(), String> {
 
 #[test]
 fn test_array_with_break() -> Result<(), String> {
+    // init_tracing!();
     // Test array iteration with break
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 20, 30, 40, 50]
             sus sum lit = 0
@@ -204,7 +208,7 @@ fn test_array_with_break() -> Result<(), String> {
             
             yolo sum  fr Should be 10+20+30 = 60 (break after adding 30)
         }
-    "#;
+    "#";
     
     // Sum of 10+20+30 = 60 (breaks once sum > 30)
     run_test(code, 60)
@@ -212,8 +216,9 @@ fn test_array_with_break() -> Result<(), String> {
 
 #[test]
 fn test_array_with_continue() -> Result<(), String> {
+    // init_tracing!();
     // Test array iteration with continue
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 15, 20, 25, 30]
             sus sum lit = 0
@@ -229,7 +234,7 @@ fn test_array_with_continue() -> Result<(), String> {
             
             yolo sum  fr Should be 10+20+30 = 60 (only even numbers)
         }
-    "#;
+    "#";
     
     // Sum of 10+20+30 = 60 (only even numbers)
     run_test(code, 60)
@@ -237,8 +242,9 @@ fn test_array_with_continue() -> Result<(), String> {
 
 #[test]
 fn test_nested_array_iteration() -> Result<(), String> {
+    // init_tracing!();
     // Test nested array iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus matrix = [
                 [1, 2, 3],
@@ -257,7 +263,7 @@ fn test_nested_array_iteration() -> Result<(), String> {
             
             yolo sum  fr Should be 1+2+3+4+5+6+7+8+9 = 45
         }
-    "#;
+    "#";
     
     // Sum of all elements 1+2+3+4+5+6+7+8+9 = 45
     run_test(code, 45)
@@ -265,8 +271,9 @@ fn test_nested_array_iteration() -> Result<(), String> {
 
 #[test]
 fn test_array_with_modification() -> Result<(), String> {
+    // init_tracing!();
     // Test modifying array elements during iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [1, 2, 3, 4, 5]
             
@@ -282,7 +289,7 @@ fn test_array_with_modification() -> Result<(), String> {
             
             yolo sum  fr Should be 2+4+6+8+10 = 30
         }
-    "#;
+    "#";
     
     // Sum of doubled elements 2+4+6+8+10 = 30
     run_test(code, 30)

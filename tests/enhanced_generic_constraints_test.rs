@@ -3,7 +3,7 @@
 //! This test suite validates the complete implementation of enhanced generic constraints
 //! including multi-bound constraints, where clauses, associated types, and variance annotations.
 
-use cursed::ast::declarations::{
+use cursed::ast::{
     AssociatedType, ConstraintOperator, ConstraintRelation, CrossParameterConstraint,
     EnhancedConstraint, EnhancedTypeParameter, MultiParamGeneric, TypeBound, 
     Variance, WhereClause

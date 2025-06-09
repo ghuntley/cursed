@@ -11,12 +11,13 @@ mod common;
 
 #[test]
 fn test_format_simple_function() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"slay add(x normie,y normie)normie{yolo x+y}"#;
-    let expected = r#"slay add(x normie, y normie) normie {
+    let expected = r#"slay add(x normie, y normie) normie {"
     yolo x + y
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -27,16 +28,17 @@ fn test_format_simple_function() {
 
 #[test]
 fn test_format_function_with_generics() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"slay max[T](a T,b T)T{lowkey a>b{yolo a}highkey{yolo b}}"#;
-    let expected = r#"slay max[T](a T, b T) T {
+    let expected = r#"slay max[T](a T, b T) T {"
     lowkey a > b {
         yolo a
     } highkey {
         yolo b
     }
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -47,13 +49,14 @@ fn test_format_function_with_generics() {
 
 #[test]
 fn test_format_struct_declaration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"squad Person{name sip age normie}"#;
-    let expected = r#"squad Person {
+    let expected = r#"squad Person {"
     name sip
     age normie
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -64,12 +67,13 @@ fn test_format_struct_declaration() {
 
 #[test]
 fn test_format_interface_declaration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"collab Writer{write(data sip)normie}"#;
-    let expected = r#"collab Writer {
+    let expected = r#"collab Writer {"
     write(data sip) normie
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -80,14 +84,15 @@ fn test_format_interface_declaration() {
 
 #[test]
 fn test_format_variable_declarations() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"sus x=42
+    let source = r#"sus x=42"
 sus y normie=100
-facts PI=3.14159"#;
-    let expected = r#"sus x = 42
+facts PI=3.14159"#";
+    let expected = r#"sus x = 42"
 sus y normie = 100
-facts PI = 3.14159"#;
+facts PI = 3.14159"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -98,12 +103,13 @@ facts PI = 3.14159"#;
 
 #[test]
 fn test_format_control_flow() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"lowkey x>0{sus y=x*2}highkey{sus y=0}
+    let source = r#"lowkey x>0{sus y=x*2}highkey{sus y=0}"
 periodt x>0{x=x-1}
-bestie i flex range(10){sus z=i*2}"#;
-    let expected = r#"lowkey x > 0 {
+bestie i flex range(10){sus z=i*2}"#";
+    let expected = r#"lowkey x > 0 {"
     sus y = x * 2
 } highkey {
     sus y = 0
@@ -113,7 +119,7 @@ periodt x > 0 {
 }
 bestie i flex range(10) {
     sus z = i * 2
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -124,19 +130,20 @@ bestie i flex range(10) {
 
 #[test]
 fn test_format_switch_statement() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"vibe_check value{mood 1:yolo "one"
+    let source = r#"vibe_check value{mood 1:yolo "one""
 mood 2:yolo "two"
-basic:yolo "other"}"#;
-    let expected = r#"vibe_check value {
+basic:yolo "other"}"#";
+    let expected = r#"vibe_check value {"
     mood 1:
         yolo "one"
     mood 2:
         yolo "two"
     basic:
         yolo "other"
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -147,14 +154,15 @@ basic:yolo "other"}"#;
 
 #[test]
 fn test_format_expressions() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"sus result=add(1,2)+multiply(3,4)
+    let source = r#"sus result=add(1,2)+multiply(3,4)"
 sus arr=[1,2,3,4]
-sus hash={a:1,b:2}"#;
-    let expected = r#"sus result = add(1, 2) + multiply(3, 4)
+sus hash={a:1,b:2}"#";
+    let expected = r#"sus result = add(1, 2) + multiply(3, 4)"
 sus arr = [1, 2, 3, 4]
-sus hash = {a: 1, b: 2}"#;
+sus hash = {a: 1, b: 2}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -165,6 +173,7 @@ sus hash = {a: 1, b: 2}"#;
 
 #[test]
 fn test_format_brace_styles() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"slay test(){yolo 42}"#;
@@ -196,6 +205,7 @@ fn test_format_brace_styles() {
 
 #[test]
 fn test_format_operator_spacing() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"sus x=a+b*c-d/e"#;
@@ -217,6 +227,7 @@ fn test_format_operator_spacing() {
 
 #[test]
 fn test_format_comma_spacing() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"sus arr=[1,2,3,4]"#;
@@ -238,6 +249,7 @@ fn test_format_comma_spacing() {
 
 #[test]
 fn test_format_indentation_sizes() {
+    // init_tracing!();
     common::tracing::setup();
     
     let source = r#"slay test(){lowkey based{yolo 42}}"#;
@@ -263,11 +275,12 @@ fn test_format_indentation_sizes() {
 
 #[test]
 fn test_format_already_formatted_code() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"slay add(x normie, y normie) normie {
+    let source = r#"slay add(x normie, y normie) normie {"
     yolo x + y
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -279,14 +292,15 @@ fn test_format_already_formatted_code() {
 
 #[test]
 fn test_format_complex_nested_structures() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"squad Matrix[T]{data[][]T rows normie cols normie}
+    let source = r#"squad Matrix[T]{data[][]T rows normie cols normie}"
 slay new_matrix[T](rows normie,cols normie)Matrix[T]{sus data=make([][]T,rows)
 bestie i flex range(rows){data[i]=make([]T,cols)}
-yolo Matrix[T]{data:data,rows:rows,cols:cols}}"#;
+yolo Matrix[T]{data:data,rows:rows,cols:cols}}"#";
     
-    let expected = r#"squad Matrix[T] {
+    let expected = r#"squad Matrix[T] {"
     data [][]T
     rows normie
     cols normie
@@ -297,7 +311,7 @@ slay new_matrix[T](rows normie, cols normie) Matrix[T] {
         data[i] = make([]T, cols)
     }
     yolo Matrix[T]{data: data, rows: rows, cols: cols}
-}"#;
+}"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -310,18 +324,19 @@ slay new_matrix[T](rows normie, cols normie) Matrix[T] {
 
 #[test]
 fn test_format_boolean_literals() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"sus is_true=true
+    let source = r#"sus is_true=true"
 sus is_false=false
 sus is_based=based
-sus is_cap=cap"#;
+sus is_cap=cap"#";
     
     // The formatter should convert boolean literals to CURSED slang
-    let expected = r#"sus is_true = based
+    let expected = r#"sus is_true = based"
 sus is_false = cap
 sus is_based = based
-sus is_cap = cap"#;
+sus is_cap = cap"#";
 
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -334,6 +349,7 @@ sus is_cap = cap"#;
 
 #[test]
 fn test_format_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test with invalid syntax
@@ -348,6 +364,7 @@ fn test_format_error_handling() {
 
 #[test]
 fn test_formatter_result_display() {
+    // init_tracing!();
     let result = cursed::tools::FormatterResult {
         formatted_code: "test".to_string(),
         changed: true,
@@ -363,12 +380,13 @@ fn test_formatter_result_display() {
 
 #[test]
 fn test_format_gen_z_keywords() {
+    // init_tracing!();
     common::tracing::setup();
     
-    let source = r#"slay vibes(){sus mood=based
+    let source = r#"slay vibes(){sus mood=based"
 lowkey mood{yolo "good vibes"}
 periodt cap{simp}
-bestie i flex range(5){ghosted}}"#;
+bestie i flex range(5){ghosted}}"#";
     
     let mut formatter = CursedFormatter::default();
     let result = formatter.format(source).unwrap();
@@ -389,6 +407,7 @@ bestie i flex range(5){ghosted}}"#;
 
 #[test]
 fn test_lexer_token_types() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test that our formatter works with the CURSED lexer
@@ -408,6 +427,7 @@ fn test_lexer_token_types() {
 
 #[test]
 fn test_parser_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test that our formatter works with the CURSED parser
@@ -424,6 +444,7 @@ fn test_parser_integration() {
 
 #[test]
 fn test_format_line_length_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let long_source = r#"slay very_long_function_name_that_exceeds_normal_line_width(very_long_parameter_name_one normie, very_long_parameter_name_two normie, very_long_parameter_name_three normie) normie { yolo very_long_parameter_name_one + very_long_parameter_name_two + very_long_parameter_name_three }"#;
@@ -442,6 +463,7 @@ fn test_format_line_length_handling() {
 
 #[test]
 fn test_configuration_options() {
+    // init_tracing!();
     let config = FormatterConfig {
         indent_size: 8,
         line_width: 120,

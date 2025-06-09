@@ -10,6 +10,7 @@ use tracing::info;
 
 #[test]
 fn test_bootstrap_integration_suite() {
+    // init_tracing!();
     let _config = init_bootstrap_tests();
     
     info!("Running comprehensive bootstrap integration test suite");

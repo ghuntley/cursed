@@ -97,8 +97,9 @@ fn test_error_recovery(code: &str, expected_message: Option<&str>) -> Result<(),
 
 #[test]
 fn test_invalid_range_values_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from invalid range values
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -109,15 +110,16 @@ fn test_invalid_range_values_recovery() -> Result<(), String> {
             
             yolo sum  fr Should be sum of 0 to 4 = 10
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_missing_end_value_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from missing end value
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -128,15 +130,16 @@ fn test_missing_end_value_recovery() -> Result<(), String> {
             
             yolo sum  fr Should run despite the syntax error
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_negative_step_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from negative step that would lead to infinite loop
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -147,15 +150,16 @@ fn test_negative_step_recovery() -> Result<(), String> {
             
             yolo sum  fr Should terminate normally
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_zero_step_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from zero step that would cause infinite loop
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -166,15 +170,16 @@ fn test_zero_step_recovery() -> Result<(), String> {
             
             yolo sum  fr Should terminate normally
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_type_error_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from type errors in range parameters
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -186,15 +191,16 @@ fn test_type_error_recovery() -> Result<(), String> {
             
             yolo sum  fr Should compile and run despite type error
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_nil_container_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from nil container
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -206,15 +212,16 @@ fn test_nil_container_recovery() -> Result<(), String> {
             
             yolo sum  fr Should be 0 (empty iteration)
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_complex_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from multiple errors in the same range clause
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -226,15 +233,16 @@ fn test_complex_recovery() -> Result<(), String> {
             fr This should run with some fallback range
             yolo sum
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_range_variable_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from missing range variable
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -245,15 +253,16 @@ fn test_range_variable_recovery() -> Result<(), String> {
             
             yolo sum  fr Should be 5
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_map_key_value_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from errors in map key-value iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -266,15 +275,16 @@ fn test_map_key_value_recovery() -> Result<(), String> {
             
             yolo sum  fr Should be 0 (empty iteration due to recovery)
         }
-    "#;
+    "#";
     
     test_error_recovery(code, None)
 }
 
 #[test]
 fn test_out_of_bounds_recovery() -> Result<(), String> {
+    // init_tracing!();
     // Test recovery from out of bounds access in array iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus arr = [10, 20, 30]
             sus idx lit = 5  fr Out of bounds
@@ -286,7 +296,7 @@ fn test_out_of_bounds_recovery() -> Result<(), String> {
             
             yolo 42  fr Should reach here
         }
-    "#;
+    "#";
     
     test_error_recovery(code, Some("42"))
 }

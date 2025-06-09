@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::cell::RefCell;
 use inkwell::context::Context;
 use tracing::{debug, info};
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion};
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::interface_type_assertion_error_propagation_filesystem::EnhancedErrorPropagationWithFilesystem;
@@ -31,6 +31,7 @@ fn init_tracing() {
 
 #[test]
 fn test_comprehensive_error_propagation_initialization() {
+    // init_tracing!();
     init_tracing();
     info!("Running test_comprehensive_error_propagation_initialization");
     
@@ -56,6 +57,7 @@ fn test_comprehensive_error_propagation_initialization() {
 
 #[test]
 fn test_comprehensive_error_message_creation() {
+    // init_tracing!();
     init_tracing();
     info!("Running test_comprehensive_error_message_creation");
     
@@ -101,6 +103,7 @@ fn test_comprehensive_error_message_creation() {
 
 #[test]
 fn test_visual_error_formatting() {
+    // init_tracing!();
     init_tracing();
     info!("Running test_visual_error_formatting");
     

@@ -150,13 +150,13 @@ mod regression_tests {
     fn test_semantic_preservation() {
         init_tracing!();
         
-        let input = r#"
+        let input = r#""
 sus result = a + b * c - d / e
 sus string = "This is a \"quoted\" string"
 sus numbers = [42, 0x1A, 0o755, 0b1010]
 sus map = {key: "value", number: 42}
 sus type_cast = value.(Type)
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(input).unwrap();
@@ -319,7 +319,7 @@ mod error_handling_golden_tests {
         init_tracing!();
         
         // Test with partially valid code
-        let mixed_input = r#"
+        let mixed_input = r#""
 slay valid_function() {
     yolo 42
 }
@@ -330,7 +330,7 @@ slay incomplete_function(
 slay another_valid() {
     yolo "hello"
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(mixed_input);
@@ -352,14 +352,14 @@ slay another_valid() {
     fn test_unicode_handling() {
         init_tracing!();
         
-        let unicode_input = r#"
+        let unicode_input = r#""
 sus café = "coffee"
 sus 变量 = 42
 sus αβγ = "greek"
 slay test_unicode() {
     yolo café + 变量
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(unicode_input).unwrap();

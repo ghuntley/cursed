@@ -8,9 +8,9 @@
 //! - Garbage collector integration
 //! - Memory safety of nil operations
 
-use cursed::ast::expressions::{NilLiteral, BooleanLiteral, InfixExpression};
-use cursed::ast::expressions::literals::StringLiteral;
-use cursed::ast::expressions::identifiers::Identifier;
+use cursed::ast::{NilLiteral, BooleanLiteral, InfixExpression};
+use cursed::ast::literals::StringLiteral;
+use cursed::ast::identifiers::Identifier;
 use cursed::ast::traits::{Expression, Node};
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::{LlvmCodeGenerator, NilOperations, NilOperationsExtension};

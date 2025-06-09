@@ -86,6 +86,7 @@ fn create_code_generator<'ctx>(
 /// Test the basic benchmarking functionality
 #[test]
 fn test_basic_benchmarking() {
+    // init_tracing!();
     // Set up tracing
     init_tracing();
     let _timer = Timer::new("test_basic_benchmarking");
@@ -118,6 +119,7 @@ fn test_basic_benchmarking() {
 /// Test benchmarking a full type assertion
 #[test]
 fn test_type_assertion_benchmarking() {
+    // init_tracing!();
     // Set up tracing
     init_tracing();
     let _timer = Timer::new("test_type_assertion_benchmarking");
@@ -145,6 +147,7 @@ fn test_type_assertion_benchmarking() {
 /// Test benchmarking multiple different assertion patterns
 #[test]
 fn test_benchmark_suite() {
+    // init_tracing!();
     // Set up tracing
     init_tracing();
     let _timer = Timer::new("test_benchmark_suite");
@@ -184,6 +187,7 @@ fn test_benchmark_suite() {
 /// Test the BenchmarkStats functionality
 #[test]
 fn test_benchmark_stats() {
+    // init_tracing!();
     // Set up tracing
     init_tracing();
     
@@ -223,6 +227,7 @@ fn test_benchmark_stats() {
 /// Test hierarchical pattern detection
 #[test]
 fn test_hierarchy_pattern_detection() {
+    // init_tracing!();
     // Set up tracing
     init_tracing();
     

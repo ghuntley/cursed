@@ -19,6 +19,7 @@ pub enum Type {
     // Special types
     Nil,
     Unknown,
+    Custom(String), // For backward compatibility with Type::Struct usage
 }
 
 pub struct TypeChecker {

@@ -45,7 +45,7 @@ impl MockFileSystem {
         // std/math package
         self.add_file(
             PathBuf::from("std/math.csd"),
-            r#"vibe std_math
+            r#"vibe std_math"
 
 // Mathematical constants
 PI float64 = 3.14159265359
@@ -72,13 +72,13 @@ slay Sqrt(x float64) float64 {
     // Simplified implementation
     yolo x * 0.5
 }
-"#.to_string(),
+"#.to_string(),"
         );
         
         // std/io package
         self.add_file(
             PathBuf::from("std/io.csd"),
-            r#"vibe std_io
+            r#"vibe std_io"
 
 // Print function
 slay Print(message string) void {
@@ -97,13 +97,13 @@ slay WriteFile(path string, content string) normie {
     // Native file writing implementation would go here
     yolo 0
 }
-"#.to_string(),
+"#.to_string(),"
         );
         
         // std/string package
         self.add_file(
             PathBuf::from("std/string.csd"),
-            r#"vibe std_string
+            r#"vibe std_string"
 
 // String length function
 slay Length(s string) normie {
@@ -122,7 +122,7 @@ slay Contains(haystack string, needle string) bool {
     // Native string contains implementation would go here
     yolo false
 }
-"#.to_string(),
+"#.to_string(),"
         );
     }
 }
@@ -147,7 +147,7 @@ impl MockProject {
         // utils/math_helpers.csd
         self.fs.add_file(
             PathBuf::from("utils/math_helpers.csd"),
-            r#"vibe utils_math_helpers
+            r#"vibe utils_math_helpers"
 yeet "std/math"
 
 // Helper function that uses std/math
@@ -163,13 +163,13 @@ slay Average(numbers []normie) float64 {
     }
     yolo sum / numbers.length
 }
-"#.to_string(),
+"#.to_string(),"
         );
         
         // utils/string_helpers.csd
         self.fs.add_file(
             PathBuf::from("utils/string_helpers.csd"),
-            r#"vibe utils_string_helpers
+            r#"vibe utils_string_helpers"
 yeet "std/string"
 yeet "std/io"
 
@@ -182,13 +182,13 @@ slay FormatGreeting(name string) string {
 slay PrintMessage(msg string) void {
     io.Print(FormatGreeting(msg))
 }
-"#.to_string(),
+"#.to_string(),"
         );
         
         // models/user.csd
         self.fs.add_file(
             PathBuf::from("models/user.csd"),
-            r#"vibe models_user
+            r#"vibe models_user"
 yeet "std/string"
 
 be_like User squad {
@@ -209,7 +209,7 @@ slay (u User) DisplayName() string {
     }
     yolo u.email
 }
-"#.to_string(),
+"#.to_string(),"
         );
     }
     
@@ -248,7 +248,7 @@ fn test_simple_import_usage() {
     common::tracing::setup();
     info!("Testing simple import usage end-to-end");
     
-    let main_content = r#"vibe main
+    let main_content = r#"vibe main"
 yeet "std/math"
 yeet "std/io"
 
@@ -258,7 +258,7 @@ slay main() normie {
     io.Print("Absolute value: ")
     yolo absolute
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(main_content);
     let mut parser = Parser::new(lexer).unwrap();
@@ -290,7 +290,7 @@ fn test_multi_file_compilation() {
     // Add main.csd that imports from utils
     project.fs.files.insert(
         PathBuf::from("main.csd"),
-        r#"vibe main
+        r#"vibe main"
 yeet "utils/math_helpers"
 yeet "utils/string_helpers"
 yeet "models/user"
@@ -304,7 +304,7 @@ slay main() normie {
     
     yolo 0
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     debug!("Compiling multi-file project");
@@ -333,7 +333,7 @@ fn test_dependency_chain_compilation() {
     // Create a dependency chain: main -> service -> repository -> database
     fs.add_file(
         PathBuf::from("database/connection.csd"),
-        r#"vibe database_connection
+        r#"vibe database_connection"
 yeet "std/io"
 
 slay Connect(host string) bool {
@@ -344,12 +344,12 @@ slay Connect(host string) bool {
 slay Query(sql string) []string {
     yolo []string{"result1", "result2"}
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("repository/user_repository.csd"),
-        r#"vibe repository_user_repository
+        r#"vibe repository_user_repository"
 yeet "database/connection"
 yeet "models/user"
 
@@ -361,12 +361,12 @@ slay FindUser(id normie) user.User {
     }
     yolo user.NewUser(0, "", "")
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("service/user_service.csd"),
-        r#"vibe service_user_service
+        r#"vibe service_user_service"
 yeet "repository/user_repository"
 yeet "utils/string_helpers"
 
@@ -374,19 +374,19 @@ slay GetUserGreeting(id normie) string {
     sus user = user_repository.FindUser(id)
     yolo string_helpers.FormatGreeting(user.DisplayName())
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("main.csd"),
-        r#"vibe main
+        r#"vibe main"
 yeet "service/user_service"
 
 slay main() normie {
     sus greeting = user_service.GetUserGreeting(1)
     yolo 0
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     // Simulate compilation
@@ -416,7 +416,7 @@ fn test_standard_library_integration() {
     common::tracing::setup();
     info!("Testing comprehensive standard library integration");
     
-    let main_content = r#"vibe main
+    let main_content = r#"vibe main"
 yeet "std/math"
 yeet "std/io"
 yeet "std/string"
@@ -443,7 +443,7 @@ slay main() normie {
     calculateAndDisplay()
     yolo 0
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(main_content);
     let mut parser = Parser::new(lexer).unwrap();
@@ -475,7 +475,7 @@ fn test_import_with_generics_end_to_end() {
     // Generic collections library
     fs.add_file(
         PathBuf::from("collections/list.csd"),
-        r#"vibe collections_list
+        r#"vibe collections_list"
 
 be_like List[T] squad {
     items []T
@@ -498,13 +498,13 @@ slay (l List[T]) Get(index normie) T {
 slay (l List[T]) Length() normie {
     yolo l.size
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     // Main file using generic collections
     fs.add_file(
         PathBuf::from("main.csd"),
-        r#"vibe main
+        r#"vibe main"
 yeet "collections/list"
 yeet "std/io"
 
@@ -529,7 +529,7 @@ slay main() normie {
     io.Print("Lists created successfully")
     yolo int_count + str_count
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     // Simulate compilation
@@ -564,35 +564,35 @@ fn test_circular_dependency_prevention() {
     // Create files that would form a circular dependency
     fs.add_file(
         PathBuf::from("moduleA.csd"),
-        r#"vibe moduleA
+        r#"vibe moduleA"
 yeet "moduleB"
 
 slay FunctionA() normie {
     yolo moduleB.FunctionB() + 1
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("moduleB.csd"),
-        r#"vibe moduleB
+        r#"vibe moduleB"
 yeet "moduleC"
 
 slay FunctionB() normie {
     yolo moduleC.FunctionC() + 1
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("moduleC.csd"),
-        r#"vibe moduleC
+        r#"vibe moduleC"
 yeet "moduleA"  // This creates a circular dependency
 
 slay FunctionC() normie {
     yolo moduleA.FunctionA() + 1  // Circular!
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     // In a real implementation, this should detect and prevent the circular dependency
@@ -622,7 +622,7 @@ fn test_real_world_project_structure() {
     // Web server project structure
     fs.add_file(
         PathBuf::from("main.csd"),
-        r#"vibe main
+        r#"vibe main"
 yeet "server/router"
 yeet "config/settings"
 yeet "std/io"
@@ -634,12 +634,12 @@ slay main() normie {
     io.Print("Starting server...")
     yolo server.Start()
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("config/settings.csd"),
-        r#"vibe config_settings
+        r#"vibe config_settings"
 yeet "std/io"
 
 be_like Config squad {
@@ -652,12 +652,12 @@ slay LoadConfig() Config {
     // Load from environment or file
     yolo Config{port: 8080, host: "localhost", debug: true}
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("server/router.csd"),
-        r#"vibe server_router
+        r#"vibe server_router"
 yeet "handlers/user_handler"
 yeet "handlers/health_handler"
 yeet "config/settings"
@@ -682,12 +682,12 @@ slay (s Server) Start() normie {
     // Start HTTP server
     yolo 0
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     fs.add_file(
         PathBuf::from("handlers/user_handler.csd"),
-        r#"vibe handlers_user_handler
+        r#"vibe handlers_user_handler"
 yeet "models/user"
 yeet "services/user_service"
 
@@ -702,7 +702,7 @@ slay NewUserHandler() UserHandler {
 slay (h UserHandler) HandleGetUser(id normie) user.User {
     yolo h.service.GetUser(id)
 }
-"#.to_string(),
+"#.to_string(),"
     );
     
     // Compile the project

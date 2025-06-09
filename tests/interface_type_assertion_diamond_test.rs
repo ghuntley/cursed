@@ -14,6 +14,7 @@ mod tests {
     /// Test that diamond inheritance detection API is available 
     #[test]
     fn test_diamond_inheritance_api_available() {
+    // init_tracing!();
         init_tracing();
         info!("Testing diamond inheritance API availability");
         
@@ -41,6 +42,7 @@ mod tests {
     /// Test visualization method exists
     #[test]
     fn test_diamond_inheritance_visualization_method_exists() {
+    // init_tracing!();
         init_tracing();
         info!("Testing diamond inheritance visualization method availability");
         
@@ -68,6 +70,7 @@ mod tests {
     /// Test basic diamond inheritance trait method compilation
     #[test]
     fn test_basic_diamond_inheritance_trait_methods() {
+    // init_tracing!();
         init_tracing();
         info!("Testing basic diamond inheritance trait method compilation");
         

@@ -1,14 +1,14 @@
-use cursed::ast::base::Program;
-use cursed::ast::expressions::{CallExpression, Identifier, IntegerLiteral, StringLiteral};
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
-use cursed::ast::declarations::FunctionStatement;
-use cursed::ast::declarations::ParameterStatement;
-use cursed::ast::declarations::GenericConstraint;
+use cursed::ast::Program;
+use cursed::ast::{CallExpression, Identifier, IntegerLiteral, StringLiteral};
+use cursed::ast::block::BlockStatement;
+use cursed::ast::{ExpressionStatement, ReturnStatement};
+use cursed::ast::FunctionStatement;
+use cursed::ast::ParameterStatement;
+use cursed::ast::GenericConstraint;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::FunctionMonomorphization;
 use cursed::codegen::llvm::monomorphization::SpecializedFunctionBuilder;
-use cursed::codegen::MonomorphizationManager;
+
 use cursed::codegen::llvm::MonomorphizationManagerExtension;
 use cursed::codegen::llvm::SpecializedFunctionBuilderExtension;
 use cursed::core::type_checker::Type;

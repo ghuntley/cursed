@@ -36,6 +36,7 @@ fn setup_test_context() -> (Context, Module<'static>, Builder<'static>) {
 
 #[test]
 fn test_bool_literal_creation() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -54,6 +55,7 @@ fn test_bool_literal_creation() {
 
 #[test]
 fn test_bool_to_integer_conversions() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -83,6 +85,7 @@ fn test_bool_to_integer_conversions() {
 
 #[test]
 fn test_bool_to_float_conversions() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -112,6 +115,7 @@ fn test_bool_to_float_conversions() {
 
 #[test]
 fn test_integer_to_bool_conversions() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -137,6 +141,7 @@ fn test_integer_to_bool_conversions() {
 
 #[test]
 fn test_float_to_bool_conversions() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -162,6 +167,7 @@ fn test_float_to_bool_conversions() {
 
 #[test]
 fn test_pointer_to_bool_conversions() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -183,6 +189,7 @@ fn test_pointer_to_bool_conversions() {
 
 #[test]
 fn test_auto_bool_conversion() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -214,6 +221,7 @@ fn test_auto_bool_conversion() {
 
 #[test]
 fn test_bool_logical_operations() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -252,6 +260,7 @@ fn test_bool_logical_operations() {
 
 #[test]
 fn test_bool_equality_comparison() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -274,6 +283,7 @@ fn test_bool_equality_comparison() {
 
 #[test]
 fn test_mixed_type_bool_operations() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -304,6 +314,7 @@ fn test_mixed_type_bool_operations() {
 
 #[test]
 fn test_conditional_branch_auto_conversion() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -328,6 +339,7 @@ fn test_conditional_branch_auto_conversion() {
 
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -352,6 +364,7 @@ fn test_error_handling() {
 
 #[test]
 fn test_edge_cases() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -382,6 +395,7 @@ fn test_edge_cases() {
 
 #[test]
 fn test_bool_type_checking() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -410,6 +424,7 @@ fn test_bool_type_checking() {
 
 #[test]
 fn test_performance_multiple_conversions() {
+    // init_tracing!();
     init_tracing();
     
     let (context, module, builder) = setup_test_context();
@@ -434,6 +449,7 @@ mod integration_tests {
     
     #[test]
     fn test_bool_conversion_integration() {
+    // init_tracing!();
         init_tracing();
         
         let (context, module, builder) = setup_test_context();

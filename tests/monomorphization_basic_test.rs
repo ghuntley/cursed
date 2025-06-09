@@ -1,7 +1,7 @@
 use cursed::ast::FunctionStatement;
-use cursed::ast::expressions::Identifier;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::declarations::type_parameter::TypeParameter;
+use cursed::ast::Identifier;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::type_parameter::TypeParameter;
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::function_monomorphization::FunctionMonomorphization;

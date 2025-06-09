@@ -1,17 +1,17 @@
-use cursed::ast::base::Program;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
-use cursed::ast::declarations::{FunctionStatement, Parameter, TypeParameter};
+use cursed::ast::Program;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::{ExpressionStatement, ReturnStatement};
+use cursed::ast::{FunctionStatement, Parameter, TypeParameter};
 use cursed::codegen::llvm::LlvmCodeGenerator;
-use cursed::codegen::MonomorphizationManager;
+
 use cursed::core::type_checker::Type;
-use cursed::lexer::Token;
+use cursed::lexer::{Token, TokenType};
 use inkwell::context::Context;
 use std::path::PathBuf;
 
 // Test generic function specialization with JIT execution
 
-use cursed::ast::expressions::{
+use cursed::ast::{
     CallExpression, Identifier, InfixExpression, IntegerLiteral, PrefixExpression,
 };
 
@@ -40,7 +40,7 @@ fn test_monomorphization_jit_execution() {
     assert!(mono_manager.is_function_instantiated("identity", &[Type::Normie]));
 
     // Verify the LLVM module contains the specialized function
-    let module = code_gen.module();
+    let module = code_gen.as_ref().unwrap().get_module();
     let function = module.get_function(&specialized_name_i32);
     // In a real implementation, this might exist, but since we're not actually creating functions:
     // assert!(function.is_some(), "Specialized function should exist in module");
@@ -63,7 +63,7 @@ fn test_monomorphization_jit_execution() {
     // We're using our own mono_manager for testing
 
     // Verify both functions exist in the module
-    let module = code_gen.module();
+    let module = code_gen.as_ref().unwrap().get_module();
     let function_i32 = module.get_function(&specialized_name_i32);
     let function_tea = module.get_function(&specialized_name_tea);
 
@@ -111,7 +111,7 @@ fn test_complex_generic_function() {
     // We're using our own mono_manager for testing
 
     // Verify both functions exist in the module
-    let module = code_gen.module();
+    let module = code_gen.as_ref().unwrap().get_module();
 
     // In a real implementation, these might exist, but since we're not actually creating functions:
     // assert!(module.get_function(&specialized_name).is_some())
@@ -121,7 +121,7 @@ fn test_complex_generic_function() {
 /// Helper function to create a generic swap function
 fn create_generic_swap_function() -> FunctionStatement {
     // Create type parameter T
-    let type_parameters = vec![TypeParameter::new(Token::Identifier("T".to_string()), "T".to_string())];
+    let type_parameters = vec![TypeParameter::new(Token::new(TokenType::Identifier, "T".to_string()), "T".to_string())];
 
     // Create parameters a: T, b: T
     let parameters = vec![
@@ -187,7 +187,7 @@ fn create_generic_swap_function() -> FunctionStatement {
 /// Helper function to create a generic identity function AST node
 fn create_generic_identity_function() -> FunctionStatement {
     // Create type parameter T
-    let type_parameters = vec![TypeParameter::new(Token::Identifier("T".to_string()), "T".to_string())];
+    let type_parameters = vec![TypeParameter::new(Token::new(TokenType::Identifier, "T".to_string()), "T".to_string())];
 
     // Create parameter x: T
     let parameters = vec![Parameter {

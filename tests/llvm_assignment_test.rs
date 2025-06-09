@@ -1,6 +1,6 @@
-use cursed::ast::expressions::literals::IntegerLiteral;
-use cursed::ast::expressions::AssignmentExpression;
-use cursed::ast::expressions::Identifier;
+use cursed::ast::literals::IntegerLiteral;
+use cursed::ast::AssignmentExpression;
+use cursed::ast::Identifier;
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::AssignmentCompilation;

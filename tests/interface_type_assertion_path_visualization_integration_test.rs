@@ -8,7 +8,7 @@ use cursed::codegen::jit::JitCompiler;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use cursed::ast::traits::{Node, Expression};
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use std::any::Any;
 use cursed::codegen::llvm::interface_type_assertion_path_visualization::InterfaceTypeAssertionPathVisualization;
 use cursed::core::interface_registry_extensions::{ThreadSafeInterfaceExtensionRegistry, InterfaceRegistryExtension};

@@ -15,6 +15,7 @@ mod tests {
     
     #[test]
     fn test_find_interface_path_simple() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -55,6 +56,7 @@ mod tests {
     
     #[test]
     fn test_find_alternative_paths_simple() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -96,6 +98,7 @@ mod tests {
     
     #[test]
     fn test_check_extension_relationship_simple() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -136,6 +139,7 @@ mod tests {
     
     #[test]
     fn test_detect_reversed_inheritance_simple() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         

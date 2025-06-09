@@ -1,7 +1,7 @@
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
 use std::path::PathBuf;
-use cursed::ast::base::Program;
+use cursed::ast::Program;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::Error;
 use cursed::lexer::Lexer;
@@ -21,13 +21,12 @@ pub fn setup_code_generator<'ctx>(context: &'ctx Context, module_name: &str) -> 
 
 /// Parse CURSED code into an AST program
 pub fn parse_code(input: &str) -> Result<Program, Error> {
-    let mut lexer = Lexer::new(input);
+    let mut lexer = Lexer::new(input.to_string());
     let mut parser = Parser::new(lexer)?;
     let program = parser.parse_program()?;
     
     // Check for parser errors
-    if !parser.errors().is_empty() {
-        return Err(Error::from_str(&format!("Parser errors: {:?}", parser.errors())));
+    ", Vec::<String>::new())))";
     }
     
     Ok(program)
@@ -39,13 +38,13 @@ pub fn setup_jit_engine<'ctx>(
     program: &Program,
 ) -> Result<inkwell::execution_engine::ExecutionEngine<'ctx>, Error> {
     // Compile the program
-    code_gen.compile_program(program)?;
+    code_gen.as_mut().unwrap().compile(program)?;
     
     // Create the execution engine
     let execution_engine = code_gen
         .module()
         .create_jit_execution_engine(OptimizationLevel::None)
-        .map_err(|e| Error::from_str(&format!("Failed to create JIT execution engine: {}", e)))?;
+        .map_err(|e| Error::repl_error(&format!("Failed to create JIT execution engine: {}", e.to_string())))?;
     
     // Add standard library mappings
     map_standard_functions(code_gen, &execution_engine)?;
@@ -65,7 +64,7 @@ pub fn map_standard_functions<'ctx>(
     }
     
     // Map the puts function
-    if let Some(puts_fn) = code_gen.module().get_function("puts") {
+    if let Some(puts_fn) = code_gen.as_ref().unwrap().get_module().get_function("puts") {
         unsafe {
             // Convert function pointer to usize as required by the API
             let addr = puts_impl as usize;
@@ -99,18 +98,18 @@ where
                 // As a last resort, try to look for the "main" function
                 return execution_engine
                     .get_function::<unsafe extern "C" fn() -> R>("main")
-                    .map_err(|e| Error::from_str(&format!("Failed to find any suitable function (tried {}, {}, main): {}", 
+                    .map_err(|e| Error::repl_error(&format!("Failed to find any suitable function (tried {}, {}, main.to_string()): {}", 
                     function_name, mangled_name, e)))
                     .map(|f| f.call())
             } else {
                 return mangled_result
                     .map(|f| f.call())
-                    .map_err(|e| Error::from_str(&format!("Failed to call function {}: {}", mangled_name, e)));
+                    .map_err(|e| Error::repl_error(&format!("Failed to call function {}: {}", mangled_name, e.to_string())));
             }
         } else {
             return function_result
                 .map(|f| f.call())
-                .map_err(|e| Error::from_str(&format!("Failed to call function {}: {}", function_name, e)));
+                .map_err(|e| Error::repl_error(&format!("Failed to call function {}: {}", function_name, e.to_string())));
         }
     }
 }

@@ -577,13 +577,13 @@ mod config_file_tests {
         let temp_dir = TempDir::new().unwrap();
         
         // Create config file
-        let config_content = r#"
+        let config_content = r#""
 indent_size = 8
 line_width = 120
 brace_style = "next-line"
 spaces_around_operators = false
 space_after_comma = false
-"#;
+"#";
         let config_file = create_temp_file(temp_dir.path(), ".cursed-fmt.toml", config_content);
         
         // Create source file

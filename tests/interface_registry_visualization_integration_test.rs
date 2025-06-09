@@ -4,8 +4,8 @@ mod disabled_tests {
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use inkwell::context::Context;
-use cursed::ast::expressions::{Expression, TypeAssertion};
-use cursed::ast::statements::ExpressionStatement;
+use cursed::ast::{Expression, TypeAssertion};
+use cursed::ast::ExpressionStatement;
 use cursed::codegen::llvm::interface_registry_visualization_integration::*;
 use cursed::codegen::llvm::interface_type_assertion_path_visualization_enhanced::*;
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -24,6 +24,7 @@ mod tests {
     
     #[test]
     fn test_registry_initialization() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -41,6 +42,7 @@ mod tests {
     
     #[test]
     fn test_interface_hierarchy_visualization() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -84,6 +86,7 @@ mod tests {
     
     #[test]
     fn test_find_and_visualize_inheritance_path() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -130,6 +133,7 @@ mod tests {
     
     #[test]
     fn test_cycle_detection() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -167,6 +171,7 @@ mod tests {
     
     #[test]
     fn test_check_interface_extension_relationship() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         
@@ -203,6 +208,7 @@ mod tests {
     
     #[test]
     fn test_enhanced_assertion_error() {
+    // init_tracing!();
         // Initialize tracing for this test
         tracing::setup();
         

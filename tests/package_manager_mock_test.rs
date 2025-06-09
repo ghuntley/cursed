@@ -528,6 +528,7 @@ async fn test_mock_registry_version_handling() {
 
 #[test]
 fn test_mock_infrastructure_performance() {
+    // init_tracing!();
     common::tracing::setup();
     let _timer = common::timing::Timer::new("mock_performance");
     

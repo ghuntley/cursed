@@ -8,7 +8,7 @@ use cursed::parser::Parser;
 #[test]
 #[ignore = "Generic type checking tests need further work"]
 fn test_basic_generic_type_checking() {
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Box[T] squad {
     value T
@@ -23,7 +23,7 @@ slay main() {
     sus result = identity[normie](42)
     sus should_be_tea = identity[tea]("hello")
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -62,7 +62,7 @@ slay main() {
 #[test]
 #[ignore = "Generic type checking tests need further work"]
 fn test_invalid_generic_type_usage() {
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Box[T] squad {
     value T
@@ -71,7 +71,7 @@ be_like Box[T] squad {
 slay main() {
     sus box_int = Box[normie]{value: "hello"}
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -95,7 +95,7 @@ slay main() {
 #[test]
 #[ignore = "Generic type checking tests need further work"]
 fn test_multiple_generic_parameters() {
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Pair[A, B] squad {
     first A
@@ -107,7 +107,7 @@ slay main() {
     sus first_value = pair.first
     sus second_value = pair.second
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -146,7 +146,7 @@ slay main() {
 #[test]
 #[ignore = "Generic type checking tests need further work"]
 fn test_nested_generic_types() {
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Box[T] squad {
     value T
@@ -164,7 +164,7 @@ slay main() {
     sus pair = nested.value
     sus text = pair.first
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

@@ -12,13 +12,13 @@ use std::path::PathBuf;
 
 #[test]
 fn test_jit_array_slice() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe array_test
 
     slay main() {
         yolo 1;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -142,13 +142,13 @@ fn test_jit_array_slice() -> Result<(), Error> {
 
 #[test]
 fn test_jit_map() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe map_test
 
     slay main() {
         yolo 1;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -263,13 +263,13 @@ fn test_jit_map() -> Result<(), Error> {
 
 #[test]
 fn test_jit_struct() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe struct_test
 
     slay main() {
         yolo 1;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

@@ -12,7 +12,7 @@ use std::path::PathBuf;
 #[test]
 fn test_jit_basic_variables() -> Result<(), Error> {
     // Test basic variable operations (simpler than arrays)
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay main() {
     fr fr Create variables
@@ -29,7 +29,7 @@ slay main() {
     
     yolo 0
 }
-"#;
+"#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -84,7 +84,7 @@ slay main() {
 #[ignore = "Struct support not fully implemented"]
 fn test_jit_struct_basic() -> Result<(), Error> {
     // Test basic struct operations
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Person squad {
     name tea
@@ -104,7 +104,7 @@ slay main() {
     
     yolo 0
 }
-"#;
+"#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

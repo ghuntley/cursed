@@ -86,7 +86,7 @@ impl DocumentationIntegrationTest {
     
     /// Create sample well-documented package
     fn create_sample_package(&self) -> std::io::Result<()> {
-        let content = r#"
+        let content = r#""
 //! Sample package demonstrating comprehensive documentation features
 //! 
 //! This package provides examples of well-documented CURSED code including
@@ -231,7 +231,7 @@ squad HttpError {
     /// Whether the error is retryable
     retryable: Bool,
 }
-"#;
+"#";
         
         let path = self.config.fixtures_dir.join("sample_package.csd");
         fs::write(path, content)?;
@@ -240,7 +240,7 @@ squad HttpError {
     
     /// Create package with missing documentation
     fn create_undocumented_package(&self) -> std::io::Result<()> {
-        let content = r#"
+        let content = r#""
 squad DatabaseConnection {
     host: String,
     port: Int,
@@ -269,7 +269,7 @@ squad QueryResult {
 collab Queryable {
     yolo execute(self, query: String) -> QueryResult
 }
-"#;
+"#";
         
         let path = self.config.fixtures_dir.join("undocumented_package.csd");
         fs::write(path, content)?;
@@ -278,7 +278,7 @@ collab Queryable {
     
     /// Create package with complex types and generics
     fn create_complex_types_package(&self) -> std::io::Result<()> {
-        let content = r#"
+        let content = r#""
 //! Complex types and generics documentation examples
 //! 
 //! Demonstrates comprehensive documentation for advanced CURSED language features
@@ -478,7 +478,7 @@ collab Storage[K, V] {
     /// True if key was found and removed, false otherwise
     yolo remove(self, key: K) -> Bool
 }
-"#;
+"#";
         
         let path = self.config.fixtures_dir.join("complex_types.csd");
         fs::write(path, content)?;
@@ -487,7 +487,7 @@ collab Storage[K, V] {
     
     /// Create package with cross-references
     fn create_cross_references_package(&self) -> std::io::Result<()> {
-        let content = r#"
+        let content = r#""
 //! Cross-reference examples for documentation linking
 //! 
 //! This package demonstrates cross-references between types and functions
@@ -678,7 +678,7 @@ squad User {
     /// User's display name
     display_name: String,
 }
-"#;
+"#";
         
         let path = self.config.fixtures_dir.join("cross_references.csd");
         fs::write(path, content)?;
@@ -694,7 +694,7 @@ squad User {
         fs::create_dir_all(&pkg2_dir)?;
         
         // Package 1: Core utilities
-        let pkg1_content = r#"
+        let pkg1_content = r#""
 //! Core utilities package
 //! 
 //! Provides fundamental utilities used across the application.
@@ -737,11 +737,11 @@ yolo format_string(template: String, args: String[]) -> String {
 yolo validate_email(email: String) -> Bool {
     true
 }
-"#;
+"#";
         fs::write(pkg1_dir.join("main.csd"), pkg1_content)?;
         
         // Package 2: String processing (depends on package1)
-        let pkg2_content = r#"
+        let pkg2_content = r#""
 //! String processing package
 //! 
 //! Advanced string processing utilities that build upon core.StringUtils.
@@ -813,7 +813,7 @@ yolo format_email(email: String) -> String? {
         nil
     }
 }
-"#;
+"#";
         fs::write(pkg2_dir.join("main.csd"), pkg2_content)?;
         
         Ok(())
@@ -822,6 +822,7 @@ yolo format_email(email: String) -> String? {
 
 #[test]
 fn test_complete_documentation_workflow() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -858,6 +859,7 @@ fn test_complete_documentation_workflow() {
 
 #[test]
 fn test_multi_package_documentation() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -888,6 +890,7 @@ fn test_multi_package_documentation() {
 
 #[test]
 fn test_cross_reference_resolution() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -916,6 +919,7 @@ fn test_cross_reference_resolution() {
 
 #[test]
 fn test_documentation_validation_and_completeness() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -958,6 +962,7 @@ fn test_documentation_validation_and_completeness() {
 
 #[test]
 fn test_html_generation_validity() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -1001,6 +1006,7 @@ fn test_html_generation_validity() {
 
 #[test]
 fn test_markdown_generation() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -1038,6 +1044,7 @@ fn test_markdown_generation() {
 
 #[test]
 fn test_json_export() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -1077,6 +1084,7 @@ fn test_json_export() {
 
 #[test]
 fn test_cli_tool_processing() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -1109,10 +1117,11 @@ fn test_cli_tool_processing() {
 
 #[test]
 fn test_error_handling_malformed_docs() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     
     // Create malformed documentation content
-    let malformed_content = r#"
+    let malformed_content = r#""
 /// This is a malformed documentation comment
 /// Missing proper structure and [invalid_reference
 squad BadStruct {
@@ -1124,7 +1133,7 @@ squad BadStruct {
 /// Another bad comment with unclosed [link
 yolo bad_function(param1: InvalidType) -> {
     // Missing return type and body
-"#;
+"#";
     
     let malformed_path = test.config.fixtures_dir.join("malformed.csd");
     fs::write(&malformed_path, malformed_content).expect("Failed to write malformed file");
@@ -1153,6 +1162,7 @@ yolo bad_function(param1: InvalidType) -> {
 
 #[test]
 fn test_performance_large_codebase() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     
     // Generate large codebase for performance testing
@@ -1161,7 +1171,7 @@ fn test_performance_large_codebase() {
     
     // Generate multiple files with comprehensive documentation
     for i in 0..10 {
-        let content = format!(r#"
+        let content = format!(r#""
 //! Large module {} for performance testing
 //! 
 //! This module contains many documented items to test performance
@@ -1208,7 +1218,7 @@ squad ServiceState{} {{
     /// Status indicator
     status: String,
 }}
-"#, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i);
+"#, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i, i)";
 
         let file_path = large_dir.join(format!("module_{}.csd", i));
         fs::write(file_path, content).expect("Failed to write large module file");
@@ -1242,6 +1252,7 @@ squad ServiceState{} {{
 
 #[test]
 fn test_documentation_coverage_analysis() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -1320,6 +1331,7 @@ impl GoldenFileTest {
 
 #[test]
 fn test_golden_file_comparison() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     
@@ -1348,6 +1360,7 @@ fn test_golden_file_comparison() {
 /// Performance benchmark for documentation generation
 #[test]
 fn test_documentation_generation_benchmarks() {
+    // init_tracing!();
     let mut test = DocumentationIntegrationTest::new().expect("Failed to create test");
     test.setup_fixtures().expect("Failed to set up fixtures");
     

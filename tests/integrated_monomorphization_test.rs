@@ -11,6 +11,7 @@ mod ast_factory;
 
 #[test]
 fn test_integrated_monomorphization() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Setup test environment

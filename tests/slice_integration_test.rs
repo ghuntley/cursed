@@ -6,7 +6,7 @@
 //! operates seamlessly for slice operations.
 
 use cursed::slice_integration::{SliceIntegration, convenience};
-use cursed::ast::expressions::slice_literal::SliceLiteral;
+use cursed::ast::slice_literal::SliceLiteral;
 use cursed::ast::Expression;
 use cursed::core::type_checker::Type;
 use cursed::error::Error;
@@ -37,6 +37,7 @@ fn init_test_tracing() {
 /// Test the complete parsing pipeline for slice literals
 #[test]
 fn test_slice_literal_parsing_pipeline() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing slice literal parsing pipeline");
     
@@ -67,6 +68,7 @@ fn test_slice_literal_parsing_pipeline() {
 /// Test AST generation and manipulation for slice literals
 #[test] 
 fn test_slice_literal_ast_generation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing slice literal AST generation");
     
@@ -100,6 +102,7 @@ fn test_slice_literal_ast_generation() {
 /// Test type inference for slice element types
 #[test]
 fn test_slice_type_inference() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing slice type inference");
     
@@ -141,6 +144,7 @@ fn test_slice_type_inference() {
 /// Test LLVM compilation of slice literals
 #[test]
 fn test_slice_llvm_compilation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing LLVM compilation of slice literals");
     
@@ -195,6 +199,7 @@ fn test_slice_llvm_compilation() {
 /// Test empty slice creation
 #[test]
 fn test_empty_slice_creation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing empty slice creation");
     
@@ -233,6 +238,7 @@ fn test_empty_slice_creation() {
 /// Test slice operations and utilities
 #[test]
 fn test_slice_operations() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing slice operations");
     
@@ -272,6 +278,7 @@ fn test_slice_operations() {
 /// Test slice literal validation
 #[test]
 fn test_slice_validation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing slice literal validation");
     
@@ -300,6 +307,7 @@ fn test_slice_validation() {
 /// Test convenience functions
 #[test]
 fn test_convenience_functions() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing convenience functions");
     
@@ -328,6 +336,7 @@ fn test_convenience_functions() {
 /// Test parse and compile convenience method
 #[test]
 fn test_parse_and_compile() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing parse and compile convenience method");
     
@@ -354,6 +363,7 @@ fn test_parse_and_compile() {
 /// Test error handling and edge cases
 #[test]
 fn test_error_handling() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing error handling and edge cases");
     
@@ -381,6 +391,7 @@ fn test_error_handling() {
 /// Test runtime utilities and information
 #[test]
 fn test_runtime_utilities() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing runtime utilities");
     
@@ -401,6 +412,7 @@ fn test_runtime_utilities() {
 /// Integration test that simulates a complete compilation pipeline
 #[test]
 fn test_complete_pipeline_simulation() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing complete pipeline simulation");
     
@@ -448,6 +460,7 @@ fn test_complete_pipeline_simulation() {
 /// Performance test for slice compilation
 #[test]
 fn test_slice_compilation_performance() {
+    // init_tracing!();
     init_test_tracing();
     info!("Testing slice compilation performance");
     

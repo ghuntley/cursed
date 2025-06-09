@@ -1,6 +1,6 @@
-use cursed::ast::control_flow::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
-use cursed::ast::expressions::literals::{BooleanLiteral, IntegerLiteral};
-use cursed::ast::statements::BlockStatement;
+use cursed::ast::{IfStatement, WhileStatement, ForStatement, SwitchStatement};
+use cursed::ast::literals::{BooleanLiteral, IntegerLiteral};
+use cursed::ast::BlockStatement;
 use cursed::error::Error;
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;

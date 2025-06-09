@@ -110,8 +110,8 @@ impl PerformanceBenchmarkRunner {
             .with_output_dir(output_dir.clone())
             .with_package_name(config.name.clone());
         
-        let mut generator = DocumentationGenerator::new(doc_config);
-        let generation_result = generator.generate();
+        let mut generator = DocumentationGenerator::new();
+        let generation_result = generator.generate_docs("src", "docs");
         
         let generation_time = start_time.elapsed();
         let peak_memory = self.get_memory_usage();
@@ -220,7 +220,7 @@ impl PerformanceBenchmarkRunner {
     
     /// Generate struct documentation
     fn generate_struct_documentation(&self, idx: usize) -> String {
-        format!(r#"
+        format!(r#""
 /// Data structure {} for performance testing
 /// 
 /// This structure represents item {} in the performance test suite.
@@ -254,12 +254,12 @@ squad Data{} {{
     metadata: Map[String, String],
 }}
 
-"#, idx, idx, idx, idx, idx, idx)
+"#, idx, idx, idx, idx, idx, idx)"
     }
     
     /// Generate function documentation
     fn generate_function_documentation(&self, idx: usize) -> String {
-        format!(r#"
+        format!(r#""
 /// Process function {} for performance testing
 /// 
 /// This function performs processing operation {} as part of the
@@ -304,12 +304,12 @@ yolo process{}(input: String, options: ProcessingOptions{}, callback: ((String) 
     format!("Processed: {{}} with options {{}}", input, options.to_string())
 }}
 
-"#, idx, idx, idx, idx, idx)
+"#, idx, idx, idx, idx, idx)"
     }
     
     /// Generate interface documentation
     fn generate_interface_documentation(&self, idx: usize) -> String {
-        format!(r#"
+        format!(r#""
 /// Interface {} for performance testing
 /// 
 /// This interface defines the contract for processing component {}.
@@ -364,7 +364,7 @@ collab Processor{} {{
     yolo get_config(self) -> ProcessorConfig{}
 }}
 
-"#, idx, idx, idx, idx, idx, idx, idx)
+"#, idx, idx, idx, idx, idx, idx, idx)"
     }
     
     /// Measure total output size and file count
@@ -452,6 +452,7 @@ collab Processor{} {{
 
 #[test]
 fn test_small_codebase_performance() {
+    // init_tracing!();
     let mut runner = PerformanceBenchmarkRunner::new().expect("Failed to create runner");
     
     runner.add_test(PerformanceTestConfig {
@@ -471,6 +472,7 @@ fn test_small_codebase_performance() {
 
 #[test]
 fn test_medium_codebase_performance() {
+    // init_tracing!();
     let mut runner = PerformanceBenchmarkRunner::new().expect("Failed to create runner");
     
     runner.add_test(PerformanceTestConfig {
@@ -490,6 +492,7 @@ fn test_medium_codebase_performance() {
 
 #[test]
 fn test_large_codebase_performance() {
+    // init_tracing!();
     let mut runner = PerformanceBenchmarkRunner::new().expect("Failed to create runner");
     
     runner.add_test(PerformanceTestConfig {
@@ -516,6 +519,7 @@ fn test_large_codebase_performance() {
 
 #[test]
 fn test_scalability_characteristics() {
+    // init_tracing!();
     let mut runner = PerformanceBenchmarkRunner::new().expect("Failed to create runner");
     
     // Test multiple sizes to analyze scalability
@@ -569,6 +573,7 @@ fn test_scalability_characteristics() {
 
 #[test]
 fn test_concurrent_generation_performance() {
+    // init_tracing!();
     // This test would ideally test parallel documentation generation
     // For now, we'll test sequential generation of multiple packages
     
@@ -609,6 +614,7 @@ fn test_concurrent_generation_performance() {
 
 #[test]
 fn test_memory_efficiency() {
+    // init_tracing!();
     let mut runner = PerformanceBenchmarkRunner::new().expect("Failed to create runner");
     
     // Test with progressively larger codebases to check memory usage
@@ -643,6 +649,7 @@ fn test_memory_efficiency() {
 
 #[test]
 fn test_generation_time_consistency() {
+    // init_tracing!();
     let mut runner = PerformanceBenchmarkRunner::new().expect("Failed to create runner");
     
     // Run the same test multiple times to check consistency

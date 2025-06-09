@@ -176,6 +176,7 @@ mod tests {
     /// Benchmark simple interface type assertion with LRU cache
     #[test]
     fn benchmark_simple_hierarchy_lru() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_simple_hierarchy_lru");
         
@@ -198,6 +199,7 @@ mod tests {
     /// Benchmark nested interface hierarchy with LRU cache
     #[test]
     fn benchmark_nested_hierarchy_lru() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_nested_hierarchy_lru");
         
@@ -220,6 +222,7 @@ mod tests {
     /// Benchmark diamond inheritance pattern with LRU cache
     #[test]
     fn benchmark_diamond_hierarchy_lru() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_diamond_hierarchy_lru");
         
@@ -242,6 +245,7 @@ mod tests {
     /// Benchmark deep nested interface hierarchy with LRU cache
     #[test]
     fn benchmark_deep_nested_hierarchy_lru() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_deep_nested_hierarchy_lru");
         
@@ -264,6 +268,7 @@ mod tests {
     /// Benchmark performance comparison of all hierarchy types
     #[test]
     fn benchmark_hierarchy_comparison() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_hierarchy_comparison");
         
@@ -305,6 +310,7 @@ mod tests {
     /// Benchmark with realistic scenario simulating common usage patterns
     #[test]
     fn benchmark_realistic_workload() {
+    // init_tracing!();
         setup_tracing();
         let _timer = Timer::new("benchmark_realistic_workload");
         

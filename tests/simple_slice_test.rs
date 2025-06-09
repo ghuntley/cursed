@@ -1,6 +1,6 @@
 //! Simple slice literal tests
 
-use cursed::ast::expressions::SliceLiteral;
+use cursed::ast::SliceLiteral;
 use cursed::ast::{Node, Expression};
 use cursed::lexer::Token;
 

@@ -1,6 +1,6 @@
-use cursed::ast::declarations::{SquadStatement, GenericConstraint, TypeParameter};
-use cursed::ast::expressions::Identifier;
-use cursed::ast::statements::fields::FieldStatement;
+use cursed::ast::{SquadStatement, GenericConstraint, TypeParameter};
+use cursed::ast::Identifier;
+use cursed::ast::fields::FieldStatement;
 use cursed::codegen::llvm::{LlvmCodeGenerator, StructMonomorphization};
 use cursed::core::type_checker::Type;
 use cursed::error::Error;

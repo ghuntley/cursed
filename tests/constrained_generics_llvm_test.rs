@@ -7,9 +7,9 @@
 //! - Performance optimizations for method dispatch
 //! - Error handling for constraint violations
 
-use cursed::ast::declarations::{FunctionStatement, SquadStatement, GenericConstraint, Parameter, TypeParameter};
-use cursed::ast::expressions::{CallExpression, Identifier};
-use cursed::ast::statements::Statement;
+use cursed::ast::{FunctionStatement, SquadStatement, GenericConstraint, Parameter, TypeParameter};
+use cursed::ast::{CallExpression, Identifier};
+use cursed::ast::Statement;
 use cursed::ast::traits::Node;
 use cursed::codegen::llvm::constrained_generics::{
     ConstrainedGenericsCodegen, ConstrainedGenericConfig, MonomorphizationStrategy,
@@ -178,6 +178,7 @@ fn setup_llvm_generator() -> (Context, LlvmCodeGenerator<'static>) {
 
 #[test]
 fn test_constraint_validation_success() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing successful constraint validation");
 
@@ -204,6 +205,7 @@ fn test_constraint_validation_success() {
 
 #[test]
 fn test_constraint_validation_failure() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constraint validation failure");
 
@@ -230,6 +232,7 @@ fn test_constraint_validation_failure() {
 
 #[test]
 fn test_full_specialization_strategy() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing full specialization strategy");
 
@@ -254,6 +257,7 @@ fn test_full_specialization_strategy() {
 
 #[test]
 fn test_hybrid_specialization_strategy() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing hybrid specialization strategy");
 
@@ -282,6 +286,7 @@ fn test_hybrid_specialization_strategy() {
 
 #[test]
 fn test_type_erasure_strategy() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type erasure strategy");
 
@@ -304,6 +309,7 @@ fn test_type_erasure_strategy() {
 
 #[test]
 fn test_struct_specialization_with_constraints() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing struct specialization with constraints");
 
@@ -319,6 +325,7 @@ fn test_struct_specialization_with_constraints() {
 
 #[test]
 fn test_gc_metadata_registration() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing GC metadata registration for specializations");
 
@@ -343,6 +350,7 @@ fn test_gc_metadata_registration() {
 
 #[test]
 fn test_specialization_cache_key_generation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing specialization cache key generation");
 
@@ -364,6 +372,7 @@ fn test_specialization_cache_key_generation() {
 
 #[test]
 fn test_specialized_name_generation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing specialized name generation");
 
@@ -384,6 +393,7 @@ fn test_specialized_name_generation() {
 
 #[test]
 fn test_type_mangling() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing type name mangling");
 
@@ -407,6 +417,7 @@ fn test_type_mangling() {
 
 #[test] 
 fn test_simple_type_classification() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing simple type classification");
 
@@ -427,6 +438,7 @@ fn test_simple_type_classification() {
 
 #[test]
 fn test_gc_tracking_detection() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing GC tracking detection");
 
@@ -446,6 +458,7 @@ fn test_gc_tracking_detection() {
 
 #[test]
 fn test_constraint_validation_with_multiple_parameters() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing constraint validation with multiple type parameters");
 
@@ -478,6 +491,7 @@ fn test_constraint_validation_with_multiple_parameters() {
 
 #[test]
 fn test_wrong_number_of_type_arguments() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing validation with wrong number of type arguments");
 
@@ -501,6 +515,7 @@ fn test_wrong_number_of_type_arguments() {
 
 #[test] 
 fn test_extension_trait_compile_with_constraints() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing extension trait compile_with_constraints");
 
@@ -522,6 +537,7 @@ fn test_extension_trait_compile_with_constraints() {
 
 #[test]
 fn test_generate_all_specializations() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing generate_all_specializations");
 
@@ -552,6 +568,7 @@ fn test_generate_all_specializations() {
 
 #[test]
 fn test_config_defaults() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing ConstrainedGenericConfig defaults");
 
@@ -568,6 +585,7 @@ fn test_config_defaults() {
 
 #[test]
 fn test_optimization_strategy_differences() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing differences between optimization strategies");
 
@@ -606,6 +624,7 @@ fn test_optimization_strategy_differences() {
 
 #[test]
 fn test_struct_field_type_instantiation() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing struct field type instantiation");
 

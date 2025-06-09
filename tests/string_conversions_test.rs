@@ -9,7 +9,7 @@
 //! - Memory safety and GC integration
 
 use cursed::codegen::llvm::{LlvmCodeGenerator, StringConversions, StringConversionUtils};
-use cursed::runtime::string_conversions::*;
+::*;
 use cursed::error::Error;
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;

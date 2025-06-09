@@ -1,4 +1,4 @@
-use cursed::ast::expressions::{TypeAssertion, Identifier};
+use cursed::ast::{TypeAssertion, Identifier};
 use cursed::ast::traits::{Expression, Node};
 use cursed::error::Error;
 use cursed::error::type_assertion_error::TypeAssertionError;

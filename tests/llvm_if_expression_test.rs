@@ -1,8 +1,8 @@
-use cursed::ast::expressions::literals::{IntegerLiteral, BooleanLiteral};
-use cursed::ast::expressions::if_expression::IfExpression;
-use cursed::ast::control_flow::conditionals::IfStatement;
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::ExpressionStatement;
+use cursed::ast::literals::{IntegerLiteral, BooleanLiteral};
+use cursed::ast::if_expression::IfExpression;
+use cursed::ast::conditionals::IfStatement;
+use cursed::ast::block::BlockStatement;
+use cursed::ast::ExpressionStatement;
 use cursed::ast::traits::{Expression, Statement};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::ExpressionCompilation;

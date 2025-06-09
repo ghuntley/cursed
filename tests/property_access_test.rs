@@ -58,7 +58,7 @@ mod property_access_tests {
             .try_init();
 
         // Define a simple struct with fields and access them
-        let code = r#"
+        let code = r#""
             vibe main
 
             be_like Point squad {
@@ -70,7 +70,7 @@ mod property_access_tests {
                 sus p = Point{x: 42, y: 24};
                 yolo p.x;
             }
-        "#;
+        "#";
 
         let result = run_code_int(code)?;
         assert_eq!(result, 42, "Expected p.x to return 42");
@@ -81,7 +81,7 @@ mod property_access_tests {
     #[test]
     fn test_nested_struct_field_access() -> Result<(), Error> {
         // Create nested structs and access fields through dot chain
-        let code = r#"
+        let code = r#""
             vibe main
 
             be_like Point squad {
@@ -100,7 +100,7 @@ mod property_access_tests {
                 sus rect = Rectangle{topLeft: p1, bottomRight: p2};
                 yolo rect.bottomRight.x;
             }
-        "#;
+        "#";
 
         let result = run_code_int(code)?;
         assert_eq!(result, 30, "Expected rect.bottomRight.x to return 30");
@@ -111,7 +111,7 @@ mod property_access_tests {
     #[test]
     fn test_field_not_found() {
         // Try to access a non-existent field
-        let code = r#"
+        let code = r#""
             vibe main
 
             be_like Point squad {
@@ -123,7 +123,7 @@ mod property_access_tests {
                 sus p = Point{x: 10, y: 20};
                 yolo p.z;
             }
-        "#;
+        "#";
 
         // This should fail with a field not found error
         let result = run_code_int(code);
@@ -136,7 +136,7 @@ mod property_access_tests {
     #[test]
     fn test_field_modification() -> Result<(), Error> {
         // Test field modification
-        let code = r#"
+        let code = r#""
             vibe main
 
             be_like Counter squad {
@@ -148,7 +148,7 @@ mod property_access_tests {
                 counter.value = 10;
                 yolo counter.value;
             }
-        "#;
+        "#";
 
         let result = run_code_int(code)?;
         assert_eq!(result, 10, "Expected counter.value to be 10 after modification");

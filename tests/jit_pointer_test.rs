@@ -9,7 +9,7 @@ use cursed::prelude::*;
 #[test]
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_pointer_parsing() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay test_pointers() {
@@ -25,7 +25,7 @@ fn test_pointer_parsing() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer)?;
@@ -50,7 +50,7 @@ fn test_pointer_parsing() -> Result<(), Error> {
 #[test]
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_pointer_dereference() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay test_deref() {
@@ -66,7 +66,7 @@ fn test_pointer_dereference() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer)?;
@@ -91,7 +91,7 @@ fn test_pointer_dereference() -> Result<(), Error> {
 #[test]
 #[ignore = "Pointer implementation needs further parser work"]
 fn test_pointer_struct() -> Result<(), Error> {
-    let input = r#"
+    let input = r#""
     vibe test;
 
     be_like Person squad {
@@ -112,7 +112,7 @@ fn test_pointer_struct() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer)?;

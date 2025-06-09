@@ -1,4 +1,4 @@
-use cursed::ast::expressions::DotExpression;
+use cursed::ast::DotExpression;
 use cursed::ast::traits::Expression;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;

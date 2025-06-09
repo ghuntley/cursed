@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use std::cell::RefCell;
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::interface_type_assertion_error_propagation_improved::*;
 use cursed::codegen::llvm::interface_type_assertion_error_propagation_improved::ImprovedTypeAssertionErrorPropagation;
@@ -23,6 +23,7 @@ mod common;
 
 #[test]
 fn test_improved_error_propagation_registration() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     
@@ -32,6 +33,7 @@ fn test_improved_error_propagation_registration() {
 
 #[test]
 fn test_generate_type_assertion_error() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     
@@ -210,6 +212,7 @@ fn test_generate_type_assertion_error() {
 
 #[test]
 fn test_suggest_recovery_options() {
+    // init_tracing!();
     // Initialize tracing for this test
     common::tracing::setup();
     

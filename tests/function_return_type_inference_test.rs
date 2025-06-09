@@ -1,10 +1,10 @@
-use cursed::ast::expressions::identifiers::Identifier;
-use cursed::ast::expressions::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral};
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::ExpressionStatement;
-use cursed::ast::statements::declarations::LetStatement;
-use cursed::ast::declarations::FunctionStatement;
-use cursed::ast::statements::declarations::ReturnStatement;
+use cursed::ast::identifiers::Identifier;
+use cursed::ast::literals::{IntegerLiteral, FloatLiteral, BooleanLiteral};
+use cursed::ast::block::BlockStatement;
+use cursed::ast::ExpressionStatement;
+use cursed::ast::LetStatement;
+use cursed::ast::FunctionStatement;
+use cursed::ast::ReturnStatement;
 use cursed::ast::traits::{Expression, Statement};
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;

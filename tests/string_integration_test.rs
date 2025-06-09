@@ -12,6 +12,7 @@ mod common;
 /// Test integration of string type with LLVM code generator string helpers
 #[test]
 fn test_string_helpers_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -74,6 +75,7 @@ fn test_string_helpers_integration() {
 /// Test string literal creation through code generator
 #[test]
 fn test_string_literal_creation() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -121,6 +123,7 @@ fn test_string_literal_creation() {
 /// Test string type compatibility with type system
 #[test]
 fn test_string_type_system_compatibility() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -154,6 +157,7 @@ fn test_string_type_system_compatibility() {
 /// Test empty string handling
 #[test]
 fn test_empty_string_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -196,6 +200,7 @@ fn test_empty_string_handling() {
 /// Test string type caching behavior
 #[test]
 fn test_string_type_caching() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();
@@ -229,6 +234,7 @@ fn test_string_type_caching() {
 /// Test that string helpers initialization is idempotent
 #[test]
 fn test_string_helpers_idempotent() {
+    // init_tracing!();
     common::tracing::setup();
     
     let context = Context::create();

@@ -10,6 +10,7 @@ mod common;
 
 #[test]
 fn test_slice_ffi_basic_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Initialize global runtime
@@ -53,6 +54,7 @@ fn test_slice_ffi_basic_operations() {
 
 #[test]
 fn test_slice_ffi_growth() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime_ptr = cursed_slice_runtime_init();
@@ -82,6 +84,7 @@ fn test_slice_ffi_growth() {
 
 #[test]
 fn test_slice_ffi_element_access() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime_ptr = cursed_slice_runtime_init();
@@ -119,6 +122,7 @@ fn test_slice_ffi_element_access() {
 
 #[test]
 fn test_slice_ffi_copy_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime_ptr = cursed_slice_runtime_init();
@@ -156,6 +160,7 @@ fn test_slice_ffi_copy_operations() {
 
 #[test]
 fn test_slice_ffi_fill_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime_ptr = cursed_slice_runtime_init();
@@ -187,6 +192,7 @@ fn test_slice_ffi_fill_operations() {
 
 #[test]
 fn test_slice_ffi_error_handling() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Test with null runtime pointer
@@ -231,6 +237,7 @@ fn test_slice_ffi_error_handling() {
 
 #[test]
 fn test_slice_ffi_length_operations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime_ptr = cursed_slice_runtime_init();
@@ -266,6 +273,7 @@ fn test_slice_ffi_length_operations() {
 
 #[test]
 fn test_slice_ffi_multiple_slices() {
+    // init_tracing!();
     common::tracing::setup();
     
     let runtime_ptr = cursed_slice_runtime_init();
@@ -302,6 +310,7 @@ fn test_slice_ffi_multiple_slices() {
 
 #[test]
 fn test_slice_ffi_concurrent_access() {
+    // init_tracing!();
     common::tracing::setup();
     
     // Initialize runtime once

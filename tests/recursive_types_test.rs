@@ -18,6 +18,7 @@ mod common;
 
 #[test]
 fn test_direct_recursive_struct() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -68,6 +69,7 @@ fn test_direct_recursive_struct() {
 
 #[test]
 fn test_binary_tree_recursive_struct() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -116,6 +118,7 @@ fn test_binary_tree_recursive_struct() {
 
 #[test]
 fn test_mutually_recursive_types() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -158,6 +161,7 @@ fn test_mutually_recursive_types() {
 
 #[test]
 fn test_complex_recursive_scenario() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -212,6 +216,7 @@ fn test_complex_recursive_scenario() {
 
 #[test]
 fn test_forward_declarations() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -244,6 +249,7 @@ fn test_forward_declarations() {
 
 #[test]
 fn test_type_checker_integration() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut type_checker = TypeChecker::new();
@@ -272,6 +278,7 @@ fn test_type_checker_integration() {
 
 #[test]
 fn test_type_dependency_analysis() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -305,6 +312,7 @@ fn test_type_dependency_analysis() {
 
 #[test]
 fn test_recursive_type_memory_safety() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -339,6 +347,7 @@ fn test_recursive_type_memory_safety() {
 
 #[test]
 fn test_cycle_detection_complex() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -376,6 +385,7 @@ fn test_cycle_detection_complex() {
 
 #[test]
 fn test_generic_recursive_types() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -407,6 +417,7 @@ fn test_generic_recursive_types() {
 
 #[test] 
 fn test_indirect_recursion() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();
@@ -438,6 +449,7 @@ fn test_indirect_recursion() {
 
 #[test]
 fn test_recursive_type_resolution_order() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = RecursiveTypeRegistry::new();

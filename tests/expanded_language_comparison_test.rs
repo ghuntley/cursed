@@ -1,6 +1,6 @@
 use std::time::Duration;
 use tracing::info;
-use cursed::benchmark::reporters::BenchmarkReporter;
+::reporters::BenchmarkReporter;
 
 // Integration test for expanded language benchmarks
 

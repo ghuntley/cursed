@@ -5,14 +5,14 @@ use cursed::parser::Parser;
 
 #[test]
 fn test_parse_squad() {
-    let input = r#"
+    let input = r#""
     be_like Person squad {
         name tea
         age normie
         isActive lit
         height snack
     }
-    "#;
+    "#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -52,7 +52,7 @@ fn test_parse_squad() {
 // Test to ensure we can parse the struct initialization syntax
 #[test]
 fn test_struct_initialization() {
-    let input = r#"
+    let input = r#""
     vibe test_squad;
     
     be_like Person squad {
@@ -63,7 +63,7 @@ fn test_struct_initialization() {
     slay main() {
         sus p = Person{name: "John", age: 30};
     }
-    "#;
+    "#";
     
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

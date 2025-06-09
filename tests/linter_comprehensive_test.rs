@@ -100,7 +100,7 @@ fn test_severity_filtering() {
 
 #[test]
 fn test_configuration_loading() {
-    let toml_content = r#"
+    let toml_content = r#""
 auto_fix = true
 min_severity = "warning"
 
@@ -111,7 +111,7 @@ indent_size = 2
 [output]
 format = "json"
 use_colors = false
-"#;
+"#";
     
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(toml_content.as_bytes()).unwrap();
@@ -128,7 +128,7 @@ use_colors = false
 
 #[test]
 fn test_json_configuration() {
-    let json_content = r#"{
+    let json_content = r#"{"
   "auto_fix": true,
   "min_severity": "error",
   "general": {
@@ -141,7 +141,7 @@ fn test_json_configuration() {
       "default_severity": "warning"
     }
   }
-}"#;
+}"#";
     
     let mut temp_file = NamedTempFile::new().unwrap();
     temp_file.write_all(json_content.as_bytes()).unwrap();

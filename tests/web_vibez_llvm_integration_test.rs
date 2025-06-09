@@ -458,7 +458,7 @@ fn test_performance_and_optimization() {
 #[test]
 fn test_integration_documentation() {
     // This test serves as living documentation
-    println!("
+    println!(""
 🔥 CURSED web_vibez LLVM Integration - COMPREHENSIVE IMPLEMENTATION ✅
 
 📊 **COVERAGE SUMMARY**:
@@ -484,5 +484,5 @@ fn test_integration_documentation() {
 
 The CURSED web_vibez package now provides enterprise-grade HTTP functionality
 with full LLVM integration for high-performance web applications!
-    ");
+    ")";
 }

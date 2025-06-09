@@ -77,7 +77,7 @@ fn test_nested_interface_type_assertion() {
     init_tracing!();
     
     // This test verifies the nested interface type assertion functionality
-    let input = r#"
+    let input = r#""
         // Define a base interface
         collab BaseRenderer {
             render() tea;
@@ -224,7 +224,7 @@ fn test_nested_interface_type_assertion() {
             
             return 0
         }
-    "#;
+    "#";
     
     // Run the test and verify nested interface assertions work correctly
     match run_jit_test(input) {
@@ -241,7 +241,7 @@ fn test_multiple_interface_inheritance() {
     init_tracing!();
     
     // This test checks assertions with complex interface inheritance
-    let input = r#"
+    let input = r#""
         // Define a hierarchy of interfaces
         collab Entity {
             getId() normie;
@@ -354,7 +354,7 @@ fn test_multiple_interface_inheritance() {
             
             return 0
         }
-    "#;
+    "#";
     
     // Run the test and verify complex interface inheritance works correctly
     match run_jit_test(input) {

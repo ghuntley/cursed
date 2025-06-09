@@ -2,7 +2,7 @@ use inkwell::context::Context;
 use std::sync::Arc;
 use cursed::lexer::TokenType;
 use cursed::lexer::Token;
-use cursed::ast::expressions::{Identifier, IntegerLiteral};
+use cursed::ast::{Identifier, IntegerLiteral};
 use cursed::ast::pointer::{PointerDereference, PointerType};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::LlvmCodeGenerator;

@@ -232,10 +232,11 @@ impl GoldenFileTestRunner {
 
 #[test]
 fn test_simple_documentation_golden() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
     // Simple documented function
-    let simple_source = r#"
+    let simple_source = r#""
 /// Simple function for testing
 /// 
 /// # Arguments
@@ -246,7 +247,7 @@ fn test_simple_documentation_golden() {
 yolo greet(name: String) -> String {
     format!("Hello, {}!", name)
 }
-"#;
+"#";
     
     runner.add_test("simple", simple_source, None).expect("Failed to add simple test");
     runner.run_all_tests().expect("Failed to run tests");
@@ -258,10 +259,11 @@ yolo greet(name: String) -> String {
 
 #[test]
 fn test_struct_documentation_golden() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
     // Struct with comprehensive documentation
-    let struct_source = r#"
+    let struct_source = r#""
 /// User account information
 /// 
 /// Represents a user in the system with authentication details
@@ -306,7 +308,7 @@ yolo create_user(username: String, email: String) -> User {
         email: email,
     }
 }
-"#;
+"#";
     
     runner.add_test("struct", struct_source, None).expect("Failed to add struct test");
     runner.run_all_tests().expect("Failed to run tests");
@@ -317,10 +319,11 @@ yolo create_user(username: String, email: String) -> User {
 
 #[test]
 fn test_interface_documentation_golden() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
     // Interface with method documentation
-    let interface_source = r#"
+    let interface_source = r#""
 /// Data serialization interface
 /// 
 /// Provides methods for converting objects to and from
@@ -360,7 +363,7 @@ squad Config {
     /// Port number for server
     port: Int,
 }
-"#;
+"#";
     
     runner.add_test("interface", interface_source, None).expect("Failed to add interface test");
     runner.run_all_tests().expect("Failed to run tests");
@@ -371,10 +374,11 @@ squad Config {
 
 #[test]
 fn test_generic_types_golden() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
     // Generic types with constraints
-    let generic_source = r#"
+    let generic_source = r#""
 /// Generic container for any type
 /// 
 /// A flexible container that can store any type implementing
@@ -423,7 +427,7 @@ yolo slay add[T: Clone](self: Container[T], item: T) -> Bool {
     self.size += 1
     true
 }
-"#;
+"#";
     
     runner.add_test("generic", generic_source, None).expect("Failed to add generic test");
     runner.run_all_tests().expect("Failed to run tests");
@@ -434,10 +438,11 @@ yolo slay add[T: Clone](self: Container[T], item: T) -> Bool {
 
 #[test]
 fn test_cross_references_golden() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
     // Cross-references between types
-    let cross_ref_source = r#"
+    let cross_ref_source = r#""
 /// User management service
 /// 
 /// Handles user operations and integrates with [UserRepository]
@@ -509,7 +514,7 @@ squad User {
     /// Display name
     name: String,
 }
-"#;
+"#";
     
     runner.add_test("cross_ref", cross_ref_source, None).expect("Failed to add cross-ref test");
     runner.run_all_tests().expect("Failed to run tests");
@@ -520,6 +525,7 @@ squad User {
 
 #[test]
 fn test_performance_golden_file_generation() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
     // Large source with many documented items
@@ -548,9 +554,10 @@ fn test_performance_golden_file_generation() {
 
 #[test]
 fn test_idempotency_golden_files() {
+    // init_tracing!();
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     
-    let source = r#"
+    let source = r#""
 /// Test function for idempotency
 /// 
 /// # Arguments
@@ -561,7 +568,7 @@ fn test_idempotency_golden_files() {
 yolo test_function(input: String) -> String {
     input
 }
-"#;
+"#";
     
     // Run generation twice and compare results
     runner.add_test("idempotency1", source, None).expect("Failed to add first test");
@@ -592,7 +599,7 @@ fn generate_large_documentation_source(count: usize) -> String {
     source.push_str("//! Large package for performance testing\n\n");
     
     for i in 0..count {
-        source.push_str(&format!(r#"
+        source.push_str(&format!(r#""
 /// Service class {} for performance testing
 /// 
 /// This service provides functionality for operation {}.
@@ -629,7 +636,7 @@ yolo slay process{}(self: Service{}, data: String) -> String {{
     format!("Processed: {{}}", data)
 }}
 
-"#, i, i, i, i, i, i, i, i, i, i));
+"#, i, i, i, i, i, i, i, i, i, i))";
     }
     
     source
@@ -642,7 +649,7 @@ mod golden_utils {
     
     /// Create expected HTML content for testing
     pub fn create_expected_html(title: &str, content: &str) -> String {
-        format!(r#"<!DOCTYPE html>
+        format!(r#"<!DOCTYPE html>"
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -666,7 +673,7 @@ mod golden_utils {
     </div>
     <script src="search.js"></script>
 </body>
-</html>"#, title, content)
+</html>"#, title, content)"
     }
     
     /// Normalize HTML content for comparison
@@ -681,6 +688,7 @@ mod golden_utils {
 
 #[test]
 fn test_golden_file_infrastructure() {
+    // init_tracing!();
     // Test the golden file testing infrastructure itself
     let mut runner = GoldenFileTestRunner::new().expect("Failed to create test runner");
     

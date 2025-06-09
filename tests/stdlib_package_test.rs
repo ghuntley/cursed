@@ -116,7 +116,7 @@ mod simple_stdlib_tests {
         let result = htmlrizzler::escape_js(&args).unwrap();
         let escaped = extract_string(result);
         assert!(escaped.contains("\\\\"), "Backslashes should be escaped");
-        assert!(escaped.contains("\\\""), "Quotes should be escaped");
+        assert!(escaped.contains("\\\""), "Quotes should be escaped")";
     }
 
     #[test]

@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex, atomic::{AtomicUsize, AtomicBool, Ordering}};
 use std::time::{Duration, Instant};
 use std::thread;
 use cursed::runtime::goroutine::*;
-use cursed::ast::expressions::concurrency::StanExpression;
+use cursed::ast::concurrency::StanExpression;
 use cursed::ast::*;
 use cursed::lexer::Token;
 use cursed::object::Object;
@@ -15,6 +15,7 @@ use tracing::{info, debug, warn, error};
 
 #[test]
 fn test_basic_goroutine_ast_creation() {
+    // init_tracing!();
     // Test basic AST creation for StanExpression
     let identifier = Box::new(Identifier {
         token: "test_func".to_string(),
@@ -32,6 +33,7 @@ fn test_basic_goroutine_ast_creation() {
 
 #[test]
 fn test_goroutine_scheduler_basic_functionality() {
+    // init_tracing!();
     // Test basic scheduler creation and functionality
     let scheduler = GoroutineScheduler::new();
     assert_eq!(scheduler.active_count(), 0);
@@ -41,6 +43,7 @@ fn test_goroutine_scheduler_basic_functionality() {
 
 #[test]
 fn test_single_goroutine_execution_ffi() {
+    // init_tracing!();
     // Test single goroutine execution using FFI functions
     let counter = Arc::new(AtomicUsize::new(0));
     
@@ -61,6 +64,7 @@ fn test_single_goroutine_execution_ffi() {
 
 #[test]
 fn test_multiple_goroutines_coordination() {
+    // init_tracing!();
     // Test multiple goroutines working together
     let counter = Arc::new(AtomicUsize::new(0));
     let goroutine_count = 10;
@@ -88,6 +92,7 @@ fn test_multiple_goroutines_coordination() {
 
 #[test]
 fn test_goroutine_resource_cleanup() {
+    // init_tracing!();
     // Test resource cleanup after goroutine completion
     let cleanup_counter = Arc::new(AtomicUsize::new(0));
     
@@ -129,6 +134,7 @@ fn test_goroutine_resource_cleanup() {
 
 #[test]
 fn test_goroutine_synchronization_pattern() {
+    // init_tracing!();
     // Test synchronization patterns between goroutines
     let shared_data = Arc::new(Mutex::new(0));
     let completion_count = Arc::new(AtomicUsize::new(0));
@@ -168,6 +174,7 @@ fn test_goroutine_synchronization_pattern() {
 
 #[test]
 fn test_goroutine_performance_benchmark() {
+    // init_tracing!();
     // Basic performance benchmark for goroutine creation
     let iterations = 100;
     let counter = Arc::new(AtomicUsize::new(0));
@@ -207,6 +214,7 @@ fn test_goroutine_performance_benchmark() {
 
 #[test]
 fn test_producer_consumer_goroutine_pattern() {
+    // init_tracing!();
     // Test producer-consumer pattern using goroutines
     let buffer = Arc::new(Mutex::new(Vec::new()));
     let producer_done = Arc::new(AtomicBool::new(false));
@@ -271,6 +279,7 @@ fn test_producer_consumer_goroutine_pattern() {
 
 #[test]
 fn test_concurrent_memory_operations() {
+    // init_tracing!();
     // Test memory operations in concurrent goroutines
     let allocation_counter = Arc::new(AtomicUsize::new(0));
     
@@ -306,6 +315,7 @@ fn test_concurrent_memory_operations() {
 
 #[test]
 fn test_goroutine_error_isolation() {
+    // init_tracing!();
     // Test that goroutine errors don't affect others
     let success_counter = Arc::new(AtomicUsize::new(0));
     
@@ -361,6 +371,7 @@ fn test_goroutine_error_isolation() {
 
 #[test]
 fn test_comprehensive_documentation_verification() {
+    // init_tracing!();
     // This meta-test ensures all important testing aspects are covered
     let test_categories = vec![
         "Basic AST Creation",

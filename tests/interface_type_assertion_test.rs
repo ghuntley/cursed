@@ -47,7 +47,7 @@ fn test_interface_type_assertion_basic() {
     init_tracing!();
     
     // Define a simple program with interface type assertions
-    let input = r#"
+    let input = r#""
         // Define an interface
         collab Stringer {
             toString() tea;
@@ -83,7 +83,7 @@ fn test_interface_type_assertion_basic() {
             
             return "Type assertion failed"
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {
@@ -99,7 +99,7 @@ fn test_interface_type_assertion_failed() {
     init_tracing!();
     
     // Define a program with a failed type assertion
-    let input = r#"
+    let input = r#""
         // Define two interfaces
         collab Stringer {
             toString() tea;
@@ -147,7 +147,7 @@ fn test_interface_type_assertion_failed() {
                 return "Assertion failed as expected"
             }
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {
@@ -163,7 +163,7 @@ fn test_interface_type_assertion_multiple() {
     init_tracing!();
     
     // Test with multiple interface implementations
-    let input = r#"
+    let input = r#""
         // Define interfaces
         collab Shape {
             area() normie;
@@ -216,7 +216,7 @@ fn test_interface_type_assertion_multiple() {
                 return "Both assertions failed"
             }
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {
@@ -232,7 +232,7 @@ fn test_interface_type_assertion_error_handling() {
     init_tracing!();
     
     // Test proper error handling with type assertions
-    let input = r#"
+    let input = r#""
         // Define an interface
         collab Handler {
             handle(msg tea) tea;
@@ -290,7 +290,7 @@ fn test_interface_type_assertion_error_handling() {
             // Return combined results
             return result1 + " | " + result2
         }
-    "#;
+    "#";
     
     // Run the test and verify the result
     match run_jit_test(input) {

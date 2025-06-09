@@ -3,7 +3,7 @@ use std::sync::Arc;
 use inkwell::context::Context;
 use inkwell::values::BasicValueEnum;
 use tracing::debug;
-use cursed::ast::expressions::TypeAssertion;
+use cursed::ast::TypeAssertion;
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::llvm::TypeAssertionResultIntegration;
@@ -67,6 +67,7 @@ mod tests {
     // Test the error conversion functionality
     #[test]
     fn test_convert_type_assertion_error() {
+    // init_tracing!();
         let context = Context::create();
         let mut setup = TestSetup::new(&context);
 
@@ -87,6 +88,7 @@ mod tests {
     // Test the error collection functionality
     #[test]
     fn test_collect_type_assertion_errors() {
+    // init_tracing!();
         let context = Context::create();
         let mut setup = TestSetup::new(&context);
 
@@ -108,6 +110,7 @@ mod tests {
     // Test the error report creation
     #[test]
     fn test_create_type_assertion_error_report() {
+    // init_tracing!();
         let context = Context::create();
         let setup = TestSetup::new(&context);
 
@@ -133,6 +136,7 @@ mod tests {
     // However, this would require much more extensive test scaffolding including function setup
     #[test]
     fn test_result_propagation_concept() {
+    // init_tracing!();
         // This is a simplified conceptual test that shows Result propagation works
         fn inner_operation() -> Result<i32, Error> {
             Err(Error::Compilation("Inner error".to_string()))

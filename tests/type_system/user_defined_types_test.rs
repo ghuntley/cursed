@@ -6,14 +6,14 @@ use cursed::error::Error;
 
 #[test]
 fn test_parse_basic_types() {
-    let input = "
+    let input = ""
         vibe main
         
         be_like Person squad {
             name tea
             age normie
         }
-    ";
+    "";
     
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -41,13 +41,13 @@ fn test_parse_basic_types() {
 
 #[test]
 fn test_parse_generic_struct() {
-    let input = "
+    let input = ""
         vibe main
         
         be_like Box[T] squad {
             value T
         }
-    ";
+    "";
     
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -74,13 +74,13 @@ fn test_parse_generic_struct() {
 
 #[test]
 fn test_parse_interface() {
-    let input = "
+    let input = ""
         vibe main
         
         be_like Greeter collab {
             greet(name tea) tea
         }
-    ";
+    "";
     
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -110,14 +110,14 @@ fn test_parse_interface() {
 
 #[test]
 fn test_parse_generic_interface() {
-    let input = "
+    let input = ""
         vibe main
         
         be_like Container[T] collab {
             add(item T)
             get(index normie) T
         }
-    ";
+    "";
     
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);

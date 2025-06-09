@@ -1,4 +1,4 @@
-use cursed::ast::statements::fields::FieldStatement;
+use cursed::ast::fields::FieldStatement;
 use cursed::lexer::Lexer;
 use cursed::parser::parser::Parser;
 use cursed::parser::struct_field_inference::StructFieldTypeInference;
@@ -8,14 +8,14 @@ use cursed::parser::struct_field_inference::StructFieldTypeInference;
 
 #[test]
 fn test_parse_struct_with_inferred_fields() {
-    let input = r#"
+    let input = r#""
     be_like Person squad {
         name tea
         age normie
         address
         phone
     }
-    "#;
+    "#";
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -46,13 +46,13 @@ fn test_parse_struct_with_inferred_fields() {
 
 #[test]
 fn test_mixed_inferred_fields() {
-    let input = r#"
+    let input = r#""
     be_like Vector2D squad {
         x
         y meal
         z
     }
-    "#;
+    "#";
 
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);

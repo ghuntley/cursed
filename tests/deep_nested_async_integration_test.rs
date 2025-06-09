@@ -15,6 +15,7 @@ mod common;
 
 #[test]
 fn test_integrated_deep_nested_async_checker() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -68,6 +69,7 @@ fn test_integrated_deep_nested_async_checker() {
 
 #[test]
 fn test_extension_trait_direct_usage() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -87,6 +89,7 @@ fn test_extension_trait_direct_usage() {
 
 #[test]
 fn test_multi_level_constraint_parallel() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -166,6 +169,7 @@ fn test_multi_level_constraint_parallel() {
 
 #[test]
 fn test_caching_reuses_results() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();
@@ -220,6 +224,7 @@ fn test_caching_reuses_results() {
 
 #[test]
 fn test_combining_async_and_deep_nested_checks() {
+    // init_tracing!();
     common::tracing::setup();
     
     let mut registry = InterfaceRegistry::new();

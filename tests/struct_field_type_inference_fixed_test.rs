@@ -1,7 +1,7 @@
-use cursed::ast::expressions::identifiers::Identifier;
-use cursed::ast::expressions::literals::{IntegerLiteral, FloatLiteral, StringLiteral};
-use cursed::ast::expressions::struct_expr::{StructLiteral, KeyValuePair};
-use cursed::ast::statements::declarations::LetStatement;
+use cursed::ast::identifiers::Identifier;
+use cursed::ast::literals::{IntegerLiteral, FloatLiteral, StringLiteral};
+use cursed::ast::struct_expr::{StructLiteral, KeyValuePair};
+use cursed::ast::LetStatement;
 use cursed::ast::traits::{Expression, Statement};
 use cursed::lexer::token::Token;
 use cursed::lexer::TokenType;
@@ -17,7 +17,7 @@ use std::path::PathBuf;
 // Helper function to create tokens correctly
 fn new_token(token_type: TokenType, literal: &str) -> Token {
     match token_type {
-        TokenType::Identifier => Token::Identifier(literal.to_string()),
+        TokenType::Identifier => Token::new(TokenType::Identifier, literal.to_string()),
         TokenType::Int => {
             if let Ok(value) = literal.parse::<i64>() {
                 Token::Int(value)
@@ -32,7 +32,7 @@ fn new_token(token_type: TokenType, literal: &str) -> Token {
                 Token::Illegal(format!("Invalid float: {}", literal))
             }
         },
-        TokenType::String => Token::String(literal.to_string()),
+        TokenType::String => Token::new(TokenType::String, literal.to_string()),
         // Boolean tokens omitted
         TokenType::LeftBrace => Token::LBrace,
         TokenType::RightBrace => Token::RBrace,
@@ -53,9 +53,9 @@ fn test_struct_field_type_inference() {
     // Create a function for testing
     let i32_type = context.i32_type();
     let fn_type = i32_type.fn_type(&[], false);
-    let function = generator.module().add_function("test_struct_field_inference", fn_type, None);
+    let function = generator.as_ref().unwrap().get_module().add_function("test_struct_field_inference", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
-    generator.builder().position_at_end(entry_block);
+    generator.as_ref().unwrap().get_builder().position_at_end(entry_block);
     generator.set_current_function(function);
     
     // First, register a struct type with the code generator
@@ -107,7 +107,7 @@ fn test_struct_field_type_inference() {
     assert!(struct_value.is_pointer_value(), "Result should be a pointer to a struct");
     
     // Verify struct creation alone
-    let verification = generator.module().verify();
+    let verification = generator.as_ref().unwrap().get_module().verify();
     assert!(verification.is_ok(), "Module verification after struct creation failed: {:?}", verification.err());
     
     // Store the struct in a variable
@@ -156,15 +156,15 @@ fn test_struct_field_type_inference() {
     assert!(decl_result.is_ok(), "Failed to compile struct variable declaration: {:?}", decl_result.err());
     
     // Verify the module
-    let verification = generator.module().verify();
+    let verification = generator.as_ref().unwrap().get_module().verify();
     assert!(verification.is_ok(), "Module verification failed: {:?}", verification.err());
     
     // Return a dummy value and finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
+    let ret_val = generator.as_ref().unwrap().get_builder().build_return(Some(&context.i32_type().const_int(0, false)));
     assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
     
     // Add module verification after return
-    let final_verification = generator.module().verify();
+    let final_verification = generator.as_ref().unwrap().get_module().verify();
     assert!(final_verification.is_ok(), "Final module verification failed: {:?}", final_verification.err());
 }
 
@@ -176,9 +176,9 @@ fn test_struct_field_incompatible_types() {
     // Create a function for testing
     let i32_type = context.i32_type();
     let fn_type = i32_type.fn_type(&[], false);
-    let function = generator.module().add_function("test_struct_field_incompatible", fn_type, None);
+    let function = generator.as_ref().unwrap().get_module().add_function("test_struct_field_incompatible", fn_type, None);
     let entry_block = context.append_basic_block(function, "entry");
-    generator.builder().position_at_end(entry_block);
+    generator.as_ref().unwrap().get_builder().position_at_end(entry_block);
     generator.set_current_function(function);
     
     // Register a Person struct type
@@ -230,6 +230,6 @@ fn test_struct_field_incompatible_types() {
     }
     
     // Return a dummy value to finalize function
-    let ret_val = generator.builder().build_return(Some(&context.i32_type().const_int(0, false)));
+    let ret_val = generator.as_ref().unwrap().get_builder().build_return(Some(&context.i32_type().const_int(0, false)));
     assert!(ret_val.is_ok(), "Failed to build return: {:?}", ret_val.err());
 }

@@ -1,0 +1,30 @@
+/// fr fr NoSQL database drivers - for when you need flexibility periodt
+///
+/// This package provides NoSQL database support for CURSED with drivers for
+/// MongoDB, Redis, and other document/key-value stores. NoSQL vibes bestie!
+
+// Core NoSQL modules
+pub mod drivers;
+pub mod document;
+pub mod mongodb;
+pub mod redis;
+
+// Re-export important types
+pub use drivers::{NoSqlDriver, NoSqlConnection};
+pub use document::{Document, Collection};
+
+/// slay Initialize the db_nosql package
+pub fn init_db_nosql() -> crate::stdlib::packages::db_core::DatabaseResult<()> {
+    println!("📄 db_nosql package initialized - NoSQL drivers ready bestie!");
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_init_db_nosql() {
+        assert!(init_db_nosql().is_ok());
+    }
+}

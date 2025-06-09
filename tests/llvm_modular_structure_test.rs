@@ -1,4 +1,4 @@
-use cursed::ast::base::Program;
+use cursed::ast::Program;
 use cursed::ast::traits::Statement;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use inkwell::context::Context;

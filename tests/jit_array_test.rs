@@ -22,14 +22,14 @@ fn test_jit_array_basic() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     info!("Starting JIT array basic test");
     // Test basic array operations
-    let input = r#"
+    let input = r#""
     vibe array_test
 
     slay main() {
         normie x = 30;
         yolo 1;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -148,14 +148,14 @@ fn test_jit_array_mutation() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     info!("Starting JIT array mutation test");
     // Test array mutation
-    let input = r#"
+    let input = r#""
     vibe array_test
 
     slay main() {
         normie x = 99;
         yolo 1;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -272,7 +272,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
     tracing_setup::init_test_tracing();
     info!("Starting JIT array mixed types test");
     // Test array with mixed type elements
-    let input = r#"
+    let input = r#""
     vibe array_test
 
     slay main() {
@@ -280,7 +280,7 @@ fn test_jit_array_mixed_types() -> Result<(), Error> {
         normie y = 20;
         yolo 1;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

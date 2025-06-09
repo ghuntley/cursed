@@ -5,8 +5,8 @@
 
 mod common;
 
-use cursed::ast::expressions::concurrency::StanExpression;
-use cursed::ast::expressions::{Identifier, FunctionLiteral, CallExpression};
+use cursed::ast::concurrency::StanExpression;
+use cursed::ast::{Identifier, FunctionLiteral, CallExpression};
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::{LlvmCodeGenerator, StanCompilation};
 use cursed::lexer::{Lexer, Token};

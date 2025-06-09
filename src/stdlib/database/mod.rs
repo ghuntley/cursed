@@ -22,6 +22,10 @@ pub mod migration;
 pub mod error;
 pub mod builder;
 pub mod llvm_integration;
+pub mod orm;
+
+// Database-specific drivers
+pub mod sqlite;
 
 // Re-export main types for easy access
 pub use core::{
@@ -38,6 +42,20 @@ pub use builder::{
     QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder
 };
 pub use llvm_integration::{DatabaseLLVMIntegration, register_database_functions};
+
+// Re-export ORM types for easy access
+pub use orm::{
+    OrmContext, Repository, Entity, EntityManager, FluentQueryBuilder,
+    Migration as OrmMigration, MigrationManager, Relationship, RelationshipManager,
+    QueryCache, EntityCache, ValidationError, Validator, TransactionalRepository,
+    SchemaBuilder, TypeMapper, ResultMapper
+};
+
+// Re-export SQLite driver
+pub use sqlite::{
+    SqliteDriver, SqliteConfig, SqliteConnectionString, SqliteError, SqliteResult,
+    SqliteVersion, SqliteFeatures, SqliteUtils, init_sqlite, register_sqlite_driver
+};
 
 /// fr fr Database isolation levels for transaction control
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

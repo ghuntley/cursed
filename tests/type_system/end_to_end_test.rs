@@ -1,9 +1,9 @@
-use cursed::ast::base::Program;
-use cursed::ast::expressions::{Identifier, IntegerLiteral, StringLiteral};
-use cursed::ast::statements::block::BlockStatement;
-use cursed::ast::statements::{ExpressionStatement, ReturnStatement};
-use cursed::ast::declarations::FunctionStatement;
-use cursed::ast::declarations::ParameterStatement;
+use cursed::ast::Program;
+use cursed::ast::{Identifier, IntegerLiteral, StringLiteral};
+use cursed::ast::block::BlockStatement;
+use cursed::ast::{ExpressionStatement, ReturnStatement};
+use cursed::ast::FunctionStatement;
+use cursed::ast::ParameterStatement;
 use cursed::core::type_checker::{Type, TypeChecker};
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
@@ -19,7 +19,7 @@ use std::path::PathBuf;
 #[ignore = "End-to-end type system test is not yet complete"]
 fn test_end_to_end_type_checking_and_codegen() {
     // A CURSED program with various type features
-    let source = r#"
+    let source = r#""
     fr fr This program demonstrates various type system features of CURSED
 
     fr fr Define a Point interface
@@ -91,7 +91,7 @@ fn test_end_to_end_type_checking_and_codegen() {
 
         yolo 0;
     }
-    "#;
+    "#";
 
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source);
@@ -133,7 +133,7 @@ fn test_end_to_end_type_checking_and_codegen() {
 #[ignore = "Type inference and coercion test is not yet complete"]
 fn test_type_inference_and_coercion() {
     // Source code with complex type inference and coercion cases
-    let source = r#"
+    let source = r#""
     fr fr Test type inference and coercion
     
     slay test_inference() normie {
@@ -156,7 +156,7 @@ fn test_type_inference_and_coercion() {
         
         yolo 0;
     }
-    "#;
+    "#";
     
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source);
@@ -195,7 +195,7 @@ fn test_type_inference_and_coercion() {
 #[ignore = "Interface implementation end-to-end test is not yet complete"]
 fn test_interface_implementation_end_to_end() {
     // Source code with interface implementation and dynamic dispatch
-    let source = r#"
+    let source = r#""
     fr fr Interface implementation test
     
     fr fr Define a common interface
@@ -255,7 +255,7 @@ fn test_interface_implementation_end_to_end() {
         
         yolo 0;
     }
-    "#;
+    "#";
     
     // Create lexer, parser, and type checker
     let mut lexer = Lexer::new(source);

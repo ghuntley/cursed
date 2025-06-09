@@ -17,11 +17,12 @@ mod common;
 // depending on which feature flag is enabled
 #[test]
 fn test_range_implementation() {
+    // init_tracing!();
     // Initialize tracing
     common::tracing::setup();
     
     // Simple test code for range iteration
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -31,7 +32,7 @@ fn test_range_implementation() {
             
             return sum // Should be 0+1+2+3+4 = 10
         }
-    "#;
+    "#";
     
     // Run the test with the currently active implementation
     // Using a mock test helper for now
@@ -59,7 +60,7 @@ fn test_range_implementation() {
         println!("✅ Enhanced range implementation is active");
         
         // Test enhanced features like negative step values
-        let code_with_negative_step = r#"
+        let code_with_negative_step = r#""
             slay main() lit {
                 sus sum lit = 0
                 
@@ -69,7 +70,7 @@ fn test_range_implementation() {
                 
                 return sum // Should be 10+8+6+4+2 = 30
             }
-        "#;
+        "#";
         
         match common::run_jit_test(code_with_negative_step) {
             Ok(result) => {
@@ -85,13 +86,14 @@ fn test_range_implementation() {
 #[cfg(feature = "enhanced-range")]
 #[test]
 fn test_enhanced_range_features() {
+    // init_tracing!();
     // Initialize tracing
     common::tracing::setup();
     
     println!("Running tests for enhanced range features");
     
     // Test advanced features like array iteration with the enhanced implementation
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus values = [10, 20, 30, 40, 50]
             sus sum lit = 0
@@ -102,7 +104,7 @@ fn test_enhanced_range_features() {
             
             return sum // Should be 10+20+30+40+50 = 150
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {

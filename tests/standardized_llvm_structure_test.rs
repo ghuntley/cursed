@@ -3,7 +3,7 @@ use inkwell::OptimizationLevel;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::rc::Rc;
-use cursed::ast::expressions::{IntegerLiteral, FloatLiteral, Identifier};
+use cursed::ast::{IntegerLiteral, FloatLiteral, Identifier};
 use cursed::ast::pointer::{PointerType, PointerDereference};
 use cursed::ast::traits::Expression;
 use cursed::codegen::llvm::VariableHandling;
@@ -136,7 +136,7 @@ fn test_standardized_structure() -> Result<(), Error> {
 #[ignore = "AST refactoring: Trait object handling has changed, needs update"]
 fn test_standardized_jit_execution() -> Result<(), Error> {
     // Test actual JIT execution with the standardized implementation
-    let input = r#"vibe pointer_test
+    let input = r#"vibe pointer_test"
 
 slay test_pointer_ops() normie {
     sus x = 42
@@ -165,7 +165,7 @@ slay test_pointer_ops() normie {
     
     yolo val  // Original value before the update (should be 42)
 }
-"#;
+"#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

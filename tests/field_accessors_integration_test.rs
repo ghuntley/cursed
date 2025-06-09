@@ -1,5 +1,5 @@
-use cursed::ast::declarations::{SquadStatement, TypeParameter};
-use cursed::ast::expressions::Identifier;
+use cursed::ast::{SquadStatement, TypeParameter};
+use cursed::ast::Identifier;
 use cursed::ast::FieldStatement;
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::LlvmCodeGenerator;
@@ -17,6 +17,7 @@ use std::time::Instant;
 
 #[test]
 fn test_field_accessors_integration() {
+    // init_tracing!();
     // setup(); // Disabled due to common module conflict
     let context = Context::create();
     let mut code_gen = LlvmCodeGenerator::new());

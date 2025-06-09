@@ -14,6 +14,7 @@ mod common;
 
 #[test]
 fn test_simple_constraint_checking() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -57,6 +58,7 @@ fn test_simple_constraint_checking() {
 
 #[test]
 fn test_nested_generic_constraint_checking() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -129,6 +131,7 @@ fn test_nested_generic_constraint_checking() {
 
 #[test]
 fn test_multiple_constraints_per_type_parameter() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     
@@ -177,6 +180,7 @@ fn test_multiple_constraints_per_type_parameter() {
 
 #[test]
 fn test_deeply_recursive_constraint_checking() {
+    // init_tracing!();
     // Initialize tracing for better debug output
     common::tracing::setup();
     

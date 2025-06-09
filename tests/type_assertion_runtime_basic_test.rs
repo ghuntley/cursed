@@ -11,6 +11,7 @@ use tracing::{info, debug};
 
 #[test]
 fn test_basic_runtime_creation() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing basic runtime creation");
 
@@ -25,6 +26,7 @@ fn test_basic_runtime_creation() {
 
 #[test]
 fn test_runtime_with_panic_config() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing runtime with custom panic configuration");
 
@@ -44,6 +46,7 @@ fn test_runtime_with_panic_config() {
 
 #[test]
 fn test_type_registration() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing type registration");
 
@@ -68,6 +71,7 @@ fn test_type_registration() {
 
 #[test]
 fn test_successful_type_assertion() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing successful type assertion");
 
@@ -101,6 +105,7 @@ fn test_successful_type_assertion() {
 
 #[test]
 fn test_failed_type_assertion() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing failed type assertion");
 
@@ -145,6 +150,7 @@ fn test_failed_type_assertion() {
 
 #[test]
 fn test_nil_interface_handling() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing nil interface assertion handling");
 
@@ -165,6 +171,7 @@ fn test_nil_interface_handling() {
 
 #[test]
 fn test_statistics_tracking() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing statistics tracking");
 
@@ -195,6 +202,7 @@ fn test_statistics_tracking() {
 
 #[test]
 fn test_type_id_lookup() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     info!("Testing type ID lookup functionality");
 

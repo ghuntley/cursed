@@ -68,6 +68,7 @@ impl<'ctx> FloatConversionTester<'ctx> {
 
 #[test]
 fn test_float_to_integer_basic_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing basic float to integer conversions");
 
@@ -125,6 +126,7 @@ fn test_float_to_integer_basic_conversions() {
 
 #[test]
 fn test_float_to_float_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing float to float conversions (f32 ↔ f64)");
 
@@ -187,6 +189,7 @@ fn test_float_to_float_conversions() {
 
 #[test]
 fn test_float_to_bool_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing float to boolean conversions");
 
@@ -231,6 +234,7 @@ fn test_float_to_bool_conversions() {
 
 #[test]
 fn test_special_float_values() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing special float value handling (NaN, infinity, -0.0)");
 
@@ -272,6 +276,7 @@ fn test_special_float_values() {
 
 #[test]
 fn test_float_to_int_bounds_checking() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing float to integer bounds checking");
 
@@ -337,6 +342,7 @@ fn test_float_to_int_bounds_checking() {
 
 #[test]
 fn test_integer_to_float_conversions() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing integer to float conversions");
 
@@ -397,6 +403,7 @@ fn test_integer_to_float_conversions() {
 
 #[test]
 fn test_precision_loss_scenarios() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing precision loss scenarios in float conversions");
 
@@ -448,6 +455,7 @@ fn test_precision_loss_scenarios() {
 
 #[test]
 fn test_conversion_edge_cases() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing edge cases in float conversions");
 
@@ -501,6 +509,7 @@ fn test_conversion_edge_cases() {
 
 #[test]
 fn test_deterministic_behavior() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing deterministic behavior of float conversions");
 
@@ -564,6 +573,7 @@ fn test_deterministic_behavior() {
 
 #[test]
 fn test_comprehensive_float_system() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Running comprehensive float conversion system test");
 

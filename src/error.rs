@@ -50,6 +50,11 @@ impl Error {
     pub fn repl_error(msg: String) -> Self {
         Error::Repl(msg)
     }
+    
+    /// Create an error from a string (for backward compatibility)
+    pub fn from_str(msg: &str) -> Self {
+        Error::Repl(msg.to_string())
+    }
 }
 
 

@@ -8,6 +8,7 @@ use tracing::info;
 
 #[test]
 fn test_float_conversion_trait_exists() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing that FloatConversion trait exists and compiles");
 
@@ -23,6 +24,7 @@ fn test_float_conversion_trait_exists() {
 
 #[test]
 fn test_ieee754_special_values() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing IEEE 754 special value constants");
 
@@ -42,6 +44,7 @@ fn test_ieee754_special_values() {
 
 #[test]
 fn test_float_conversion_module_exists() {
+    // init_tracing!();
     common::tracing::setup();
     info!("Testing that float conversion module compiles and links");
 

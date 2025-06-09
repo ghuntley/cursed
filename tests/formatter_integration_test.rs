@@ -17,7 +17,7 @@ mod end_to_end_tests {
     fn test_format_simple_program() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 sus main_func() {
 sus x = 42
 sus y = 24
@@ -27,9 +27,9 @@ yolo x
 yolo y
 }
 }
-"#.trim();
+"#.trim()";
 
-        let expected = r#"sus main_func() {
+        let expected = r#"sus main_func() {"
     sus x = 42
     sus y = 24
     lowkey x > y {
@@ -37,7 +37,7 @@ yolo y
     } highkey {
         yolo y
     }
-}"#;
+}"#";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -51,7 +51,7 @@ yolo y
     fn test_format_complex_program() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 facts PI = 3.14159
 
 squad Circle {
@@ -79,7 +79,7 @@ yolo "Large circle"
 yolo "Small circle"
 }
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -97,7 +97,7 @@ yolo "Small circle"
     fn test_format_with_generics() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 squad Container[T] {
 value T
 }
@@ -116,7 +116,7 @@ sus str_container = new_container[sip]("hello")
 sus int_val = get_value[normie](int_container)
 sus str_val = get_value[sip](str_container)
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -132,7 +132,7 @@ sus str_val = get_value[sip](str_container)
     fn test_format_with_arrays_and_maps() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 slay main() {
 sus numbers = [1, 2, 3, 4, 5]
 sus person = {name: "Alice", age: 30}
@@ -146,7 +146,7 @@ bestie key, value flex person {
 yolo key + ": " + value
 }
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -163,7 +163,7 @@ yolo key + ": " + value
     fn test_format_with_error_handling() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 slay divide(a normie, b normie) (normie, error) {
 lowkey b == 0 {
 yolo 0, error("division by zero")
@@ -178,7 +178,7 @@ yolo "Error: " + err.message()
 }
 yolo "Result: " + result
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -194,7 +194,7 @@ yolo "Result: " + result
     fn test_format_with_goroutines() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 slay worker(ch chan normie) {
 bestie i flex range(10) {
 ch <- i
@@ -210,7 +210,7 @@ bestie value flex ch {
 yolo "Received:", value
 }
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -232,7 +232,7 @@ mod language_construct_tests {
     fn test_function_declarations() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 slay simple_function() {
 yolo "hello"
 }
@@ -256,7 +256,7 @@ yolo value
 slay method_receiver(r Receiver) sip {
 yolo r.field
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -274,14 +274,14 @@ yolo r.field
     fn test_variable_declarations() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 sus x = 42
 sus y normie = 100
 sus z sip = "hello"
 facts CONSTANT = 3.14
 sus a, b = get_values()
 sus (c, d) = get_tuple()
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -299,7 +299,7 @@ sus (c, d) = get_tuple()
     fn test_control_flow_statements() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 lowkey x > 0 {
 yolo "positive"
 } highkey lowkey x < 0 {
@@ -322,7 +322,7 @@ yolo i
 bestie key, value flex map {
 yolo key, value
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -340,7 +340,7 @@ yolo key, value
     fn test_switch_statements() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 vibe_check value {
 mood 1:
 yolo "one"
@@ -360,7 +360,7 @@ yolo "string"
 basic:
 yolo "unknown"
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -379,7 +379,7 @@ yolo "unknown"
     fn test_complex_nested_structures() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 squad NestedStruct {
 data map[sip][]normie
 metadata struct {
@@ -400,7 +400,7 @@ yolo "Small value at index", i, ":", value
 }
 }
 }
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -417,7 +417,7 @@ yolo "Small value at index", i, ":", value
     fn test_comments_and_documentation() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 // Package-level comment
 package main
 
@@ -436,7 +436,7 @@ squad Person {
 name sip // name field
 age normie // age field
 }
-"#.trim();
+"#.trim()";
 
         let config = FormatterConfig {
             ..FormatterConfig::default()
@@ -551,14 +551,14 @@ mod semantic_preservation_tests {
     fn test_expression_semantics_preservation() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 sus result = func1(arg1, arg2).method().field
 sus array_access = arr[index]
 sus map_access = map["key"]
 sus type_assertion = value.(Type)
 sus channel_send = ch <- value
 sus channel_receive = <-ch
-"#.trim();
+"#.trim()";
 
         let mut formatter = CursedFormatter::default();
         let result = formatter.format(source).unwrap();
@@ -634,11 +634,11 @@ mod configuration_integration_tests {
     fn test_vertical_alignment() {
         init_tracing!();
         
-        let source = r#"
+        let source = r#""
 sus short = 1
 sus medium_name = 2
 sus very_long_variable_name = 3
-"#.trim();
+"#.trim()";
 
         let config = FormatterConfig {
             align_assignments: true,

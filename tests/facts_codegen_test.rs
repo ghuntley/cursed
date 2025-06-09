@@ -19,7 +19,7 @@ fn test_facts_codegen() {
     // Initialize tracing for this test
     common::tracing::setup();
     info!("Testing facts codegen compilation");
-    let input = r#"
+    let input = r#""
     vibe main; // Add a package declaration to make it more valid
     
     facts PI = 3.14159;
@@ -29,7 +29,7 @@ fn test_facts_codegen() {
     slay main() normie {
         yolo ANSWER;
     }
-    "#;
+    "#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

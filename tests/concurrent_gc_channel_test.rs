@@ -57,6 +57,7 @@ unsafe impl Sync for TestData {}
 
 #[test]
 fn test_channel_with_concurrent_gc() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     
@@ -166,6 +167,7 @@ fn test_channel_with_concurrent_gc() {
 
 #[test]
 fn test_concurrent_channel_operations() {
+    // init_tracing!();
     // Initialize tracing
     init_tracing();
     

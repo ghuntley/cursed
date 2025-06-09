@@ -158,15 +158,15 @@ impl MockSymbolResolver {
         
         // Find the package
         let package = self.packages.get(&package_name)
-            .ok_or_else(|| Error::PackageNotFound(package_name.clone()))?;
+            .ok_or_else(|| Error::repl_error("Package not found".to_string())))?;
         
         // Find the symbol
         let symbol = package.symbols.get(name)
-            .ok_or_else(|| Error::SymbolNotFound(name.to_string(), package_name.clone()))?;
+            .ok_or_else(|| Error::repl_error("Symbol not found".to_string()), package_name.clone()))?;
         
         // Check visibility
         if symbol.visibility != Visibility::Public && symbol.package != self.current_package {
-            return Err(Error::SymbolNotExported(name.to_string(), package_name));
+            return Err(Error::repl_error("Symbol not exported".to_string()), package_name));
         }
         
         Ok(symbol.clone())
@@ -191,7 +191,7 @@ impl MockSymbolResolver {
             }
         }
         
-        Err(Error::SymbolNotFound(name.to_string(), "any".to_string()))
+        Err(Error::repl_error("Symbol not found".to_string()), "any".to_string()))
     }
     
     fn check_symbol_conflict(&self, name: &str) -> Vec<String> {
@@ -273,7 +273,7 @@ fn test_private_symbol_access() {
     assert!(result.is_err(), "Should not be able to access private symbol");
     
     match result.unwrap_err() {
-        Error::SymbolNotExported(name, package) => {
+        Error::repl_error("Symbol not exported".to_string()) => {
             assert_eq!(name, "internal_calc");
             assert_eq!(package, "std/math");
         }

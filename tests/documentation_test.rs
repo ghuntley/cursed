@@ -17,7 +17,7 @@ use tracing_test::traced_test;
 fn test_comment_parser_basic() {
     let parser = CommentParser::new().unwrap();
     
-    let source = r#"
+    let source = r#""
 /// This is a function that calculates fibonacci numbers
 /// @param n the input number
 /// @return the fibonacci result
@@ -27,7 +27,7 @@ slay fibonacci(n normie) normie {
     }
     yolo fibonacci(n - 1) + fibonacci(n - 2)
 }
-"#;
+"#";
 
     let comments = parser.parse_comments(source).unwrap();
     assert_eq!(comments.len(), 1);
@@ -48,7 +48,7 @@ slay fibonacci(n normie) normie {
 fn test_comment_parser_multiline() {
     let parser = CommentParser::new().unwrap();
     
-    let source = r#"
+    let source = r#""
 /**
  * This is a squad (struct) that represents a person
  * with various properties and methods.
@@ -60,7 +60,7 @@ squad Person {
     name tea
     age normie
 }
-"#;
+"#";
 
     let comments = parser.parse_comments(source).unwrap();
     assert_eq!(comments.len(), 1);
@@ -75,7 +75,7 @@ squad Person {
 fn test_comment_parser_examples() {
     let parser = CommentParser::new().unwrap();
     
-    let source = r#"
+    let source = r#""
 /// Calculate the square of a number
 /// @param x the input number
 /// @return the square of x
@@ -87,7 +87,7 @@ fn test_comment_parser_examples() {
 slay square(x normie) normie {
     yolo x * x
 }
-"#;
+"#";
 
     let comments = parser.parse_comments(source).unwrap();
     assert_eq!(comments.len(), 1);
@@ -107,7 +107,7 @@ slay square(x normie) normie {
 fn test_simplified_doc_generator() {
     let mut generator = SimplifiedDocGenerator::new().unwrap();
     
-    let source = r#"
+    let source = r#""
 /// This is a test function
 slay test_function(x normie) normie {
     yolo x * 2
@@ -117,7 +117,7 @@ slay test_function(x normie) normie {
 squad TestSquad {
     name tea
 }
-"#;
+"#";
 
     let items = generator.generate_from_source(source).unwrap();
     assert_eq!(items.len(), 2);
@@ -197,7 +197,7 @@ fn test_end_to_end_documentation_generation() {
     fs::create_dir_all(&source_dir).unwrap();
     
     // Create a sample CURSED source file
-    let sample_source = r#"
+    let sample_source = r#""
 vibe test_package
 
 /// This is the main function that starts the program
@@ -242,7 +242,7 @@ squad Person {
 collab Displayable {
     show() tea
 }
-"#;
+"#";
     
     // Write the sample source file
     let source_file = source_dir.join("main.csd");

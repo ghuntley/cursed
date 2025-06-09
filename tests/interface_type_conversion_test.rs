@@ -17,7 +17,7 @@ fn test_basic_interface_type_assertion() {
     init_test_tracing!();
     
     // Test basic type assertion with success case
-    let code = r#"
+    let code = r#""
         // Define an interface
         collab Stringer {
             toString() tea;
@@ -51,7 +51,7 @@ fn test_basic_interface_type_assertion() {
             
             return "type assertion failed"
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {
@@ -66,7 +66,7 @@ fn test_interface_type_assertion_failure() {
     init_test_tracing!();
     
     // Test type assertion with failure case
-    let code = r#"
+    let code = r#""
         // Define interfaces
         collab Stringer {
             toString() tea;
@@ -111,7 +111,7 @@ fn test_interface_type_assertion_failure() {
             
             return "assertion failed as expected"
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {
@@ -126,7 +126,7 @@ fn test_multiple_interface_implementations() {
     init_test_tracing!();
     
     // Test a type that implements multiple interfaces
-    let code = r#"
+    let code = r#""
         // Define interfaces
         collab Stringer {
             toString() tea;
@@ -174,7 +174,7 @@ fn test_multiple_interface_implementations() {
             
             return 0
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {
@@ -189,7 +189,7 @@ fn test_interface_type_switch() {
     init_test_tracing!();
     
     // Test type switch statement for interfaces
-    let code = r#"
+    let code = r#""
         // Define interface
         collab Shape {
             area() normie;
@@ -255,7 +255,7 @@ fn test_interface_type_switch() {
             
             return type1 + "," + type2  // Should be "circle,rectangle"
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {
@@ -270,7 +270,7 @@ fn test_direct_interface_method_call_with_assertion() {
     init_test_tracing!();
     
     // Test calling a method on the concrete type after assertion
-    let code = r#"
+    let code = r#""
         // Define interface
         collab Animal {
             makeSound() tea;
@@ -313,7 +313,7 @@ fn test_direct_interface_method_call_with_assertion() {
             
             return "error"
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {
@@ -328,7 +328,7 @@ fn test_nil_interface_assertion() {
     init_test_tracing!();
     
     // Test asserting on a nil interface value
-    let code = r#"
+    let code = r#""
         // Define interface
         collab Processor {
             process(data tea) tea;
@@ -362,7 +362,7 @@ fn test_nil_interface_assertion() {
             // Try to assert on nil interface
             return assertNilInterface(nilProcessor)  // Should be "nil or wrong type"
         }
-    "#;
+    "#";
     
     match common::run_jit_test(code) {
         Ok(result) => {

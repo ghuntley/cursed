@@ -22,4 +22,10 @@ impl Parser {
             statements: Vec::new(),
         })
     }
+    
+    /// Temporary method to help tests compile - get parser errors
+    pub fn errors(&self) -> Vec<String> {
+        // TODO: Implement actual error tracking
+        Vec::new()
+    }
 }

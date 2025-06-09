@@ -44,7 +44,7 @@ fn run_test_with_expected(code: &str, expected: Object) -> Result<(), String> {
 
 #[test]
 fn test_range_basic() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -54,14 +54,14 @@ fn test_range_basic() -> Result<(), String> {
             
             return sum // Should be 0+1+2+3+4 = 10
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(10))
 }
 
 #[test]
 fn test_range_start_end() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -71,14 +71,14 @@ fn test_range_start_end() -> Result<(), String> {
             
             return sum // Should be 5+6+7+8+9 = 35
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(35))
 }
 
 #[test]
 fn test_range_step() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -88,14 +88,14 @@ fn test_range_step() -> Result<(), String> {
             
             return sum // Should be 0+2+4+6+8 = 20
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(20))
 }
 
 #[test]
 fn test_range_negative_step() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -105,14 +105,14 @@ fn test_range_negative_step() -> Result<(), String> {
             
             return sum // Should be 10+8+6+4+2 = 30
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(30))
 }
 
 #[test]
 fn test_empty_range() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus count lit = 0
             
@@ -122,14 +122,14 @@ fn test_empty_range() -> Result<(), String> {
             
             return count // Should be 0
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(0))
 }
 
 #[test]
 fn test_negative_bounds() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -139,14 +139,14 @@ fn test_negative_bounds() -> Result<(), String> {
             
             return sum // Should be -5+(-4)+(-3)+(-2)+(-1) = -15
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(-15))
 }
 
 #[test]
 fn test_array_iteration() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus numbers = [10, 20, 30, 40, 50]
             sus sum lit = 0
@@ -157,14 +157,14 @@ fn test_array_iteration() -> Result<(), String> {
             
             return sum // Should be 10+20+30+40+50 = 150
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(150))
 }
 
 #[test]
 fn test_mixed_type_array() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() normie {
             sus values = [1, 2.5, 3, 4.5, 5]
             sus sum normie = 0.0
@@ -175,14 +175,14 @@ fn test_mixed_type_array() -> Result<(), String> {
             
             return sum // Should be 1+2.5+3+4.5+5 = 16.0
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Float(16.0))
 }
 
 #[test]
 fn test_nested_loops() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -194,14 +194,14 @@ fn test_nested_loops() -> Result<(), String> {
             
             return sum // Should be 0+1+2+10+11+12+20+21+22 = 99
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(99))
 }
 
 #[test]
 fn test_break_in_range() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -215,7 +215,7 @@ fn test_break_in_range() -> Result<(), String> {
             
             return sum // Should be 0+1+2+3+4 = 10 or 15 (depending on evaluation order)
         }
-    "#;
+    "#";
     
     // Could be 10 or 15 depending on if break happens before or after the addition
     let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43));
@@ -238,7 +238,7 @@ fn test_break_in_range() -> Result<(), String> {
 
 #[test]
 fn test_continue_in_range() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -252,14 +252,14 @@ fn test_continue_in_range() -> Result<(), String> {
             
             return sum // Should be 1+3+5+7+9 = 25
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(25))
 }
 
 #[test]
 fn test_advanced_break_continue() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -277,7 +277,7 @@ fn test_advanced_break_continue() -> Result<(), String> {
             
             return sum  // Should add 1+2+4+5+7+8+10+11 = 48
         }
-    "#;
+    "#";
     
     // The exact sum depends on when it breaks, but it should be > 30
     let result: Result<cursed::object::Object, cursed::error::Error> = Ok(cursed::object::Object::Integer(43));
@@ -300,7 +300,7 @@ fn test_advanced_break_continue() -> Result<(), String> {
 
 #[test]
 fn test_map_key_value_iteration() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus scores = {"Alice": 95, "Bob": 87, "Charlie": 92}
             sus sum lit = 0
@@ -311,14 +311,14 @@ fn test_map_key_value_iteration() -> Result<(), String> {
             
             return sum // Should be 95+87+92 = 274
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(274))
 }
 
 #[test]
 fn test_variable_scoping() -> Result<(), String> {
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus outer lit = 42
             
@@ -328,7 +328,7 @@ fn test_variable_scoping() -> Result<(), String> {
             
             return outer // Should still be 42
         }
-    "#;
+    "#";
     
     run_test_with_expected(code, Object::Integer(42))
 }
@@ -339,7 +339,7 @@ fn test_variable_scoping() -> Result<(), String> {
 #[ignore]
 fn test_implementation_comparison() -> Result<(), String> {
     // This will test that both implementations produce the same results
-    let code = r#"
+    let code = r#""
         slay main() lit {
             sus sum lit = 0
             
@@ -349,7 +349,7 @@ fn test_implementation_comparison() -> Result<(), String> {
             
             return sum
         }
-    "#;
+    "#";
     
     match helper::compare_implementations(code) {
         Ok(same) => {

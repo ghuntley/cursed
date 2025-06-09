@@ -19,7 +19,7 @@ fn test_binary_compilation_simple_program() {
     }
     
     // Create a simple program
-    let code = r#"
+    let code = r#""
 vibe test
 
 slay main() {
@@ -27,7 +27,7 @@ slay main() {
     vibe 42;
     return 42;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);
@@ -81,14 +81,14 @@ fn test_binary_compilation_with_external_functions() {
     }
     
     // Create a program that uses external functions
-    let code = r#"
+    let code = r#""
 vibe test
 
 slay main() {
     vibez.spill("Hello from compiled binary!");
     vibe 0;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);

@@ -6,7 +6,7 @@
 #[path = "tracing_setup.rs"]
 pub mod tracing_setup;
 
-use cursed::ast::expressions::{TypeAssertion, TypeAssertionQuestion, Identifier, StringLiteral};
+use cursed::ast::{TypeAssertion, TypeAssertionQuestion, Identifier, StringLiteral};
 use cursed::ast::traits::{Expression, Node};
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::token::Token;
@@ -30,6 +30,7 @@ fn setup_codegen_with_function<'ctx>(context: &'ctx Context) -> LlvmCodeGenerato
 
 #[test]
 fn test_type_assertion_compilation_basic() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting basic type assertion compilation test");
 
@@ -58,6 +59,7 @@ fn test_type_assertion_compilation_basic() {
 
 #[test]
 fn test_instance_of_check() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting instance-of check test");
 
@@ -95,6 +97,7 @@ fn test_instance_of_check() {
 
 #[test]
 fn test_interface_data_extraction() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting interface data extraction test");
 
@@ -139,6 +142,7 @@ fn test_interface_data_extraction() {
 
 #[test]
 fn test_type_id_hashing() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting type ID hashing test");
 
@@ -162,6 +166,7 @@ fn test_type_id_hashing() {
 
 #[test]
 fn test_interface_casting() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting interface casting test");
 
@@ -185,6 +190,7 @@ fn test_interface_casting() {
 
 #[test]
 fn test_type_assertion_error_handling() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting type assertion error handling test");
 
@@ -210,6 +216,7 @@ fn test_type_assertion_error_handling() {
 
 #[test]
 fn test_type_assertion_question_ast() {
+    // init_tracing!();
     tracing_setup::init_test_tracing();
     tracing::info!("Starting type assertion question AST test");
 

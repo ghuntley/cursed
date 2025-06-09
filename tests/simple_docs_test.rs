@@ -232,12 +232,12 @@ fn test_extract_references() {
 #[test]
 fn test_extract_param_tags() {
     let analyzer = DocumentationAnalyzer::new();
-    let documentation = r#"
+    let documentation = r#""
     This is a function description.
     @param name The name parameter
     @param age The age parameter  
     @return The result value
-    "#;
+    "#";
     
     let params = analyzer.extract_param_tags(documentation);
     assert_eq!(params.len(), 2);
@@ -248,7 +248,7 @@ fn test_extract_param_tags() {
 #[test]
 fn test_extract_code_examples() {
     let analyzer = DocumentationAnalyzer::new();
-    let documentation = r#"
+    let documentation = r#""
     This function does something.
     
     Example usage:
@@ -263,7 +263,7 @@ fn test_extract_code_examples() {
         vibez.spill("positive")
     }
     ```
-    "#;
+    "#";
     
     let examples = analyzer.extract_code_examples(documentation);
     assert_eq!(examples.len(), 2);

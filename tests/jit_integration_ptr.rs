@@ -13,7 +13,7 @@ use std::path::PathBuf;
 #[ignore = "currently broken until statement compilation is fixed"]
 fn test_jit_pointer_basic() -> Result<(), Error> {
     // Test basic pointer operations
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -29,7 +29,7 @@ fn test_jit_pointer_basic() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -74,7 +74,7 @@ fn test_jit_pointer_basic() -> Result<(), Error> {
 #[ignore = "currently broken until statement compilation is fixed"]
 fn test_jit_pointer_modify() -> Result<(), Error> {
     // Test pointer modification
-    let input = r#"
+    let input = r#""
     vibe test;
 
     slay main() {
@@ -90,7 +90,7 @@ fn test_jit_pointer_modify() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);
@@ -134,7 +134,7 @@ fn test_jit_pointer_modify() -> Result<(), Error> {
 #[ignore = "currently broken until statement compilation is fixed"]
 fn test_jit_pointer_struct() -> Result<(), Error> {
     // Test struct pointers
-    let input = r#"
+    let input = r#""
     vibe test;
 
     be_like Person squad {
@@ -155,7 +155,7 @@ fn test_jit_pointer_struct() -> Result<(), Error> {
         
         yolo 0;
     }
-    "#;
+    "#";
 
     // Parse the code into an AST
     let mut lexer = Lexer::new(input);

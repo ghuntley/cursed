@@ -6,12 +6,12 @@ use cursed::parser::Parser;
 #[ignore = "Parser tests need further work"]
 fn test_generics_parsing() {
     // Test basic generic struct
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 be_like Box[T] squad {
     value T
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();
@@ -41,12 +41,12 @@ be_like Box[T] squad {
 #[ignore = "Parser tests need further work"]
 fn test_basic_function() {
     // Test basic function (no type parameters or type annotations)
-    let input = r#"vibe test
+    let input = r#"vibe test"
 
 slay add(x, y) {
     yolo x + y
 }
-"#;
+"#";
 
     let mut lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer).unwrap();

@@ -1,5 +1,5 @@
-use cursed::benchmark::language_comparison;
-use cursed::benchmark::metrics::*;
+::language_comparison;
+::metrics::*;
 use tracing::{debug, info};
 
 // Integration tests for language comparison benchmarks
@@ -10,6 +10,7 @@ mod tracing_setup;
 
 #[test]
 fn test_binary_trees_benchmark() {
+    // init_tracing!();
     // Initialize tracing
     tracing_setup::init_test_tracing();
     
@@ -33,6 +34,7 @@ fn test_binary_trees_benchmark() {
 
 #[test]
 fn test_n_bodies_benchmark() {
+    // init_tracing!();
     // Initialize tracing
     tracing_setup::init_test_tracing();
     
@@ -56,6 +58,7 @@ fn test_n_bodies_benchmark() {
 
 #[test]
 fn test_language_comparison_suite() {
+    // init_tracing!();
     // Initialize tracing
     tracing_setup::init_test_tracing();
     

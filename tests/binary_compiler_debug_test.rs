@@ -26,7 +26,7 @@ fn test_binary_debug_information_generation() {
     }
     
     // Create a program with multiple functions and variables for debug info
-    let code = r#"
+    let code = r#""
 vibe debug_test
 
 slay helper_function(x: int) -> int {
@@ -42,7 +42,7 @@ slay main() {
     vibe 0;
     yolo 0;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);
@@ -149,7 +149,7 @@ fn test_binary_source_mapping() {
     }
     
     // Create a program with line numbers and source references
-    let code = r#"
+    let code = r#""
 vibe source_mapping_test
 
 slay function1() -> int {
@@ -175,7 +175,7 @@ slay main() {
     vibe 0;
     yolo 0;
 }
-    "#;
+    "#";
     
     // Parse the program
     let mut lexer = Lexer::new(code);

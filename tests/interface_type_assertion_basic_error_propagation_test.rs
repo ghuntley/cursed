@@ -77,7 +77,7 @@ fn test_basic_type_assertion_error_handling() {
     init_tracing!();
     
     // Define a simple program that just returns success
-    let input = r#"
+    let input = r#""
         // Package declaration
         vibe main;
         
@@ -85,7 +85,7 @@ fn test_basic_type_assertion_error_handling() {
         slay main() lit {
             return 0;
         }
-    "#;
+    "#";
     
     // Run the test and verify it worked without errors
     match run_jit_test(input) {
@@ -102,7 +102,7 @@ fn test_failed_type_assertion_with_error_handling() {
     init_tracing!();
     
     // Define a simple program that just returns success
-    let input = r#"
+    let input = r#""
         // Package declaration
         vibe main;
         
@@ -110,7 +110,7 @@ fn test_failed_type_assertion_with_error_handling() {
         slay main() lit {
             return 0;
         }
-    "#;
+    "#";
     
     // Run the test and verify error handling works
     match run_jit_test(input) {
