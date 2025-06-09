@@ -235,3 +235,52 @@ impl Expression for RuneLiteral {
         })
     }
 }
+
+/// NilLiteral represents the nil (cap) literal in CURSED
+///
+/// The nil literal represents the zero value for pointer, slice, map, channel,
+/// function, and interface types. In CURSED, it's represented by the keyword "cap".
+///
+/// # Fields
+///
+/// * `token` - The original token from the lexer (should be "cap")
+#[derive(Debug, Clone)]
+pub struct NilLiteral {
+    pub token: String,
+}
+
+impl NilLiteral {
+    pub fn new() -> Self {
+        NilLiteral {
+            token: "cap".to_string(),
+        }
+    }
+}
+
+impl Node for NilLiteral {
+    fn token_literal(&self) -> String {
+        self.token.clone()
+    }
+
+    fn string(&self) -> String {
+        "cap".to_string()
+    }
+}
+
+impl Expression for NilLiteral {
+    fn expression_node(&self) {}
+
+    fn node_type(&self) -> &str {
+        "NilLiteral"
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
+    fn clone_box(&self) -> Box<dyn Expression> {
+        Box::new(NilLiteral {
+            token: self.token.clone(),
+        })
+    }
+}

@@ -373,3 +373,56 @@ mod tests {
         assert!(gc_integration.is_gc_managed_type(&struct_with_ptr.into()));
     }
 }
+
+/// Extensions for nil handling in garbage collection
+impl<'ctx> LlvmGcIntegration<'ctx> {
+    /// Check if a value is nil and should be excluded from GC tracking
+    pub fn is_nil_value(&self, value: BasicValueEnum<'ctx>) -> bool {
+        match value {
+            BasicValueEnum::PointerValue(ptr) => {
+                // Check if pointer is null
+                ptr.is_null()
+            },
+            BasicValueEnum::StructValue(_) => {
+                // For structs (like slices, interfaces), we need runtime checks
+                // This is a compile-time limitation
+                false
+            },
+            _ => false,
+        }
+    }
+    
+    /// Create GC roots for non-nil values only
+    pub fn create_gc_root_if_not_nil(&mut self, builder: &Builder<'ctx>, value: BasicValueEnum<'ctx>, name: &str) -> Result<(), String> {
+        if !self.is_nil_value(value) {
+            // For now, just log the GC root creation since we don't have a simple single-value method
+            debug!("Creating GC root for non-nil value: {}", name);
+            // This is a placeholder - in a real implementation, you'd register the GC root
+            Ok(())
+        } else {
+            debug!("Skipping GC root creation for nil value: {}", name);
+            Ok(())
+        }
+    }
+    
+    /// Handle nil assignment for GC tracking
+    pub fn handle_nil_assignment(&mut self, builder: &Builder<'ctx>, target_ptr: PointerValue<'ctx>, _target_type: BasicTypeEnum<'ctx>) -> Result<(), String> {
+        // When assigning nil to a variable, we need to ensure any previous GC roots are cleared
+        // This prevents memory leaks where old values are still tracked after being set to nil
+        debug!("Handling nil assignment to tracked variable");
+        
+        // For now, this is a placeholder for more complex GC integration
+        // In a full implementation, this would:
+        // 1. Check if the target currently holds a GC-tracked value
+        // 2. Remove the old value from GC tracking
+        // 3. Ensure the nil assignment doesn't create new GC roots
+        
+        Ok(())
+    }
+    
+    /// Mark nil values as non-reachable in GC marking phase
+    pub fn mark_nil_as_non_reachable(&self, value: BasicValueEnum<'ctx>) -> bool {
+        // Nil values don't reference any heap objects, so they shouldn't be marked as reachable
+        self.is_nil_value(value)
+    }
+}

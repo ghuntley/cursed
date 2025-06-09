@@ -59,8 +59,8 @@ fn test_enhanced_detailed_error_message() {
     ).unwrap();
     
     // Verify error message for unrelated interfaces
-    assert!(error_message.contains("No inheritance relationship exists");
-    assert!(error_message.contains("To fix this error");
+    assert!(error_message.contains("No inheritance relationship exists"));
+    assert!(error_message.contains("To fix this error"));
 }
 
 #[test]
@@ -80,11 +80,11 @@ fn test_enhanced_ascii_hierarchy() {
     let ascii = EnhancedVisualizationIntegration::generate_ascii_hierarchy(&registry).unwrap();
     
     // Verify output contains expected content
-    assert!(ascii.contains("Interface Hierarchy Tree");
-    assert!(ascii.contains("LivingThing");
-    assert!(ascii.contains("Animal");
-    assert!(ascii.contains("Mammal");
-    assert!(ascii.contains("Dog");
-    assert!(ascii.contains("Cat");
-    assert!(ascii.contains("Bird");
+    assert!(ascii.contains("Interface Hierarchy Tree"));
+    assert!(ascii.contains("LivingThing"));
+    assert!(ascii.contains("Animal"));
+    assert!(ascii.contains("Mammal"));
+    assert!(ascii.contains("Dog"));
+    assert!(ascii.contains("Cat"));
+    assert!(ascii.contains("Bird"));
 }

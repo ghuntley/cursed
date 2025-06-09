@@ -43,6 +43,7 @@ pub mod regex_vibez;
 // Text templates (text/template equivalent)
 pub mod rizztemplate;
 pub mod stringz; // String manipulation functions (strings equivalent)
+pub mod string_conversions; // String type conversion functions
 // Time-related functionality (time equivalent)
 pub mod timez;
 // OS functionality (os equivalent)

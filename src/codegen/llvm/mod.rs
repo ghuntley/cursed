@@ -48,6 +48,9 @@
 pub use self::context::LlvmCodeGenerator;
 pub use self::type_assertion::InterfaceTypeAssertion;
 pub use self::char_operations::CharOperations;
+pub use self::float_conversions::FloatConversion;
+pub use self::float_type_conversions::FloatTypeConverter;
+pub use self::type_conversion_system::{TypeConversionSystem, ConversionConfig, ConversionType, ConversionStatistics};
 pub use self::optimization_passes::{OptimizationManager, OptimizationConfig, OptimizationPass, OptimizationStats, create_optimization_manager};
 
 // Re-export separate compilation functionality
@@ -56,6 +59,7 @@ pub use self::executable_linking::{ExecutableLinker, ExecutableLinkingConfig, Li
 pub use self::package_compilation::{PackageCompilationPipeline, PackageCompilationConfig, CompiledPackage, compile_single_package, compile_and_link_packages as compile_and_link_packages_pipeline};
 pub use self::module_linking::{ModuleLinker, SymbolInfo, SymbolType, link_modules_with_metadata};
 pub use self::string_type::{CursedStringType, StringTypeUtils};
+pub use self::string_conversions::{StringConversions, StringConversionRuntime, StringConversionUtils};
 pub use self::stdlib_integration::{StdlibLlvmIntegration, StdlibRegistry, StdlibFunctionInfo};
 pub use self::gc_integration::{LlvmGcIntegration, GcTypeMetadata};
 
@@ -84,6 +88,9 @@ pub use self::map_operations::{MapOperations, MapOperationsImpl, HashStrategy, c
 
 // Re-export map runtime
 pub use self::map_runtime::{MapRuntimeProvider, create_map_runtime};
+
+// Re-export nil operations
+pub use self::nil_operations::{NilOperations, NilOperationsExtension};
 
 // Re-export binary compiler
 pub use self::binary_compiler::BinaryCompiler;
@@ -124,6 +131,7 @@ pub use self::statement::StatementCompilation;
 pub use self::variables::VariableHandling;
 pub use self::pointer_ops::PointerOperations;  // Updated to use the new standardized module
 pub use self::basic_expressions::BasicExpressionOperations;
+pub use self::bool_conversions::BoolConversions;
 pub use self::function_monomorphization::FunctionMonomorphization;
 pub use self::struct_monomorphization::StructMonomorphization;
 pub use self::enhanced_monomorphization::EnhancedMonomorphization;
@@ -231,12 +239,17 @@ mod cross_compilation; // Cross-compilation support
 mod size_optimization; // Size optimization
 mod optimize_module; // Module optimization passes
 mod basic_expressions;
+mod bool_conversions;     // Comprehensive bool type conversions
 mod builder;
 pub mod container_layout; // Container memory layout optimization
 pub mod llvm_code_generator_extensions; // Extension traits for LlvmCodeGenerator
 pub mod basic_value_extensions; // Extension traits for LLVM BasicValueEnum and types
 pub mod zero_values; // Zero value initialization for all CURSED types
 pub mod zero_values_simple; // Simple zero value initialization
+pub mod type_conversion_system; // Unified type conversion system
+pub mod float_conversions; // Comprehensive IEEE 754 float type conversions
+pub mod float_conversion_impl; // Implementation of FloatConversion for LlvmCodeGenerator
+pub mod float_type_conversions; // Basic working float type conversions
 pub mod type_switch_simple; // Simple type switch compilation
 pub mod type_switch_fixed; // Fixed type switch compilation
 mod dot_expressions;  // Dot expression compilation (module.function)
@@ -266,6 +279,7 @@ mod statement;
 mod string_switch;
 mod string_utils;
 pub mod string_type;     // Core LLVM string type definition
+pub mod string_conversions; // Comprehensive string type conversions
 mod path_utils;
 pub mod struct_monomorphization;
 pub mod types;
@@ -362,6 +376,7 @@ pub mod map_operations; // Map (hash table) operations and manipulation
 pub mod map_runtime; // Map runtime function implementations
 mod hash; // Hash map literal and indexing compilation
 mod ir_output; // LLVM IR and bitcode output generation
+pub mod nil_operations; // Comprehensive nil representation and operations
 mod separate_ir_output; // IR output for separate compilation
 // Module already declared above
 

@@ -280,7 +280,8 @@ impl<'a> Parser<'a> {
             }
             Token::LParen => self.parse_grouped_expression(),
             Token::Bang | Token::Minus | Token::Slash => self.parse_prefix_operator(),
-            Token::Based | Token::Cap => self.parse_boolean_literal(),
+            Token::Based => self.parse_boolean_literal(),
+            Token::Cap => self.parse_nil_literal(),
             Token::LBrace => {
                 // Use our context-aware method to decide if this is a block or hash literal
                 if self.is_likely_block_statement() {
@@ -892,6 +893,20 @@ impl<'a> Parser<'a> {
         Ok(Box::new(ast::BooleanLiteral {
             token: token.token_literal(),
             value,
+        }))
+    }
+
+    fn parse_nil_literal(&mut self) -> Result<Box<dyn Expression>, Error> {
+        let token = self.current_token.clone();
+        
+        if token != Token::Cap {
+            return Err(Error::from_str(&format!("Expected 'cap' (nil literal), got {:?}", token)));
+        }
+
+        self.next_token()?; // Skip past the nil literal
+
+        Ok(Box::new(ast::NilLiteral {
+            token: token.token_literal(),
         }))
     }
 

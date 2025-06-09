@@ -20,6 +20,7 @@ pub mod slice_runtime;
 pub mod slice_utils;
 pub mod type_assertion_runtime;
 pub mod unicode_char;
+pub mod string_conversions;
 
 // Re-export the public API
 pub use channel::*;
@@ -36,3 +37,4 @@ pub use slice_runtime::*;
 pub use slice_utils::*;
 pub use type_assertion_runtime::*;
 pub use unicode_char::*;
+pub use string_conversions::*;

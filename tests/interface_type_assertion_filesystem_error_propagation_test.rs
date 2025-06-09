@@ -61,6 +61,7 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
 }
 
 // Mock expression for testing
+#[derive(Debug)]
 struct MockExpression {
     token: String,
 }
