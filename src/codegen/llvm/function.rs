@@ -380,50 +380,163 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     ///
     /// * `Result<BasicValueEnum, String>` - The function call's return value
     pub fn compile_call_expression(&mut self, call_expr: &crate::ast::expressions::CallExpression) -> Result<BasicValueEnum<'ctx>, String> {
-        // Get the function to call
+        use tracing::{debug, instrument};
+        
+        // Handle different types of function calls
+        if let Some(fn_name) = call_expr.function.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
+            // Direct function call by name
+            return self.compile_direct_function_call(&fn_name.value, &call_expr.arguments);
+        } else if let Some(dot_expr) = call_expr.function.as_any().downcast_ref::<crate::ast::expressions::DotExpression>() {
+            // Package.function call (qualified name)
+            if let Some(package_name) = dot_expr.left.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
+                if let Some(function_name) = dot_expr.right.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
+                    let qualified_name = format!("{}.{}", package_name.value, function_name.value);
+                    return self.compile_qualified_function_call(&qualified_name, &package_name.value, &function_name.value, &call_expr.arguments);
+                }
+            }
+        }
+        
+        // Fall back to expression-based function call (function pointers, etc.)
         let callee = self.compile_expression(call_expr.function.as_ref())?;
         
-        // If it's not a function pointer, try to find it by name
-        let function = if !callee.is_pointer_value() {
+        if !callee.is_pointer_value() {
             return Err("Callee is not a function".to_string());
-        } else if let Some(fn_name) = call_expr.function.as_any().downcast_ref::<crate::ast::expressions::Identifier>() {
-            // Look up the function by name
-            match self.module.get_function(&fn_name.value) {
-                Some(f) => f,
-                None => return Err(format!("Function '{}' not found", fn_name.value)),
-            }
-        } else {
-            // Function pointer
-            // This is limited - we should properly cast the pointer to a function type
-            return Err("Function pointers not fully supported yet".to_string());
-        };
+        }
         
-        // Check that the argument count matches
-        if function.count_params() != call_expr.arguments.len() as u32 {
+        // Function pointer - this is limited support for now
+        return Err("Function pointers not fully supported yet".to_string());
+    }
+
+    /// Compiles a direct function call by name
+    fn compile_direct_function_call(&mut self, function_name: &str, arguments: &[Box<dyn crate::ast::traits::Expression>]) -> Result<BasicValueEnum<'ctx>, String> {
+        use tracing::{debug, warn};
+        
+        debug!(function_name = %function_name, arg_count = arguments.len(), "Compiling direct function call");
+        
+        // First, check if it's a stdlib function
+        if let Some(stdlib_integration) = &self.stdlib_integration {
+            if let Some(function_info) = stdlib_integration.get_function_info(function_name) {
+                debug!(function_name = %function_name, package = %function_info.package, "Found stdlib function");
+                return self.compile_stdlib_function_call(function_info, arguments);
+            }
+        }
+        
+        // Look up user-defined function
+        match self.module.get_function(function_name) {
+            Some(function) => {
+                debug!(function_name = %function_name, "Found user-defined function");
+                self.compile_llvm_function_call(function, arguments)
+            }
+            None => Err(format!("Function '{}' not found", function_name)),
+        }
+    }
+
+    /// Compiles a qualified function call (package.function)
+    fn compile_qualified_function_call(&mut self, qualified_name: &str, package_name: &str, function_name: &str, arguments: &[Box<dyn crate::ast::traits::Expression>]) -> Result<BasicValueEnum<'ctx>, String> {
+        use tracing::{debug, warn};
+        
+        debug!(qualified_name = %qualified_name, package = %package_name, function = %function_name, arg_count = arguments.len(), "Compiling qualified function call");
+        
+        // Check if it's a stdlib function
+        if let Some(stdlib_integration) = &self.stdlib_integration {
+            if let Some(function_info) = stdlib_integration.get_function_info(qualified_name) {
+                debug!(qualified_name = %qualified_name, package = %function_info.package, "Found stdlib function by qualified name");
+                return self.compile_stdlib_function_call(function_info, arguments);
+            }
+        }
+        
+        // Look up user-defined function by qualified name
+        match self.module.get_function(qualified_name) {
+            Some(function) => {
+                debug!(qualified_name = %qualified_name, "Found user-defined function by qualified name");
+                self.compile_llvm_function_call(function, arguments)
+            }
+            None => {
+                // Try mangled name
+                let mangled_name = self.mangle_name(package_name, function_name);
+                match self.module.get_function(&mangled_name) {
+                    Some(function) => {
+                        debug!(mangled_name = %mangled_name, "Found user-defined function by mangled name");
+                        self.compile_llvm_function_call(function, arguments)
+                    }
+                    None => Err(format!("Function '{}' not found (tried qualified name '{}' and mangled name '{}')", qualified_name, qualified_name, mangled_name)),
+                }
+            }
+        }
+    }
+
+    /// Compiles a stdlib function call
+    fn compile_stdlib_function_call(&mut self, function_info: &super::stdlib_integration::StdlibFunctionInfo, arguments: &[Box<dyn crate::ast::traits::Expression>]) -> Result<BasicValueEnum<'ctx>, String> {
+        use tracing::{debug, warn};
+        
+        debug!(function_name = %function_info.name, package = %function_info.package, "Compiling stdlib function call");
+        
+        // Get the LLVM function declaration
+        let stdlib_integration = self.stdlib_integration.as_ref().unwrap();
+        let llvm_function = stdlib_integration.get_llvm_function(&function_info.qualified_name())
+            .or_else(|| stdlib_integration.get_llvm_function(&function_info.name))
+            .ok_or_else(|| format!("LLVM function declaration not found for '{}'", function_info.qualified_name()))?;
+
+        // For stdlib functions with Rust implementations, we could:
+        // 1. Call the LLVM function (if we have runtime linking set up)
+        // 2. Inline the Rust implementation (for development/testing)
+        // 3. Generate a call to an external library function
+        
+        // For now, let's generate calls to the LLVM function declarations
+        self.compile_llvm_function_call(llvm_function, arguments)
+    }
+
+    /// Compiles a call to an LLVM function
+    fn compile_llvm_function_call(&mut self, function: inkwell::values::FunctionValue<'ctx>, arguments: &[Box<dyn crate::ast::traits::Expression>]) -> Result<BasicValueEnum<'ctx>, String> {
+        use tracing::{debug, warn};
+        
+        let function_name = function.get_name().to_string_lossy();
+        debug!(function_name = %function_name, expected_params = function.count_params(), provided_args = arguments.len(), "Compiling LLVM function call");
+        
+        // Handle variadic functions
+        let is_variadic = function.get_type().is_var_arg();
+        let min_params = function.count_params();
+        
+        if !is_variadic && min_params != arguments.len() as u32 {
             return Err(format!(
                 "Function '{}' expects {} arguments but got {}",
-                function.get_name().to_string_lossy(),
-                function.count_params(),
-                call_expr.arguments.len()
+                function_name,
+                min_params,
+                arguments.len()
+            ));
+        } else if is_variadic && (arguments.len() as u32) < min_params {
+            return Err(format!(
+                "Variadic function '{}' expects at least {} arguments but got {}",
+                function_name,
+                min_params,
+                arguments.len()
             ));
         }
         
         // Compile arguments
-        let mut compiled_args = Vec::with_capacity(call_expr.arguments.len());
-        for arg in &call_expr.arguments {
+        let mut compiled_args = Vec::with_capacity(arguments.len());
+        for (i, arg) in arguments.iter().enumerate() {
             let compiled_arg = self.compile_expression(arg.as_ref())?;
             compiled_args.push(compiled_arg.into());
+            debug!(arg_index = i, "Compiled function argument");
         }
         
         // Call the function
         let call_result = self.builder
             .build_call(function, &compiled_args, "call")
-            .unwrap();
+            .map_err(|e| format!("Failed to build function call: {:?}", e))?;
         
         // Get the return value
         match call_result.try_as_basic_value().left() {
-            Some(value) => Ok(value),
-            None => Ok(self.context.i64_type().const_int(0, false).into()), // void return
+            Some(value) => {
+                debug!(function_name = %function_name, "Function call completed with return value");
+                Ok(value)
+            }
+            None => {
+                debug!(function_name = %function_name, "Function call completed with void return");
+                // For void functions, return a null/zero value
+                Ok(self.context.i64_type().const_int(0, false).into())
+            }
         }
     }
 }

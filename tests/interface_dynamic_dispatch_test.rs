@@ -43,7 +43,7 @@ fn setup_interface_hierarchy() -> Result<TypeChecker, Error> {
         ("position".to_string(), Type::Normie),
     ]);
     
-    type_checker.register_struct("TextFile", text_file_fields, Vec::new();
+    type_checker.register_struct("TextFile", text_file_fields, Vec::new())?;
     
     // Register TextFile methods
     let text_file_methods = vec![
@@ -63,7 +63,7 @@ fn setup_interface_hierarchy() -> Result<TypeChecker, Error> {
         ("data".to_string(), Type::Tea),
     ]);
     
-    type_checker.register_struct("StringBuffer", buffer_fields, Vec::new();
+    type_checker.register_struct("StringBuffer", buffer_fields, Vec::new())?;
     
     // Register StringBuffer methods
     let buffer_methods = vec![
@@ -87,9 +87,9 @@ fn test_multiple_interface_implementations() -> Result<(), Error> {
     let mut type_checker = setup_interface_hierarchy()?;
     
     // Test if TextFile implements both Reader and Writer
-    let text_file_type = Type::Struct("TextFile".to_string(), Vec::new();
-    let reader_type = Type::Interface("Reader".to_string(), Vec::new();
-    let writer_type = Type::Interface("Writer".to_string(), Vec::new();
+    let text_file_type = Type::Struct("TextFile".to_string(), Vec::new());
+    let reader_type = Type::Interface("Reader".to_string(), Vec::new());
+    let writer_type = Type::Interface("Writer".to_string(), Vec::new());
     
     let implements_reader = type_checker.check_interface_implementation(&text_file_type, &reader_type)?;
     let implements_writer = type_checker.check_interface_implementation(&text_file_type, &writer_type)?;
@@ -98,7 +98,7 @@ fn test_multiple_interface_implementations() -> Result<(), Error> {
     assert!(implements_writer, "TextFile should implement Writer");
     
     // Test if StringBuffer implements Writer but not Reader
-    let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new();
+    let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new());
     
     let buffer_implements_writer = type_checker.check_interface_implementation(&buffer_type, &writer_type)?;
     let buffer_implements_reader = type_checker.check_interface_implementation(&buffer_type, &reader_type)?;
@@ -164,7 +164,7 @@ fn test_interface_vtable_generation() -> Result<(), Error> {
     method_map.insert("flush".to_string(, flush_fn);
     
     // Create vtable implementation for StringBuffer -> Writer
-    let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new();
+    let buffer_type = Type::Struct("StringBuffer".to_string(), Vec::new());
     interface_manager.create_vtable_for_implementation(
         &context,
         &module,

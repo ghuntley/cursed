@@ -8,16 +8,16 @@ use cursed::codegen::llvm::lru_field_accessors::LruCachedFieldAccessors;
 use cursed::lexer::Token;
 use inkwell::context::Context;
 use std::time::Instant;
-use crate::common::tracing::setup;
+// use crate::common::tracing::setup; // Disabled due to common module conflict
 
 // Integration tests for field accessor generation in the monomorphization system
 
 
-mod common;
+// mod common; // Disabled due to file conflict
 
 #[test]
 fn test_field_accessors_integration() {
-    setup();
+    // setup(); // Disabled due to common module conflict
     let context = Context::create();
     let mut code_gen = LlvmCodeGenerator::new(&context, "test", std::path::PathBuf::from("test.csd"));
     

@@ -30,7 +30,7 @@ pub fn contains(s: &str, substr: &str) -> bool {
         }
         Err(_) => false,
     }
-};
+}
 
     //
 pub fn len(s: &str) -> i64 {
@@ -45,7 +45,7 @@ pub fn len(s: &str) -> i64 {
         }
         Err(_) => 0,
     }
-};
+}
 
     //
 pub fn to_upper(s: &str) -> String {
@@ -60,7 +60,7 @@ pub fn to_upper(s: &str) -> String {
         }
         Err(_) => String::new(),
     }
-};
+}
 
     //
 pub fn to_lower(s: &str) -> String {
@@ -75,7 +75,7 @@ pub fn to_lower(s: &str) -> String {
         }
         Err(_) => String::new(),
     }
-};
+}
 
     //
 pub fn escape_html(html: &str) -> String {
@@ -90,7 +90,7 @@ pub fn escape_html(html: &str) -> String {
         }
         Err(_) => String::new(),
     }
-};
+}
 
     //
 pub fn escape_js(js: &str) -> String {
@@ -105,7 +105,7 @@ pub fn escape_js(js: &str) -> String {
         }
         Err(_) => String::new(),
     }
-};
+}
 
     //
 pub fn abs(value: i64) -> i64 {
@@ -120,7 +120,7 @@ pub fn abs(value: i64) -> i64 {
         }
         Err(_) => 0,
     }
-};
+}
 
     //
 pub fn max(a: i64, b: i64) -> i64 {
@@ -138,7 +138,7 @@ pub fn max(a: i64, b: i64) -> i64 {
         }
         Err(_) => 0,
     }
-};
+}
 
     //
 pub fn min(a: i64, b: i64) -> i64 {
@@ -156,7 +156,7 @@ pub fn min(a: i64, b: i64) -> i64 {
         }
         Err(_) => 0,
     }
-};
+}
 
     //
 pub fn sqrt(value: f64) -> f64 {
@@ -186,7 +186,7 @@ pub fn sin(value: f64) -> f64 {
         }
         Err(_) => 0.0,
     }
-};
+}
 
     //
 pub fn cos(value: f64) -> f64 {
@@ -201,7 +201,7 @@ pub fn cos(value: f64) -> f64 {
         }
         Err(_) => 0.0,
     }
-};
+}
 
     //
 pub fn now() -> i64 {
@@ -216,7 +216,7 @@ pub fn now() -> i64 {
         }
         Err(_) => 0,
     }
-};
+}
 
     //
 pub fn format_time(timestamp: i64, format: &str) -> String {

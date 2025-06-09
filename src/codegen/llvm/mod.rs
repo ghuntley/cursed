@@ -49,6 +49,8 @@ pub use self::context::LlvmCodeGenerator;
 pub use self::type_assertion::InterfaceTypeAssertion;
 pub use self::char_operations::CharOperations;
 pub use self::string_type::{CursedStringType, StringTypeUtils};
+pub use self::stdlib_integration::{StdlibLlvmIntegration, StdlibRegistry, StdlibFunctionInfo};
+pub use self::gc_integration::{LlvmGcIntegration, GcTypeMetadata};
 
 // Re-export extension traits
 pub use self::llvm_code_generator_extensions::{
@@ -239,6 +241,8 @@ pub mod struct_monomorphization;
 pub mod types;
 mod variables;
 mod intrinsics;      // Standard library intrinsics
+mod stdlib_integration; // Standard library LLVM integration
+mod gc_integration;   // Garbage collection LLVM integration
 mod break_continue;  // Break and continue statement handling
 mod control_flow;    // Control flow statements
 // Range clause implementation with proper error handling

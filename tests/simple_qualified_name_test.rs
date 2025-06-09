@@ -5,6 +5,7 @@
 #[cfg(test)]
 mod tests {
     use cursed::ast::expressions::{QualifiedName, QualifiedSymbolKind};
+    use cursed::ast::Node;
 
     #[test]
     fn test_qualified_name_basic() {
