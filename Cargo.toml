@@ -80,6 +80,10 @@ hostname = "0.4.1"
 # sha2 already included above for cryptography
 tempfile = "3.8"  # Temporary directories for testing
 
+# Documentation generation dependencies
+pulldown-cmark = "0.9"  # Markdown parsing and HTML generation
+handlebars = "4.4"      # Template engine for HTML generation
+
 # We removed reqwest dependency since we're using mock HTTP responses only
 
 [features]
@@ -127,6 +131,10 @@ path = "src/bin/bootstrap_verify.rs"
 [[bin]]
 name = "cursed-fmt"
 path = "src/bin/cursed_fmt.rs"
+
+[[bin]]
+name = "cursed-doc"
+path = "src/bin/cursed_doc.rs"
 
 
 

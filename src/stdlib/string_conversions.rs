@@ -648,9 +648,9 @@ mod tests {
         
         // Test array conversion
         let args = vec![Arc::new(Object::Array(vec![
-            Arc::new(Object::Integer(1)),
-            Arc::new(Object::Integer(2)),
-            Arc::new(Object::Integer(3)),
+            Object::Integer(1),
+            Object::Integer(2),
+            Object::Integer(3),
         ]))];
         let result = to_string(&args).unwrap();
         if let Object::String(s) = &*result {

@@ -504,18 +504,16 @@ mod tests {
     use inkwell::context::Context;
     use inkwell::module::Module;
     use inkwell::builder::Builder;
+    use std::path::PathBuf;
     
-    fn setup_test_context() -> (Context, Module<'static>, Builder<'static>) {
-        let context = Context::create();
-        let module = context.create_module("test");
-        let builder = context.create_builder();
-        (context, module, builder)
+    fn setup_test_context() -> Context {
+        Context::create()
     }
     
     #[test]
     fn test_create_bool_literal() {
-        let (context, module, builder) = setup_test_context();
-        let mut codegen = LlvmCodeGenerator::new(context, module, builder);
+        let context = setup_test_context();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let true_val = codegen.create_bool_literal(true);
         let false_val = codegen.create_bool_literal(false);
@@ -526,8 +524,8 @@ mod tests {
     
     #[test]
     fn test_integer_to_bool_conversion() {
-        let (context, module, builder) = setup_test_context();
-        let mut codegen = LlvmCodeGenerator::new(context, module, builder);
+        let context = setup_test_context();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let int_type = context.i32_type();
         let zero = int_type.const_int(0, false).into();
@@ -542,8 +540,8 @@ mod tests {
     
     #[test]
     fn test_float_to_bool_conversion() {
-        let (context, module, builder) = setup_test_context();
-        let mut codegen = LlvmCodeGenerator::new(context, module, builder);
+        let context = setup_test_context();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let float_type = context.f64_type();
         let zero = float_type.const_float(0.0).into();
@@ -558,8 +556,8 @@ mod tests {
     
     #[test]
     fn test_bool_to_integer_conversion() {
-        let (context, module, builder) = setup_test_context();
-        let mut codegen = LlvmCodeGenerator::new(context, module, builder);
+        let context = setup_test_context();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let true_bool = codegen.create_bool_literal(true);
         let false_bool = codegen.create_bool_literal(false);
@@ -574,8 +572,8 @@ mod tests {
     
     #[test]
     fn test_bool_to_float_conversion() {
-        let (context, module, builder) = setup_test_context();
-        let mut codegen = LlvmCodeGenerator::new(context, module, builder);
+        let context = setup_test_context();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let true_bool = codegen.create_bool_literal(true);
         let false_bool = codegen.create_bool_literal(false);
@@ -590,8 +588,8 @@ mod tests {
     
     #[test]
     fn test_bool_logical_operations() {
-        let (context, module, builder) = setup_test_context();
-        let mut codegen = LlvmCodeGenerator::new(context, module, builder);
+        let context = setup_test_context();
+        let mut codegen = LlvmCodeGenerator::new(&context, "test", PathBuf::from("test.csd"));
         
         let true_val = codegen.create_bool_literal(true);
         let false_val = codegen.create_bool_literal(false);

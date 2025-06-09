@@ -769,6 +769,7 @@ impl<'a> Parser<'a> {
             type_parameters,
             generic_constraints: Vec::new(), // No constraints for now
             fields,
+            doc: None,
         }))
     }
 
@@ -966,6 +967,7 @@ impl<'a> Parser<'a> {
             return_type,
             body,
             generic_constraints: Vec::new(), // No constraints for now
+            doc: None,
         }))
     }
     
@@ -1124,6 +1126,7 @@ impl<'a> Parser<'a> {
             )], // Placeholder for type parameter T
             generic_constraints: Vec::new(), // No constraints for now
             fields,
+            doc: None,
         }))
     }
     

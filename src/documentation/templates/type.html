@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="../assets/docs.css">
+    <link rel="stylesheet" href="../assets/highlight.css">
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <meta name="description" content="{{item_name}} {{item_type}} documentation">
+</head>
+<body class="type-page">
+    {{navigation}}
+    
+    <main class="main-content">
+        {{breadcrumbs}}
+        
+        <article class="type-article">
+            {{content}}
+            
+            <section class="type-hierarchy">
+                <h2>Type Hierarchy</h2>
+                <div class="hierarchy-graph" id="hierarchy-graph">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </section>
+            
+            <section class="usage-examples">
+                <h2>Usage Examples</h2>
+                <div class="example-tabs">
+                    <button class="tab-button active" data-tab="basic">Basic Usage</button>
+                    <button class="tab-button" data-tab="advanced">Advanced Usage</button>
+                </div>
+                <div class="tab-content" id="basic-tab">
+                    <pre class="code-block"><code class="language-cursed">// Basic usage example will be generated</code></pre>
+                </div>
+                <div class="tab-content" id="advanced-tab" style="display: none;">
+                    <pre class="code-block"><code class="language-cursed">// Advanced usage example will be generated</code></pre>
+                </div>
+            </section>
+        </article>
+        
+        <aside class="type-toc">
+            <h3>Contents</h3>
+            <ul id="toc-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </aside>
+        
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 {{project_name}} Documentation.</p>
+            </div>
+        </footer>
+    </main>
+    
+    <script src="../assets/docs.js"></script>
+    <script src="../assets/highlight.js"></script>
+    <script src="../assets/navigation.js"></script>
+    <script>
+        // Type-specific enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            generateTableOfContents('type-article', 'toc-list');
+            setupTabSwitching();
+            generateTypeHierarchy('{{item_name}}', 'hierarchy-graph');
+        });
+    </script>
+</body>
+</html>

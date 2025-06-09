@@ -22,6 +22,7 @@ mod channel_helpers;
 mod select;
 mod channel_range;
 mod context;
+mod documentation;
 mod expression_list;
 mod expressions;
 mod generic_constraints_simple;
@@ -46,6 +47,7 @@ mod types;
 #[cfg(test)]
 mod tests;
 
+pub use documentation::{DocumentationComment, DocumentationParsing, DocumentationType, CodeExample};
 pub use parser::Parser;
 pub use preprocessor::{Preprocessor, TokenStream};
 pub use range_clause_error_recovery::RangeClauseErrorRecovery;

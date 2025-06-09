@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="../assets/docs.css">
+    <link rel="stylesheet" href="../assets/highlight.css">
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <meta name="description" content="{{item_name}} function documentation">
+</head>
+<body class="function-page">
+    {{navigation}}
+    
+    <main class="main-content">
+        {{breadcrumbs}}
+        
+        <article class="function-article">
+            {{content}}
+            
+            <section class="related-functions">
+                <h2>See Also</h2>
+                <div class="related-list" id="related-functions">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </section>
+        </article>
+        
+        <aside class="function-toc">
+            <h3>Contents</h3>
+            <ul id="toc-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </aside>
+        
+        <footer class="footer">
+            <div class="footer-content">
+                <p>&copy; 2024 {{project_name}} Documentation.</p>
+            </div>
+        </footer>
+    </main>
+    
+    <script src="../assets/docs.js"></script>
+    <script src="../assets/highlight.js"></script>
+    <script src="../assets/navigation.js"></script>
+    <script>
+        // Function-specific enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            generateTableOfContents('function-article', 'toc-list');
+            loadRelatedFunctions('{{item_name}}', 'related-functions');
+        });
+    </script>
+</body>
+</html>

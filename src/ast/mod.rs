@@ -20,6 +20,7 @@
 pub mod base;
 pub mod control_flow;
 pub mod declarations;
+pub mod documentation;
 pub mod expressions;
 pub mod pointer;
 pub mod statement_utils;
@@ -49,6 +50,9 @@ pub use declarations::fields::Field;
 
 // Re-export expressions
 pub use expressions::*;
+
+// Re-export documentation types
+pub use documentation::{DocComment, DocModule, DocFunction, DocType, DocMethod, DocMetadata, DocPosition};
 
 // Re-export BlockStatement as Block for backward compatibility - only do it once
 pub use statements::block::BlockStatement as Block;

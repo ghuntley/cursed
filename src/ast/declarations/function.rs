@@ -5,6 +5,7 @@
 
 use crate::ast::declarations::Parameter;
 use crate::ast::declarations::TypeParameter;
+use crate::ast::documentation::DocFunction;
 use crate::ast::expressions::identifiers::Identifier;
 use crate::ast::statements::block::BlockStatement;
 use crate::ast::{Expression, Node, Statement};
@@ -36,6 +37,7 @@ pub struct FunctionStatement {
     pub return_type: Option<Box<dyn Expression>>,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters for function [T], [A, B], etc.
     pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
+    pub doc: Option<DocFunction>, // Associated documentation
 }
 
 impl std::fmt::Debug for FunctionStatement {
@@ -48,6 +50,7 @@ impl std::fmt::Debug for FunctionStatement {
             .field("return_type", &self.return_type.as_ref().map(|rt| rt.string()))
             .field("type_parameters", &self.type_parameters)
             .field("generic_constraints", &self.generic_constraints)
+            .field("doc", &self.doc)
             .finish()
     }
 }

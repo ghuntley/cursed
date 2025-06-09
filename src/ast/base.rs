@@ -3,6 +3,7 @@
 //! This module defines the base structures of the Abstract Syntax Tree,
 //! particularly the Program struct that serves as the root of the AST.
 
+use crate::ast::documentation::DocModule;
 use crate::ast::{Node, Statement};
 use std::fmt;
 
@@ -15,6 +16,7 @@ use std::fmt;
 #[derive(Default)]
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
+    pub doc: Option<DocModule>, // Module-level documentation
 }
 
 impl Program {
@@ -22,6 +24,7 @@ impl Program {
     pub fn new() -> Self {
         Self {
             statements: Vec::new(),
+            doc: None,
         }
     }
 }

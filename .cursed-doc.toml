@@ -1,0 +1,211 @@
+# CURSED Documentation Configuration
+# ===================================
+# 
+# This file configures the CURSED documentation generation system.
+# All settings can be overridden with command-line arguments or environment variables.
+
+[general]
+# Project information
+project_name = "CURSED Programming Language"
+project_version = "0.1.0"
+project_description = "Gen Z slang meets Go-like grammar in a self-hosting compiler"
+project_url = "https://github.com/ghuntley/cursed"
+project_logo = "docs/assets/cursed-logo.png"
+
+# Contact information
+authors = ["Geoffrey Huntley"]
+license = "MIT"
+repository = "https://github.com/ghuntley/cursed"
+
+[input]
+# Source directories to scan for documentation
+source_dirs = [
+    "src/",
+    "examples/",
+    "specs/",
+    "docs/"
+]
+
+# File patterns to include (glob patterns)
+include_patterns = [
+    "**/*.csd",     # CURSED source files
+    "**/*.rs",      # Rust implementation files
+    "**/*.md",      # Markdown documentation
+    "**/*.toml",    # Configuration files
+]
+
+# File patterns to exclude
+exclude_patterns = [
+    "target/**",
+    ".git/**",
+    "**/*.tmp",
+    "**/.*",
+    "node_modules/**"
+]
+
+# Maximum file size to process (in bytes)
+max_file_size = 10485760  # 10MB
+
+[output]
+# Output directory for generated documentation
+output_dir = "docs/html"
+
+# Output formats to generate
+formats = ["html", "json"]
+
+# Whether to clean output directory before generation
+clean_output = true
+
+# Base URL for generated links (useful for deployment)
+base_url = ""
+
+[html]
+# HTML generation settings
+theme = "default"
+syntax_highlighting = true
+table_of_contents = true
+search_enabled = true
+responsive_design = true
+
+# Custom CSS and JavaScript files
+custom_css = []
+custom_js = []
+
+# HTML template directory (optional)
+template_dir = ""
+
+# Whether to generate offline-capable documentation
+offline_mode = false
+
+[markdown]
+# Markdown generation settings
+flavor = "github"  # github, commonmark, or custom
+table_of_contents = true
+code_block_style = "fenced"
+link_style = "reference"
+
+[processing]
+# Documentation processing options
+extract_comments = true
+extract_examples = true
+generate_cross_references = true
+analyze_dependencies = true
+
+# Language-specific processing
+process_cursed_files = true
+process_rust_files = false  # Set to true to include Rust implementation docs
+process_markdown_files = true
+
+# Comment extraction patterns for CURSED files
+cursed_comment_patterns = [
+    "^\\s*fr fr\\s+(.*)$",     # Single-line comments: "fr fr comment"
+    "^\\s*/\\*\\*?(.*)\\*/$",  # Block comments: /* comment */
+]
+
+[navigation]
+# Navigation structure
+generate_sidebar = true
+max_depth = 4
+sort_order = "alphabetical"  # alphabetical, modification_time, or custom
+
+# Custom navigation order (optional)
+custom_order = [
+    "overview",
+    "getting-started",
+    "language-reference",
+    "standard-library",
+    "examples",
+    "internals"
+]
+
+[search]
+# Search functionality
+enable_search = true
+search_engine = "built-in"  # built-in or external
+index_content = true
+index_code = true
+search_suggestions = true
+
+[performance]
+# Performance optimization settings
+parallel_processing = true
+max_workers = 0  # 0 = auto-detect CPU cores
+cache_enabled = true
+cache_dir = ".cursed-doc-cache"
+
+[development]
+# Development and debugging options
+watch_mode = false
+auto_reload = true
+serve_port = 8080
+serve_host = "127.0.0.1"
+open_browser = false
+
+# Debug output
+verbose_logging = false
+show_progress = true
+show_statistics = true
+
+[validation]
+# Documentation validation settings
+check_links = true
+check_examples = true
+validate_syntax = true
+require_descriptions = false
+
+# Warnings and errors
+treat_warnings_as_errors = false
+ignore_missing_files = false
+
+[examples]
+# Example code processing
+extract_examples = true
+validate_examples = true
+run_examples = false  # Set to true to execute examples during generation
+
+# Example categorization
+categorize_by_directory = true
+generate_example_index = true
+
+[api]
+# API documentation generation
+generate_api_docs = true
+include_private = false
+include_internal = false
+show_source_links = true
+
+# Documentation coverage
+require_doc_comments = false
+coverage_threshold = 0.0  # 0.0 to 1.0 (percentage)
+
+[assets]
+# Asset handling
+copy_assets = true
+asset_dirs = [
+    "docs/assets/",
+    "examples/assets/"
+]
+
+# Image optimization
+optimize_images = false
+max_image_width = 1200
+
+[integrations]
+# Integration with external tools
+mermaid_diagrams = true
+math_rendering = false
+code_playground = false
+
+# External link handling
+external_link_icon = true
+validate_external_links = false
+
+[deployment]
+# Deployment settings
+generate_sitemap = false
+generate_robots_txt = false
+canonical_url = ""
+
+# CDN and caching
+cdn_prefix = ""
+cache_control = "public, max-age=3600"
