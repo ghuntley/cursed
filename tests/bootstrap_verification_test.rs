@@ -1,6 +1,6 @@
 //! Integration tests for the bootstrap verification system
 
-use cursed::bootstrap::{SelfCompilationVerifier, VerificationConfig};
+use cursed::bootstrap::self_compilation_verification::{SelfCompilationVerifier, VerificationConfig};
 use std::path::PathBuf;
 use std::time::Duration;
 use tempfile::TempDir;
@@ -52,7 +52,7 @@ fn test_simple_compiler_build() {
 #[traced_test]
 #[test]
 fn test_verification_report_structure() {
-    use cursed::bootstrap::{VerificationReport, PerformanceMetrics, generate_verification_report};
+    use cursed::bootstrap::self_compilation_verification::{VerificationReport, PerformanceMetrics};
     use std::collections::HashMap;
     
     let report = VerificationReport {
@@ -72,7 +72,7 @@ fn test_verification_report_structure() {
         verification_time: Duration::from_secs(120),
     };
     
-    let report_text = generate_verification_report(&report);
+    let report_text = cursed::bootstrap::self_compilation_verification::generate_verification_report(&report);
     
     // Verify the report contains expected sections
     assert!(report_text.contains("CURSED Self-Compilation Verification Report"));
@@ -85,7 +85,7 @@ fn test_verification_report_structure() {
 #[traced_test]
 #[test]
 fn test_checksum_functionality() {
-    use cursed::bootstrap::SelfCompilationVerifier;
+    use cursed::bootstrap::self_compilation_verification::SelfCompilationVerifier;
     
     let temp_dir = TempDir::new().unwrap();
     let config = VerificationConfig {
@@ -198,7 +198,7 @@ fn test_work_directory_preservation() {
 #[traced_test]
 #[test]
 fn test_performance_stability_check() {
-    use cursed::bootstrap::{CompilationResult, SelfCompilationVerifier};
+    use cursed::bootstrap::self_compilation_verification::{CompilationResult, SelfCompilationVerifier};
     use std::path::PathBuf;
     
     let temp_dir = TempDir::new().unwrap();
@@ -248,7 +248,7 @@ fn test_performance_stability_check() {
 #[traced_test]
 #[test]
 fn test_comparison_result_creation() {
-    use cursed::bootstrap::{CompilationResult, SelfCompilationVerifier};
+    use cursed::bootstrap::self_compilation_verification::{CompilationResult, SelfCompilationVerifier};
     use std::path::PathBuf;
     
     let temp_dir = TempDir::new().unwrap();

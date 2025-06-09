@@ -24,6 +24,7 @@ mod channel_range;
 mod context;
 mod expression_list;
 mod expressions;
+mod generic_constraints_simple;
 mod parser;
 mod precedence;
 pub mod preprocessor;

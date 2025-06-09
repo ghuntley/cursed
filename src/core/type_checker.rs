@@ -17,6 +17,11 @@ use std::sync::{Arc, Mutex};
 use crate::core::interface_type_checker::InterfaceTypeChecker;
 use crate::core::interface_registry::InterfaceRegistry;
 use crate::core::recursive_types::{RecursiveTypeRegistry, RecursiveTypeResolver};
+use crate::core::constraint_resolver::{ConstraintResolver, ConstraintResolutionResult};
+use crate::core::constraint_validator::{ConstraintValidator, ValidationContext, ValidationResult};
+use crate::core::enhanced_type_inference::{EnhancedTypeInference, InferenceContext, InferenceResult};
+use std::sync::RwLock;
+use tracing::{debug, info, instrument};
 
 /// Represents a type in the CURSED type system
 ///
@@ -331,6 +336,12 @@ pub struct TypeChecker {
     pub interface_registry: Arc<Mutex<InterfaceRegistry>>,
     /// Registry for recursive type definitions
     pub recursive_type_registry: Arc<Mutex<RecursiveTypeRegistry>>,
+    /// Constraint resolver for generic constraint resolution
+    constraint_resolver: Option<Arc<RwLock<ConstraintResolver>>>,
+    /// Constraint validator for constraint validation during type checking
+    constraint_validator: Option<Arc<RwLock<ConstraintValidator>>>,
+    /// Enhanced type inference engine
+    enhanced_inference: Option<Arc<RwLock<EnhancedTypeInference>>>,
 }
 
 impl TypeChecker {
@@ -344,11 +355,193 @@ impl TypeChecker {
             struct_methods_map: HashMap::new(),
             interface_registry: Arc::new(Mutex::new(InterfaceRegistry::new_with_defaults())),
             recursive_type_registry: Arc::new(Mutex::new(RecursiveTypeRegistry::new())),
+            constraint_resolver: None,
+            constraint_validator: None,
+            enhanced_inference: None,
         }
     }
     
     // Register methods for a struct will be implemented in the future
     // For now, directly access the struct_methods_map field
+
+    /// Initialize constraint resolution and validation systems
+    #[instrument(level = "debug")]
+    pub fn initialize_constraint_systems(&mut self) -> Result<(), Error> {
+        debug!("Initializing constraint resolution and validation systems");
+        
+        let interface_registry = Arc::new(RwLock::new(InterfaceRegistry::new_with_defaults()));
+        let self_ref = Arc::new(RwLock::new(TypeChecker::new()));
+        
+        // Create constraint resolver
+        let constraint_resolver = Arc::new(RwLock::new(
+            ConstraintResolver::new(self_ref.clone(), interface_registry.clone())
+        ));
+        
+        // Create constraint validator
+        let constraint_validator = Arc::new(RwLock::new(
+            ConstraintValidator::new(
+                self_ref.clone(),
+                interface_registry.clone(),
+                constraint_resolver.clone(),
+            )
+        ));
+        
+        // Create enhanced type inference
+        let enhanced_inference = Arc::new(RwLock::new(
+            EnhancedTypeInference::new(self_ref, constraint_resolver.clone())
+        ));
+        
+        self.constraint_resolver = Some(constraint_resolver);
+        self.constraint_validator = Some(constraint_validator);
+        self.enhanced_inference = Some(enhanced_inference);
+        
+        info!("Constraint systems initialized successfully");
+        Ok(())
+    }
+    
+    /// Check if a type satisfies generic constraints
+    #[instrument(skip(self), level = "debug")]
+    pub fn check_generic_constraints_simple(
+        &self,
+        concrete_type: &Type,
+        constraints: &[crate::ast::declarations::GenericConstraint],
+    ) -> Result<bool, Error> {
+        debug!(
+            concrete_type = ?concrete_type,
+            constraints_count = constraints.len(),
+            "Checking generic constraints"
+        );
+        
+        // Fallback to basic interface implementation checking
+        for constraint in constraints {
+            let implements = self.check_interface_implementation(
+                concrete_type,
+                &constraint.interface_name,
+            )?;
+            if !implements {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+    
+    /// Get available methods for a type (used by constraint checking)
+    #[instrument(skip(self), level = "debug")]
+    pub fn get_type_methods(&self, type_: &Type) -> Result<Vec<String>, Error> {
+        debug!(type_ = ?type_, "Getting type methods");
+        
+        match type_ {
+            Type::Struct(struct_name, _) => {
+                // Get methods from struct_methods_map
+                if let Some(methods) = self.struct_methods_map.get(struct_name) {
+                    Ok(methods.iter().map(|(name, _, _)| name.clone()).collect())
+                } else {
+                    Ok(Vec::new())
+                }
+            }
+            Type::Named(type_name) => {
+                // Check if it's a known struct
+                if let Some(methods) = self.struct_methods_map.get(type_name) {
+                    Ok(methods.iter().map(|(name, _, _)| name.clone()).collect())
+                } else {
+                    Ok(Vec::new())
+                }
+            }
+            _ => {
+                // Primitive types don't have methods in this implementation
+                Ok(Vec::new())
+            }
+        }
+    }
+    
+    /// Get required methods for an interface (used by constraint checking)
+    #[instrument(skip(self), level = "debug")]
+    pub fn get_interface_methods(&self, interface_name: &str) -> Result<Vec<String>, Error> {
+        debug!(interface_name = %interface_name, "Getting interface methods");
+        
+        if let Some(methods) = self.interface_map.get(interface_name) {
+            Ok(methods.iter().map(|(name, _, _)| name.clone()).collect())
+        } else {
+            Ok(Vec::new())
+        }
+    }
+    
+    /// Get known implementations of an interface
+    #[instrument(skip(self), level = "debug")]
+    pub fn get_interface_implementations(&self, interface_name: &str) -> Result<Vec<Type>, Error> {
+        debug!(interface_name = %interface_name, "Getting interface implementations");
+        
+        let registry = self.interface_registry.lock()
+            .map_err(|e| Error::new(&format!("Failed to acquire interface registry lock: {}", e)))?;
+        
+        // Get all implementations from the registry
+        // Note: Simplified implementation for now
+        Ok(Vec::new())
+    }
+    
+    /// Check if a type has a specific method
+    #[instrument(skip(self), level = "debug")]
+    pub fn has_method(&self, type_: &Type, method_name: &str) -> Result<bool, Error> {
+        debug!(type_ = ?type_, method_name = %method_name, "Checking if type has method");
+        
+        let methods = self.get_type_methods(type_)?;
+        Ok(methods.contains(&method_name.to_string()))
+    }
+    
+    /// Check method signature compatibility
+    #[instrument(skip(self), level = "debug")]
+    pub fn check_method_signature_compatibility(
+        &self,
+        type_: &Type,
+        method_name: &str,
+        expected_params: &[crate::ast::declarations::Parameter],
+        expected_return: &Type,
+    ) -> Result<bool, Error> {
+        debug!(
+            type_ = ?type_,
+            method_name = %method_name,
+            "Checking method signature compatibility"
+        );
+        
+        match type_ {
+            Type::Struct(struct_name, _) | Type::Named(struct_name) => {
+                if let Some(methods) = self.struct_methods_map.get(struct_name) {
+                    for (name, param_types, return_type) in methods {
+                        if name == method_name {
+                            // Check parameter count
+                            if param_types.len() != expected_params.len() {
+                                return Ok(false);
+                            }
+                            
+                            // Check parameter types
+                            for (i, expected_param) in expected_params.iter().enumerate() {
+                                if i < param_types.len() {
+                                    if param_types[i] != expected_param.parameter_type {
+                                        return Ok(false);
+                                    }
+                                }
+                            }
+                            
+                            // Check return type
+                            if let Some(actual_return) = return_type {
+                                if actual_return != expected_return {
+                                    return Ok(false);
+                                }
+                            } else if *expected_return != Type::Unknown {
+                                return Ok(false);
+                            }
+                            
+                            return Ok(true);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        
+        // Method not found or type doesn't support methods
+        Ok(false)
+    }
 
     /// Check the types in a program
     #[tracing::instrument(skip(self, program), level = "info")]

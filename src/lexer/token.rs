@@ -280,6 +280,7 @@ impl Token {
             TokenType::Continue => Token::Simp,
             TokenType::For => Token::Bestie,
             TokenType::Question => Token::Question,
+            TokenType::Where => Token::Identifier("where".to_string()),
         }
     }
 

@@ -12,7 +12,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 
 use cursed::bootstrap::feature_detection::{
     BootstrapStage, CompilerVersion, CompilerFeature, FeatureDetectionSystem,
-    init_feature_detection, get_feature_system
+    FeatureDetectionResult, init_feature_detection, get_feature_system
 };
 use cursed::bootstrap::diagnostic_tools::{
     DiagnosticTool, ReportFormat, quick_diagnostic, export_diagnostic_to_file
@@ -319,15 +319,18 @@ fn cmd_detect(matches: &ArgMatches) {
             let mut results = HashMap::new();
             for feature in &supported_features {
                 let support_level = system.get_feature_support(feature);
-                if runtime_detection {
-                    let runtime_result = system.detect_feature_runtime(feature);
-                    results.insert(feature, runtime_result);
+                let result = if runtime_detection {
+                    system.detect_feature_runtime(feature)
                 } else {
-                    results.insert(feature, serde_json::json!({
-                        "supported": true,
-                        "support_level": support_level
-                    }));
-                }
+                    FeatureDetectionResult {
+                        feature: feature.clone(),
+                        supported: true,
+                        support_level,
+                        detection_method: "Static Analysis".to_string(),
+                        fallback_available: false,
+                    }
+                };
+                results.insert(feature, result);
             }
             println!("{}", serde_json::to_string_pretty(&results).unwrap());
         } else {

@@ -180,7 +180,7 @@ impl fmt::Display for CompilerVersion {
 pub type CapabilityMatrix = HashMap<(BootstrapStage, CompilerFeature), FeatureSupport>;
 
 /// Runtime feature detection result
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct FeatureDetectionResult {
     pub feature: CompilerFeature,
     pub supported: bool,
@@ -190,7 +190,7 @@ pub struct FeatureDetectionResult {
 }
 
 /// Main feature detection system
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FeatureDetectionSystem {
     pub current_stage: BootstrapStage,
     pub current_version: CompilerVersion,
