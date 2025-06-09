@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help
 
 build:
 	devenv shell cargo build
@@ -245,3 +245,149 @@ cursed-lint-help:
 	@echo "  make cursed-lint-check                    # CI linting"
 	@echo "  make cursed-lint-fix                      # Auto-fix issues"
 	@echo "  make cursed-lint-dir DIR=examples         # Lint examples/"
+
+# Documentation Generation Targets
+# =================================
+
+# Generate comprehensive HTML documentation
+docs:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Generating documentation..."
+	devenv shell "./target/debug/cursed-doc --html --source src --source examples --output docs/html --package-name 'CURSED Language' --package-version '$(shell git describe --tags --always)' --description 'A programming language that speaks Gen Z' --clean --stats"
+	@echo "Documentation generated successfully!"
+	@echo "📖 View at: file://$(PWD)/docs/html/index.html"
+
+# Generate all documentation formats
+docs-all:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Generating HTML documentation..."
+	devenv shell "./target/debug/cursed-doc --html --source src --source examples --output docs/html --package-name 'CURSED Language' --clean --stats"
+	@echo "Generating Markdown documentation..."
+	devenv shell "./target/debug/cursed-doc --markdown --source src --source examples --output docs/markdown --package-name 'CURSED Language' --clean --stats"
+	@echo "Generating JSON documentation..."
+	devenv shell "./target/debug/cursed-doc --json --source src --source examples --output docs/json --package-name 'CURSED Language' --clean --stats"
+	@echo "All documentation formats generated successfully!"
+	@echo "📖 HTML: file://$(PWD)/docs/html/index.html"
+	@echo "📄 Markdown: docs/markdown/"
+	@echo "📊 JSON: docs/json/"
+
+# Generate Markdown documentation
+docs-markdown:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Generating Markdown documentation..."
+	devenv shell "./target/debug/cursed-doc --markdown --source src --source examples --output docs/markdown --package-name 'CURSED Language' --clean --stats"
+	@echo "Markdown documentation generated successfully!"
+	@echo "📖 View at: docs/markdown/"
+
+# Generate JSON documentation data
+docs-json:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Generating JSON documentation..."
+	devenv shell "./target/debug/cursed-doc --json --source src --source examples --output docs/json --package-name 'CURSED Language' --clean --stats"
+	@echo "JSON documentation generated successfully!"
+	@echo "📊 View at: docs/json/"
+
+# Check documentation completeness and validity
+docs-check:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Checking documentation completeness..."
+	devenv shell "./target/debug/cursed-doc --check --source src --source examples --package-name 'CURSED Language'"
+	@echo "Documentation check complete."
+
+# Check documentation completeness with JSON output
+docs-check-json:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Checking documentation completeness (JSON output)..."
+	devenv shell "./target/debug/cursed-doc --check --source src --source examples --package-name 'CURSED Language' --output-format json" | jq '.'
+
+# Serve documentation locally with auto-reload
+docs-serve:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Starting documentation server..."
+	devenv shell "./target/debug/cursed-doc --source src --source examples --output docs/html --serve --watch --host 127.0.0.1 --port 8080 --clean"
+
+# Generate documentation and serve with auto-reload (development mode)
+docs-watch:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Starting documentation server in watch mode..."
+	devenv shell "./target/debug/cursed-doc --source src --source examples --output docs/html --serve --watch --open --clean"
+
+# Clean generated documentation
+docs-clean:
+	@echo "Cleaning documentation..."
+	rm -rf docs/html docs/json docs/markdown
+	@echo "Documentation cleaned."
+
+# Open documentation in browser
+docs-open:
+	@if [ -f "docs/html/index.html" ]; then \
+		echo "Opening documentation in browser..."; \
+		if command -v xdg-open > /dev/null; then \
+			xdg-open "file://$(PWD)/docs/html/index.html"; \
+		elif command -v open > /dev/null; then \
+			open "file://$(PWD)/docs/html/index.html"; \
+		elif command -v start > /dev/null; then \
+			start "file://$(PWD)/docs/html/index.html"; \
+		else \
+			echo "Please open: file://$(PWD)/docs/html/index.html"; \
+		fi; \
+	else \
+		echo "Documentation not found. Run 'make docs' first."; \
+	fi
+
+# Generate default configuration file
+docs-config:
+	@echo "Building documentation generator..."
+	devenv shell "cargo build --bin cursed-doc"
+	@echo "Generating default configuration..."
+	devenv shell "./target/debug/cursed-doc --generate-config .cursed-doc.toml"
+	@echo "Configuration file generated: .cursed-doc.toml"
+	@echo "Edit this file to customize documentation generation."
+
+# Show documentation help
+docs-help:
+	@echo ""
+	@echo "CURSED Documentation Generation"
+	@echo "==============================="
+	@echo ""
+	@echo "Available documentation targets:"
+	@echo "  docs            - Generate HTML documentation (default)"
+	@echo "  docs-all        - Generate all formats (HTML, Markdown, JSON)"
+	@echo "  docs-markdown   - Generate Markdown documentation only"
+	@echo "  docs-json       - Generate JSON documentation data only"
+	@echo "  docs-check      - Validate documentation completeness"
+	@echo "  docs-check-json - Validate with JSON output"
+	@echo "  docs-serve      - Start local server with live reload"
+	@echo "  docs-watch      - Generate and serve with auto-reload"
+	@echo "  docs-clean      - Clean generated documentation"
+	@echo "  docs-open       - Open documentation in browser"
+	@echo "  docs-config     - Generate default configuration file"
+	@echo "  docs-help       - Show this help"
+	@echo ""
+	@echo "Example usage:"
+	@echo "  make docs                    # Generate HTML docs"
+	@echo "  make docs-all               # Generate all formats"
+	@echo "  make docs-check             # Validate completeness"
+	@echo "  make docs-serve             # Start development server"
+	@echo ""
+	@echo "CLI usage examples:"
+	@echo "  ./target/debug/cursed-doc --html --source src --output docs/html"
+	@echo "  ./target/debug/cursed-doc --check --source src"
+	@echo "  ./target/debug/cursed-doc --serve --watch --port 8080"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  - Create .cursed-doc.toml for custom settings"
+	@echo "  - Use environment variables: CURSED_DOC_*"
+	@echo "  - CLI arguments override configuration files"
+	@echo ""
+	@echo "For advanced options, run:"
+	@echo "  ./target/debug/cursed-doc --help"
+	@echo ""

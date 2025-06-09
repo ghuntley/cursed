@@ -11,6 +11,7 @@ use crate::lexer::{Lexer, Token};
 
 use super::precedence::Precedence;
 use super::context::{ContextAwareParsing, ParsingContext};
+use super::documentation::{DocumentationParsing, DocumentationComment};
 
 /// Parser for the CURSED language
 ///
@@ -127,12 +128,21 @@ pub fn new(lexer: &'a mut Lexer<'a>) -> Result<Self, Error> {
     pub fn parse_program(&mut self) -> Result<Program, Error> {
         let mut program = Program {
             statements: Vec::new(),
+            doc: None,
         };
 
         while !self.current_token_is(Token::Eof) {
-            match self.parse_statement() {
-                Ok(stmt) => program.statements.push(stmt),
-                Err(e) => self.log_error(e),
+            // Check for documentation comments before parsing statements
+            if self.is_documentation_comment() {
+                match self.parse_documented_declaration() {
+                    Ok(stmt) => program.statements.push(stmt),
+                    Err(e) => self.log_error(e),
+                }
+            } else {
+                match self.parse_statement() {
+                    Ok(stmt) => program.statements.push(stmt),
+                    Err(e) => self.log_error(e),
+                }
             }
 
             // Advance to the next statement

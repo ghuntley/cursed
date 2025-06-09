@@ -107,6 +107,30 @@ cp examples/formatter/integration/pre-commit .git/hooks/
 
 📖 **[Complete Formatter Guide](docs/formatter.md)** | 🔧 **[Developer API](docs/formatter-dev.md)**
 
+### Documentation Generator (`cursed-doc`)
+- **Comprehensive docs**: Auto-generates beautiful HTML documentation
+- **Live server**: Development server with auto-reload
+- **Multiple formats**: HTML, Markdown, JSON output
+- **Cross-references**: Automatic linking between code components
+- **Search integration**: Full-text search with syntax highlighting
+
+Quick start:
+```bash
+# Generate HTML documentation
+make docs
+
+# Serve docs locally with auto-reload
+make docs-serve
+
+# Generate Markdown documentation
+make docs-markdown
+
+# Check documentation completeness
+make docs-check
+```
+
+📖 **[Documentation Guide](docs/cursed-doc.md)** | 🔧 **[Configuration Reference](docs/cursed-doc-config.md)**
+
 ## Language Documentation (real ones read the docs) 📚
 
 The complete language specifications are available in the `/specs` directory (we ate with these specs):

@@ -6,6 +6,7 @@
 use crate::ast::declarations::Parameter;
 use crate::ast::declarations::TypeParameter;
 use crate::ast::declarations::GenericConstraint;
+use crate::ast::documentation::DocType;
 use crate::ast::expressions::identifiers::Identifier;
 use crate::ast::statements::fields::FieldStatement;
 use crate::ast::{Expression, Node, Statement};
@@ -31,6 +32,7 @@ pub struct SquadStatement {
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters [T], [A, B], etc.
     pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
     pub fields: Vec<FieldStatement>,
+    pub doc: Option<DocType>, // Associated documentation
 }
 
 impl Node for SquadStatement {
@@ -185,6 +187,7 @@ pub struct CollabStatement {
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters [T], [A, B], etc.
     pub generic_constraints: Vec<GenericConstraint>, // Constraints on type parameters (e.g., T: Stringer)
     pub methods: Vec<MethodSignature>,
+    pub doc: Option<DocType>, // Associated documentation
 }
 
 impl Node for CollabStatement {

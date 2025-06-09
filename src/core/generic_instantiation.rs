@@ -140,6 +140,7 @@ impl GenericInstantiator {
             return_type: specialized_return_type,
             type_parameters: Vec::new(), // No type parameters in specialized version
             generic_constraints: Vec::new(), // No constraints in specialized version
+            doc: generic_function.doc.clone(), // Preserve documentation
         };
 
         Ok(specialized_func)
@@ -548,6 +549,7 @@ impl GenericInstantiator {
             type_parameters: Vec::new(), // No type parameters in specialized version
             generic_constraints: Vec::new(), // No constraints in specialized version
             fields: specialized_fields,  // Fields with concrete types
+            doc: generic_struct.doc.clone(), // Preserve documentation
         };
 
         Ok(specialized_struct)
@@ -669,6 +671,7 @@ impl GenericInstantiator {
             type_parameters: Vec::new(), // No type parameters in specialized version
             generic_constraints: Vec::new(), // No constraints in specialized version
             methods: Vec::new(), // In a real implementation, we would process methods with concrete types
+            doc: generic_interface.doc.clone(), // Preserve documentation
         };
 
         // Note: In a complete implementation, we would process each method

@@ -730,9 +730,11 @@ mod tests {
 
     #[test]
     fn test_operator_spacing_rule() {
+        use crate::lexer::Token;
+        
         let rule = OperatorSpacingRule::new();
-        assert!(rule.is_binary_operator(&TokenType::Plus));
-        assert!(rule.is_binary_operator(&TokenType::Equal));
-        assert!(!rule.is_binary_operator(&TokenType::Identifier));
+        assert!(rule.is_binary_operator_token(&Token::Plus));
+        assert!(rule.is_binary_operator_token(&Token::Assign));
+        assert!(!rule.is_binary_operator_token(&Token::Identifier("test".to_string())));
     }
 }

@@ -31,6 +31,32 @@ impl<'a> Lexer<'a> {
         lexer
     }
 
+    /// Find the start position of the current line
+    pub fn line_start_position(&self) -> usize {
+        let mut pos = self.position;
+        let chars: Vec<char> = self.input.chars().collect();
+        
+        // Go backwards to find the start of the current line
+        while pos > 0 && chars.get(pos.saturating_sub(1)) != Some(&'\n') {
+            pos = pos.saturating_sub(1);
+        }
+        
+        pos
+    }
+
+    /// Find the end position of the current line
+    pub fn find_line_end(&self) -> usize {
+        let chars: Vec<char> = self.input.chars().collect();
+        let mut pos = self.position;
+        
+        // Go forward to find the end of the current line
+        while pos < chars.len() && chars.get(pos) != Some(&'\n') {
+            pos += 1;
+        }
+        
+        pos
+    }
+
     /// Read the next character from the input
     pub fn read_char(&mut self) {
         if self.read_position >= self.input.len() {

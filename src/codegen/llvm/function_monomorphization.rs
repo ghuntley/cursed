@@ -462,6 +462,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                             value: "T".to_string(),
                         }) as Box<dyn crate::ast::traits::Expression>),
                         generic_constraints: vec![],
+                        doc: None,
                     });
                 }
                 
@@ -557,6 +558,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
                 value: "T".to_string(),
             }) as Box<dyn crate::ast::traits::Expression>),
             generic_constraints: vec![],
+            doc: None,
         };
         
         self.generate_specialized_function(&test_function, specialized_name, type_args)

@@ -91,6 +91,8 @@ pub mod benchmark;
 pub mod tools;
 pub mod linter;
 pub mod slice_integration;
+pub mod docs;
+pub mod documentation;
 pub mod stdlib_test;
 pub mod symbol;
 pub mod resolver;
@@ -341,6 +343,13 @@ pub use stdlib::dot_registry;
 
 // Re-export interface type assertion error for external use
 pub use error::type_assertion_error::TypeAssertionError;
+
+// Re-export documentation system for external use
+pub use docs::{
+    DocumentationGenerator, DocConfig, DocumentationGenerationResult,
+    DocumentationItem, ItemType, CommentParser, DocComment,
+    HtmlTemplate, TemplateEngine, PackageDocumentation
+};
 
 // Helper for dot expression patching (now unused)
 /*
