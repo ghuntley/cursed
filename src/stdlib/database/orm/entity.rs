@@ -385,13 +385,14 @@ impl EntityManager {
 }
 
 /// fr fr Entity info trait for runtime introspection
-trait EntityInfo: Send + Sync {
+trait EntityInfo: Debug + Send + Sync {
     fn table_name(&self) -> &str;
     fn metadata(&self) -> &EntityMetadata;
     fn validate_row(&self, row: &HashMap<String, SqlValue>) -> Result<(), DatabaseError>;
 }
 
 /// fr fr Concrete implementation of entity info
+#[derive(Debug)]
 struct ConcreteEntityInfo<T: Entity> {
     metadata: EntityMetadata,
     _phantom: std::marker::PhantomData<T>,
@@ -568,7 +569,7 @@ mod tests {
     }
 
     fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::new("test").expect("Failed to create test DB"))
+        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
     }
 
     #[traced_test]

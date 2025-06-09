@@ -676,7 +676,7 @@ mod tests {
     }
 
     fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::new("test").expect("Failed to create test DB"))
+        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
     }
 
     #[traced_test]
@@ -733,7 +733,7 @@ mod tests {
     #[test]
     fn test_transaction_metrics() {
         let metrics = TransactionMetrics {
-            state: TransactionState::Completed,
+            state: TransactionState::Committed,
             total_operations: 10,
             completed_operations: 8,
             failed_operations: 2,

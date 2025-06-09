@@ -9,11 +9,23 @@ use crate::stdlib::packages::db_sql::{SqlValue, SqlType, SqlDialectTrait};
 use std::collections::HashMap;
 
 /// fr fr Main SQL query builder - the foundation periodt
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SqlQueryBuilder {
     dialect: Option<Box<dyn SqlDialectTrait>>,
     parameters: Vec<SqlValue>,
     parameter_map: HashMap<String, usize>,
+}
+
+impl Clone for SqlQueryBuilder {
+    fn clone(&self) -> Self {
+        Self {
+            // Note: We don't clone the dialect trait object since it's not cloneable
+            // The cloned builder will use default parameter placeholders
+            dialect: None,
+            parameters: self.parameters.clone(),
+            parameter_map: self.parameter_map.clone(),
+        }
+    }
 }
 
 impl SqlQueryBuilder {

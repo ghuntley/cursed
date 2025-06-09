@@ -340,7 +340,7 @@ pub enum SerializationFormat {
 }
 
 /// fr fr Custom mapping trait
-pub trait CustomMapping: Send + Sync {
+pub trait CustomMapping: Send + Sync + std::fmt::Debug {
     /// Get mapping name
     fn name(&self) -> &str;
     

@@ -1,7 +1,7 @@
 /// Object system for CURSED
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Integer(i64),
     Float(f64),

@@ -4,15 +4,16 @@
 /// dependency tracking, and database-agnostic DDL generation.
 
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
 use super::entity::{Entity, ColumnDefinition, SqlColumnType, IndexDefinition};
-use super::schema::{TableSchema, DatabaseSchema};
+use super::schema::{TableSchema, DatabaseSchema, ColumnSchema};
 
 /// fr fr Migration trait for defining schema changes
-pub trait Migration: Send + Sync {
+pub trait Migration: Send + Sync + Debug {
     /// Migration version/timestamp
     fn version(&self) -> String;
     
@@ -516,6 +517,7 @@ impl Default for MigrationConfig {
 // Concrete migration implementations
 
 /// fr fr Create table migration
+#[derive(Debug)]
 pub struct CreateTableMigration<T: Entity> {
     version: String,
     name: String,
@@ -556,6 +558,7 @@ impl<T: Entity> Migration for CreateTableMigration<T> {
 }
 
 /// fr fr Drop table migration
+#[derive(Debug)]
 pub struct DropTableMigration<T: Entity> {
     version: String,
     name: String,
@@ -596,6 +599,7 @@ impl<T: Entity> Migration for DropTableMigration<T> {
 }
 
 /// fr fr Add column migration
+#[derive(Debug)]
 pub struct AddColumnMigration<T: Entity> {
     version: String,
     name: String,
@@ -633,7 +637,14 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
         );
         
         if let Some(table) = schema.get_table_mut(T::table_name()) {
-            table.add_column(self.column.clone());
+            let column_schema = ColumnSchema {
+                name: self.column.name.clone(),
+                sql_type: self.column.sql_type.clone(),
+                nullable: self.column.nullable,
+                default_value: self.column.default.clone(),
+                auto_increment: false, // ColumnDefinition doesn't track this, default to false
+            };
+            table.add_column(column_schema);
         }
         
         Ok(Vec::from([sql]))
@@ -655,6 +666,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
 }
 
 /// fr fr Drop column migration
+#[derive(Debug)]
 pub struct DropColumnMigration<T: Entity> {
     version: String,
     name: String,
@@ -773,7 +785,7 @@ mod tests {
     }
 
     fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::new("test").expect("Failed to create test DB"))
+        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
     }
 
     #[traced_test]

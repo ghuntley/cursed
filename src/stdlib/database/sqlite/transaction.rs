@@ -274,7 +274,6 @@ mod tests {
         let base = TxOptions {
             isolation: SqlIsolationLevel::LevelSerializable,
             read_only: false,
-            timeout: None,
         };
 
         let sqlite_opts = SqliteTransactionOptions::from(base);

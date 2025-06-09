@@ -636,7 +636,7 @@ mod tests {
     }
 
     fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::new("test").expect("Failed to create test DB"))
+        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
     }
 
     #[traced_test]

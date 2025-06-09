@@ -341,7 +341,6 @@ impl Default for TemplateEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::object::CursedObject;
 
     #[test]
     fn test_template_context_operations() {
