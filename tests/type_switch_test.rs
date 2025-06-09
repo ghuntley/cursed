@@ -17,7 +17,6 @@ use cursed::error::Error;
 use std::sync::Arc;
 use tracing::{debug, info};
 
-#[path = "common.rs"]
 mod common;
 
 /// Test basic type switch compilation

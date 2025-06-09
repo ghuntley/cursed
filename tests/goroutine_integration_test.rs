@@ -25,7 +25,6 @@ use cursed::error::Error;
 use tracing::{info, debug, warn, error};
 
 /// Test initialization and cleanup
-#[path = "common.rs"]
 mod common;
 
 /// Initialize tracing for tests

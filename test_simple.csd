@@ -1,5 +1,7 @@
-vibe test
-
+// Simple CURSED program for testing debug info
 slay main() {
-    vibez.spill("Hello, IR output!")
+    sus x = 42
+    facts message = "Hello, debugging!"
+    yolo result = x + 10
+    periodt
 }

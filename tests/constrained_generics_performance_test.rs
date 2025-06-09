@@ -21,7 +21,6 @@ use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
-#[path = "common.rs"]
 mod common;
 
 /// Performance test configuration

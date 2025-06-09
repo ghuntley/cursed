@@ -1,0 +1,151 @@
+# CURSED Build Configuration
+# This file defines the build configuration for a CURSED project
+
+[project]
+name = "cursed-language"
+version = "0.1.0"
+description = "A programming language that speaks Gen Z"
+authors = ["CURSED Team <team@cursed-lang.org>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ghuntley/cursed"
+documentation = "https://docs.cursed-lang.org"
+keywords = ["language", "compiler", "gen-z", "programming"]
+categories = ["development-tools", "compilers"]
+edition = "2024"
+
+# Build targets
+[[targets]]
+name = "cursed"
+type = "bin"
+path = "src/main.rs"
+required_features = []
+
+[[targets]]
+name = "cursed-fmt"
+type = "bin"
+path = "src/bin/cursed_fmt.rs"
+required_features = []
+
+[[targets]]
+name = "cursed-lint"
+type = "bin"
+path = "src/bin/cursed_lint.rs"
+required_features = []
+
+[[targets]]
+name = "cursed-doc"
+type = "bin"
+path = "src/bin/cursed_doc.rs"
+required_features = []
+
+[[targets]]
+name = "cursed-pkg"
+type = "bin"
+path = "src/bin/cursed_pkg.rs"
+required_features = []
+
+[[targets]]
+name = "cursed-build"
+type = "bin"
+path = "src/bin/cursed_build.rs"
+required_features = []
+
+# Build profiles
+[profiles.dev]
+optimization = "none"
+debug = true
+strip = false
+lto = false
+panic = "unwind"
+codegen_units = 256
+
+[profiles.release]
+optimization = "max"
+debug = false
+strip = true
+lto = true
+panic = "abort"
+codegen_units = 1
+llvm_args = ["-enable-new-pm=0"]
+
+[profiles.test]
+inherits = "dev"
+optimization = "basic"
+
+[profiles.bench]
+inherits = "release"
+debug = true
+
+# Dependencies
+[dependencies]
+serde = "1.0"
+toml = "0.8"
+clap = "4.0"
+tokio = "1.0"
+tracing = "0.1"
+
+[dev_dependencies]
+criterion = "0.5"
+proptest = "1.0"
+
+[build_dependencies]
+cc = "1.0"
+
+# Feature flags
+[features]
+default = ["std"]
+std = []
+jit = ["llvm-sys"]
+debug_mode = []
+
+# Build scripts
+[scripts]
+pre_build = "echo 'Starting build...'"
+post_build = "echo 'Build completed!'"
+pre_test = "echo 'Running tests...'"
+post_test = "echo 'Tests completed!'"
+
+# Tool configurations
+[tools.formatter]
+indent_style = "spaces"
+indent_size = 4
+line_width = 100
+brace_style = "same_line"
+format_on_build = true
+
+[tools.linter]
+lint_on_build = true
+auto_fix = false
+severity = "warning"
+disabled_rules = ["unused_imports"]
+enabled_rules = []
+
+[tools.docs]
+generate_on_build = false
+format = "html"
+output_dir = "docs"
+include_private = false
+theme = "light"
+
+[tools.package_manager]
+registry = "https://registry.cursed-lang.org"
+offline = false
+
+[tools.compiler]
+default_target = "x86_64-unknown-linux-gnu"
+incremental = true
+parallel_threads = 0  # Use all available cores
+
+# Cross-compilation targets
+[tools.targets.windows]
+triple = "x86_64-pc-windows-gnu"
+linker = "x86_64-w64-mingw32-gcc"
+linker_args = ["-static-libgcc"]
+
+[tools.targets.macos]
+triple = "x86_64-apple-darwin"
+linker = "x86_64-apple-darwin-ld"
+
+[tools.targets.wasm]
+triple = "wasm32-unknown-unknown"
+linker = "wasm-ld"

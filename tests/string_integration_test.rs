@@ -7,7 +7,6 @@ use inkwell::builder::Builder;
 
 use cursed::codegen::llvm::{LlvmCodeGenerator, CursedStringType};
 
-#[path = "common.rs"]
 mod common;
 
 /// Test integration of string type with LLVM code generator string helpers

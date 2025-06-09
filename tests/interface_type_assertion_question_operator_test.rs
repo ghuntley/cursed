@@ -27,7 +27,7 @@ use inkwell::module::Module;
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 // Test trait definitions (since the real ones aren't public)
 trait InterfaceTypeAssertionResult<'ctx> {

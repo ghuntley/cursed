@@ -2,7 +2,6 @@
 //!
 //! Simple tests focusing on parsing and AST creation without LLVM compilation.
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::lexer::{Lexer, Token};

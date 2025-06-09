@@ -21,7 +21,7 @@ use common::timing::Timer;
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 
 /// Test the full end-to-end compilation and execution of the interface type 

@@ -30,7 +30,7 @@ fn test_integer_literal_expression() {
 
     // Generate code for the expression
     let result = generator.compile_expression(&int_lit);
-    assert!(result.is_ok(), "Failed to compile integer literal: {:?}", result.err())
+    assert!(result.is_ok(), "Failed to compile integer literal: {:?}", result.err());
 
     // Check the result is an i32 with value 42
     let value = result.unwrap();

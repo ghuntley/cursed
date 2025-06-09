@@ -3,8 +3,7 @@
 //! These tests verify that the synchronization primitives work correctly
 //! under concurrent load and properly prevent race conditions and deadlocks.
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use cursed::runtime::{WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker, get_global_parker};
 use std::sync::{Arc, mpsc};

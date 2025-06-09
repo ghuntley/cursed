@@ -7,7 +7,6 @@ use std::ffi::c_void;
 use cursed::runtime::slice_runtime::{SliceRuntime, SliceHeader, SliceConfiguration, SliceStatistics};
 use cursed::runtime::slice_utils::*;
 
-#[path = "common.rs"]
 mod common;
 
 #[test]

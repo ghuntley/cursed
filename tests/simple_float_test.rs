@@ -1,6 +1,5 @@
 //! Simple focused test for float conversion functionality
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::codegen::llvm::FloatConversion;

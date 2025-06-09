@@ -11,7 +11,6 @@ use cursed::lexer::{Lexer, Token};
 use cursed::parser::Parser;
 use cursed::error::Error;
 
-#[path = "common.rs"]
 mod common;
 
 /// Test basic select statement AST creation

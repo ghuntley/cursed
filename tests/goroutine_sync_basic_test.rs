@@ -4,8 +4,7 @@
 //! primitive to ensure they work correctly in single-threaded scenarios
 //! before testing concurrent behavior.
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use cursed::runtime::{WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker};
 use std::sync::Arc;

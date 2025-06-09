@@ -12,7 +12,7 @@ use inkwell::builder::Builder;
 use inkwell::values::{BasicValueEnum, IntValue, StructValue};
 use std::sync::{Arc, Mutex};
 
-#[path = "common.rs"]
+#[path = "common/mod.rs"]
 mod common;
 
 /// Test basic map operations creation

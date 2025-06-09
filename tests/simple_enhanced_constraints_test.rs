@@ -10,7 +10,6 @@ use cursed::ast::{Expression, Node, Statement};
 use cursed::lexer::Token;
 use tracing::{debug, info, instrument};
 
-#[path = "common.rs"]
 mod common;
 
 /// Initialize tracing for tests

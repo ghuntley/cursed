@@ -5,8 +5,7 @@
 //! for ensuring the reliability of the synchronization primitives in
 //! production environments.
 
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 use cursed::runtime::{WaitGroup, GoroutineMutex, AtomicCounter, GoroutineCondvar, GoroutineParker, get_global_parker};
 use std::sync::{Arc, mpsc, Barrier};

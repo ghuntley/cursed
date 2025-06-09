@@ -3,7 +3,6 @@
 //! This test suite validates the integration of the comprehensive float conversion
 //! system with the CURSED language's type system and LLVM backend.
 
-#[path = "common.rs"]
 mod common;
 
 use cursed::codegen::llvm::{LlvmCodeGenerator, FloatConversion};

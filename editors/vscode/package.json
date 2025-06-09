@@ -1,0 +1,274 @@
+{
+    "name": "cursed-language-support",
+    "displayName": "CURSED Language Support",
+    "description": "Language support for CURSED programming language",
+    "version": "0.1.0",
+    "publisher": "cursed-lang",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ghuntley/cursed"
+    },
+    "engines": {
+        "vscode": "^1.74.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Linters",
+        "Formatters",
+        "Snippets"
+    ],
+    "keywords": [
+        "cursed",
+        "programming language",
+        "gen z",
+        "slang",
+        "go-like"
+    ],
+    "activationEvents": [
+        "onLanguage:cursed"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "cursed",
+                "aliases": ["CURSED", "cursed"],
+                "extensions": [".csd"],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./icons/cursed-light.svg",
+                    "dark": "./icons/cursed-dark.svg"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "cursed",
+                "scopeName": "source.cursed",
+                "path": "./syntaxes/cursed.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "cursed",
+                "path": "./snippets/cursed.json"
+            }
+        ],
+        "themes": [
+            {
+                "label": "CURSED Dark",
+                "uiTheme": "vs-dark",
+                "path": "./themes/cursed-dark.json"
+            },
+            {
+                "label": "CURSED Light",
+                "uiTheme": "vs",
+                "path": "./themes/cursed-light.json"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "CURSED Language Server",
+            "properties": {
+                "cursed.languageServer.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable CURSED language server"
+                },
+                "cursed.languageServer.command": {
+                    "type": "string",
+                    "default": "cursed-lsp",
+                    "description": "Command to start the CURSED language server"
+                },
+                "cursed.languageServer.args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Arguments to pass to the language server"
+                },
+                "cursed.languageServer.debug": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable debug logging for the language server"
+                },
+                "cursed.format.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable automatic formatting on save"
+                },
+                "cursed.format.indentSize": {
+                    "type": "number",
+                    "default": 4,
+                    "description": "Number of spaces per indent level"
+                },
+                "cursed.format.useTabs": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use tabs instead of spaces for indentation"
+                },
+                "cursed.format.lineWidth": {
+                    "type": "number",
+                    "default": 120,
+                    "description": "Maximum line width for formatting"
+                },
+                "cursed.format.braceStyle": {
+                    "type": "string",
+                    "enum": ["same-line", "next-line", "next-line-unindented"],
+                    "default": "same-line",
+                    "description": "Brace placement style"
+                },
+                "cursed.lint.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable linting"
+                },
+                "cursed.lint.checkStyle": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Check for style issues"
+                },
+                "cursed.lint.checkPerformance": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Check for performance issues"
+                },
+                "cursed.lint.checkSecurity": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Check for security issues"
+                },
+                "cursed.completion.enableSnippets": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable code snippets in completion"
+                },
+                "cursed.completion.enableCursedSlang": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Suggest CURSED slang keywords"
+                },
+                "cursed.inlayHints.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable inlay hints for type information"
+                },
+                "cursed.semanticHighlighting.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable semantic syntax highlighting"
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "cursed.restartLanguageServer",
+                "title": "Restart Language Server",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.showAstNode",
+                "title": "Show AST Node",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.showTypeInfo",
+                "title": "Show Type Information",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.formatDocument",
+                "title": "Format Document",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.runLinter",
+                "title": "Run Linter",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.showGoroutineInfo",
+                "title": "Show Goroutine Information",
+                "category": "CURSED"
+            },
+            {
+                "command": "cursed.showChannelInfo",
+                "title": "Show Channel Information",
+                "category": "CURSED"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.showAstNode",
+                    "group": "cursed@1"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.showTypeInfo",
+                    "group": "cursed@2"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.formatDocument",
+                    "group": "cursed@3"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.showAstNode"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.showTypeInfo"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.formatDocument"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.runLinter"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.showGoroutineInfo"
+                },
+                {
+                    "when": "resourceLangId == cursed",
+                    "command": "cursed.showChannelInfo"
+                }
+            ]
+        },
+        "keybindings": [
+            {
+                "command": "cursed.formatDocument",
+                "key": "ctrl+shift+f",
+                "mac": "cmd+shift+f",
+                "when": "resourceLangId == cursed"
+            },
+            {
+                "command": "cursed.showTypeInfo",
+                "key": "ctrl+k ctrl+i",
+                "mac": "cmd+k cmd+i",
+                "when": "resourceLangId == cursed"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "devDependencies": {
+        "@types/node": "^18.x",
+        "@types/vscode": "^1.74.0",
+        "typescript": "^4.9.4"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^8.1.0"
+    }
+}

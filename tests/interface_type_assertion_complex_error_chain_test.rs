@@ -25,7 +25,7 @@ use common::timing::Timer;
 
 // Import common test utilities
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 
 /// Test complex error chaining scenarios with interface type assertions and ? operator

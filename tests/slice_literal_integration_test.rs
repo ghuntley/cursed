@@ -15,7 +15,6 @@ use inkwell::OptimizationLevel;
 use std::error::Error;
 use tracing_test::traced_test;
 
-#[path = "common.rs"]
 mod common;
 
 /// Test compilation of an empty slice literal

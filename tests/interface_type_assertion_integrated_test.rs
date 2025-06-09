@@ -10,7 +10,7 @@ use cursed::object::Object as CursedObject;
 
 
 #[path = "common/mod.rs"]
-pub mod common;
+mod common;
 
 // Initialize tracing setup for tests
 #[macro_export]

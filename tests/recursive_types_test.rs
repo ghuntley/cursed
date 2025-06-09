@@ -14,8 +14,7 @@ use cursed::error::Error;
 use std::collections::HashMap;
 
 // Common test tracing setup
-#[path = "common.rs"]
-pub mod common;
+mod common;
 
 #[test]
 fn test_direct_recursive_struct() {

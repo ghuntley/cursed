@@ -3,7 +3,6 @@
 //! This test focuses on testing the core constrained generics functionality
 //! without relying on modules that have compilation issues.
 
-#[path = "common.rs"]
 mod common;
 
 use std::time::Instant;

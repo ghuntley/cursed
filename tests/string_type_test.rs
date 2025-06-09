@@ -12,7 +12,6 @@ use cursed::codegen::llvm::string_type::{CursedStringType, StringTypeUtils};
 use cursed::core::type_checker::Type;
 use cursed::codegen::llvm::types::{convert_type, create_basic_type, get_type_size, is_string_type, validate_type_compatibility};
 
-#[path = "common.rs"]
 mod common;
 
 /// Test basic string type creation and validation

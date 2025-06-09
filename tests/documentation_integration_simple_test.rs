@@ -12,7 +12,6 @@ use std::{
 };
 use tempfile::TempDir;
 
-#[path = "common.rs"]
 mod common;
 
 /// Simple test configuration
