@@ -150,7 +150,8 @@ impl DriverTx for SqliteTransaction {
             ));
         }
 
-        self.connection.prepare(query)
+        // Use the DriverConn trait method through the connection
+        (self.connection.as_ref() as &dyn super::super::DriverConn).prepare(query)
     }
 
     fn query(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::QueryResult, DatabaseError> {
@@ -161,7 +162,8 @@ impl DriverTx for SqliteTransaction {
             ));
         }
 
-        self.connection.query(query, args)
+        // Use the DriverConn trait method through the connection
+        (self.connection.as_ref() as &dyn super::super::DriverConn).query(query, args)
     }
 
     fn execute(&self, query: &str, args: &[SqlValue]) -> Result<super::super::driver::ExecuteResult, DatabaseError> {
@@ -172,7 +174,8 @@ impl DriverTx for SqliteTransaction {
             ));
         }
 
-        self.connection.execute(query, args)
+        // Use the DriverConn trait method through the connection
+        (self.connection.as_ref() as &dyn super::super::DriverConn).execute(query, args)
     }
 
     fn commit(&self) -> Result<(), DatabaseError> {
