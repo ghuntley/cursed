@@ -87,6 +87,12 @@ url = "2.4"             # URL parsing and manipulation
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
 
+# Missing dependencies for web_vibez
+uuid = { version = "1.0", features = ["v4"] }      # For request IDs
+urlencoding = "2.1"                                # For URL encoding/decoding
+httpdate = "1.0"                                   # For HTTP date formatting  
+async-trait = "0.1"                                # For async traits
+
 # Language Server Protocol dependencies
 tower-lsp = "0.20"         # LSP server framework
 tower = "0.4"             # Service trait and utilities

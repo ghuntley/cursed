@@ -4,11 +4,17 @@ use crate::debug::{DebugConfig, SourceLocation};
 use std::path::PathBuf;
 
 pub mod debug_integration;
+pub mod web_vibez_integration;
+pub mod stdlib_registry;
+
 pub use debug_integration::LlvmDebugCodeGenerator;
+pub use web_vibez_integration::{WebVibezLlvmIntegration, HttpTypeRegistry};
+pub use stdlib_registry::{StdlibRegistry, StdlibLlvmIntegration, StdlibFunction};
 
 pub struct LlvmCodeGenerator {
     debug_generator: LlvmDebugCodeGenerator,
     module_name: Option<String>,
+    web_vibez_integration: Option<WebVibezLlvmIntegration<'static>>,
 }
 
 impl LlvmCodeGenerator {
@@ -16,6 +22,7 @@ impl LlvmCodeGenerator {
         Ok(Self {
             debug_generator: LlvmDebugCodeGenerator::new(DebugConfig::default()),
             module_name: None,
+            web_vibez_integration: None,
         })
     }
     
@@ -23,6 +30,7 @@ impl LlvmCodeGenerator {
         Ok(Self {
             debug_generator: LlvmDebugCodeGenerator::new(debug_config),
             module_name: None,
+            web_vibez_integration: None,
         })
     }
     
