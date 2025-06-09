@@ -313,7 +313,8 @@ fn map_channel_functions(
     module: &Module,
 ) -> Result<(), Error> {
     use crate::runtime::channel::{cursed_make_channel, cursed_send_to_channel, 
-                               cursed_receive_from_channel, cursed_close_channel};
+    cursed_receive_from_channel, cursed_close_channel, cursed_try_send_to_channel,
+    cursed_try_receive_from_channel, cursed_channel_stats};
     
     tracing::debug!("Mapping channel runtime functions");
     
@@ -350,6 +351,33 @@ fn map_channel_functions(
             let addr = cursed_close_channel as usize;
             execution_engine.add_global_mapping(&close_fn, addr);
             println!("Mapped cursed_close_channel function");
+        }
+    }
+    
+    // Map cursed_try_send_to_channel function
+    if let Some(try_send_fn) = module.get_function("cursed_try_send_to_channel") {
+        unsafe {
+            let addr = cursed_try_send_to_channel as usize;
+            execution_engine.add_global_mapping(&try_send_fn, addr);
+            println!("Mapped cursed_try_send_to_channel function");
+        }
+    }
+    
+    // Map cursed_try_receive_from_channel function
+    if let Some(try_receive_fn) = module.get_function("cursed_try_receive_from_channel") {
+        unsafe {
+            let addr = cursed_try_receive_from_channel as usize;
+            execution_engine.add_global_mapping(&try_receive_fn, addr);
+            println!("Mapped cursed_try_receive_from_channel function");
+        }
+    }
+    
+    // Map cursed_channel_stats function
+    if let Some(stats_fn) = module.get_function("cursed_channel_stats") {
+        unsafe {
+            let addr = cursed_channel_stats as usize;
+            execution_engine.add_global_mapping(&stats_fn, addr);
+            println!("Mapped cursed_channel_stats function");
         }
     }
     

@@ -19,6 +19,8 @@
 
 mod channel;
 mod channel_helpers;
+mod select;
+mod channel_range;
 mod context;
 mod expression_list;
 mod expressions;

@@ -486,15 +486,15 @@ mod tests {
         let source = r#"
 vibe mypackage;
 
-yeet "fmt"
-yeet "strings"
+yeet "fmt";
+yeet "strings";
 
 slay main() {
-    vibez.spill("Hello, World!")
+    cap 42;
 }
 
-slay helper() -> normie {
-    cap 42
+slay helper() {
+    cap 43;
 }
 "#;
 

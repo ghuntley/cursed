@@ -205,7 +205,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     }
     
     /// Store a variable in the current scope
-    fn store_variable(&mut self, name: &str, value: BasicValueEnum<'ctx>) -> Result<(), Error> {
+    pub(crate) fn store_variable(&mut self, name: &str, value: BasicValueEnum<'ctx>) -> Result<(), Error> {
         // This would interface with the variable storage system
         // For now, we'll create an alloca and store the value
         

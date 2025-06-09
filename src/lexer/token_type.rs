@@ -97,6 +97,7 @@ pub enum TokenType {
     Bestie,    // for (bestie)
     Periodt,   // while (periodt)
     VibeCheck, // switch (vibe_check)
+    Choose,    // select (choose)
     Mood,      // case (mood)
     Basic,     // default (basic)
     Ghosted,   // break (ghosted)

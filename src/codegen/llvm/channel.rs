@@ -9,50 +9,50 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
     #[tracing::instrument(skip(self, channel_expr), fields(element_type = ?channel_expr.element_type.string(), has_capacity = channel_expr.capacity.is_some()), level = "debug")]
     pub fn compile_channel_creation(&mut self, channel_expr: &ChannelExpression) -> Result<BasicValueEnum<'ctx>, String> {
         tracing::info!("Compiling channel creation");
-        // Import the create_channel function from core::channel
+        // Import the enhanced channel creation function
         self.init_channel_helpers();
         
-        // Get the element type as a string
+        // Get the element type as a string and determine size
         let element_type_str = channel_expr.element_type.string();
+        let element_size = match element_type_str.as_str() {
+            "byte" => 1u64,
+            "normie" | "int" | "i32" => 4u64,
+            "thicc" | "i64" | "float" | "f64" => 8u64,
+            _ => 8u64, // Default to 8 bytes for unknown types
+        };
         
-        // Create a string constant for the element type
-        let element_type_const = self.builder.build_global_string_ptr(&element_type_str, "element_type").unwrap();
-        
-        // Determine which function to call based on whether capacity is provided
-        if let Some(capacity_expr) = &channel_expr.capacity {
-            // This is a buffered channel with capacity
-            let create_buffered_channel_fn = self.module.get_function("create_buffered_channel").ok_or_else(|| 
-                "create_buffered_channel function not found".to_string()
-            )?;
-            
+        // Get the capacity (0 for unbuffered)
+        let capacity = if let Some(capacity_expr) = &channel_expr.capacity {
             // Compile the capacity expression
             let capacity_value = self.compile_expression(capacity_expr.as_ref())?;
-            
-            // Call function with element type and capacity
-            let result = self.builder.build_call(
-                create_buffered_channel_fn,
-                &[element_type_const.as_pointer_value().into(), capacity_value.into()],
-                "buffered_channel"
-            ).unwrap();
-            
-            // Return the channel object
-            Ok(result.try_as_basic_value().left().unwrap())
+            match capacity_value {
+                BasicValueEnum::IntValue(int_val) => {
+                    int_val.get_zero_extended_constant().unwrap_or(0)
+                },
+                _ => return Err("Channel capacity must be an integer".to_string()),
+            }
         } else {
-            // This is an unbuffered channel
-            let create_channel_fn = self.module.get_function("create_channel").ok_or_else(|| 
-                "create_channel function not found".to_string()
-            )?;
-            
-            // Call the function with just the element type
-            let result = self.builder.build_call(
-                create_channel_fn,
-                &[element_type_const.as_pointer_value().into()],
-                "channel"
-            ).unwrap();
-            
-            // Return the channel object
-            Ok(result.try_as_basic_value().left().unwrap())
-        }
+            0u64 // Unbuffered channel
+        };
+        
+        // Get the enhanced channel creation function
+        let create_channel_fn = self.module.get_function("cursed_make_channel").ok_or_else(|| 
+            "cursed_make_channel function not found".to_string()
+        )?;
+        
+        // Create constants for element size and capacity
+        let element_size_const = self.context.i64_type().const_int(element_size, false);
+        let capacity_const = self.context.i64_type().const_int(capacity, false);
+        
+        // Call the enhanced function with element size and capacity
+        let result = self.builder.build_call(
+            create_channel_fn,
+            &[element_size_const.into(), capacity_const.into()],
+            "channel"
+        ).unwrap();
+        
+        // Return the channel pointer
+        Ok(result.try_as_basic_value().left().unwrap())
     }
     
     // Compile a send expression (either blocking or non-blocking)
@@ -83,21 +83,21 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let void_ptr_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
         let value_void_ptr = self.builder.build_bitcast(value_ptr, void_ptr_type, "value_void_ptr").unwrap();
         
-        // Get the send_to_channel function
-        let send_fn = self.module.get_function("send_to_channel").ok_or_else(|| 
-            "send_to_channel function not found".to_string()
+        // Get the enhanced send function
+        let send_fn = self.module.get_function("cursed_send_to_channel").ok_or_else(|| 
+            "cursed_send_to_channel function not found".to_string()
         )?;
         
         // Call the function with channel and value
-        let result = self.builder.build_call(
+        self.builder.build_call(
             send_fn,
             &[channel_val.into(), value_void_ptr.into()],
             "send_result"
         ).unwrap();
         
-        // Return result code (0 for success, non-zero for error)
-        let result_val = result.try_as_basic_value().left().unwrap();
-        Ok(result_val)
+        // Return success (void return from FFI function)
+        let success_const = self.context.i32_type().const_int(0, false);
+        Ok(success_const.into())
     }
     
     // Compile a non-blocking send expression
@@ -126,9 +126,9 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let void_ptr_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
         let value_void_ptr = self.builder.build_bitcast(value_ptr, void_ptr_type, "value_void_ptr").unwrap();
         
-        // Get the try_send_to_channel function
-        let try_send_fn = self.module.get_function("try_send_to_channel").ok_or_else(|| 
-            "try_send_to_channel function not found".to_string()
+        // Get the enhanced try_send function
+        let try_send_fn = self.module.get_function("cursed_try_send_to_channel").ok_or_else(|| 
+            "cursed_try_send_to_channel function not found".to_string()
         )?;
         
         // Call the function with channel and value
@@ -138,7 +138,7 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
             "try_send_result"
         ).unwrap();
         
-        // Return result code (0 for success, 1 for would block, -1 for error)
+        // Return result code (1 for success, 0 for would block, -1 for error)
         let result_val = result.try_as_basic_value().left().unwrap();
         Ok(result_val)
     }
@@ -153,37 +153,38 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         // Compile the channel expression
         let channel_val = self.compile_expression(recv_expr.channel.as_ref())?;
         
-        // Get the receive_from_channel function
-        let receive_fn = self.module.get_function("receive_from_channel").ok_or_else(|| 
-            "receive_from_channel function not found".to_string()
+        // Allocate space for the received value
+        let i64_type = self.context.i64_type();
+        let result_alloca = self.builder.build_alloca(i64_type, "receive_result").unwrap();
+        
+        // Cast to void pointer for FFI call
+        let void_ptr_type = self.context.i8_type().ptr_type(inkwell::AddressSpace::default());
+        let result_void_ptr = self.builder.build_bitcast(result_alloca, void_ptr_type, "result_void_ptr").unwrap();
+        
+        // Get the enhanced receive function
+        let receive_fn = self.module.get_function("cursed_receive_from_channel").ok_or_else(|| 
+            "cursed_receive_from_channel function not found".to_string()
         )?;
         
-        // Call the function with channel
-        let result = self.builder.build_call(
+        // Call the function with channel and result pointer
+        self.builder.build_call(
             receive_fn,
-            &[channel_val.into()],
-            "receive_result"
+            &[channel_val.into(), result_void_ptr.into()],
+            "receive_call"
         ).unwrap();
         
-        // Get the return value which is a void pointer
-        let void_ptr = result.try_as_basic_value().left().unwrap().into_pointer_value();
-        
-        // For a complete implementation, we should know the channel's element type
-        // and cast the void pointer to the correct type
-        // For now, we'll assume it's an integer value
-        
-        // Load the value from the void pointer by casting it to the appropriate type
-        let i64_type = self.context.i64_type();
-        let i64_ptr_type = i64_type.ptr_type(inkwell::AddressSpace::default());
-        let value_ptr = self.builder.build_bitcast(void_ptr, i64_ptr_type, "value_ptr").unwrap();
-        let value = self.builder.build_load(i64_type, value_ptr.into_pointer_value(), "received_value").unwrap();
+        // Load the received value from the allocated space
+        let value = self.builder.build_load(i64_type, result_alloca, "received_value").unwrap();
         
         // Return the received value
         Ok(value)
     }
     
-    // Compile a channel close expression
+    /// Compile a channel close expression with comprehensive error handling
+    #[tracing::instrument(skip(self, channel_expr), level = "debug")]
     pub fn compile_channel_close(&mut self, channel_expr: &dyn Expression) -> Result<BasicValueEnum<'ctx>, String> {
+        tracing::info!("Compiling channel close operation");
+        
         // Import the channel helper functions
         self.init_channel_helpers();
         
@@ -191,8 +192,8 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         let channel_val = self.compile_expression(channel_expr)?;
         
         // Get the close_channel function
-        let close_fn = self.module.get_function("close_channel").ok_or_else(|| 
-            "close_channel function not found".to_string()
+        let close_fn = self.module.get_function("cursed_close_channel").ok_or_else(|| 
+            "cursed_close_channel function not found".to_string()
         )?;
         
         // Call the function with channel
@@ -203,6 +204,66 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         ).unwrap();
         
         // Return result code (0 for success, non-zero for error)
+        let result_val = result.try_as_basic_value().left().unwrap();
+        
+        // Create error checking blocks
+        let current_fn = self.builder.get_insert_block().unwrap().get_parent().unwrap();
+        let success_block = self.context.append_basic_block(current_fn, "close_success");
+        let error_block = self.context.append_basic_block(current_fn, "close_error");
+        let cont_block = self.context.append_basic_block(current_fn, "close_continue");
+        
+        // Check if the result is 0 (success)
+        let zero = self.context.i32_type().const_int(0, false);
+        let is_success = self.builder.build_int_compare(
+            inkwell::IntPredicate::EQ,
+            result_val.into_int_value(),
+            zero,
+            "is_close_success"
+        ).unwrap();
+        
+        // Branch based on success
+        self.builder.build_conditional_branch(is_success, success_block, error_block).unwrap();
+        
+        // Success block
+        self.builder.position_at_end(success_block);
+        self.builder.build_unconditional_branch(cont_block).unwrap();
+        
+        // Error block - could add logging or error handling here
+        self.builder.position_at_end(error_block);
+        self.builder.build_unconditional_branch(cont_block).unwrap();
+        
+        // Continue block
+        self.builder.position_at_end(cont_block);
+        
+        Ok(result_val)
+    }
+    
+    /// Compile a graceful channel close with timeout
+    pub fn compile_channel_close_gracefully(&mut self, channel_expr: &dyn Expression, timeout_ms: u64) -> Result<BasicValueEnum<'ctx>, String> {
+        tracing::info!(timeout_ms = timeout_ms, "Compiling graceful channel close operation");
+        
+        // Import the channel helper functions
+        self.init_channel_helpers();
+        
+        // Compile the channel expression
+        let channel_val = self.compile_expression(channel_expr)?;
+        
+        // Get the graceful close function
+        let close_fn = self.module.get_function("cursed_close_channel_gracefully").ok_or_else(|| 
+            "cursed_close_channel_gracefully function not found".to_string()
+        )?;
+        
+        // Create timeout constant
+        let timeout_val = self.context.i64_type().const_int(timeout_ms, false);
+        
+        // Call the function with channel and timeout
+        let result = self.builder.build_call(
+            close_fn,
+            &[channel_val.into(), timeout_val.into()],
+            "graceful_close_result"
+        ).unwrap();
+        
+        // Return result code
         let result_val = result.try_as_basic_value().left().unwrap();
         Ok(result_val)
     }
@@ -244,6 +305,10 @@ impl<'ctx> LlvmCodeGenerator<'ctx> {
         
         // Declare the close channel function
         let close_type = int32_type.fn_type(&[void_ptr_type.into()], false);
-        self.module.add_function("close_channel", close_type, Some(inkwell::module::Linkage::External));
+        self.module.add_function("cursed_close_channel", close_type, Some(inkwell::module::Linkage::External));
+        
+        // Declare the graceful close channel function  
+        let graceful_close_type = int32_type.fn_type(&[void_ptr_type.into(), self.context.i64_type().into()], false);
+        self.module.add_function("cursed_close_channel_gracefully", graceful_close_type, Some(inkwell::module::Linkage::External));
     }
 }

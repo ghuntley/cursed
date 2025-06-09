@@ -101,6 +101,7 @@ pub enum Token {
     Bestie,    // for (bestie)
     Periodt,   // while (periodt)
     VibeCheck, // switch (vibe_check)
+    Choose,    // select (choose)
     Mood,      // case (mood)
     Case,      // case (case) - for type switches
     Basic,     // default (basic)
@@ -242,6 +243,7 @@ impl Token {
             TokenType::Bestie => Token::Bestie,
             TokenType::Periodt => Token::Periodt,
             TokenType::VibeCheck => Token::VibeCheck,
+            TokenType::Choose => Token::Choose,
             TokenType::Mood => Token::Mood,
             TokenType::Basic => Token::Basic,
             TokenType::Ghosted => Token::Ghosted,
@@ -368,6 +370,7 @@ impl Token {
             Token::Bestie => String::from("bestie"),
             Token::Periodt => String::from("periodt"),
             Token::VibeCheck => String::from("vibe_check"),
+            Token::Choose => String::from("choose"),
             Token::Mood => String::from("mood"),
             Token::Case => String::from("case"),
             Token::Basic => String::from("basic"),
