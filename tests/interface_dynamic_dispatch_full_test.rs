@@ -65,8 +65,8 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     )?;
     
     // 4. Verify FileReader implements Reader
-    let file_reader_type = Type::Struct("FileReader".to_string(), Vec::new();
-    let reader_interface_type = Type::Interface("Reader".to_string(), Vec::new();
+    let file_reader_type = Type::Struct("FileReader".to_string(), Vec::new());
+    let reader_interface_type = Type::Interface("Reader".to_string(), Vec::new());
     
     let implements = type_checker.check_interface_implementation(
         &file_reader_type,
@@ -216,7 +216,7 @@ fn test_reader_interface_dynamic_dispatch() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string());
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
     }
     
     Ok(())
@@ -377,7 +377,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     codegen.builder().build_store(age_ptr, age).unwrap();
     
     // Convert Person to Stringer interface
-    let person_type = Type::Struct("Person".to_string(), Vec::new();
+    let person_type = Type::Struct("Person".to_string(), Vec::new());
     let stringer_interface = codegen.create_interface_value(
         person_ptr,
         &person_type,
@@ -438,7 +438,7 @@ fn test_interface_type_assertion() -> Result<(), Error> {
     
     // Verify the module
     if let Err(message) = codegen.module().verify() {
-        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string()));
+        return Err(Error::from_str(&format!("Module verification error: {}", message.to_string())));
     }
     
     Ok(())

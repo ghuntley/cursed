@@ -67,6 +67,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 
 // Re-export the AST module with the new structure
 pub mod ast;
+pub mod bootstrap;
 pub mod cli;
 pub mod code;
 pub mod codegen;
@@ -158,6 +159,8 @@ pub use crate::codegen::llvm::interface_path_finder_enhanced::EnhancedInterfaceP
 pub use crate::codegen::llvm::slice_literal::{SliceLiteralCompiler, create_slice_literal_compiler};
 pub use crate::codegen::llvm::slice_operations::{SliceOperations, create_slice_operations};
 pub use crate::slice_integration::{SliceIntegration, convenience as slice_convenience};
+
+// Bootstrap compiler and self-compilation verification system already included above
 
 // Re-export essential types
 pub use crate::core::symbol_table::Symbol as CoreSymbol;

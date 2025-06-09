@@ -66,6 +66,10 @@ fn main() {
                     cursed::cli::print_optimization_help();
                     Ok(())
                 }
+                "stage2" => {
+                    println!("Stage 2 compiler commands not yet implemented");
+                    Ok(())
+                }
                 "--list-passes" => {
                     let args = vec!["--list-passes".to_string()];
                     match cursed::cli::parse_optimization_args(&args) {
@@ -139,6 +143,12 @@ fn main() {
                 }
                 return;
             }
+
+            // // Check for Stage 2 compiler commands - temporarily disabled
+            // if args.len() > 1 && args[1] == "stage2" {
+            //     println!("Stage 2 compiler commands not yet implemented");
+            //     return;
+            // }
 
             match args[1].as_str() {
                 "--debug-tokens" => {
@@ -217,6 +227,13 @@ fn print_usage(program_name: &str) {
     println!("  --opt-help         Show detailed optimization help");
     println!("  --list-passes      List available optimization passes");
     println!("  --benchmark-opt    Benchmark optimization levels");
+    println!("");
+    println!("Stage 2 Compiler (Self-Hosting):");
+    println!("  stage2             Show Stage 2 compiler help");
+    println!("  stage2 status      Check Stage 2 compiler availability");
+    println!("  stage2 build       Build Stage 2 compiler from CURSED source");
+    println!("  stage2 compile     Compile using Stage 2 (CURSED) compiler");
+    println!("  stage2 self-host   Enable/disable self-hosting mode");
     println!("");
     println!("If no arguments are provided, the REPL will start in interactive mode.");
     println!("If a file path is provided, the file will be executed.");

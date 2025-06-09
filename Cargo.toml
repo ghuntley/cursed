@@ -47,6 +47,7 @@ once_cell = "1.17"  # Lazy static initialization
 lazy_static = "1.4"  # Lazy static initialization support
 serde = { version = "1.0", features = ["derive"] }  # Serialization framework
 serde_json = "1.0"  # JSON serialization/deserialization
+serde_yaml = "0.9"  # YAML serialization/deserialization
 thread_local = "1.1"  # Thread-local storage
 parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
@@ -70,6 +71,10 @@ num_cpus = "1.16"  # For detecting CPU cores
 chrono = "0.4"   # Date and time utilities
 hostname = "0.4.1"
 
+# For the bootstrap verification system
+# sha2 already included above for cryptography
+tempfile = "3.8"  # Temporary directories for testing
+
 # We removed reqwest dependency since we're using mock HTTP responses only
 
 [features]
@@ -86,7 +91,8 @@ pretty_assertions = "1.4"  # For nicer test output
 proptest = "1.3"  # For property-based testing
 rand = "0.8.5"  # For randomization in tests
 tempfile = "3.8"  # For temporary files in tests
-clap = "2.34"  # For command-line argument parsing
+clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing
+tracing-test = "0.2"  # For tracing in tests
 
 [workspace]
 members = [
@@ -108,6 +114,10 @@ path = "src/test_preprocessor.rs"
 [[bin]]
 name = "language_benchmark"
 path = "src/bin/language_benchmark.rs"
+
+[[bin]]
+name = "bootstrap-verify"
+path = "src/bin/bootstrap_verify.rs"
 
 [profile.release]
 lto = true  # Enable Link Time Optimization for smaller binaries

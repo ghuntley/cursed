@@ -33,7 +33,7 @@ fn run_jit_test(input: &str) -> Result<ObjectRef, String> {
     // Check for parser errors
     if !parser.errors().is_empty() {
         let error_msg = parser.errors().join("\n");
-        return Err(format!("Parser errors:\n{}", error_msg);
+        return Err(format!("Parser errors:\n{}", error_msg));
     }
     
     // Enable debugging for type assertions
@@ -138,7 +138,7 @@ fn test_interface_type_registry_basic() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Counts: Rectangle=1, Circle=1, Triangle=1".to_string());
+            assert_eq!(result.as_string(), Some("Counts: Rectangle=1, Circle=1, Triangle=1".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -209,7 +209,7 @@ fn test_interface_type_registry_nested() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Success: All type assertions passed".to_string());
+            assert_eq!(result.as_string(), Some("Success: All type assertions passed".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
@@ -276,7 +276,7 @@ fn test_interface_type_registry_invalid() {
     // Run the test and verify the result
     match run_jit_test(input) {
         Ok(result) => {
-            assert_eq!(result.as_string(), Some("Success: Invalid assertions correctly failed".to_string());
+            assert_eq!(result.as_string(), Some("Success: Invalid assertions correctly failed".to_string()));
         },
         Err(e) => panic!("Failed to run test: {}", e),
     }
