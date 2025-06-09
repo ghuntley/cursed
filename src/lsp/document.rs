@@ -194,7 +194,7 @@ impl DocumentManager {
             doc_entry.version = version;
             
             for change in changes {
-                doc_entry.apply_change(change);
+                (*doc_entry).apply_change(change);
             }
             
             Some(doc_entry.get_text())

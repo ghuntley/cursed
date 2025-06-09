@@ -356,7 +356,7 @@ impl BuildPipeline {
     
     /// Execute individual pipeline stage
     #[instrument(skip(self))]
-    async fn execute_stage(&self, stage: &PipelineStage, context: &PipelineContext) -> Result<StageResult, BuildError> {
+    pub async fn execute_stage(&self, stage: &PipelineStage, context: &PipelineContext) -> Result<StageResult, BuildError> {
         let start_time = Instant::now();
         info!("Executing stage: {}", stage.name);
         
@@ -438,7 +438,7 @@ impl BuildPipeline {
                     let stderr = String::from_utf8_lossy(&output_result.stderr);
                     
                     output.push(stdout.to_string());
-                    if !stderr.is_empty() {
+                    if !stderr.as_ref().is_empty() {
                         warnings.push(stderr.to_string());
                     }
                     
@@ -487,7 +487,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.as_ref().is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -536,7 +536,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.as_ref().is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -573,13 +573,13 @@ impl BuildPipeline {
         
         // Build specific targets or all targets
         let targets_to_build = if context.targets.is_empty() {
-            self.config.targets.iter().map(|t| t.name.clone()).collect()
+            (&self.config.targets).iter().map(|t| t.name.clone()).collect()
         } else {
             context.targets.clone()
         };
         
         for target_name in targets_to_build {
-            let target = self.config.targets.iter()
+            let target = (&self.config.targets).iter()
                 .find(|t| t.name == target_name)
                 .ok_or_else(|| BuildError::TargetNotFound(target_name.clone()))?;
             
@@ -612,7 +612,7 @@ impl BuildPipeline {
                     let stderr = String::from_utf8_lossy(&output_result.stderr);
                     
                     output.push(stdout.to_string());
-                    if !stderr.is_empty() {
+                    if !stderr.as_ref().is_empty() {
                         warnings.push(stderr.to_string());
                     }
                     
@@ -665,7 +665,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.as_ref().is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -715,7 +715,7 @@ impl BuildPipeline {
                 let stderr = String::from_utf8_lossy(&output_result.stderr);
                 
                 output.push(stdout.to_string());
-                if !stderr.is_empty() {
+                if !stderr.as_ref().is_empty() {
                     warnings.push(stderr.to_string());
                 }
                 
@@ -800,7 +800,7 @@ impl BuildPipeline {
     }
     
     /// Generate cache key for stage
-    fn generate_cache_key(&self, stage: &PipelineStage, context: &PipelineContext) -> String {
+    pub fn generate_cache_key(&self, stage: &PipelineStage, context: &PipelineContext) -> String {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         

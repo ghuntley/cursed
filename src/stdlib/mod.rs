@@ -4,11 +4,20 @@ pub mod packages;
 pub mod web_vibez;
 pub mod http_core;
 pub mod database;
+pub mod crypto;
 
 // Database package re-exports for easy access
 pub use database::llvm_integration::{
     DatabaseLLVMIntegration, DatabaseLLVMIntegrationImpl, 
     register_database_functions
+};
+
+// Crypto package re-exports for easy access
+pub use crypto::{
+    CryptoPlatform, JwtHandler, HmacAuth, TotpGenerator, TlsHandshake,
+    SecureRandom, UuidV4Generator, SaltGenerator, NonceGenerator,
+    Base64Encoder, HexEncoder, Base32Encoder, Asn1Parser,
+    CryptoLLVMIntegration, CryptoLLVMIntegrationImpl, register_crypto_functions
 };
 
 // Package re-exports

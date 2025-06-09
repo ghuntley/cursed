@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help
+.PHONY: build test lint fmt fmt-check fmt-fix fmt-diff clean example jit-test language-benchmark stage2-build stage2-test stage2-status bootstrap-test bootstrap-test-quick bootstrap-test-full bootstrap-test-category bootstrap-test-report bootstrap-test-clean bootstrap-test-help fmt-help cursed-lint cursed-lint-check cursed-lint-fix cursed-lint-stats cursed-lint-help pkg-install pkg-update pkg-check pkg-clean pkg-search pkg-info pkg-init build-with-packages test-with-packages pkg-help docs docs-all docs-markdown docs-json docs-check docs-check-json docs-serve docs-watch docs-clean docs-open docs-config docs-help cursed-build cursed-build-init cursed-build-clean cursed-build-run cursed-build-test cursed-build-templates cursed-build-help debug-build debug-test debug-ir debug-dwarf debug-gdb debug-lldb debug-vscode debug-report debug-validate debug-help crypto-test crypto-test-integration crypto-test-stress crypto-test-security crypto-test-interop crypto-test-all crypto-example crypto-benchmark crypto-help
 
 build:
 	./fix_linking.sh devenv shell cargo build
@@ -735,3 +735,147 @@ debug-help:
 	@echo "For complete usage information:"
 	@echo "  ./target/debug/cursed-debug --help"
 	@echo ""
+
+# =============================================================================
+# CRYPTO TESTING COMMANDS
+# =============================================================================
+
+# Run crypto integration tests
+crypto-test-integration:
+	@echo "🔐 Running crypto integration tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_integration_test
+
+# Run crypto stress tests
+crypto-test-stress:
+	@echo "🚀 Running crypto stress tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_stress_test
+
+# Run crypto security validation tests
+crypto-test-security:
+	@echo "🛡️ Running crypto security tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_security_test
+
+# Run crypto interoperability tests
+crypto-test-interop:
+	@echo "🔗 Running crypto interoperability tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_interop_test
+
+# Run all crypto tests
+crypto-test-all:
+	@echo "💎 Running comprehensive crypto test suite..."
+	@make crypto-test-integration
+	@make crypto-test-stress
+	@make crypto-test-security
+	@make crypto-test-interop
+	@echo "✅ All crypto tests completed!"
+
+# Run specific crypto test suites
+crypto-test:
+	@echo "🔒 Running standard crypto tests..."
+	./fix_linking.sh devenv shell cargo test crypto
+
+# Run crypto examples
+crypto-example:
+	@echo "🎭 Running crypto examples..."
+	@echo "Building crypto showcase..."
+	./target/debug/cursed examples/crypto_showcase.csd
+	@echo "Building secure messaging demo..."
+	./target/debug/cursed examples/secure_messaging.csd
+	@echo "Building file encryption utility..."
+	./target/debug/cursed examples/file_encryption.csd demo
+	@echo "Building digital signatures demo..."
+	./target/debug/cursed examples/digital_signatures.csd
+	@echo "Building web security demo..."
+	./target/debug/cursed examples/web_security.csd
+
+# Run crypto performance benchmarks
+crypto-benchmark:
+	@echo "⚡ Running crypto performance benchmarks..."
+	./fix_linking.sh devenv shell cargo test --test crypto_stress_test test_performance_benchmarks --release
+	./fix_linking.sh devenv shell cargo test --test crypto_integration_test test_performance_benchmarks --release
+
+# Build crypto examples
+crypto-build-examples:
+	@echo "🔧 Building crypto examples..."
+	@make build
+	@echo "✅ Examples ready to run!"
+
+# Quick crypto test (essential tests only)
+crypto-test-quick:
+	@echo "⚡ Running quick crypto tests..."
+	./fix_linking.sh devenv shell cargo test --test crypto_integration_test test_end_to_end_encryption_workflow
+	./fix_linking.sh devenv shell cargo test --test crypto_security_test test_randomness_quality
+	@echo "✅ Quick crypto tests completed!"
+
+# Crypto test with coverage
+crypto-test-coverage:
+	@echo "📊 Running crypto tests with coverage..."
+	./fix_linking.sh devenv shell cargo tarpaulin --tests crypto_integration_test crypto_stress_test crypto_security_test crypto_interop_test --out html --output-dir target/coverage/crypto
+
+# Validate crypto implementations
+crypto-validate:
+	@echo "✅ Validating crypto implementations..."
+	./fix_linking.sh devenv shell cargo test --test crypto_interop_test test_standard_test_vectors
+	./fix_linking.sh devenv shell cargo test --test crypto_security_test test_constant_time_operations
+	@echo "✅ Crypto validation completed!"
+
+# Clean crypto test artifacts
+crypto-clean:
+	@echo "🧹 Cleaning crypto test artifacts..."
+	rm -rf target/coverage/crypto
+	rm -f examples/*.encrypted
+	rm -f *.encrypted
+	rm -f demo_secret.txt
+	@echo "✅ Crypto artifacts cleaned!"
+
+# Crypto help
+crypto-help:
+	@echo "🔐 CURSED Crypto Testing Commands"
+	@echo "================================="
+	@echo ""
+	@echo "Test Commands:"
+	@echo "  crypto-test               - Run standard crypto tests"
+	@echo "  crypto-test-integration   - Run comprehensive integration tests"
+	@echo "  crypto-test-stress        - Run performance and stress tests"
+	@echo "  crypto-test-security      - Run security validation tests"
+	@echo "  crypto-test-interop       - Run interoperability tests"
+	@echo "  crypto-test-all           - Run complete crypto test suite"
+	@echo "  crypto-test-quick         - Run essential tests only"
+	@echo "  crypto-test-coverage      - Run tests with coverage analysis"
+	@echo ""
+	@echo "Example Commands:"
+	@echo "  crypto-example            - Run all crypto examples"
+	@echo "  crypto-build-examples     - Build crypto examples"
+	@echo ""
+	@echo "Performance Commands:"
+	@echo "  crypto-benchmark          - Run crypto performance benchmarks"
+	@echo ""
+	@echo "Validation Commands:"
+	@echo "  crypto-validate           - Validate crypto implementations"
+	@echo ""
+	@echo "Utility Commands:"
+	@echo "  crypto-clean              - Clean crypto test artifacts"
+	@echo "  crypto-help               - Show this help message"
+	@echo ""
+	@echo "Example Usage:"
+	@echo "  make crypto-test-all                    # Run complete test suite"
+	@echo "  make crypto-test-quick                  # Quick validation"
+	@echo "  make crypto-example                     # Try examples"
+	@echo "  make crypto-benchmark                   # Performance testing"
+	@echo ""
+	@echo "Test Suites Include:"
+	@echo "  • Symmetric encryption (AES-GCM, ChaCha20-Poly1305)"
+	@echo "  • Asymmetric cryptography (RSA, ECC, Ed25519)"
+	@echo "  • Digital signatures and verification"
+	@echo "  • Cryptographic hashing (SHA-2, SHA-3, BLAKE3)"
+	@echo "  • Key derivation functions (PBKDF2, Argon2, scrypt)"
+	@echo "  • Secure random number generation"
+	@echo "  • Zero-knowledge proofs"
+	@echo "  • Post-quantum cryptography assessment"
+	@echo "  • PKI and certificate handling"
+	@echo "  • Cryptographic protocols"
+	@echo "  • Security validation and attack resistance"
+	@echo "  • Cross-platform compatibility"
+	@echo "  • Standard compliance verification"
+	@echo ""
+	@echo "For more details, see the AGENT.md file!"

@@ -53,7 +53,7 @@ impl FormattingProvider {
             Ok(formatted_content) => {
                 if formatted_content != content {
                     // Return a single edit that replaces the entire document
-                    let lines: Vec<&str> = content.lines().collect();
+                    let lines: Vec<&str> = content.split('\n').collect();
                     let end_line = lines.len().saturating_sub(1);
                     let end_character = lines.last().map_or(0, |line| line.len());
 
@@ -143,7 +143,7 @@ impl FormattingProvider {
         options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         // Format the current line and potentially add proper indentation
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split('\n').collect();
         let line_index = position.line as usize;
         
         if line_index >= lines.len() {
@@ -168,7 +168,7 @@ impl FormattingProvider {
                     start: insert_position,
                     end: insert_position,
                 },
-                new_text: format!("\n{}", " ".repeat(next_line_indent)),
+                new_text: format!("\n{}", " ".to_string().repeat(next_line_indent)),
             }]);
         }
 
@@ -183,7 +183,7 @@ impl FormattingProvider {
         options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         // Adjust indentation of the current line with closing brace
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split('\n').collect();
         let line_index = position.line as usize;
         
         if line_index >= lines.len() {
@@ -203,7 +203,7 @@ impl FormattingProvider {
                     start: Position { line: position.line, character: 0 },
                     end: Position { line: position.line, character: current_indent as u32 },
                 },
-                new_text: " ".repeat(proper_indent),
+                new_text: " ".to_string().repeat(proper_indent),
             }]);
         }
 
@@ -218,7 +218,7 @@ impl FormattingProvider {
         options: FormattingOptions,
     ) -> Option<Vec<TextEdit>> {
         // Format the current statement
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split('\n').collect();
         let line_index = position.line as usize;
         
         if line_index >= lines.len() {
@@ -270,7 +270,7 @@ impl FormattingProvider {
 
     /// Extract content from a range
     fn extract_range_content(&self, content: &str, range: Range) -> String {
-        let lines: Vec<&str> = content.lines().collect();
+        let lines: Vec<&str> = content.split('\n').collect();
         let start_line = range.start.line as usize;
         let end_line = range.end.line as usize;
         
