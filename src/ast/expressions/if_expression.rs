@@ -12,6 +12,7 @@ use std::any::Any;
 /// 
 /// This is used by the LLVM code generator to support the implementation of
 /// if expressions, where the result of the if can be used as a value.
+#[derive(Debug)]
 pub struct IfExpression {
     /// The wrapped if statement
     pub statement: IfStatement,

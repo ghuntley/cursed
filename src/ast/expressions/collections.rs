@@ -27,6 +27,7 @@ use std::any::Any;
 ///
 /// The AST would have an `ArrayLiteral` with elements corresponding to each item inside
 /// the brackets, or an empty vector for an empty array.
+#[derive(Debug)]
 pub struct ArrayLiteral {
     pub token: Token,
     pub elements: Vec<Box<dyn Expression>>,
@@ -79,6 +80,7 @@ impl Expression for ArrayLiteral {
 ///
 /// The AST would have a `HashLiteral` with pairs corresponding to each key-value pair
 /// inside the braces, or an empty vector for an empty map.
+#[derive(Debug)]
 pub struct HashLiteral {
     pub token: Token,
     pub pairs: Vec<(Box<dyn Expression>, Box<dyn Expression>)>,
@@ -133,6 +135,7 @@ impl Expression for HashLiteral {
 ///
 /// The AST would have a `MapLiteral` with the key type, value type, and pairs
 /// corresponding to each key-value pair inside the braces.
+#[derive(Debug)]
 pub struct MapLiteral {
     pub token: Token,
     pub key_type: Box<dyn Expression>,
@@ -238,6 +241,7 @@ impl Expression for MapLiteral {
 /// The AST would have an `IndexExpression` with:
 /// - left: the array or map expression being accessed
 /// - index: the index or key expression used for access
+#[derive(Debug)]
 pub struct IndexExpression {
     pub token: Token,
     pub left: Box<dyn Expression>,

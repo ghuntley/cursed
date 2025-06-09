@@ -24,6 +24,7 @@ use std::any::Any;
 ///     age lit
 /// }
 /// ```
+#[derive(Debug)]
 pub struct SquadStatement {
     pub token: String, // Token::Squad
     pub name: Identifier,
@@ -98,6 +99,7 @@ impl Statement for SquadStatement {
 /// ```
 /// toString() normie
 /// ```
+#[derive(Debug)]
 pub struct MethodSignature {
     pub token: String, // Usually the method name token
     pub name: Identifier,
@@ -176,6 +178,7 @@ impl Statement for MethodSignature {
 ///     toString() normie
 /// }
 /// ```
+#[derive(Debug)]
 pub struct CollabStatement {
     pub token: String, // Token::Collab
     pub name: Identifier,

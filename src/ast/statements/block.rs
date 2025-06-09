@@ -39,6 +39,15 @@ pub struct BlockStatement {
     pub statements: Vec<Box<dyn Statement>>,
 }
 
+impl std::fmt::Debug for BlockStatement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlockStatement")
+            .field("token", &self.token)
+            .field("statements", &format!("{} statements", self.statements.len()))
+            .finish()
+    }
+}
+
 impl Node for BlockStatement {
     fn token_literal(&self) -> String {
         self.token.token_literal()

@@ -64,7 +64,7 @@ impl<'a> Parser<'a> {
             _ => {
                 return Err(Error::Type {
                     message: format!("Expected identifier for type parameter, got {:?}", self.current_token),
-                    location: SourceLocation::unknown(),
+                    location: SourceLocation::default(),
                 });
             }
         };
@@ -95,7 +95,7 @@ impl<'a> Parser<'a> {
             _ => {
                 return Err(Error::Type {
                     message: "Expected parameter name in where clause".to_string(),
-                    location: SourceLocation::unknown(),
+                    location: SourceLocation::default(),
                 });
             }
         };
@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
         if !matches!(self.current_token, Token::Colon) {
             return Err(Error::Type {
                 message: "Expected ':' after parameter name in where constraint".to_string(),
-                location: SourceLocation::unknown(),
+                location: SourceLocation::default(),
             });
         }
 
@@ -118,7 +118,7 @@ impl<'a> Parser<'a> {
             _ => {
                 return Err(Error::Type {
                     message: "Expected interface name in where constraint".to_string(),
-                    location: SourceLocation::unknown(),
+                    location: SourceLocation::default(),
                 });
             }
         };

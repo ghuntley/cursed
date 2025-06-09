@@ -4,6 +4,7 @@ use std::any::Any;
 
 /// TypeConstraint represents a constraint on a generic type parameter
 /// In CURSED syntax: `where T: Comparable`
+#[derive(Debug)]
 pub struct TypeConstraint {
     pub token: String,       // The 'where' token
     pub type_param: Identifier, // The type parameter being constrained

@@ -34,7 +34,7 @@ pub trait Statement: Node {
 /// This includes literals, variables, arithmetic operations, function calls,
 /// and more complex expressions. The Expression trait provides methods for
 /// inspecting the structure of expressions for code generation and analysis.
-pub trait Expression: Node {
+pub trait Expression: Node + std::fmt::Debug {
     fn expression_node(&self);
 
     /// Returns the node type as a string for compiler dispatch

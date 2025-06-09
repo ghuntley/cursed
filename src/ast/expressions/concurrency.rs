@@ -9,6 +9,7 @@ use std::any::Any;
 
 /// A goroutine expression (stan expression)
 // No derives for now due to trait object issues
+#[derive(Debug)]
 pub struct StanExpression {
     pub token: Token,
     pub expression: Box<dyn Expression>,

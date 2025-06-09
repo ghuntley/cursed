@@ -321,6 +321,7 @@ impl Type {
 /// type safety before execution. It maintains type information for variables,
 /// functions, and user-defined types, and ensures that operations like assignments
 /// and function calls use compatible types.
+#[derive(Debug)]
 pub struct TypeChecker {
     /// Maps variable names to their types
     type_map: HashMap<String, Type>,
@@ -414,9 +415,11 @@ impl TypeChecker {
         
         // Fallback to basic interface implementation checking
         for constraint in constraints {
+            // Convert interface name string to Type for the type checker method
+            let interface_type = Type::Interface(constraint.interface_name.clone(), vec![]);
             let implements = self.check_interface_implementation(
                 concrete_type,
-                &constraint.interface_name,
+                &interface_type,
             )?;
             if !implements {
                 return Ok(false);
@@ -472,7 +475,7 @@ impl TypeChecker {
         debug!(interface_name = %interface_name, "Getting interface implementations");
         
         let registry = self.interface_registry.lock()
-            .map_err(|e| Error::new(&format!("Failed to acquire interface registry lock: {}", e)))?;
+            .map_err(|e| Error::new("TypeChecker", &format!("Failed to acquire interface registry lock: {}", e), None))?;
         
         // Get all implementations from the registry
         // Note: Simplified implementation for now
@@ -489,7 +492,7 @@ impl TypeChecker {
     }
     
     /// Check method signature compatibility
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, expected_params), level = "debug")]
     pub fn check_method_signature_compatibility(
         &self,
         type_: &Type,
@@ -516,7 +519,9 @@ impl TypeChecker {
                             // Check parameter types
                             for (i, expected_param) in expected_params.iter().enumerate() {
                                 if i < param_types.len() {
-                                    if param_types[i] != expected_param.parameter_type {
+                                    let expected_type_str = expected_param.param_type.string();
+                                    let expected_type = Type::Named(expected_type_str);
+                                    if param_types[i] != expected_type {
                                         return Ok(false);
                                     }
                                 }
@@ -1566,8 +1571,8 @@ impl TypeChecker {
         }
     }
     
-    /// Get interface methods for a given interface name
-    pub fn get_interface_methods(&self, interface_name: &str) -> Option<Vec<(String, Vec<Type>, Option<Type>)>> {
+    /// Get interface methods with full signatures for a given interface name
+    pub fn get_interface_method_signatures(&self, interface_name: &str) -> Option<Vec<(String, Vec<Type>, Option<Type>)>> {
         self.interface_map.get(interface_name).cloned()
     }
     

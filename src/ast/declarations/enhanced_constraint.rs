@@ -8,11 +8,31 @@ use crate::lexer::token::Token;
 use std::any::Any;
 
 /// Represents a single type bound in a constraint (e.g., Display, Clone, Into<String>)
-#[derive(Debug)]
 pub struct TypeBound {
     pub token: Token,           // The bound token
     pub interface_name: String, // Name of the interface/trait
     pub type_args: Vec<Box<dyn Expression>>, // Optional type arguments for generic interfaces
+}
+
+impl std::fmt::Debug for TypeBound {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TypeBound")
+            .field("token", &self.token)
+            .field("interface_name", &self.interface_name)
+            .field("type_args", &format!("[{} type args]", self.type_args.len()))
+            .finish()
+    }
+}
+
+impl Clone for TypeBound {
+    fn clone(&self) -> Self {
+        Self {
+            token: self.token.clone(),
+            interface_name: self.interface_name.clone(),
+            // Note: Cannot clone Box<dyn Expression> directly, use empty vec as fallback
+            type_args: Vec::new(),
+        }
+    }
 }
 
 impl TypeBound {
@@ -61,7 +81,7 @@ impl Node for TypeBound {
 /// Represents an enhanced generic constraint with multiple bounds
 /// 
 /// Supports syntax like: `T: Display + Clone + Into<String>`
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EnhancedConstraint {
     pub token: Token,                 // The constraint token
     pub parameter_name: String,       // The type parameter being constrained
@@ -146,12 +166,35 @@ impl Statement for EnhancedConstraint {
 }
 
 /// Represents an associated type constraint (e.g., Iterator::Item = String)
-#[derive(Debug)]
 pub struct AssociatedType {
     pub token: Token,                    // The associated type token
     pub interface_name: String,          // The interface containing the associated type
     pub type_name: String,               // The name of the associated type
     pub constraint: Box<dyn Expression>, // The type constraint for the associated type
+}
+
+impl std::fmt::Debug for AssociatedType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AssociatedType")
+            .field("token", &self.token)
+            .field("interface_name", &self.interface_name)
+            .field("type_name", &self.type_name)
+            .field("constraint", &"<expr>")
+            .finish()
+    }
+}
+
+impl Clone for AssociatedType {
+    fn clone(&self) -> Self {
+        // Note: This is a simplified clone that doesn't preserve the constraint expression
+        Self::new(
+            self.token.clone(),
+            self.interface_name.clone(),
+            self.type_name.clone(),
+            // Cannot clone Box<dyn Expression>, using placeholder
+            Box::new(crate::ast::expressions::literals::StringLiteral::new("placeholder".to_string()))
+        )
+    }
 }
 
 impl AssociatedType {

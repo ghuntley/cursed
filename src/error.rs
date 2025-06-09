@@ -677,6 +677,12 @@ impl From<inkwell::builder::BuilderError> for Error {
     }
 }
 
+impl From<crate::error_enhanced::CursedError> for Error {
+    fn from(err: crate::error_enhanced::CursedError) -> Self {
+        Error::Unknown(err.message().to_string())
+    }
+}
+
 /// Implement Default trait for Error
 impl Default for Error {
     fn default() -> Self {

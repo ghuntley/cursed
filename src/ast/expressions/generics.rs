@@ -12,6 +12,7 @@ use crate::lexer::token::Token;
 /// Represents a type reference with type arguments
 ///
 /// This is used for types with generic parameters like Box[T] or Result[T, E].
+#[derive(Debug)]
 pub struct TypeReference {
     pub token: String,
     pub name: Identifier,
@@ -53,6 +54,7 @@ impl Expression for TypeReference {
 }
 
 /// Represents a generic function call expression (identity[T](x))
+#[derive(Debug)]
 pub struct GenericCallExpression {
     pub token: String,
     pub function: Box<dyn Expression>,
@@ -100,6 +102,7 @@ impl Expression for GenericCallExpression {
 }
 
 /// Represents a struct instantiation with fields
+#[derive(Debug)]
 pub struct BeLikeExpression {
     pub token: String,
     pub struct_name: Identifier,

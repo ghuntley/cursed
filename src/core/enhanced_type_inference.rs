@@ -17,6 +17,7 @@ use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, instrument, warn};
 
 /// Enhanced type inference engine with constraint support
+#[derive(Debug)]
 pub struct EnhancedTypeInference {
     /// Base type checker
     type_checker: Arc<RwLock<TypeChecker>>,
@@ -71,7 +72,7 @@ impl EnhancedTypeInference {
     }
 
     /// Infer type for a generic function call with constraint resolution
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, call_expr, function), level = "debug")]
     pub fn infer_generic_call_type(
         &mut self,
         call_expr: &CallExpression,
@@ -95,7 +96,7 @@ impl EnhancedTypeInference {
     }
 
     /// Infer type with explicit type arguments
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, call_expr, function), level = "debug")]
     fn infer_with_explicit_types(
         &mut self,
         call_expr: &CallExpression,
@@ -137,18 +138,18 @@ impl EnhancedTypeInference {
 
         // TODO: Fix return type handling - need to convert Expression to Type
         // Substitute type parameters in return type
-        let return_type = Type::Any; // Placeholder for now
+        let return_type = Type::Named("Any".to_string()); // Placeholder for now
 
         Ok(InferenceResult {
             inferred_type: return_type,
             additional_bindings: substitutions,
-            constraint_result: Some(constraint_result),
+            constraint_result: Some(constraint_result.clone()),
             confidence: if constraint_result.satisfied { 1.0 } else { 0.3 },
         })
     }
 
     /// Infer types from function arguments and constraints
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, call_expr, function), level = "debug")]
     fn infer_from_arguments_and_constraints(
         &mut self,
         call_expr: &CallExpression,
@@ -182,6 +183,9 @@ impl EnhancedTypeInference {
         // Merge inferred types with existing bindings
         type_bindings.extend(inferred_constraint_types);
 
+        // Drop the resolver lock before proceeding to avoid borrow conflicts
+        drop(resolver);
+
         // Fill in any remaining unresolved type parameters
         for type_param in &function.type_parameters {
             if !type_bindings.contains_key(&type_param.name) {
@@ -205,6 +209,14 @@ impl EnhancedTypeInference {
             })
             .collect();
 
+        // Reacquire resolver lock for constraint validation
+        let mut resolver = self.constraint_resolver.write()
+            .map_err(|e| Error::new(
+                "LockError", 
+                &format!("Failed to acquire constraint resolver lock: {}", e),
+                None
+            ))?;
+
         // Validate constraints with inferred types
         let constraint_result = resolver.resolve_function_constraints(
             function,
@@ -213,7 +225,7 @@ impl EnhancedTypeInference {
 
         // Substitute type parameters in return type
         // TODO: Fix return type handling - need to convert Expression to Type
-        let return_type = Type::Any; // Placeholder for now
+        let return_type = Type::Named("Any".to_string()); // Placeholder for now
 
         let confidence = self.calculate_inference_confidence(
             &type_bindings,
@@ -230,7 +242,7 @@ impl EnhancedTypeInference {
     }
 
     /// Infer types for function arguments
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, arguments), level = "debug")]
     fn infer_argument_types(
         &mut self,
         arguments: &[Box<dyn Expression>],
@@ -239,7 +251,7 @@ impl EnhancedTypeInference {
         debug!(args_count = arguments.len(), "Inferring argument types");
 
         let mut arg_types = Vec::new();
-        let type_checker = self.type_checker.read()
+        let mut type_checker = self.type_checker.write()
             .map_err(|e| Error::new(
                 "LockError",
                 &format!("Failed to acquire type checker lock: {}", e),
@@ -258,7 +270,7 @@ impl EnhancedTypeInference {
     }
 
     /// Create initial type bindings from function parameters and argument types
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, function), level = "debug")]
     fn create_initial_bindings(
         &self,
         function: &FunctionStatement,
@@ -271,11 +283,12 @@ impl EnhancedTypeInference {
         // Match argument types with parameter types to extract type bindings
         for (i, param) in function.parameters.iter().enumerate() {
             if i < argument_types.len() {
-                self.extract_type_bindings(
-                    &param.param_type,
-                    &argument_types[i],
-                    &mut bindings,
-                )?;
+                // TODO: Fix type mismatch - param_type is Box<dyn Expression> but extract_type_bindings expects Type
+                // self.extract_type_bindings(
+                //     &param.param_type,
+                //     &argument_types[i],
+                //     &mut bindings,
+                // )?;
             }
         }
 
@@ -552,7 +565,7 @@ impl EnhancedTypeInference {
     }
 
     /// Infer type for struct instantiation with generic parameters
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, struct_stmt), level = "debug")]
     pub fn infer_struct_instantiation_type(
         &mut self,
         struct_stmt: &SquadStatement,
@@ -570,8 +583,10 @@ impl EnhancedTypeInference {
         
         for field in &struct_stmt.fields {
             if let Some(provided_type) = field_types.get(&field.name.string()) {
+                // Convert the field type name identifier to a Type
+                let field_type = Type::Named(field.type_name.string());
                 self.extract_type_bindings(
-                    &field.type_name,
+                    &field_type,
                     provided_type,
                     &mut type_bindings,
                 )?;
@@ -683,7 +698,8 @@ impl Default for InferenceContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::token::{Token, TokenType};
+    use crate::lexer::token::Token;
+    use crate::lexer::TokenType;
 
     #[test]
     fn test_inference_context() {
@@ -710,7 +726,7 @@ mod tests {
     #[test]
     fn test_fresh_type_variable() {
         let type_checker = Arc::new(RwLock::new(TypeChecker::new()));
-        let interface_registry = Arc::new(RwLock::new(InterfaceRegistry::new()));
+        let interface_registry = Arc::new(RwLock::new(crate::core::interface_registry::InterfaceRegistry::new()));
         let constraint_resolver = Arc::new(RwLock::new(
             ConstraintResolver::new(type_checker.clone(), interface_registry)
         ));

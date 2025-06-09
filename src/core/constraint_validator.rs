@@ -11,6 +11,7 @@ use crate::core::constraint_resolver::{ConstraintResolver, ConstraintResolutionR
 use crate::core::constraint_error::{create_constraint_error, create_nested_constraint_error};
 use crate::core::interface_registry::InterfaceRegistry;
 use crate::error::Error;
+use crate::ast::traits::Node;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use tracing::{debug, error, info, instrument, warn};
@@ -59,6 +60,7 @@ pub struct ValidationMetrics {
 }
 
 /// Constraint validator that integrates with type checking
+#[derive(Debug)]
 pub struct ConstraintValidator {
     /// Type checker for interface implementation checks
     type_checker: Arc<RwLock<TypeChecker>>,
@@ -91,7 +93,7 @@ impl ConstraintValidator {
     }
 
     /// Validate constraints during type checking
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, expression), level = "debug")]
     pub fn validate_during_type_checking(
         &mut self,
         expression: &dyn crate::ast::Expression,
@@ -121,7 +123,7 @@ impl ConstraintValidator {
     }
 
     /// Validate constraints for a generic function call
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, call_expr, function), level = "debug")]
     pub fn validate_function_call_constraints(
         &mut self,
         call_expr: &CallExpression,
@@ -145,11 +147,15 @@ impl ConstraintValidator {
 
         // Explicit type arguments provided - validate directly
         if call_expr.type_arguments.len() != function.type_parameters.len() {
-            let error = Error::new(&format!(
-                "Type argument count mismatch: expected {}, got {}",
-                function.type_parameters.len(),
-                call_expr.type_arguments.len()
-            ));
+            let error = Error::new(
+                "ConstraintValidation",
+                &format!(
+                    "Type argument count mismatch: expected {}, got {}",
+                    function.type_parameters.len(),
+                    call_expr.type_arguments.len()
+                ),
+                None
+            );
             errors.push(error);
             return Ok(ValidationResult::with_errors(errors));
         }
@@ -201,7 +207,7 @@ impl ConstraintValidator {
     }
 
     /// Validate constraints for struct instantiation
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, struct_stmt), level = "debug")]
     pub fn validate_struct_instantiation_constraints(
         &mut self,
         struct_stmt: &SquadStatement,
@@ -220,12 +226,16 @@ impl ConstraintValidator {
 
         // Validate type argument count
         if type_arguments.len() != struct_stmt.type_parameters.len() {
-            let error = Error::new(&format!(
-                "Type argument count mismatch for struct {}: expected {}, got {}",
-                struct_stmt.name.string(),
-                struct_stmt.type_parameters.len(),
-                type_arguments.len()
-            ));
+            let error = Error::new(
+                "TypeError", 
+                &format!(
+                    "Type argument count mismatch for struct {}: expected {}, got {}",
+                    struct_stmt.name.string(),
+                    struct_stmt.type_parameters.len(),
+                    type_arguments.len()
+                ),
+                None
+            );
             errors.push(error);
             return Ok(ValidationResult::with_errors(errors));
         }
@@ -239,7 +249,7 @@ impl ConstraintValidator {
 
         // Validate constraints using constraint resolver
         let mut resolver = self.constraint_resolver.write()
-            .map_err(|e| Error::new(&format!("Failed to acquire constraint resolver lock: {}", e)))?;
+            .map_err(|e| Error::new("SystemError", &format!("Failed to acquire constraint resolver lock: {}", e), None))?;
 
         match resolver.resolve_struct_constraints(struct_stmt, type_arguments) {
             Ok(resolution_result) => {
@@ -277,7 +287,7 @@ impl ConstraintValidator {
     }
 
     /// Validate interface implementation constraints
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, interface_stmt), level = "debug")]
     pub fn validate_interface_implementation_constraints(
         &mut self,
         interface_stmt: &CollabStatement,
@@ -295,7 +305,7 @@ impl ConstraintValidator {
 
         // Use constraint resolver for comprehensive validation
         let mut resolver = self.constraint_resolver.write()
-            .map_err(|e| Error::new(&format!("Failed to acquire constraint resolver lock: {}", e)))?;
+            .map_err(|e| Error::new("SystemError", &format!("Failed to acquire constraint resolver lock: {}", e), None))?;
 
         match resolver.resolve_interface_constraints(interface_stmt, implementing_type) {
             Ok(resolution_result) => {
@@ -334,7 +344,7 @@ impl ConstraintValidator {
     }
 
     /// Validate constraints for inferred function call
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, call_expr, function), level = "debug")]
     fn validate_inferred_function_call(
         &mut self,
         call_expr: &CallExpression,
@@ -389,11 +399,13 @@ impl ConstraintValidator {
 
         // Use type checker to validate interface implementation
         let type_checker = self.type_checker.read()
-            .map_err(|e| Error::new(&format!("Failed to acquire type checker lock: {}", e)))?;
+            .map_err(|e| Error::new("SystemError", &format!("Failed to acquire type checker lock: {}", e), None))?;
 
+        // Convert interface name string to Type for the type checker method
+        let interface_type = Type::Interface(constraint.interface_name.clone(), vec![]);
         let implements = type_checker.check_interface_implementation(
             concrete_type,
-            &constraint.interface_name,
+            &interface_type,
         )?;
 
         debug!(
@@ -407,7 +419,7 @@ impl ConstraintValidator {
     }
 
     /// Validate expression constraints
-    #[instrument(skip(self), level = "debug")]
+    #[instrument(skip(self, expression), level = "debug")]
     fn validate_expression_constraints(
         &mut self,
         expression: &dyn crate::ast::Expression,
@@ -721,7 +733,8 @@ impl Default for ValidationMetrics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::token::{Token, TokenType};
+    use crate::lexer::token::Token;
+    use crate::lexer::TokenType;
 
     #[test]
     fn test_validation_context() {
@@ -740,7 +753,7 @@ mod tests {
     #[test]
     fn test_validation_result() {
         let result = ValidationResult::with_errors(vec![
-            Error::new("Test error")
+            Error::new("Test", "Test error", None)
         ]);
         assert!(!result.is_valid());
         assert_eq!(result.errors.len(), 1);

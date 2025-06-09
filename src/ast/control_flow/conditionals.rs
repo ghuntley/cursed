@@ -33,6 +33,7 @@ use std::any::Any;
 /// - condition: InfixExpression for `x > 10`
 /// - consequence: BlockStatement containing the first print statement
 /// - alternative: BlockStatement containing the second print statement
+#[derive(Debug)]
 pub struct IfStatement {
     pub token: String, // Token::If
     pub condition: Box<dyn Expression>,

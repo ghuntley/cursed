@@ -25,6 +25,15 @@ pub struct StringLiteral {
     pub value: String,
 }
 
+impl StringLiteral {
+    pub fn new(value: String) -> Self {
+        StringLiteral {
+            token: format!("\"{}\"", value),
+            value,
+        }
+    }
+}
+
 impl Node for StringLiteral {
     fn token_literal(&self) -> String {
         self.token.clone()
@@ -60,7 +69,7 @@ impl Expression for StringLiteral {
 ///
 /// * `token` - The original token from the lexer
 /// * `value` - The parsed integer value
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct IntegerLiteral {
     pub token: String,
     pub value: i64,
@@ -96,6 +105,7 @@ impl Expression for IntegerLiteral {
 }
 
 /// FloatLiteral represents a floating-point literal
+#[derive(Debug)]
 pub struct FloatLiteral {
     pub token: String,
     pub value: f64,
@@ -127,6 +137,7 @@ impl Expression for FloatLiteral {
 }
 
 /// BooleanLiteral represents a boolean literal
+#[derive(Debug)]
 pub struct BooleanLiteral {
     pub token: String,
     pub value: bool,
@@ -162,6 +173,7 @@ impl Expression for BooleanLiteral {
 }
 
 /// ByteLiteral represents a byte literal (single ASCII character)
+#[derive(Debug)]
 pub struct ByteLiteral {
     pub token: String,
     pub value: u8,
@@ -193,6 +205,7 @@ impl Expression for ByteLiteral {
 }
 
 /// RuneLiteral represents a rune (Unicode character) literal
+#[derive(Debug)]
 pub struct RuneLiteral {
     pub token: String,
     pub value: char,

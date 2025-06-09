@@ -438,6 +438,7 @@ mod tests {
     use inkwell::context::Context;
     
     // Mock expression for testing
+    #[derive(Debug)]
     struct MockExpression {
         pub token: String,
         pub value: String,

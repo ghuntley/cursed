@@ -9,6 +9,7 @@ use std::any::Any;
 
 /// A channel expression (dm expression)
 // No derives for now due to trait object issues
+#[derive(Debug)]
 pub struct ChannelExpression {
     pub token: Token,
     pub element_type: String,
@@ -47,6 +48,7 @@ impl Expression for ChannelExpression {
 
 /// A send expression (ch <- value)
 // No derives for now due to trait object issues
+#[derive(Debug)]
 pub struct SendExpression {
     pub token: Token,
     pub channel: Box<dyn Expression>,
@@ -81,6 +83,7 @@ impl Expression for SendExpression {
 
 /// A receive expression (<-ch)
 // No derives for now due to trait object issues
+#[derive(Debug)]
 pub struct ReceiveExpression {
     pub token: Token,
     pub channel: Box<dyn Expression>,

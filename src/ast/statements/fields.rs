@@ -3,6 +3,7 @@ use crate::ast::{Node, Statement};
 use std::any::Any;
 
 /// FieldStatement represents a field definition in a struct
+#[derive(Debug)]
 pub struct FieldStatement {
     pub token: String, // Usually the identifier token
     pub name: Identifier,

@@ -26,6 +26,7 @@ use std::any::Any;
 ///
 /// The AST would have a `PointerType` with the target type expression representing
 /// the pointed-to type (int, Node, []byte).
+#[derive(Debug)]
 pub struct PointerType {
     pub token: String,
     pub target_type: Box<dyn Expression>,

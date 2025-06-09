@@ -34,6 +34,7 @@ use std::any::Any;
 ///
 /// The AST would contain a `ChannelRangeClause` representing the channel
 /// iteration expression `<-ch`.
+#[derive(Debug)]
 pub struct ChannelRangeClause {
     pub token: Token,                      // Token::Flex
     pub channel: Box<dyn Expression>,      // Channel expression to iterate over
@@ -143,6 +144,7 @@ impl Statement for ChannelRangeForStatement {
 ///
 /// This expression provides runtime information about whether a channel
 /// receive operation succeeded or if the channel was closed.
+#[derive(Debug)]
 pub struct ChannelClosureDetection {
     pub token: Token,                      // Token for the detection expression
     pub channel: Box<dyn Expression>,     // Channel being checked
