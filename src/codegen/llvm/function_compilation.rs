@@ -99,7 +99,7 @@ impl crate::codegen::llvm::LlvmCodeGenerator {
         // This would be added to the LlvmCodeGenerator struct
         // For now, we'll use a placeholder approach
         static mut FUNCTION_STACK: Vec<FunctionContext> = Vec::new();
-        unsafe { &mut FUNCTION_STACK }
+        unsafe { &mut *std::ptr::addr_of_mut!(FUNCTION_STACK) }
     }
     
     /// Get current function context

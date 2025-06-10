@@ -14,11 +14,13 @@ mod common;
 
 // Initialize tracing setup for tests
 #[macro_export]
-macro_rules! init_tracing   {(} => {let _ = tracing_subscriber::fmt(}))
-            .with_env_filter(info,cursed="debug);
+macro_rules! init_tracing   {() => {let _ = tracing_subscriber::fmt().init()
+    };
+}
+            .with_env_filter(info,cursed="debug);"
         slay greet(person @Person) tea {yolo  Hello , " + person.name}"
-            sus p = Person{name:  #    #;""}
-    let input = r#        be_like Greeter collab {greet(name tea} tea}")
+            sus p = Person{name:  #    #;"}"
+    let input = r#        be_like Greeter collab {greet(name tea} tea)")"
         slay greet(person @Person) tea {yolo  Hello  , ", , age: 30};"
-            lowkey ok {yolo based  // Successful type assertion} highkey {yolo sus    // Failed type assertion}"#    #;
-    let input = r#"#    #;"fixed"
+            lowkey ok {yolo based  // Successful type assertion} highkey {yolo sus    // Failed type assertion}"    #;"
+    let input = r#"#    #;"

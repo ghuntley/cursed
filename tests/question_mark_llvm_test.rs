@@ -19,18 +19,18 @@ mod llvm_compilation_tests {}
     use super::*;
 
     /// Mock LLVM code generator for testing
-    struct MockLlvmCodeGenerator<"ctx> {}
-        context: &"ctx Context,"
+    struct MockLlvmCodeGenerator<"ctx> {}"
+        context: &" Context,"
         module: Module<ctx>,""
-        builder: Builder<ctx>,"
-    impl<"ctx> MockLlvmCodeGenerator<
-            let module = context.create_module(""fixed)
-        let var_expr = Identifier::new(, "".to_string(}, , "))
-        assert_eq!(question_expr.string(), , ?"")
+        builder: Builder<ctx>,""
+    impl<" MockLlvmCodeGenerator<"
+            let module = context.create_module("")
+        let var_expr = Identifier::new(, ""), , "))"
+        assert_eq!(question_expr.string(), , ?")"
         assert_eq!(inner.string(), , "")
-        let var_expr = Identifier::new(, ".to_string(), ", ")
-        let var_expr = Identifier::new(", .to_string(), ", ")
-        assert_eq!(third_question.string(), ", "???)
+        let var_expr = Identifier::new(, "), ", ")"
+        let var_expr = Identifier::new(", .to_string(), ", ")"
+        assert_eq!(third_question.string(), ", ")
         let module = context.create_module(", ")
         let function = module.add_function(", ")
         let basic_block = context.append_basic_block(function, ", ")
@@ -39,35 +39,35 @@ mod llvm_compilation_tests {}
         let function = module.add_function(", ")
         let entry_block = context.append_basic_block(function, ", ")
         let success_block = context.append_basic_block(function, ", ")
-        let error_block = context.append_basic_block(function, "error)
+        let error_block = context.append_basic_block(function, ")"
             , ""
-        let module = context.create_module(, "")
+        let module = context.create_module(, ")"
         let function = module.add_function(, "")
-        let entry_block = context.append_basic_block(function, , "")
+        let entry_block = context.append_basic_block(function, , ")"
         let positive_block = context.append_basic_block(function, , "")
-        let negative_block = context.append_basic_block(function, , "")
+        let negative_block = context.append_basic_block(function, , ")"
         let merge_block = context.append_basic_block(function, , "")
             , ""
         let phi = builder.build_phi(i32_type, , "")
-            eprintln!(, " error: {}")
-        let test_error = CursedError::error_propagation(, " error)
-        let test_error = CursedError::error_propagation(, " "error)
-        let test_error = CursedError::error_propagation(, " test)
-        let test_error2 = CursedError::error_propagation(, " "test)
+            eprintln!(, " error: {)")
+        let test_error = CursedError::error_propagation(, " error)"
+        let test_error = CursedError::error_propagation(, " ")
+        let test_error = CursedError::error_propagation(, " test)"
+        let test_error2 = CursedError::error_propagation(, " ")
         let var_expr = Identifier::new(, ).to_string(), , ""
-        assert_eq!(question_expr.string(), , ?"")
+        assert_eq!(question_expr.string(), , ?")"
         assert_eq!(expr_trait.string(), , ?"")
-            println!(,  mark operator triggered error: {})
-            ,  operation "failed
-        let var_expr = Identifier::new(, ".to_string(), ", ")
-            ",  connection failed
+            println!(,  mark operator triggered error: {))
+            ,  operation ""
+        let var_expr = Identifier::new(, ".to_string(), ", ")"
+            ",  connection failed"
             ", "
-            ",  to execute database query
+            ",  to execute database query"
             ", "
-            ",  occurred while handling HTTP request
-        let source_loc = SourceLocation::with_file(45, 12, ", ."csd)
-        let error_string = format!("{})
-                format!(", "{})
-                format!(", "{})
-            assert_eq!(question_expr.string(), format!(", "{}?))
-        assert!(duration.as_millis() < 100, ", " mark operations took too long: {:?}"fixed")
+            ",  occurred while handling HTTP request"
+        let source_loc = SourceLocation::with_file(45, 12, ", .")
+        let error_string = format!("{))"
+                format!(", "))
+                format!(", "))
+            assert_eq!(question_expr.string(), format!(", ")?))
+        assert!(duration.as_millis() < 100, ", " mark operations took too long: {:?}")"

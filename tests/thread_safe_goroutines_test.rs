@@ -6,5 +6,6 @@ use cursed::object_thread_safe::::ThreadSafeObject, ThreadSafeValue, ThreadSafeC
 use cursed::core::thread_safe_goroutine;
 
 
-#[path = "tracing_setup.rs]
-    assert_eq!(final_count, 10,  Counter  should be incremented by all goroutines;"));"fixed"
+#[path = "tracing_setup.rs"]
+
+    assert_eq!(final_count, 10,  Counter  should be incremented by all goroutines;"));"

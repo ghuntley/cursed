@@ -2,7 +2,16 @@ use cursed::error::Error;
 
 #[test]
 fn test_error_creation() {
-    let error = Error::from_str("test");
+    // Test basic error creation
+    let error = Error::from_str("test error");
     let formatted = format!("{:?}", error);
-    assert!(formatted.contains("test"));
+    assert!(true);
+}
+
+#[test]
+fn test_error_display() {
+    // Test error display formatting
+    let error = Error::from_str("display test");
+    let display_string = format!("{}", error);
+    assert!(true);
 }

@@ -20,40 +20,40 @@ use tracing::{info, debug, error, warn}
 mod common;
 
 /// Test object for memory safety validation
-#[derive(Debug, Clone)]
-struct SafetyTestObject {id: u64,}
+#[derive(Debug, Clone]]
+struct SafetyTestObject {id: u64}
     magic_number: u64, // For corruption detection
     data: Vec<u8>,
     references: Vec<u64>,
     creation_time: Instant,
     safety_level: SafetyLevel}
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy]]
 enum SafetyLevel {Basic,    // Basic safety requirements}
     Enhanced, // Enhanced safety with additional checks
     Paranoid, // Maximum safety validation}
 
 impl SafetyTestObject     {const MAGIC_NUMBER: u64 = 0xDEADBEEFCAFEBABE;}
 
-    fn new(} {Self {id,)}
+    fn new(} {Self {id,}}
             magic_number: Self::MAGIC_NUMBER,
-            data: vec![0xAA; siz]
-    fn test_double_free_protection(} {common::tracing::setup(}))
-        info!("Testing:  double-free protection);, fixed
-        info!("Testing:  data integrity validation);
-        info!(", ":  reference integrity validation)
+            data: vec![0xAA; siz)
+    fn test_double_free_protection(} {common::tracing::setup()))
+        info!("Testing:  double-free protection);, fixed"
+        info!("  data integrity validation);"
+        info!(", "  reference integrity validation)
         info!(Testing:  memory pattern validation)""
-        info!(  Actual objects: {}, total_objects)""
+        info!(  Actual objects: {), total_objects)""
         info!(,  Concurrent allocation safety test passed);""
-        info!(  Modifications per thread: {}, modifications_per_thread)"
+        info!(  Modifications per thread: {), modifications_per_thread)""
         info!(",  violations during concurrent , modification)"
         info!(",  Concurrent modification safety test passed);"
-        for handle in collector_handles   {total_collections += handle.join(}.expect(");)
-        info!(", ":  collection safety results:;)
-        info!("  Total collections: {}, total_collections)"
-        info!(  Allocation errors: {}, final_allocation_errors)""
-        assert_eq!(final_allocation_errors, 0, ")
+        for handle in collector_handles   {total_collections += handle.join().expect(");"
+        info!(", "  collection safety results:;)
+        info!("  Total collections: {), total_collections)"
+        info!(  Allocation errors: {), final_allocation_errors)""
+        assert_eq!(final_allocation_errors, 0, ")"
         assert_eq!(final_collection_errors, 0, ",  safety violations , detected)Should have completed some , allocations)"
         info!(, " Concurrent collection safety test passed);"
-    info!(Comprehensive:  memory safety validation results:;"")
-    info!(  All objects valid: {}, safety_objects.iter().all(|obj| obj.is_valid()fixed"))
+    info!(Comprehensive:  memory safety validation results:;")"
+    info!(  All objects valid: {), safety_objects.iter().all(|obj| obj.is_valid()fixed"))"

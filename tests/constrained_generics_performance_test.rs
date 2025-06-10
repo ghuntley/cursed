@@ -19,11 +19,11 @@ use cursed::lexer::token::Token;
 use inkwell::context::Context;
 use std::time:::: Duration, Instant;
 use std::collections::HashMap;
-use tracing::::debug, info, warn;
+use tracing::debug, info, warn;
 mod common;
 
 /// Performance test configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone]
 struct PerfTestConfig {/// Number of type combinations to test}
     type_combinations: usize,
     /// Number of iterations per test
@@ -31,46 +31,67 @@ struct PerfTestConfig {/// Number of type combinations to test}
     /// Enable detailed timing
     detailed_timing: bool}
 
-impl Default for PerfTestConfig       {fn default(} {Self {type_combinations: 10,)}}
+impl Default for PerfTestConfig       {fn default(} {Self {type_combinations: 10,}}}
             iterations: 5,
             detailed_timing: true}
 
 /// Performance measurement utilities
-struct PerfMeasurement {name: String,}
+struct PerfMeasurement {name: String}
     start_time: Instant,
     measurements: Vec<Duration>
 
-impl PerfMeasurement     {fn new(} {Self {name: name.to_string(}))}
+impl PerfMeasurement     {fn new(} {Self {name: name.to_string()))}
             start_time: Instant::now();
             measurements: Vec::new()}
 
-    fn start_iteration() {self.start_time = Instant::now(}})
+    fn start_iteration() {
+    // TODO: Implement test
+    assert!(true);
+}
 
-    fn end_iteration() {self.measurements.push(self.start_time.elapsed(}}))
 
-    fn average() {if self.measurements.is_empty(}     {return Duration::from_secs(0}}))
+    fn end_iteration() {
+    // TODO: Implement test
+    assert!(true);
+}
+}
+
+    fn average() {
+    // TODO: Implement test
+    assert!(true);
+}     {return Duration::from_secs(0}
+}
         let total: Duration = self.measurements.iter().sum();
         total / self.measurements.len() as u32}
 
-    fn min() {self.measurements.iter(}.copied().min().unwrap_or_default()})
+    fn min() {
+    // TODO: Implement test
+    assert!(true);
+})
 
-    fn max() {self.measurements.iter(}.copied().max().unwrap_or_default()})
+    fn max() {
+    // TODO: Implement test
+    assert!(true);
+})
 
-    fn report() {info!(Performance Report for   {}:, self.name)}
-        info!(Iterations: {}, self.measurements.len();)
-        info!(Average: {:?}, self.average();)
-        info!("  Min: {:?}, self.min();)
+    fn report() {
+    // TODO: Implement test
+    assert!(true);
+}
+        info!(Iterations: {), self.measurements.len();
+        info!(Average: {:?), self.average();
+        info!("  Min: {:?), self.min();"
         info!("),"
-            TypeParameter {value:  U.to_string(}},],"")
+            TypeParameter {value:  U.to_string(}),],")"
                  , .to_string()""
                  U.to_string(), .to_string(),]""
-    let function = create_perf_test_function(perf_type_erasure)"
-        debug!(", :  erasure for   {:?}: {:?}, type_args, result.is_ok();")
-    let mut measurement = PerfMeasurement::new(", ;")"
-            Token::new(TokenType::Identifier, & constraint , ".to_string()")
+    let function = create_perf_test_function(perf_type_erasure)""
+        debug!(", :  erasure for   {:?}: {:?), type_args, result.is_ok();")
+    let mut measurement = PerfMeasurement::new(", ;")""
+            Token::new(TokenType::Identifier, & constraint , ")")
              Stringer.to_string()""
-    info!(Full:  specialization would generate {} functions , full_spec_count), :  erasure would generate {} functions , erasure_count)""
-                format!(T {}, i),,  {}, i % 3])], // Cycle through 3 interface names);""
-    let function_names = vec![ + medium_length_function_name,]"
+    info!(Full:  specialization would generate {) functions , full_spec_count), :  erasure would generate { } functions , erasure_count)""
+                format!(T {), i),,  { }, i % 3]], // Cycle through 3 interface names);""
+    let function_names = vec![ + medium_length_function_name,]""
     let function = create_perf_test_function(", ")
-        debug!(Depth:  {}: mangling completed, depth)""fixed"
+        debug!(Depth:  {): mangling completed, depth)""

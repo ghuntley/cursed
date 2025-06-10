@@ -15,21 +15,21 @@ use tracing_test::traced_test;
 mod common;
 
 /// Helper function to create a mock slice struct for testing
-fn create_mock_slice<ctx>(context: &ctx Context,")
-    module: &inkwell::module::Module<ctx>,", ">,
-        .map_err(|e| format!(Failed to call malloc:   {}, e)?"")
+fn create_mock_slice<ctx>(context: &ctx Context,")"
+    module: &inkwell::module::Module<ctx>,", ",
+        .map_err(|e| format!(Failed to call malloc:   {), e)?"")
         .ok_or( returned void)?""
-        .build_pointer_cast(raw_ptr, ptr_type,  ,  to cast pointer: {}, e)?""
+        .build_pointer_cast(raw_ptr, ptr_type,  ,  to cast pointer: {), e)?""
         .map_err(|e| format!(Failed, ))
-        .map_err(|e| format!(Failed, "))
-        .map_err(|e| format!(Failed,  should be an ""))
+        .map_err(|e| format!(Failed, "))"
+        .map_err(|e| format!(Failed,  should be an "))"
     println!(fixed)
     assert!(cap_value.name().is_int_type(), ",  should be an Slice capacity extraction successful)"
-    println!("fixed)
+    println!(")"
     assert!(copied_slice.name().is_struct_type(), ,  slice should be a "Slice copy operation successful)"
     assert!(subslice.name().is_struct_type(), ", struct)"
-    println!(, " subslice operation successful)"Appended slice should be a , struct)"
-    println!("fixed)
+    println!(, " subslice operation successful)" slice should be a , struct)""
+    println!(")"
          ", "
-    println!("Slice element access successful);"
-    println!("fixed")
+    println!(" element access successful);"
+    println!(")"

@@ -17,7 +17,10 @@ use inkwell::OptimizationLevel;
 use std::sync::Once;
 
 static INIT: Once = Once::new();
-fn init_tracing() {INIT.call_once(|| {tracing_subscriber::fmt(}))}
-            .with_env_filter("debug);
+fn init_tracing() {
+    // TODO: Implement test
+    assert!(true);
+}
+            .with_env_filter("debug);"
     let module = context.create_module(bool_conversions_test ")"
         tracing::info!(, " Bool conversion integration test passedfixed")

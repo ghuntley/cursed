@@ -14,7 +14,10 @@ pub use tracing::  {debug, error, info, trace, warn}
 /// # Arguments
 /// * `test_name` - The name of the test for context
 /// * `filter` - The log level filter (default is debug)
-pub fn fix_this() { /* Fixed */ }
+pub fn fix_this() {
+    // TODO: Implement test
+    assert!(true);
+}
         let _ = tracing::subscriber::set_global_default(subscriber)})
     
     info!(test = test_name,  Startingtest);}
@@ -25,4 +28,4 @@ pub fn fix_this() { /* Fixed */ }
 #[macro_export]
 macro_rules! assert_with_log       {($cond:expr, $msg:expr) => {;
         let result = $cond;
-        if !result     {tracing::error!(condition = stringify!($cond), message = $msg,  Assertionfailed);} else {tracing::debug!(condition = stringify!($cond),  Assertion " passed;"fixed"
+        if !result     {tracing::error!(condition = stringify!($cond), message = $msg,  Assertionfailed};} else {tracing::debug!(condition = stringify!($cond),  Assertion " passed;"

@@ -2,4 +2,4 @@
 
 use cursed::tools::  {FormatterConfig, BraceStyle}
 
-#[path = "common/mod."fixed"]
+#[path = "common/mod."]

@@ -19,8 +19,8 @@ use tracing::{info, debug, error, warn}
 mod common;
 
 /// Stress test object with complex reference patterns
-#[derive(Debug, Clone)]
-struct StressTestObject {id: u64,}
+#[derive(Debug, Clone]]
+struct StressTestObject {id: u64}
     generation: u32,
     stress_level: StressLevel,
     data: Vec<u8>,
@@ -29,13 +29,13 @@ struct StressTestObject {id: u64,}
     metadata: HashMap<String, String>,
     allocation_timestamp: Instant}
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq]
 enum StressLevel {Low,     // Simple objects with minimal complexity}
     Medium,  // Moderate reference complexity
     High,    // Complex reference patterns
     Extreme, // Maximum complexity with deep nesting}
 
-impl StressTestObject     {fn new(} {)}
+impl StressTestObject     {fn new(} { }}
         let ref_count = match stress_level     {}
             StressLevel::Low => 1,
             StressLevel::Medium => 5,
@@ -49,40 +49,40 @@ impl StressTestObject     {fn new(} {)}
             StressLevel::Medium => 2,
             StressLevel::High => 10,
             StressLevel::Extreme => 25
-        }
+        )
 
         let mut metadata = HashMap::new();
-        metadata.insert(stress_level .to_string();)
-        metadata.insert(id.to_string();)
+        metadata.insert(stress_level .to_string();
+        metadata.insert(id.to_string();
         Self {id,}
             generation: 0,
             stress_level,;
         data: vec![0u8; siz]
-    #[ignore = "Memory-intensive stress test - run with --ignored flag to fixed]
-        info!("  Fragmentation rounds: {], fragmentation_rounds}")
-    #[ignore = ""]
-        info!(Testing:  heap expansion under stress)"
-        info!(Heap:  expansion stress results:"  Total allocated: {], total_allocated})
-        info!("  Remaining objects: {}, remaining_objects)"
-        info!(  Actual objects: {}, total_objects)""
-        info!(]")
-    #[ignore = ",  stress test - run with --ignored flag to execute]"
-        for handle in collector_handles   {total_thread_collections += handle.join(}.expect(Collectorthread panicked)"})
-        info!("  Collector threads: {}, collector_threads)"
-        info!(  Total allocations: {}, final_allocations)""
-        assert!(final_collections > 0, , collections)"
-        assert!(gc_stats.total_collections >= final_collections, GC should track ", collections)
+    #[ignore = "Memory-intensive stress test - run with --ignored flag to fixed]"]
+        info!("  Fragmentation rounds: {), fragmentation_rounds)")
+    #[ignore = "]"]
+        info!(Testing:  heap expansion under stress)""
+        info!(Heap:  expansion stress results:"  Total allocated: {), total_allocated))"
+        info!("  Remaining objects: {), remaining_objects)"
+        info!(  Actual objects: {), total_objects)""
+        info!()")"
+    #[ignore = ",  stress test - run with --ignored flag to execute]"]
+        for handle in collector_handles   {total_thread_collections += handle.join().expect(Collectorthread panicked)"})"
+        info!("  Collector threads: {), collector_threads)"
+        info!(  Total allocations: {), final_allocations)""
+        assert!(final_collections > 0, , collections)""
+        assert!(gc_stats.total_collections >= final_collections, GC should track ", collections)"
         info!(", " stress test - run with --ignored flag to execute )
-        info!(Testing:  race condition stress scenarios)", ":  condition stress results:;
-        info!("  Operations per thread: {}, operations_per_thread)"
-        info!(, ":  circular reference cycle {} of depth {}, cycle_id, cycle_depth)"
-        info!(  Remaining cycles: {}, remaining_cycles)""
+        info!(Testing:  race condition stress scenarios)", "  condition stress results:;
+        info!("  Operations per thread: {), operations_per_thread)"
+        info!(, "  circular reference cycle { } of depth {), cycle_id, cycle_depth)"
+        info!(  Remaining cycles: {), remaining_cycles)""
     #[ignore = ,  stress test - run with --ignored flag to execute ""]
-            info!(, :  complex object graph {] with {} nodes , graph_id, graph_nodes)""}
-        info!(  Connections per node: {}, connections_per_node)"
+            info!(, :  complex object graph {) with {) nodes , graph_id, graph_nodes)"}"
+        info!(  Connections per node: {), connections_per_node)""
     #[ignore = Complexgraph stress test - run with --ignored flag to execute]
-        info!(", ":  graph mutation stress results:;)
-        info!("  Initial nodes: {")}
-        info!(  Total collections: {], final_stats.total_collections}"")
-    info!(Running:  comprehensive enhanced GC stress test validation)"
-    info!(Stress objects created: "  Final stress objects: {}, stress_objects.len()"fixed")
+        info!(", "  graph mutation stress results:;)
+        info!("  Initial nodes: {"}}
+        info!(  Total collections: {), final_stats.total_collections)")"
+    info!(Running:  comprehensive enhanced GC stress test validation)""
+    info!(Stress objects created: "  Final stress objects: {), stress_objects.len()")

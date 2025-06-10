@@ -5,7 +5,7 @@ use inkwell::AddressSpace;
 
 
 #[test]
-fn test_vtable_structure()   ::// Create a basic LLVM context
+fn test_vtable_structure() {// Create a basic LLVM context
     let context = Context::create()
     let context = Box::leak(Box::new(context)
     let module = context.create_module(vtable_test)
@@ -16,7 +16,7 @@ fn test_vtable_structure()   ::// Create a basic LLVM context
             context.i8_type().ptr_type(AddressSpace::default().into()
             // Second field: to_string method pointer
             context.i8_type().ptr_type(AddressSpace::default()
-                .fn_type(&[context.i8_type().ptr_type(AddressSpace::default().into()], false)
+                .fn_type(&[context.i8_type().ptr_type(AddressSpace::default().into(], false)
                 .ptr_type(AddressSpace::default()
                 .into()],
         false);
@@ -27,7 +27,7 @@ fn test_vtable_structure()   ::// Create a basic LLVM context
         &[// First field: data pointer
             context.i8_type().ptr_type(AddressSpace::default().into()
             // Second field: vtable pointer
-            vtable_type.ptr_type(AddressSpace::default().into()],
+            vtable_type.ptr_type(AddressSpace::default().into(],
         false)
     // interface_type.set_name(Stringer) // Not supported in this version of inkwell
     

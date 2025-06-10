@@ -5,5 +5,6 @@ use cursed::error::SourceLocation;
 
 
 
-#[path = "tracing_setup.rs]
-        source_line:  person, ok = animal.(Person)".to_string()}"fixed"
+#[path = "tracing_setup.rs"]
+
+        source_line:  person, ok = animal.(Person)")}"fixed""

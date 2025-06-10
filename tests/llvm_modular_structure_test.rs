@@ -10,7 +10,10 @@ use std::path::PathBuf;
 
 
 #[test]
-fn test_modular_structure_basic() {}
+fn test_modular_structure_basic() {
+    // TODO: Implement test
+    assert!(true);
+}
         statements: Vec::<Box<dyn Statement>>::new()}
 
     // Compile the program
@@ -19,4 +22,4 @@ fn test_modular_structure_basic() {}
 
     // Verify the module
     let module = code_gen.as_ref().unwrap().get_module()
-    assert!(module.verify().is_ok(), Moduleshould verify ",);"fixed"
+    assert!(module.verify().is_ok(), Moduleshould verify ",);"

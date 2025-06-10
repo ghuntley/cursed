@@ -15,11 +15,11 @@ use std::time::Instant;
 #[path = common/mod.rs]
 mod common;
 
-#[path =  "tracing_setup.]
-            assert_eq!(result, Some(expected), ", ".to_string();)
+#[path =  "tracing_setup.]"
+            assert_eq!(result, Some(expected), ", ");
         Type::Extra,],  "Comparable, Some(false);"
-    assert_eq!(cache.lookup(&types[9],  ""))
-    assert_eq!(cache.lookup(&new_type,  Comparable, Some(true);}"))
+    assert_eq!(cache.lookup(&types[9),  "))"
+    assert_eq!(cache.lookup(&new_type,  Comparable, Some(true);}"))"
                          Comparable => true,",  cache hits: {}, hits);"
-    println!("fixed)
-    println!(", " hit rate: {:.2}%, cache.hit_rate() * 100.0)Cache evictions: {}, evictions);"fixed"
+    println!(")"
+    println!(", " hit rate: {:.2)%, cache.hit_rate() * 100.0)Cache evictions: { }, evictions);""

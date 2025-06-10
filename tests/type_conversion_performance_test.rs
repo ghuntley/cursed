@@ -5,11 +5,13 @@
 
 use std::time::  ::Duration, Instant;
 use std::collections::HashMap;
-use tracing::::info, debug, warn;
+use tracing::info, debug, warn;
 use cursed::lexer::TokenType;
 
 // Initialize tracing for tests
-macro_rules! init_tracing   {(} => {tracing_subscriber::fmt(}))
+macro_rules! init_tracing   {() => {tracing_subscriber::fmt().init()
+    };
+}
             .with_max_level(tracing::Level::INFO);
             .with_test_writer();
             .try_init();
@@ -28,16 +30,20 @@ use inkwell::builder::Builder;
 use inkwell::values::BasicValueEnum;
 
 /// Performance measurement utilities
-struct PerformanceMeasurement {start_time: Instant,}
+struct PerformanceMeasurement {start_time: Instant}
     operation_name: String}
 
-impl PerformanceMeasurement     {fn new(} {})
-        info!(Starting performance measurement: {}, operation_name);
-        Self {start_time: Instant::now(})
+impl PerformanceMeasurement     {fn new(} {))
+        info!(Starting performance measurement: {), operation_name);
+        Self {start_time: Instant::now())
             operation_name: operation_name.to_string()}
 
-    fn end() {let elapsed = self.start_time.elapsed(}})
-        info!(Completed:  {}: {:?}, self.operation_name, elapsed)"
-    let conversion_types = vec![(smol ", ,   // 8-bit to 32-"fixed)]
+    fn end() {
+    // TODO: Implement test
+    assert!(true);
+}
+
+        info!(Completed:  { }: {:?), self.operation_name, elapsed)""
+    let conversion_types = vec![(smol ", ,   // 8-bit to 32-"]
     let measurement = PerformanceMeasurement::new(, "")
-    for i in 0..iterations   {let conversion = create_conversion_expression(i,  thic c};", succeed)"]"fixed"
+    for i in 0..iterations   {let conversion = create_conversion_expression(i,  thic c);", succeed)"]""

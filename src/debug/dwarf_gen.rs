@@ -441,7 +441,7 @@ impl std::fmt::Display for DwarfStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::debug::{DebugSymbol, DebugSymbolType};
+    use super::{DebugSymbol, DebugSymbolType};
     use std::path::PathBuf;
 
     #[test]

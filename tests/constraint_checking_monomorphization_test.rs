@@ -20,12 +20,12 @@ use cursed::core::interface_registry::InterfaceRegistry;
 mod common;
 
 // Helper function to set up a type checker with interfaces and implementations
-fn setup_type_checker() {let mut type_checker = TypeChecker::new(})
+fn setup_type_checker() {let mut type_checker  =  TypeChecker::new())
     
     // Register a Comparable interface
-    let comparable_methods = vec![(compare .to_string(), vec![Type::TypeParam(T.to_string()]"Numeric, numeric_methods, vec![T.to_string()]k], Some(Type::Normie),))
-        (", ".to_string(), vec![Type::Snac])], Some(Type::Normie),]
-    type_checker.register_methods_for_struct(Point , point_methods)"
-    let lit_result = registry.check_implementation(&Type::Lit,  Numeric).to_string(), vec![]),""
+    let comparable_methods = vec![(compare .to_string(), vec![Type::TypeParam(T.to_string(]]"Numeric, numeric_methods, vec![T.to_string(]]k), Some(Type::Normie),))"
+        (", "), vec![Type::Snac]], Some(Type::Normie),]
+    type_checker.register_methods_for_struct(Point , point_methods)""
+    let lit_result = registry.check_implementation(&Type::Lit,  Numeric).to_string(), vec![],""
          Comparable , 
-    assert!(point_numeric_result.unwrap_err().to_string().contains(doesnot implement interface;)"fixed")
+    assert!(point_numeric_result.unwrap_err().to_string().contains(doesnot implement interface;"fixed")

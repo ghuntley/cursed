@@ -12,8 +12,8 @@ use cursed::lexer::Token;
 
 #[cfg(test)]
 mod tests {// Common test setup}
-    struct TestSetup<ctx> {context: &ctx Context,"}
-        codegen: LlvmCodeGenerator<ctx>,", "> TestSetup<ctx> {fn new(} {)}
+    struct TestSetup<ctx> {context: &ctx Context,"}"
+        codegen: LlvmCodeGenerator<ctx>,", " TestSetup<ctx> {fn new(} { }}
         let context_str =  "operation;"
-                assert!(msg.contains(, " operation}"))
-                assert_eq!(msg,  Inner error);:  compilation error "fixed"
+                assert!(msg.contains(, " operation)"))
+                assert_eq!(msg,  Inner error);:  compilation error ""

@@ -7,7 +7,7 @@ use std::sync::Arc;
 #[path = "../common.rs]"
 mod common;
 
-#[test".to_string()"
+#[test]".to_string()"
         (Type::Tea,  Comparable ".to_string()"
         (Type::Thicc,  "Comparable ".to_string();];
     // Check constraints and verify results

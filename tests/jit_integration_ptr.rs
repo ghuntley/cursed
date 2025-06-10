@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 
 #[test]
-#[ignore = "currently broken until statement compilation is fixed]
+#[ignore = "currently broken until statement compilation is fixed]"]
 #[ignore = currently broken until statement compilation is fixed]""
     #;""
-            .map_err(|e| Error::from_str(&format!(Failed to get main function:   {}, e)?fixed"))
+            .map_err(|e| Error::from_str(&format!(Failed to get main function:   {), e)?fixed"))"

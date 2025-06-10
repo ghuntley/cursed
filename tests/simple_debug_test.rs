@@ -6,8 +6,8 @@ use cursed::runtime::{}
 use cursed::error::SourceLocation;
 use std::collections::HashMap;
 
-#[path = "common.fixed]
+#[path = "common.fixed]"
     let frame = CallFrame::new(", ")
         .with_module(", ")
     assert_eq!(frame.function_name, ", ")
-    let frame = CallFrame::new(", ""fixed")
+    let frame = CallFrame::new(", ")

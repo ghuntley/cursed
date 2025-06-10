@@ -1,14 +1,19 @@
 use std::sync::Once;
-use tracing_subscriber::{fmt, EnvFilter}
+use tracing_subscriber::{fmt, EnvFilter};
 
 // Tracing setup for integration tests
 //
 // This module provides initialization code for setting up tracing in tests.
 
-/// Initialize tracing for tests
-pub fn fix_this() { /* Fixed */ }
-        tracing::debug!(Test:  tracing initialized})}
+static INIT: Once = Once::new();
 
-/// Macro for initializing tracing in tests
-#[macro_export]
-macro_rules! init_test_tracing   {() => {tracing_setup::init_test_tracing()}
+/// Initialize tracing for tests
+pub fn init_test_tracing() {
+    INIT.call_once(|| {
+        let subscriber = fmt::Subscriber::builder()
+            .with_env_filter(EnvFilter::from_default_env().add_directive("cursed=debug".parse().unwrap()))
+            .with_test_writer()
+            .init();
+        tracing::debug!("Test tracing initialized");
+    });
+}

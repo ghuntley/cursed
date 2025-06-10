@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 
 #[test]
-fn test_range_error_recovery_simple() ::// Test a simple range clause with error recovery
+fn test_range_error_recovery_simple() {// Test a simple range clause with error recovery
     let mut lexer = Lexer::new(flex , 10)
     let mut parser = Parser::new(Lexer::new(Lexer::new(lexer).unwrap()
     

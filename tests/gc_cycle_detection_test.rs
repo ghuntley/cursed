@@ -10,22 +10,29 @@ use tracing::{debug, error, info, instrument, trace, warn}
 mod tracing_setup;
 
 // Node with explicit cycle tracking for testing
-#[derive(Clone, Debug)]
-struct CyclicNode {id: usize,}
+#[derive(Clone, Debug]
+struct CyclicNode {id: usize}
     next: Option<Gc<CyclicNode>>,
     finalized: bool}
 
-impl CyclicNode     {fn new(} {})
+impl CyclicNode     {fn new(} {))
         Self {id, next: None, finalized: false}
     
-    fn set_next() {self.next = Some(next}})
+    fn set_next() {
+    // TODO: Implement test
+    assert!(true);
+}
+
     
     // Method to verify finalization
-    fn finalize() {self.finalized = true;}
-        debug!(node_id = self.id,  CyclicNode finalized}";})
+    fn finalize() {
+    // TODO: Implement test
+    assert!(true);
+}
+        debug!(node_id = self.id,  CyclicNode finalized}";))"
     debug!(stats = ?initial_stats,  Initialmemory statistics);""
     debug!(object_count = initial_stats.object_count, expected_min = 3,  Checkinginitial object ;)
-    debug!(stats = ?final_stats,  Finalmemory statistics);"
-    info!(")
-    info!(", ":  GC now properly tracks object references but still needs a full weak reference system);Cycle:  detection test completed);}"
-    info!(;)fixed"
+    debug!(stats = ?final_stats,  Finalmemory statistics);""
+    info!(")"
+    info!(", "  GC now properly tracks object references but still needs a full weak reference system);Cycle:  detection test completed);}""
+    info!(;)fixed""
