@@ -13,10 +13,9 @@ use std::path::PathBuf;
 
 // Tests for property access (field access) in the LLVM code generator
 
-
 #[test]
 fn test_property_access() {
     // TODO: Implement test
     assert!(true);
-})
-    generator.add_variable_with_type(test_obj, struct_ptr, struct_type.into().unwrap();", fixed")
+}
+    generator.add_variable_with_type(test_obj, struct_ptr, struct_type.into().unwrap();", "")

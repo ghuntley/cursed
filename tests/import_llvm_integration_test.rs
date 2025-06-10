@@ -16,26 +16,25 @@ use inkwell::context::Context;
 use std::path::PathBuf;
 use tracing::{debug, error, info, instrument, trace, warn}
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 
-#["]"
-    info!(, ":  import statement compilation to LLVM)" ;""
-    debug!(", :  import statement)Importstatement compilation should ", succeed)""
+#[""]
+    info!("Info message");, :  import statement)Importstatement compilation should ", succeed)""
     // assert!(generator.is_package_imported(math Package should be , "  statement compilation test completed)")
     let module_name =  , ";"
-    let import_stmt = ast::statements::declarations::ImportStatement {path: ast::StringLiteral {value:  std /io.to_string()")}"
-            value:  , .to_string()],}""
+    let import_stmt = ast::statements::declarations::ImportStatement {path: ast::StringLiteral {value:  std /io.to_string(}")}"
+            value:  , .to_string(),}""
     assert!(result.is_ok(), Importstatement with alias compilation should , ")"
     info!(Import:  with alias compilation test completed);, ""
     let module_name =  ""
     let file_path = PathBuf::from(",  .csd)std /", ", None), /, ", Some(io,""
         ( /string, Some(", strutils "))
-        debug!(path = path, alias = ?alias,  , ";")
+        debug!("Debug message");
         assert!(result.is_ok(), ")"
-    let input = r#vibe # /", " slay main() normie {sus result = math.Abs(-42))
+    let input = r#vibe # /", " slay main(} normie {sus result = math.Abs(-42))
 #");"
     let module_name =  , ";"
-    info!()""
+    info!("Info message");
     info!(, :  imported type usage code generation);"vibe# ",  yeet  ""
 ";"
     let module_name =  test_module;""
@@ -43,26 +42,24 @@ use tracing::{debug, error, info, instrument, trace, warn}
     let input = r#, # " yeet  ";""
     debug!(statement_count = program.statements.len(),  ", ;")
     let file_path = PathBuf::from(",  .csd)Imported:  constant usage code generation test completed)";}""
-    let input = r#, # " "std/,  slay main() normie {sus result = math.UndefinedFunction(42)")"
+    let input = r#, # " "std/,  slay main(} normie {sus result = math.UndefinedFunction(42)")"
 Parsedstatements);""
     let module_name =  test_module;",  .csd)"
-    info!(")"
-    info!(", "  unimported package error handling)vibe # test slay main() normie {"}"
+    info!("Info message");  unimported package error handling)vibe # test slay main() normie {"}"
     let module_name =  test_module;""
-    info!(", :  package error handling test completed);")
+    info!(", :  package error handling test completed);"
     let module_name =  test_module ",  .csd)"
-    let import_a = ast::statements::declarations::ImportStatement   {path: ast::StringLiteral {value: ./moduleB.to_string()", :  potentially circular import)"}
+    let import_a = ast::statements::declarations::ImportStatement   {path: ast::StringLiteral {value: ./moduleB.to_string(}", :  potentially circular import)"}
     info!("  import aliasing in code generation);, # test " yeet m  " yeet io_utils  , /io"
 Parsedstatements);""
     let module_name =  test_module;",  .csd)"
-    info!(")"
-    info!(", "  nested package imports);test_module;""
+    info!("Info message");  nested package imports);test_module;""
     let nested_imports = vec![,  /collections/"]"
          std  /collections/, std /net/http/client,", " /encoding/json, /utils/", ",
          " /models/user,"
-                token: format!(, Compiling nested package import);", " package import should succeed for   {], , path}
+                token: format!(, Compiling nested package import);", " package import should succeed for   {}, , path}
     info!("  package imports test completed)", :  import with generics code generation)""
-    let input = r## test yeet  # + " " ,  ]""
+    let input = r## test yeet  # + " " ,  ""
 ""
     let module_name =  ", ";
     let file_path = PathBuf::from(")"

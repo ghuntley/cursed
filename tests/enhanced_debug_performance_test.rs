@@ -24,85 +24,85 @@ fn test_debug_registry_performance() {
 
     // Register many debug info entries
     for i in 0..PERFORMANCE_ITERATIONS {}
-        let debug_info = EnhancedDebugInfo::new())
-            "perf_test.fixed"
-            format!(", "))
-        let location_key = format!(", "):1)
-    println!(", " registration time for { } entries: {:?))
-        let location_key = format!(", "):1)
-    println!(", " retrieval time for { } entries: {:?))
+        let debug_info = EnhancedDebugInfo::new()
+            "perf_test.""
+            format!(")
+        let location_key = format!(":1)
+    println!(", " registration time for { } entries: {:?)
+        let location_key = format!(":1)
+    println!(", " retrieval time for { } entries: {:?)
     assert!(registration_time < Duration::from_millis(100), ", " should be under 100ms)
     assert!(retrieval_time < Duration::from_millis(50), ", " should be under 50ms)
-            &format!(", "))
-            std::path::Path::new(", ")
-            format!(", "))
+            &format!(")
+            std::path::Path::new(")
+            format!(")
             ", "
-    println!(", " debugging time for { } operations: {:?))
-            &format!(", "))
-            std::path::Path::new(", ")
-            format!(", "))
+    println!(", " debugging time for { } operations: {:?)
+            &format!(")
+            std::path::Path::new(")
+            format!(")
             ", "
-    println!(", " debugging time for { } operations: {:?))
-    println!(", " overhead ratio: {:.2)x)
+    println!(", " debugging time for { } operations: {:?)
+    println!(", " overhead ratio: {:.2)x
     assert!(disabled_time < Duration::from_millis(10), ", " debugging should be very fast)
-                format!(", "))
+                format!(")
         ", "
         ", "
-    println!(", " inspection time for 100 complex inspections: {:?))
+    println!(", " inspection time for 100 complex inspections: {:?)
     assert!(inspection_time < Duration::from_millis(500), ", " variable inspection should be under 500ms)
-    let mut source_map = SourceMap::new(PathBuf::from(", "))
-    println!(", " mapping creation time for { } ranges: {:?))
-    println!(", " mapping lookup time for { } lookups: {:?))
+    let mut source_map = SourceMap::new(PathBuf::from("))
+    println!(", " mapping creation time for { } ranges: {:?)
+    println!(", " mapping lookup time for { } lookups: {:?)
     assert!(mapping_time < Duration::from_millis(50), ", " mapping creation should be under 50ms)
     assert!(lookup_time < Duration::from_millis(100), ", " mapping lookup should be under 100ms)
-            PathBuf::from(format!(", ").csd))
-    println!(", " setup time for { } breakpoints: {:?))
-            std::path::Path::new(&format!(", ").csd))
-    println!(", " checking time for { } checks: {:?))
-    println!(", " cleanup time: {:?))
+            PathBuf::from(format!(".csd))
+    println!(", " setup time for { } breakpoints: {:?)
+            std::path::Path::new(&format!(".csd))
+    println!(", " checking time for { } checks: {:?)
+    println!(", " cleanup time: {:?)
     assert!(setup_time < Duration::from_millis(100), ", " setup should be under 100ms)
     assert!(check_time < Duration::from_millis(200), ", " checking should be under 200ms)
     assert!(cleanup_time < Duration::from_millis(50), ", " cleanup should be under 50ms)
-        let error = cursed::error::Error::Runtime(format!(", " error {)))
-            .with_annotation(", ")
-            .with_annotation(", "), , " test)"
-    println!(, " context generation time for { } contexts: {:?)")
+        let error = cursed::error::Error::Runtime(format!(", " error {))
+            .with_annotation(")
+            .with_annotation(", , " test)"
+    println!(, " context generation time for { } contexts: {:?)"
     assert!(generation_time < Duration::from_millis(500), , " context generation should be under 500ms)"
 #[ignore = , " scale performance "]
             &format!(, "{)"}}
             std::path::Path::new(&format!(, ").csd))"
-                format!(, "{ }_{)")
+                format!(, "{ }_{)"
                 , ""
                 PathBuf::from(&format!(, "{).csd))"
-    println!(, " scale debugging time for { } operations: {:?)")
-    println!(, " report generation time: {:?)")
+    println!(, " scale debugging time for { } operations: {:?)"
+    println!(, " report generation time: {:?)"
     println!(, " time per debug operation: {) ns)"
     assert!(report_time < Duration::from_millis(100), , " generation should be under 100")
-                    &format!(, "{ }_{)")
+                    &format!(, "{ }_{)"
                     std::path::Path::new(&format!(, ").csd))"
-                    format!(, "{ }_{)")
+                    format!(, "{ }_{)"
                     , ""
     println!("fixed)"
     assert!(concurrent_time < Duration::from_millis(1000), ,  debugging should be under 1")"
             , ."csd"
             format!(, {)")"
-        let location_key = format!(, .csd:{):1"")
+        let location_key = format!(, .csd:{):1""
         let metadata = SymbolMetadata::function(&format!(, {)"))"
-        let _ = registry.register_symbol(format!(, ::func_{)""))
+        let _ = registry.register_symbol(format!(, ::func_{)"")
             &format!(, {)")"
             std::path::Path::new(, ."csd)"
             format!(, {)")"
-            Value::String(format!(, {)""))
+            Value::String(format!(, {)"")
             , ""
     println!(,  stats: {));
-    println!(,  stats: {))
-            &format!(, {)"")
+    println!(,  stats: {)
+            &format!(, {)""
             std::path::Path::new(&format!(, {)."))"
-                format!(, {)"")
+                format!(, {)""
                 , ""
                 PathBuf::from(&format!(, {)."csd))"
     println!(,  debug report generation time: {:?));
-    println!(,  contains {) stack frames)
-    println!(,  contains {) scope variables)
-    println!(,  contains {) breakpoints)
+    println!(,  contains {) stack frames
+    println!(,  contains {) scope variables
+    println!(,  contains {) breakpoints
     assert!(report_time < Duration::from_millis(50), ,  report generation should be under 50ms")"

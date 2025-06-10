@@ -20,4 +20,4 @@ macro_rules! init_tracing   {() => {let _ = tracing_subscriber::fmt().init()
 fn test_simple_basic_zero_values() {
     // TODO: Implement test
     assert!(true);
-}"fixed"
+}"""

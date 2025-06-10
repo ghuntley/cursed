@@ -10,7 +10,7 @@ use tracing::info;
 fn test_float_conversion_trait_exists() {
     // TODO: Implement test
     assert!(true);
-};)
+};
 
 #[test]
 fn test_float_conversion_module_exists() {

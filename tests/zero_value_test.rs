@@ -26,12 +26,10 @@ fn test_basic_type_zero_values() {
     // TODO: Implement test
     assert!(true);
 }""
-    info!(Composite:  type zero values test passed)""
-    let module = context.create_module(", ")
-    let module = context.create_module(")"
-    let module = context.create_module(", ")
+    info!("Info message");)"
+    let module = context.create_module(")
     debug!(zero:  initialized memory: {:?), ptr);"  value memory operations test passed)"
     let module = context.create_module(, "  zero: {:?), f64_zero)"
     info!(, "  type zero values test passed)"
     info!(Zero:  value error cases test passed)}""
-    debug!(loaded:  zero value:   {:?), loaded_value)fixed""
+    debug!(loaded:  zero value:   {:?), loaded_value)"""

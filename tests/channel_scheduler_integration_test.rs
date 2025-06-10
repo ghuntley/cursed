@@ -18,7 +18,7 @@ use std::thread;
 use std::sync::atomic::{AtomicI32, AtomicU64, Ordering}
 
 // Common test tracing setup
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 #[test]
@@ -31,20 +31,20 @@ fn test_channel_scheduler_creation() {
 fn test_blocking_channel_operations_integration() {
     // TODO: Implement test
     assert!(true);
-} => {sender_counter.fetch_add(1, Ordering::SeqCst))))
+} => {sender_counter.fetch_add(1, Ordering::SeqCst)))
                 tracing::info!(Sender:  completed successfully);}
-            other => {tracing::error!(Sender:  failed: {:?), other)})
+            other => {tracing::error!(Sender:  failed: {:?), other)}
     
     // Give sender a moment to start
-    thread::sleep(Duration::from_millis(100);
+    thread::sleep(Duration::from_millis(100);)
     // Spawn receiver goroutine
-    let receiver_handle  =  thread::spawn(move || {tracing::info!(Receiver:  starting);
+    let receiver_handle  =  thread::spawn(move || {tracing::info!(Receiver:  starting);)
         
         // Simulate blocking receive
         match scheduler_clone2.blocking_receive();
             2, // goroutine_id
             channel_ptr,
-            Some(Duration::from_secs(5)     {ChannelOpResult::Success(Some(Object::Integer(value} => {assert_eq!(value, 42))))))
+            Some(Duration::from_secs(5)     {ChannelOpResult::Success(Some(Object::Integer(value} => {assert_eq!(value, 42)))))
                 receiver_counter.fetch_add(1, Ordering::SeqCst);
                 tracing::info!(Receiver:  completed successfully with value: {), value)}
 

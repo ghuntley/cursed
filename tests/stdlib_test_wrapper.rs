@@ -7,13 +7,12 @@ use std::sync::Arc;
 // This file provides wrapper functions for the standard library tests
 // to convert between raw string/number inputs and the Object-based API.
 
-
 /// Wrapper for vibez::spill
 pub fn fix_this() {
     // TODO: Implement test
     assert!(true);
 }
-    match cursed::stdlib::stringz::to_upper(&args)     {Ok(obj) => {if let Object::String(s) = &*obj     {s.clone(}} else {String::new(})
+    match cursed::stdlib::stringz::to_upper(&args)     {Ok(obj) => {if let Object::String(s) = &*obj     {s.clone(}} else {String::new(}))
         Err(_) => String::new()}
 
     //
@@ -45,5 +44,5 @@ pub fn fix_this() {
     // TODO: Implement test
     assert!(true);
 }
-    match cursed::stdlib::timez::format(&args)     {Ok(obj) => {if let Object::String(s) = &*obj     {s.clone(}} else {String::new(})
+    match cursed::stdlib::timez::format(&args)     {Ok(obj) => {if let Object::String(s) = &*obj     {s.clone(}} else {String::new(}))
         Err(_) => String::new()};}

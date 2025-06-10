@@ -20,10 +20,9 @@ use std::path::PathBuf;
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 #[test]
 fn test_llvm_code_generator_creation() {
@@ -31,22 +30,22 @@ fn test_llvm_code_generator_creation() {
     assert!(true);
 }""
     let temp_path = std::env::temp_dir().join(, .rs)""
-    let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  , ,""}}
+    let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  , ,""}})
     debug!(Stan:  expression compilation test completed), "  multiple stan expressions)"
     let temp_path = std::env::temp_dir().join(")"
-        let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  stan},, ":  { } compilation: {:?), i, result.is_ok()")
-    debug!())
+        let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  stan},, ":  { } compilation: {:?), i, result.is_ok()"
+    debug!()
     info!(, :  LLVM module verification);""
     match codegen.as_ref().unwrap().get_module().verify()     {Ok(_) => debug!(Module:  verification passed),")"
         Err(msg) => debug!(Module ", :  module verification test completed)"
     let temp_path = std::env::temp_dir().join(", .rs)"
     assert!(ir_str.contains(goroutine_yield, ",  should contain goroutine_yield IR should contain goroutine_exit ", function)")"
     debug!(Generated:  LLVM IR test passed)}""
-    info!(Testing:  error handling in stan compilation)""
+    info!("Info message");
         Err(msg) => debug!(", )"
     debug!(, "  handling test completed)"
     debug!(, "  pointer detection test passed)"Testing:  closure type creation)""
     let temp_path = std::env::temp_dir().join(")"
     debug!(", "  type creation test passed)Testing:  memory allocation function declarations)""
     let temp_path = std::env::temp_dir().join(")"
-    debug!(", :  function declared: {:?), module_malloc.is_some()Memory:  allocation functions test passed ")
+    debug!(", :  function declared: {:?), module_malloc.is_some()Memory:  allocation functions test passed "

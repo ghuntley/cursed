@@ -12,7 +12,7 @@ use std::time::Duration;
 macro_rules! init_tracing {() => {let _ = tracing_subscriber::fmt().init()
     };
 }
-            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env();
+            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env();)
             .try_init()}
 
 #[test]
@@ -25,7 +25,7 @@ fn test_optimization_manager_creation() {
         
         let manager = manager.unwrap();
         let config = manager.get_config();
-        match level     {0 => assert!(matches!(config.level, OptimizationLevel::None),))
+        match level     {0 => assert!(matches!(config.level, OptimizationLevel::None),)
             1 => assert!(matches!(config.level, OptimizationLevel::Less),)
             2 => assert!(matches!(config.level, OptimizationLevel::Default),)
             3 => assert!(matches!(config.level, OptimizationLevel::Aggressive),)
@@ -33,10 +33,10 @@ fn test_optimization_manager_creation() {
     
     // Test invalid level
     let invalid = OptimizationManager::for_level(5);
-    assert!(invalid.is_err();
+    assert!(invalid.is_err();)
 
 #[test]
-fn test_optimization_manager_from_string() {common::tracing::init_tracing!())
+fn test_optimization_manager_from_string() {common::tracing::init_tracing!()
     // TODO: Implement test
     assert!(true);
 }

@@ -13,11 +13,10 @@ use cursed::lexer::Token;
 // filesystem source location tracking to provide detailed error messages with
 // source code context when interface type assertions with the ? operator fail.
 
-
 // Import the necessary modules and traits
 
 // Import common test utilities
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 #[test]
@@ -35,10 +34,10 @@ fn test_interface_type_assertion_filesystem_error_propagation() {
     assert!(source_location.is_some(), Should be able to create source , location)
     
     // Basic error message formatting test
-    let error_message = format!(Type assertion failed: cannot convert from { } to {))
-         ActualType , ExpectedType)
+    let error_message = format!(Type assertion failed: cannot convert from { } to {)
+         ActualType , ExpectedType
     
     // Verify that the error message contains type information
-    assert!(error_message.contains(ExpectedType, Error  message should contain expected type);
+    assert!(error_message.contains(ExpectedType, Error  message should contain expected type);)
     assert!(error_message.contains("ActualType, , Type assertion failed), ")
-    assert!(error_message.contains(Type assertion failed), ", , fixed")
+    assert!(error_message.contains(Type assertion failed), ", , "")

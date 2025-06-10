@@ -9,7 +9,7 @@ fn test_map_iteration_type_determination() {
     assert!(true);
 }
 
-#[test])
+#[test]
 fn test_map_iteration_range_clauses() {
     // TODO: Implement test
     assert!(true);
@@ -17,7 +17,7 @@ fn test_map_iteration_range_clauses() {
     // 5. Test handling of unknown type names and fallback mechanisms
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM types.)
+    // setting up a proper test environment with LLVM types.
 
 #[test]
 fn test_map_entry_struct_inference() {
@@ -30,4 +30,4 @@ fn test_map_entry_struct_inference() {
     // 5. Verify proper handling of nested pointer types, arrays, and other complexities
     //
     // Note: This is a placeholder for the actual test. Implementation would require
-    // setting up a proper test environment with LLVM structs and types.;)
+    // setting up a proper test environment with LLVM structs and types.;

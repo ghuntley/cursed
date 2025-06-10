@@ -15,7 +15,6 @@ use std::path::PathBuf;
 
 // Test for the MonomorphizationManager integration with LLVM code generator
 
-
 /// A helper struct for MonomorphizationManager testing
 struct TestGenericFunction {name: String}
     type_params: Vec<String>,
@@ -28,7 +27,7 @@ fn test_monomorphization_manager_creation() {
     assert!(true);
 }
     let manager = // MonomorphizationManager not implemented yet
-    let mut mono_manager = std::collections::HashMap::new())
+    let mut mono_manager = std::collections::HashMap::new()
 
     // Verify it s initially empty - now using public methods
     assert!(true);
@@ -38,15 +37,15 @@ fn test_monomorphization_name_generation() {
     // TODO: Implement test
     assert!(true);
 }
-    let mut mono_manager = std::collections::HashMap::new())
+    let mut mono_manager = std::collections::HashMap::new()
 
     // Test with simple types
-    let name = manager.generate_specialized_name(add, &[Type::Normie, Type::Normie));
+    let name = manager.generate_specialized_name(add, &[Type::Normie, Type::Normie));]
     assert_eq!(name,  add__Normie_Normie)
 
     // Test with complex types
-    let slice_type = Type::Slice(Box::new(Type::Tea);
-    let name = manager.generate_specialized_name(process, &[slice_type));
+    let slice_type = Type::Slice(Box::new(Type::Tea);)
+    let name = manager.generate_specialized_name(process, &[slice_type));]
     assert_eq!(name,  process__Slice_Tea)}
 
 #[test]
@@ -54,8 +53,8 @@ fn test_monomorphization_function_specialization() {
     // TODO: Implement test
     assert!(true);
 }
-    let context = Context::create())
-    let context = Box::leak(Box::new(context);
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);)
     let file_path = PathBuf::from(test_mono .csd);
     let mut code_gen = LlvmCodeGenerator::new();
     // Create a MonomorphizationManager directly to avoid the borrow issues
@@ -73,7 +72,7 @@ fn test_monomorphization_function_specialization() {
     assert!(true);
     // Specializing again should return the same name
     let specialized_name2 = mono_manager
-        .specialize_function(&mut code_gen, &generic_func, &[Type::Normie));
+        .specialize_function(&mut code_gen, &generic_func, &[Type::Normie));]
         .expect(Shouldsucceed);
     assert_eq!()
         specialized_name, specialized_name2, Should reuse existing "}"

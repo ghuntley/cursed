@@ -22,7 +22,7 @@ mod tests :: use super::*;
     // TODO: Implement test
     assert!(true);
 }
-        setup_tracing())
+        setup_tracing()
         
         // Create a test code generator
         let code_generator = create_test_code_generator();
@@ -38,15 +38,15 @@ mod tests :: use super::*;
     // TODO: Implement test
     assert!(true);
 }
-        setup_tracing())
+        setup_tracing()
         
         // Test basic error creation
         let error = Error::from_str(test error message);
-        assert!(error.to_string().contains(testerror);
+        assert!(error.to_string().contains(testerror);)
         // Test compilation error
-        let compilation_error = Error::Compilation(compilationfailed.to_string();
-        let error_str = format!({), compilation_error)
+        let compilation_error = Error::Compilation(compilationfailed.to_string();)
+        let error_str = format!({), compilation_error
         assert!(error_str.contains(compilationfailed)", .to_string()"}")"
         let error_message = format!(, mismatch)""
-        assert!(error_message.contains(,  assertion );
-        assert!(module.verify().is_ok(),  Module  should remain valid ;}fixed")"
+        assert!(error_message.contains(,  assertion );)
+        assert!(module.verify().is_ok(),  Module  should remain valid ;}"")"

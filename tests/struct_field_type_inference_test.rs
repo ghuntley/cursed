@@ -34,7 +34,7 @@ fn test_struct_literal_creation() {
     
     let name_field = KeyValuePair {
         key: Identifier { token: name_token },
-        value: Box::new(StringLiteral {
+        value: Box::new(StringLiteral {)
             value: "Alice".to_string(),
             token: Token::new(TokenType::StringLiteral, "Alice".to_string(), 0, 0),
         }),
@@ -42,7 +42,7 @@ fn test_struct_literal_creation() {
     
     let age_field = KeyValuePair {
         key: Identifier { token: age_token },
-        value: Box::new(IntegerLiteral {
+        value: Box::new(IntegerLiteral {)
             value: 25,
             token: Token::new(TokenType::IntegerLiteral, "25".to_string(), 0, 0),
         }),
@@ -73,12 +73,12 @@ fn test_type_inference_with_mixed_types() {
         name: Identifier {
             token: Token::new(TokenType::Identifier, "MixedData".to_string(), 0, 0),
         },
-        fields: vec![
+        fields: vec![]
             KeyValuePair {
                 key: Identifier {
                     token: Token::new(TokenType::Identifier, "count".to_string(), 0, 0),
                 },
-                value: Box::new(IntegerLiteral {
+                value: Box::new(IntegerLiteral {)
                     value: 42,
                     token: Token::new(TokenType::IntegerLiteral, "42".to_string(), 0, 0),
                 }),
@@ -87,12 +87,12 @@ fn test_type_inference_with_mixed_types() {
                 key: Identifier {
                     token: Token::new(TokenType::Identifier, "ratio".to_string(), 0, 0),
                 },
-                value: Box::new(FloatLiteral {
+                value: Box::new(FloatLiteral {)
                     value: 3.14,
                     token: Token::new(TokenType::FloatLiteral, "3.14".to_string(), 0, 0),
                 }),
             },
-        ],
+        ,
     };
     
     // Verify the mixed struct was created correctly

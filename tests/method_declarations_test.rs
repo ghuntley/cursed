@@ -22,14 +22,12 @@ fn test_basic_method_parsing() {
     // TODO: Implement test
     assert!(true);
 }, , parser.errors()")"
-    assert_eq!(method_stmt.receiver.name.value,  , ")"
-    let input = r#""
-    #,  to create parser)""
+    assert_eq!(method_stmt.receiver.name.value, "expected")""
     let program = parser.unwrap().parse_program().expect(")"
     assert_eq!(parser.errors().len(), 0, ",  errors: {:?}, , parser.errors()")
     assert_eq!(method_stmt.receiver.name.value,  ", ;")
     let input = r#""
-    #", " to create parser)
+    #", " to create parser
     let program = parser.unwrap().parse_program().expect(")"
     assert_eq!(parser.errors().len(), 0, , " errors: {:?}, , parser.errors()")
     assert_eq!(method_stmt.return_type.as_ref().unwrap().string(),  , ";")
@@ -37,9 +35,9 @@ fn test_basic_method_parsing() {
     let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string())""))
     assert_eq!(parser.errors().len(), 0, Parser errors: {:?}, , parser.errors()        slay (p Person) getName() normie {yolo 42};"    #",  to create parser)""
     let program = parser.unwrap().parse_program().expect(")"
-    assert_eq!(parser.errors().len(), 0, ", " errors: {:?}, , parser.errors();
-    let input = r#"        slay (s Stack[T)) push[T](item T) {s.items = append(s.items, item});";")"
+    assert_eq!(parser.errors().len(), 0, ", " errors: {:?}, , parser.errors();)
+    let input = r#"        slay (s Stack[T)) push[T](item T) {s.items = append(s.items, item});";]
     let program = parser.unwrap().parse_program().expect(Failed to parse program)""
     ";"
     let mut parser = Parser::new(Lexer::new(Lexer::new(lexer.to_string())))
-    let program = parser.unwrap().parse_program().expect(,  to parse programfixed")"
+    let program = parser.unwrap().parse_program().expect(,  to parse program"")"

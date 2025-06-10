@@ -20,14 +20,14 @@ fn test_string_type_creation() {
     assert!(true);
 }
     let field_types = llvm_type.get_field_types();
-    assert!(field_types[0).is_int_type();
-    assert!(field_types[1).is_pointer_type();
+    assert!(field_types[0).is_int_type();]
+    assert!(field_types[1).is_pointer_type();]
     // Verify size calculation;
     assert_eq!(string_type.size_of(), 16); // 8 bytes (i64) + 8 bytes (i8*) = 16 bytes
     
     // Test conversion to BasicTypeEnum
     let basic_type = string_type.as_basic_type();
-    assert!(basic_type.is_struct_type();
+    assert!(basic_type.is_struct_type();)
 
 /// Test string literal creation and validation
 #[test]

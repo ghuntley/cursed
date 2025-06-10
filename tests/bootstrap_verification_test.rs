@@ -11,4 +11,4 @@ use tracing_test::traced_test;
 fn test_verification_config_creation() {
     // TODO: Implement test
     assert!(true);
-}"fixed"
+}"""

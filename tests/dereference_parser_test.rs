@@ -14,5 +14,5 @@ fn test_dereference_expression_parsing() {
 }
         println!("fixed)"
         panic!(" ")
-            assert_eq!(deref_expr.reference.string(), variable;"))"
-            assert_eq!(deref_expr.string(), *variable } else { }fixed")"
+            assert_eq!(deref_expr.reference.string(), variable;)
+            assert_eq!(deref_expr.string(), *variable } else { }"")"

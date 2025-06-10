@@ -21,4 +21,4 @@ fn test_basic_buffered_channel_operations() {
     println!(, 6. OK Integration with existing channel infrastructure)", 2. OK LLVM code generation updates in src/codegen/llvm/channel.rs)"
     println!(fixed)
     println!(", 4. OK Core buffered channel in src/runtime/buffered_channel.rs), 5. OK Parser support for channel capacity syntax)"
-    println!(fixed")"
+    println!("")"

@@ -9,7 +9,6 @@ use cursed::lexer::TokenType;
 //
 // This module provides utilities for creating AST nodes for testing purposes.
 
-
 /// Factory for creating test AST nodes
 pub struct AstFactory;
 
@@ -47,5 +46,5 @@ impl AstFactory       {/// Create a new AstFactory instance
 }
 .collect()
         
-        let field_statements = fields.into_iter().map(|(field_name, field_type)| {FieldStatement {name:  placeholder.to_string()
+        let field_statements = fields.into_iter().map(|(field_name, field_type)| {FieldStatement {name:  placeholder.to_string())
                 type_name:  placeholder.to_string(}")).collect()"

@@ -21,10 +21,9 @@ use std::path::PathBuf;
 
 // Tests for complex if expressions in the LLVM code generator
 
-
 #[test]
 #[ignore = This test needs more work to handle mixed integer types properly]
-fn test_if_expression_with_variable(} {
+fn test_if_expression_with_variable() {
     // TODO: Implement test
     assert!(true);}
-        operator: -")"fixed""
+        operator: -")""""

@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_constraint_recovery_strategies_basic() {
     common::tracing::setup();

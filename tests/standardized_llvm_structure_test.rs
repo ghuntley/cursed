@@ -22,14 +22,11 @@ use cursed::lexer::Token;
 // This test verifies that the standardized LLVM code generator structure works
 // correctly, with a particular focus on the pointer operations implementation.
 
-
-
-
 #[test]
 fn test_standardized_structure() {
     // TODO: Implement test
     assert!(true);
-})
+}
     let ptr1 = code_gen.get_address_of(&var1_ident)?;
     assert_eq!(ptr1, var1)
     
@@ -47,5 +44,5 @@ fn test_standardized_structure() {
     
     // Test create_null_pointer
     // We should use  normie instead of  int as thats the cursed language type name ";"
-        println!(", " : {), val)
+        println!(", " : {), val
             .map_err(|e| Error::from_str(&format!(Failed to get test function:   {), e)?"))"

@@ -16,6 +16,6 @@ fn test_llvm_goroutine_function_creation() {
     // TODO: Implement test
     assert!(true);
 }
-    let module = context.create_module(", ";Wrapper should take one parameter (data pointer);")"
+    let module = context.create_module(", ";Wrapper should take one parameter (data pointer);)
     assert_eq!(wait_fn.name().get_param_types().len(), 1, ,  should take 1 , parameter)" should take 0 , parameters)"}
-    let module = context.create_module(goroutine_test;")"
+    let module = context.create_module(goroutine_test;)

@@ -10,8 +10,6 @@ use inkwell::context::Context;
 // This module tests the enhanced implementation of the interface path finder with
 // proper error handling, visualizations, and registry integration.
 
-
-
 mod common;
 
 #[test]
@@ -29,18 +27,18 @@ fn test_interface_path_finder_enhanced() {
     let mut test_inheritance_map = std::collections::HashMap::new();
     // Set up FileReader extends Reader
     let mut reader_extensions = std::collections::HashSet::new();
-    reader_extensions.insert(FileReader.to_string();
-    reader_extensions.insert(NetworkReader.to_string();
+    reader_extensions.insert(FileReader.to_string();)
+    reader_extensions.insert(NetworkReader.to_string();)
     test_inheritance_map.insert(Reader.to_string(), reader_extensions)
     
     // Set up JSONFileReader extends FileReader
     let mut filereader_extensions = std::collections::HashSet::new();
-    filereader_extensions.insert(JSONFileReader.to_string();
+    filereader_extensions.insert(JSONFileReader.to_string();)
     test_inheritance_map.insert(FileReader.to_string(), filereader_extensions)
     
     // Set up JSONSerializable extends Serializable
     let mut serializable_extensions = std::collections::HashSet::new();
-    serializable_extensions.insert(JSONSerializable.to_string();
+    serializable_extensions.insert(JSONSerializable.to_string();)
     test_inheritance_map.insert(Serializable.to_string(), serializable_extensions)
     
     // Store this in the code generator for testing
@@ -49,7 +47,7 @@ fn test_interface_path_finder_enhanced() {
 
 /// Test that the error messages are formatted correctly and contain useful information
 #[test]
-fn test_interface_path_finder_enhanced_error_messages() {// common::tracing::init_tracing!())
+fn test_interface_path_finder_enhanced_error_messages() {// common::tracing::init_tracing!()
     // TODO: Implement test
     assert!(true);
 }

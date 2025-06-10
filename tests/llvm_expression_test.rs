@@ -9,7 +9,6 @@ use cursed::lexer::TokenType;
 use inkwell::context::Context;
 use std::path::PathBuf;
 
-
 #[test]
 fn test_integer_literal_expression() {
     // TODO: Implement test
@@ -33,14 +32,14 @@ fn test_integer_literal_expression() {
 fn test_infix_expression() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
     let right = IntegerLiteral {token: Token::new(TokenType::I32, 5).to_string();
         value: 5}
 
     // Create an infix call: 10 + 5,
-    let infix = InfixExpression {token: Token::new(TokenType::Plus,  Plus }}
-        left: Box::new(left),)
+    let infix = InfixExpression {token: Token::new(TokenType::Plus,  Plus )}
+        left: Box::new(left),
         operator: String::from(,)
         right: Box::new(right)}
     // Generate code for the expression
@@ -61,8 +60,8 @@ fn test_infix_expression() {
 fn test_prefix_expression() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
     // Create a prefix call: -5,
     let prefix = PrefixExpression {token: Token::new(TokenType::Minus,  Minus})
-        operator: String::from(-",")
+        operator: String::from(-")

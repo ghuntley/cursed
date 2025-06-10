@@ -18,18 +18,14 @@ use cursed::lexer::Token;
 // These tests ensure that the error propagation for interface type assertions with the ? operator
 // effectively leverages filesystem source location information to generate rich error messages.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
-
-
 
 // Initialize tracing for tests
 fn init_tracing() {
     // TODO: Implement test
     assert!(true);
 }
-
 
 #[test]
 fn test_comprehensive_error_propagation_initialization() {
@@ -39,14 +35,14 @@ fn test_comprehensive_error_propagation_initialization() {
         type_name:  ""
         source_line:  , " .(ExpectedType)?"
     assert!(error_message.contains(Type  assertion failed), , " message should mention type assertion " message should contain expected , type)""
-    assert!(error_message.contains(ActualType, ", type);"
+    assert!(error_message.contains(ActualType, ", type);")
     assert!(true);
     assert!(error_message.contains(, 42), Errormessage should contain line ")"
-    assert!(error_message.contains(10), ,  should contain column "ExpectedType ")})
+    assert!(error_message.contains(10), ,  should contain column "ExpectedType ")}
         source_line:  " .(ExpectedType)?.to_string()"
          ExpectedType ,""
-        Some(';")"
-    assert!(formatted_error.contains(", type);"
+        Some(';)
+    assert!(formatted_error.contains(", type);")
     assert!(formatted_error.contains(", ", Formatted error should contain actual test_file ., ", 42), ",  should contain line , number)Erroroccurshere), Formattederror should indicate error ", location)}"
     fn node_type() {
     // TODO: Implement test

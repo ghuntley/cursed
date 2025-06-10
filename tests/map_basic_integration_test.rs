@@ -19,7 +19,7 @@ use tracing::{debug, info};
 /// Initialize tracing for tests
 fn init_test_tracing() {
     static INIT: Once = Once::new();
-    INIT.call_once(|| {
+    INIT.call_once(|| {)
         tracing_subscriber::fmt()
             .with_env_filter("debug")
             .with_test_writer()
@@ -47,12 +47,12 @@ fn test_basic_map_parsing() {
     init_test_tracing();
     info!("Starting basic map parsing test");
     
-    let test_cases = vec![
+    let test_cases = vec![]
         (r#"#{alice: 30, bob: 25}"#, 2, "simple map"),
         (r#"#{1: "one", 2: "two", 3: "three"}"#, 3, "numeric keys"),
         (r#"#{score: 95.5, grade: 87.2}"#, 2, "float values"),
         (r#"#{}"#, 0, "empty map"),
-    ];
+    ;
     
     for (source, expected_count, description) in test_cases {
         debug!("Testing: {}", description);
@@ -60,7 +60,7 @@ fn test_basic_map_parsing() {
         assert!(result.is_ok(), "Failed to parse {}: {}", description, source);
         
         let hash_literal = result.unwrap();
-        assert_eq!(hash_literal.pairs.len(), expected_count, 
+        assert_eq!(hash_literal.pairs.len(), expected_count, )
                   "Expected {} pairs for {}", expected_count, description);
         info!("✓ {} test passed", description);
     }
@@ -71,12 +71,12 @@ fn test_invalid_map_syntax() {
     init_test_tracing();
     info!("Starting invalid map syntax test");
     
-    let invalid_sources = vec![
+    let invalid_sources = vec![]
         r#"#{unclosed: value"#,     // Missing closing brace
         r#"#{,key: value}"#,        // Missing key
         r#"#{key:}"#,              // Missing value
         r#"#{key value}"#,         // Missing colon
-    ];
+    ;
     
     for source in invalid_sources {
         debug!("Testing invalid syntax: {}", source);
@@ -105,14 +105,14 @@ fn test_map_with_whitespace() {
     init_test_tracing();
     info!("Starting whitespace handling test");
     
-    let test_cases = vec![
+    let test_cases = vec![]
         (r#"#{ key1: "value1" }"#, 1, "spaces around braces"),
         (r#"#{key1:"value1",key2:"value2"}"#, 2, "no spaces"),
-        (r#"#{"
+        (r#"#{")
             key1: "value1",
             key2: "value2"
         }"#, 2, "multiline formatting"),"
-    ];
+    ;
     
     for (source, expected_count, description) in test_cases {
         debug!("Testing whitespace: {}", description);
@@ -120,7 +120,7 @@ fn test_map_with_whitespace() {
         assert!(result.is_ok(), "Failed to parse map with {}", description);
         
         let hash_literal = result.unwrap();
-        assert_eq!(hash_literal.pairs.len(), expected_count,
+        assert_eq!(hash_literal.pairs.len(), expected_count,)
                   "Expected {} pairs for {}", expected_count, description);
         info!("✓ {} test passed", description);
     }

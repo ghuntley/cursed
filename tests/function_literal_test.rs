@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_function_literal_basic() {
     common::tracing::setup();

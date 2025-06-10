@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_range_clause_basic() {
     common::tracing::setup();

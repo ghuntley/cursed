@@ -11,7 +11,7 @@ use cursed::ast::{expressions::{Literal, LiteralValue},}
 use cursed::debug::SourceLocation;
 use std::path::PathBuf;
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Test complete compilation pipeline for arithmetic expressions
@@ -37,10 +37,8 @@ fn test_boolean_expression_with_slang() {
         /.to_string()""
         &&""
         >");"
-    assert!(error_msg.contains(undefined_var "Error:  handling test passed: {), error_msg)")
+    assert!(error_msg.contains(undefined_var "Error:  handling test passed: {), error_msg)"
         Box::new(Identifier::from_name(persistent_var,"))"
         *.to_string()""
-    tracing::info!(Context:  persistence test passed)"} else {"
-        SourceLocation::new(PathBuf::from(", ")}
-            "+.to_string()")
+    tracing::info!("Info message");+.to_string()"
         ==}""

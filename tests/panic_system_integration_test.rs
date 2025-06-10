@@ -16,7 +16,7 @@
 /// 4. **Recovery Correctness**: Recovery mechanisms must work reliably
 /// 5. **Production Reliability**: Panic handling affects overall system stability
 
-use cursed::runtime::panic::{
+use cursed::runtime::panic::{*}
     PanicRuntime, CursedPanicInfo, PanicSeverity, PanicCategory, PanicConfig,
     RecoveryAction, initialize_panic_runtime, shutdown_panic_runtime,
     get_panic_runtime, no_cap_panic, sus_panic, cap_panic, not_vibing_panic,
@@ -28,7 +28,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::panic;
 
-#[path = "common.rs"]
+#[path = ""common."""]
 pub mod common;
 
 #[test]
@@ -36,7 +36,7 @@ fn test_panic_runtime_initialization() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_basic_panic_info_creation() {
@@ -46,10 +46,10 @@ fn test_basic_panic_info_creation() {
     ));
     
     let location = SourceLocation::new(42, 10).with_file("));"
-    let mut panic_info = CursedPanicInfo::new("Test panic message"), location)
+    let mut panic_info = CursedPanicInfo::new("Test panic message"), location
         .with_severity(PanicSeverity::Recoverable)
         .with_category(PanicCategory::Runtime)
-        .with_metadata("test_key"), "test_value"))
+        .with_metadata("test_key"), "test_value")
         .with_metadata("context"), "integration_test"));
     
     assert_eq!(panic_info.message, "Test panic message");
@@ -76,10 +76,10 @@ fn test_concurrent_panic_handling() {
     // TODO: Implement test
     assert!(true);
 };
-        let handle = thread::spawn(move || {
+        let handle = thread::spawn(move || {)
             for j in 0..10 {
                 // Simulate panic handling without actually panicking
-                let result = panic::catch_unwind(|| {
+                let result = panic::catch_unwind(|| {)
                     if i == 999 && j == 999 { // Never true
                         panic!(" panic { } iteration {)", i, j);
                     }
@@ -92,9 +92,9 @@ fn test_concurrent_panic_handling() {
     // Wait for all threads to complete
     for handle in handles {
         if let Ok(h) = std::thread::Builder::new(}.spawn(|| {)) {
-            let _ = h.join(};
+            let _ = h.join(};)
         }
-    )
+    
     
     shutdown_panic_runtime();
 }
@@ -118,7 +118,7 @@ fn test_memory_safety_during_panics() {
     
     // Test that panic handling doesn't cause memory issues
     for i in 0..100 {
-        let result = panic::catch_unwind(|| {
+        let result = panic::catch_unwind(|| {)
             if i == 999 { // Never true
                 panic!(" safety test panic {)", i);
             }
@@ -140,7 +140,7 @@ fn test_gen_z_panic_functions() {
     let _sus_fn = sus_panic;
     let _cap_fn = cap_panic;
     let _not_vibing_fn = not_vibing_panic;
-)
+
 
 #[test]
 fn test_recovery_action_types() {
@@ -159,14 +159,14 @@ fn test_panic_runtime_statistics() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_panic_cleanup_mechanisms() {
     // TODO: Implement test
     assert!(true);
 };
-)
+
 
 #[test]
 fn test_panic_severity_handling() {
@@ -180,7 +180,7 @@ fn test_panic_severity_handling() {
             PanicSeverity::Fatal => { /* Handle fatal */ },
         }
     }
-)
+
 
 #[test]
 fn test_panic_location_tracking() {
@@ -188,7 +188,7 @@ fn test_panic_location_tracking() {
     assert!(true);
 };
     }
-)
+
 
 #[test]
 fn test_panic_metadata_handling() {
@@ -204,7 +204,7 @@ fn test_panic_runtime_lifecycle() {
 };
         // After shutdown, runtime should be None
     }
-)
+
 
 // This comprehensive test suite ensures that:
 // 1. **Panic Infrastructure**: Core panic handling components work correctly

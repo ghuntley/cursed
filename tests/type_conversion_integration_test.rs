@@ -19,11 +19,11 @@ struct TypeConversionIntegrationTest<ctx> {context: &ctx Context,"}"
     execution_engine: ExecutionEngine<"ctx>,", > {fn new(} {let module = context.create_module(test_type_conversions ", " create execution engine)"))"
             debug!(Integer:  conversion successful: {) bits , expected_bit_width)"} else if result.is_float_value()     {let float_value = result.into_float_value())"
             debug!(Float:  conversion successful: {) bits , expected_bit_width)"}"
-    info!(Integer:  literal conversions completed successfully)""
-    info!(Integer:  to float conversions completed successfully)", "  float literal to integer conversions)
+    info!("Info message");
+    info!("Info message");  float literal to integer conversions
     info!(Float:  to integer conversions completed successfully);", "  float to float conversions);
     info!(Float:  to float conversions completed successfully)"Testing:  edge case conversions)"
-    info!(Edge:  case conversions completed successfully)""
+    info!("Info message");
     info!(Overflow:  conversions completed successfully), :  conversions with precision loss)""
     let conversion = test.create_float_type_conversion(-7.1,  thicc);, :  loss conversions completed successfully)""
         .expect(,  compile boolean conversion)""

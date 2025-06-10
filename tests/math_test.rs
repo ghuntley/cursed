@@ -242,7 +242,7 @@ mod tests {
     // Random Number Generation Tests
     #[test]
     fn test_random_basic() {
-        // Test that random generates values in [0, 1)
+        // Test that random generates values in [0, 1)]
         for _ in 0..100 {
             let r = random();
             assert!(r >= 0.0 && r < 1.0);

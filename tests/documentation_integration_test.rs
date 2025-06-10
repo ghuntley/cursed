@@ -23,7 +23,7 @@ use std::collections::HashMap;
 mod common;
 
 /// Test configuration for documentation integration testing
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 struct TestConfig {/// Temporary directory for test files}
     work_dir: TempDir,
     /// Generated documentation output directory
@@ -40,19 +40,19 @@ impl TestConfig       {fn new(} {let work_dir  =  TempDir::new()?;)
         fs::create_dir_all(&output_dir)?;
         fs::create_dir_all(&fixtures_dir)?;
         
-        Ok(Self {work_dir,}}
+        Ok(Self {work_dir,}})
             output_dir,
             fixtures_dir,
-            max_generation_time: Duration::from_secs(30),)
+            max_generation_time: Duration::from_secs(30),
             max_file_size: 10 * 1024 * 1024, // 10MB}
 
 /// Documentation integration test suite
 struct DocumentationIntegrationTest {config: TestConfig}
     generated_files: Vec<PathBuf>
 
-impl DocumentationIntegrationTest     {fn new(} {common::tracing::setup()))
+impl DocumentationIntegrationTest     {fn new(} {common::tracing::setup())
         
-        Ok(Self {config: TestConfig::new()?,))
+        Ok(Self {config: TestConfig::new()?,)
             generated_files: Vec::new()}
 
     /// Set up test fixtures with sample CURSED files
@@ -61,9 +61,9 @@ impl DocumentationIntegrationTest     {fn new(} {common::tracing::setup()))
     assert!(true);
 }"#"
 //! ""
-    fn create_undocumented_package(} {let content  =  r#, # " DatabaseConnection {host: String,"}}
-collab Queryable {yolo execute(self, query: String} -> QueryResult};")"
-        let path = self.config.fixtures_dir.join(undocumented_package.csd ;")"
+    fn create_undocumented_package(} {let content  =  r#, # " DatabaseConnection {host: String,"}})
+collab Queryable {yolo execute(self, query: String} -> QueryResult};)
+        let path = self.config.fixtures_dir.join(undocumented_package.csd ;)
     fn create_complex_types_package() {
     // TODO: Implement test
     assert!(true);
@@ -71,12 +71,12 @@ collab Queryable {yolo execute(self, query: String} -> QueryResult};")"
     fn create_cross_references_package() {
     // TODO: Implement test
     assert!(true);
-})
-    let result = generator.generate().expect(Cross-reference documentation failed ""))
-    assert!(index_content.contains( SessionManager);")"
-        .with_source_dirs(vec![test.config.fixtures_dir.join(sample_package.csd, .to_string();")]]"
+}
+    let result = generator.generate().expect(Cross-reference documentation failed "")
+    assert!(index_content.contains( SessionManager);)
+        .with_source_dirs(vec![test.config.fixtures_dir.join(sample_package.csd, .to_string();")]")
     let result = generator.generate().expect(HTML generation failed)";"
-                    CLI tool did not generate index.html;" CLI tool processing test passed;]"
+                    CLI tool did not generate index.html;" CLI tool processing test passed;"
     let malformed_content = r#/// This is a malformed documentation ""
     // Missing return type and body;""
-            Ok(() => println!(Golden " file test passed: {), test_case),")
+            Ok(() => println!(Golden " file test passed: {), test_case),"

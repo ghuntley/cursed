@@ -12,14 +12,13 @@ use tracing::{debug, error, info}
 // These tests verify string comparison capabilities needed for implementing
 // switch statements with string case values in the CURSED language.
 
-
 // Import the common test utilities
-#[path = common/mod.rs]
-#[allow(unused_imports]]
+#[path = "common/mod.""]
+#[allow(unused_imports])
 mod common;
 
 // StringLiteral needs to be reimplemented for our tests
-#[derive(Debug]
+#[derive(Debug])
 struct TestStringLiteral {pub value: String}
 
 impl Expression for TestStringLiteral       {}
@@ -37,10 +36,10 @@ impl Expression for TestStringLiteral       {}
     // TODO: Implement test
     assert!(true);
 }
-})
+}
 
 // Implement Node trait for StringLiteral
-impl Node for TestStringLiteral       {fn token_literal(} {string_literal .to_string(}
+impl Node for TestStringLiteral       {fn token_literal(} {string_literal .to_string(}))
 }
 
     fn string() {
@@ -56,10 +55,9 @@ fn test_string_comparison() {
 }""
     let file_path = PathBuf::from(test_module .csd)",  module verification "
     if !contains_str     {error!(", :  missing expected string literal content)IRshould contain the string literal ", content)""
-    info!()""
-        write!(f,  DummyBlockStatementwith  {} {".to_string(})"))
+    info!("Info message");.to_string(})")
         write!(f,   with {) expressions, self.expressions.len()")"
-impl Node for DummySwitchStatement       {fn token_literal(} {, vibe_check {...).to_string(), ".to_string()}")
+impl Node for DummySwitchStatement       {fn token_literal(} {, vibe_check {...).to_string(), ".to_string()}"
     fn string() {
     // TODO: Implement test
     assert!(true);

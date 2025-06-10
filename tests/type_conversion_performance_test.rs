@@ -33,9 +33,9 @@ use inkwell::values::BasicValueEnum;
 struct PerformanceMeasurement {start_time: Instant}
     operation_name: String}
 
-impl PerformanceMeasurement     {fn new(} {))
+impl PerformanceMeasurement     {fn new(} {)
         info!(Starting performance measurement: {), operation_name);
-        Self {start_time: Instant::now())
+        Self {start_time: Instant::now()
             operation_name: operation_name.to_string()}
 
     fn end() {
@@ -44,6 +44,6 @@ impl PerformanceMeasurement     {fn new(} {))
 }
 
         info!(Completed:  { }: {:?), self.operation_name, elapsed)""
-    let conversion_types = vec![(smol ", ,   // 8-bit to 32-"]
+    let conversion_types = vec![(smol ", ,   // 8-bit to 32-"])
     let measurement = PerformanceMeasurement::new(, "")
-    for i in 0..iterations   {let conversion = create_conversion_expression(i,  thic c);", succeed)"]""
+    for i in 0..iterations   {let conversion = create_conversion_expression(i,  thic c);", succeed)"""

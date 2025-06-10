@@ -21,51 +21,51 @@ mod tests   {// Import the common module for test utilities
     fn setup() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
     #[test]
     fn test_interface_type_assertion_error_propagation_setup() {
     // TODO: Implement test
     assert!(true);
 }
-        let fn_type = void_type.fn_type(&[), false)
+        let fn_type = void_type.fn_type(&[), false)]
         let function = codegen.as_ref().unwrap().get_module().add_function(test_function, context.i32_type().into(), None)
         let basic_block = context.i32_type().const_int(0, false).into()
         codegen.as_ref().unwrap().builder().name()
         
         // Create a dummy value (i8* null pointer) to use in the Result
-        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default().const_null()
+        let null_ptr = context.i8_type().ptr_type(inkwell::AddressSpace::default().const_null())
         
         // Create a successful Result
         let success_result = codegen.create_type_assertion_result()
             null_ptr.into()
             true, // success flag
             None, // no error message
-            None  // no source location)
+            None  // no source location
         
         // Verify the Result was created successfully
-        assert!(success_result.is_ok();
+        assert!(success_result.is_ok();)
         // Create a failure Result with error message;
         let error_message =  Test error message;
         let failure_result = codegen.create_type_assertion_result()
             null_ptr.into()
             false, // failure flag
             Some(error_message),
-            None  // no source location)
+            None  // no source location
         
         // Verify the failure Result was created successfully
-        assert!(failure_result.is_ok()
+        assert!(failure_result.is_ok())
         
-        info!(Successfully:  created Result structures for type assertions];}
+        info!(Successfully:  created Result structures for type assertions;})
 
-    #[test])
+    #[test]
     fn test_result_unwrap_success_case() {// common::tracing::init_tracing!()
         setup()
         info!(Testing:  unwrapping successful Result);
         
         // Create a new LLVM context
         let context = Context::create()
-    let context = Box::leak(Box::new(context)
+    let context = Box::leak(Box::new(context))
         let module = context.create_module(test_module)
         let builder = context.create_builder()
         
@@ -74,7 +74,7 @@ mod tests   {// Import the common module for test utilities
         
         // Create a test function to contain our code
         let i8_type = context.i8_type()
-        let fn_type = i8_type.fn_type(&[), false);
+        let fn_type = i8_type.fn_type(&[), false);]
         let function = codegen.as_ref().unwrap().get_module().add_function(test_function, context.i32_type().into(), None);
         let basic_block = context.i32_type().const_int(0, false).into()
         let success_block = context.i32_type().const_int(0, false).into()
@@ -90,14 +90,14 @@ mod tests   {// Import the common module for test utilities
             test_value.into()
             true, // success flag
             None, // no error message
-            None  // no source location).expect(Failed to create successful Result)
+            None  // no source location).expect(Failed to create successful Result
         
         // Now try to unwrap the Result
         codegen.as_ref().unwrap().builder().name()
         let unwrapped = codegen.unwrap_type_assertion_result(success_result)
         
         // Verify the unwrapping succeeded
-        assert!(unwrapped.is_ok()
+        assert!(unwrapped.is_ok())
         
         // Branch to the success block
         codegen.as_ref().unwrap().builder().build_unconditional_branch(success_block)
@@ -110,7 +110,7 @@ mod tests   {// Import the common module for test utilities
         
         // In the return block, return the unwrapped value
         codegen.as_ref().unwrap().builder().name()
-        codegen.as_ref().unwrap().builder().build_return(Some(&unwrapped.unwrap()
+        codegen.as_ref().unwrap().builder().build_return(Some(&unwrapped.unwrap()))
             .expect(Failed to build return instruction)
         
         info!();

@@ -3,14 +3,13 @@ use cursed::lexer::TokenType;
 
 // Tests for composite type token implementation in the JIT
 
-
 /// Test for array-related tokens
 #[test]
 fn test_array_tokens() {
     // TODO: Implement test
     assert!(true);
 }
-        left_bracket)
+        left_bracket
     assert_eq!()
         right_bracket,
         Token::new(TokenType::RightBracket, )
@@ -18,7 +17,7 @@ fn test_array_tokens() {
           Token::Identifier, got {:?}""
         Token::new(TokenType::Squad,  Squad,")"
          ", "
-    let input =  tea [K]V;, a), got {:?}, tea);", Expected got {:?]}"
+    let input =  tea [KV;, a), got {:?}, tea);", Expected got {:?]}"
          ", " Token::Identifier, got {:?}
         Token::new(TokenType::RightBracket, " Token::new(TokenType::RightBracket, "))
          , ""
@@ -27,8 +26,8 @@ fn test_array_tokens() {
         Token::new(TokenType::LeftParen, (,  Token::new(TokenType::LeftParen, "(",))))
          ", " Token::new(TokenType::Normie, )
         Token::new(TokenType::Comma,  Comm, ", Expected Token::new(TokenType::Comma,  fixed))"
-        Token::new(TokenType::Normie,  ", ", Token::new(TokenType::Normie, , " got {:?)"))
+        Token::new(TokenType::Normie,  ", ", Token::new(TokenType::Normie, , " got {:?)")
         Token::new(TokenType::RightParen, Expected Token::new(TokenType::RightParen, "))"
         Token::new(TokenType::Normie,  , )
          Expected " Token::new(TokenType::BeLike, ", Expected)
-        Token::new(TokenType::Collab,  "  + " Token::new(TokenType::Collab,  fixed"))"
+        Token::new(TokenType::Collab,  "  + " Token::new(TokenType::Collab,  ""))"

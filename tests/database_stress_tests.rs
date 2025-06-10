@@ -26,15 +26,15 @@ mod pool_stress_tests ::use super::*;
     // TODO: Implement test
     assert!(true);
 }}
-                            if error_string.contains("timeout || error_string.contains(Timeout     {timeout_clone.fetch_add(1, Ordering::Relaxed)")))
+                            if error_string.contains("timeout || error_string.contains(Timeout     {timeout_clone.fetch_add(1, Ordering::Relaxed)"))
         println!(  Failed: { } ({:.1)%)")"
         println!(  Total time: {:?), total_time)""
         println!(")"
         println!()fixed
-        println!(  Peak connections: {), final_stats.peak_connections()"")
+        println!(  Peak connections: {), final_stats.peak_connections()""
         println!(  Average wait time: {:?), final_stats.average_wait_time()")"
         println!(" Pool stress test completed with {:.1)% success rate , success_rate * 100.0)"
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP), vec![].get_i64(", ");
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP), vec![].get_i64(";
         assert!(count > 0, "exhaustion_pool)"
         println!(")"
         println!("fixed)"
@@ -45,11 +45,11 @@ mod pool_stress_tests ::use super::*;
     // TODO: Implement test
     assert!(true);
 }}
-            (", , 3, 6),")
-                .with_connection_config(ConnectionConfig::new(", :memory:);"
+            (", , 3, 6),"
+                .with_connection_config(ConnectionConfig::new(", :memory:);")
         println!("  Failed: { } ({:.1)%), failed, (failed as f64 / total as f64) * 100.0)"
         println!(")"
-        let table_name  =  format!({)_stress  , pool_name.replace(, ;
+        let table_name  =  format!({)_stress  , pool_name.replace(, ;)
             pool_name TEXT), table_name), vec![].await.unwrap()✅ Queried { } records in {:?} ({:.0) records/sec)""
         println!(")"
         println!()fixed
@@ -57,13 +57,13 @@ mod pool_stress_tests ::use super::*;
     // TODO: Implement test
     assert!(true);
 }
-        for i in 0..data_size   {txn.execute(INSERT ", &[Parameter::from(SqlValue::Integer((i % 10) as i64],]")))
+        for i in 0..data_size   {txn.execute(INSERT ", &[Parameter::from(SqlValue::Integer((i % 10) as i64,]")))
                 SqlValue::Text(format!(, "))"
         println!(\\n📊 Concurrent Large Query Results:);
         println!(  Total rows processed: {), total_rows)""
         println!(",  queries failed ")
         println!(")"
-                connection.query(SELECT* FROM concurrent_large ORDER BY id , &[)).await?"}"
+                connection.query(SELECT* FROM concurrent_large ORDER BY id , &[)).await?"}"]
                         assert!(elapsed <= Duration::from_millis(200), , " too , slow)" Connection timeout stress test completed);}""
                  ""
     async fn test_long_running_operations() {
@@ -88,4 +88,4 @@ mod pool_stress_tests ::use super::*;
     println!(")"
     println!(cargo test --test database_stress_tests test_large_result_sets)""
     println!(cargo test --test database_stress_tests test_connection_timeout_stress)""
-    println!(fixed")"
+    println!("")"

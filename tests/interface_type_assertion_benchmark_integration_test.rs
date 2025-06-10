@@ -19,33 +19,29 @@ use inkwell::context::Context;
 // This integration test validates that the benchmarking
 // infrastructure works correctly for interface type assertions.
 
-
 // We need to call init_test_tracing only once
 static INIT: Once = Once::new();
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 pub mod tracing_setup;
 
 // Macro for initializing tracing in tests
 macro_rules! init_tracing {
     () => {
-        INIT.call_once(|| {tracing_setup::init_test_tracing(
+        INIT.call_once(|| {tracing_setup::init_test_tracing())
     };
 })}
 
-
 // Import required test utilities
 
-
-
 #[test]
-#[ignore = Requiresextensive API refactoring "]"
+#[ignore = Requiresextensive API refactoring ""]
     assert!(config.test_diamond_patterns, ",)"
                 results[0].name, SimpleType Assertions , , assertions)""
         Err(e) => panic!(,  extensive API refactoring )
-            assert_eq!(results[0).name, Simple  Type Assertions);,  Inheritance Type , Assertions)""
+            assert_eq!(results[0).name, Simple  Type Assertions);,  Inheritance Type , Assertions)""]
                 assert!(result.min_duration.as_nanos() > 0, ,  duration should be , positive)" duration should be , positive)"},
         Err(e) => panic!(")"
-#[ignore = Requires extensive API refactoring ", " file should , exist]"]"
+#[ignore = Requires extensive API refactoring ", " file should , exist""]
     file.read_to_string(&mut content).expect(")"
     assert!(true);
-    registry.register_interface(300,  ", ").unwrap();"fixed")
+    registry.register_interface(300,  ".unwrap();""")

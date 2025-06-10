@@ -20,7 +20,7 @@ fn test_expression_compilation() {
 }
     
     let result = generator.compile_expression(&int_lit);
-    assert!(result.is_ok(), Failedto compile integer literal: {:?}, result.err();
+    assert!(result.is_ok(), Failedto compile integer literal: {:?}, result.err();)
     let value = result.unwrap();
     assert!(value.is_int_value(),  , Result should be an "integer)"
         operator: String::from(,", "  to compile infix call: {:?), result.err();

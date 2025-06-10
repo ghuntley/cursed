@@ -22,10 +22,10 @@ fn test_auto_interface_implementation() {
     // TODO: Implement test
     assert!(true);
 }
-            vec!)
+            vec!
     
     // Register the interface with the code generator;
-    codegen.register_interface(Shape, shape_methods, vec![), false)
+    codegen.register_interface(Shape, shape_methods, vec![), false)]
     
     let perimeter_fn = codegen.as_ref().unwrap().get_module().add_function()
-        &format!({).perimeter  , struct_name),";]?;"
+        &format!({).perimeter  , struct_name),";?;"

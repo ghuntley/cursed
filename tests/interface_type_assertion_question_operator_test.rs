@@ -13,7 +13,7 @@ use cursed::error::SourceLocation;
 use cursed::error::type_assertion_error::TypeAssertionError;
 use tracing::{debug, info, warn, trace};
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 use inkwell::context::Context;
 use inkwell::types::BasicTypeEnum;
@@ -25,10 +25,8 @@ use inkwell::module::Module;
 // This test verifies that the interface type assertion system properly supports
 // the ? operator for automatic error propagation with Result types.
 
-
-
 // Import common test utilities
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 // Test trait definitions (since the real ones arent public)
@@ -36,12 +34,12 @@ trait InterfaceTypeAssertionResult<ctx>   {fn compile_type_assertion_result() {
     // TODO: Implement test
     assert!(true);
 }}
-    let module = context.create_module(name))
+    let module = context.create_module(name)
     
     // Add a basic function that will use the ? operator
     let i32_type = context.i32_type();
     let void_type = context.void_type();
-    let fn_type = void_type.fn_type(&[), false);
+    let fn_type = void_type.fn_type(&[), false);]
     // Create the main function
     let function = module.add_function(main , context.i32_type().into(), None)
     let basic_block = context.i32_type().const_int(0, false).into();
@@ -54,13 +52,13 @@ fn test_result_type_structure() {
     assert!(true);
 }
         module: Module<", ",
-        function: FunctionValue<ctx>,", " TestCodeGenerator<ctx> {fn new(} {Self {context,}}}
+        function: FunctionValue<ctx>,", " TestCodeGenerator<ctx> {fn new(} {Self {context,}}})
                  result .error).unwrap();"failed)"
     info!(, Error :  result creation , ";")
     struct TestCodeGenerator<ctx>   {context: &ctx Context,"}"
         module: Module<, >,""
-        function: FunctionValue<ctx>,, > TestCodeGenerator<ctx> {fn new(} {Self {context,"}}}"
+        function: FunctionValue<ctx>,, > TestCodeGenerator<ctx> {fn new(} {Self {context,"}}}")
     impl<ctx> ResultPropagation<ctx> for TestCodeGenerator<ctx>   {"}"
-                 error_result .success).unwrap().into_struct_value();" .fixed"
+                 error_result .success).unwrap().into_struct_value();" .""
     match code_generator.setup_result_propagation(function)       {Ok(_) => info!(Result :  propagation setup successful),")"
-        Err(e) => panic!()"fixed"
+        Err(e) => panic!()"""

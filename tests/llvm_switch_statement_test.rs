@@ -10,7 +10,6 @@ use std::path::PathBuf;
 use 
 use cursed::codegen::llvm::LlvmCodeGenerator;
 
-
 // Import the LLVM code generator using the exposed public API
 
 #[test]
@@ -27,9 +26,9 @@ fn test_switch_statement_compilation() {
             basic: {result = 999;}
         
         yolo result;}"#    #;"
-    println!(", Generated LLVM IR:, {), code_gen.as_ref().unwrap().get_module().to_string()}")
+    println!(", Generated LLVM IR:, {), code_gen.as_ref().unwrap().get_module().to_string()}"
     let test_code = r#""
         yolo 0;}#    #;""
         if let Some(switch)  =  switch_stmt.as_any().downcast_ref::<SwitchStatement>()     {assert_eq!(switch.cases.len(), 2, "))"
             assert!(switch.default.is_some(), ", " a default Failed:  to downcast to SwitchStatement)""
-    } else {panic!(};fixed")"
+    } else {panic!(};"")"

@@ -3,12 +3,12 @@
 use std::time::Duration;
 use std::collections::HashMap;
 
-use cursed::profiling::  {ProfilerBuilder, ProfilerConfig, ProfilerMode, OutputFormat,
+use cursed::profiling::  {*}ProfilerBuilder, ProfilerConfig, ProfilerMode, OutputFormat,
     BenchmarkSuite, BenchmarkConfig, ReportGenerator, ReportConfig,
     VisualizationGenerator, VisualizationConfig, PerformanceAnalyzer, AnalysisConfig,
     BuildIntegration, BuildConfig}
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Test the complete profiling workflow
@@ -19,23 +19,23 @@ fn test_complete_profiling_workflow() {
 };
 
 /// Test build integration
-#[test])
+#[test]
 fn test_build_integration() {
     // TODO: Implement test
     assert!(true);
-}; // Should pass with no tests]
+}; // Should pass with no tests
 
 /// Test CLI configuration
-#[test])
+#[test]
 fn test_cli_configuration() {
     // TODO: Implement test
     assert!(true);
 }
     
     // Test valid configuration
-    let config = ProfilerConfig {modes: vec![ProfilerMode::Cpu, ProfilerMode::Memor)
+    let config = ProfilerConfig {modes: vec![ProfilerMode::Cpu, ProfilerMode::Memor)]
 fn test_error_handling() {
     // TODO: Implement test
     assert!(true);
-} => {// Expected error)
+} => {// Expected error
         _ => panic!(Expected :  NoActiveSession error),"}"

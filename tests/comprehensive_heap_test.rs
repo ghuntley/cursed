@@ -20,7 +20,7 @@ use cursed::memory:::: Heap, HeapConfiguration, AllocationStrategy,
     GarbageCollector,;
 use cursed::memory::gc::GcConfig;
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Test basic heap creation and configuration
@@ -29,6 +29,6 @@ fn test_heap_creation_and_configuration() {
     // TODO: Implement test
     assert!(true);
 }""
-    info!(Memory:  regions test passed)""
+    info!("Info message");
     info!(, :  allocation strategies test passed);""}
-    info!(Edge:  cases test passed)";"
+    info!("Info message");

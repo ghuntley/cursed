@@ -11,7 +11,7 @@ use inkwell::context::Context;
 use std::path::PathBuf;
 use tracing_test::traced_test;
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 #[traced_test]

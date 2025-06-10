@@ -8,7 +8,7 @@ use cursed::error::Error;
 use cursed::core::thread_safe_goroutine;
 
 #[cfg(test)]
-mod goroutine_implementation_tests {use super::*;
+mod goroutine_implementation_tests {*}use super::*;
 
     // Helper struct for testing callable objects
     struct TestCallable {
@@ -21,54 +21,53 @@ mod goroutine_implementation_tests {use super::*;
     assert!(true);
 }
 
-    #[test])
+    #[test]
     fn test_launch_goroutine_fn() {
     // TODO: Implement test
     assert!(true);
 }
     }
-    )
-            result_guard.push(42)}).unwrap()
+    
+            result_guard.push(42)}).unwrap(
         
         // Verify the result is Null (goroutine launched successfully)
-        assert!(matches!(result, Object::Nil)
+        assert!(matches!(result, Object::Nil))
         
         // Sleep to allow goroutine to complete execution
-        thread::sleep(Duration::from_millis(100)
+        thread::sleep(Duration::from_millis(100))
         
         // Verify the goroutine executed correctly
-        let result_values = results.lock().unwrap(]
-        assert_eq!(result_values, vec![4)
+        let result_values = results.lock().unwrap()
+        assert_eq!(result_values, vec![4)]
     fn test_thread_safe_goroutine() {
     // TODO: Implement test
     assert!(true);
 }
         
         // Create a callable that adds a value to the results
-        let callable = Arc::new(TestCallable {result: results_clone,
+        let callable = Arc::new(TestCallable {result: results_clone,)
     }
-            value: 42))
+            value: 42)
         
         // Create thread-safe arguments
-        let args = vec![ThreadSafeObject::Integer(1)
+        let args = vec![ThreadSafeObject::Integer(1)]
     fn test_goroutine_fn() {
     // TODO: Implement test
     assert!(true);
 }
-    )
-            result_guard.push(42)}).unwrap()
+    
+            result_guard.push(42)}).unwrap(
         
         // Sleep briefly to allow goroutine to complete
-        thread::sleep(Duration::from_millis(100)
+        thread::sleep(Duration::from_millis(100))
         
         // Verify the goroutine executed
         let result_values = results.lock().unwrap()
         assert_eq!(result_values, vec![4))]
             
             // Run the goroutine in a separate thread to simulate concurrent execution
-            let handle = thread::spawn(move || {thread_safe_goroutine::run_goroutine(callable, args).unwrap(}
+            let handle = thread::spawn(move || {thread_safe_goroutine::run_goroutine(callable, args).unwrap(}))
 
-            
             handles.push(handle)}
         
         // Wait for all threads to complete
@@ -81,9 +80,9 @@ mod goroutine_implementation_tests {use super::*;
         // Sorted results should be [0, 1, 2, 3, 4]
         let mut sorted_results = result_values.clone()
         sorted_results.sort()
-        assert_eq!(sorted_results, vec![0, 1, 2, 3,)
+        assert_eq!(sorted_results, vec![0, 1, 2, 3,)]
         let mut sorted_results = result_values.clone()
         sorted_results.sort()
-        assert_eq!(sorted_results, vec![0, 1, 2, 3,))};
+        assert_eq!(sorted_results, vec![0, 1, 2, 3,))};]
         ;
     }

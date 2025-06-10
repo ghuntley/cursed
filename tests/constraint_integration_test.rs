@@ -16,16 +16,15 @@ mod common;
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        let _ = common::tracing::setup(
+        let _ = common::tracing::setup()
     };
 }
-
 
 /// Create a test token
 fn test_token() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
 /// Create a test type parameter
 fn create_test_type_parameter() {
@@ -48,7 +47,7 @@ fn create_test_parameter() {
         parameter_type: type_}
 
 #[test]
-fn test_type_checker_basic_constraint_checking() {common::tracing::init_tracing!())
+fn test_type_checker_basic_constraint_checking() {common::tracing::init_tracing!()
     // TODO: Implement test
     assert!(true);
 }

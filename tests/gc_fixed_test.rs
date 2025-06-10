@@ -9,11 +9,11 @@ use tracing::{debug, error, info, instrument, trace, warn}
 // proper root management, deadlock detection, and circular reference handling.
 
 // Import common test utilities for setting up tracing
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 mod tracing_setup;
 
 // Simple struct that holds a reference to another GC-managed object
-#[derive(Clone, Debug]
+#[derive(Clone, Debug])
 struct CircularNode {id: usize}
     next: Option<Gc<CircularNode>>}
 

@@ -13,12 +13,12 @@ fn test_basic_functionality() {
     let map_literal_syntax =  tea[tea]thicc{"  42};"
     println!(, " literal syntax: {), map_literal_syntax);"
     assert!(true);""
-    assert!(true);")"
+    assert!(true);
     let patterns = vec![MapPattern {input:  ", , expected_type:  "}]
-        MapPattern {input:  tea ", , expected_type:  map_type],"}
+        MapPattern {input:  tea ", , expected_type:  map_type,"}
         MapPattern {input:  " , fixed}"
         MapPattern {input:  "tea [tea]}"
         println!(" pattern: { } ->   {), pattern.input, pattern.expected_type)"
              map_literal => {, " [}"]
-                assert!(true);],")"
-             map_index => {;fixed"}"
+                assert!(true);,")"
+             map_index => {;""}"

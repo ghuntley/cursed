@@ -26,34 +26,28 @@ fn test_web_vibez_integration_initialization() {
     assert!(true);
 } should be , declared, func_name)""
         tracing::debug!(")"
-    let response_functions = vec![ResponseWriter.Write , ,]]
-         ResponseWriter. ,]""
+    let response_functions = vec![ResponseWriter.Write , ,]
+         ResponseWriter. ,""
     assert!(registry.is_ok(), ,)""
-    tracing::info!(OK All HTTP types validated successfully)"}"
-            web_vibez, ";"
-    let web_vibez_core_functions = vec![web_vibez  .ListenAndServe, "]"
-         web_vibez  + " ."
-         web_vibez " .", web_vibez .Delete,,  .","
-        assert_eq!(func_info.package,  web_vibez;, " Registry function {) validated , func_name)")
+    tracing::info!("Info message"); Registry function {) validated , func_name)"
     let advanced_functions = vec![web_vibez.ListenAndServeTLS  ,, "]"
          ",  , ,"
-         web_vibez.Request." ,"
+         web_vibez.Request.", "
          ", " + .ResponseWriter.Write ""
-         web_vibez.ResponseWriter., WriteHeaderweb_vibez.ResponseWriter., " ,"
-        tracing::debug!())
+         web_vibez.ResponseWriter., WriteHeaderweb_vibez.ResponseWriter., ", "
+        tracing::debug!()
     tracing::info!(,  Complete web_vibez stdlib registry integration validated);""
     assert!(init_result.is_ok(), ,  LLVM integration should  + "" .)
          web_vibez " .", web_vibez .client_timeout,, fixed
         tracing::debug!(" LLVM integration for   {) validated , func_name);"
     tracing::info!(", " Complete stdlib LLVM integration with web_vibez validated);
     assert!(wrong_args_result.is_err(), Wrong argument count should return ", " Error handling validated)
-    let module = context.create_module(")"
-         , ", + ",""
+    let module = context.create_module(")", ", + ", ""
          ""
-         Delete, + ","
+         Delete, + ", "
          Request ", ,"
          "  +  ."
          ResponseWriter  ., ResponseWriter .WriteHeader,", " .Header,""
     let module = context.create_module(test_performance ",  should initialize in < , , 1s)"
     tracing::info!(" Performance validated - Init: { }ms, Validation: {)fixed)"
-    println!()fixed""
+    println!()"""

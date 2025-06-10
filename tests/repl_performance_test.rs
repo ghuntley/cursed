@@ -11,7 +11,7 @@ fn test_syntax_highlighting_performance() {
     // TODO: Implement test
     assert!(true);
 }
-    for i in 0..1000    {large_code.push_str(&format!(;}
+    for i in 0..1000    {large_code.push_str(&format!(;}))
             slay function_{)() {{facts var_{ } = { }; return var_{ };}\n  ,
             i, i, i * 2, i)}
     let start = Instant::now()
@@ -19,8 +19,8 @@ fn test_syntax_highlighting_performance() {
     let duration = start.elapsed()
     
     // Should complete highlighting in reasonable time (< 1 second)
-    assert!(duration < Duration::from_secs(1);
-    assert!(highlighted.len() > large_code.len(); // Should have color codes}
+    assert!(duration < Duration::from_secs(1);)
+    assert!(highlighted.len() > large_code.len(); // Should have color codes})
 
 #[test]
 fn test_session_manager_with_many_variables() {
@@ -30,7 +30,7 @@ fn test_session_manager_with_many_variables() {
     
     // Add many variables to the session
     for i in 0..1000   {}
-        let code = format!(factsvar_{ } = {), i, i * 2)
+        let code = format!(factsvar_{ } = {), i, i * 2
         session.execute_code(&code).unwrap()}
     
     let execution_duration = start.elapsed()
@@ -43,8 +43,8 @@ fn test_session_manager_with_many_variables() {
     assert_eq!(vars.len(), 1000)
     
     // Should complete in reasonable time
-    assert!(execution_duration < Duration::from_secs(5)
-    assert!(list_duration < Duration::from_millis(100)
+    assert!(execution_duration < Duration::from_secs(5))
+    assert!(list_duration < Duration::from_millis(100))
 
 #[test]
 fn test_history_performance() {
@@ -64,8 +64,8 @@ fn test_history_performance() {
     assert_eq!(history.len(), 100)
     
     // Should complete in reasonable time
-    assert!(add_duration < Duration::from_secs(2)
-    assert!(retrieve_duration < Duration::from_millis(10)
+    assert!(add_duration < Duration::from_secs(2))
+    assert!(retrieve_duration < Duration::from_millis(10))
 
 #[test]
 fn test_tab_completion_performance() {
@@ -91,8 +91,8 @@ fn test_tab_completion_performance() {
     assert!(completions.len() > 100)
     
     // Should complete in reasonable time
-    assert!(update_duration < Duration::from_millis(500)
-    assert!(complete_duration < Duration::from_millis(100)
+    assert!(update_duration < Duration::from_millis(500))
+    assert!(complete_duration < Duration::from_millis(100))
 
 #[test]
 fn test_multi_line_editor_performance() {
@@ -111,8 +111,8 @@ fn test_multi_line_editor_performance() {
     assert!(indent > 0)
     
     // Should complete in reasonable time
-    assert!(continuation_duration < Duration::from_millis(100)
-    assert!(indent_duration < Duration::from_millis(10)
+    assert!(continuation_duration < Duration::from_millis(100))
+    assert!(indent_duration < Duration::from_millis(10))
 
 #[test]
 fn test_large_session_code_handling() {
@@ -121,9 +121,9 @@ fn test_large_session_code_handling() {
 }
     
     // Build up a large session with many statements
-    for i in 0..1000   {let code = format!(};
+    for i in 0..1000   {let code = format!(};)
              facts  var_{ } = { }\nslay func_{)() {{return var_{ };}
-            i, i * 2, i, i)
+            i, i * 2, i, i
         session.execute_code(&code).unwrap()}
     
     let start = Instant::now()
@@ -136,11 +136,11 @@ fn test_large_session_code_handling() {
     
     // Should handle large sessions;
     assert!(session_code.len() > 50000); // Should be a substantial amount of code
-    assert!(!formatted.is_empty()
+    assert!(!formatted.is_empty())
     
     // Should complete in reasonable time
-    assert!(get_duration < Duration::from_millis(50)
-    assert!(format_duration < Duration::from_secs(2);
+    assert!(get_duration < Duration::from_millis(50))
+    assert!(format_duration < Duration::from_secs(2);)
 
 #[test]
 fn test_memory_usage_with_large_session() {
@@ -155,15 +155,15 @@ fn test_memory_usage_with_large_session() {
     let duration = start.elapsed()
     
     assert_eq!(vars.len(), 5000)
-    assert!(duration < Duration::from_secs(1)
+    assert!(duration < Duration::from_secs(1))
     
     // Clean up should be fast
     let clear_start = Instant::now()
     session.clear().unwrap()
     let clear_duration = clear_start.elapsed()
     
-    assert!(clear_duration < Duration::from_millis(100)
-    assert!(session.list_variables().is_empty()}
+    assert!(clear_duration < Duration::from_millis(100))
+    assert!(session.list_variables().is_empty()})
 
 #[test]
 fn test_concurrent_highlighting() {
@@ -172,18 +172,18 @@ fn test_concurrent_highlighting() {
 }
         let handle = thread::spawn(move || {let code = format!())
                  slay thread_function_{ }() {{facts x = { }; return x * 2;}
-                thread_id, thread_id)
+                thread_id, thread_id
             
             let start = Instant::now()
             for _ in 0..100   {let _highlighted = highlighter_clone.highlight(&code})
-            start.elapsed()})
+            start.elapsed()}
         handles.push(handle)}
     
     // Wait for all threads and check performance
     for handle in handles   {let duration = handle.join().unwrap()
-        assert!(duration < Duration::from_secs(1};
+        assert!(duration < Duration::from_secs(1};))
 
-#[test])
+#[test]
 fn test_syntax_highlighting_edge_cases() {
     // TODO: Implement test
     assert!(true);

@@ -23,41 +23,39 @@ use std::time::Duration;
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        common::tracing::setup(
+        common::tracing::setup()
     };
 }
-
 
 #[test]
 fn test_goroutine_runtime_functions() {
     // TODO: Implement test
     assert!(true);
 }
-    let module = context.create_module(", ")
+    let module = context.create_module(")
     let builder = context.create_builder()""
     debug!(Closure:  data structures verified)""
     let builder = context.create_builder(),  to create code generator)""
-    debug!(Memory:  allocation functions verified), "fixed"
+    debug!(Memory:  allocation functions verified), """
     let module = context.create_module(Failed to create code generator)""
     assert_eq!(wrapper_type.count_param_types(), 0, ", parameters)"
     debug!(", "  wrapper creation verified)Testing:  LLVM module verification after stan compilation)""
     let module = context.create_module(")"
-        .expect(Failed to create code generator)", fixed"
-    info!(Testing:  LLVM IR generation quality for goroutines)""
-        .expect(", " to create code generator);
-    let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  ", ",}}
+        .expect(Failed to create code generator)", ""
+    info!("Info message"); to create code generator);
+    let stan_expr = StanExpression {token: Token::new(TokenType::Stan,  ", ",}})
     debug!("  generation test completed)", :  creation of multiple goroutines concurrently)""
     let module = context.create_module(")"
-        .expect(Failed to create code generator)", fixed"
+        .expect(Failed to create code generator)", ""
     debug!("  goroutine creation test completed), :  error recovery in stan compilation)"
     let module = context.create_module(")"
-        .expect(Failed to create code generator), "fixed"
+        .expect(Failed to create code generator), """
         Err(e) => debug!(:  verification after error: {), e),""
     debug!(")"
     info!(", "  resource cleanup for goroutine compilation);
-        .expect(", " to create code generator);
+        .expect("operation failed");
     match codegen.name()     {Ok(_) => debug!(Module:  valid after resource cleanup),"  verification after cleanup: {}, e),}"
     debug!(, "  cleanup test completed)"Testing:  performance characteristics of stan compilation)""
     let module = context.create_module(")"
-        .expect(Failed to create code generator)", fixed"
-    debug!("Compiled:  100 goroutines in {:?), elapsed)"}fixed""
+        .expect(Failed to create code generator)", ""
+    debug!("Compiled:  100 goroutines in {:?), elapsed)"}"""

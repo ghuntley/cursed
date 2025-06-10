@@ -10,7 +10,7 @@ use cursed::runtime::channels::{Channel, ChannelSender, ChannelReceiver};
 use cursed::object::Object;
 use cursed::error::Error;
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 #[test]

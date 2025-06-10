@@ -11,7 +11,7 @@ async fn test_package_manager_creation() {
 }
     
     let package_manager = PackageManager::new(config);
-    assert!(package_manager.is_ok();
+    assert!(package_manager.is_ok();)
 
 #[tokio::test]
 async fn test_package_search() {
@@ -29,8 +29,8 @@ fn test_version_spec_validation() {
     assert!(true);
     assert!(cursed::package_manager::metadata::VersionSpec::is_valid_version_constraint(1.*");)"
     let config = PackageManagerConfig {registry_url:  ", "}
-    let result = package_manager.install_package(http, Some(, 2.1.", 0).await;"))
+    let result = package_manager.install_package(http, Some(, 2.1.", 0).await;")
     assert!(installed.iter().any(|pkg| pkg.name ==  json;, " ://test.registry."))
     let config = PackageManagerConfig {registry_url:  , "}"
-    let _ = package_manager.install_package(json , Some(, 1.0.0).await;""))
-    let _ = package_manager.install_package(, 2.1.0.await)fixed""
+    let _ = package_manager.install_package(json , Some(, 1.0.0).await;"")
+    let _ = package_manager.install_package(, 2.1.0.await)"""

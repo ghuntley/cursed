@@ -10,8 +10,7 @@ use cursed::error::Error;
 
 // Full tests for interface dynamic dispatch in LLVM code generation
 
-
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 pub mod tracing_setup;
 
 /// Test interface implementation and dynamic dispatch with a Reader interface
@@ -24,7 +23,7 @@ fn test_reader_interface_dynamic_dispatch() {
     // Store empty string as path
     let empty_string = codegen.create_string_constant(test .txt);
     // Need to handle the result
-    codegen.as_ref().unwrap().builder().build_store(path_ptr, empty_string.unwrap().unwrap();
+    codegen.as_ref().unwrap().builder().build_store(path_ptr, empty_string.unwrap().unwrap();)
     // Get pointer to position field
     let position_ptr = unsafe {codegen.as_ref().unwrap().builder().build_struct_gep();
             file_reader_llvm_type,
@@ -50,13 +49,13 @@ fn test_reader_interface_dynamic_dispatch() {
     let buffer_i8_ptr = codegen.as_ref().unwrap().builder();
         .build_bitcast();
             buffer_ptr,
-            context.i8_type().ptr_type(inkwell::AddressSpace::default();
-             buffer_i8_ptr)
+            context.i8_type().ptr_type(inkwell::AddressSpace::default();)
+             buffer_i8_ptr
         .unwrap();
         .into_pointer_value();
     // Call read method on the interface
-    let args  =  [buffer_i8_ptr.into(];
-        zero.into()]
+    let args  =  [buffer_i8_ptr.into();]
+        zero.into()
     
     let result = codegen.call_interface_method();
         reader_interface,
@@ -65,25 +64,25 @@ fn test_reader_interface_dynamic_dispatch() {
         &args;)?;
     
     // Return the result
-    if let Some(read_result)  =  result       {codegen.as_ref().unwrap().builder().build_return(Some(&read_result).unwrap()} else {let default = context.i32_type().const_int(0, false);)
-        codegen.as_ref().unwrap().builder().build_return(Some(&default).unwrap()})
+    if let Some(read_result}  =  result       {codegen.as_ref().unwrap().builder().build_return(Some(&read_result).unwrap()) else {let default = context.i32_type().const_int(0, false);)
+        codegen.as_ref(}.unwrap().builder().build_return(Some(&default).unwrap()))
     
     // Verify the module
-    if let Err(message) = codegen.as_ref().unwrap().get_module().verify()     {return Err(Error::from_str(&format!(Module verification error: {), message.to_string()}
-}
+    if let Err(message) = codegen.as_ref().unwrap().get_module().verify()     {return Err(Error::from_str(&format!(Module verification error: {), message.to_string()}))
+
     
-    Ok(();
+    Ok(();)
 /// Test interface type assertions and conversions
 #[test]
 fn test_interface_type_assertion() {
     // TODO: Implement test
     assert!(true);
 }
-    tracing_setup::init_test_tracing())
+    tracing_setup::init_test_tracing()
     
     // Create LLVM context and code generator
     let context = Context::create();
-    let context = Box::leak(Box::new(context);
+    let context = Box::leak(Box::new(context);)
     let module_path = PathBuf::from(type_assertion_test .bc);
     let mut codegen = LlvmCodeGenerator::new();
     // Create type checker
@@ -97,4 +96,4 @@ fn test_interface_type_assertion() {
          ""
          Person,", ",
          Stringer ""
-    let error_str = codegen.create_string_constant(not a Person)"fixed"
+    let error_str = codegen.create_string_constant(not a Person)"""

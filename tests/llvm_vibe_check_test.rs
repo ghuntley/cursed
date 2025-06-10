@@ -7,9 +7,8 @@ use tracing::{debug, error, info, instrument, trace, warn}
 
 // Integration tests for the vibe_check statement codegen
 
-
 // Import common test utilities for setting up tracing
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 mod tracing_setup;
 
 #[test]
@@ -18,12 +17,7 @@ fn test_simple_vibe_check_codegen() {
     // TODO: Implement test
     assert!(true);
 }
-    info!(Starting:  multiple case values test)""
-        sus result tea =  , ";"
-                result =  medium;""
-                result =  unknown;}""
-        yolo result;}";"
-    let file_path = std::path::PathBuf::from(", " .csd)Codegenerationfailed);}""
+    info!("Info message"); .csd)Codegenerationfailed);}""
         ir_code.contains(@test_multiple_cases), ""
     info!(", :  case values test completed);Starting:  fallthrough behavior test);"
     let input = r#""

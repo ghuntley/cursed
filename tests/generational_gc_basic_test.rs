@@ -9,16 +9,15 @@ use std::time::Duration;
 use cursed::memory::  {GenerationalCollector, GenerationalConfig, Generation, CollectionStrategy}
     WriteBarrierMode, ObjectRegistry, ObjectId}
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        let _ = tracing_subscriber::fmt::try_init(
+        let _ = tracing_subscriber::fmt::try_init()
     };
 }
-
 
 fn create_test_collector() {
     // TODO: Implement test

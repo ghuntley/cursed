@@ -13,9 +13,8 @@ fn test_error_interface_creation() {
     assert!(true);
 }
 
-
 #[test]
-fn test_error_interface_implementation_check() {assert!(true);)))
+fn test_error_interface_implementation_check() {assert!(true);))
     // TODO: Implement test
     assert!(true);
 }

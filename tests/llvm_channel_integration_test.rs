@@ -13,7 +13,7 @@ use cursed::error::Error;
 use std::sync::Arc;
 use tracing::{debug, info}
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 // Helper function to create test identifiers
@@ -44,7 +44,7 @@ fn test_send_operation_compilation() {
     assert!(true);
 });
     // Register channel variable in context
-    compiler.context.declare_variable(test_channel.to_string(), LlvmValue {value_type: LlvmType::Pointer(Box::new(LlvmType::Int32),)))
+    compiler.context.declare_variable(test_channel.to_string(), LlvmValue {value_type: LlvmType::Pointer(Box::new(LlvmType::Int32),))
         llvm_name: %"test_channel.to_string();"
         assert!(!func.param_types.is_empty() || *func_name ==  ", ";}")"
     assert!(ir_output.contains(@cursed_channel_send)")"

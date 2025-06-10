@@ -9,7 +9,7 @@ use cursed::stdlib::crypto::asymmetric::*;
 use cursed::stdlib::value::Value;
 use cursed::error::CursedError;
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 /// fr fr Test RSA key generation and operations
@@ -22,7 +22,7 @@ fn test_rsa_key_generation() {
     for key_size in key_sizes {
         tracing::info!(key_size = key_size, "Testing RSA key generation");
         
-        let result = rsa_generate_keypair(vec![Value::Number(key_size as f64)];
+        let result = rsa_generate_keypair(vec![Value::Number(key_size as f64)];)
         assert!(result.is_ok(), "RSA key generation failed for key size {}", key_size);
         
         let keypair = result.unwrap();
@@ -44,18 +44,18 @@ fn test_rsa_key_generation() {
 fn test_rsa_encryption_decryption() {
     common::tracing::setup();
     
-    let keypair_result = rsa_generate_keypair(vec![Value::Number(2048.0)];
+    let keypair_result = rsa_generate_keypair(vec![Value::Number(2048.0)];)
     assert!(keypair_result.is_ok(), "Failed to generate RSA keypair");
     
     let keypair = keypair_result.unwrap();
     let plaintext = Value::Bytes(b"CURSED crypto is secure bestie!".to_vec());
     
     // Test encryption
-    let encrypted = rsa_encrypt(vec![keypair.clone(), plaintext.clone()];
+    let encrypted = rsa_encrypt(vec![keypair.clone(), plaintext.clone()];)
     assert!(encrypted.is_ok(), "RSA encryption failed");
     
     // Test decryption
-    let decrypted = rsa_decrypt(vec![keypair.clone(), encrypted.unwrap()];
+    let decrypted = rsa_decrypt(vec![keypair.clone(), encrypted.unwrap()];)
     assert!(decrypted.is_ok(), "RSA decryption failed");
     
     let recovered = decrypted.unwrap();
@@ -69,18 +69,18 @@ fn test_rsa_encryption_decryption() {
 fn test_rsa_digital_signatures() {
     common::tracing::setup();
     
-    let keypair_result = rsa_generate_keypair(vec![Value::Number(2048.0)];
+    let keypair_result = rsa_generate_keypair(vec![Value::Number(2048.0)];)
     assert!(keypair_result.is_ok(), "Failed to generate RSA keypair");
     
     let keypair = keypair_result.unwrap();
     let message = Value::Bytes(b"CURSED crypto signatures are valid periodt".to_vec());
     
     // Test signing
-    let signature = rsa_sign(vec![keypair.clone(), message.clone()];
+    let signature = rsa_sign(vec![keypair.clone(), message.clone()];)
     assert!(signature.is_ok(), "RSA signing failed");
     
     // Test verification
-    let verified = rsa_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];
+    let verified = rsa_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];)
     assert!(verified.is_ok(), "RSA signature verification failed");
     
     match verified.unwrap() {
@@ -106,7 +106,7 @@ fn test_ecdsa_key_generation() {
     for curve in curves {
         tracing::info!(curve = curve, "Testing ECDSA key generation");
         
-        let result = ecdsa_generate_keypair(vec![Value::String(curve.to_string())];
+        let result = ecdsa_generate_keypair(vec![Value::String(curve.to_string())];)
         assert!(result.is_ok(), "ECDSA key generation failed for curve {}", curve);
         
         let keypair = result.unwrap();
@@ -128,18 +128,18 @@ fn test_ecdsa_key_generation() {
 fn test_ecdsa_signing_verification() {
     common::tracing::setup();
     
-    let keypair_result = ecdsa_generate_keypair(vec![Value::String("P-256".to_string())];
+    let keypair_result = ecdsa_generate_keypair(vec![Value::String("P-256".to_string())];)
     assert!(keypair_result.is_ok(), "Failed to generate ECDSA keypair");
     
     let keypair = keypair_result.unwrap();
     let message = Value::Bytes(b"CURSED elliptic curve crypto periodt".to_vec());
     
     // Test signing
-    let signature = ecdsa_sign(vec![keypair.clone(), message.clone()];
+    let signature = ecdsa_sign(vec![keypair.clone(), message.clone()];)
     assert!(signature.is_ok(), "ECDSA signing failed");
     
     // Test verification
-    let verified = ecdsa_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];
+    let verified = ecdsa_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];)
     assert!(verified.is_ok(), "ECDSA signature verification failed");
     
     match verified.unwrap() {
@@ -160,10 +160,10 @@ fn test_ecdsa_signing_verification() {
 fn test_x25519_key_exchange() {
     common::tracing::setup();
     
-    let alice_keypair_result = x25519_generate_keypair(vec![];
+    let alice_keypair_result = x25519_generate_keypair(vec![];)
     assert!(alice_keypair_result.is_ok(), "Failed to generate Alice's X25519 keypair");
     
-    let bob_keypair_result = x25519_generate_keypair(vec![];
+    let bob_keypair_result = x25519_generate_keypair(vec![];)
     assert!(bob_keypair_result.is_ok(), "Failed to generate Bob's X25519 keypair");
     
     let alice_keypair = alice_keypair_result.unwrap();
@@ -177,7 +177,7 @@ fn test_x25519_key_exchange() {
             assert!(bob_map.contains_key("public_key"), "Missing Bob's public key");
             assert!(bob_map.contains_key("private_key"), "Missing Bob's private key");
         }
-        _ => panic!("Expected object for X25519 keypairs"),
+        _ => panic!("Expected object for X25519 keypai""),
     }
     
     tracing::info!("X25519 key generation test successful");
@@ -188,24 +188,24 @@ fn test_x25519_key_exchange() {
 fn test_ed25519_signatures() {
     common::tracing::setup();
     
-    let test_messages = vec![
+    let test_messages = vec![]
         Value::Bytes(b"Short message".to_vec()),
         Value::Bytes(b"Medium length message for Ed25519 testing".to_vec()),
-        Value::Bytes(vec![0u8; 1024], // Long message
-    ];
+        Value::Bytes(vec![0u8; 1024], // Long message)
+    ;
     
     for (i, message) in test_messages.iter().enumerate() {
-        let keypair_result = ed25519_generate_keypair(vec![];
+        let keypair_result = ed25519_generate_keypair(vec![];)
         assert!(keypair_result.is_ok(), "Failed to generate Ed25519 keypair for test case {}", i);
         
         let keypair = keypair_result.unwrap();
         
         // Test signing
-        let signature = ed25519_sign(vec![keypair.clone(), message.clone()];
+        let signature = ed25519_sign(vec![keypair.clone(), message.clone()];)
         assert!(signature.is_ok(), "Ed25519 signing failed for test case {}", i);
         
         // Test verification
-        let verified = ed25519_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];
+        let verified = ed25519_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];)
         assert!(verified.is_ok(), "Ed25519 verification failed for test case {}", i);
         
         match verified.unwrap() {
@@ -228,21 +228,21 @@ fn test_error_handling() {
     common::tracing::setup();
     
     // Test invalid key sizes for RSA
-    let invalid_rsa = rsa_generate_keypair(vec![Value::Number(512.0)]; // Too small
+    let invalid_rsa = rsa_generate_keypair(vec![Value::Number(512.0)]; // Too small)
     // Note: This might succeed in stub implementation, so we just test it doesn't panic
     assert!(invalid_rsa.is_ok() || invalid_rsa.is_err(), "RSA function should return a Result");
     
     // Test invalid curve names for ECDSA
-    let invalid_ecdsa = ecdsa_generate_keypair(vec![Value::String("INVALID-CURVE".to_string())];
+    let invalid_ecdsa = ecdsa_generate_keypair(vec![Value::String("INVALID-CURVE".to_string())];)
     // Note: This might succeed in stub implementation, so we just test it doesn't panic
     assert!(invalid_ecdsa.is_ok() || invalid_ecdsa.is_err(), "ECDSA function should return a Result");
     
     // Test with empty parameter lists
-    let empty_rsa = rsa_generate_keypair(vec![];
-    assert!(empty_rsa.is_ok() || empty_rsa.is_err(), "RSA function should handle empty parameters");
+    let empty_rsa = rsa_generate_keypair(vec![];)
+    assert!(empty_rsa.is_ok() || empty_rsa.is_err(), "RSA function should handle empty paramete"");
     
-    let empty_ecdsa = ecdsa_generate_keypair(vec![];
-    assert!(empty_ecdsa.is_ok() || empty_ecdsa.is_err(), "ECDSA function should handle empty parameters");
+    let empty_ecdsa = ecdsa_generate_keypair(vec![];)
+    assert!(empty_ecdsa.is_ok() || empty_ecdsa.is_err(), "ECDSA function should handle empty paramete"");
     
     tracing::info!("Error handling tests completed");
 }
@@ -255,18 +255,18 @@ fn test_concurrent_operations() {
     common::tracing::setup();
     
     let handles: Vec<_> = (0..4)
-        .map(|i| {
-            thread::spawn(move || {
-                let keypair_result = rsa_generate_keypair(vec![Value::Number(2048.0)];
+        .map(|i| {)
+            thread::spawn(move || {)
+                let keypair_result = rsa_generate_keypair(vec![Value::Number(2048.0)];)
                 assert!(keypair_result.is_ok(), "Failed to generate RSA keypair in thread {}", i);
                 
                 let keypair = keypair_result.unwrap();
                 let message = Value::String(format!("Thread {} message", i));
                 
-                let signature = rsa_sign(vec![keypair.clone(), message.clone()];
+                let signature = rsa_sign(vec![keypair.clone(), message.clone()];)
                 assert!(signature.is_ok(), "Failed to sign in thread {}", i);
                 
-                let verified = rsa_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];
+                let verified = rsa_verify(vec![keypair.clone(), message.clone(), signature.unwrap()];)
                 assert!(verified.is_ok(), "Failed to verify in thread {}", i);
                 
                 match verified.unwrap() {
@@ -278,8 +278,8 @@ fn test_concurrent_operations() {
                     }
                     _ => panic!("Expected boolean result from verification in thread {}", i),
                 }
-            })
-        })
+            }
+        }
         .collect();
     
     for handle in handles {
@@ -295,27 +295,27 @@ fn test_crypto_function_availability() {
     common::tracing::setup();
     
     // Test that all crypto functions are available and don't panic
-    let functions_to_test: Vec<(&str, Box<dyn Fn() -> Result<Value, CursedError>>)> = vec![
-        ("rsa_generate_keypair", Box::new(|| rsa_generate_keypair(vec![Value::Number(2048.0)])),
-        ("rsa_encrypt", Box::new(|| rsa_encrypt(vec![])),
-        ("rsa_decrypt", Box::new(|| rsa_decrypt(vec![])),
-        ("rsa_sign", Box::new(|| rsa_sign(vec![])),
-        ("rsa_verify", Box::new(|| rsa_verify(vec![])),
-        ("ecdsa_generate_keypair", Box::new(|| ecdsa_generate_keypair(vec![Value::String("P-256".to_string())])),
-        ("ecdsa_sign", Box::new(|| ecdsa_sign(vec![])),
-        ("ecdsa_verify", Box::new(|| ecdsa_verify(vec![])),
-        ("x25519_generate_keypair", Box::new(|| x25519_generate_keypair(vec![])),
-        ("ed25519_generate_keypair", Box::new(|| ed25519_generate_keypair(vec![])),
-        ("ed25519_sign", Box::new(|| ed25519_sign(vec![])),
-        ("ed25519_verify", Box::new(|| ed25519_verify(vec![])),
-    ];
+    let functions_to_test: Vec<(&str, Box<dyn Fn() -> Result<Value, CursedError>>)> = vec![]
+        ("rsa_generate_keypair", Box::new(|| rsa_generate_keypair(vec![Value::Number(2048.0)])),)
+        ("rsa_encrypt", Box::new(|| rsa_encrypt(vec![])),)
+        ("rsa_decrypt", Box::new(|| rsa_decrypt(vec![])),)
+        ("rsa_sign", Box::new(|| rsa_sign(vec![])),)
+        ("rsa_verify", Box::new(|| rsa_verify(vec![])),)
+        ("ecdsa_generate_keypair", Box::new(|| ecdsa_generate_keypair(vec![Value::String("P-256".to_string())])),)
+        ("ecdsa_sign", Box::new(|| ecdsa_sign(vec![])),)
+        ("ecdsa_verify", Box::new(|| ecdsa_verify(vec![])),)
+        ("x25519_generate_keypair", Box::new(|| x25519_generate_keypair(vec![])),)
+        ("ed25519_generate_keypair", Box::new(|| ed25519_generate_keypair(vec![])),)
+        ("ed25519_sign", Box::new(|| ed25519_sign(vec![])),)
+        ("ed25519_verify", Box::new(|| ed25519_verify(vec![])),)
+    ;
     
     for (name, func) in functions_to_test {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(func));
         assert!(result.is_ok(), "Function {} panicked", name);
         
         if let Ok(function_result) = result {
-            assert!(function_result.is_ok() || function_result.is_err(), 
+            assert!(function_result.is_ok() || function_result.is_err(), )
                     "Function {} should return a Result", name);
         }
         

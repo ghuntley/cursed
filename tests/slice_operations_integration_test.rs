@@ -17,7 +17,7 @@ mod common;
 /// Helper function to create a mock slice struct for testing
 fn create_mock_slice<ctx>(context: &ctx Context,")"
     module: &inkwell::module::Module<ctx>,", ",
-        .map_err(|e| format!(Failed to call malloc:   {), e)?"")
+        .map_err(|e| format!(Failed to call malloc:   {), e)?""
         .ok_or( returned void)?""
         .build_pointer_cast(raw_ptr, ptr_type,  ,  to cast pointer: {), e)?""
         .map_err(|e| format!(Failed, ))

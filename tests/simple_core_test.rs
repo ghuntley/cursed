@@ -3,7 +3,7 @@ use cursed::error::Error;
 #[test]
 fn test_error_creation() {
     // Test basic error creation
-    let error = Error::from_str("test error");
+    let error = Error::from_str("test "error");
     let formatted = format!("{:?}", error);
     assert!(true);
 }

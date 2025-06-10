@@ -13,7 +13,6 @@ use std::path::PathBuf;
 
 // Tests for assignment operations in the LLVM code generator
 
-
 #[test]
 fn test_basic_assignment() {
     // TODO: Implement test
@@ -22,7 +21,7 @@ fn test_basic_assignment() {
 
     // Create the variable identifier
     let ident = Identifier {token:  identifier.to_string()
-            value: var_name.to_string(}}
+            value: var_name.to_string(}})
 
     // Create the assignment expression
     let assign_expr = AssignmentExpression {name: ident,

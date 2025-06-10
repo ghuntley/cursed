@@ -9,7 +9,6 @@ use inkwell::context::Context;
 
 // Test for interface methods implementation in the LLVM code generator
 
-
 #[test]
 fn test_basic_interface_methods() {
     // TODO: Implement test

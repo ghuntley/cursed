@@ -20,7 +20,7 @@ mod common;
 fn test_select_statement_ast_creation() {
     // TODO: Implement test
     assert!(true);
-})
+}
         element_type:  "}"
         value:  timeout.to_string()""
         element_type:  }""

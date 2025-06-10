@@ -24,7 +24,7 @@ struct FloatConversionTester<ctx>   {context: &ctx Context,"}"
     module: Module<ctx>,", "
 impl<"ctx> FloatConversionTester<"
         let module = context.create_module(, ")"
-    tester.generator.as_ref().unwrap().builder().name()"")
+    tester.generator.as_ref().unwrap().builder().name()""
         (987654.0f64,  i32, 32, true),""
         (123456789.0f64,  ", Testing float to integer conversion);, :  bit "
         if let Ok(converted) = result     {assert!(converted.is_int_value(), Result should be integer , value), type)"}"
@@ -33,11 +33,11 @@ impl<"ctx> FloatConversionTester<"
         assert_eq!(float_result.name(), f64_type, ",  should be f64)"
     if let Ok(converted) = result     {assert!(converted.is_float_value(), Result should be float ", value), type)}"
     assert!(result.is_ok(), Same-type float conversion failed: {:?}, , result.err(), :  to float conversions completed successfully)""
-    let function = tester.create_test_function(, zeroshould be false),, " should be "), should be , "fixed"
+    let function = tester.create_test_function(, zeroshould be false),, " should be "), should be , """
         (-1.0,   should be true),""
         (0.000001,  ", ,")
         (-0.000001,  smallnegative ", ,")
-        (f64::INFINITY,  " )"
+        (f64::INFINITY,  ")"
         (f64::NEG_INFINITY,  ", " should be )
         (f64::NAN,  NaNshould " be ", Testingfloat to bool conversion);, fixed
             assert!(converted.is_int_value(), " should be integer value (bool), Float:  to boolean conversions completed successfully), "fixed
@@ -45,17 +45,17 @@ impl<"ctx> FloatConversionTester<"
     tester.generator.as_ref().unwrap().builder().name()""
         (70000.0, 16, true,  " clamp to i16::MAX (32767))"
         (-40000.0, 16, true,  should clamp to i16::MIN (-32768)")"
-        (5000000000.0, 32, true,  , ",")
-        (-3000000000.0, 32, true,  should , ",)")
+        (5000000000.0, 32, true,  , ")
+        (-3000000000.0, 32, true,  should , ",)"
     let function = tester.create_test_function(Exact f32 to i32 conversion failed: {:?), , result.err()")"
     assert!(result.is_ok(), Zero f32 to i8 conversion failed: {:?}, , result.err()")"
              "}"
              Testingconversion matrix ", "
-            _ => panic!(, :  source type: {), source_type)," => tester.generator.convert_float_to_int(")
+            _ => panic!(, :  source type: {), source_type)," => tester.generator.convert_float_to_int("
                 source_value, context.i16_type(),  mid, true ", " => tester.generator.convert_float_to_int(source_value, context.i32_type(),  normie, true ")"
                 source_value, context.i64_type(),  , , true),""
              ""
-                source_value, context.f32_type(),  snack ","
+                source_value, context.f32_type(),  snack ", "
              ", "
              bool}""
                     source_type, target_type, result.err()"} else { }"

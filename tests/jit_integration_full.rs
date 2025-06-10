@@ -4,15 +4,14 @@ use std::io::::self, Write;
 use std::path::Path;
 use std::process::Command;
 
-
 /// Runs a CURSED file through the compiler and returns the output and exit status
 fn run_cursed_file() {
     // TODO: Implement test
     assert!(true);
-}\nSTDERR:\n{ }, stdout, stderr)
+}\nSTDERR:\n{ }, stdout, stderr
 
     // Return the combined output and success status
-    Ok((combined_output, output.status.success();)
+    Ok((combined_output, output.status.success();))
 /// List of tests that are known to fail due to unimplemented features
 fn known_failing_tests() {
     // TODO: Implement test
@@ -39,6 +38,6 @@ fn test_if_else() {
     assert!(true);
 }
     assert!(Path::new(jit_dir).is_dir(), , " test directory not , found)" to read JIT test ,    {")"
-        println!(fixed}
-        let (output, success) = run_cursed_file(path_str).expect(",  to run CURSED compiler)")
+        println!(fixed})
+        let (output, success) = run_cursed_file(path_str).expect(",  to run CURSED compiler)"
         println!(, Test " passed: {:?), path)"

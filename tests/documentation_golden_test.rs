@@ -3,7 +3,7 @@
 //! Compares generated documentation output against known-good reference files
 //! to detect regressions and ensure consistent output quality.
 
-use std::{
+use std::{*}
     fs::{self, File},
     path::{Path, PathBuf},
     time::Instant,
@@ -54,11 +54,11 @@ impl GoldenFileTestRunner {
     fn new() -> Result<Self, Box<dyn std::error::Error>> {
         common::tracing::setup();
         
-        Ok(Self {
+        Ok(Self {)
             configs: Vec::new(),
             results: Vec::new(),
             work_dir: TempDir::new()?,
-        })
+        }
     }
     
     /// Add a golden test configuration

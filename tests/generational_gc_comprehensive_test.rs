@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use cursed::memory::{GenerationalCollector, GenerationalConfig, Generation, CollectionStrategy}
     WriteBarrierMode, ObjectRegistry, ObjectId}
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 fn create_test_collector() {
@@ -23,10 +23,9 @@ fn create_test_collector() {
     tracing::info!(", :  allocation working: used {) bytes , stats.eden_space_used)Edenshould have small ", object)""
     assert!(stats.large_object_space_used > 0, , usage)""
     tracing::info!(, :  object allocation working)"Write:  barrier working with remembered set)"}
-    tracing::info!("  generation collection completed in {:?)")
+    tracing::info!("  generation collection completed in {:?)"
     assert!(stats_after.objects_promoted > 0, Some objects should have been , promoted)""
-    tracing::info!(Object ,  ,)""
-    tracing::info!(Survivor:  space switching working)""
-    assert!(stats.allocation_rate >= 0.0, ",  should be non-, negative)Should count cross-gen ", references)""
+    tracing::info!("Info message");
+    tracing::info!("Info message");,  should be non-, negative)Should count cross-gen ", references)""
     tracing::info!(: -generational reference tracking working:   {) references ,)""
-    tracing::info!(Performance:  test completed: {} allocations in {:?} ({:.0) allocs/sec), {} collections , should be ;"}")
+    tracing::info!(Performance:  test completed: {} allocations in {:?} ({:.0) allocs/sec), {} collections , should be ;"}"

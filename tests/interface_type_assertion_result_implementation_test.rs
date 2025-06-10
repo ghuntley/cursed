@@ -9,12 +9,9 @@ use common::tracing::setup as init_tracing;
 // These tests verify that interface type assertions work correctly with proper
 // integration of the ? operator for error propagation.
 
-
-
 // Import common test utilities
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
-
 
 #[test]
 fn test_basic_type_assertion_structure() {
@@ -28,8 +25,8 @@ fn test_source_location_creation() {
     assert!(true);
 }
         column: 10,
-        file: Some(test.csd .to_string()))
+        file: Some(test.csd .to_string())
         source_line:  x, ok = value.(TargetType)".to_string()}"
-    assert_eq!(source_location.source_line,  ")")
+    assert_eq!(source_location.source_line,  ")"
     assert!(true);""
-        type_name:  TargetType.to_string()}fixed""
+        type_name:  TargetType.to_string()}"""

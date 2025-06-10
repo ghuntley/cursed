@@ -4,7 +4,6 @@ use cursed::parser::Parser;
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::codegen::jit::JitCompiler;
 
-
 #[cfg(test)]
 mod property_access_tests ::use super::*;
 
@@ -13,18 +12,18 @@ mod property_access_tests ::use super::*;
     // TODO: Implement test
     assert!(true);
 }
-                .errors())
+                .errors()
                 .iter();
-                .map(|e| e.to_string();
+                .map(|e| e.to_string();)
                 .collect::<Vec<String>>()
                 .join(\n)}
-            return Err(Error::from_str(&format!("Parsererrors:\\n{), errors_str)}"
+            return Err(Error::from_str(&format!("Parsererrors:\\n{), errors_str)}")
 
             .with_env_filter(debug  ,cursed::codegen::llvm::property_access=trace)            vibe ""
-                yolo p.x;}#        #;")"
+                yolo p.x;}#        #;
         let code = r#            vibe main ""
                 yolo rect.bottomRight.x;}",  rect.bottomRight.x to return , , 30)"
-        let code = r#"        #;"#
+        let code = "        #;"
         assert!(error.contains(", " || error.contains(field z, Error should mention field not found: {), , error)}"))"
         let code = r##        #;""
         assert_eq!(result, 10,  Expected " counter.value to be 10 after modification ")

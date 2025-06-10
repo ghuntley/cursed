@@ -9,11 +9,11 @@ use cursed::error::{Error, SourceLocation};
 /// that is currently implemented, focusing on AST nodes and basic
 /// error handling functionality.
 
-#[cfg(test)]]
+#[cfg(test)]
 mod ast_tests {
     use super::*;
 
-    #[test])
+    #[test]
     fn test_basic_error_propagation_creation() {
     // TODO: Implement test
     assert!(true);
@@ -96,8 +96,8 @@ mod ast_tests {
         }
         
         // Verify they're all created correctly
-        assert_eq!(propagations[0).string(), ");"
-        assert_eq!(propagations[999).string(), "var_999?");
+        assert_eq!(propagations[0).string(), ");"]
+        assert_eq!(propagations[999).string(), "var_999?");]
     }
 
     #[test]
@@ -118,11 +118,11 @@ mod ast_tests {
     }
 }
 
-#[cfg(test)]]
+#[cfg(test)]
 mod integration_tests {
     use super::*;
 
-    #[test])
+    #[test]
     fn test_error_propagation_in_context() {
     // TODO: Implement test
     assert!(true);

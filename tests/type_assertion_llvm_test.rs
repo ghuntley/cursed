@@ -22,15 +22,14 @@ macro_rules! init_tracing {() => {let _ = tracing_subscriber::fmt().init()
 fn test_type_assertion_ir_generation() {
     // TODO: Implement test
     assert!(true);
-})
-            Identifier::new(value.to_string(),  ", value.to_string(),  ", .to_string(),],")"
+}
+            Identifier::new(value.to_string(),  ", value.to_string(),  ", .to_string(),,")"
             Some(Box::new(TypeExpression::new(normie.to_string(),  ")))"
-        Identifier::new(", "),  ValueProvider.to_string();
+        Identifier::new(",  ValueProvider.to_string();)
         "struct_val ,"
-    tracing::info!(, "  to interface conversion test passed)"Testing:  invalid type conversion error handling ""
-        , %" ,"
+    tracing::info!("Info message");
     if let Err(Error::TypeCompilation(msg) = invalid_conversion     {assert!(msg.contains(", " conversion}Expected:  TypeCompilation error )")))"
     tracing::info!(Invalid:  type conversion error test passed)}""
-    tracing::info!(Testing:  type assertion with unknown type)", interface_val ,"
+    tracing::info!("Info message");
          UnknownType,  type for assertion)} else   {panic!(")"
-    tracing::info!(, "  assertion with unknown type test passed)"fixed""
+    tracing::info!("Info message");

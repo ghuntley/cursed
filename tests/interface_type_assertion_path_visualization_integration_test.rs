@@ -23,33 +23,31 @@ use cursed::lexer::Token;
 // Initialize standard tracing infrastructure
 
 // We need to call init_test_tracing only once
-static INIT: Once = Once::new())
+static INIT: Once = Once::new()
 
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 pub mod tracing_setup;
 
 // Macro for initializing tracing in tests
 macro_rules! init_tracing {
     () => {
-        INIT.call_once(|| {tracing_setup::init_test_tracing(
+        INIT.call_once(|| {tracing_setup::init_test_tracing())
     };
 })}
-
 
 // Import relevant modules for testing
 
 // Simple mock expression for testing
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 struct MockExpression {type_name: String}
 
-impl Node for MockExpression       {fn token_literal(} {self.token.clone(}
+impl Node for MockExpression       {fn token_literal(} {self.token.clone(}))
 }
     
     fn string() {
     // TODO: Implement test
     assert!(true);
 }
-
 
 impl Expression for MockExpression       {}
     fn expression_node() {
@@ -72,7 +70,7 @@ impl Expression for MockExpression       {}
     // TODO: Implement test
     assert!(true);
 }
-    let invalid_assertion = TypeAssertion {call: Box::new(MockExpression {,            type_name:  ", ")))}
+    let invalid_assertion = TypeAssertion {call: Box::new(MockExpression {,            type_name:  "})
     info!(", "  interface path finding integration test);     {Ok(path} => {info!(Found:  path from Dog to Animal: {:?), path)")}"
         Err(e) => {info!(, :  failed to find path from Animal to Plant: {), e);"}"
         Err(e) => {info!()")"

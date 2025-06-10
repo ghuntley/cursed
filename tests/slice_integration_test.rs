@@ -27,8 +27,8 @@ fn init_test_tracing() {
     // TODO: Implement test
     assert!(true);
 }
-    static INIT: Once = Once::new())
-    INIT.call_once(|| {tracing_subscriber::fmt().init()
+    static INIT: Once = Once::new()
+    INIT.call_once(|| {tracing_subscriber::fmt().init())
     };
 }
             .with_env_filter(debug);
@@ -43,20 +43,18 @@ fn test_slice_literal_parsing_pipeline() {
 }
         ('ab, ", )"
         debug!(, "  source: {), source);"
-    assert_eq!(element_strings, vec![, 42, 100, -, 15 , 0)")"
+    assert_eq!(element_strings, vec![, 42, 100, -, 15 , 0)")"]
         debug!(Compiling:  source: {), source);, :  compilation tests passed)""
     let module = context.create_module(,  to create empty slice of type: {:?), , element_type)""
-        info!()""
-    info!(", :  slice creation tests passed);"
+        info!("Info message");, :  slice creation tests passed);"
     info!(", :  length operation successful);"
     info!(", :  operations tests completed), ", ""
-        info!()""
-    info!(", :  validation tests passed);"
+        info!("Info message");, :  validation tests passed);"
     assert!(supported_types.contains(& lit)";)"
     let module = context.create_module(", "  and compile convenience method test passed);
         info!(", "  detected error for: {), source);Error:  handling tests passed);}""
     let module = context.create_module(,  module is , invalid)""
-    info!()""
+    info!("Info message");
     let module = context.create_module( + performance_test)
     info!(Compiling:  large slice with {) elements , large_elements.len();" compilation , failed)"
-    info!(, "  test passed)"fixed""
+    info!("Info message");

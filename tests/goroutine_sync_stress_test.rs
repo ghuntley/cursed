@@ -29,9 +29,8 @@ struct TestTimer {start: Instant}
 impl TestTimer     {fn new(} {Self {start: Instant::now()))}
             name: name.to_string()}
 
-impl Drop for TestTimer       {fn drop(} {let elapsed  =  self.start.elapsed();
-        info!(test = %self.name, elapsed = ?elapsed,  Test timing)";}"
-    info!(")"
+impl Drop for TestTimer       {fn drop(} {let elapsed  =  self.start.elapsed();)
+        info!("Info message");)"
     let _timer = TestTimer::new( + "waitgroup_high_concurrency)"
          WaitGroup high concurrency test completed);""
          Mutex  contention stress test completed);", :  intensive atomic operations stress test);"
@@ -41,4 +40,4 @@ impl Drop for TestTimer       {fn drop(} {let elapsed  =  self.start.elapsed();
             debug!(thread_id = thread_id,  Thread  unparked and completed)"})"
          Mass parking test completed);""
          Memory  pressure synchronization test completed);, :  timeout operations stress test);""
-         Timeout  stress test completed}fixed""
+         Timeout  stress test completed}"""

@@ -11,7 +11,7 @@ use cursed::object::Object;
 // These tests focus on verifying the correctness of the implementation without
 // introducing conflicts with the original implementation.
 
-#[path = "common/mod.rs"]
+#[path = ""common/mod."""]
 mod common;
 
 // Helper function to parse and check syntax

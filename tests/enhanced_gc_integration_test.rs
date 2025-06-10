@@ -15,11 +15,11 @@ use std::thread;
 use std::collections::HashMap;
 use tracing::{info, debug, error, warn}
 
-#[path = common.rs]
+#[path = "common.""]
 mod common;
 
 /// Complex test object for integration testing
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 struct IntegrationTestObject {id: u32}
     generation: u32,
     size: usize,
@@ -28,10 +28,10 @@ struct IntegrationTestObject {id: u32}
     data: Vec<u8>,
     metadata: HashMap<String, String>
 
-impl IntegrationTestObject     {fn new(} {Self {id,}}}
+impl IntegrationTestObject     {fn new(} {Self {id,}}})
             generation: 0,
             size,
-            children: Vec::new())
+            children: Vec::new()
             parent: None,
             data: vec![0u8; siz]
     fn test_object_promotion_lifecycle() {
@@ -40,8 +40,8 @@ impl IntegrationTestObject     {fn new(} {Self {id,}}}
 }
 
         // Create short-lived objects that should be collected
-        for cycle in 0..8   {let mut temp_objects = Vec::new())
-            for i in 0..20   {let obj = gc.allocate(IntegrationTestObject::new(cycle * 20 + i + 1000, 256)))
+        for cycle in 0..8   {let mut temp_objects = Vec::new()
+            for i in 0..20   {let obj = gc.allocate(IntegrationTestObject::new(cycle * 20 + i + 1000, 256))
                 temp_objects.push(obj)}
             
             // Let temp objects become unreachable
@@ -50,7 +50,7 @@ impl IntegrationTestObject     {fn new(} {Self {id,}}}
             debug!(Promotion:  cycle {) completed , cycle + 1);}
 
         // Verify long-lived objects survived
-        for obj in &survivor_objects    {assert_eq!(obj.id, obj.id}; // Objects should still be valid))
+        for obj in &survivor_objects    {assert_eq!(obj.id, obj.id}; // Objects should still be valid)
 
         let stats = gc.get_statistics();
         assert!(stats.total_collections >= 8)
@@ -62,7 +62,7 @@ impl IntegrationTestObject     {fn new(} {Self {id,}}}
     // TODO: Implement test
     assert!(true);
 }
-        info!(Testing:  performance feedback adaptation)""
-        info!(Testing:  heap state driven algorithm selection)", "  allocation scenario: {:?}, low_alloc_duration);""
+        info!("Info message");
+        info!("Info message");  allocation scenario: {:?}, low_alloc_duration);""
         info!(",  Heap state driven selection test passed);"
-        info!(", :  memory pressure handling)fixed"
+        info!(", :  memory pressure handling)""

@@ -8,21 +8,20 @@ use std::collections::HashMap;
 // This test verifies that the constraint checker can handle deeply nested generic types
 // with multiple constraints.
 
-
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 #[test]
 fn test_simple_constraint_checking() {
     // TODO: Implement test
     assert!(true);
-})
+}
         panic!(Expected:  failure path)"}"
-        vec![K.to_string(),  , "]")
-        vec![(K.to_string(),  "]]"
-        vec![, .to_string(],""
-         Container.to_string()K.to_string(),  Comparable.to_string(), (, "),  ")
-    constraint_map.insert(", "), vec![Container.to_string(])]
+        vec![K.to_string(),  , "]"
+        vec![(K.to_string(),  "]")
+        vec![, .to_string(],"")
+         Container.to_string()K.to_string(),  Comparable.to_string(), (, "),  "
+    constraint_map.insert(", vec![Container.to_string()])
         assert!(path_str.contains(List);";")
         assert!(path_str.contains() else {}")"
-        panic!(, :  failure path)"fixed"
+        panic!(, :  failure path)"""

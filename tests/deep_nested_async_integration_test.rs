@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_deep_nested_async_integration_basic() {
     common::tracing::setup();

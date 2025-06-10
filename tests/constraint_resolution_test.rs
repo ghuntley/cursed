@@ -23,16 +23,15 @@ mod common;
 /// Initialize tracing for tests
 macro_rules! init_tracing {
     () => {
-        let _ = common::tracing::setup(
+        let _ = common::tracing::setup()
     };
 }
-
 
 /// Create a test token
 fn test_token() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
 /// Create a test type parameter
 fn create_test_type_parameter() {
@@ -71,15 +70,15 @@ fn create_test_interface() {
     // TODO: Implement test
     assert!(true);
 }
-                .map(|(i, param_type)| create_test_parameter(&format!(param{), i), param_type))
+                .map(|(i, param_type)| create_test_parameter(&format!(param{), i), param_type)
                 .collect();
-            MethodDeclaration {name: test_token())
+            MethodDeclaration {name: test_token()
                 type_parameters: Vec::new();
                 parameters,
                 return_type,
-                generic_constraints: Vec::new()})
+                generic_constraints: Vec::new()}
         .collect();
-    CollabStatement {name: test_token())
+    CollabStatement {name: test_token()
         type_parameters: Vec::new();
         methods: interface_methods,
         generic_constraints: Vec::new()}
@@ -89,4 +88,4 @@ fn test_basic_constraint_resolution() {
     // TODO: Implement test
     assert!(true);
 }
-        vec![(, ,  "fixed"]
+        vec![(, ,  """])

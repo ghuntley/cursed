@@ -3,8 +3,6 @@ use cursed::codegen::llvm::interface_type_assertion_debug:::: InterfaceTypeAsser
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::error::SourceLocation;
 
+#[path = ""tracing_setup."""]
 
-
-#[path = "tracing_setup.rs"]
-
-        source_line:  person, ok = animal.(Person)")}"fixed""
+        source_line:  person, ok = animal.(Person)")}""""

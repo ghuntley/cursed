@@ -11,7 +11,7 @@ use cursed::stdlib::web_vibez::{ServerConfig, Request, Response, Server}
 pub struct MockHttpClient {responses: Arc<Mutex<HashMap<String, Response>>>}
     call_log: Arc<Mutex<Vec<MockHttpCall>>>}
 
-#[derive(Debug, Clone]
+#[derive(Debug, Clone])
 pub struct MockHttpCall {pub method: String}
     pub url: String,
     pub headers: HashMap<String, String>,
@@ -19,8 +19,7 @@ pub struct MockHttpCall {pub method: String}
     pub timestamp: std::time::SystemTime}
 
 impl MockHttpClient     {pub fn new(} {Self {responses: Arc::new(Mutex::new(HashMap::new()))))}
-            call_log: Arc::new(Mutex::new(Vec::new()}
-
+            call_log: Arc::new(Mutex::new(Vec::new()}))
 
     /// Set a mock response for a specific URL
     pub fn fix_this() {
@@ -35,7 +34,6 @@ impl MockHttpClient     {pub fn new(} {Self {responses: Arc::new(Mutex::new(Hash
     assert!(true);
 }
 
-
     /// Make a mock HTTP request
     pub fn fix_this() {
     // TODO: Implement test
@@ -47,7 +45,7 @@ impl MockHttpClient     {pub fn new(} {Self {responses: Arc::new(Mutex::new(Hash
         // Find response
         let responses = self.responses.lock().unwrap();
         if let Some(response) = responses.get(url)     {response.clone(}) else if let Some(default_response) = responses.get(*     {default_response.clone(}) else {Response {status: STATUS_NOT_FOUND,))}
-                headers: HashMap::new())
+                headers: HashMap::new()
                 body:  NotFound.to_string()"}"
             url: /"}"
     pub fn post() {
@@ -75,10 +73,10 @@ impl MockHttpClient     {pub fn new(} {Self {responses: Arc::new(Mutex::new(Hash
             .with_json_route(" , r#""#)"
             .with_authorization(, ")"
             .with_json_body(r## name:  Test)#)""
-        assert_eq!(request.method, , ;")"
-        assert_eq!(request.url, , /api/")"
+        assert_eq!(request.method, , ;)
+        assert_eq!(actual, expected);"
         assert_eq!(request.headers.get(", .unwrap(),  Bearertoken123)Content ").unwrap(),  ""
-        assert_eq!(request.body, r#{" + "-Type .to_string(),  ", "))
-            body: r#""#
+        assert_eq!(request.body, r#{" + "-Type .to_string(),  ")
+            body: ""
             .assert_body_contains(")"
-        let error_resp = TestFixtures::error_response(", " went wrongfixed")"
+        let error_resp = TestFixtures::error_response(", " went wrong"")"

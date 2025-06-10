@@ -7,14 +7,13 @@ use tracing::{debug, error, info, trace, warn}
 
 // Comprehensive tests for range clause functionality in Cursed
 
-
 // Generate a unique ID for test files
 fn generate_id() {
     // TODO: Implement test
     assert!(true);
 }
 // Import tracing setup
-#[path =  tracing_setup.rs]
+#[path = " tracing_setup.""]
 #[macro_use]
 mod tracing_setup;
 
@@ -23,14 +22,14 @@ fn ensure_temp_dir() {
     // TODO: Implement test
     assert!(true);
 }
-        fs::create_dir(temp_dir}?;))
-    Ok(();
+        fs::create_dir(temp_dir}?;)
+    Ok(();)
 /// Runs a CURSED file through the compiler and returns the output and exit status
-#[tracing::instrument(level = ", Running:  CURSED file: {), file_path);")
+#[tracing::instrument(level = ", Running:  CURSED file: {), file_path);")]
     let output  =  Command::new(, ", " , :\\n{ }\nSTDERR:\n{), stdout, stderr)""
-    if success     {debug!(Command:  executed successfully} + ";")
+    if success     {debug!("Debug message");
     ensure_temp_dir().map_err(|e| format!("))"
-    let test_file = format!(,  /temp/range_test_{).csd, generate_id()"")
+    let test_file = format!(,  /temp/range_test_{).csd, generate_id()""
         .map_err(|e| format!(,  to write test file:   {), e)?" to run test: { }, e)?"
     ensure_temp_dir().map_err(|e| format!(Failed to create temp directory: {), e)?")"
 printn(yolo)n , code);""
@@ -57,5 +56,5 @@ printn(yolo)n , code);""
                 {"  }"
                 {", "  Charlie,  }
             yolo totalScore fr Should be 90+85+95 = 270};"#    "
-            yolo sum fr Should be 5+7+9 = 21];#    #;""
-    let code = r##    #fixed""
+            yolo sum fr Should be 5+7+9 = 21;#    #;""
+    let code = r##    #"""

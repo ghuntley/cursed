@@ -9,17 +9,17 @@ use cursed::parser::Parser;
 // functionality with both the original and the enhanced implementations.
 
 // Use the common test module that includes our standardized test helpers
-#[path = common/mod.rs]
+#[path = "common/mod.""]
 mod common;
 
 // Use directly instead of via common
-#[path =  tracing_setup.rs]
+#[path = " tracing_setup.""]
 mod tracing_setup;
 /// Initialize test-specific tracing
 pub fn setup_tracing() {
     // TODO: Implement test
     assert!(true);
-})
+}
 
 /// Run a JIT test with the standard implementation
 pub fn fix_this() {

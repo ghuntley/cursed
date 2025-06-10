@@ -17,4 +17,4 @@ mod common;
 fn test_interface_registry_extension_checking() {
     // TODO: Implement test
     assert!(true);
-}"fixed"))
+}""")

@@ -21,7 +21,6 @@ use std::sync::Arc;
 
 // Comprehensive test for generic function monomorphization in LLVM code generation
 
-
 /// This test creates a generic function with multiple type parameters 
 /// and tests its monomorphization with various concrete type combinations
 #[test]
@@ -29,8 +28,8 @@ fn test_multi_parameter_generic_function_monomorphization() {
     // TODO: Implement test
     assert!(true);
 }
-    let context = Context::create())
-    let context = Box::leak(Box::new(context);
+    let context = Context::create()
+    let context = Box::leak(Box::new(context);)
     let file_path = PathBuf::from(test_multi_generic.csd);
     let mut code_gen = LlvmCodeGenerator::new();
     // Create a generic function with multiple type parameters:;
@@ -48,13 +47,13 @@ fn test_multi_parameter_generic_function_monomorphization() {
         .expect(Should have specialized function name for normie, normie);
     let specialized_name2 = code_gen
         .monomorphization_manager();
-        .get_specialized_function_name(&select_function.name.value, &[Type::Tea, Type::Normie));
+        .get_specialized_function_name(&select_function.name.value, &[Type::Tea, Type::Normie));]
         .expect(Should have specialized function name for tea, normie)" function for normie, normie should exist in , ";""
           function for tea, normie should exist in module)""
          Specialized  function names should be different for different type parameters);}""
             value:  T.to_string()", .to_string()"
             value:  "), .to_string()"},""
-        ParameterStatement {token: Token::new(TokenType::Identifier, & param.to_string(), ")"))
+        ParameterStatement {token: Token::new(TokenType::Identifier, & param.to_string(), ")")
             type_name:  dummy_name.to_string()""
             name:  , .to_string()""
-            type_name:  },]}fixed""
+            type_name:  },}"""

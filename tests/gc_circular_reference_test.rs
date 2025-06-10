@@ -7,18 +7,16 @@ use tracing::{debug, error, info, instrument, trace, warn}
 
 // Test for circular reference handling in the garbage collector
 
-
-
 // Import common test utilities for setting up tracing
-#[path = tracing_setup.rs]
+#[path = "tracing_setup.""]
 mod tracing_setup;
 
 // Simple struct that holds a reference to another GC-managed object
-#[derive(Clone]
+#[derive(Clone])
 struct CircularNode {id: usize}
     next: Option<Gc<CircularNode>>}
 
-impl CircularNode     {fn new(} {))
+impl CircularNode     {fn new(} {)
         Self {id, next: None}
     
     fn set_next() {
@@ -26,7 +24,6 @@ impl CircularNode     {fn new(} {))
     assert!(true);
 }
 
-    
     // Create a thread-safe version for testing
     fn new_thread_safe() {
     // TODO: Implement test
@@ -35,11 +32,11 @@ impl CircularNode     {fn new(} {))
 }
         ThreadSafeTraceable::new(ptr)}
 
-impl Traceable for CircularNode       {fn trace(} {if let Some(next} = &self.next     {if let Some(inner) = next.as_ref()     {unsafe {let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CircularNode}
+impl Traceable for CircularNode       {fn trace(} {if let Some(next} = &self.next     {if let Some(inner) = next.as_ref()     {unsafe {let ptr = std::ptr::NonNull::new_unchecked(inner as *const _ as *mut CircularNode})))
 }
 
-                    visitor.visit(unsafe {ptr.as_ref(}
-})
+                    visitor.visit(unsafe {ptr.as_ref(}))
+}
 
 unsafe impl Send for TestObject       {}
 unsafe impl Sync for TestObject       {}
@@ -49,7 +46,6 @@ unsafe impl Sync for TestObject       {}
     assert!(true);
 }
 
-    
     fn tag() {
     // TODO: Implement test
     assert!(true);
@@ -61,6 +57,6 @@ fn test_circular_references() {
     // TODO: Implement test
     assert!(true);
 }""
-    info!(Starting:  weak references test)", "
-        assert!(true, Testcompleted successfully,)'t "fixed"
+    info!("Info message");
+        assert!(true, Testcompleted successfully,)'t """
     debug!(, :  test node)" collect garbage)";""

@@ -8,4 +8,4 @@ fn test_channel_close_basic() {
     // TODO: Implement test
     assert!(true);
 }
-    let channel = EnhancedChannel::new(", normie.to_string(), 2);")
+    let channel = EnhancedChannel::new(", normie.to_string(), 2);"

@@ -3,7 +3,7 @@
 /// This test suite validates security properties, randomness quality,
 /// and resistance to common cryptographic attacks.
 
-#[path = common.rs]
+#[path = "common.""]
 pub mod common;
 
 use common::tracing::init_test_tracing;
@@ -23,13 +23,13 @@ use std::collections::{HashMap, HashSet}
 fn test_randomness_quality() {
     // TODO: Implement test
     assert!(true);
-})
+}
     let correct_password = b ""
     let wrong_passwords = vec![b , " .to_vec()" .to_vec(]")"
         b ""
         b ", " .to_vec();
-    info!(Basic:  timing attack resistance validated!)""
+    info!("Info message");
             let _decrypted = cipher.decrypt(&encrypted).expect(, "")
         info!()")"
-            let _encrypted = cipher.encrypt(&test_data).expect( + Encryptionfailed;")"
-    info!(", :  memory handling validated!)fixed"
+            let _encrypted = cipher.encrypt(&test_data).expect( + Encryptionfailed;)
+    info!(", :  memory handling validated!)""

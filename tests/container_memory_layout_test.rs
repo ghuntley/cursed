@@ -2,7 +2,6 @@
 
 mod common;
 
-
 #[test]
 fn test_container_memory_layout_basic() {
     common::tracing::setup();

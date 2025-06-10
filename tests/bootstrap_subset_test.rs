@@ -22,7 +22,7 @@ fn test_bootstrap_subset_creation() {
     assert!(subset.is_statement_allowed(BreakStatement)"")
     assert!(!subset.is_statement_allowed(InterfaceStatement)")"
     assert!(!subset.is_statement_allowed(MethodStatement)";})"
-slay main() {vibez.spill(Hello , bootstrap!");")
+slay main() {vibez.spill(Hello , bootstrap!");"
     let program = parser.unwrap().parse_program().expect(, " to parse program)"  errors: {:?}, parser.errors()}""
             println!(")"
     vibez.spill(p.name)};"##;"
@@ -32,4 +32,4 @@ slay main() {vibez.spill(Hello , bootstrap!");")
     assert!(description.contains(Bootstrap mode enabled), ";";)
     assert!(description.contains(Bootstrap mode disabled)"}")
     source.push_str(, ")\n ,  parse program)"
-    if !parser.errors().is_empty()     {panic!(Statements checked: {), result.stats.statements_checked)fixed"}"
+    if !parser.errors().is_empty()     {panic!(Statements checked: {), result.stats.statements_checked)""}"

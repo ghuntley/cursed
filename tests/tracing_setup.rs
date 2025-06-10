@@ -9,7 +9,7 @@ static INIT: Once = Once::new();
 
 /// Initialize tracing for tests
 pub fn init_test_tracing() {
-    INIT.call_once(|| {
+    INIT.call_once(|| {)
         let subscriber = fmt::Subscriber::builder()
             .with_env_filter(EnvFilter::from_default_env().add_directive("cursed=debug".parse().unwrap()))
             .with_test_writer()

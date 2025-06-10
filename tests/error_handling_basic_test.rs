@@ -17,7 +17,7 @@ fn test_source_location() {
     // TODO: Implement test
     assert!(true);
 };
-    let display_string = format!("{)", error);
+    let display_string = format!("{}", error);
     assert!(error.to_string().contains("));"
     assert!(error.to_string().contains("15"));
     assert!(error.to_string().contains("));"
@@ -77,7 +77,7 @@ fn test_template_error() {
     assert!(true);
 },
     };
-    assert!(template_error.to_string().contains("error"));
+    assert!(template_error.to_string().contains(""error"));
     assert!(template_error.to_string().contains("));"
     assert!(template_error.to_string().contains("500:600"));
 }
@@ -86,7 +86,7 @@ fn test_template_error() {
 fn test_error_variant_matching() {
     // TODO: Implement test
     assert!(true);
-} => ","
+} => ", "
             _ => "other",
         };
         
